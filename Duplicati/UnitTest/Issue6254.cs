@@ -25,11 +25,7 @@ using System.Linq;
 using System;
 using NUnit.Framework.Internal;
 using System.IO.Compression;
-using Duplicati.Library.Interface;
-using System.Collections.Generic;
 using Duplicati.Library.DynamicLoader;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -109,65 +105,18 @@ namespace Duplicati.UnitTest
             //Assert.That(matches, Is.EqualTo(newIndexFiles.Count), "No new index files found with list folder");
 
             // Check that recreate does not load dblock files
-            BackendLoader.AddBackend(new BlockDblockBackend());
+            BackendLoader.AddBackend(new DeterministicErrorBackend());
             File.Delete(DBFILE);
 
-            using (var c = new Library.Main.Controller(BlockDblockBackend.Key + "://" + TARGETFOLDER, testopts, null))
+            DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
+            {
+                if (action.IsGetOperation && remotename.Contains(".dblock."))
+                    return true;
+                return false;
+            };
+
+            using (var c = new Library.Main.Controller(new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Repair());
-        }
-
-        private class BlockDblockBackend : IStreamingBackend
-        {
-            public const string Key = "test-backend-6254";
-            public string DisplayName => "Test backend";
-            public string ProtocolKey => Key;
-            public string Description => "Test backend";
-            public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
-            private readonly IStreamingBackend backend;
-
-            public static string RealKey { get; set; } = "file";
-            public BlockDblockBackend()
-            {
-                backend = (IStreamingBackend)BackendLoader.Backends.First(x => x.ProtocolKey == RealKey);
-            }
-
-            public BlockDblockBackend(string url, Dictionary<string, string> opts)
-            {
-                backend = (IStreamingBackend)BackendLoader.GetBackend(RealKey + url.Substring(ProtocolKey.Length), opts);
-            }
-
-            public Task CreateFolderAsync(CancellationToken cancellationToken)
-                => backend.CreateFolderAsync(cancellationToken);
-
-            public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
-                => backend.DeleteAsync(remotename, cancellationToken);
-            public void Dispose()
-                => backend.Dispose();
-            public Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
-            {
-                if (remotename.Contains(".dblock."))
-                    throw new DeterministicErrorBackend.DeterministicErrorBackendException("Prevent");
-                return backend.GetAsync(remotename, stream, cancelToken);
-            }
-            public Task GetAsync(string remotename, string filename, CancellationToken cancellationToken)
-            {
-                if (remotename.Contains(".dblock."))
-                    throw new DeterministicErrorBackend.DeterministicErrorBackendException("Prevent");
-                return backend.GetAsync(remotename, filename, cancellationToken);
-            }
-            public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
-                => GetDNSNamesAsync(cancelToken);
-            public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
-                => backend.ListAsync(cancellationToken);
-
-            public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
-                => backend.PutAsync(remotename, stream, cancelToken);
-
-            public Task PutAsync(string remotename, string filename, CancellationToken cancellationToken)
-                => backend.PutAsync(remotename, filename, cancellationToken);
-
-            public Task TestAsync(CancellationToken cancellationToken)
-                => backend.TestAsync(cancellationToken);
         }
     }
 }
