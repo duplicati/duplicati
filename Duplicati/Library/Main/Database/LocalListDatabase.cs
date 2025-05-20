@@ -97,8 +97,8 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = m_db.Connection.CreateCommand())
                 {
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tablename}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""IsFullBackup"" AS ""IsFullBackup"" , ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" {query}"), args);
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tablename}_FilesetIDTimestampIndex"" ON ""{m_tablename}"" (""FilesetID"", ""Timestamp"" DESC)"));
+                    cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{m_tablename}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""IsFullBackup"" AS ""IsFullBackup"" , ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" {query}", args);
+                    cmd.ExecuteNonQuery($@"CREATE INDEX ""{m_tablename}_FilesetIDTimestampIndex"" ON ""{m_tablename}"" (""FilesetID"", ""Timestamp"" DESC)");
                 }
 
                 return fs;
@@ -165,27 +165,27 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_connection.CreateCommand())
                 {
                     //First we trim the filelist to exclude filenames not found in any of the filesets
-                    cmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) "));
+                    cmd.ExecuteNonQuery($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) ");
 
                     //If we have a prefix rule, apply it
                     if (!string.IsNullOrWhiteSpace(prefixrule))
-                        cmd.SetCommandAndParameters(FormatInvariant($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, {prefixrule.Length}) != @Rule"))
+                        cmd.SetCommandAndParameters($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, {prefixrule.Length}) != @Rule")
                             .SetParameterValue("@Rule", prefixrule)
                             .ExecuteNonQuery();
 
                     // Then we recursively find the largest prefix
-                    var v0 = cmd.ExecuteScalar(FormatInvariant($@"SELECT ""Path"" FROM ""{tmpnames.Tablename}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"));
+                    var v0 = cmd.ExecuteScalar($@"SELECT ""Path"" FROM ""{tmpnames.Tablename}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
                     var maxpath = "";
                     if (v0 != null)
                         maxpath = v0.ToString() ?? "";
 
                     var dirsep = Util.GuessDirSeparator(maxpath);
 
-                    var filecount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"""), 0);
+                    var filecount = cmd.ExecuteScalarInt64($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}""", 0);
                     var foundfiles = -1L;
 
                     //TODO: Handle FS case-sensitive?
-                    cmd.SetCommandAndParameters(FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, @PrefixLength) = @Prefix"));
+                    cmd.SetCommandAndParameters($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, @PrefixLength) = @Prefix");
 
                     while (filecount != foundfiles && maxpath.Length > 0)
                     {
@@ -208,7 +208,7 @@ namespace Duplicati.Library.Main.Database
                     // Special handling for Windows and multi-drive/UNC backups as they do not have a single common root
                     if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
                     {
-                        var paths = cmd.ExecuteReaderEnumerable(FormatInvariant($@"SELECT Path FROM ""{tmpnames.Tablename}""")).Select(x => x.ConvertValueToString(0) ?? "").ToArray();
+                        var paths = cmd.ExecuteReaderEnumerable($@"SELECT Path FROM ""{tmpnames.Tablename}""").Select(x => x.ConvertValueToString(0) ?? "").ToArray();
                         var roots = paths.Select(x => x.Substring(0, 1)).Distinct().Where(x => x != "\\").ToArray();
 
                         //unc path like \\server.domain\
@@ -228,7 +228,7 @@ namespace Duplicati.Library.Main.Database
                     prefix = Util.AppendDirSeparator(prefix, Util.GuessDirSeparator(prefix));
 
                 var ppl = prefix.Length;
-                using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT DISTINCT ""Path"" FROM ""{table}"" ")))
+                using (var rd = cmd.ExecuteReader($@"SELECT DISTINCT ""Path"" FROM ""{table}"" "))
                     while (rd.Read())
                     {
                         var s = rd.ConvertValueToString(0) ?? "";
@@ -267,7 +267,7 @@ namespace Duplicati.Library.Main.Database
                     using (var cmd = m_connection.CreateCommand())
                     {
                         //First we trim the filelist to exclude filenames not found in any of the filesets
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) "));
+                        cmd.ExecuteNonQuery($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) ");
 
                         // If we had instr support this would work:
                         /*var distinctPaths = @"SELECT DISTINCT :1 || " +
@@ -278,23 +278,23 @@ namespace Duplicati.Library.Main.Database
                             @" FROM (" + cartesianPathFileset + @")";*/
 
                         // Instead we manually iterate the paths
-                        cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tbname}"" (""Path"" TEXT NOT NULL)"));
+                        cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{tbname}"" (""Path"" TEXT NOT NULL)");
 
                         using (var c2 = m_connection.CreateCommand())
                         {
-                            c2.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{tbname}"" (""Path"") VALUES (@Path)"));
+                            c2.SetCommandAndParameters($@"INSERT INTO ""{tbname}"" (""Path"") VALUES (@Path)");
                             foreach (var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename).Distinct())
                                 c2.SetParameterValue("@Path", n)
                                     .ExecuteNonQuery();
 
-                            c2.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{tbname}_PathIndex"" ON ""{tbname}"" (""Path"")"));
+                            c2.ExecuteNonQuery($@"CREATE INDEX ""{tbname}_PathIndex"" ON ""{tbname}"" (""Path"")");
                         }
 
                         //Then we select the matching results
-                        var filesets = FormatInvariant($@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC");
-                        var cartesianPathFileset = FormatInvariant($@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{tbname}"" A, ({filesets}) B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC");
+                        var filesets = $@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC";
+                        var cartesianPathFileset = $@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{tbname}"" A, ({filesets}) B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC";
 
-                        var filesWithSizes = FormatInvariant($@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") ");
+                        var filesWithSizes = $@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") ";
                         var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
 
                         using (var rd = cmd.ExecuteReader(query))
@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         using (var c = m_connection.CreateCommand())
-                            c.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tbname}"""));
+                            c.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""{tbname}""");
                     }
                     catch
                     {
@@ -337,12 +337,12 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_connection.CreateCommand())
                 {
                     //First we trim the filelist to exclude filenames not found in any of the filesets
-                    cmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) "));
+                    cmd.ExecuteNonQuery($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) ");
 
                     //Then we select the matching results
-                    var filesets = FormatInvariant($@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC");
-                    var cartesianPathFileset = FormatInvariant($@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{tmpnames.Tablename}"" A, ({filesets}) B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC");
-                    var filesWithSizes = FormatInvariant($@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID""  AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") ");
+                    var filesets = $@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC";
+                    var cartesianPathFileset = $@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{tmpnames.Tablename}"" A, ({filesets}) B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC";
+                    var filesWithSizes = $@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID""  AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") ";
                     var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
                     using (var rd = cmd.ExecuteReader(query))
                         if (rd.Read())
@@ -361,7 +361,7 @@ namespace Duplicati.Library.Main.Database
             public void TakeFirst()
             {
                 using (var cmd = m_connection.CreateCommand())
-                    cmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{m_tablename}"" WHERE ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC LIMIT 1 )"));
+                    cmd.ExecuteNonQuery($@"DELETE FROM ""{m_tablename}"" WHERE ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC LIMIT 1 )");
             }
 
             public IEnumerable<IFileset> QuickSets
@@ -392,12 +392,12 @@ namespace Duplicati.Library.Main.Database
                     for (var i = 0; i < m_filesets.Length; i++)
                         dict[m_filesets[i].Key] = i;
 
-                    var summation = FormatInvariant(
-                        $@"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""A"".""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") GROUP BY ""A"".""FilesetID"" ");
+                    var summation =
+                        $@"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""A"".""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") GROUP BY ""A"".""FilesetID"" ";
 
                     using (var cmd = m_connection.CreateCommand())
-                    using (var rd = cmd.ExecuteReader(FormatInvariant(
-                        $@"SELECT DISTINCT ""A"".""FilesetID"", ""A"".""IsFullBackup"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{m_tablename}"" A LEFT OUTER JOIN ( {summation} ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC "))
+                    using (var rd = cmd.ExecuteReader(
+                        $@"SELECT DISTINCT ""A"".""FilesetID"", ""A"".""IsFullBackup"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{m_tablename}"" A LEFT OUTER JOIN ( {summation} ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC ")
                     )
                         while (rd.Read())
                         {
@@ -419,7 +419,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         using (var cmd = m_connection.CreateCommand())
-                            cmd.ExecuteNonQuery(FormatInvariant(@$"DROP TABLE IF EXISTS ""{m_tablename}"" "));
+                            cmd.ExecuteNonQuery(@$"DROP TABLE IF EXISTS ""{m_tablename}"" ");
                     }
                     catch { }
                     finally { m_tablename = null!; }
