@@ -110,6 +110,13 @@ namespace Duplicati.Library.Main
         private const long DEFAULT_BACKUP_TEST_SAMPLES = 1;
 
         /// <summary>
+        /// The default snapshot policy
+        /// </summary>
+        private static readonly OptimizationStrategy DEFAULT_SNAPSHOT_POLICY = PermissionHelper.HasSeBackupPrivilege()
+            ? OptimizationStrategy.Auto
+            : OptimizationStrategy.Off;
+
+        /// <summary>
         /// The default number of compressor instances
         /// </summary>
         private static readonly int DEFAULT_COMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
@@ -372,7 +379,7 @@ namespace Duplicati.Library.Main
 
             new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
 
-            new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy))),
+            new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, DEFAULT_SNAPSHOT_POLICY.ToString(), null, Enum.GetNames(typeof(OptimizationStrategy))),
             new CommandLineArgument("snapshot-provider", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotproviderShort, Strings.Options.SnapshotproviderLong, OperatingSystem.IsWindows() ? Snapshots.SnapshotProvider.AlphaVSS.ToString() : Snapshots.SnapshotProvider.LVM.ToString(), null, (OperatingSystem.IsWindows() ? [Snapshots.SnapshotProvider.AlphaVSS, Snapshots.SnapshotProvider.Wmic] : new [] { Snapshots.SnapshotProvider.LVM }).Select(x => x.ToString()).ToArray()),
             new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong, "{e8132975-6f93-4464-a53e-1050253ae220}"),
             new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false"),
@@ -894,7 +901,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the snapshot strategy to use
         /// </summary>
-        public OptimizationStrategy SnapShotStrategy => GetEnum("snapshot-policy", OptimizationStrategy.Off);
+        public OptimizationStrategy SnapShotStrategy => GetEnum("snapshot-policy", DEFAULT_SNAPSHOT_POLICY);
 
         /// <summary>
         /// Gets the snapshot strategy to use
