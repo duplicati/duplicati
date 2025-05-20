@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 #nullable enable
@@ -24,21 +24,30 @@
 using System;
 using System.Data;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
 {
     internal class LocalPurgeDatabase : LocalDeleteDatabase
     {
-        public LocalPurgeDatabase(string path, long pagecachesize)
-            : base(path, "Purge", pagecachesize)
+        public static async Task<LocalPurgeDatabase> CreateAsync(string path, long pagecachesize)
         {
-            ShouldCloseConnection = true;
+            var db = new LocalPurgeDatabase();
+
+            db = (LocalPurgeDatabase)await CreateLocalDatabaseAsync(db, path, "ListBrokenFiles", false, pagecachesize);
+            db.ShouldCloseConnection = true;
+
+            return db;
         }
 
-        public LocalPurgeDatabase(LocalDatabase db)
-            : base(db)
+        public static async Task<LocalPurgeDatabase> CreateAsync(LocalDatabase dbparent)
         {
+            var dbnew = new LocalPurgeDatabase();
+
+            dbnew = (LocalPurgeDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
+
+            return dbnew;
         }
 
         public ITemporaryFileset CreateTemporaryFileset(long parentid, IDbTransaction transaction)
@@ -82,26 +91,35 @@ namespace Duplicati.Library.Main.Database
 
         private class TemporaryFileset : ITemporaryFileset
         {
-            private readonly IDbConnection m_connection;
-            private readonly IDbTransaction m_transaction;
-            private readonly string m_tablename;
-            private readonly LocalPurgeDatabase m_parentdb;
+            private string m_tablename = null!;
+            private LocalDatabase m_db = null!;
 
             public long ParentID { get; private set; }
             public long RemovedFileCount { get; private set; }
             public long RemovedFileSize { get; private set; }
             public long UpdatedFileCount { get; private set; }
 
+            [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
             public TemporaryFileset(long parentid, LocalPurgeDatabase parentdb, IDbConnection connection, IDbTransaction transaction)
             {
-                ParentID = parentid;
-                m_parentdb = parentdb;
-                m_connection = connection;
-                m_transaction = transaction;
-                m_tablename = "TempDeletedFilesTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                throw new NotImplementedException("Use CreateAsync instead");
+            }
 
-                using (var cmd = m_connection.CreateCommand(m_transaction))
+            private TemporaryFileset() { }
+
+            public static async Task<TemporaryFileset> CreateAsync(long parentid, LocalDatabase db)
+            {
+                var tempf = new TemporaryFileset()
+                {
+                    ParentID = parentid,
+                    m_db = db,
+                    m_tablename = "TempDeletedFilesTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())
+                };
+
+                using (var cmd = db.Connection.CreateCommand())
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tablename}"" (""FileID"" INTEGER PRIMARY KEY) "));
+
+                return tempf;
             }
 
             public void ApplyFilter(Func<IDbCommand, long, string, int> filtercommand)
@@ -169,13 +187,13 @@ namespace Duplicati.Library.Main.Database
                     UpdatedFileCount = updated;
                     RemovedFileCount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tablename}"""), 0);
                     RemovedFileSize = cmd.ExecuteScalarInt64(FormatInvariant($@"
-                        SELECT 
-                            SUM(""C"".""Length"") 
+                        SELECT
+                            SUM(""C"".""Length"")
                         FROM
                             ""{m_tablename}"" A, ""FileLookup"" B, ""Blockset"" C, ""Metadataset"" D
                         WHERE
                             ""A"".""FileID"" = ""B"".""ID""
-                            AND(""B"".""BlocksetID"" = ""C"".""ID"" OR(""B"".""MetadataID"" = ""D"".""ID"" AND ""D"".""BlocksetID"" = ""C"".""ID""))                    
+                            AND(""B"".""BlocksetID"" = ""C"".""ID"" OR(""B"".""MetadataID"" = ""D"".""ID"" AND ""D"".""BlocksetID"" = ""C"".""ID""))
                         "), 0);
                     var filesetcount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = {ParentID}"), 0);
                     if (filesetcount == RemovedFileCount)
@@ -185,9 +203,9 @@ namespace Duplicati.Library.Main.Database
 
             public Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup)
             {
-                var remotevolid = m_parentdb.RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-                var filesetid = m_parentdb.CreateFileset(remotevolid, timestamp, m_transaction);
-                m_parentdb.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
+                var remotevolid = m_db.RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
+                var filesetid = m_db.CreateFileset(remotevolid, timestamp, m_transaction);
+                m_db.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
 
                 using (var cmd = m_connection.CreateCommand(m_transaction))
                     cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT @TargetFilesetId, ""FileID"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @SourceFilesetId AND ""FileID"" NOT IN ""{m_tablename}"" "))
