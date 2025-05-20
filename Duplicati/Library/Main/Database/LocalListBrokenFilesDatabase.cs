@@ -88,27 +88,34 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
             return dbnew;
         }
 
-        public IEnumerable<(DateTime FilesetTime, long FilesetID, long RemoveFileCount)> GetBrokenFilesets(DateTime time, long[] versions, IDbTransaction transaction)
+        public async IAsyncEnumerable<(DateTime FilesetTime, long FilesetID, long RemoveFileCount)> GetBrokenFilesets(DateTime time, long[] versions, IDbTransaction transaction)
         {
             var query = BROKEN_FILE_SETS;
-            var clause = GetFilelistWhereClause(time, versions);
+            var clause = await GetFilelistWhereClause(time, versions);
             if (!string.IsNullOrWhiteSpace(clause.Item1))
                 query += $@" AND ""A"".""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" {clause.Item1})";
 
             query += @" GROUP BY ""A"".""FilesetID""";
 
             using (var cmd = Connection.CreateCommand(transaction))
-                foreach (var rd in cmd.SetCommandAndParameters(query).SetParameterValues(clause.Values).ExecuteReaderEnumerable())
+                await foreach (var rd in cmd.SetCommandAndParameters(query).SetParameterValues(clause.Values).ExecuteReaderEnumerableAsync())
                     if (!rd.IsDBNull(0))
-                        yield return (ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)), rd.ConvertValueToInt64(1, -1), rd.ConvertValueToInt64(2, 0));
+                        yield return (
+                            ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)),
+                            rd.ConvertValueToInt64(1, -1),
+                            rd.ConvertValueToInt64(2, 0)
+                        );
         }
 
-        public IEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid, IDbTransaction transaction)
+        public async IAsyncEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid, IDbTransaction transaction)
         {
             using (var cmd = Connection.CreateCommand(transaction, BROKEN_FILE_NAMES).SetParameterValue("@FilesetId", filesetid))
-                foreach (var rd in cmd.ExecuteReaderEnumerable())
+                await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
                     if (!rd.IsDBNull(0))
-                        yield return new Tuple<string, long>(rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"), rd.ConvertValueToInt64(1));
+                        yield return new Tuple<string, long>(
+                            rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"),
+                            rd.ConvertValueToInt64(1)
+                        );
         }
 
         /// <summary>
@@ -116,11 +123,11 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         /// </summary>
         /// <param name="transaction">Transaction to use for the query.</param>
         /// <returns>>All index files that are orphaned.</returns>
-        public IEnumerable<RemoteVolume> GetOrphanedIndexFiles(IDbTransaction transaction)
+        public async IAsyncEnumerable<RemoteVolume> GetOrphanedIndexFiles(IDbTransaction transaction)
         {
             using var cmd = Connection.CreateCommand(transaction, $@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Index.ToString()}' AND ""ID"" NOT IN (SELECT ""IndexVolumeID"" FROM ""IndexBlockLink"")");
 
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
                 yield return new RemoteVolume(
                     rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"),
                     rd.ConvertValueToString(1) ?? throw new Exception("Hash was null"),
@@ -135,11 +142,11 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         /// <param name="tablename">The name of the table to insert into</param>
         /// <param name="IDfieldname">The name of the ID field in the table</param>
         /// <param name="transaction">The transaction to use for the query</param>
-        public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, IDbTransaction transaction)
+        public async Task InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, IDbTransaction transaction)
         {
             using var cmd = Connection.CreateCommand(transaction, INSERT_BROKEN_IDS(tablename, IDfieldname))
               .SetParameterValue("@FilesetId", filesetid);
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -151,27 +158,27 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         /// <param name="emptyHashSize">The size of the empty blockset</param>
         /// <param name="transaction">The transaction to use for the query</param>
         /// <returns>The ID of the empty metadata blockset, or -1 if no suitable blockset is found</returns>
-        public long GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, IDbTransaction transaction)
+        public async Task<long> GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, IDbTransaction transaction)
         {
             using var cmd = Connection.CreateCommand(transaction, @"SELECT ""ID"" FROM ""Blockset"" WHERE ""FullHash"" = @EmptyHash AND ""Length"" == @EmptyHashSize AND ""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds))")
               .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds)
               .SetParameterValue("@EmptyHash", emptyHash)
               .SetParameterValue("@EmptyHashSize", emptyHashSize);
 
-            var res = cmd.ExecuteScalarInt64(-1);
+            var res = await cmd.ExecuteScalarInt64Async(-1);
 
             // No empty block found, try to find a zero-length block instead
             if (res < 0 && emptyHashSize != 0)
-                res = cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" == @EmptyHashSize AND ""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds))")
+                res = await cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" == @EmptyHashSize AND ""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds))")
                   .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds)
                   .SetParameterValue("@EmptyHashSize", 0)
-                  .ExecuteScalarInt64(-1);
+                  .ExecuteScalarInt64Async(-1);
 
             // No empty block found, pick the smallest one
             if (res < 0)
-                res = cmd.SetCommandAndParameters(@"SELECT ""Blockset"".""ID"" FROM ""BlocksetEntry"", ""Blockset"", ""Metadataset"", ""Block"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds) ORDER BY ""Blockset"".""Length"" ASC LIMIT 1")
+                res = await cmd.SetCommandAndParameters(@"SELECT ""Blockset"".""ID"" FROM ""BlocksetEntry"", ""Blockset"", ""Metadataset"", ""Block"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds) ORDER BY ""Blockset"".""Length"" ASC LIMIT 1")
                   .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds)
-                  .ExecuteScalarInt64(-1);
+                  .ExecuteScalarInt64Async(-1);
 
             return res;
         }
@@ -184,7 +191,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         /// <param name="emptyBlocksetId">The empty blockset ID to replace with</param>
         /// <param name="transaction">The transaction to use for the query</param>
         /// <returns>The number of rows affected</returns>
-        public int ReplaceMetadata(long filesetId, long emptyBlocksetId, IDbTransaction transaction)
+        public async Task<int> ReplaceMetadata(long filesetId, long emptyBlocksetId, IDbTransaction transaction)
         {
             using var cmd = m_connection.CreateCommand(transaction, @"
 UPDATE ""Metadataset""
@@ -204,10 +211,10 @@ WHERE
   )")
               .SetParameterValue("@EmptyBlocksetId", emptyBlocksetId)
               .SetParameterValue("@FilesetId", filesetId);
-            return cmd.ExecuteNonQuery();
+            return await cmd.ExecuteNonQueryAsync();
         }
 
-        public void RemoveMissingBlocks(IEnumerable<string> names, IDbTransaction transaction)
+        public async Task RemoveMissingBlocks(IEnumerable<string> names, IDbTransaction transaction)
         {
             if (names == null || !names.Any()) return;
             if (transaction == null)
@@ -221,37 +228,37 @@ WHERE
                 // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
                 deletecmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)");
 
-                using (var tmptable = new TemporaryDbValueList(m_connection, transaction, names))
-                    deletecmd.SetCommandAndParameters($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)")
+                using (var tmptable = await TemporaryDbValueList.CreateAsync(this, names))
+                    await deletecmd.SetCommandAndParameters($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)")
                       .ExpandInClauseParameter("@Names", tmptable)
-                      .ExecuteNonQuery();
+                      .ExecuteNonQueryAsync();
 
                 var volIdsSubQuery = $@"SELECT ""ID"" FROM ""{volidstable}"" ";
                 deletecmd.Parameters.Clear();
 
-                deletecmd.ExecuteNonQuery($@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({volIdsSubQuery}) OR ""IndexVolumeID"" IN ({volIdsSubQuery})");
-                deletecmd.ExecuteNonQuery($@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
-                deletecmd.ExecuteNonQuery($@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
-                deletecmd.ExecuteNonQuery($@"DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
+                await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({volIdsSubQuery}) OR ""IndexVolumeID"" IN ({volIdsSubQuery})");
+                await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
+                await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
+                await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
                 // SQLite.SQLiteException (0x80004005): database table is locked
-                deletecmd.ExecuteNonQuery($@"DELETE FROM ""{volidstable}"" ");
+                await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""{volidstable}"" ");
                 try
                 {
                     deletecmd.CommandTimeout = 2;
-                    deletecmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""{volidstable}"" ");
+                    await deletecmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{volidstable}"" ");
                 }
                 catch { /* Ignore, will be deleted on close anyway. */ }
             }
         }
 
-        public long GetFilesetFileCount(long filesetid, IDbTransaction transaction)
+        public async Task<long> GetFilesetFileCount(long filesetid, IDbTransaction transaction)
         {
             using var cmd = m_connection.CreateCommand(transaction, @"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId")
               .SetParameterValue("@FilesetId", filesetid);
-            return cmd.ExecuteScalarInt64(0);
+            return await cmd.ExecuteScalarInt64Async(0);
         }
     }
 }
