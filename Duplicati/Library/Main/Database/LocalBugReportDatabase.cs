@@ -77,9 +77,10 @@ namespace Duplicati.Library.Main.Database
                             || @DirSep
                             || ""ID""
                             || (
-                                CASE WHEN substr(""RealPath"", length(""RealPath"")) = @DirSep
-                                THEN @DirSep
-                                ELSE @FileExt
+                                CASE
+                                    WHEN substr(""RealPath"", length(""RealPath"")) = @DirSep
+                                    THEN @DirSep
+                                    ELSE @FileExt
                                 END
                             )
                         ")

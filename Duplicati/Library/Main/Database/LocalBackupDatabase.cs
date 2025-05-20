@@ -304,12 +304,32 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = dbnew.Connection.CreateCommand())
                 {
                     dbnew.m_tempDeletedBlockTable = "DeletedBlock-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                    cmd.SetCommandAndParameters($@"CREATE TEMPORARY TABLE ""{dbnew.m_tempDeletedBlockTable}"" AS "
-                        + @$"SELECT MAX(""ID"") AS ""ID"", ""Hash"", ""Size"" FROM ""DeletedBlock"" WHERE ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" NOT IN (@States)) GROUP BY ""Hash"", ""Size""")
-                        .ExpandInClauseParameter("@States", [RemoteVolumeState.Deleted, RemoteVolumeState.Deleting])
-                        .ExecuteNonQuery();
+                    await cmd.SetCommandAndParameters($@"
+                        CREATE TEMPORARY TABLE ""{dbnew.m_tempDeletedBlockTable}"" AS
+                        SELECT
+                            MAX(""ID"") AS ""ID"",
+                            ""Hash"",
+                            ""Size""
+                        FROM ""DeletedBlock""
+                        WHERE ""VolumeID"" IN (
+                            SELECT ""ID""
+                            FROM ""RemoteVolume""
+                            WHERE ""State"" NOT IN (@States)
+                        )
+                        GROUP BY
+                            ""Hash"",
+                            ""Size""
+                    ")
+                        .ExpandInClauseParameter("@States", [
+                            RemoteVolumeState.Deleted,
+                            RemoteVolumeState.Deleting
+                        ])
+                        .ExecuteNonQueryAsync();
 
-                    var deletedBlocks = await cmd.ExecuteScalarInt64Async(@$"SELECT COUNT(*) FROM ""{dbnew.m_tempDeletedBlockTable}""", 0);
+                    var deletedBlocks = await cmd.ExecuteScalarInt64Async(@$"
+                        SELECT COUNT(*)
+                        FROM ""{dbnew.m_tempDeletedBlockTable}""
+                    ", 0);
 
                     // There are no deleted blocks, so we can drop the table
                     if (deletedBlocks == 0)
@@ -322,7 +342,15 @@ namespace Duplicati.Library.Main.Database
                     else if (deletedBlocks <= deletedBlockCacheSizeLong)
                     {
                         dbnew.m_deletedBlockLookup = new Dictionary<string, Dictionary<long, long>>();
-                        using (var reader = await cmd.ExecuteReaderAsync(@$"SELECT ""ID"", ""Hash"", ""Size"" FROM ""{dbnew.m_tempDeletedBlockTable}"""))
+                        cmd.SetCommandAndParameters(@$"
+                            SELECT
+                                ""ID"",
+                                ""Hash"",
+                                ""Size""
+                            FROM ""{dbnew.m_tempDeletedBlockTable}""
+                        ");
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
                             while (await reader.ReadAsync())
                             {
                                 var id = reader.ConvertValueToInt64(0);
@@ -340,22 +368,66 @@ namespace Duplicati.Library.Main.Database
                     // The deleted blocks are too large to fit in memory, so we use a temporary table
                     else
                     {
-                        await cmd.ExecuteNonQueryAsync($@"CREATE UNIQUE INDEX ""unique_{dbnew.m_tempDeletedBlockTable}"" ON ""{dbnew.m_tempDeletedBlockTable}"" (""Hash"", ""Size"")");
-                        dbnew.m_findindeletedCommand = await dbnew.m_connection.CreateCommandAsync($@"SELECT ""ID"" FROM ""{dbnew.m_tempDeletedBlockTable}"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
-                        dbnew.m_moveblockfromdeletedCommand = await dbnew.m_connection.CreateCommandAsync(string.Join(";",
-                            @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId LIMIT 1",
-                            @"DELETE FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId",
-                            @$"DELETE FROM {dbnew.m_tempDeletedBlockTable} WHERE ""ID"" = @DeletedBlockId",
-                            "SELECT last_insert_rowid()"));
+                        await cmd.ExecuteNonQueryAsync($@"
+                            CREATE UNIQUE INDEX ""unique_{dbnew.m_tempDeletedBlockTable}""
+                            ON ""{dbnew.m_tempDeletedBlockTable}"" (
+                                ""Hash"",
+                                ""Size""
+                            )
+                        ");
+
+                        dbnew.m_findindeletedCommand = await dbnew.Connection.CreateCommandAsync($@"
+                            SELECT ""ID""
+                            FROM ""{dbnew.m_tempDeletedBlockTable}""
+                            WHERE
+                                ""Hash"" = @Hash
+                                AND ""Size"" = @Size
+                        ");
+
+                        dbnew.m_moveblockfromdeletedCommand = await dbnew.Connection.CreateCommandAsync(@$"
+                            INSERT INTO ""Block"" (
+                                ""Hash"",
+                                ""Size"",
+                                ""VolumeID""
+                            )
+                            SELECT
+                                ""Hash"",
+                                ""Size"",
+                                ""VolumeID""
+                            FROM ""DeletedBlock""
+                            WHERE ""ID"" = @DeletedBlockId LIMIT 1;
+
+                            DELETE FROM ""DeletedBlock""
+                            WHERE ""ID"" = @DeletedBlockId;
+
+                            DELETE FROM {dbnew.m_tempDeletedBlockTable}
+                            WHERE ""ID"" = @DeletedBlockId;
+
+                            SELECT last_insert_rowid()
+                        ");
 
                     }
 
                     if (deletedBlocks > 0)
                     {
-                        dbnew.m_moveblockfromdeletedCommand = await dbnew.m_connection.CreateCommandAsync(string.Join(";",
-                            @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId LIMIT 1",
-                            @"DELETE FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId",
-                            "SELECT last_insert_rowid()"));
+                        dbnew.m_moveblockfromdeletedCommand = await dbnew.m_connection.CreateCommandAsync(@$"
+                            INSERT INTO ""Block"" (
+                                ""Hash"",
+                                ""Size"",
+                                ""VolumeID""
+                            )
+                            SELECT
+                                ""Hash"",
+                                ""Size"",
+                                ""VolumeID""
+                            FROM ""DeletedBlock""
+                            WHERE ""ID"" = @DeletedBlockId LIMIT 1;
+
+                            DELETE FROM ""DeletedBlock""
+                            WHERE ""ID"" = @DeletedBlockId;
+
+                            SELECT last_insert_rowid()
+                        ");
                     }
 
                 }
@@ -383,70 +455,161 @@ namespace Duplicati.Library.Main.Database
             {
                 // The query used in Duplicati until 2.0.3.9
                 case 1:
-                    findQuery =
-                        @" SELECT ""FileLookup"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
-                        @"   FROM ""FileLookup"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
-                        @"  WHERE ""FileLookup"".""PrefixID"" = @PrefixId AND ""FileLookup"".""Path"" = @Path " +
-                        @"    AND ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
-                        @"    AND ""FileBlockset"".""ID"" = ""FileLookup"".""BlocksetID"" " +
-                        @"    AND ""Metadataset"".""ID"" = ""FileLookup"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
-                        @"    AND @FilesetId IS NOT NULL" +
-                        @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
-                        @"  LIMIT 1 ";
+                    findQuery = @"
+                        SELECT
+                            ""FileLookup"".""ID"" AS ""FileID"",
+                            ""FilesetEntry"".""Lastmodified"",
+                            ""FileBlockset"".""Length"",
+                            ""MetaBlockset"".""Fullhash"" AS ""Metahash"",
+                            ""MetaBlockset"".""Length"" AS ""Metasize""
+                        FROM
+                            ""FileLookup"",
+                            ""FilesetEntry"",
+                            ""Fileset"",
+                            ""Blockset"" ""FileBlockset"",
+                            ""Metadataset"",
+                            ""Blockset"" ""MetaBlockset""
+                        WHERE
+                            ""FileLookup"".""PrefixID"" = @PrefixId
+                            AND ""FileLookup"".""Path"" = @Path
+                            AND ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID""
+                            AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID""
+                            AND ""FileBlockset"".""ID"" = ""FileLookup"".""BlocksetID""
+                            AND ""Metadataset"".""ID"" = ""FileLookup"".""MetadataID""
+                            AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID""
+                            AND @FilesetId IS NOT NULL
+                        ORDER BY ""Fileset"".""Timestamp"" DESC
+                        LIMIT 1
+                    ";
                     break;
 
                 // The fastest reported query in Duplicati 2.0.3.10, but with "LIMIT 1" added
                 default:
                 case 2:
-                    var getLastFileEntryForPath =
-                        @"SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"", ""A"".""MetadataID"" " +
-                        @"  FROM (SELECT ""ID"", ""BlocksetID"", ""MetadataID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" " +
-                        @"  CROSS JOIN ""FilesetEntry"" ""B"" " +
-                        @"  WHERE ""A"".""ID"" = ""B"".""FileID"" " +
-                        @"    AND ""B"".""FilesetID"" = @FilesetId ";
+                    var getLastFileEntryForPath = @"
+                        SELECT
+                            ""A"".""ID"",
+                            ""B"".""LastModified"",
+                            ""A"".""BlocksetID"",
+                            ""A"".""MetadataID""
+                        FROM (
+                            SELECT
+                                ""ID"",
+                                ""BlocksetID"",
+                                ""MetadataID""
+                            FROM ""FileLookup""
+                            WHERE
+                                ""PrefixID"" = @PrefixId
+                                AND ""Path"" = @Path
+                        ) ""A""
+                        CROSS JOIN ""FilesetEntry"" ""B""
+                        WHERE
+                            ""A"".""ID"" = ""B"".""FileID""
+                            AND ""B"".""FilesetID"" = @FilesetId
+                    ";
 
-                    findQuery = $@"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize""
-FROM ({getLastFileEntryForPath}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F""
-WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID""
-LIMIT 1";
+                    findQuery = $@"
+                        SELECT
+                            ""C"".""ID"" AS ""FileID"",
+                            ""C"".""LastModified"",
+                            ""D"".""Length"",
+                            ""E"".""FullHash"" as ""Metahash"",
+                            ""E"".""Length"" AS ""Metasize""
+                        FROM
+                            ({getLastFileEntryForPath}) AS ""C"",
+                            ""Blockset"" AS ""D"",
+                            ""Blockset"" AS ""E"",
+                            ""Metadataset"" ""F""
+                        WHERE
+                            ""C"".""BlocksetID"" == ""D"".""ID""
+                            AND ""C"".""MetadataID"" == ""F"".""ID""
+                            AND ""F"".""BlocksetID"" = ""E"".""ID""
+                        LIMIT 1
+                    ";
                     break;
 
                 // Potentially faster query: https://forum.duplicati.com/t/release-2-0-3-10-canary-2018-08-30/4497/25
                 case 3:
-                    findQuery =
-                        @"    SELECT FileLookup.ID as FileID, FilesetEntry.Lastmodified, FileBlockset.Length,  " +
-                        @"           MetaBlockset.FullHash AS Metahash, MetaBlockset.Length as Metasize " +
-                        @"      FROM FilesetEntry " +
-                        @"INNER JOIN Fileset ON (FileSet.ID = FilesetEntry.FilesetID) " +
-                        @"INNER JOIN FileLookup ON (FileLookup.ID = FilesetEntry.FileID) " +
-                        @"INNER JOIN Metadataset ON (Metadataset.ID = FileLookup.MetadataID) " +
-                        @"INNER JOIN Blockset AS MetaBlockset ON (MetaBlockset.ID = Metadataset.BlocksetID) " +
-                        @" LEFT JOIN Blockset AS FileBlockset ON (FileBlockset.ID = FileLookup.BlocksetID) " +
-                        @"     WHERE FileLookup.PrefixID = @PrefixId AND FileLookup.Path = @Path AND FilesetID = @FilesetId " +
-                        @"     LIMIT 1 ";
+                    findQuery = @"
+                        SELECT
+                            FileLookup.ID as FileID,
+                            FilesetEntry.Lastmodified,
+                            FileBlockset.Length,
+                            MetaBlockset.FullHash AS Metahash,
+                            MetaBlockset.Length as Metasize
+                        FROM FilesetEntry
+                        INNER JOIN Fileset
+                            ON (FileSet.ID = FilesetEntry.FilesetID)
+                        INNER JOIN FileLookup
+                            ON (FileLookup.ID = FilesetEntry.FileID)
+                        INNER JOIN Metadataset
+                            ON (Metadataset.ID = FileLookup.MetadataID)
+                        INNER JOIN Blockset AS MetaBlockset
+                            ON (MetaBlockset.ID = Metadataset.BlocksetID)
+                        LEFT JOIN Blockset AS FileBlockset
+                            ON (FileBlockset.ID = FileLookup.BlocksetID)
+                        WHERE
+                            FileLookup.PrefixID = @PrefixId
+                            AND FileLookup.Path = @Path
+                            AND FilesetID = @FilesetId
+                        LIMIT 1
+                    ";
                     break;
 
                 // The slow query used in Duplicati 2.0.3.10, but with "LIMIT 1" added
                 case 4:
-                    findQuery =
-                        @" SELECT ""FileLookup"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
-                        @"   FROM ""FileLookup"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
-                        @"  WHERE ""FileLookup"".""PrefixID"" = @PrefixId AND ""FileLookup"".""Path"" = @Path " +
-                        @"    AND ""Fileset"".""ID"" = @FilesetId " +
-                        @"    AND ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
-                        @"    AND ""FileBlockset"".""ID"" = ""FileLookup"".""BlocksetID"" " +
-                        @"    AND ""Metadataset"".""ID"" = ""FileLookup"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
-                        @"  LIMIT 1 ";
+                    findQuery = @"
+                        SELECT
+                            ""FileLookup"".""ID"" AS ""FileID"",
+                            ""FilesetEntry"".""Lastmodified"",
+                            ""FileBlockset"".""Length"",
+                            ""MetaBlockset"".""Fullhash"" AS ""Metahash"",
+                            ""MetaBlockset"".""Length"" AS ""Metasize""
+                        FROM
+                            ""FileLookup"",
+                            ""FilesetEntry"",
+                            ""Fileset"",
+                            ""Blockset"" ""FileBlockset"",
+                            ""Metadataset"",
+                            ""Blockset"" ""MetaBlockset""
+                        WHERE
+                            ""FileLookup"".""PrefixID"" = @PrefixId
+                            AND ""FileLookup"".""Path"" = @Path
+                            AND ""Fileset"".""ID"" = @FilesetId
+                            AND ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID""
+                            AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID""
+                            AND ""FileBlockset"".""ID"" = ""FileLookup"".""BlocksetID""
+                            AND ""Metadataset"".""ID"" = ""FileLookup"".""MetadataID""
+                            AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID""
+                        LIMIT 1
+                    ";
                     break;
 
             }
 
             dbnew.m_findfileCommand = dbnew.m_connection.CreateCommand(findQuery);
 
-            dbnew.m_selectfileHashCommand = dbnew.m_connection.CreateCommand(@"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""FileLookup"" WHERE ""Blockset"".""ID"" = ""FileLookup"".""BlocksetID"" AND ""FileLookup"".""ID"" = @FileId  ");
-            dbnew.m_getfirstfilesetwithblockinblockset = dbnew.m_connection.CreateCommand(@"SELECT MIN(""FilesetEntry"".""FilesetID"") FROM ""FilesetEntry"" WHERE  ""FilesetEntry"".""FileID"" IN (
-SELECT ""File"".""ID"" FROM ""File"" WHERE ""File"".""BlocksetID"" IN(
-SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""BlocklistHash"".""Hash"" = @Hash))");
+            dbnew.m_selectfileHashCommand = dbnew.m_connection.CreateCommand(@"
+                SELECT ""Blockset"".""Fullhash""
+                FROM ""Blockset"", ""FileLookup""
+                WHERE
+                    ""Blockset"".""ID"" = ""FileLookup"".""BlocksetID""
+                    AND ""FileLookup"".""ID"" = @FileId
+            ");
+
+            dbnew.m_getfirstfilesetwithblockinblockset = dbnew.m_connection.CreateCommand(@"
+                SELECT MIN(""FilesetEntry"".""FilesetID"")
+                FROM ""FilesetEntry""
+                WHERE  ""FilesetEntry"".""FileID"" IN (
+                    SELECT ""File"".""ID""
+                    FROM ""File""
+                    WHERE ""File"".""BlocksetID"" IN(
+                        SELECT ""BlocklistHash"".""BlocksetID""
+                        FROM ""BlocklistHash""
+                        WHERE ""BlocklistHash"".""Hash"" = @Hash
+                    )
+                )
+            ");
 
             dbnew.m_blocklistHashes = new HashSet<string>();
 
@@ -1002,7 +1165,7 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
             using (var cmd = m_connection.CreateCommand(m_rtr))
             {
                 var prevFileSetId = await GetPreviousFilesetID(cmd);
-                ChangeStatistics.UpdateChangeStatistics(cmd, results, m_filesetId, prevFileSetId);
+                await ChangeStatistics.UpdateChangeStatistics(cmd, results, m_filesetId, prevFileSetId);
             }
         }
 

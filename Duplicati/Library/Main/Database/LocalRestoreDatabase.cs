@@ -156,8 +156,26 @@ namespace Duplicati.Library.Main.Database
                         ""F"".""ID"",
                         IFNULL(COUNT(""B"".""ID""), 0),
                         IFNULL(SUM(""B"".""Size""), 0),
-                        IFNULL(COUNT(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""ID"" ELSE NULL END), 0),
-                        IFNULL(SUM(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""Size"" ELSE 0 END), 0)
+                        IFNULL(
+                            COUNT(
+                                CASE ""B"".""Restored""
+                                    WHEN 1
+                                    THEN ""B"".""ID""
+                                    ELSE NULL
+                                END
+                            ),
+                            0
+                        ),
+                        IFNULL(
+                            SUM(
+                                CASE ""B"".""Restored""
+                                    WHEN 1
+                                    THEN ""B"".""Size""
+                                    ELSE 0
+                                END
+                            ),
+                            0
+                        )
                     FROM ""{m_tempfiletable}"" ""F""
                     LEFT JOIN ""{m_tempblocktable}"" ""B""
                         ON  ""B"".""FileID"" = ""F"".""ID""
@@ -180,9 +198,30 @@ namespace Duplicati.Library.Main.Database
                         IFNULL(COUNT(""P"".""FileId""), 0),
                         IFNULL(SUM(""P"".""TotalBlocks""), 0),
                         IFNULL(SUM(""P"".""TotalSize""), 0),
-                        IFNULL(COUNT(CASE WHEN ""P"".""BlocksRestored"" = ""P"".""TotalBlocks"" THEN 1 ELSE NULL END), 0),
-                        IFNULL(COUNT(CASE WHEN ""P"".""BlocksRestored"" BETWEEN 1 AND ""P"".""TotalBlocks"" - 1 THEN 1 ELSE NULL END), 0),
-                        IFNULL(SUM(""P"".""BlocksRestored""), 0), IFNULL(SUM(""P"".""SizeRestored""), 0)
+                        IFNULL(
+                            COUNT(
+                                CASE
+                                    WHEN ""P"".""BlocksRestored"" = ""P"".""TotalBlocks""
+                                    THEN 1
+                                    ELSE NULL
+                                END
+                            ),
+                            0
+                        ),
+                        IFNULL(
+                            COUNT(
+                                CASE
+                                    WHEN
+                                        ""P"".""BlocksRestored"" BETWEEN 1
+                                        AND ""P"".""TotalBlocks"" - 1
+                                    THEN 1
+                                    ELSE NULL
+                                END
+                            ),
+                            0
+                        ),
+                        IFNULL(SUM(""P"".""BlocksRestored""), 0),
+                        IFNULL(SUM(""P"".""SizeRestored""), 0)
                     FROM ""{m_fileprogtable}"" ""P""
                 ");
 
@@ -201,8 +240,12 @@ namespace Duplicati.Library.Main.Database
                     AND NEW.""Metadata"" = 0
                     BEGIN UPDATE ""{m_fileprogtable}""
                     SET
-                        ""BlocksRestored"" = ""{m_fileprogtable}"".""BlocksRestored"" + (NEW.""Restored"" - OLD.""Restored""),
-                        ""SizeRestored"" = ""{m_fileprogtable}"".""SizeRestored"" + ((NEW.""Restored"" - OLD.""Restored"") * NEW.Size)
+                        ""BlocksRestored"" =
+                            ""{m_fileprogtable}"".""BlocksRestored""
+                            + (NEW.""Restored"" - OLD.""Restored""),
+                        ""SizeRestored"" =
+                            ""{m_fileprogtable}"".""SizeRestored""
+                            + ((NEW.""Restored"" - OLD.""Restored"") * NEW.Size)
                     WHERE ""{m_fileprogtable}"".""FileId"" = NEW.""FileID""
                     ; END
                 ");
@@ -213,14 +256,42 @@ namespace Duplicati.Library.Main.Database
                     AFTER UPDATE ON ""{m_fileprogtable}""
                     BEGIN UPDATE ""{m_totalprogtable}""
                     SET
-                        ""FilesFullyRestored"" = ""{m_totalprogtable}"".""FilesFullyRestored""
-                            + (CASE WHEN NEW.""BlocksRestored"" = NEW.""TotalBlocks"" THEN 1 ELSE 0 END)
-                            - (CASE WHEN OLD.""BlocksRestored"" = OLD.""TotalBlocks"" THEN 1 ELSE 0 END),
-                        ""FilesPartiallyRestored"" = ""{m_totalprogtable}"".""FilesPartiallyRestored""
-                            + (CASE WHEN NEW.""BlocksRestored"" BETWEEN 1 AND NEW.""TotalBlocks"" - 1 THEN 1 ELSE 0 END)
-                            - (CASE WHEN OLD.""BlocksRestored"" BETWEEN 1 AND OLD.""TotalBlocks"" - 1 THEN 1 ELSE 0 END),
-                        ""BlocksRestored"" = ""{m_totalprogtable}"".""BlocksRestored"" + NEW.""BlocksRestored"" - OLD.""BlocksRestored"",
-                        ""SizeRestored"" = ""{m_totalprogtable}"".""SizeRestored"" + NEW.""SizeRestored"" - OLD.""SizeRestored""
+                        ""FilesFullyRestored"" =
+                            ""{m_totalprogtable}"".""FilesFullyRestored""
+                            + (CASE
+                                WHEN NEW.""BlocksRestored"" = NEW.""TotalBlocks""
+                                THEN 1
+                                ELSE 0
+                            END)
+                            - (CASE
+                                WHEN OLD.""BlocksRestored"" = OLD.""TotalBlocks""
+                                THEN 1
+                                ELSE 0
+                            END),
+                        ""FilesPartiallyRestored"" =
+                            ""{m_totalprogtable}"".""FilesPartiallyRestored""
+                            + (CASE
+                                WHEN
+                                    NEW.""BlocksRestored"" BETWEEN 1
+                                    AND NEW.""TotalBlocks"" - 1
+                                THEN 1
+                                ELSE 0
+                            END)
+                            - (CASE
+                                WHEN
+                                    OLD.""BlocksRestored"" BETWEEN 1
+                                    AND OLD.""TotalBlocks"" - 1
+                                THEN 1
+                                ELSE 0
+                            END),
+                        ""BlocksRestored"" =
+                            ""{m_totalprogtable}"".""BlocksRestored""
+                            + NEW.""BlocksRestored""
+                            - OLD.""BlocksRestored"",
+                        ""SizeRestored"" =
+                            ""{m_totalprogtable}"".""SizeRestored""
+                            + NEW.""SizeRestored""
+                            - OLD.""SizeRestored""
                     ; END
                 ");
 
@@ -650,7 +721,8 @@ namespace Duplicati.Library.Main.Database
                                 WHEN SUBSTR(""Path"", 1, 1) == '/'
                                 THEN @Path || SUBSTR(""Path"", 2)
                                 ELSE ""Path""
-                            END")
+                            END
+                    ")
                         .SetParameterValue("@Path", Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"))
                         .ExecuteNonQueryAsync();
                 }

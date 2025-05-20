@@ -1309,7 +1309,11 @@ namespace Duplicati.Library.Main.Database
                         SELECT
                             ""N"".""BlocksetID"",
                             ((""N"".""BlockCount"" + {blocksize / hashsize} - 1) / {blocksize / hashsize}) AS ""BlocklistHashCountExpected"",
-                            CASE WHEN ""G"".""BlocklistHashCount"" IS NULL THEN 0 ELSE ""G"".""BlocklistHashCount"" END AS ""BlocklistHashCountActual""
+                            CASE
+                                WHEN ""G"".""BlocklistHashCount"" IS NULL
+                                THEN 0
+                                ELSE ""G"".""BlocklistHashCount""
+                            END AS ""BlocklistHashCountActual""
                         FROM (
                             SELECT
                                 ""BlocksetID"",
