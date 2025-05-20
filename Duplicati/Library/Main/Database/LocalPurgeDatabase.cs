@@ -33,9 +33,9 @@ namespace Duplicati.Library.Main.Database
     {
         public static new async Task<LocalPurgeDatabase> CreateAsync(string path, long pagecachesize)
         {
-            var db = new LocalPurgeDatabase();
+            // TODO double check whether this is possible.
+            var db = (LocalPurgeDatabase)await LocalDeleteDatabase.CreateAsync(path, "Purge", pagecachesize);
 
-            db = (LocalPurgeDatabase)await CreateLocalDatabaseAsync(db, path, "Purge", false, pagecachesize);
             db.ShouldCloseConnection = true;
 
             return db;

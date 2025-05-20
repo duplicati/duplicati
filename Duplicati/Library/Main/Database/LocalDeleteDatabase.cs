@@ -46,11 +46,11 @@ namespace Duplicati.Library.Main.Database
 
         private SqliteCommand m_registerDuplicateBlockCommand = null!;
 
-        public static async Task<LocalDeleteDatabase> CreateAsync(string path, long pagecachesize)
+        public static async Task<LocalDeleteDatabase> CreateAsync(string path, string operation, long pagecachesize)
         {
             var db = new LocalDeleteDatabase();
 
-            db = (LocalDeleteDatabase)await CreateLocalDatabaseAsync(db, path, "BugReportCreate", false, pagecachesize);
+            db = (LocalDeleteDatabase)await CreateLocalDatabaseAsync(db, path, operation, true, pagecachesize);
 
             return db;
         }
