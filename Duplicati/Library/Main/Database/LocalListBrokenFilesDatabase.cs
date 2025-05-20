@@ -30,7 +30,11 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalListBrokenFilesDatabase : LocalDatabase
     {
-        private static readonly string BLOCK_VOLUME_IDS = $@"SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks.ToString()}'";
+        private static readonly string BLOCK_VOLUME_IDS = $@"
+            SELECT ""ID""
+            FROM ""RemoteVolume""
+            WHERE ""Type"" = '{RemoteVolumeType.Blocks}'
+        ";
 
         // Invalid blocksets include those that:
         // - Have BlocksetEntries with unknown/invalid blocks (meaning the data to rebuild the blockset isn't available)
@@ -39,33 +43,100 @@ namespace Duplicati.Library.Main.Database
         // - Are defined in the Blockset table but have no entries in the BlocksetEntries table (this can happen during recreate if Files volumes reference blocksets that are not found in any Index files)
         // However, blocksets with a length of 0 are excluded from this check, as the corresponding blocks for these are not needed.
         private static readonly string BROKEN_FILE_IDS = $@"
-SELECT DISTINCT ""ID"" FROM (
-  SELECT ""ID"" AS ""ID"", ""BlocksetID"" AS ""BlocksetID"" FROM ""FileLookup"" WHERE ""BlocksetID"" != {FOLDER_BLOCKSET_ID} AND ""BlocksetID"" != {SYMLINK_BLOCKSET_ID}
-UNION
-  SELECT ""A"".""ID"" AS ""ID"", ""B"".""BlocksetID"" AS ""BlocksetID"" FROM ""FileLookup"" A LEFT JOIN ""Metadataset"" B ON ""A"".""MetadataID"" = ""B"".""ID""
-)
-WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
-  (
-    SELECT DISTINCT ""BlocksetID"" FROM
-    (
-      SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" NOT IN
-        (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN
-          ({BLOCK_VOLUME_IDS}))
-        UNION
-      SELECT ""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Hash"" NOT IN
-        (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" IN
-          ({BLOCK_VOLUME_IDS}))
-        UNION
-      SELECT ""A"".""ID"" AS ""BlocksetID"" FROM ""Blockset"" A LEFT JOIN ""BlocksetEntry"" B ON ""A"".""ID"" = ""B"".""BlocksetID"" WHERE ""A"".""Length"" > 0 AND ""B"".""BlocksetID"" IS NULL
-    )
-    WHERE ""BlocksetID"" NOT IN (SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" == 0)
-  )
-";
-        private static readonly string BROKEN_FILE_SETS = $@"SELECT DISTINCT ""B"".""Timestamp"", ""A"".""FilesetID"", COUNT(""A"".""FileID"") AS ""FileCount"" FROM ""FilesetEntry"" A, ""Fileset"" B WHERE ""A"".""FilesetID"" = ""B"".""ID"" AND ""A"".""FileID"" IN ({BROKEN_FILE_IDS})";
+            SELECT DISTINCT ""ID""
+            FROM (
+                SELECT
+                    ""ID"" AS ""ID"",
+                    ""BlocksetID"" AS ""BlocksetID""
+                FROM ""FileLookup""
+                WHERE
+                    ""BlocksetID"" != {FOLDER_BLOCKSET_ID}
+                    AND ""BlocksetID"" != {SYMLINK_BLOCKSET_ID}
+                UNION
+                    SELECT
+                        ""A"".""ID"" AS ""ID"",
+                        ""B"".""BlocksetID"" AS ""BlocksetID""
+                    FROM ""FileLookup"" A
+                    LEFT JOIN ""Metadataset"" B
+                        ON ""A"".""MetadataID"" = ""B"".""ID""
+            )
+            WHERE
+                ""BlocksetID"" IS NULL
+                OR ""BlocksetID"" IN (
+                    SELECT DISTINCT ""BlocksetID""
+                    FROM (
+                        SELECT ""BlocksetID""
+                        FROM ""BlocksetEntry""
+                        WHERE ""BlockID"" NOT IN (
+                            SELECT ""ID""
+                            FROM ""Block""
+                            WHERE ""VolumeID"" IN ({BLOCK_VOLUME_IDS})
+                        )
+                        UNION
+                            SELECT ""BlocksetID""
+                            FROM ""BlocklistHash""
+                            WHERE ""Hash"" NOT IN (
+                                SELECT ""Hash""
+                                FROM ""Block""
+                                WHERE ""VolumeID"" IN ({BLOCK_VOLUME_IDS})
+                            )
+                        UNION
+                            SELECT ""A"".""ID"" AS ""BlocksetID""
+                            FROM ""Blockset"" A
+                            LEFT JOIN ""BlocksetEntry"" B
+                                ON ""A"".""ID"" = ""B"".""BlocksetID""
+                            WHERE
+                                ""A"".""Length"" > 0
+                                AND ""B"".""BlocksetID"" IS NULL
+                    )
+                    WHERE ""BlocksetID"" NOT IN (
+                        SELECT ""ID""
+                        FROM ""Blockset""
+                        WHERE ""Length"" == 0
+                    )
+                )
+        ";
 
-        private static readonly string BROKEN_FILE_NAMES = $@"SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A LEFT JOIN ""Blockset"" B ON (""A"".""BlocksetID"" = ""B"".""ID"") WHERE ""A"".""ID"" IN ({BROKEN_FILE_IDS}) AND ""A"".""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId)";
+        private static readonly string BROKEN_FILE_SETS = $@"
+            SELECT DISTINCT
+                ""B"".""Timestamp"",
+                ""A"".""FilesetID"",
+                COUNT(""A"".""FileID"") AS ""FileCount""
+            FROM
+                ""FilesetEntry"" A,
+                ""Fileset"" B
+            WHERE
+                ""A"".""FilesetID"" = ""B"".""ID""
+                AND ""A"".""FileID"" IN ({BROKEN_FILE_IDS})
+        ";
 
-        private static string INSERT_BROKEN_IDS(string tablename, string IDfieldname) => $@"INSERT INTO ""{tablename}"" (""{IDfieldname}"") {BROKEN_FILE_IDS} AND ""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId)";
+        private static readonly string BROKEN_FILE_NAMES = $@"
+            SELECT
+                ""A"".""Path"",
+                ""B"".""Length""
+            FROM ""File"" A
+            LEFT JOIN ""Blockset"" B
+                ON (""A"".""BlocksetID"" = ""B"".""ID"")
+            WHERE
+                ""A"".""ID"" IN ({BROKEN_FILE_IDS})
+                AND ""A"".""ID"" IN (
+                    SELECT ""FileID""
+                    FROM ""FilesetEntry""
+                    WHERE ""FilesetID"" = @FilesetId
+                )
+        ";
+
+        private static string INSERT_BROKEN_IDS(string tablename, string IDfieldname) => $@"
+            INSERT INTO ""{tablename}"" (
+                ""{IDfieldname}""
+            )
+            {BROKEN_FILE_IDS}
+            AND ""ID"" IN (
+                SELECT ""FileID""
+                FROM ""FilesetEntry""
+                WHERE ""FilesetID"" = @FilesetId
+            )
+        ";
 
         public static async Task<LocalListBrokenFilesDatabase> CreateAsync(string path, long pagecachesize)
         {
@@ -91,30 +162,42 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         {
             var query = BROKEN_FILE_SETS;
             var clause = await GetFilelistWhereClause(time, versions);
-            if (!string.IsNullOrWhiteSpace(clause.Item1))
-                query += $@" AND ""A"".""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" {clause.Item1})";
+            if (!string.IsNullOrWhiteSpace(clause.Query))
+                query += $@"
+                    AND ""A"".""FilesetID"" IN (
+                        SELECT ""ID""
+                        FROM ""Fileset""
+                        {clause.Query}
+                    )
+                ";
 
             query += @" GROUP BY ""A"".""FilesetID""";
 
-            using (var cmd = Connection.CreateCommand(m_rtr))
-                await foreach (var rd in cmd.SetCommandAndParameters(query).SetParameterValues(clause.Values).ExecuteReaderEnumerableAsync())
-                    if (!rd.IsDBNull(0))
-                        yield return (
-                            ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)),
-                            rd.ConvertValueToInt64(1, -1),
-                            rd.ConvertValueToInt64(2, 0)
-                        );
+            using var cmd = Connection.CreateCommand(m_rtr)
+                .SetCommandAndParameters(query)
+                .SetParameterValues(clause.Values);
+
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
+                if (!rd.IsDBNull(0))
+                    yield return (
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)),
+                        rd.ConvertValueToInt64(1, -1),
+                        rd.ConvertValueToInt64(2, 0)
+                    );
         }
 
         public async IAsyncEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid)
         {
-            using (var cmd = Connection.CreateCommand(m_rtr).SetCommandAndParameters(BROKEN_FILE_NAMES).SetParameterValue("@FilesetId", filesetid))
-                await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
-                    if (!rd.IsDBNull(0))
-                        yield return new Tuple<string, long>(
-                            rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"),
-                            rd.ConvertValueToInt64(1)
-                        );
+            using var cmd = Connection.CreateCommand(m_rtr)
+                .SetCommandAndParameters(BROKEN_FILE_NAMES)
+                .SetParameterValue("@FilesetId", filesetid);
+
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
+                if (!rd.IsDBNull(0))
+                    yield return new Tuple<string, long>(
+                        rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"),
+                        rd.ConvertValueToInt64(1)
+                    );
         }
 
         /// <summary>
@@ -124,7 +207,19 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         /// <returns>>All index files that are orphaned.</returns>
         public async IAsyncEnumerable<RemoteVolume> GetOrphanedIndexFiles()
         {
-            using var cmd = Connection.CreateCommand($@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Index.ToString()}' AND ""ID"" NOT IN (SELECT ""IndexVolumeID"" FROM ""IndexBlockLink"")")
+            using var cmd = Connection.CreateCommand($@"
+                SELECT
+                    ""Name"",
+                    ""Hash"",
+                    ""Size""
+                FROM ""RemoteVolume""
+                WHERE
+                    ""Type"" = '{RemoteVolumeType.Index}'
+                    AND ""ID"" NOT IN (
+                        SELECT ""IndexVolumeID""
+                        FROM ""IndexBlockLink""
+                    )
+            ")
                 .SetTransaction(m_rtr);
 
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
@@ -147,6 +242,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
             using var cmd = Connection.CreateCommand(m_rtr)
                 .SetCommandAndParameters(INSERT_BROKEN_IDS(tablename, IDfieldname))
                 .SetParameterValue("@FilesetId", filesetid);
+
             await cmd.ExecuteNonQueryAsync();
         }
 
@@ -162,7 +258,22 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         public async Task<long> GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize)
         {
             // TODO the casting to object is a typing fix for the extension method for now. Should be fixed properly.
-            using var cmd = Connection.CreateCommand(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""FullHash"" = @EmptyHash AND ""Length"" == @EmptyHashSize AND ""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds))")
+            using var cmd = Connection.CreateCommand(@"
+                SELECT ""ID""
+                FROM ""Blockset""
+                WHERE
+                    ""FullHash"" = @EmptyHash
+                    AND ""Length"" == @EmptyHashSize
+                    AND ""ID"" NOT IN (
+                        SELECT ""BlocksetID""
+                        FROM
+                            ""BlocksetEntry"",
+                            ""Block""
+                        WHERE
+                            ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                            AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
+                    )
+            ")
                 .SetTransaction(m_rtr)
                 .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds.Cast<object>())
                 .SetParameterValue("@EmptyHash", emptyHash)
@@ -172,14 +283,42 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
 
             // No empty block found, try to find a zero-length block instead
             if (res < 0 && emptyHashSize != 0)
-                res = await cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" == @EmptyHashSize AND ""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds))")
+                res = await cmd.SetCommandAndParameters(@"
+                    SELECT ""ID""
+                    FROM ""Blockset""
+                    WHERE
+                        ""Length"" == @EmptyHashSize
+                        AND ""ID"" NOT IN (
+                            SELECT ""BlocksetID""
+                            FROM
+                                ""BlocksetEntry"",
+                                ""Block""
+                            WHERE
+                                ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                                AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
+                        )
+                ")
                   .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds.Cast<object>())
                   .SetParameterValue("@EmptyHashSize", 0)
                   .ExecuteScalarInt64Async(-1);
 
             // No empty block found, pick the smallest one
             if (res < 0)
-                res = await cmd.SetCommandAndParameters(@"SELECT ""Blockset"".""ID"" FROM ""BlocksetEntry"", ""Blockset"", ""Metadataset"", ""Block"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds) ORDER BY ""Blockset"".""Length"" ASC LIMIT 1")
+                res = await cmd.SetCommandAndParameters(@"
+                    SELECT ""Blockset"".""ID""
+                    FROM
+                        ""BlocksetEntry"",
+                        ""Blockset"",
+                        ""Metadataset"",
+                        ""Block""
+                    WHERE
+                        ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
+                        AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID""
+                        AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
+                        AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
+                    ORDER BY ""Blockset"".""Length"" ASC
+                    LIMIT 1
+                ")
                   .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds.Cast<object>())
                   .ExecuteScalarInt64Async(-1);
 
@@ -197,21 +336,24 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         public async Task<int> ReplaceMetadata(long filesetId, long emptyBlocksetId)
         {
             using var cmd = m_connection.CreateCommand(@"
-UPDATE ""Metadataset""
-SET ""BlocksetID"" = @EmptyBlocksetID
-WHERE
-  ""ID"" IN (
-    SELECT ""FileLookup"".""MetadataID""
-    FROM ""FileLookup"", ""FilesetEntry""
-    WHERE
-      ""FilesetEntry"".""FilesetId"" = @FilesetId
-      AND ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID""
-    )
-  AND ""BlocksetID"" NOT IN (
-    SELECT ""BlocksetID""
-    FROM ""BlocksetEntry"", ""Block""
-    WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-  )")
+                UPDATE ""Metadataset""
+                SET ""BlocksetID"" = @EmptyBlocksetID
+                WHERE
+                    ""ID"" IN (
+                        SELECT ""FileLookup"".""MetadataID""
+                        FROM
+                            ""FileLookup"",
+                            ""FilesetEntry""
+                        WHERE
+                            ""FilesetEntry"".""FilesetId"" = @FilesetId
+                            AND ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID""
+                    )
+                    AND ""BlocksetID"" NOT IN (
+                        SELECT ""BlocksetID""
+                        FROM ""BlocksetEntry"", ""Block""
+                        WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    )
+            ")
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@EmptyBlocksetId", emptyBlocksetId)
                 .SetParameterValue("@FilesetId", filesetId);
@@ -228,20 +370,49 @@ WHERE
                 var volidstable = "DelVolSetIds-" + temptransguid;
 
                 // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
-                await deletecmd.ExecuteNonQueryAsync($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)");
+                await deletecmd.ExecuteNonQueryAsync($@"
+                    CREATE TEMP TABLE ""{volidstable}"" (
+                        ""ID"" INTEGER PRIMARY KEY
+                    )
+                ");
 
                 using (var tmptable = await TemporaryDbValueList.CreateAsync(this, names))
-                    await (await deletecmd.SetCommandAndParameters($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)")
+                    await (await deletecmd.SetCommandAndParameters($@"
+                        INSERT OR IGNORE INTO ""{volidstable}"" (""ID"")
+                        SELECT ""ID""
+                        FROM ""RemoteVolume""
+                        WHERE ""Name"" IN (@Names)
+                    ")
                       .ExpandInClauseParameterAsync("@Names", tmptable))
                       .ExecuteNonQueryAsync();
 
-                var volIdsSubQuery = $@"SELECT ""ID"" FROM ""{volidstable}"" ";
+                var volIdsSubQuery = $@"
+                    SELECT ""ID""
+                    FROM ""{volidstable}""
+                ";
                 deletecmd.Parameters.Clear();
 
-                await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({volIdsSubQuery}) OR ""IndexVolumeID"" IN ({volIdsSubQuery})");
-                await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
-                await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
-                await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
+                await deletecmd.ExecuteNonQueryAsync($@"
+                    DELETE FROM ""IndexBlockLink""
+                    WHERE
+                        ""BlockVolumeID"" IN ({volIdsSubQuery})
+                        OR ""IndexVolumeID"" IN ({volIdsSubQuery})
+                ");
+
+                await deletecmd.ExecuteNonQueryAsync($@"
+                    DELETE FROM ""Block""
+                    WHERE ""VolumeID"" IN ({volIdsSubQuery})
+                ");
+
+                await deletecmd.ExecuteNonQueryAsync($@"
+                    DELETE FROM ""DeletedBlock""
+                    WHERE ""VolumeID"" IN ({volIdsSubQuery})
+                ");
+
+                await deletecmd.ExecuteNonQueryAsync($@"
+                    DELETE FROM ""DuplicateBlock""
+                    WHERE ""VolumeID"" IN ({volIdsSubQuery})
+                ");
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
@@ -258,9 +429,14 @@ WHERE
 
         public async Task<long> GetFilesetFileCount(long filesetid)
         {
-            using var cmd = m_connection.CreateCommand(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId")
+            using var cmd = m_connection.CreateCommand(@"
+                SELECT COUNT(*)
+                FROM ""FilesetEntry""
+                WHERE ""FilesetID"" = @FilesetId
+            ")
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", filesetid);
+
             return await cmd.ExecuteScalarInt64Async(0);
         }
     }
