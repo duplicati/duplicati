@@ -22,13 +22,13 @@
 #nullable enable
 
 using System;
-using System.Data;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
+using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -124,11 +124,11 @@ namespace Duplicati.Library.Main.Database
 
             private class Fileversion : IFileversion
             {
-                private readonly IDataReader m_reader;
+                private readonly SqliteDataReader m_reader;
                 public string? Path { get; private set; }
                 public bool More { get; private set; }
 
-                public Fileversion(IDataReader reader)
+                public Fileversion(SqliteDataReader reader)
                 {
                     m_reader = reader;
                     Path = reader.ConvertValueToString(0);
@@ -159,9 +159,9 @@ namespace Duplicati.Library.Main.Database
                 return GetLargestPrefix(filter, null);
             }
 
-            private IEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string? prefixrule)
+            private async IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string? prefixrule)
             {
-                using (var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
+                using (var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, filter))
                 using (var cmd = m_connection.CreateCommand())
                 {
                     //First we trim the filelist to exclude filenames not found in any of the filesets
@@ -222,7 +222,7 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            private IEnumerable<string> SelectFolderEntries(IDbCommand cmd, string prefix, string table)
+            private IEnumerable<string> SelectFolderEntries(SqliteCommand cmd, string prefix, string table)
             {
                 if (!string.IsNullOrEmpty(prefix))
                     prefix = Util.AppendDirSeparator(prefix, Util.GuessDirSeparator(prefix));
@@ -263,7 +263,7 @@ namespace Duplicati.Library.Main.Database
                     if (pathprefix.Length > 0 || dirsep == "/")
                         pathprefix = Util.AppendDirSeparator(pathprefix, dirsep);
 
-                    using (var tmpnames = new FilteredFilenameTable(m_connection, new FilterExpression(new string[] { pathprefix + "*" }, true), null))
+                    using (var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, new FilterExpression(new string[] { pathprefix + "*" }, true)))
                     using (var cmd = m_connection.CreateCommand())
                     {
                         //First we trim the filelist to exclude filenames not found in any of the filesets
