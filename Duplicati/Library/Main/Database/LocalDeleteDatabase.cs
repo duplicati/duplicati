@@ -647,14 +647,13 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        // TODO signature has been changed.
         /// <summary>
         /// Builds a lookup table to enable faster response to block queries
         /// </summary>
-        //public IBlockQuery CreateBlockQueryHelper(IDbTransaction transaction)
-        //{
-        //    return new BlockQuery(m_connection, transaction);
-        //}
+        public async Task<IBlockQuery> CreateBlockQueryHelper()
+        {
+            return await BlockQuery.CreateAsync(this);
+        }
 
         /// <summary>
         /// Registers a block as moved to a new volume
