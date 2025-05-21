@@ -67,6 +67,7 @@ namespace Duplicati.Library.Backend
         public static string DescriptionUseCwdNamesShort { get { return LC.L(@"Use CWD instead of absolute paths"); } }
         public static string DescriptionUseCwdNamesLong { get { return LC.L(@"Use this option to start the connection with a CWD command instead of an absolute path. This can be useful if the FTP server does not support absolute paths."); } }
         public static string ErrorCreateFolder(string targetFolderName, string? resultingFolder) { return LC.L(@"Error creating folder {0}, gave folder: {1}", targetFolderName, resultingFolder); }
+        public static string ErrorWriteFile(string filename, string message) { return LC.L(@"Error writing file: {0}, error: {1}", filename, message); }
         public static string DescriptionIgnorePureFTPShort => LC.L(@"Ignore PureFTPd limit warnings");
         public static string DescriptionIgnorePureFTPLong => LC.L(@"PureFTPd is known to truncate file listings. If server has been configured to a higher limit or do not expect to store more than 10000 files you can suppress errors and warnings with {0}", "--ignore-pureftpd-limit-issue");
 
