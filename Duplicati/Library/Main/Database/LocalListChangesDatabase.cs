@@ -618,6 +618,11 @@ namespace Duplicati.Library.Main.Database
                 }
             }
         }
+
+        public async Task<IStorageHelper> CreateStorageHelper()
+        {
+            return await StorageHelper.CreateAsync(this);
+        }
     }
 }
 
