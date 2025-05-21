@@ -40,7 +40,6 @@ namespace Duplicati.Library.Main.Operation.Common
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<DatabaseCommon>();
 
         protected readonly LocalDatabase m_db;
-        private System.Data.IDbTransaction m_transaction;
         protected readonly Options m_options;
 
         public DatabaseCommon(LocalDatabase db, Options options)
@@ -48,26 +47,16 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             m_db = db;
             m_options = options;
-            m_transaction = db.BeginTransaction();
-        }
-
-        protected System.Data.IDbTransaction GetTransaction()
-        {
-            m_workerSource.Token.ThrowIfCancellationRequested();
-
-            if (m_transaction == null)
-                m_transaction = m_db.BeginTransaction();
-            return m_transaction;
         }
 
         public Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, RemoteVolumeState state)
         {
-            return RunOnMain(() => m_db.RegisterRemoteVolume(name, type, state, GetTransaction()));
+            return RunOnMain(async () => await m_db.RegisterRemoteVolume(name, type, state));
         }
 
         public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup = false, TimeSpan deleteGraceTime = default(TimeSpan), bool? setArchived = null)
         {
-            return RunOnMain(() => m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, setArchived, GetTransaction()));
+            return RunOnMain(async () => await m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, setArchived));
         }
 
         public async Task FlushBackendMessagesAndCommitAsync(IBackendManager backendManager)
@@ -77,83 +66,66 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
         private Task FlushPendingBackendMessagesAsync(IBackendManager backendManager)
-            => RunOnMain(() => backendManager.FlushPendingMessagesAsync(m_db, GetTransaction(), CancellationToken.None).ConfigureAwait(false));
+            => RunOnMain(async () => await backendManager.FlushPendingMessagesAsync(m_db, CancellationToken.None).ConfigureAwait(false));
 
         public Task CommitTransactionAsync(string message, bool restart = true)
         {
-            return RunOnMain(() =>
+            return RunOnMain(async () =>
             {
                 if (m_options.Dryrun)
                 {
-                    if (!restart)
-                    {
-                        if (m_transaction != null)
-                            m_transaction.Rollback();
-                        m_transaction = null;
-                    }
-                    return;
+                    await m_db.Transaction.RollBackAsync();
                 }
-
-                if (m_transaction != null)
+                else
                 {
                     using (new Logging.Timer(LOGTAG, "CommitTransactionAsync", message))
-                        m_transaction.Commit();
-                    m_transaction = null;
+                        await m_db.Transaction.CommitAsync(message, restart);
                 }
             });
         }
 
         public Task RollbackTransactionAsync()
         {
-            return RunOnMain(() =>
-            {
-                if (m_transaction != null)
-                {
-                    m_transaction.Rollback();
-                    m_transaction = null;
-                }
-            });
+            return RunOnMain(async () => await m_db.Transaction.RollBackAsync());
         }
-
-
 
         public Task RenameRemoteFileAsync(string oldname, string newname)
         {
-            return RunOnMain(() => m_db.RenameRemoteFile(oldname, newname, GetTransaction()));
+            return RunOnMain(async () => await m_db.RenameRemoteFile(oldname, newname));
         }
 
         public Task LogRemoteOperationAsync(string operation, string path, string data)
         {
-            return RunOnMain(() => m_db.LogRemoteOperation(operation, path, data, GetTransaction()));
+            return RunOnMain(async () => await m_db.LogRemoteOperation(operation, path, data));
         }
 
         public Task<LocalDatabase.IBlock[]> GetBlocksAsync(long volumeid)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
-            return RunOnMain(() => m_db.GetBlocks(volumeid, GetTransaction()).ToArray());
+            return RunOnMain(async () => await m_db.GetBlocks(volumeid).ToArrayAsync());
         }
 
         public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename)
         {
-            return RunOnMain(() => m_db.GetRemoteVolume(remotename, GetTransaction()));
+            return RunOnMain(async () => await m_db.GetRemoteVolume(remotename));
         }
 
         public Task<Tuple<string, byte[], int>[]> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
-            return RunOnMain(() => m_db.GetBlocklists(volumeid, blocksize, hashsize, GetTransaction()).ToArray());
+            return RunOnMain(async () => await m_db.GetBlocklists(volumeid, blocksize, hashsize).ToArrayAsync());
         }
 
         public Task<long> GetRemoteVolumeIDAsync(string remotename)
         {
-            return RunOnMain(() => m_db.GetRemoteVolumeID(remotename, GetTransaction()));
+            return RunOnMain(async () => await m_db.GetRemoteVolumeID(remotename));
         }
 
         public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID)
         {
-            return RunOnMain(() => m_db.AddIndexBlockLink(indexVolumeID, blockVolumeID, GetTransaction()));
+            return RunOnMain(async () => await m_db.AddIndexBlockLink(indexVolumeID, blockVolumeID));
         }
 
 
@@ -162,13 +134,11 @@ namespace Duplicati.Library.Main.Operation.Common
             if (m_workerSource.IsCancellationRequested)
                 return;
 
-            RunOnMain(() =>
+            RunOnMain(async () =>
             {
                 base.Dispose(isDisposing);
-
-                var tr = Interlocked.Exchange(ref m_transaction, null);
-                tr?.Commit();
-                tr?.Dispose();
+                await m_db.Transaction.CommitAsync(restart: false);
+                await m_db.Transaction.DisposeAsync();
             }).Await();
         }
 
