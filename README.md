@@ -35,7 +35,7 @@ We also provide a comprehensive [Duplicati manual](https://docs.duplicati.com), 
 - Initial full backup followed by smaller, incremental updates to save bandwidth and storage.
 - Built-in scheduler ensures backups stay up-to-date automatically.
 - An integrated updater notifies you of new releases.
-- Encrypted backups can be transferred to destinations like FTP, Cloudfiles, WebDAV, SSH (SFTP), Amazon S3, and more.
+- Encrypted backups can be transferred to destinations like FTP, WebDAV, SSH (SFTP), Amazon S3, and more.
 - Flexible backup options: back up folders, specific file types (e.g., documents or images), or use custom filters.
 - Available as a user-friendly application or a command-line tool.
 - Supports backing up open or locked files using Volume Snapshot Service (VSS) on Windows or Logical Volume Manager (LVM) on Linux.
