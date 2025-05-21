@@ -66,7 +66,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 try
                 {
                     sw_get_files?.Start();
-                    var files = db.GetFilesAndSymlinksToRestore().OrderByDescending(x => x.Length).ToArray(); // Get started on big files first
+                    // The enumerables are cast to arrays to force the query to be executed and release the database lock.
+                    var files = await db.GetFilesAndSymlinksToRestore().OrderByDescending(x => x.Length).ToArrayAsync(); // Get started on big files first
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_get_files?.Stop();
 
@@ -78,7 +79,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (!options.SkipMetadata)
                     {
                         sw_get_folders?.Start();
-                        var folders = db.GetFolderMetadataToRestore().ToArray();
+                        // The enumerables are cast to arrays to force the query to be executed and release the database lock.
+                        var folders = await db.GetFolderMetadataToRestore().ToArrayAsync();
                         sw_get_folders?.Stop();
 
                         sw_write_folder?.Start();

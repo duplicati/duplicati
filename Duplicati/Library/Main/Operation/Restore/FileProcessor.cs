@@ -122,7 +122,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Get information about the blocks for the file
                         // TODO rather than keeping all of the blocks in memory, we could do a single pass over the blocks using a cursor, only keeping the relevant block requests in memory. Maybe even only a single block request at a time.
                         sw_block?.Start();
-                        var blocks = db.GetBlocksFromFile(file.BlocksetID).ToArray();
+                        var blocks = await db.GetBlocksFromFile(file.BlocksetID).ToArrayAsync();
                         sw_block?.Stop();
 
                         sw_work_verify_target?.Start();
@@ -577,12 +577,17 @@ namespace Duplicati.Library.Main.Operation.Restore
         private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<Task<byte[]>> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
         {
             sw_meta?.Start();
+            // Since each FileProcessor should have its own connection, it's ok
+            // to keep the lock associated with the read transaction for a long
+            // time, as the other processes should still be able to read.
+            // Therefore, we don't need to read the entire result set into
+            // memory.
             var blocks = db.GetMetadataBlocksFromFile(file.ID);
             sw_meta?.Stop();
 
             using var ms = new MemoryStream();
 
-            foreach (var block in blocks)
+            await foreach (var block in blocks)
             {
                 sw_work?.Stop();
                 sw_req?.Start();

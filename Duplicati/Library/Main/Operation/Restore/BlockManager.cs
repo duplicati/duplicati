@@ -172,7 +172,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_set_wake_get = options.InternalProfiling ? new() : null;
                 sw_set_wake_set = options.InternalProfiling ? new() : null;
 
-                foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDs(options.SkipMetadata))
+                foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDs(options.SkipMetadata).ToEnumerable())
                 {
                     var bc = m_blockcount.TryGetValue(block_id, out var c);
                     m_blockcount[block_id] = bc ? c + 1 : 1;

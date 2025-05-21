@@ -75,7 +75,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Trigger the download.
                         sw_wait?.Start();
                         TempFile f;
-                        var (volume_name, size, hash) = db.GetVolumeInfo(volume_id).First();
+                        var (volume_name, size, hash) = await db.GetVolumeInfo(volume_id).FirstAsync();
                         try
                         {
                             f = await backend.GetDirectAsync(volume_name, hash, size, CancellationToken.None).ConfigureAwait(false);
