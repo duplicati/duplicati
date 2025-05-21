@@ -258,4 +258,19 @@ namespace Duplicati.Library.Interface
             : base(message, helpId, innerException)
         { }
     }
+
+    /// <summary>
+    /// Exception indicating that the test failed after the connection was established and authenticated
+    /// </summary>
+    [Serializable]
+    public class TestAfterConnectException : UserInformationException
+    {
+        public TestAfterConnectException(string message, string helpId)
+            : base(message, helpId)
+        { }
+
+        public TestAfterConnectException(string message, string helpId, Exception innerException)
+            : base(message, helpId, innerException)
+        { }
+    }
 }

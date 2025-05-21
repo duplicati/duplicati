@@ -589,6 +589,8 @@ namespace Duplicati.Library.Backend
                 // Wrap the existing item not found error in a 'FolderMissingException'
                 throw new FolderMissingException(ex);
             }
+
+            await this.TestReadWritePermissionsAsync(cancelToken).ConfigureAwait(false);
         }
 
         public void Dispose()

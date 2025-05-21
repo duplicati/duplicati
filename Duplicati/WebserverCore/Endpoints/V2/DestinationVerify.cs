@@ -27,6 +27,7 @@ using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto.V2;
 using Microsoft.AspNetCore.Mvc;
+using InvalidCertificateException = Duplicati.Library.Utility.SslCertificateValidator.InvalidCertificateException;
 
 namespace Duplicati.WebserverCore.Endpoints.V2.Backup;
 
@@ -88,6 +89,24 @@ public class DestinationVerify : IEndpointV2
         return new TupleDisposeWrapper(backend, modules);
     }
 
+    private static Exception GetInnerException<T>(Exception ex) where T : Exception
+    {
+        var original = ex;
+        while (true)
+        {
+            if (ex == null)
+                return original;
+
+            if (ex is T)
+                return (T)ex;
+
+            if (ex.InnerException == null)
+                throw new ArgumentNullException(nameof(ex.InnerException));
+
+            ex = ex.InnerException;
+        }
+    }
+
 
     private static async Task<DestinationTestResponseDto> ExecuteTest(Connection connection, IApplicationSettings applicationSettings, DestinationTestRequestDto input, CancellationToken cancelToken)
     {
@@ -100,7 +119,7 @@ public class DestinationVerify : IEndpointV2
             using (var b = wrapper.Backend)
             {
                 try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
-                catch (FolderMissingException)
+                catch (Exception ex) when (GetInnerException<FolderMissingException>(ex) is FolderMissingException)
                 {
                     if (!input.AutoCreate)
                         throw;
@@ -135,48 +154,62 @@ public class DestinationVerify : IEndpointV2
 
             }
         }
-        catch (FolderMissingException)
+        catch (Exception ex) when (GetInnerException<FolderMissingException>(ex) is FolderMissingException)
         {
             if (input.AutoCreate)
                 return DestinationTestResponseDto.Failure(
                     "Failed to create folder",
                     "error-creating-folder",
-                    folderExists: false
+                    folderExists: false,
+                    afterConnect: ex is TestAfterConnectException
                 );
 
             return DestinationTestResponseDto.Failure(
                 "Folder does not exist",
                 "missing-folder",
-                folderExists: false
+                folderExists: false,
+                afterConnect: ex is TestAfterConnectException
             );
         }
-        catch (Library.Utility.SslCertificateValidator.InvalidCertificateException icex)
+        catch (Exception ex) when (GetInnerException<InvalidCertificateException>(ex) is InvalidCertificateException icex)
         {
             if (string.IsNullOrWhiteSpace(icex.Certificate))
                 return DestinationTestResponseDto.Failure(
                     icex.Message,
-                    "CertError"
+                    "CertError",
+                    afterConnect: ex is TestAfterConnectException
                 );
 
             return DestinationTestResponseDto.Failure(
                 "Host certificate error",
                 "incorrect-cert",
+                afterConnect: ex is TestAfterConnectException,
                 hostCertificate: icex.Certificate
             );
         }
-        catch (Library.Utility.HostKeyException hex)
+        catch (Exception ex) when (GetInnerException<Library.Utility.HostKeyException>(ex) is Library.Utility.HostKeyException hex)
         {
             if (string.IsNullOrWhiteSpace(hex.ReportedHostKey))
                 return DestinationTestResponseDto.Failure(
                     hex.Message,
-                    "KeyError"
+                    "KeyError",
+                    afterConnect: ex is TestAfterConnectException
                 );
 
             return DestinationTestResponseDto.Failure(
                 "Host key error",
                 "incorrect-host-key",
+                afterConnect: ex is TestAfterConnectException,
                 reportedHostKey: hex.ReportedHostKey,
                 acceptedHostKey: hex.AcceptedHostKey
+            );
+        }
+        catch (TestAfterConnectException tcex)
+        {
+            return DestinationTestResponseDto.Failure(
+                tcex.Message,
+                tcex.HelpID,
+                afterConnect: true
             );
         }
         catch (UserInformationException uex)

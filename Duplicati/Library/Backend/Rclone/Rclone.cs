@@ -21,6 +21,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -297,7 +298,7 @@ namespace Duplicati.Library.Backend
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { remote_repo });
 
         public Task TestAsync(CancellationToken cancelToken)
-            => this.TestListAsync(cancelToken);
+            => this.TestReadWritePermissionsAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

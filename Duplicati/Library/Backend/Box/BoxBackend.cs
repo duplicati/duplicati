@@ -300,7 +300,7 @@ namespace Duplicati.Library.Backend.Box
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-            => this.TestListAsync(cancelToken);
+            => this.TestReadWritePermissionsAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancellationToken)
         {

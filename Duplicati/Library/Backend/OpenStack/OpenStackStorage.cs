@@ -629,7 +629,7 @@ namespace Duplicati.Library.Backend.OpenStack
             await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_helper.ReadJSONResponseAsync<object>(url, ct, null, "DELETE")).ConfigureAwait(false);
         }
         public Task TestAsync(CancellationToken cancelToken)
-            => this.TestListAsync(cancelToken);
+            => this.TestReadWritePermissionsAsync(cancelToken);
 
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
