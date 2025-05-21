@@ -21,90 +21,64 @@
 
 using System.IO;
 using NUnit.Framework;
-using System.Linq;
 using System;
 using NUnit.Framework.Internal;
-using System.IO.Compression;
 using Duplicati.Library.DynamicLoader;
 
 namespace Duplicati.UnitTest
 {
-    public class Issue6254 : BasicSetupHelper
+    public class Issue6200 : BasicSetupHelper
     {
         [Test]
         [Category("Targeted")]
-        public void VerifyCompactKeepsIndexFileBlocklists()
+        public void VerifyMultiVolumeCompactWorks()
         {
+            const int FILESIZE = 500 * 1024;
+            const int FILECOUNT = 40;
+
             var testopts = TestOptions.Expand(new
             {
-                no_encryption = true,
-                number_of_retries = 0,
                 keep_versions = 1,
                 no_auto_compact = true,
                 zip_compression_level = 0,
                 asynchronous_concurrent_upload_limit = 1,
                 asynchronous_upload_limit = 1,
                 blocksize = "100kb",
-                dblock_size = "4mb"
+                dblock_size = "1mb"
             });
 
-            var rnd = Random.Shared; //new Random(42);
-            var data1 = new byte[1024 * 1024 * 10];
-            rnd.NextBytes(data1);
-            var data2 = new byte[1024 * 1024 * 10];
-            rnd.NextBytes(data1);
-
-            // Create some files
-            for (var i = 0; i < 10; i++)
-                File.WriteAllBytes(Path.Combine(DATAFOLDER, $"a{i}"), data1.AsSpan().Slice(i, 1024 * 1024 * 2).ToArray());
-
-            // Make a backup
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
-
-            // Add some second files
-            for (var i = 0; i < 10; i++)
-                File.WriteAllBytes(Path.Combine(DATAFOLDER, $"b{i}"), data2.AsSpan().Slice(i, 1024 * 1024 * 2).ToArray());
+            var rnd = Random.Shared;
+            // Create 100 files of 10MB each
+            for (var i = 0; i < FILECOUNT; i++)
+            {
+                var data = new byte[FILESIZE];
+                rnd.NextBytes(data);
+                File.WriteAllBytes(Path.Combine(DATAFOLDER, $"a{i}"), data);
+            }
 
             // Make a backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
 
-            // Delete the first files
-            for (var i = 0; i < 8; i++)
+            // Delete half the files
+            for (var i = 0; i < FILECOUNT / 2; i++)
                 File.Delete(Path.Combine(DATAFOLDER, $"a{i}"));
 
-            var indexfiles = Directory.GetFiles(TARGETFOLDER, "*.dindex.*", SearchOption.TopDirectoryOnly).ToHashSet();
-
             // Make a backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+
+            var fullBlockvolumeCount = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).Length;
 
             // Now run compact
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Compact());
 
-            // Find the new index files
-            var newIndexFiles = Directory.GetFiles(TARGETFOLDER, "*.dindex.*", SearchOption.TopDirectoryOnly)
-                .Where(x => !indexfiles.Contains(x))
-                .ToList();
+            var newBlockvolumeCount = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).Length;
 
-            Assert.That(newIndexFiles.Count, Is.GreaterThan(0), "No new index files found");
+            // Check that the number of dblock files is reduced by at least 4
+            Assert.That(newBlockvolumeCount, Is.LessThan(fullBlockvolumeCount - 4), "Compact did not reduce the number of dblock files");
 
-            // Check that the new index files contains the list folder
-            var matches = 0;
-            foreach (var file in newIndexFiles)
-            {
-                using var zip = new ZipArchive(File.OpenRead(file), ZipArchiveMode.Read);
-                if (zip.Entries.Any(x => x.FullName.StartsWith("list/")))
-                    matches++;
-            }
-
-            // Test is essentially inconclusive here, as the repair does not cover the blocklist hashes
-            // but we cannot control it closely enough to make it always work
-            //Assert.That(matches, Is.EqualTo(newIndexFiles.Count), "No new index files found with list folder");
-
-            // Check that recreate does not load dblock files
             BackendLoader.AddBackend(new DeterministicErrorBackend());
             File.Delete(DBFILE);
 
