@@ -31,21 +31,22 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalPurgeDatabase : LocalDeleteDatabase
     {
-        public static new async Task<LocalPurgeDatabase> CreateAsync(string path, long pagecachesize)
+        public static new async Task<LocalPurgeDatabase> CreateAsync(string path, long pagecachesize, LocalPurgeDatabase? dbnew = null)
         {
-            // TODO double check whether this is possible.
-            var db = (LocalPurgeDatabase)await LocalDeleteDatabase.CreateAsync(path, "Purge", pagecachesize);
+            dbnew ??= new LocalPurgeDatabase();
 
-            db.ShouldCloseConnection = true;
+            dbnew = (LocalPurgeDatabase)await LocalDeleteDatabase.CreateAsync(path, "Purge", pagecachesize, dbnew);
 
-            return db;
+            dbnew.ShouldCloseConnection = true;
+
+            return dbnew;
         }
 
-        public static new async Task<LocalPurgeDatabase> CreateAsync(LocalDatabase dbparent)
+        public static new async Task<LocalPurgeDatabase> CreateAsync(LocalDatabase dbparent, LocalPurgeDatabase? dbnew = null)
         {
-            var dbnew = new LocalPurgeDatabase();
+            dbnew ??= new LocalPurgeDatabase();
 
-            dbnew = (LocalPurgeDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
+            dbnew = (LocalPurgeDatabase)await LocalDeleteDatabase.CreateAsync(dbparent, dbnew);
 
             return dbnew;
         }

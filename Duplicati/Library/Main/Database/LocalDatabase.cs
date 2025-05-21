@@ -147,17 +147,12 @@ namespace Duplicati.Library.Main.Database
         //     return CreateLocalDatabaseAsync(connection).Await();
         // }
 
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string operation, bool shouldclose, long pagecachesize)
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string operation, bool shouldclose, long pagecachesize, LocalDatabase? db = null)
         {
-            var db = new LocalDatabase();
+            db ??= new LocalDatabase();
 
-            return await CreateLocalDatabaseAsync(db, path, operation, shouldclose, pagecachesize);
-        }
-
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase db, string path, string operation, bool shouldclose, long pagecachesize)
-        {
             var connection = await CreateConnectionAsync(path, pagecachesize);
-            db = await CreateLocalDatabaseAsync(db, connection, operation);
+            db = await CreateLocalDatabaseAsync(connection, operation, db);
 
             db.ShouldCloseConnection = shouldclose;
             db.m_pagecachesize = pagecachesize;
@@ -165,9 +160,11 @@ namespace Duplicati.Library.Main.Database
             return db;
         }
 
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase dbparent, LocalDatabase dbnew)
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase dbparent, LocalDatabase? dbnew = null)
         {
-            dbnew = await CreateLocalDatabaseAsync(dbnew, dbparent.m_connection);
+            dbnew ??= new LocalDatabase();
+
+            dbnew = await CreateLocalDatabaseAsync(dbparent.m_connection, dbnew);
 
             dbnew.OperationTimestamp = dbparent.OperationTimestamp;
             dbnew.m_connection = dbparent.m_connection;
@@ -177,21 +174,22 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase db, SqliteConnection connection, string operation)
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection, string operation, LocalDatabase? dbnew = null)
         {
-            db = await CreateLocalDatabaseAsync(db, connection);
+            dbnew ??= new LocalDatabase();
+            dbnew = await CreateLocalDatabaseAsync(connection, dbnew);
 
-            db.OperationTimestamp = DateTime.UtcNow;
+            dbnew.OperationTimestamp = DateTime.UtcNow;
 
-            if (db.m_connection.State != ConnectionState.Open)
-                await db.m_connection.OpenAsync();
+            if (dbnew.m_connection.State != ConnectionState.Open)
+                await dbnew.m_connection.OpenAsync();
 
-            using var cmd = db.m_connection.CreateCommand();
-            using var transaction = db.m_connection.BeginTransaction();
+            using var cmd = dbnew.m_connection.CreateCommand();
+            using var transaction = dbnew.m_connection.BeginTransaction();
             cmd.Transaction = transaction;
             if (operation != null)
             {
-                db.m_operationid = await cmd.SetCommandAndParameters(@"
+                dbnew.m_operationid = await cmd.SetCommandAndParameters(@"
                     INSERT INTO ""Operation"" (
                         ""Description"",
                         ""Timestamp""
@@ -203,7 +201,7 @@ namespace Duplicati.Library.Main.Database
                     SELECT last_insert_rowid();
                 ")
                     .SetParameterValue("@Description", operation)
-                    .SetParameterValue("@Timestamp", db.OperationTimestamp)
+                    .SetParameterValue("@Timestamp", dbnew.OperationTimestamp)
                     .ExecuteScalarInt64Async(-1);
             }
             else
@@ -221,16 +219,17 @@ namespace Duplicati.Library.Main.Database
                 if (!await rd.ReadAsync())
                     throw new Exception("LocalDatabase does not contain a previous operation.");
 
-                db.m_operationid = rd.ConvertValueToInt64(0);
-                db.OperationTimestamp = ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
+                dbnew.m_operationid = rd.ConvertValueToInt64(0);
+                dbnew.OperationTimestamp = ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
             }
 
-            return db;
+            return dbnew;
         }
 
-        private static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase db, SqliteConnection connection)
+        private static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection, LocalDatabase? dbnew = null)
         {
-            db.m_connection = connection;
+            dbnew ??= new LocalDatabase();
+            dbnew.m_connection = connection;
 
             var selectremotevolumes_sql = @"
                 SELECT
@@ -245,7 +244,7 @@ namespace Duplicati.Library.Main.Database
                 FROM ""Remotevolume""
             ";
 
-            db.m_insertlogCommand = await connection.CreateCommandAsync(@"
+            dbnew.m_insertlogCommand = await connection.CreateCommandAsync(@"
                 INSERT INTO ""LogData"" (
                     ""OperationID"",
                     ""Timestamp"",
@@ -262,7 +261,7 @@ namespace Duplicati.Library.Main.Database
                 )
             ");
 
-            db.m_insertremotelogCommand = await connection.CreateCommandAsync(@"
+            dbnew.m_insertremotelogCommand = await connection.CreateCommandAsync(@"
                 INSERT INTO ""RemoteOperation"" (
                     ""OperationID"",
                     ""Timestamp"",
@@ -279,7 +278,7 @@ namespace Duplicati.Library.Main.Database
                 )
             ");
 
-            db.m_updateremotevolumeCommand = await connection.CreateCommandAsync(@"
+            dbnew.m_updateremotevolumeCommand = await connection.CreateCommandAsync(@"
                 UPDATE ""Remotevolume""
                 SET
                     ""OperationID"" = @OperationID,
@@ -289,14 +288,14 @@ namespace Duplicati.Library.Main.Database
                 WHERE ""Name"" = @Name
             ");
 
-            db.m_selectremotevolumesCommand = await connection.CreateCommandAsync(selectremotevolumes_sql);
+            dbnew.m_selectremotevolumesCommand = await connection.CreateCommandAsync(selectremotevolumes_sql);
 
-            db.m_selectremotevolumeCommand = await connection.CreateCommandAsync(@$"
+            dbnew.m_selectremotevolumeCommand = await connection.CreateCommandAsync(@$"
                 {selectremotevolumes_sql}
                 WHERE ""Name"" = @Name
             ");
 
-            db.m_selectduplicateRemoteVolumesCommand = await connection.CreateCommandAsync($@"
+            dbnew.m_selectduplicateRemoteVolumesCommand = await connection.CreateCommandAsync($@"
                 SELECT DISTINCT ""Name"", ""State""
                 FROM ""Remotevolume""
                 WHERE
@@ -308,7 +307,7 @@ namespace Duplicati.Library.Main.Database
                     AND NOT ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
             ");
 
-            db.m_removeremotevolumeCommand = await connection.CreateCommandAsync(@"
+            dbnew.m_removeremotevolumeCommand = await connection.CreateCommandAsync(@"
                 DELETE FROM ""Remotevolume""
                 WHERE
                     ""Name"" = @Name
@@ -319,7 +318,7 @@ namespace Duplicati.Library.Main.Database
             ");
 
             // >12 is to handle removal of old records that were in ticks
-            db.m_removedeletedremotevolumeCommand = await connection.CreateCommandAsync($@"
+            dbnew.m_removedeletedremotevolumeCommand = await connection.CreateCommandAsync($@"
                 DELETE FROM ""Remotevolume""
                 WHERE
                     ""State"" == '{RemoteVolumeState.Deleted}'
@@ -329,13 +328,13 @@ namespace Duplicati.Library.Main.Database
                     )
             ");
 
-            db.m_selectremotevolumeIdCommand = await connection.CreateCommandAsync(@"
+            dbnew.m_selectremotevolumeIdCommand = await connection.CreateCommandAsync(@"
                 SELECT ""ID""
                 FROM ""Remotevolume""
                 WHERE ""Name"" = @Name
             ");
 
-            db.m_createremotevolumeCommand = await connection.CreateCommandAsync(@"
+            dbnew.m_createremotevolumeCommand = await connection.CreateCommandAsync(@"
                 INSERT INTO ""Remotevolume"" (
                     ""OperationID"",
                     ""Name"",
@@ -359,7 +358,7 @@ namespace Duplicati.Library.Main.Database
                 SELECT last_insert_rowid();
             ");
 
-            db.m_insertIndexBlockLink = await connection.CreateCommandAsync(@"
+            dbnew.m_insertIndexBlockLink = await connection.CreateCommandAsync(@"
                 INSERT INTO ""IndexBlockLink"" (
                     ""IndexVolumeID"",
                     ""BlockVolumeID""
@@ -370,19 +369,19 @@ namespace Duplicati.Library.Main.Database
                 )
             ");
 
-            db.m_findpathprefixCommand = await connection.CreateCommandAsync(@"
+            dbnew.m_findpathprefixCommand = await connection.CreateCommandAsync(@"
                 SELECT ""ID""
                 FROM ""PathPrefix""
                 WHERE ""Prefix"" = @Prefix
             ");
 
-            db.m_insertpathprefixCommand = await connection.CreateCommandAsync(@"
+            dbnew.m_insertpathprefixCommand = await connection.CreateCommandAsync(@"
                 INSERT INTO ""PathPrefix"" (""Prefix"")
                 VALUES (@Prefix);
                 SELECT last_insert_rowid();
             ");
 
-            return db;
+            return dbnew;
         }
 
         /// <summary>

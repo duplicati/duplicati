@@ -30,14 +30,14 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalListAffectedDatabase : LocalDatabase
     {
-        public static async Task<LocalListAffectedDatabase> CreateAsync(string path, long pagecachesize)
+        public static async Task<LocalListAffectedDatabase> CreateAsync(string path, long pagecachesize, LocalListAffectedDatabase? dbnew = null)
         {
-            var db = new LocalListAffectedDatabase();
+            dbnew ??= new LocalListAffectedDatabase();
 
-            db = (LocalListAffectedDatabase)await CreateLocalDatabaseAsync(db, path, "ListAffected", false, pagecachesize);
-            db.ShouldCloseConnection = true;
+            dbnew = (LocalListAffectedDatabase)await CreateLocalDatabaseAsync(path, "ListAffected", false, pagecachesize, dbnew);
+            dbnew.ShouldCloseConnection = true;
 
-            return db;
+            return dbnew;
         }
 
         private class ListResultFileset : Interface.IListResultFileset

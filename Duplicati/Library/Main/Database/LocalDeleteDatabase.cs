@@ -46,18 +46,21 @@ namespace Duplicati.Library.Main.Database
 
         private SqliteCommand m_registerDuplicateBlockCommand = null!;
 
-        public static async Task<LocalDeleteDatabase> CreateAsync(string path, string operation, long pagecachesize)
+        public static async Task<LocalDeleteDatabase> CreateAsync(string path, string operation, long pagecachesize, LocalDeleteDatabase? dbnew = null)
         {
-            var db = new LocalDeleteDatabase();
+            dbnew ??= new LocalDeleteDatabase();
 
-            db = (LocalDeleteDatabase)await CreateLocalDatabaseAsync(db, path, operation, true, pagecachesize);
+            dbnew = (LocalDeleteDatabase)await CreateLocalDatabaseAsync(path, operation, true, pagecachesize, dbnew);
 
-            return db;
+            dbnew.m_registerDuplicateBlockCommand = await dbnew.Connection.CreateCommandAsync(REGISTER_COMMAND);
+
+            return dbnew;
         }
 
-        public static async Task<LocalDeleteDatabase> CreateAsync(LocalDatabase dbparent)
+        // TODO Second argumnet is optional, as the original constructor call chain will have initialized the object if the constructor is called from another constructor. If not, the constructor will instantiate a new object.
+        public static async Task<LocalDeleteDatabase> CreateAsync(LocalDatabase dbparent, LocalDeleteDatabase? dbnew = null)
         {
-            var dbnew = new LocalDeleteDatabase();
+            dbnew ??= new LocalDeleteDatabase();
 
             dbnew = (LocalDeleteDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
 

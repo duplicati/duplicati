@@ -85,19 +85,19 @@ namespace Duplicati.Library.Main.Database
 
         private bool m_logQueries;
 
-        public static async Task<LocalBackupDatabase> CreateAsync(string path, Options options)
+        public static async Task<LocalBackupDatabase> CreateAsync(string path, Options options, LocalBackupDatabase? dbnew = null)
         {
-            var db = new LocalBackupDatabase();
+            dbnew ??= new LocalBackupDatabase();
 
-            db = (LocalBackupDatabase)await CreateLocalDatabaseAsync(db, path, "Backup", false, options.SqlitePageCache);
-            db.ShouldCloseConnection = true;
+            dbnew = (LocalBackupDatabase)await CreateLocalDatabaseAsync(path, "Backup", false, options.SqlitePageCache, dbnew);
+            dbnew.ShouldCloseConnection = true;
 
-            return await CreateAsync(db, options);
+            return await CreateAsync(dbnew, options);
         }
 
-        public static async Task<LocalBackupDatabase> CreateAsync(LocalBackupDatabase dbparent, Options options)
+        public static async Task<LocalBackupDatabase> CreateAsync(LocalDatabase dbparent, Options options, LocalBackupDatabase? dbnew = null)
         {
-            var dbnew = new LocalBackupDatabase();
+            dbnew ??= new LocalBackupDatabase();
 
             dbnew = (LocalBackupDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
 

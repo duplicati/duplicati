@@ -34,14 +34,14 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalListDatabase : LocalDatabase
     {
-        public static async Task<LocalListDatabase> CreateAsync(string path, long pagecachesize)
+        public static async Task<LocalListDatabase> CreateAsync(string path, long pagecachesize, LocalListDatabase? dbnew = null)
         {
-            var db = new LocalListDatabase();
+            dbnew ??= new LocalListDatabase();
 
-            db = (LocalListDatabase)await CreateLocalDatabaseAsync(db, path, "List", false, pagecachesize);
-            db.ShouldCloseConnection = true;
+            dbnew = (LocalListDatabase)await CreateLocalDatabaseAsync(path, "List", false, pagecachesize, dbnew);
+            dbnew.ShouldCloseConnection = true;
 
-            return db;
+            return dbnew;
         }
 
         public interface IFileversion

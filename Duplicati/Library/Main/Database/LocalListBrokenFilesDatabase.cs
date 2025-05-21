@@ -138,19 +138,19 @@ namespace Duplicati.Library.Main.Database
             )
         ";
 
-        public static async Task<LocalListBrokenFilesDatabase> CreateAsync(string path, long pagecachesize)
+        public static async Task<LocalListBrokenFilesDatabase> CreateAsync(string path, long pagecachesize, LocalListBrokenFilesDatabase? dbnew = null)
         {
-            var db = new LocalListBrokenFilesDatabase();
+            dbnew ??= new LocalListBrokenFilesDatabase();
 
-            db = (LocalListBrokenFilesDatabase)await CreateLocalDatabaseAsync(db, path, "ListBrokenFiles", false, pagecachesize);
-            db.ShouldCloseConnection = true;
+            dbnew = (LocalListBrokenFilesDatabase)await CreateLocalDatabaseAsync(path, "ListBrokenFiles", false, pagecachesize, dbnew);
+            dbnew.ShouldCloseConnection = true;
 
-            return db;
+            return dbnew;
         }
 
-        public static async Task<LocalListBrokenFilesDatabase> CreateAsync(LocalDatabase dbparent)
+        public static async Task<LocalListBrokenFilesDatabase> CreateAsync(LocalDatabase dbparent, LocalListBrokenFilesDatabase? dbnew = null)
         {
-            var dbnew = new LocalListBrokenFilesDatabase();
+            dbnew ??= new LocalListBrokenFilesDatabase();
 
             dbnew = (LocalListBrokenFilesDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
             dbnew.ShouldCloseConnection = false;

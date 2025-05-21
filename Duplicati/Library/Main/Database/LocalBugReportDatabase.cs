@@ -34,14 +34,14 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalBugReportDatabase));
 
-        public static async Task<LocalBugReportDatabase> CreateAsync(string path, long pagecachesize)
+        public static async Task<LocalBugReportDatabase> CreateAsync(string path, long pagecachesize, LocalBugReportDatabase? dbnew = null)
         {
-            var db = new LocalBugReportDatabase();
+            dbnew ??= new LocalBugReportDatabase();
 
-            db = (LocalBugReportDatabase)await CreateLocalDatabaseAsync(db, path, "BugReportCreate", false, pagecachesize);
-            db.ShouldCloseConnection = true;
+            dbnew = (LocalBugReportDatabase)await CreateLocalDatabaseAsync(path, "BugReportCreate", false, pagecachesize, dbnew);
+            dbnew.ShouldCloseConnection = true;
 
-            return db;
+            return dbnew;
         }
 
         public async Task Fix()
