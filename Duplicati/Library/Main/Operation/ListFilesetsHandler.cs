@@ -46,11 +46,11 @@ internal static class ListFilesetsHandler
     /// <returns>A task representing the asynchronous operation</returns>
     public static async Task RunAsync(Options options, ListFilesetResults result, IBackendManager backendManager)
     {
-        //Use a speedy local query
+        // Use a speedy local query
         if (System.IO.File.Exists(options.Dbpath) && !options.NoLocalDb)
         {
-            using var db = new Database.LocalListDatabase(options.Dbpath, options.SqlitePageCache);
-            result.Filesets = db.ListFilesetsExtended().ToArray();
+            using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache);
+            result.Filesets = await db.ListFilesetsExtended().ToArrayAsync();
             return;
         }
 
