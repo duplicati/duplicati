@@ -22,10 +22,10 @@
 #nullable enable
 
 using System;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -48,9 +48,9 @@ namespace Duplicati.Library.Main.Database
             return (LocalTestDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
         }
 
-        public void UpdateVerificationCount(string name, IDbTransaction? tr)
+        public void UpdateVerificationCount(string name)
         {
-            using (var cmd = m_connection.CreateCommand(tr))
+            using (var cmd = m_connection.CreateCommand(m_rtr))
                 cmd.SetCommandAndParameters(@"UPDATE ""RemoteVolume"" SET ""VerificationCount"" = MAX(1, CASE WHEN ""VerificationCount"" <= 0 THEN (SELECT MAX(""VerificationCount"") FROM ""RemoteVolume"") ELSE ""VerificationCount"" + 1 END) WHERE ""Name"" = @Name")
                     .SetParameterValue("@Name", name)
                     .ExecuteNonQuery();
@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Database
             public string Hash { get; init; }
             public long VerificationCount { get; init; }
 
-            public RemoteVolume(IDataReader rd)
+            public RemoteVolume(SqliteDataReader rd)
             {
                 ID = rd.ConvertValueToInt64(0);
                 Name = rd.ConvertValueToString(1) ?? "";
@@ -126,12 +126,12 @@ namespace Duplicati.Library.Main.Database
             return res;
         }
 
-        public IEnumerable<IRemoteVolume> SelectTestTargets(long samples, Options options, IDbTransaction? tr)
+        public IEnumerable<IRemoteVolume> SelectTestTargets(long samples, Options options)
         {
             var tp = GetFilelistWhereClause(options.Time, options.Version);
 
             samples = Math.Max(1, samples);
-            using (var cmd = m_connection.CreateCommand(tr))
+            using (var cmd = m_connection.CreateCommand(m_rtr))
             {
                 // Select any broken items
                 cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" IN (@States)) AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0) AND (""ArchiveTime"" = 0)")
@@ -199,34 +199,32 @@ namespace Duplicati.Library.Main.Database
 
         private abstract class Basiclist : IDisposable
         {
-            protected IDbConnection m_connection = null!;
+            protected LocalDatabase m_db = null!;
             protected string m_volumename = null!;
             protected string m_tablename = null!;
-            protected ReusableTransaction m_rtr = null!;
-            protected IDbCommand m_insertCommand = null!;
+            protected SqliteCommand m_insertCommand = null!;
 
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
-            protected Basiclist(IDbConnection connection, ReusableTransaction rtr, string volumename, string tablePrefix, string tableFormat, string insertCommand)
+            protected Basiclist(SqliteConnection connection, ReusableTransaction rtr, string volumename, string tablePrefix, string tableFormat, string insertCommand)
             {
                 throw new NotSupportedException("Use CreateAsync method instead.");
             }
 
             protected Basiclist() { }
 
-            protected static async Task<Basiclist> CreateAsync(Basiclist bl, IDbConnection connection, ReusableTransaction rtr, string volumename, string tablePrefix, string tableFormat, string insertCommand)
+            protected static async Task<Basiclist> CreateAsync(Basiclist bl, LocalDatabase db, string volumename, string tablePrefix, string tableFormat, string insertCommand)
             {
-                bl.m_connection = connection;
+                bl.m_db = db;
                 bl.m_volumename = volumename;
-                bl.m_rtr = rtr;
                 var tablename = tablePrefix + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-                using (var cmd = bl.m_connection.CreateCommand(bl.m_rtr.Transaction))
+                using (var cmd = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction))
                 {
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" {tableFormat}"));
                     bl.m_tablename = tablename;
                 }
 
-                bl.m_insertCommand = bl.m_connection.CreateCommand(bl.m_rtr.Transaction, FormatInvariant($@"INSERT INTO ""{bl.m_tablename}"" {insertCommand}"));
+                bl.m_insertCommand = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction, FormatInvariant($@"INSERT INTO ""{bl.m_tablename}"" {insertCommand}"));
 
                 return bl;
             }
@@ -236,7 +234,7 @@ namespace Duplicati.Library.Main.Database
                 if (m_tablename != null)
                     try
                     {
-                        using (var cmd = m_connection.CreateCommand(m_rtr.Transaction))
+                        using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction.Transaction))
                             cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"""));
                     }
                     catch { }
@@ -259,7 +257,7 @@ namespace Duplicati.Library.Main.Database
             private const string INSERT_COMMAND = @"(""Path"", ""Size"", ""Hash"", ""Metasize"", ""Metahash"") VALUES (@Path,@Size,@Hash,@Metasize,@Metahash)";
 
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
-            public Filelist(IDbConnection connection, string volumename, ReusableTransaction rtr)
+            public Filelist(SqliteConnection connection, string volumename, ReusableTransaction rtr)
                 : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             {
                 throw new NotSupportedException("Use CreateAsync method instead.");
@@ -267,15 +265,15 @@ namespace Duplicati.Library.Main.Database
 
             private Filelist() { }
 
-            public static async Task<Filelist> CreateAsync(IDbConnection connection, string volumename, ReusableTransaction rtr)
+            public static async Task<Filelist> CreateAsync(LocalDatabase db, string volumename)
             {
                 var bl = new Filelist();
-                return (Filelist)await CreateAsync(bl, connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
+                return (Filelist)await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
             }
 
             public void Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time)
             {
-                m_insertCommand.SetTransaction(m_rtr.Transaction)
+                m_insertCommand.SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Path", path)
                     .SetParameterValue("@Size", hash == null ? -1 : size)
                     .SetParameterValue("@Hash", hash)
@@ -294,7 +292,7 @@ namespace Duplicati.Library.Main.Database
                 var modified = FormatInvariant($@"SELECT @TypeModified AS ""Type"", ""E"".""Path"" AS ""Path"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Path"" = ""E"".""Path"" AND (""D"".""Size"" != ""E"".""Size"" OR ""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Metasize"" != ""E"".""Metasize"" OR ""D"".""Metahash"" != ""E"".""Metahash"")  ");
                 var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
 
-                using (var cmd = m_connection.CreateCommand(m_rtr.Transaction))
+                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
                     try
                     {
@@ -334,7 +332,7 @@ namespace Duplicati.Library.Main.Database
             private const string INSERT_COMMAND = @"(""Name"", ""Hash"", ""Size"") VALUES (@Name,@Hash,@Size)";
 
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
-            public Indexlist(IDbConnection connection, string volumename, ReusableTransaction rtr)
+            public Indexlist(SqliteConnection connection, string volumename, ReusableTransaction rtr)
                 : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             {
                 throw new NotSupportedException("Use CreateAsync method instead.");
@@ -342,15 +340,15 @@ namespace Duplicati.Library.Main.Database
 
             private Indexlist() { }
 
-            public static async Task<Indexlist> CreateAsync(IDbConnection connection, string volumename, ReusableTransaction rtr)
+            public static async Task<Indexlist> CreateAsync(LocalDatabase db, string volumename)
             {
                 var bl = new Indexlist();
-                return (Indexlist)await CreateAsync(bl, connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
+                return (Indexlist)await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
             }
 
             public void AddBlockLink(string filename, string hash, long length)
             {
-                m_insertCommand.SetTransaction(m_rtr.Transaction)
+                m_insertCommand.SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Name", filename)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", length)
@@ -366,7 +364,7 @@ namespace Duplicati.Library.Main.Database
                 var modified = FormatInvariant($@"SELECT @TypeModified AS ""Type"", ""E"".""Name"" AS ""Name"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Name"" = ""E"".""Name"" AND (""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Size"" != ""E"".""Size"") ");
                 var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
 
-                using (var cmd = m_connection.CreateCommand(m_rtr.Transaction))
+                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
                     try
                     {
@@ -406,7 +404,7 @@ namespace Duplicati.Library.Main.Database
             private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (@Hash,@Size)";
 
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
-            public Blocklist(IDbConnection connection, string volumename, ReusableTransaction rtr)
+            public Blocklist(SqliteConnection connection, string volumename, ReusableTransaction rtr)
                 : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             {
                 throw new NotSupportedException("Use CreateAsync method instead.");
@@ -414,15 +412,15 @@ namespace Duplicati.Library.Main.Database
 
             private Blocklist() { }
 
-            public static async Task<Blocklist> CreateAsync(IDbConnection connection, string volumename, ReusableTransaction rtr)
+            public static async Task<Blocklist> CreateAsync(LocalDatabase db, string volumename)
             {
                 var bl = new Blocklist();
-                return (Blocklist)await CreateAsync(bl, connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
+                return (Blocklist)await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
             }
 
             public void AddBlock(string hash, long size)
             {
-                m_insertCommand.SetTransaction(m_rtr.Transaction)
+                m_insertCommand.SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
                     .ExecuteNonQuery();
@@ -440,7 +438,7 @@ namespace Duplicati.Library.Main.Database
                 var modified = FormatInvariant($@"SELECT @TypeModified AS ""Type"", ""E"".""Hash"" AS ""Hash"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Hash"" = ""E"".""Hash"" AND ""D"".""Size"" != ""E"".""Size""  ");
                 var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
 
-                using (var cmd = m_connection.CreateCommand(m_rtr.Transaction))
+                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
                     try
                     {
@@ -466,17 +464,17 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IFilelist CreateFilelist(string name, ReusableTransaction rtr)
+        public IFilelist CreateFilelist(string name)
         {
             return new Filelist(m_connection, name, rtr);
         }
 
-        public IIndexlist CreateIndexlist(string name, ReusableTransaction rtr)
+        public IIndexlist CreateIndexlist(string name)
         {
             return new Indexlist(m_connection, name, rtr);
         }
 
-        public IBlocklist CreateBlocklist(string name, ReusableTransaction rtr)
+        public IBlocklist CreateBlocklist(string name)
         {
             return new Blocklist(m_connection, name, rtr);
         }
