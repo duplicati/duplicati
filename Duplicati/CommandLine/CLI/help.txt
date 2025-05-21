@@ -20,7 +20,7 @@ See %CLI_EXE% help <topic> for more information.
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, decimal, encryption, compression
   Advanced: mail, advanced, returncodes, filter, filter-groups, <option>
-  Secrets: secret, <provider>
+  Secrets: password, secret, <provider>
 
 https://duplicati.com/                 Version: %VERSION%
 
@@ -653,3 +653,22 @@ For providers that require a request per secret, the lookup is case-sensitive.
 The following secret providers are supported:
 
 %SECRETPROVIDERS%
+
+# =============================================================================
+> duplicati.commandline.exe help password
+> duplicati.commandline.exe help passwords
+
+You can provide the encryption passphrase and login credentials from the commandline, but this will make them visible to other users on the system that can list processes.
+
+You can instead use the environment variables:
+  - PASSPHRASE, mapped to --passphrase
+  - AUTH_USERNAME, mapped to --auth-username
+  - AUTH_PASSWORD, mapped to --auth-password
+
+Note that if the argument is given on the commandline, the environment variable is ignored.
+
+You may also use the --parameters-file option to store the secrets, so they cannot be seen as environment variables. Be sure that you secure the file with appropriate permissions.
+
+If you prefer to not store secrets on disk, see the secret providers:
+  
+  "%APP_PATH%" help secret-provider
