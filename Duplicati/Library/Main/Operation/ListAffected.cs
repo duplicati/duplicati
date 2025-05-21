@@ -39,36 +39,34 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public Task RunAsync(List<string> args, Action<IListAffectedResults> callback = null)
+        public async Task RunAsync(List<string> args, Action<IListAffectedResults> callback = null)
         {
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = new Database.LocalListAffectedDatabase(m_options.Dbpath, m_options.SqlitePageCache))
+            using (var db = await Database.LocalListAffectedDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache))
             {
                 if (callback == null)
                 {
                     m_result.SetResult(
-                        db.GetFilesets(args).OrderByDescending(x => x.Time).ToArray(),
-                        db.GetFiles(args).ToArray(),
-                        db.GetLogLines(args).ToArray(),
-                        db.GetVolumes(args).ToArray()
+                        await db.GetFilesets(args).OrderByDescending(x => x.Time).ToArrayAsync(),
+                        await db.GetFiles(args).ToArrayAsync(),
+                        await db.GetLogLines(args).ToArrayAsync(),
+                        await db.GetVolumes(args).ToArrayAsync()
                     );
                 }
                 else
                 {
                     m_result.SetResult(
-                        db.GetFilesets(args).OrderByDescending(x => x.Time),
-                        db.GetFiles(args),
-                        db.GetLogLines(args),
-                        db.GetVolumes(args)
+                        await db.GetFilesets(args).OrderByDescending(x => x.Time).ToArrayAsync(),
+                        await db.GetFiles(args).ToArrayAsync(),
+                        await db.GetLogLines(args).ToArrayAsync(),
+                        await db.GetVolumes(args).ToArrayAsync()
                     );
 
                     callback(m_result);
                 }
             }
-
-            return Task.CompletedTask;
         }
     }
 }
