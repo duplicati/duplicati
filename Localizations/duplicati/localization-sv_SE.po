@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-30 18:10+0200\n"
+"POT-Creation-Date: 2025-05-21 12:54+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: axez85 <dr@davidaslan.se>, 2025\n"
 "Language-Team: Swedish (Sweden) (https://app.transifex.com/duplicati/teams/67655/sv_SE/)\n"
@@ -198,23 +198,6 @@ msgstr "Google Drive"
 msgid "File not found: {0}"
 msgstr "Filen kan inte hittas: {0}"
 
-#: Library/Backend/CloudFiles/Strings.cs:27
-msgid "Rackspace CloudFiles"
-msgstr "Rackspace CloudFiles"
-
-#: Library/Backend/CloudFiles/Strings.cs:29
-msgid "Provide another authentication URL"
-msgstr "Ange en annan URL för autentisering"
-
-#: Library/Backend/CloudFiles/Strings.cs:37
-msgid "Failed to delete file"
-msgstr "Misslyckades att radera fil"
-
-#: Library/Backend/CloudFiles/Strings.cs:38
-#: Library/Backend/Jottacloud/Strings.cs:31
-msgid "Failed to upload file"
-msgstr "Misslyckades att ladda upp fil"
-
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
 #: Library/Utility/Strings.cs:93
 msgid ""
@@ -355,6 +338,10 @@ msgstr "Azure blob"
 msgid "Jottacloud"
 msgstr "Jottacloud"
 
+#: Library/Backend/Jottacloud/Strings.cs:31
+msgid "Failed to upload file"
+msgstr "Misslyckades att ladda upp fil"
+
 #: Library/Backend/Mega/Strings.cs:25
 msgid "mega.nz"
 msgstr "mega.nz"
@@ -489,21 +476,11 @@ msgstr ""
 "Porten som webbservern lyssnar på. Flera värden kan anges med ett komma "
 "emellan."
 
-#: Library/RestAPI/Strings.cs:59
-msgid ""
-"The password required to access the webserver. This option is saved so you "
-"do not need to set it on each run. Setting an empty value disables the "
-"password."
-msgstr ""
-"Lösenordet som krävs för att komma åt webbservern. Det här alternativet "
-"sparas så att du inte behöver ställa in det vid varje körning. Om du ställer"
-" in ett tomt värde inaktiveras lösenordet."
-
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:251
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:253
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Ställ in tiden efter vilken loggdata ska rensas från databasen."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:252
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:254
 msgid "Clean up old log data"
 msgstr "Ta bort gammal data från loggarna"
 
@@ -511,7 +488,7 @@ msgstr "Ta bort gammal data från loggarna"
 msgid "Temporary storage folder"
 msgstr "Mapp för temporär lagring"
 
-#: Library/RestAPI/Strings.cs:91 Library/RestAPI/Strings.cs:113
+#: Library/RestAPI/Strings.cs:91 Library/RestAPI/Strings.cs:120
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Servern har startat och lyssnar på {0}, port {1}"
@@ -583,7 +560,7 @@ msgstr "Välj vilken modul som ska användas för komprimering"
 msgid "Select what module to use for encryption"
 msgstr "Välj vilken modul som ska användas för kryptering"
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:204
 msgid "Use local file data when restoring"
 msgstr "Använd lokala data vid återställning"
 
