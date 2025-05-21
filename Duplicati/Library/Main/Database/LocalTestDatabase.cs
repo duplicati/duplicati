@@ -24,20 +24,28 @@
 using System;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Database
 {
     internal class LocalTestDatabase : LocalDatabase
     {
-        public LocalTestDatabase(string path, long pagecachesize)
-            : base(path, "Test", true, pagecachesize)
+        public static async Task<LocalTestDatabase> CreateAsync(string path, long pagecachesize, LocalTestDatabase? dbnew = null)
         {
+            dbnew ??= new LocalTestDatabase();
+
+            dbnew = (LocalTestDatabase)await CreateLocalDatabaseAsync(path, "Test", true, pagecachesize, dbnew);
+            dbnew.ShouldCloseConnection = true;
+
+            return dbnew;
         }
 
-        public LocalTestDatabase(LocalDatabase parent)
-            : base(parent)
+        public static async Task<LocalTestDatabase> CreateAsync(LocalDatabase dbparent, LocalTestDatabase? dbnew = null)
         {
+            dbnew ??= new LocalTestDatabase();
+
+            return (LocalTestDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
         }
 
         public void UpdateVerificationCount(string name, IDbTransaction? tr)
@@ -70,7 +78,7 @@ namespace Duplicati.Library.Main.Database
         {
             var rnd = new Random();
 
-            // First round is the new items            
+            // First round is the new items
             var res = (from n in volumes where n.VerificationCount == 0 select n).ToList();
             while (res.Count > samples)
                 res.RemoveAt(rnd.Next(0, res.Count));
@@ -191,26 +199,36 @@ namespace Duplicati.Library.Main.Database
 
         private abstract class Basiclist : IDisposable
         {
-            protected readonly IDbConnection m_connection;
-            protected readonly string m_volumename;
-            protected string m_tablename;
-            protected ReusableTransaction m_rtr;
-            protected IDbCommand m_insertCommand;
+            protected IDbConnection m_connection = null!;
+            protected string m_volumename = null!;
+            protected string m_tablename = null!;
+            protected ReusableTransaction m_rtr = null!;
+            protected IDbCommand m_insertCommand = null!;
 
+            [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             protected Basiclist(IDbConnection connection, ReusableTransaction rtr, string volumename, string tablePrefix, string tableFormat, string insertCommand)
             {
-                m_connection = connection;
-                m_volumename = volumename;
-                m_rtr = rtr;
+                throw new NotSupportedException("Use CreateAsync method instead.");
+            }
+
+            protected Basiclist() { }
+
+            protected static async Task<Basiclist> CreateAsync(Basiclist bl, IDbConnection connection, ReusableTransaction rtr, string volumename, string tablePrefix, string tableFormat, string insertCommand)
+            {
+                bl.m_connection = connection;
+                bl.m_volumename = volumename;
+                bl.m_rtr = rtr;
                 var tablename = tablePrefix + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-                using (var cmd = m_connection.CreateCommand(m_rtr.Transaction))
+                using (var cmd = bl.m_connection.CreateCommand(bl.m_rtr.Transaction))
                 {
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" {tableFormat}"));
-                    m_tablename = tablename;
+                    bl.m_tablename = tablename;
                 }
 
-                m_insertCommand = m_connection.CreateCommand(m_rtr.Transaction, FormatInvariant($@"INSERT INTO ""{m_tablename}"" {insertCommand}"));
+                bl.m_insertCommand = bl.m_connection.CreateCommand(bl.m_rtr.Transaction, FormatInvariant($@"INSERT INTO ""{bl.m_tablename}"" {insertCommand}"));
+
+                return bl;
             }
 
             public virtual void Dispose()
@@ -239,9 +257,20 @@ namespace Duplicati.Library.Main.Database
             private const string TABLE_PREFIX = "Filelist";
             private const string TABLE_FORMAT = @"(""Path"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Hash"" TEXT NULL, ""Metasize"" INTEGER NOT NULL, ""Metahash"" TEXT NOT NULL)";
             private const string INSERT_COMMAND = @"(""Path"", ""Size"", ""Hash"", ""Metasize"", ""Metahash"") VALUES (@Path,@Size,@Hash,@Metasize,@Metahash)";
+
+            [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             public Filelist(IDbConnection connection, string volumename, ReusableTransaction rtr)
                 : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             {
+                throw new NotSupportedException("Use CreateAsync method instead.");
+            }
+
+            private Filelist() { }
+
+            public static async Task<Filelist> CreateAsync(IDbConnection connection, string volumename, ReusableTransaction rtr)
+            {
+                var bl = new Filelist();
+                return (Filelist)await CreateAsync(bl, connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
             }
 
             public void Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time)
@@ -304,9 +333,19 @@ namespace Duplicati.Library.Main.Database
             private const string TABLE_FORMAT = @"(""Name"" TEXT NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
             private const string INSERT_COMMAND = @"(""Name"", ""Hash"", ""Size"") VALUES (@Name,@Hash,@Size)";
 
+            [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             public Indexlist(IDbConnection connection, string volumename, ReusableTransaction rtr)
                 : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             {
+                throw new NotSupportedException("Use CreateAsync method instead.");
+            }
+
+            private Indexlist() { }
+
+            public static async Task<Indexlist> CreateAsync(IDbConnection connection, string volumename, ReusableTransaction rtr)
+            {
+                var bl = new Indexlist();
+                return (Indexlist)await CreateAsync(bl, connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
             }
 
             public void AddBlockLink(string filename, string hash, long length)
@@ -366,9 +405,20 @@ namespace Duplicati.Library.Main.Database
             private const string TABLE_FORMAT = @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
             private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (@Hash,@Size)";
 
+            [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             public Blocklist(IDbConnection connection, string volumename, ReusableTransaction rtr)
                 : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
-            { }
+            {
+                throw new NotSupportedException("Use CreateAsync method instead.");
+            }
+
+            private Blocklist() { }
+
+            public static async Task<Blocklist> CreateAsync(IDbConnection connection, string volumename, ReusableTransaction rtr)
+            {
+                var bl = new Blocklist();
+                return (Blocklist)await CreateAsync(bl, connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
+            }
 
             public void AddBlock(string hash, long size)
             {
