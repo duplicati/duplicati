@@ -157,7 +157,13 @@ namespace Duplicati.Library.Main.Operation
                 var progress = 0;
                 var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count() + missingRemoteFilesets.Count + missingLocalFilesets.Count + emptyIndexFiles.Count;
 
-                var mostRecentLocal = db.FilesetTimes.Select(x => x.Value.ToLocalTime()).Append(DateTime.MinValue).Max();
+                // Find the most recent timestamp from either a fileset or a remote volume
+                var mostRecentLocal = db.GetRemoteVolumes(rtr.Transaction)
+                    .Where(x => x.Type == RemoteVolumeType.Files)
+                    .Select(x => VolumeBase.ParseFilename(x.Name).Time.ToLocalTime())
+                    .Concat(db.FilesetTimes.Select(x => x.Value.ToLocalTime()))
+                    .Append(DateTime.MinValue).Max();
+
                 var mostRecentRemote = tp.ParsedVolumes.Select(x => x.Time.ToLocalTime()).Append(DateTime.MinValue).Max();
                 if (mostRecentLocal < DateTime.UnixEpoch)
                     throw new UserInformationException("The local database has no fileset times. Consider deleting the local database and run the repair operation again.", "LocalDatabaseHasNoFilesetTimes");

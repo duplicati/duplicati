@@ -483,12 +483,21 @@ namespace Duplicati.UnitTest
                 TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
             // Find a dlist file
-            var dlistFile = Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*").First();
-            if (deleteRemoteFile)
-                File.Delete(dlistFile);
+            var dlistFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*")
+                .OrderByDescending(x => x)
+                .AsEnumerable();
+
+            // Randomly delete the first or last file
+            if (Random.Shared.Next(2) == 0)
+                dlistFiles = dlistFiles.Reverse();
+
+            var dlistFile = dlistFiles.First();
             using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
             using (var cmd = con.CreateCommand("DELETE FROM RemoteVolume WHERE Name = @Name"))
                 Assert.AreEqual(1, cmd.SetParameterValue("@Name", Path.GetFileName(dlistFile)).ExecuteNonQuery());
+
+            if (deleteRemoteFile)
+                File.Delete(dlistFile);
 
             // Should catch this in validation
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
