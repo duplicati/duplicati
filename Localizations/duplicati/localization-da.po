@@ -18,7 +18,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-30 18:10+0200\n"
+"POT-Creation-Date: 2025-05-21 12:54+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Kenneth Skovhede <kenneth@hexad.dk>, 2025\n"
 "Language-Team: Danish (https://app.transifex.com/duplicati/teams/67655/da/)\n"
@@ -426,39 +426,6 @@ msgstr "Fil ikke fundet: {0}"
 msgid "Team drive ID"
 msgstr "Team drev ID"
 
-#: Library/Backend/CloudFiles/Strings.cs:27
-msgid "Rackspace CloudFiles"
-msgstr "Rackspace CloudFiles"
-
-#: Library/Backend/CloudFiles/Strings.cs:29
-msgid "Provide another authentication URL"
-msgstr "Angiv en anden URL til godkendelse"
-
-#: Library/Backend/CloudFiles/Strings.cs:33
-msgid "Use a UK account"
-msgstr "Brug en UK konto"
-
-#: Library/Backend/CloudFiles/Strings.cs:36
-msgid "MD5 Hash (ETag) verification failed"
-msgstr "MD5 Hash (ETag) verifikation fejlede"
-
-#: Library/Backend/CloudFiles/Strings.cs:37
-msgid "Failed to delete file"
-msgstr "Kunne ikke slette fil"
-
-#: Library/Backend/CloudFiles/Strings.cs:38
-#: Library/Backend/Jottacloud/Strings.cs:31
-msgid "Failed to upload file"
-msgstr "Kunne ikke uploade fil"
-
-#: Library/Backend/CloudFiles/Strings.cs:39
-msgid "No CloudFiles API Access Key given"
-msgstr "Der er ikke angivet en CloudFiles API Access Key"
-
-#: Library/Backend/CloudFiles/Strings.cs:40
-msgid "No CloudFiles userID given"
-msgstr "Der er ikke angivet et CloudFiles userID"
-
 #: Library/Backend/S3/Strings.cs:27
 msgid "S3 compatible"
 msgstr "S3 kompatibel"
@@ -669,6 +636,10 @@ msgstr "Jottacloud"
 msgid "Illegal mount point given."
 msgstr "Ikke gyldigt mount givet"
 
+#: Library/Backend/Jottacloud/Strings.cs:31
+msgid "Failed to upload file"
+msgstr "Kunne ikke uploade fil"
+
 #: Library/Backend/Jottacloud/Strings.cs:32
 #, csharp-format
 msgid ""
@@ -860,16 +831,6 @@ msgstr ""
 " \"any\" betyder all interfaces. Specialværdien \"loopback\" betyder "
 "loopback-adapteren."
 
-#: Library/RestAPI/Strings.cs:59
-msgid ""
-"The password required to access the webserver. This option is saved so you "
-"do not need to set it on each run. Setting an empty value disables the "
-"password."
-msgstr ""
-"Koden der angives for at få adgang til webserveren. Denne indstilling er "
-"gemt, så du ikke behøver at angive den ved hver opstart. Hvis der angives en"
-" tom streng, deaktiveres adgangskoden."
-
 #: Library/RestAPI/Strings.cs:60
 msgid ""
 "The hostnames that are accepted, separated with semicolons. If any of the "
@@ -879,11 +840,11 @@ msgstr ""
 "Hostnavne der er accepteret, separeret med semikolon. Hvis nogle af "
 "hostnavne er \"*\" vil alle hostnavne være tilladt."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:251
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:253
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Indstil den tid, hvorefter logdata vil blive fjernet fra databasen."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:252
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:254
 msgid "Clean up old log data"
 msgstr "Ryd gammel logdata"
 
@@ -914,12 +875,12 @@ msgstr ""
 msgid "Temporary storage folder"
 msgstr "Midlertidig mappe"
 
-#: Library/RestAPI/Strings.cs:91 Library/RestAPI/Strings.cs:113
+#: Library/RestAPI/Strings.cs:91 Library/RestAPI/Strings.cs:120
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Serveren er startet og lytter på {0}, port {1}"
 
-#: Library/RestAPI/Strings.cs:109
+#: Library/RestAPI/Strings.cs:116
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -928,7 +889,7 @@ msgstr ""
 "Kan ikke finde en gyldig dato, givet startdatoen {0}, gentagelsesintervallet"
 " {1} og de tilladte dage {2}"
 
-#: Library/RestAPI/Strings.cs:115
+#: Library/RestAPI/Strings.cs:122
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Kunne ikke åbne et socket til at lytte på, forsøgte disse porte: {0}"
@@ -1005,71 +966,71 @@ msgstr "Log interne oplysninger til en fil"
 msgid "Log information level"
 msgstr "Log informationsniveau"
 
-#: Library/Main/Strings.cs:141
+#: Library/Main/Strings.cs:143
 msgid "Do not re-use connections"
 msgstr "Genbrug ikke forbindelser"
 
-#: Library/Main/Strings.cs:145
+#: Library/Main/Strings.cs:147
 msgid "Upload empty backup files"
 msgstr "Upload tomme backup filer"
 
-#: Library/Main/Strings.cs:153
+#: Library/Main/Strings.cs:155
 msgid "Symlink handling"
 msgstr "Symlink håndtering"
 
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:157
 msgid "Hardlink handling"
 msgstr "Hardlink håndtering"
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:163
 msgid "Name of the backup"
 msgstr "Navn på backupen"
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:165
 msgid "Backup ID"
 msgstr "Backup ID"
 
-#: Library/Main/Strings.cs:171
+#: Library/Main/Strings.cs:173
 msgid "Manage non-compressible file extensions"
 msgstr "Administrer ikke-komprimerbare filtyper"
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:177
 msgid "List of files to examine for changes"
 msgstr "Liste over filer, der skal undersøges for ændringer"
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:179
 msgid "Path to the local state database"
 msgstr "Sti til den lokale tilstandsdatabase"
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:181
 msgid "List of deleted files"
 msgstr "Liste over slettede filer"
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:194
 msgid "The hash algorithm used on blocks"
 msgstr "Hash-algoritme, der anvendes til blokke"
 
-#: Library/Main/Strings.cs:194
+#: Library/Main/Strings.cs:196
 msgid "The hash algorithm used on files"
 msgstr "Hashalgoritmen der bruges til filer"
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:200
 msgid "Volume size threshold"
 msgstr "Volumenstørrelsestærskel"
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:204
 msgid "Use local file data when restoring"
 msgstr "Brug lokale fildata, ved gendannelse"
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:209
 msgid "Keep a number of versions"
 msgstr "Antal versioner, der skal beholdes"
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:217
 msgid "Overwrite files when restoring"
 msgstr "Overskriv filer ved genoprettelse"
 
-#: Library/Main/Strings.cs:359
+#: Library/Main/Strings.cs:369
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Kunne ikke oprette snapshot: {0}"

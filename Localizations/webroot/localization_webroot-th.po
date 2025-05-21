@@ -28,7 +28,7 @@ msgstr "เกี่ยวกับ"
 msgid "About {{appname}}"
 msgstr "เกี่ยวกับ {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1191
+#: scripts/services/EditUriBuiltins.js:1190
 msgid "Access Key"
 msgstr "กุญแจเข้าถึง"
 
@@ -40,7 +40,7 @@ msgstr "การเข้าถึงถูกปฏิเสธ"
 msgid "Access to user interface"
 msgstr "การเข้าถึงส่วนติดต่อผู้ใช้"
 
-#: scripts/services/EditUriBuiltins.js:1190 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1189 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "ชื่อบัญชี"
@@ -69,8 +69,8 @@ msgstr "เพิ่ม path"
 msgid "Added"
 msgstr "เพิ่มแล้ว"
 
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 msgid "Adjust bucket name?"
 msgstr "ปรับแก้ชื่อถัง?"
 
@@ -103,8 +103,8 @@ msgstr "อนุญาตการเข้าถึงจากทางไก
 msgid "Allowed days"
 msgstr "วันที่อนุญาต"
 
-#: scripts/services/EditUriBuiltins.js:1148
-#: scripts/services/EditUriBuiltins.js:1158 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1147
+#: scripts/services/EditUriBuiltins.js:1157 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -165,8 +165,8 @@ msgstr "ค่ามาตรฐานของเบราว์เซอร์
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 #: scripts/services/EditUriBuiltins.js:62 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
@@ -525,7 +525,7 @@ msgstr "สด"
 msgid "Load older data"
 msgstr "เรียกข้อมูลที่เก่ากว่า"
 
-#: scripts/services/SystemInfo.js:88
+#: scripts/services/SystemInfo.js:87
 msgid "Local storage"
 msgstr "ที่เก็บข้อมูลในท้องถิ่น"
 
@@ -588,8 +588,8 @@ msgstr "ถัดไป"
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 #: scripts/services/EditUriBuiltins.js:62
 msgid "No"
 msgstr "ไม่"
@@ -625,7 +625,7 @@ msgstr "ตัวเลือก"
 msgid "Original location"
 msgstr "ตำแหน่งที่ตั้งตั้งต้น"
 
-#: scripts/services/SystemInfo.js:91
+#: scripts/services/SystemInfo.js:90
 msgid "Others"
 msgstr "อื่นๆ"
 
@@ -654,7 +654,7 @@ msgstr "วลีรหัสผ่านไม่ตรงกัน"
 msgid "Passphrases do not match"
 msgstr "วลีรหัสผ่านไม่ตรง"
 
-#: scripts/services/EditUriBuiltins.js:1333 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1332 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11

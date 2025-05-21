@@ -67,18 +67,18 @@ msgstr ""
 "<p>由于无效的身份验证，连接服务器被拒绝。</p>\n"
 "                <p>重新登录，或者从托盘图标重新打开页面（如果适用）。</p>"
 
-#: scripts/services/EditUriBuiltins.js:1368
+#: scripts/services/EditUriBuiltins.js:1367
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
 #: templates/backends/storj.html:22
 msgid "API key"
 msgstr "API 密钥"
 
-#: scripts/services/EditUriBuiltins.js:1242 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1241 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWS 访问 ID"
 
-#: scripts/services/EditUriBuiltins.js:1243 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1242 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWS 访问密钥"
@@ -95,7 +95,7 @@ msgstr "关于"
 msgid "About {{appname}}"
 msgstr "关于 {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1191
+#: scripts/services/EditUriBuiltins.js:1190
 msgid "Access Key"
 msgstr "Access Key"
 
@@ -123,7 +123,7 @@ msgstr "Access key"
 msgid "Access to user interface"
 msgstr "用户界面访问"
 
-#: scripts/services/EditUriBuiltins.js:1190 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1189 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "帐户名"
@@ -156,8 +156,8 @@ msgstr "添加路径"
 msgid "Added"
 msgstr "已添加"
 
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 msgid "Adjust bucket name?"
 msgstr "调整 bucket 名称？"
 
@@ -252,8 +252,8 @@ msgstr "您确定要删除远程控注册吗？"
 msgid "As Command-line"
 msgstr "导出为命令行"
 
-#: scripts/services/EditUriBuiltins.js:1148
-#: scripts/services/EditUriBuiltins.js:1158 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1147
+#: scripts/services/EditUriBuiltins.js:1157 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -263,7 +263,7 @@ msgstr "导出为命令行"
 msgid "AuthID"
 msgstr "授权 ID"
 
-#: scripts/services/EditUriBuiltins.js:1359 templates/backends/storj.html:2
+#: scripts/services/EditUriBuiltins.js:1358 templates/backends/storj.html:2
 msgid "Authentication method"
 msgstr "认证方法"
 
@@ -299,7 +299,7 @@ msgstr "B2 应用 ID"
 msgid "B2 Application Key"
 msgstr "B2 应用密钥"
 
-#: scripts/services/EditUriBuiltins.js:1288
+#: scripts/services/EditUriBuiltins.js:1287
 msgid "B2 Cloud Storage Account ID"
 msgstr "B2 云存储帐户 ID"
 
@@ -307,7 +307,7 @@ msgstr "B2 云存储帐户 ID"
 msgid "B2 Cloud Storage Application ID"
 msgstr "B2 云存储应用 ID"
 
-#: scripts/services/EditUriBuiltins.js:1289 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1288 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "B2 云存储应用密钥"
 
@@ -372,14 +372,14 @@ msgstr "浏览器默认"
 msgid "Bucket create location"
 msgstr "Bucket 创建位置"
 
-#: scripts/services/EditUriBuiltins.js:1201
-#: scripts/services/EditUriBuiltins.js:1241
-#: scripts/services/EditUriBuiltins.js:1287
-#: scripts/services/EditUriBuiltins.js:1301
-#: scripts/services/EditUriBuiltins.js:1364
-#: scripts/services/EditUriBuiltins.js:1370
-#: scripts/services/EditUriBuiltins.js:1426
-#: scripts/services/EditUriBuiltins.js:1438 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1200
+#: scripts/services/EditUriBuiltins.js:1240
+#: scripts/services/EditUriBuiltins.js:1286
+#: scripts/services/EditUriBuiltins.js:1300
+#: scripts/services/EditUriBuiltins.js:1363
+#: scripts/services/EditUriBuiltins.js:1369
+#: scripts/services/EditUriBuiltins.js:1425
+#: scripts/services/EditUriBuiltins.js:1437 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -388,7 +388,7 @@ msgstr "Bucket 创建位置"
 msgid "Bucket name"
 msgstr "Bucket 名称"
 
-#: scripts/services/EditUriBuiltins.js:1382
+#: scripts/services/EditUriBuiltins.js:1381
 msgid ""
 "Bucket name can only be between 3 and 63 characters long and contain only "
 "lower-case characters, numbers, periods and dashes"
@@ -481,8 +481,8 @@ msgstr "Canary"
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 #: scripts/services/EditUriBuiltins.js:62 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
@@ -676,7 +676,7 @@ msgstr "连接中断"
 msgid "Connection worked!"
 msgstr "连接正常！"
 
-#: scripts/services/EditUriBuiltins.js:1192 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1191 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "容器名称"
@@ -778,7 +778,7 @@ msgstr "当前版本为 {{versionname}} ({{versionnumber}})"
 msgid "Custom S3 endpoint"
 msgstr "自定义 S3 端点"
 
-#: scripts/services/EditUriBuiltins.js:1374 templates/backends/storj.html:18
+#: scripts/services/EditUriBuiltins.js:1373 templates/backends/storj.html:18
 msgid "Custom Satellite"
 msgstr "自定义卫星"
 
@@ -1097,7 +1097,7 @@ msgstr ""
 "加密模块：<p style=\"display: inline\" ng-repeat=\"item in "
 "sysinfo.EncryptionModules\">{{item.Key}} </p>"
 
-#: scripts/services/EditUriBuiltins.js:1369 templates/backends/storj.html:25
+#: scripts/services/EditUriBuiltins.js:1368 templates/backends/storj.html:25
 #: templates/backends/storj.html:26
 msgid "Encryption passphrase"
 msgstr "加密密码"
@@ -1451,7 +1451,7 @@ msgstr "生成 IAM 访问策略"
 msgid "Getting file versions …"
 msgstr "正在获取文件版本..."
 
-#: scripts/services/EditUriBuiltins.js:1181 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1180 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "群组邮箱"
 
@@ -1502,11 +1502,11 @@ msgstr "ID:"
 msgid "IDrive Sync directory path"
 msgstr "IDrive 同步目录路径"
 
-#: scripts/services/EditUriBuiltins.js:1424 templates/backends/e2.html:3
+#: scripts/services/EditUriBuiltins.js:1423 templates/backends/e2.html:3
 msgid "IDrive e2 Access Key ID"
 msgstr "IDrive e2 Access Key ID"
 
-#: scripts/services/EditUriBuiltins.js:1425 templates/backends/e2.html:7
+#: scripts/services/EditUriBuiltins.js:1424 templates/backends/e2.html:7
 msgid "IDrive e2 Access Key Secret"
 msgstr "IDrive e2 Access Key Secret"
 
@@ -1622,7 +1622,7 @@ msgstr "信息"
 msgid "Interrupted, no statistics collected"
 msgstr "中断，未收集统计信息"
 
-#: scripts/services/EditUriBuiltins.js:1345
+#: scripts/services/EditUriBuiltins.js:1344
 msgid "Invalid characters in path"
 msgstr "路径中包含无效字符"
 
@@ -1742,7 +1742,7 @@ msgstr "本地数据库路径："
 msgid "Local repository"
 msgstr "本地仓库"
 
-#: scripts/services/SystemInfo.js:88
+#: scripts/services/SystemInfo.js:87
 msgid "Local storage"
 msgstr "本地存储"
 
@@ -1830,7 +1830,7 @@ msgstr "Microsoft SQL 数据库"
 msgid "Minimum redundancy"
 msgstr "最小冗余"
 
-#: scripts/services/EditUriBuiltins.js:1349
+#: scripts/services/EditUriBuiltins.js:1348
 msgid "Minimum redundancy is 1.0"
 msgstr "最小冗余为 1.0"
 
@@ -1947,8 +1947,8 @@ msgstr "下一次运行时间："
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 #: scripts/services/EditUriBuiltins.js:62
 msgid "No"
 msgstr "否"
@@ -2076,7 +2076,7 @@ msgstr "OpenStack 对象存储 / Swift"
 msgid "Opened"
 msgstr "已打开"
 
-#: scripts/services/EditUriBuiltins.js:1217
+#: scripts/services/EditUriBuiltins.js:1216
 msgid "Openstack API key are not supported in v3 keystone API"
 msgstr "Openstack API key 在 v3 keystone API 中不受支持"
 
@@ -2127,7 +2127,7 @@ msgstr "在此添加的选项适用于所有备份，但每个备份中可以单
 msgid "Original location"
 msgstr "原位置"
 
-#: scripts/services/SystemInfo.js:91
+#: scripts/services/SystemInfo.js:90
 msgid "Others"
 msgstr "其它"
 
@@ -2163,7 +2163,7 @@ msgstr "密码不匹配"
 msgid "Passphrases do not match"
 msgstr "密码不匹配"
 
-#: scripts/services/EditUriBuiltins.js:1333 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1332 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -2176,8 +2176,8 @@ msgstr "密码"
 msgid "Patching files with local blocks …"
 msgstr "正在使用本地块修补文件…"
 
-#: scripts/services/EditUriBuiltins.js:1317
-#: scripts/services/EditUriBuiltins.js:1454
+#: scripts/services/EditUriBuiltins.js:1316
+#: scripts/services/EditUriBuiltins.js:1453
 msgid "Path"
 msgstr "路径"
 
@@ -2251,7 +2251,7 @@ msgstr "进度："
 msgid "ProjectID is optional if the bucket exist"
 msgstr "若 Bucket 存在， 则项目ID 可选"
 
-#: scripts/services/SystemInfo.js:90
+#: scripts/services/SystemInfo.js:89
 msgid "Proprietary"
 msgstr "专有"
 
@@ -2323,11 +2323,11 @@ msgstr "重新加载"
 msgid "Remote"
 msgstr "远程"
 
-#: scripts/services/EditUriBuiltins.js:1392
+#: scripts/services/EditUriBuiltins.js:1391
 msgid "Remote Path"
 msgstr "远程路径"
 
-#: scripts/services/EditUriBuiltins.js:1391
+#: scripts/services/EditUriBuiltins.js:1390
 msgid "Remote Repository"
 msgstr "远程仓库"
 
@@ -2554,7 +2554,7 @@ msgstr "选择日志级别并实时查看"
 msgid "Select files"
 msgstr "选择文件"
 
-#: scripts/services/EditUriBuiltins.js:1341 templates/backends/pcloud.html:2
+#: scripts/services/EditUriBuiltins.js:1340 templates/backends/pcloud.html:2
 #: templates/backends/s3.html:8 templates/backends/sia.html:2
 #: templates/backends/smb.html:17
 msgid "Server"
@@ -2672,7 +2672,7 @@ msgstr "面向开发者的特定构建，不适用于重要数据"
 msgid "Stable"
 msgstr "Stable"
 
-#: scripts/services/SystemInfo.js:89
+#: scripts/services/SystemInfo.js:88
 msgid "Standard protocols"
 msgstr "标准协议"
 
@@ -2842,10 +2842,10 @@ msgstr "正在测试权限…"
 msgid "Testing …"
 msgstr "正在测试…"
 
-#: scripts/services/EditUriBuiltins.js:1297
-#: scripts/services/EditUriBuiltins.js:1313
-#: scripts/services/EditUriBuiltins.js:1434
-#: scripts/services/EditUriBuiltins.js:1450
+#: scripts/services/EditUriBuiltins.js:1296
+#: scripts/services/EditUriBuiltins.js:1312
+#: scripts/services/EditUriBuiltins.js:1433
+#: scripts/services/EditUriBuiltins.js:1449
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
@@ -2860,7 +2860,7 @@ msgid ""
 "The backup was temporary and does not exist anymore, so the log data is lost"
 msgstr "这是已经不存在的临时备份，因此没有日志数据"
 
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1268
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr "Bucket 名称应当是全小写，需要自动转换吗？"
 
@@ -2882,7 +2882,7 @@ msgstr "黑色主题 (by Michal)"
 msgid "The default blue on white theme (by Alex)"
 msgstr "默认蓝白主题 (by Alex)"
 
-#: scripts/services/EditUriBuiltins.js:1378
+#: scripts/services/EditUriBuiltins.js:1377
 msgid "The encryption passphrases do not match"
 msgstr "加密密码不匹配"
 
@@ -3006,7 +3006,7 @@ msgstr "导出为文件"
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr "如果不想使用密码加密导出的文件，请去除勾选\"加密文件\""
 
-#: scripts/services/EditUriBuiltins.js:1253
+#: scripts/services/EditUriBuiltins.js:1252
 msgid ""
 "To prevent bucket naming conflicts, it is recommended to prepend your "
 "account ID to the bucket name. Prepend automatically?"
@@ -3135,8 +3135,8 @@ msgid "User interface settings"
 msgstr "界面设置"
 
 #: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1200
-#: scripts/services/EditUriBuiltins.js:1332 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1199
+#: scripts/services/EditUriBuiltins.js:1331 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -3269,8 +3269,8 @@ msgstr "年"
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 #: scripts/services/EditUriBuiltins.js:62
 msgid "Yes"
 msgstr "是"
@@ -3354,7 +3354,7 @@ msgstr "您已经生成了一个强密码。确保您已经安全记录下了该
 msgid "You must choose at least one source folder"
 msgstr "您必须至少一个源文件夹"
 
-#: scripts/services/EditUriBuiltins.js:1211
+#: scripts/services/EditUriBuiltins.js:1210
 msgid "You must enter a domain name to use v3 API"
 msgstr "您必须输入域名称以使用 v3 API"
 
@@ -3366,7 +3366,7 @@ msgstr "您必须输入备份名称"
 msgid "You must enter a passphrase or disable encryption"
 msgstr "您必须输入加密密码或禁用加密"
 
-#: scripts/services/EditUriBuiltins.js:1208
+#: scripts/services/EditUriBuiltins.js:1207
 msgid "You must enter a password to use v3 API"
 msgstr "您必须输入密码以使用 v3 API"
 
@@ -3374,11 +3374,11 @@ msgstr "您必须输入密码以使用 v3 API"
 msgid "You must enter a positive number of backups to keep"
 msgstr "您输入要保留的版本数必须为正数"
 
-#: scripts/services/EditUriBuiltins.js:1214
+#: scripts/services/EditUriBuiltins.js:1213
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr "您必须输入租户名称（即项目）以使用 v3 API"
 
-#: scripts/services/EditUriBuiltins.js:1228
+#: scripts/services/EditUriBuiltins.js:1227
 msgid "You must enter a tenant name if you do not provide an API key"
 msgstr "如果您不提供API key，则必须输入租户名称"
 
@@ -3390,11 +3390,11 @@ msgstr "您必须输入有效的期限来保留备份"
 msgid "You must enter a valid retention policy string"
 msgstr "您必须输入一个有效的保留策略"
 
-#: scripts/services/EditUriBuiltins.js:1225
+#: scripts/services/EditUriBuiltins.js:1224
 msgid "You must enter either a password or an API key"
 msgstr "您必须输入密码或API key"
 
-#: scripts/services/EditUriBuiltins.js:1232
+#: scripts/services/EditUriBuiltins.js:1231
 msgid "You must enter either a password or an API key, not both"
 msgstr "您必须输入密码或API key，两者不能同时都输入"
 
@@ -3415,11 +3415,11 @@ msgstr "您必须填写用户名"
 msgid "You must fill in {{field}}"
 msgstr "您必须填写 {{field}}"
 
-#: scripts/services/EditUriBuiltins.js:1204
+#: scripts/services/EditUriBuiltins.js:1203
 msgid "You must select or fill in the AuthURI"
 msgstr "您必须选择或填写认证地址"
 
-#: scripts/services/EditUriBuiltins.js:1246
+#: scripts/services/EditUriBuiltins.js:1245
 msgid "You must select or fill in the server"
 msgstr "您必须选择或填写服务器"
 
@@ -3451,23 +3451,23 @@ msgstr "B"
 msgid "byte/s"
 msgstr "B/s"
 
-#: scripts/services/EditUriBuiltins.js:1400
+#: scripts/services/EditUriBuiltins.js:1399
 msgid "cos_app_id"
 msgstr "cos_app_id"
 
-#: scripts/services/EditUriBuiltins.js:1404
+#: scripts/services/EditUriBuiltins.js:1403
 msgid "cos_bucket"
 msgstr "cos_bucket"
 
-#: scripts/services/EditUriBuiltins.js:1403
+#: scripts/services/EditUriBuiltins.js:1402
 msgid "cos_region"
 msgstr "cos_region"
 
-#: scripts/services/EditUriBuiltins.js:1401
+#: scripts/services/EditUriBuiltins.js:1400
 msgid "cos_secret_id"
 msgstr "cos_secret_id"
 
-#: scripts/services/EditUriBuiltins.js:1402
+#: scripts/services/EditUriBuiltins.js:1401
 msgid "cos_secret_key"
 msgstr "cos_secret_key"
 
@@ -3485,23 +3485,23 @@ msgstr "失败"
 msgid "local repository, leave empty for local"
 msgstr "本地版本库，留空表示本地"
 
-#: scripts/services/EditUriBuiltins.js:1413
+#: scripts/services/EditUriBuiltins.js:1412
 msgid "oss_access_key_id"
 msgstr "oss_access_key_id"
 
-#: scripts/services/EditUriBuiltins.js:1414
+#: scripts/services/EditUriBuiltins.js:1413
 msgid "oss_access_key_secret"
 msgstr "oss_access_key_secret"
 
-#: scripts/services/EditUriBuiltins.js:1416
+#: scripts/services/EditUriBuiltins.js:1415
 msgid "oss_bucket_name"
 msgstr "oss_bucket_name"
 
-#: scripts/services/EditUriBuiltins.js:1412
+#: scripts/services/EditUriBuiltins.js:1411
 msgid "oss_endpoint"
 msgstr "oss_endpoint"
 
-#: scripts/services/EditUriBuiltins.js:1415
+#: scripts/services/EditUriBuiltins.js:1414
 msgid "oss_region"
 msgstr "oss_region"
 
@@ -3525,11 +3525,11 @@ msgstr "远程仓库，例如：remote"
 msgid "resume now"
 msgstr "立即恢复运行"
 
-#: scripts/services/EditUriBuiltins.js:1363
+#: scripts/services/EditUriBuiltins.js:1362
 msgid "storj_shared_access"
 msgstr "storj_shared_access"
 
-#: scripts/services/EditUriBuiltins.js:1181
+#: scripts/services/EditUriBuiltins.js:1180
 msgid "unless you are explicitly specifying --group-id"
 msgstr "除非您明确指定 --group-id"
 
