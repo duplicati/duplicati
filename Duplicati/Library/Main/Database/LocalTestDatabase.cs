@@ -49,10 +49,10 @@ namespace Duplicati.Library.Main.Database
             return (LocalTestDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
         }
 
-        public void UpdateVerificationCount(string name)
+        public async Task UpdateVerificationCount(string name)
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
-                cmd.SetCommandAndParameters(@"
+                await cmd.SetCommandAndParameters(@"
                     UPDATE ""RemoteVolume""
                     SET ""VerificationCount"" = MAX(1,
                         CASE
@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main.Database
                     WHERE ""Name"" = @Name
                 ")
                     .SetParameterValue("@Name", name)
-                    .ExecuteNonQuery();
+                    .ExecuteNonQueryAsync();
         }
 
         private record RemoteVolume : IRemoteVolume
