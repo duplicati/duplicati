@@ -987,7 +987,7 @@ namespace Duplicati.Library.Main.Database
             return r;
         }
 
-        public async Task<IEnumerable<long>> GetFilesetIDs(DateTime restoretime, long[] versions, bool singleTimeMatch = false)
+        public async IAsyncEnumerable<long> GetFilesetIDs(DateTime restoretime, long[] versions, bool singleTimeMatch = false)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
                 throw new Exception("Invalid DateTime given, must be either local or UTC");
@@ -1023,7 +1023,8 @@ namespace Duplicati.Library.Main.Database
                     Logging.Log.WriteWarningMessage(LOGTAG, "RestoreTimeNoMatch", null, "Restore time or version did not match any existing backups, selecting newest backup");
             }
 
-            return res;
+            foreach (var el in res)
+                yield return el;
         }
 
         public async Task<IEnumerable<long>> FindMatchingFilesets(DateTime restoretime, long[] versions)
