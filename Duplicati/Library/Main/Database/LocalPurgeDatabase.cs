@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalPurgeDatabase : LocalDeleteDatabase
     {
-        public static new async Task<LocalPurgeDatabase> CreateAsync(string path, long pagecachesize, LocalPurgeDatabase? dbnew = null)
+        public static async Task<LocalPurgeDatabase> CreateAsync(string path, long pagecachesize, LocalPurgeDatabase? dbnew = null)
         {
             dbnew ??= new LocalPurgeDatabase();
 
@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
-        public static new async Task<LocalPurgeDatabase> CreateAsync(LocalDatabase dbparent, LocalPurgeDatabase? dbnew = null)
+        public static async Task<LocalPurgeDatabase> CreateAsync(LocalDatabase dbparent, LocalPurgeDatabase? dbnew = null)
         {
             dbnew ??= new LocalPurgeDatabase();
 

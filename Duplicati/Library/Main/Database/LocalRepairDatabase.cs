@@ -41,13 +41,13 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="path">The path to the database</param>
         /// <param name="pagecachesize">The page cache size</param>
-        public static async Task<LocalRepairDatabase> CreateRepairDatabase(string path, long pagecachesize)
+        public static async Task<LocalRepairDatabase> CreateRepairDatabase(string path, long pagecachesize, LocalRepairDatabase? dbnew = null)
         {
-            var db = new LocalRepairDatabase();
+            dbnew ??= new LocalRepairDatabase();
 
-            db = (LocalRepairDatabase)await CreateLocalDatabaseAsync(db, path, "Repair", false, pagecachesize);
+            dbnew = (LocalRepairDatabase)await CreateLocalDatabaseAsync(path, "Repair", false, pagecachesize, dbnew);
 
-            return db;
+            return dbnew;
         }
 
         /// <summary>

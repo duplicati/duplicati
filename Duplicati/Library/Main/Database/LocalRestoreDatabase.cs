@@ -59,19 +59,19 @@ namespace Duplicati.Library.Main.Database
 
         public DateTime RestoreTime { get { return m_restoreTime; } }
 
-        public static async Task<LocalRestoreDatabase> CreateAsync(string path, long pagecachesize)
+        public static async Task<LocalRestoreDatabase> CreateAsync(string path, long pagecachesize, LocalRestoreDatabase? dbnew = null)
         {
-            var db = new LocalRestoreDatabase();
+            dbnew ??= new LocalRestoreDatabase();
 
-            db = (LocalRestoreDatabase)await CreateLocalDatabaseAsync(db, path, "Restore", false, pagecachesize);
-            db.ShouldCloseConnection = true;
+            dbnew = (LocalRestoreDatabase)await CreateLocalDatabaseAsync(path, "Restore", false, pagecachesize, dbnew);
+            dbnew.ShouldCloseConnection = true;
 
-            return db;
+            return dbnew;
         }
 
-        public static async Task<LocalRestoreDatabase> CreateAsync(LocalDatabase dbparent)
+        public static async Task<LocalRestoreDatabase> CreateAsync(LocalDatabase dbparent, LocalRestoreDatabase? dbnew = null)
         {
-            var dbnew = new LocalRestoreDatabase();
+            dbnew ??= new LocalRestoreDatabase();
 
             return (LocalRestoreDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
         }

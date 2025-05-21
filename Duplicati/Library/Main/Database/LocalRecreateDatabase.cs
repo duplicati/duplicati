@@ -129,7 +129,7 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalRecreateDatabase();
 
-            dbnew = (LocalRecreateDatabase)await CreateLocalDatabaseAsync(parentdb, dbnew);
+            dbnew = (LocalRecreateDatabase)await LocalRestoreDatabase.CreateAsync(parentdb, dbnew);
 
             dbnew.m_tempblocklist = "TempBlocklist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             dbnew.m_tempsmalllist = "TempSmalllist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
