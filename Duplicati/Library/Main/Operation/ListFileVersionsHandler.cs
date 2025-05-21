@@ -42,16 +42,16 @@ internal static class ListFileVersionsHandler
     /// <param name="offset">The offset to start listing from</param>
     /// <param name="limit">The maximum number of results to return</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    public static Task RunAsync(Options options, ListFileVersionsResults result, string[] paths, long offset, long limit)
+    public async static Task RunAsync(Options options, ListFileVersionsResults result, string[] paths, long offset, long limit)
     {
         if (!System.IO.File.Exists(options.Dbpath) || options.NoLocalDb)
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
-        using var db = new Database.LocalListDatabase(options.Dbpath, options.SqlitePageCache);
+        using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache);
         long[]? filesetIds = null;
         if (!options.AllVersions)
         {
-            filesetIds = db.GetFilesetIDs(options.Time, options.Version).ToArray();
+            filesetIds = await db.GetFilesetIDs(options.Time, options.Version).ToArrayAsync();
             if (filesetIds.Length == 0)
                 throw new UserInformationException("No filesets found", "NoFilesetsFound");
         }
@@ -60,8 +60,6 @@ internal static class ListFileVersionsHandler
             throw new UserInformationException("No path specified", "NoPathSpecified");
 
         paths = paths.Select(path => Util.AppendDirSeparator(path)).ToArray();
-        result.FileVersions = db.ListFileVersions(paths, filesetIds, offset, limit);
-
-        return Task.CompletedTask;
+        result.FileVersions = await db.ListFileVersions(paths, filesetIds, offset, limit);
     }
 }
