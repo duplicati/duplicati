@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main.Strings
         public static string RetrydelayShort { get { return LC.L(@"Time to wait between retries"); } }
         public static string RetrywithexponentialbackoffLong { get { return LC.L(@"After a failed transmission, Duplicati will wait a short period before attempting again. This period is controlled by the retry-delay option. Use this option to double that period after each consecutive failure."); } }
         public static string RetrywithexponentialbackoffShort { get { return LC.L(@"Exponential backoff for backend errors"); } }
-        public static string ControlfilesLong { get { return LC.L(@"Use this option to attach extra files to the newly uploaded filelists."); } }
+        public static string ControlfilesLong { get { return LC.L(@"Use this option to attach extra files to the newly uploaded filelists. The argument is a path to the file to include. Multiple files can be supplied using the path separator (""{0}"")", System.IO.Path.PathSeparator); } }
         public static string ControlfilesShort { get { return LC.L(@"Set control files"); } }
         public static string SkipfilehashchecksLong { get { return LC.L(@"If the hash for the volume does not match, Duplicati will refuse to use the backup. Activate this option to allow Duplicati to proceed anyway."); } }
         public static string SkipfilehashchecksShort { get { return LC.L(@"Skip hash checks"); } }
