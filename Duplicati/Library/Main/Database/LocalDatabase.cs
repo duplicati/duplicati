@@ -533,7 +533,7 @@ namespace Duplicati.Library.Main.Database
                 .ExecuteScalarInt64Async(-1);
         }
 
-        public async IAsyncEnumerable<KeyValuePair<string, long>> GetRemoteVolumeIDs(IEnumerable<string> files, SqliteTransaction transaction)
+        public async IAsyncEnumerable<KeyValuePair<string, long>> GetRemoteVolumeIDs(IEnumerable<string> files)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
                 SELECT
@@ -542,7 +542,7 @@ namespace Duplicati.Library.Main.Database
                 FROM ""RemoteVolume""
                 WHERE ""Name"" IN (@Name)
             ");
-            cmd.SetTransaction(transaction);
+            cmd.SetTransaction(m_rtr);
             using var tmptable = await TemporaryDbValueList.CreateAsync(this, files);
             await cmd.ExpandInClauseParameterAsync("@Name", tmptable);
 
@@ -573,9 +573,9 @@ namespace Duplicati.Library.Main.Database
             return RemoteVolumeEntry.Empty;
         }
 
-        public async IAsyncEnumerable<KeyValuePair<string, RemoteVolumeState>> DuplicateRemoteVolumes(SqliteTransaction transaction)
+        public async IAsyncEnumerable<KeyValuePair<string, RemoteVolumeState>> DuplicateRemoteVolumes()
         {
-            m_selectduplicateRemoteVolumesCommand.SetTransaction(transaction);
+            m_selectduplicateRemoteVolumesCommand.SetTransaction(m_rtr);
 
             await foreach (var rd in m_selectduplicateRemoteVolumesCommand.ExecuteReaderEnumerableAsync())
             {
@@ -586,9 +586,9 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public async IAsyncEnumerable<RemoteVolumeEntry> GetRemoteVolumes(SqliteTransaction transaction)
+        public async IAsyncEnumerable<RemoteVolumeEntry> GetRemoteVolumes()
         {
-            m_selectremotevolumesCommand.SetTransaction(transaction);
+            m_selectremotevolumesCommand.SetTransaction(m_rtr);
             using var rd = await m_selectremotevolumesCommand.ExecuteReaderAsync();
             while (await rd.ReadAsync())
             {
@@ -611,10 +611,10 @@ namespace Duplicati.Library.Main.Database
         /// <param name="operation">The operation performed</param>
         /// <param name="path">The path involved</param>
         /// <param name="data">Any data relating to the operation</param>
-        public async Task LogRemoteOperation(string operation, string path, string? data, SqliteTransaction transaction)
+        public async Task LogRemoteOperation(string operation, string path, string? data)
         {
             await m_insertremotelogCommand
-                .SetTransaction(transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@OperationID", m_operationid)
                 .SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow))
                 .SetParameterValue("@Operation", operation)
@@ -641,7 +641,7 @@ namespace Duplicati.Library.Main.Database
                 .ExecuteNonQueryAsync();
         }
 
-        public async Task UnlinkRemoteVolume(string name, RemoteVolumeState state, SqliteTransaction transaction)
+        public async Task UnlinkRemoteVolume(string name, RemoteVolumeState state)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
                 DELETE FROM ""RemoteVolume""
@@ -649,7 +649,7 @@ namespace Duplicati.Library.Main.Database
                     ""Name"" = @Name
                     AND ""State"" = @State
             ");
-            var c = await cmd.SetTransaction(transaction)
+            var c = await cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@Name", name)
                 .SetParameterValue("@State", state.ToString())
                 .ExecuteNonQueryAsync();
@@ -657,7 +657,7 @@ namespace Duplicati.Library.Main.Database
             if (c != 1)
                 throw new Exception($"Unexpected number of remote volumes deleted: {c}, expected {1}");
 
-            await transaction.CommitAsync();
+            await m_rtr.CommitAsync();
         }
 
         public async Task RemoveRemoteVolume(string name)
@@ -1049,7 +1049,7 @@ namespace Duplicati.Library.Main.Database
             return res;
         }
 
-        public async Task<bool> IsFilesetFullBackup(DateTime filesetTime, SqliteTransaction transaction)
+        public async Task<bool> IsFilesetFullBackup(DateTime filesetTime)
         {
             using var cmd = m_connection.CreateCommand();
             cmd.SetCommandAndParameters($@"
@@ -1057,7 +1057,7 @@ namespace Duplicati.Library.Main.Database
                 FROM ""Fileset""
                 WHERE ""Timestamp"" = @Timestamp
             ")
-                .SetTransaction(transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTime));
 
             using var rd = await cmd.ExecuteReaderAsync();
@@ -1067,7 +1067,7 @@ namespace Duplicati.Library.Main.Database
             return isFullBackup == BackupType.FULL_BACKUP;
         }
 
-        private async IAsyncEnumerable<KeyValuePair<string, string>> GetDbOptionList(SqliteTransaction transaction)
+        private async IAsyncEnumerable<KeyValuePair<string, string>> GetDbOptionList()
         {
             using var cmd = m_connection.CreateCommand(@"
                 SELECT
@@ -1075,19 +1075,19 @@ namespace Duplicati.Library.Main.Database
                     ""Value""
                 FROM ""Configuration""
             ")
-                .SetTransaction(transaction);
+                .SetTransaction(m_rtr);
 
             using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())
                 yield return new KeyValuePair<string, string>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToString(1) ?? "");
         }
 
-        public async Task<IDictionary<string, string>> GetDbOptions(SqliteTransaction transaction)
+        public async Task<IDictionary<string, string>> GetDbOptions()
         {
-            var res = await GetDbOptionList(transaction)
+            var res = await GetDbOptionList()
                 .ToDictionaryAsync(x => x.Key, x => x.Value);
 
-            await transaction.CommitAsync();
+            await m_rtr.CommitAsync();
             return res;
         }
 
@@ -1098,22 +1098,21 @@ namespace Duplicati.Library.Main.Database
         /// <param name="value">The value to set</param>
         private async Task UpdateDbOption(string key, bool value)
         {
-            var transaction = m_connection.BeginTransaction();
-            var opts = await GetDbOptions(transaction);
+            var opts = await GetDbOptions();
 
             if (value)
                 opts[key] = "true";
             else
                 opts.Remove(key);
 
-            await SetDbOptions(opts, transaction);
-            await transaction.CommitAsync();
+            await SetDbOptions(opts);
+            await m_rtr.CommitAsync();
         }
 
         /// <summary>
         /// Flag indicating if a repair is in progress
         /// </summary>
-        public async Task<bool> RepairInProgress(SqliteTransaction transaction, bool? value = null)
+        public async Task<bool> RepairInProgress(bool? value = null)
         {
             if (value is bool v)
             {
@@ -1121,14 +1120,14 @@ namespace Duplicati.Library.Main.Database
                 return v;
             }
 
-            var opts = await GetDbOptions(transaction);
+            var opts = await GetDbOptions();
             return opts.ContainsKey("repair-in-progress");
         }
 
         /// <summary>
         /// Flag indicating if a repair is in progress
         /// </summary>
-        public async Task<bool> PartiallyRecreated(SqliteTransaction transaction, bool? value = null)
+        public async Task<bool> PartiallyRecreated(bool? value = null)
         {
             if (value is bool v)
             {
@@ -1136,14 +1135,14 @@ namespace Duplicati.Library.Main.Database
                 return v;
             }
 
-            var opts = await GetDbOptions(transaction);
+            var opts = await GetDbOptions();
             return opts.ContainsKey("partially-recreated");
         }
 
         /// <summary>
         /// Flag indicating if the database can contain partial uploads
         /// </summary>
-        public async Task<bool> TerminatedWithActiveUploads(SqliteTransaction transaction, bool? value = null)
+        public async Task<bool> TerminatedWithActiveUploads(bool? value = null)
         {
             if (value is bool v)
             {
@@ -1151,7 +1150,7 @@ namespace Duplicati.Library.Main.Database
                 return v;
             }
 
-            var opts = await GetDbOptions(transaction);
+            var opts = await GetDbOptions();
             return opts.ContainsKey("terminated-with-active-uploads");
         }
 
@@ -1160,7 +1159,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="options">The options to set</param>
         /// <param name="transaction">An optional transaction</param>
-        public async Task SetDbOptions(IDictionary<string, string> options, SqliteTransaction transaction)
+        public async Task SetDbOptions(IDictionary<string, string> options)
         {
             using var cmd = m_connection.CreateCommand();
             await cmd.ExecuteNonQueryAsync(@"
@@ -1184,7 +1183,7 @@ namespace Duplicati.Library.Main.Database
                     .ExecuteNonQueryAsync();
             }
 
-            await transaction.CommitAsync();
+            await m_rtr.CommitAsync();
         }
 
         public async Task<long> GetBlocksLargerThan(long fhblocksize)
@@ -1206,8 +1205,8 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hashsize">The hash size in byts</param>
         /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
         /// <param name="transaction">The transaction to run in</param>
-        public async Task VerifyConsistency(long blocksize, long hashsize, bool verifyfilelists, SqliteTransaction transaction)
-            => await VerifyConsistencyInner(blocksize, hashsize, verifyfilelists, false, transaction);
+        public async Task VerifyConsistency(long blocksize, long hashsize, bool verifyfilelists)
+            => await VerifyConsistencyInner(blocksize, hashsize, verifyfilelists, false);
 
         /// <summary>
         /// Verifies the consistency of the database prior to repair
@@ -1216,8 +1215,8 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hashsize">The hash size in byts</param>
         /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
         /// <param name="transaction">The transaction to run in</param>
-        public async Task VerifyConsistencyForRepair(long blocksize, long hashsize, bool verifyfilelists, SqliteTransaction transaction)
-            => await VerifyConsistencyInner(blocksize, hashsize, verifyfilelists, true, transaction);
+        public async Task VerifyConsistencyForRepair(long blocksize, long hashsize, bool verifyfilelists)
+            => await VerifyConsistencyInner(blocksize, hashsize, verifyfilelists, true);
 
         /// <summary>
         /// Verifies the consistency of the database
@@ -1227,10 +1226,10 @@ namespace Duplicati.Library.Main.Database
         /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
         /// <param name="laxVerifyForRepair">Disable verify for errors that will be fixed by repair</param>
         /// <param name="transaction">The transaction to run in</param>
-        private async Task VerifyConsistencyInner(long blocksize, long hashsize, bool verifyfilelists, bool laxVerifyForRepair, SqliteTransaction transaction)
+        private async Task VerifyConsistencyInner(long blocksize, long hashsize, bool verifyfilelists, bool laxVerifyForRepair)
         {
-            using var cmd = m_connection.CreateCommand();
-            cmd.Transaction = transaction;
+            using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
             // Calculate the lengths for each blockset
             var combinedLengths = @"
                 SELECT
@@ -1504,7 +1503,7 @@ namespace Duplicati.Library.Main.Database
                 var anyError = new List<string>();
                 using (var cmd2 = m_connection.CreateCommand())
                 {
-                    cmd2.SetTransaction(transaction);
+                    cmd2.SetTransaction(m_rtr);
                     cmd.SetCommandAndParameters(@"
                         SELECT ""ID""
                         FROM ""Fileset""
@@ -1566,7 +1565,7 @@ namespace Duplicati.Library.Main.Database
             public long Size { get; private set; } = size;
         }
 
-        public async IAsyncEnumerable<IBlock> GetBlocks(long volumeid, SqliteTransaction transaction)
+        public async IAsyncEnumerable<IBlock> GetBlocks(long volumeid)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
                 SELECT DISTINCT
@@ -1575,7 +1574,7 @@ namespace Duplicati.Library.Main.Database
                 FROM ""Block""
                 WHERE ""VolumeID"" = @VolumeId
             ");
-            cmd.SetTransaction(transaction)
+            cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@VolumeId", volumeid);
             using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())
@@ -1799,11 +1798,11 @@ namespace Duplicati.Library.Main.Database
                 ""H"".""Index""
             ";
 
-        public async Task WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, long filesetId, SqliteTransaction transaction)
+        public async Task WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, long filesetId)
         {
             using var cmd = m_connection.CreateCommand()
                 .SetCommandAndParameters(LIST_FOLDERS_AND_SYMLINKS)
-                .SetTransaction(transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", filesetId)
                 .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
                 .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID);
@@ -1871,14 +1870,14 @@ namespace Duplicati.Library.Main.Database
                 }
         }
 
-        public async Task LinkFilesetToVolume(long filesetid, long volumeid, SqliteTransaction transaction)
+        public async Task LinkFilesetToVolume(long filesetid, long volumeid)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
                 UPDATE ""Fileset""
                 SET ""VolumeID"" = @VolumeId
                 WHERE ""ID"" = @FilesetId
             ");
-            var c = await cmd.SetTransaction(transaction)
+            var c = await cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@VolumeId", volumeid)
                 .SetParameterValue("@FilesetId", filesetid)
                 .ExecuteNonQueryAsync();
@@ -1887,7 +1886,7 @@ namespace Duplicati.Library.Main.Database
                 throw new Exception($"Failed to link filesetid {filesetid} to volumeid {volumeid}");
         }
 
-        public async Task PushTimestampChangesToPreviousVersion(long filesetId, SqliteTransaction transaction)
+        public async Task PushTimestampChangesToPreviousVersion(long filesetId)
         {
             var query = @"
                 UPDATE FilesetEntry AS oldVersion
@@ -1906,7 +1905,7 @@ namespace Duplicati.Library.Main.Database
             ";
 
             using var cmd = await m_connection.CreateCommandAsync(query);
-            await cmd.SetTransaction(transaction)
+            await cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", filesetId)
                 .ExecuteNonQueryAsync();
         }
@@ -1926,7 +1925,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             [Obsolete("Calling this constructor will throw an exception. Use the Create method instead.")]
-            public FilteredFilenameTable(SqliteConnection connection, IFilter filter, SqliteTransaction transaction)
+            public FilteredFilenameTable(SqliteConnection connection, IFilter filter)
             {
                 throw new NotImplementedException("Use the Create method instead.");
             }
@@ -2128,14 +2127,14 @@ namespace Duplicati.Library.Main.Database
         /// <param name="indexVolumeID">The ID of the index volume.</param>
         /// <param name="blockVolumeID">The ID of the block volume.</param>
         /// <param name="transaction">An optional transaction.</param>
-        public async Task AddIndexBlockLink(long indexVolumeID, long blockVolumeID, SqliteTransaction transaction)
+        public async Task AddIndexBlockLink(long indexVolumeID, long blockVolumeID)
         {
             if (indexVolumeID <= 0)
                 throw new ArgumentOutOfRangeException(nameof(indexVolumeID), "Index volume ID must be greater than 0.");
             if (blockVolumeID <= 0)
                 throw new ArgumentOutOfRangeException(nameof(blockVolumeID), "Block volume ID must be greater than 0.");
 
-            await m_insertIndexBlockLink.SetTransaction(transaction)
+            await m_insertIndexBlockLink.SetTransaction(m_rtr)
                 .SetParameterValue("@IndexVolumeId", indexVolumeID)
                 .SetParameterValue("@BlockVolumeId", blockVolumeID)
                 .ExecuteNonQueryAsync();
@@ -2149,7 +2148,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hashsize">The size of the hash</param>
         /// <param name="transaction">An optional external transaction</param>
         /// <returns>An enumerable of tuples containing the blocklist hash, the blocklist data and the length of the data</returns>
-        public async IAsyncEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize, SqliteTransaction transaction)
+        public async IAsyncEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize)
         {
             // Group subquery by hash to ensure that each blocklist hash appears only once in the result
             using var cmd = await m_connection.CreateCommandAsync($@"
@@ -2187,7 +2186,7 @@ namespace Duplicati.Library.Main.Database
             var count = 0;
             var buffer = new byte[blocksize];
 
-            cmd.SetTransaction(transaction)
+            cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@VolumeId", volumeid);
             using (var rd = await cmd.ExecuteReaderAsync())
                 while (await rd.ReadAsync())
@@ -2236,13 +2235,13 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="filesetId">The fileset ID to clear</param>
         /// <param name="transaction">The transaction to use</param>
-        public async Task ClearFilesetEntries(long filesetId, SqliteTransaction transaction)
+        public async Task ClearFilesetEntries(long filesetId)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
                 DELETE FROM ""FilesetEntry""
                 WHERE ""FilesetID"" = @FilesetId
             ");
-            await cmd.SetTransaction(transaction)
+            await cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", filesetId)
                 .ExecuteNonQueryAsync();
         }
