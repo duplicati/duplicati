@@ -51,26 +51,27 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        private readonly SqliteCommand m_insertFileCommand;
-        private readonly SqliteCommand m_insertFilesetEntryCommand;
-        private readonly SqliteCommand m_insertMetadatasetCommand;
-        private readonly SqliteCommand m_insertBlocksetCommand;
-        private readonly SqliteCommand m_insertBlocklistHashCommand;
-        private readonly SqliteCommand m_updateBlockVolumeCommand;
-        private readonly SqliteCommand m_insertTempBlockListHash;
-        private readonly SqliteCommand m_insertSmallBlockset;
-        private readonly SqliteCommand m_findBlocksetCommand;
-        private readonly SqliteCommand m_findMetadatasetCommand;
-        private readonly SqliteCommand m_findFilesetCommand;
-        private readonly SqliteCommand m_findTempBlockListHashCommand;
-        private readonly SqliteCommand m_findHashBlockCommand;
-        private readonly SqliteCommand m_insertBlockCommand;
-        private readonly SqliteCommand m_insertDuplicateBlockCommand;
+        private SqliteCommand m_insertFileCommand = null!;
+        private SqliteCommand m_insertFilesetEntryCommand = null!;
+        private SqliteCommand m_insertMetadatasetCommand = null!;
+        private SqliteCommand m_insertBlocksetCommand = null!;
+        private SqliteCommand m_insertBlocklistHashCommand = null!;
+        private SqliteCommand m_updateBlockVolumeCommand = null!;
+        private SqliteCommand m_insertTempBlockListHash = null!;
+        private SqliteCommand m_insertSmallBlockset = null!;
+        private SqliteCommand m_findBlocksetCommand = null!;
+        private SqliteCommand m_findMetadatasetCommand = null!;
+        private SqliteCommand m_findFilesetCommand = null!;
+        private SqliteCommand m_findTempBlockListHashCommand = null!;
+        private SqliteCommand m_findHashBlockCommand = null!;
+        private SqliteCommand m_insertBlockCommand = null!;
+        private SqliteCommand m_insertDuplicateBlockCommand = null!;
 
-        private string m_tempblocklist;
-        private string m_tempsmalllist;
+        private string m_tempblocklist = null!;
+        private string m_tempsmalllist = null!;
 
-        private new readonly SqliteConnection m_connection;
+        // TODO why was this "new" ?
+        //private new readonly SqliteConnection m_connection;
 
         //public new bool RepairInProgress { get; set; } = false;
 
@@ -125,38 +126,43 @@ namespace Duplicati.Library.Main.Database
            ""FullIndex""
 ");
 
-        public LocalRecreateDatabase(LocalDatabase parentdb, Options options)
-            : base(parentdb)
+        public static async Task<LocalRecreateDatabase> CreateAsync(LocalDatabase parentdb, Options options, LocalRecreateDatabase? dbnew = null)
         {
-            m_tempblocklist = "TempBlocklist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            m_tempsmalllist = "TempSmalllist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            dbnew ??= new LocalRecreateDatabase();
 
-            if (m_connection == null)
+            dbnew = (LocalRecreateDatabase)await CreateLocalDatabaseAsync(parentdb, dbnew);
+
+            dbnew.m_tempblocklist = "TempBlocklist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            dbnew.m_tempsmalllist = "TempSmalllist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+
+            if (dbnew.m_connection == null)
                 throw new Exception("Connection is null");
-            using var cmd = m_connection.CreateCommand();
+            using var cmd = dbnew.m_connection.CreateCommand();
 
-            cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tempblocklist}"" (""BlockListHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""Index"" INTEGER NOT NULL)")).Await();
-            cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE INDEX ""Index_{m_tempblocklist}"" ON ""{m_tempblocklist}"" (""BlockListHash"");")).Await();
+            cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{dbnew.m_tempblocklist}"" (""BlockListHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""Index"" INTEGER NOT NULL)")).Await();
+            cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE INDEX ""Index_{dbnew.m_tempblocklist}"" ON ""{dbnew.m_tempblocklist}"" (""BlockListHash"");")).Await();
 
-            cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tempsmalllist}"" (""FileHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""BlockSize"" INTEGER NOT NULL)")).Await();
-            cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE UNIQUE INDEX ""Index_File_{m_tempsmalllist}"" ON ""{m_tempsmalllist}"" (""FileHash"", ""BlockSize"");")).Await();
-            cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE UNIQUE INDEX ""Index_Block_{m_tempsmalllist}"" ON ""{m_tempsmalllist}"" (""BlockHash"", ""BlockSize"");")).Await();
+            cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{dbnew.m_tempsmalllist}"" (""FileHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""BlockSize"" INTEGER NOT NULL)")).Await();
+            cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE UNIQUE INDEX ""Index_File_{dbnew.m_tempsmalllist}"" ON ""{dbnew.m_tempsmalllist}"" (""FileHash"", ""BlockSize"");")).Await();
+            cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE UNIQUE INDEX ""Index_Block_{dbnew.m_tempsmalllist}"" ON ""{dbnew.m_tempsmalllist}"" (""BlockHash"", ""BlockSize"");")).Await();
 
-            m_insertFileCommand = m_connection.CreateCommand(@"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"") VALUES (@PrefixId,@Path,@BlocksetId,@MetadataId); SELECT last_insert_rowid();");
-            m_insertFilesetEntryCommand = m_connection.CreateCommand(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (@FilesetId,@FileId,@LastModified)");
-            m_insertMetadatasetCommand = m_connection.CreateCommand(@"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (@BlocksetId); SELECT last_insert_rowid();");
-            m_insertBlocksetCommand = m_connection.CreateCommand(@"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (@Length,@FullHash); SELECT last_insert_rowid();");
-            m_insertBlocklistHashCommand = m_connection.CreateCommand(@"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (@BlocksetId,@Index,@Hash)");
-            m_updateBlockVolumeCommand = m_connection.CreateCommand(@"UPDATE ""Block"" SET ""VolumeID"" = @VolumeId WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
-            m_insertTempBlockListHash = m_connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{m_tempblocklist}"" (""BlocklistHash"", ""BlockHash"", ""Index"") VALUES (@BlocklistHash,@BlockHash,@Index) "));
-            m_insertSmallBlockset = m_connection.CreateCommand(FormatInvariant($@"INSERT OR IGNORE INTO ""{m_tempsmalllist}"" (""FileHash"", ""BlockHash"", ""BlockSize"") VALUES (@FileHash,@BlockHash,@BlockSize) "));
-            m_findBlocksetCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" = @Length AND ""FullHash"" = @FullHash ");
-            m_findMetadatasetCommand = m_connection.CreateCommand(@"SELECT ""Metadataset"".""ID"" FROM ""Metadataset"",""Blockset"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Blockset"".""FullHash"" = @FullHash AND ""Blockset"".""Length"" = @Length ");
-            m_findFilesetCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path AND ""BlocksetID"" = @BlocksetId AND ""MetadataID"" = @MetadataId ");
-            m_findTempBlockListHashCommand = m_connection.CreateCommand(FormatInvariant($@"SELECT DISTINCT ""BlockListHash"" FROM ""{m_tempblocklist}"" WHERE ""BlockListHash"" = @BlocklistHash "));
-            m_findHashBlockCommand = m_connection.CreateCommand(@"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size ");
-            m_insertBlockCommand = m_connection.CreateCommand(@"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") VALUES (@Hash,@Size,@VolumeId)");
-            m_insertDuplicateBlockCommand = m_connection.CreateCommand(@"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size), @VolumeId)");
+            dbnew.m_insertFileCommand = dbnew.m_connection.CreateCommand(@"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"") VALUES (@PrefixId,@Path,@BlocksetId,@MetadataId); SELECT last_insert_rowid();");
+            dbnew.m_insertFilesetEntryCommand = dbnew.m_connection.CreateCommand(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (@FilesetId,@FileId,@LastModified)");
+            dbnew.m_insertMetadatasetCommand = dbnew.m_connection.CreateCommand(@"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (@BlocksetId); SELECT last_insert_rowid();");
+            dbnew.m_insertBlocksetCommand = dbnew.m_connection.CreateCommand(@"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (@Length,@FullHash); SELECT last_insert_rowid();");
+            dbnew.m_insertBlocklistHashCommand = dbnew.m_connection.CreateCommand(@"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (@BlocksetId,@Index,@Hash)");
+            dbnew.m_updateBlockVolumeCommand = dbnew.m_connection.CreateCommand(@"UPDATE ""Block"" SET ""VolumeID"" = @VolumeId WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
+            dbnew.m_insertTempBlockListHash = dbnew.m_connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{dbnew.m_tempblocklist}"" (""BlocklistHash"", ""BlockHash"", ""Index"") VALUES (@BlocklistHash,@BlockHash,@Index) "));
+            dbnew.m_insertSmallBlockset = dbnew.m_connection.CreateCommand(FormatInvariant($@"INSERT OR IGNORE INTO ""{dbnew.m_tempsmalllist}"" (""FileHash"", ""BlockHash"", ""BlockSize"") VALUES (@FileHash,@BlockHash,@BlockSize) "));
+            dbnew.m_findBlocksetCommand = dbnew.m_connection.CreateCommand(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" = @Length AND ""FullHash"" = @FullHash ");
+            dbnew.m_findMetadatasetCommand = dbnew.m_connection.CreateCommand(@"SELECT ""Metadataset"".""ID"" FROM ""Metadataset"",""Blockset"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Blockset"".""FullHash"" = @FullHash AND ""Blockset"".""Length"" = @Length ");
+            dbnew.m_findFilesetCommand = dbnew.m_connection.CreateCommand(@"SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path AND ""BlocksetID"" = @BlocksetId AND ""MetadataID"" = @MetadataId ");
+            dbnew.m_findTempBlockListHashCommand = dbnew.m_connection.CreateCommand(FormatInvariant($@"SELECT DISTINCT ""BlockListHash"" FROM ""{dbnew.m_tempblocklist}"" WHERE ""BlockListHash"" = @BlocklistHash "));
+            dbnew.m_findHashBlockCommand = dbnew.m_connection.CreateCommand(@"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size ");
+            dbnew.m_insertBlockCommand = dbnew.m_connection.CreateCommand(@"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") VALUES (@Hash,@Size,@VolumeId)");
+            dbnew.m_insertDuplicateBlockCommand = dbnew.m_connection.CreateCommand(@"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size), @VolumeId)");
+
+            return dbnew;
         }
 
         public async Task FindMissingBlocklistHashes(long hashsize, long blocksize, SqliteTransaction transaction)
