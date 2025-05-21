@@ -26,6 +26,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -74,7 +75,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        private IEnumerable<RemoteVolume> FilterByVerificationCount(IEnumerable<RemoteVolume> volumes, long samples, long maxverification)
+        private static List<RemoteVolume> FilterByVerificationCount(IEnumerable<RemoteVolume> volumes, long samples, long maxverification)
         {
             var rnd = new Random();
 
@@ -126,9 +127,9 @@ namespace Duplicati.Library.Main.Database
             return res;
         }
 
-        public IEnumerable<IRemoteVolume> SelectTestTargets(long samples, Options options)
+        public async IAsyncEnumerable<IRemoteVolume> SelectTestTargets(long samples, Options options)
         {
-            var tp = GetFilelistWhereClause(options.Time, options.Version);
+            var tp = await GetFilelistWhereClause(options.Time, options.Version);
 
             samples = Math.Max(1, samples);
             using (var cmd = m_connection.CreateCommand(m_rtr))
@@ -137,22 +138,22 @@ namespace Duplicati.Library.Main.Database
                 cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" IN (@States)) AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0) AND (""ArchiveTime"" = 0)")
                     .ExpandInClauseParameter("@States", [RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()]);
 
-                using (var rd = cmd.ExecuteReader())
-                    while (rd.Read())
+                using (var rd = await cmd.ExecuteReaderAsync())
+                    while (await rd.ReadAsync())
                         yield return new RemoteVolume(rd);
 
                 //Grab the max value
-                var max = cmd.ExecuteScalarInt64(@"SELECT MAX(""VerificationCount"") FROM ""RemoteVolume""", 0);
+                var max = await cmd.ExecuteScalarInt64Async(@"SELECT MAX(""VerificationCount"") FROM ""RemoteVolume""", 0);
 
                 //First we select some filesets
                 var files = new List<RemoteVolume>();
-                var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
-                using (var rd = cmd.SetCommandAndParameters(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"", ""A"".""VerificationCount"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""ArchiveTime"" = 0 AND ""State"" IN (@State1, @State2)) A, ""Fileset"" " + whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" ")
+                var whereClause = string.IsNullOrEmpty(tp.Query) ? " WHERE " : (" " + tp.Query + " AND ");
+                using (var rd = await cmd.SetCommandAndParameters(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"", ""A"".""VerificationCount"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""ArchiveTime"" = 0 AND ""State"" IN (@State1, @State2)) A, ""Fileset"" " + whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" ")
                     .SetParameterValue("@State1", RemoteVolumeState.Uploaded.ToString())
                     .SetParameterValue("@State2", RemoteVolumeState.Verified.ToString())
-                    .SetParameterValues(tp.Item2)
-                    .ExecuteReader())
-                    while (rd.Read())
+                    .SetParameterValues(tp.Values)
+                    .ExecuteReaderAsync())
+                    while (await rd.ReadAsync())
                         files.Add(new RemoteVolume(rd));
 
                 if (files.Count == 0)
@@ -171,8 +172,8 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Type", RemoteVolumeType.Index.ToString())
                     .ExpandInClauseParameter("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
-                using (var rd = cmd.ExecuteReader())
-                    while (rd.Read())
+                using (var rd = await cmd.ExecuteReaderAsync())
+                    while (await rd.ReadAsync())
                         files.Add(new RemoteVolume(rd));
 
                 foreach (var f in FilterByVerificationCount(files, samples, max))
@@ -188,8 +189,8 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
                     .ExpandInClauseParameter("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
-                using (var rd = cmd.ExecuteReader())
-                    while (rd.Read())
+                using (var rd = await cmd.ExecuteReaderAsync())
+                    while (await rd.ReadAsync())
                         files.Add(new RemoteVolume(rd));
 
                 foreach (var f in FilterByVerificationCount(files, samples, max))
@@ -220,34 +221,39 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction))
                 {
-                    cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{tablename}"" {tableFormat}");
+                    await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{tablename}"" {tableFormat}");
                     bl.m_tablename = tablename;
                 }
 
-                bl.m_insertCommand = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction, $@"INSERT INTO ""{bl.m_tablename}"" {insertCommand}");
+                bl.m_insertCommand = await bl.m_db.Connection.CreateCommandAsync($@"INSERT INTO ""{bl.m_tablename}"" {insertCommand}");
 
                 return bl;
             }
 
-            public virtual void Dispose()
+            public void Dispose()
+            {
+                DisposeAsync().Await();
+            }
+
+            public virtual async Task DisposeAsync()
             {
                 if (m_tablename != null)
                     try
                     {
                         using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction.Transaction))
-                            cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""{m_tablename}""");
+                            await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tablename}""");
                     }
                     catch { }
                     finally { m_tablename = null!; }
 
-                m_insertCommand?.Dispose();
+                await m_insertCommand.DisposeAsync();
             }
         }
 
         public interface IFilelist : IDisposable
         {
-            void Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time);
-            IEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare();
+            Task Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time);
+            IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare();
         }
 
         private class Filelist : Basiclist, IFilelist
@@ -271,18 +277,19 @@ namespace Duplicati.Library.Main.Database
                 return (Filelist)await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
             }
 
-            public void Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time)
+            public async Task Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time)
             {
-                m_insertCommand.SetTransaction(m_db.Transaction)
+                await m_insertCommand
+                    .SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Path", path)
                     .SetParameterValue("@Size", hash == null ? -1 : size)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Metasize", metasize)
                     .SetParameterValue("@Metahash", metahash)
-                    .ExecuteNonQuery();
+                    .ExecuteNonQueryAsync();
             }
 
-            public IEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare()
+            public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare()
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -296,23 +303,28 @@ namespace Duplicati.Library.Main.Database
                 {
                     try
                     {
-                        cmd.SetCommandAndParameters(create)
+                        await cmd
+                            .SetCommandAndParameters(create)
                             .SetParameterValue("@Name", m_volumename)
-                            .ExecuteNonQuery();
+                            .ExecuteNonQueryAsync();
 
-                        cmd.SetCommandAndParameters($"{extra} UNION {missing} UNION {modified}")
+                        cmd
+                            .SetCommandAndParameters($"{extra} UNION {missing} UNION {modified}")
                             .SetParameterValue("@TypeExtra", (int)Interface.TestEntryStatus.Extra)
                             .SetParameterValue("@TypeMissing", (int)Interface.TestEntryStatus.Missing)
                             .SetParameterValue("@TypeModified", (int)Interface.TestEntryStatus.Modified);
 
-                        using (var rd = cmd.ExecuteReader())
-                            while (rd.Read())
+                        using (var rd = await cmd.ExecuteReaderAsync())
+                            while (await rd.ReadAsync())
                                 yield return new KeyValuePair<Interface.TestEntryStatus, string>((Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
                     }
                     finally
                     {
-                        try { cmd.ExecuteNonQuery(drop); }
+                        try
+                        {
+                            await cmd.ExecuteNonQueryAsync(drop);
+                        }
                         catch { }
                     }
                 }
@@ -321,8 +333,8 @@ namespace Duplicati.Library.Main.Database
 
         public interface IIndexlist : IDisposable
         {
-            void AddBlockLink(string filename, string hash, long length);
-            IEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
+            Task AddBlockLink(string filename, string hash, long length);
+            IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
         }
 
         private class Indexlist : Basiclist, IIndexlist
@@ -346,16 +358,16 @@ namespace Duplicati.Library.Main.Database
                 return (Indexlist)await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
             }
 
-            public void AddBlockLink(string filename, string hash, long length)
+            public async Task AddBlockLink(string filename, string hash, long length)
             {
-                m_insertCommand.SetTransaction(m_db.Transaction)
+                await m_insertCommand.SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Name", filename)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", length)
-                    .ExecuteNonQuery();
+                    .ExecuteNonQueryAsync();
             }
 
-            public IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare()
+            public async IAsyncEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare()
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var create = $@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT ""A"".""Name"", ""A"".""Hash"", ""A"".""Size"" FROM ""Remotevolume"" A, ""Remotevolume"" B, ""IndexBlockLink"" WHERE ""B"".""Name"" = @Name AND ""A"".""ID"" = ""IndexBlockLink"".""BlockVolumeID"" AND ""B"".""ID"" = ""IndexBlockLink"".""IndexVolumeID"" ";
@@ -368,23 +380,28 @@ namespace Duplicati.Library.Main.Database
                 {
                     try
                     {
-                        cmd.SetCommandAndParameters(create)
+                        await cmd
+                            .SetCommandAndParameters(create)
                             .SetParameterValue("@Name", m_volumename)
-                            .ExecuteNonQuery();
+                            .ExecuteNonQueryAsync();
 
-                        cmd.SetCommandAndParameters($"{extra} UNION {missing} UNION {modified}")
+                        cmd
+                            .SetCommandAndParameters($"{extra} UNION {missing} UNION {modified}")
                             .SetParameterValue("@TypeExtra", (int)Interface.TestEntryStatus.Extra)
                             .SetParameterValue("@TypeMissing", (int)Interface.TestEntryStatus.Missing)
                             .SetParameterValue("@TypeModified", (int)Interface.TestEntryStatus.Modified);
 
-                        using (var rd = cmd.ExecuteReader())
-                            while (rd.Read())
+                        using (var rd = await cmd.ExecuteReaderAsync())
+                            while (await rd.ReadAsync())
                                 yield return new KeyValuePair<Interface.TestEntryStatus, string>((Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
                     }
                     finally
                     {
-                        try { cmd.ExecuteNonQuery(drop); }
+                        try
+                        {
+                            await cmd.ExecuteNonQueryAsync(drop);
+                        }
                         catch { }
                     }
                 }
@@ -393,8 +410,8 @@ namespace Duplicati.Library.Main.Database
 
         public interface IBlocklist : IDisposable
         {
-            void AddBlock(string key, long value);
-            IEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
+            Task AddBlock(string key, long value);
+            IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
         }
 
         private class Blocklist : Basiclist, IBlocklist
@@ -418,15 +435,15 @@ namespace Duplicati.Library.Main.Database
                 return (Blocklist)await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
             }
 
-            public void AddBlock(string hash, long size)
+            public async Task AddBlock(string hash, long size)
             {
-                m_insertCommand.SetTransaction(m_db.Transaction)
+                await m_insertCommand.SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
-                    .ExecuteNonQuery();
+                    .ExecuteNonQueryAsync();
             }
 
-            public IEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare()
+            public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare()
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var curBlocks = @"SELECT ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" FROM ""Remotevolume"", ""Block"" WHERE ""Remotevolume"".""Name"" = @Name AND ""Remotevolume"".""ID"" = ""Block"".""VolumeID""";
@@ -442,41 +459,47 @@ namespace Duplicati.Library.Main.Database
                 {
                     try
                     {
-                        cmd.SetCommandAndParameters(create)
+                        await cmd
+                            .SetCommandAndParameters(create)
                             .SetParameterValue("@Name", m_volumename)
-                            .ExecuteNonQuery();
+                            .ExecuteNonQueryAsync();
 
-                        cmd.SetCommandAndParameters($"{extra} UNION {missing} UNION {modified}")
+                        cmd
+                            .SetCommandAndParameters($"{extra} UNION {missing} UNION {modified}")
                             .SetParameterValue("@TypeExtra", (int)Library.Interface.TestEntryStatus.Extra)
                             .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
                             .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
-                        using (var rd = cmd.ExecuteReader())
-                            while (rd.Read())
+
+                        using (var rd = await cmd.ExecuteReaderAsync())
+                            while (await rd.ReadAsync())
                                 yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
                     }
                     finally
                     {
-                        try { cmd.ExecuteNonQuery(drop); }
+                        try
+                        {
+                            await cmd.ExecuteNonQueryAsync(drop);
+                        }
                         catch { }
                     }
                 }
             }
         }
 
-        public IFilelist CreateFilelist(string name)
+        public async Task<IFilelist> CreateFilelist(string name)
         {
-            return new Filelist(m_connection, name, rtr);
+            return await Filelist.CreateAsync(this, name);
         }
 
-        public IIndexlist CreateIndexlist(string name)
+        public async Task<IIndexlist> CreateIndexlist(string name)
         {
-            return new Indexlist(m_connection, name, rtr);
+            return await Indexlist.CreateAsync(this, name);
         }
 
-        public IBlocklist CreateBlocklist(string name)
+        public async Task<IBlocklist> CreateBlocklist(string name)
         {
-            return new Blocklist(m_connection, name, rtr);
+            return await Blocklist.CreateAsync(this, name);
         }
     }
 }
