@@ -41,13 +41,13 @@ internal static class ListFolderHandler
     /// <param name="offset">The offset to start listing from</param>
     /// <param name="limit">The maximum number of entries to list</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    public static Task RunAsync(Options options, ListFolderResults result, string[] folders, long offset, long limit)
+    public static async Task RunAsync(Options options, ListFolderResults result, string[] folders, long offset, long limit)
     {
         if (!System.IO.File.Exists(options.Dbpath) || options.NoLocalDb)
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
-        using var db = new Database.LocalListDatabase(options.Dbpath, options.SqlitePageCache);
-        var filesetIds = db.GetFilesetIDs(options.Time, options.Version, singleTimeMatch: true).ToArray();
+        using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache);
+        var filesetIds = await db.GetFilesetIDs(options.Time, options.Version, singleTimeMatch: true).ToArrayAsync();
         if (filesetIds.Length == 0)
             throw new UserInformationException("No filesets found", "NoFilesetsFound");
         if (filesetIds.Length > 1)
@@ -57,12 +57,11 @@ internal static class ListFolderHandler
         {
             if (folders != null && folders.Length > 1)
                 throw new UserInformationException("When no folder is specified, only one folder can be listed", "MultipleFoldersFound");
-            result.Entries = db.ListFilesetEntries(db.GetRootPrefixes(filesetIds[0]), filesetIds[0], offset, limit);
+            result.Entries = await db.ListFilesetEntries(db.GetRootPrefixes(filesetIds[0]).ToEnumerable(), filesetIds[0], offset, limit);
         }
         else
         {
-            result.Entries = db.ListFolder(db.GetPrefixIds(folders), filesetIds[0], offset, limit);
+            result.Entries = await db.ListFolder(db.GetPrefixIds(folders).ToEnumerable(), filesetIds[0], offset, limit);
         }
-        return Task.CompletedTask;
     }
 }
