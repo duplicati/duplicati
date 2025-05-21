@@ -86,45 +86,44 @@ namespace Duplicati.Library.Main.Database
         // {1} --> BlockHash-Size
         // {2} --> Temp-Table
         // {3} --> FullBlocklist-BlockCount [equals ({0} / {1}), if SQLite pays respect to ints]
-        private static string SELECT_BLOCKLIST_ENTRIES(long blocksize, long blockhashsize, string temptable, long fullBlockListBlockCount) =>
-            $@"
-        SELECT
-            ""E"".""BlocksetID"",
-            ""F"".""Index"" + (""E"".""BlocklistIndex"" * {fullBlockListBlockCount}) AS ""FullIndex"",
-            ""F"".""BlockHash"",
-            MIN({blocksize}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * {fullBlockListBlockCount})) * {blocksize})) AS ""BlockSize"",
-            ""E"".""Hash"",
-            ""E"".""BlocklistSize"",
-            ""E"".""BlocklistHash""
-        FROM
-            (
-                    SELECT * FROM
-                    (
-                        SELECT
-                            ""A"".""BlocksetID"",
-                            ""A"".""Index"" AS ""BlocklistIndex"",
-                            MIN({fullBlockListBlockCount} * {blockhashsize}, (((""B"".""Length"" + {blocksize} - 1) / {blocksize}) - (""A"".""Index"" * ({fullBlockListBlockCount}))) * {blockhashsize}) AS ""BlocklistSize"",
-                            ""A"".""Hash"" AS ""BlocklistHash"",
-                            ""B"".""Length""
-                        FROM
-                            ""BlocklistHash"" A,
-                            ""Blockset"" B
-                        WHERE
-                            ""B"".""ID"" = ""A"".""BlocksetID""
-                    ) C,
-                    ""Block"" D
-                WHERE
-                   ""C"".""BlocklistHash"" = ""D"".""Hash""
-                   AND
-                   ""C"".""BlocklistSize"" = ""D"".""Size""
-            ) E,
-            ""{temptable}"" F
-        WHERE
-           ""F"".""BlocklistHash"" = ""E"".""Hash""
-        ORDER BY
-           ""E"".""BlocksetID"",
-           ""FullIndex""
-";
+        private static string SELECT_BLOCKLIST_ENTRIES(long blocksize, long blockhashsize, string temptable, long fullBlockListBlockCount) => $@"
+            SELECT
+                ""E"".""BlocksetID"",
+                ""F"".""Index"" + (""E"".""BlocklistIndex"" * {fullBlockListBlockCount}) AS ""FullIndex"",
+                ""F"".""BlockHash"",
+                MIN({blocksize}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * {fullBlockListBlockCount})) * {blocksize})) AS ""BlockSize"",
+                ""E"".""Hash"",
+                ""E"".""BlocklistSize"",
+                ""E"".""BlocklistHash""
+            FROM
+                (
+                    SELECT *
+                    FROM
+                        (
+                            SELECT
+                                ""A"".""BlocksetID"",
+                                ""A"".""Index"" AS ""BlocklistIndex"",
+                                MIN({fullBlockListBlockCount} * {blockhashsize}, (((""B"".""Length"" + {blocksize} - 1) / {blocksize}) - (""A"".""Index"" * ({fullBlockListBlockCount}))) * {blockhashsize}) AS ""BlocklistSize"",
+                                ""A"".""Hash"" AS ""BlocklistHash"",
+                                ""B"".""Length""
+                            FROM
+                                ""BlocklistHash"" A,
+                                ""Blockset"" B
+                            WHERE
+                                ""B"".""ID"" = ""A"".""BlocksetID""
+                        ) C,
+                        ""Block"" D
+                    WHERE
+                        ""C"".""BlocklistHash"" = ""D"".""Hash""
+                        AND ""C"".""BlocklistSize"" = ""D"".""Size""
+                ) E,
+                ""{temptable}"" F
+            WHERE
+                ""F"".""BlocklistHash"" = ""E"".""Hash""
+            ORDER BY
+                ""E"".""BlocksetID"",
+                ""FullIndex""
+        ";
 
         public static async Task<LocalRecreateDatabase> CreateAsync(LocalDatabase parentdb, Options options, LocalRecreateDatabase? dbnew = null)
         {
@@ -139,28 +138,207 @@ namespace Duplicati.Library.Main.Database
                 throw new Exception("Connection is null");
             using var cmd = dbnew.m_connection.CreateCommand();
 
-            await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{dbnew.m_tempblocklist}"" (""BlockListHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""Index"" INTEGER NOT NULL)");
-            await cmd.ExecuteNonQueryAsync($@"CREATE INDEX ""Index_{dbnew.m_tempblocklist}"" ON ""{dbnew.m_tempblocklist}"" (""BlockListHash"");");
+            await cmd.ExecuteNonQueryAsync($@"
+                CREATE TEMPORARY TABLE ""{dbnew.m_tempblocklist}"" (
+                    ""BlockListHash"" TEXT NOT NULL,
+                    ""BlockHash"" TEXT NOT NULL,
+                    ""Index"" INTEGER NOT NULL
+                )
+            ");
 
-            await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{dbnew.m_tempsmalllist}"" (""FileHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""BlockSize"" INTEGER NOT NULL)");
-            await cmd.ExecuteNonQueryAsync($@"CREATE UNIQUE INDEX ""Index_File_{dbnew.m_tempsmalllist}"" ON ""{dbnew.m_tempsmalllist}"" (""FileHash"", ""BlockSize"");");
-            await cmd.ExecuteNonQueryAsync($@"CREATE UNIQUE INDEX ""Index_Block_{dbnew.m_tempsmalllist}"" ON ""{dbnew.m_tempsmalllist}"" (""BlockHash"", ""BlockSize"");");
+            await cmd.ExecuteNonQueryAsync($@"
+                CREATE INDEX ""Index_{dbnew.m_tempblocklist}""
+                ON ""{dbnew.m_tempblocklist}"" (""BlockListHash"");
+            ");
 
-            dbnew.m_insertFileCommand = await dbnew.m_connection.CreateCommandAsync(@"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"") VALUES (@PrefixId,@Path,@BlocksetId,@MetadataId); SELECT last_insert_rowid();");
-            dbnew.m_insertFilesetEntryCommand = await dbnew.m_connection.CreateCommandAsync(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (@FilesetId,@FileId,@LastModified)");
-            dbnew.m_insertMetadatasetCommand = await dbnew.m_connection.CreateCommandAsync(@"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (@BlocksetId); SELECT last_insert_rowid();");
-            dbnew.m_insertBlocksetCommand = await dbnew.m_connection.CreateCommandAsync(@"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (@Length,@FullHash); SELECT last_insert_rowid();");
-            dbnew.m_insertBlocklistHashCommand = await dbnew.m_connection.CreateCommandAsync(@"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (@BlocksetId,@Index,@Hash)");
-            dbnew.m_updateBlockVolumeCommand = await dbnew.m_connection.CreateCommandAsync(@"UPDATE ""Block"" SET ""VolumeID"" = @VolumeId WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
-            dbnew.m_insertTempBlockListHash = await dbnew.m_connection.CreateCommandAsync($@"INSERT INTO ""{dbnew.m_tempblocklist}"" (""BlocklistHash"", ""BlockHash"", ""Index"") VALUES (@BlocklistHash,@BlockHash,@Index) ");
-            dbnew.m_insertSmallBlockset = await dbnew.m_connection.CreateCommandAsync($@"INSERT OR IGNORE INTO ""{dbnew.m_tempsmalllist}"" (""FileHash"", ""BlockHash"", ""BlockSize"") VALUES (@FileHash,@BlockHash,@BlockSize) ");
-            dbnew.m_findBlocksetCommand = await dbnew.m_connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" = @Length AND ""FullHash"" = @FullHash ");
-            dbnew.m_findMetadatasetCommand = await dbnew.m_connection.CreateCommandAsync(@"SELECT ""Metadataset"".""ID"" FROM ""Metadataset"",""Blockset"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Blockset"".""FullHash"" = @FullHash AND ""Blockset"".""Length"" = @Length ");
-            dbnew.m_findFilesetCommand = await dbnew.m_connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path AND ""BlocksetID"" = @BlocksetId AND ""MetadataID"" = @MetadataId ");
-            dbnew.m_findTempBlockListHashCommand = await dbnew.m_connection.CreateCommandAsync($@"SELECT DISTINCT ""BlockListHash"" FROM ""{dbnew.m_tempblocklist}"" WHERE ""BlockListHash"" = @BlocklistHash ");
-            dbnew.m_findHashBlockCommand = await dbnew.m_connection.CreateCommandAsync(@"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size ");
-            dbnew.m_insertBlockCommand = await dbnew.m_connection.CreateCommandAsync(@"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") VALUES (@Hash,@Size,@VolumeId)");
-            dbnew.m_insertDuplicateBlockCommand = await dbnew.m_connection.CreateCommandAsync(@"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size), @VolumeId)");
+            await cmd.ExecuteNonQueryAsync($@"
+                CREATE TEMPORARY TABLE ""{dbnew.m_tempsmalllist}"" (
+                    ""FileHash"" TEXT NOT NULL,
+                    ""BlockHash"" TEXT NOT NULL,
+                    ""BlockSize"" INTEGER NOT NULL
+                )
+            ");
+
+            await cmd.ExecuteNonQueryAsync($@"
+                CREATE UNIQUE INDEX ""Index_File_{dbnew.m_tempsmalllist}""
+                ON ""{dbnew.m_tempsmalllist}"" (
+                    ""FileHash"",
+                    ""BlockSize""
+                );
+            ");
+
+            await cmd.ExecuteNonQueryAsync($@"
+                CREATE UNIQUE INDEX ""Index_Block_{dbnew.m_tempsmalllist}""
+                ON ""{dbnew.m_tempsmalllist}"" (
+                    ""BlockHash"",
+                    ""BlockSize""
+                );
+            ");
+
+            dbnew.m_insertFileCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                INSERT INTO ""FileLookup"" (
+                    ""PrefixID"",
+                    ""Path"",
+                    ""BlocksetID"",
+                    ""MetadataID""
+                )
+                VALUES (
+                    @PrefixId,
+                    @Path,
+                    @BlocksetId,
+                    @MetadataId
+                );
+                SELECT last_insert_rowid();
+            ");
+
+            dbnew.m_insertFilesetEntryCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                INSERT INTO ""FilesetEntry"" (
+                    ""FilesetID"",
+                    ""FileID"",
+                    ""Lastmodified""
+                )
+                VALUES (
+                    @FilesetId,
+                    @FileId,
+                    @LastModified
+                )
+            ");
+
+            dbnew.m_insertMetadatasetCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                INSERT INTO ""Metadataset"" (""BlocksetID"")
+                VALUES (@BlocksetId);
+                SELECT last_insert_rowid();
+            ");
+
+            dbnew.m_insertBlocksetCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                INSERT INTO ""Blockset"" (
+                    ""Length"",
+                    ""FullHash""
+                )
+                VALUES (
+                    @Length,
+                    @FullHash
+                );
+                SELECT last_insert_rowid();
+            ");
+
+            dbnew.m_insertBlocklistHashCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                INSERT INTO ""BlocklistHash"" (
+                    ""BlocksetID"",
+                    ""Index"",
+                    ""Hash""
+                )
+                VALUES (
+                    @BlocksetId,
+                    @Index,
+                    @Hash
+                )
+            ");
+
+            dbnew.m_updateBlockVolumeCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                UPDATE ""Block""
+                SET ""VolumeID"" = @VolumeId
+                WHERE
+                    ""Hash"" = @Hash
+                    AND ""Size"" = @Size
+            ");
+
+            dbnew.m_insertTempBlockListHash = await dbnew.m_connection.CreateCommandAsync($@"
+                INSERT INTO ""{dbnew.m_tempblocklist}"" (
+                    ""BlocklistHash"",
+                    ""BlockHash"",
+                    ""Index""
+                )
+                VALUES (
+                    @BlocklistHash,
+                    @BlockHash,
+                    @Index
+                )
+            ");
+
+            dbnew.m_insertSmallBlockset = await dbnew.m_connection.CreateCommandAsync($@"
+                INSERT OR IGNORE INTO ""{dbnew.m_tempsmalllist}"" (
+                    ""FileHash"",
+                    ""BlockHash"",
+                    ""BlockSize""
+                )
+                VALUES (
+                    @FileHash,
+                    @BlockHash,
+                    @BlockSize
+                )
+            ");
+
+            dbnew.m_findBlocksetCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                SELECT ""ID""
+                FROM ""Blockset""
+                WHERE
+                    ""Length"" = @Length
+                    AND ""FullHash"" = @FullHash
+            ");
+
+            dbnew.m_findMetadatasetCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                SELECT ""Metadataset"".""ID""
+                FROM ""Metadataset"",""Blockset""
+                WHERE
+                    ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
+                    AND ""Blockset"".""FullHash"" = @FullHash
+                    AND ""Blockset"".""Length"" = @Length
+            ");
+
+            dbnew.m_findFilesetCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                SELECT ""ID""
+                FROM ""FileLookup""
+                WHERE
+                    ""PrefixID"" = @PrefixId
+                    AND ""Path"" = @Path
+                    AND ""BlocksetID"" = @BlocksetId
+                    AND ""MetadataID"" = @MetadataId
+            ");
+
+            dbnew.m_findTempBlockListHashCommand = await dbnew.m_connection.CreateCommandAsync($@"
+                SELECT DISTINCT ""BlockListHash""
+                FROM ""{dbnew.m_tempblocklist}""
+                WHERE ""BlockListHash"" = @BlocklistHash
+            ");
+
+            dbnew.m_findHashBlockCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                SELECT ""VolumeID""
+                FROM ""Block""
+                WHERE
+                    ""Hash"" = @Hash
+                    AND ""Size"" = @Size
+            ");
+
+            dbnew.m_insertBlockCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                INSERT INTO ""Block"" (
+                    ""Hash"",
+                    ""Size"",
+                    ""VolumeID""
+                )
+                VALUES (
+                    @Hash,
+                    @Size,
+                    @VolumeId
+                )
+            ");
+
+            dbnew.m_insertDuplicateBlockCommand = await dbnew.m_connection.CreateCommandAsync(@"
+                INSERT OR IGNORE INTO ""DuplicateBlock"" (
+                    ""BlockID"",
+                    ""VolumeID""
+                )
+                VALUES (
+                    (
+                        SELECT ""ID""
+                        FROM ""Block""
+                        WHERE
+                            ""Hash"" = @Hash
+                            AND ""Size"" = @Size
+                    ),
+                    @VolumeId
+                )
+            ");
 
             return dbnew;
         }
@@ -170,45 +348,146 @@ namespace Duplicati.Library.Main.Database
             using var cmd = m_connection.CreateCommand(m_rtr);
             //Update all small blocklists and matching blocks
 
-            var selectSmallBlocks = $@"SELECT ""BlockHash"", ""BlockSize"" FROM ""{m_tempsmalllist}""";
+            var selectSmallBlocks = $@"
+                SELECT
+                    ""BlockHash"",
+                    ""BlockSize""
+                FROM ""{m_tempsmalllist}""
+            ";
 
-            var selectBlockHashes = $@"SELECT ""BlockHash"" AS ""FullHash"", ""BlockSize"" AS ""Length"" FROM ( {SELECT_BLOCKLIST_ENTRIES(blocksize, hashsize, m_tempblocklist, blocksize / hashsize)} )";
+            var selectBlockHashes = $@"
+                SELECT
+                    ""BlockHash"" AS ""FullHash"",
+                    ""BlockSize"" AS ""Length""
+                FROM (
+                    {SELECT_BLOCKLIST_ENTRIES(blocksize, hashsize, m_tempblocklist, blocksize / hashsize)}
+                )
+            ";
 
-            var selectAllBlocks = @"SELECT DISTINCT ""FullHash"", ""Length"" FROM (" + selectBlockHashes + " UNION " + selectSmallBlocks + " )";
+            var selectAllBlocks = @$"
+                SELECT DISTINCT
+                    ""FullHash"",
+                    ""Length""
+                FROM (
+                    {selectBlockHashes}
+                    UNION {selectSmallBlocks}
+                )
+            ";
 
-            var selectNewBlocks = $@"SELECT ""FullHash"" AS ""Hash"", ""Length"" AS ""Size"", -1 AS ""VolumeID""
-FROM (SELECT ""A"".""FullHash"", ""A"".""Length"", CASE WHEN ""B"".""Hash"" IS NULL THEN '' ELSE ""B"".""Hash"" END AS ""Hash"", CASE WHEN ""B"".""Size"" is NULL THEN -1 ELSE ""B"".""Size"" END AS ""Size"" FROM ({selectAllBlocks}) A
-LEFT OUTER JOIN ""Block"" B ON ""B"".""Hash"" =  ""A"".""FullHash"" AND ""B"".""Size"" = ""A"".""Length"" )
-WHERE ""FullHash"" != ""Hash"" AND ""Length"" != ""Size"" ";
+            var selectNewBlocks = $@"
+                SELECT
+                    ""FullHash"" AS ""Hash"",
+                    ""Length"" AS ""Size"",
+                    -1 AS ""VolumeID""
+                FROM (
+                    SELECT
+                        ""A"".""FullHash"",
+                        ""A"".""Length"",
+                        CASE
+                            WHEN ""B"".""Hash"" IS NULL
+                            THEN ''
+                            ELSE ""B"".""Hash""
+                        END AS ""Hash"",
+                        CASE
+                            WHEN ""B"".""Size"" is NULL
+                            THEN -1
+                            ELSE ""B"".""Size""
+                        END AS ""Size""
+                    FROM ({selectAllBlocks}) A
+                    LEFT OUTER JOIN ""Block"" B
+                        ON ""B"".""Hash"" =  ""A"".""FullHash""
+                        AND ""B"".""Size"" = ""A"".""Length""
+                )
+                WHERE
+                    ""FullHash"" != ""Hash""
+                    AND ""Length"" != ""Size""
+            ";
 
-            var insertBlocksCommand =
-                @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") " +
-                selectNewBlocks;
+            var insertBlocksCommand = @$"
+                INSERT INTO ""Block"" (
+                    ""Hash"",
+                    ""Size"",
+                    ""VolumeID""
+                )
+                {selectNewBlocks}
+            ";
 
             // Insert all known blocks into block table with volumeid = -1
             await cmd.ExecuteNonQueryAsync(insertBlocksCommand);
 
-            var selectBlocklistBlocksetEntries =
-                // TODO: The BlocklistHash join seems to be unnecessary, but the join might be required to work around a from really old versions of Duplicati
-                // this could be used instead
-                //@") D, ""Block"" WHERE  ""BlockQuery"".""BlockHash"" = ""Block"".""Hash"" AND ""BlockQuery"".""BlockSize"" = ""Block"".""Size"" ";
-                $@"SELECT ""E"".""BlocksetID"" AS ""BlocksetID"", ""D"".""FullIndex"" AS ""Index"", ""F"".""ID"" AS ""BlockID"" FROM ( {SELECT_BLOCKLIST_ENTRIES(blocksize, hashsize, m_tempblocklist, blocksize / hashsize)}) D, ""BlocklistHash"" E, ""Block"" F, ""Block"" G WHERE ""D"".""BlocksetID"" = ""E"".""BlocksetID"" AND ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""BlocklistSize"" = ""G"".""Size"" AND ""D"".""BlocklistHash"" = ""G"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" "
-            ;
+            // TODO: The BlocklistHash join seems to be unnecessary, but the join might be required to work around a from really old versions of Duplicati
+            // this could be used instead
+            //@") D, ""Block"" WHERE  ""BlockQuery"".""BlockHash"" = ""Block"".""Hash"" AND ""BlockQuery"".""BlockSize"" = ""Block"".""Size"" ";
+            var selectBlocklistBlocksetEntries = $@"
+                SELECT
+                    ""E"".""BlocksetID"" AS ""BlocksetID"",
+                    ""D"".""FullIndex"" AS ""Index"",
+                    ""F"".""ID"" AS ""BlockID""
+                FROM
+                    ({SELECT_BLOCKLIST_ENTRIES(blocksize, hashsize, m_tempblocklist, blocksize / hashsize)}) D,
+                    ""BlocklistHash"" E,
+                    ""Block"" F,
+                    ""Block"" G
+                WHERE
+                    ""D"".""BlocksetID"" = ""E"".""BlocksetID""
+                    AND ""D"".""BlocklistHash"" = ""E"".""Hash""
+                    AND ""D"".""BlocklistSize"" = ""G"".""Size""
+                    AND ""D"".""BlocklistHash"" = ""G"".""Hash""
+                    AND ""D"".""Blockhash"" = ""F"".""Hash""
+                    AND ""D"".""BlockSize"" = ""F"".""Size""
+            ";
 
-            var selectBlocksetEntries = $@"SELECT ""Blockset"".""ID"" AS ""BlocksetID"", 0 AS ""Index"", ""Block"".""ID"" AS ""BlockID"" FROM ""Blockset"", ""Block"", ""{m_tempsmalllist}"" S WHERE ""Blockset"".""Fullhash"" = ""S"".""FileHash"" AND ""S"".""BlockHash"" = ""Block"".""Hash"" AND ""S"".""BlockSize"" = ""Block"".""Size"" AND ""Blockset"".""Length"" = ""S"".""BlockSize"" AND ""Blockset"".""Length"" <= {blocksize} ";
+            var selectBlocksetEntries = $@"
+                SELECT
+                    ""Blockset"".""ID"" AS ""BlocksetID"",
+                    0 AS ""Index"",
+                    ""Block"".""ID"" AS ""BlockID""
+                FROM
+                    ""Blockset"",
+                    ""Block"",
+                    ""{m_tempsmalllist}"" S
+                WHERE
+                    ""Blockset"".""Fullhash"" = ""S"".""FileHash""
+                    AND ""S"".""BlockHash"" = ""Block"".""Hash""
+                    AND ""S"".""BlockSize"" = ""Block"".""Size""
+                    AND ""Blockset"".""Length"" = ""S"".""BlockSize""
+                    AND ""Blockset"".""Length"" <= {blocksize}
+            ";
 
-            var selectAllBlocksetEntries =
-                selectBlocklistBlocksetEntries +
-                @" UNION " +
-                selectBlocksetEntries;
+            var selectAllBlocksetEntries = @$"
+                {selectBlocklistBlocksetEntries}
+                UNION
+                {selectBlocksetEntries}
+            ";
 
-            var selectFiltered =
-                @"SELECT DISTINCT ""H"".""BlocksetID"", ""H"".""Index"", ""H"".""BlockID"" FROM (" +
-                selectAllBlocksetEntries +
-                @") H WHERE (""H"".""BlocksetID"" || ':' || ""H"".""Index"") NOT IN (SELECT (""ExistingBlocksetEntries"".""BlocksetID"" || ':' || ""ExistingBlocksetEntries"".""Index"") FROM ""BlocksetEntry"" ""ExistingBlocksetEntries"" )";
+            var selectFiltered = @$"
+                SELECT DISTINCT
+                    ""H"".""BlocksetID"",
+                    ""H"".""Index"",
+                    ""H"".""BlockID""
+                FROM ({selectAllBlocksetEntries}) H
+                WHERE (
+                        ""H"".""BlocksetID""
+                        || ':'
+                        || ""H"".""Index""
+                    ) NOT IN (
+                    SELECT (
+                        ""ExistingBlocksetEntries"".""BlocksetID""
+                        || ':'
+                        || ""ExistingBlocksetEntries"".""Index""
+                    )
+                    FROM ""BlocksetEntry"" ""ExistingBlocksetEntries""
+                )
+            ";
 
-            var insertBlocksetEntriesCommand =
-                @"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") " + selectFiltered;
+            var insertBlocksetEntriesCommand = @$"
+                INSERT INTO ""BlocksetEntry"" (
+                    ""BlocksetID"",
+                    ""Index"",
+                    ""BlockID""
+                )
+                {selectFiltered}
+            ";
 
             try
             {
@@ -220,8 +499,17 @@ WHERE ""FullHash"" != ""Hash"" AND ""Length"" != ""Size"" ";
 
                 using (var fixcmd = m_connection.CreateCommand(m_rtr))
                 {
-                    await fixcmd.ExecuteNonQueryAsync($@"CREATE TABLE ""{m_tempblocklist}-Failure"" AS SELECT * FROM ""{m_tempblocklist}"" ");
-                    await fixcmd.ExecuteNonQueryAsync($@"CREATE TABLE ""{m_tempsmalllist}-Failure"" AS SELECT * FROM ""{m_tempsmalllist}"" ");
+                    await fixcmd.ExecuteNonQueryAsync($@"
+                        CREATE TABLE ""{m_tempblocklist}-Failure"" AS
+                        SELECT *
+                        FROM ""{m_tempblocklist}""
+                    ");
+
+                    await fixcmd.ExecuteNonQueryAsync($@"
+                        CREATE TABLE ""{m_tempsmalllist}-Failure"" AS
+                        SELECT *
+                        FROM ""{m_tempsmalllist}""
+                    ");
                 }
 
                 throw new Exception("The recreate failed, please create a bug-report from this database and send it to the developers for further analysis");
@@ -247,51 +535,98 @@ WHERE ""FullHash"" != ""Hash"" AND ""Length"" != ""Size"" ";
         public async Task AddBlockAndBlockSetEntryFromTemp(long hashsize, long blocksize, SqliteTransaction transaction, bool hashOnly = false)
         {
             using var cmd = m_connection.CreateCommand(m_rtr);
-            var insertBlocksCommand = $@"INSERT INTO BLOCK (Hash, Size, VolumeID)
-SELECT DISTINCT BlockHash AS Hash, BlockSize AS Size, -1 AS VolumeID FROM
-(
-SELECT NB.BlockHash,
-MIN({blocksize}, BS.Length - ((NB.""Index"" + (BH.""Index"" * {blocksize / hashsize})) * {blocksize})) AS BlockSize
-FROM (
-     SELECT TBL.BlockListHash, TBL.BlockHash, TBL.""Index"" FROM {m_tempblocklist} TBL
-        LEFT OUTER JOIN Block B ON (B.Hash = TBL.BlockHash)
-        WHERE B.Hash IS NULL
-     ) NB
-JOIN BlocklistHash BH ON (BH.Hash = NB.BlocklistHash)
-JOIN Blockset BS ON (BS.ID = BH.Blocksetid) ";
-            if (!hashOnly)
-            {
-                insertBlocksCommand += $@" UNION
-SELECT TS.BlockHash, TS.BlockSize FROM
-{m_tempsmalllist} TS
-WHERE NOT EXISTS (SELECT ""X"" FROM Block AS B WHERE
-  B.Hash =  TS.BlockHash AND
-  B.Size = TS.BlockSize)
-)";
-            }
+            var extra = hashOnly ? "" : $@"
+                    UNION
+                    SELECT
+                        TS.BlockHash,
+                        TS.BlockSize
+                    FROM {m_tempsmalllist} TS
+                    WHERE NOT EXISTS (
+                        SELECT ""X""
+                        FROM Block AS B
+                        WHERE
+                            B.Hash =  TS.BlockHash
+                            AND B.Size = TS.BlockSize
+                    )
+                ";
+            var insertBlocksCommand = $@"
+                INSERT INTO BLOCK (
+                    Hash,
+                    Size,
+                    VolumeID
+                )
+                SELECT DISTINCT
+                    BlockHash AS Hash,
+                    BlockSize AS Size,
+                    -1 AS VolumeID
+                FROM (
+                    SELECT
+                        NB.BlockHash,
+                        MIN({blocksize}, BS.Length - ((NB.""Index"" + (BH.""Index"" * {blocksize / hashsize})) * {blocksize})) AS BlockSize
+                    FROM (
+                        SELECT
+                            TBL.BlockListHash,
+                            TBL.BlockHash,
+                            TBL.""Index"" FROM {m_tempblocklist} TBL
+                        LEFT OUTER JOIN Block B
+                            ON (B.Hash = TBL.BlockHash)
+                        WHERE B.Hash IS NULL
+                    ) NB
+                    JOIN BlocklistHash BH
+                        ON (BH.Hash = NB.BlocklistHash)
+                    JOIN Blockset BS
+                        ON (BS.ID = BH.Blocksetid)
+                    {extra}
+                )
+            ";
 
-            var insertBlocksetEntriesCommand = $@"INSERT INTO BlocksetEntry (BlocksetID, ""Index"", BlockID)
-SELECT DISTINCT BH.blocksetid, (BH.""Index"" * {blocksize / hashsize})+TBL.""Index"" as FullIndex, BK.ID AS BlockID
-FROM {m_tempblocklist} TBL
-   JOIN blocklisthash BH ON (BH.hash = TBL.blocklisthash)
-   JOIN block BK ON (BK.Hash = TBL.BlockHash)
-   LEFT OUTER JOIN BlocksetEntry BE ON (BE.BlockSetID = BH.BlocksetID AND BE.""Index"" = (BH.""Index"" * {blocksize / hashsize})+TBL.""Index"")
-WHERE
-BE.BlockSetID IS NULL ";
-            if (!hashOnly)
-            {
-                insertBlocksetEntriesCommand += $@" UNION
-SELECT BS.ID AS BlocksetID, 0 AS ""Index"", BL.ID AS BlockID
-FROM {m_tempsmalllist} TS
-   JOIN Blockset BS ON (BS.FullHash = TS.FileHash AND
-                        BS.Length = TS.BlockSize AND
-                        BS.Length <= {blocksize})
-   JOIN Block BL ON (BL.Hash = TS.BlockHash AND
-                     BL.Size = TS.BlockSize)
-   LEFT OUTER JOIN BlocksetEntry BE ON (BE.BlocksetID = BS.ID AND BE.""Index"" = 0)
-WHERE
-BE.BlocksetID IS NULL ";
-            }
+            extra = hashOnly ? "" : $@"
+                UNION
+                    SELECT
+                        BS.ID AS BlocksetID,
+                        0 AS ""Index"",
+                        BL.ID AS BlockID
+                    FROM {m_tempsmalllist} TS
+                    JOIN Blockset BS
+                        ON (
+                            BS.FullHash = TS.FileHash
+                            AND BS.Length = TS.BlockSize
+                            AND BS.Length <= {blocksize}
+                        )
+                    JOIN Block BL
+                        ON (
+                            BL.Hash = TS.BlockHash
+                            AND BL.Size = TS.BlockSize
+                        )
+                    LEFT OUTER JOIN BlocksetEntry BE
+                        ON (
+                            BE.BlocksetID = BS.ID
+                            AND BE.""Index"" = 0
+                        )
+                    WHERE BE.BlocksetID IS NULL
+            ";
+            var insertBlocksetEntriesCommand = $@"
+                INSERT INTO BlocksetEntry (
+                    BlocksetID,
+                    ""Index"",
+                    BlockID
+                )
+                SELECT DISTINCT
+                    BH.blocksetid,
+                    (BH.""Index"" * {blocksize / hashsize})+TBL.""Index"" as FullIndex,
+                    BK.ID AS BlockID
+                FROM {m_tempblocklist} TBL
+                    JOIN blocklisthash BH
+                        ON (BH.hash = TBL.blocklisthash)
+                    JOIN block BK
+                        ON (BK.Hash = TBL.BlockHash)
+                    LEFT OUTER JOIN BlocksetEntry BE
+                        ON (
+                            BE.BlockSetID = BH.BlocksetID
+                            AND BE.""Index"" = (BH.""Index"" * {blocksize / hashsize})+TBL.""Index""
+                        )
+                WHERE BE.BlockSetID IS NULL
+                {extra}";
 
             try
             {
@@ -306,8 +641,17 @@ BE.BlocksetID IS NULL ";
 
                 using (var fixcmd = m_connection.CreateCommand(m_rtr))
                 {
-                    await fixcmd.ExecuteNonQueryAsync($@"CREATE TABLE ""{m_tempblocklist}_Failure"" AS SELECT * FROM ""{m_tempblocklist}"" ");
-                    await fixcmd.ExecuteNonQueryAsync($@"CREATE TABLE ""{m_tempsmalllist}_Failure"" AS SELECT * FROM ""{m_tempsmalllist}"" ");
+                    await fixcmd.ExecuteNonQueryAsync($@"
+                        CREATE TABLE ""{m_tempblocklist}_Failure"" AS
+                        SELECT *
+                        FROM ""{m_tempblocklist}""
+                    ");
+
+                    await fixcmd.ExecuteNonQueryAsync($@"
+                        CREATE TABLE ""{m_tempsmalllist}_Failure""
+                        AS SELECT *
+                        FROM ""{m_tempsmalllist}""
+                    ");
                 }
 
                 throw new Exception("The recreate failed, please create a bug-report from this database and send it to the developers for further analysis");
@@ -524,7 +868,15 @@ BE.BlocksetID IS NULL ";
 
         public async IAsyncEnumerable<string> GetBlockLists(long volumeid)
         {
-            using var cmd = m_connection.CreateCommand(@"SELECT DISTINCT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"", ""Block"" WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" AND ""Block"".""VolumeID"" = @VolumeId")
+            using var cmd = m_connection.CreateCommand(@"
+                SELECT DISTINCT ""BlocklistHash"".""Hash""
+                FROM
+                    ""BlocklistHash"",
+                    ""Block""
+                WHERE
+                    ""Block"".""Hash"" = ""BlocklistHash"".""Hash""
+                    AND ""Block"".""VolumeID"" = @VolumeId
+            ")
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@VolumeId", volumeid);
 
@@ -537,25 +889,59 @@ BE.BlocksetID IS NULL ";
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                var selectCommand = @"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"", ""RemoteVolume"".""ID"" FROM ""RemoteVolume""";
+                var selectCommand = @"
+                    SELECT DISTINCT
+                        ""RemoteVolume"".""Name"",
+                        ""RemoteVolume"".""Hash"",
+                        ""RemoteVolume"".""Size"",
+                        ""RemoteVolume"".""ID""
+                    FROM ""RemoteVolume""
+                ";
 
-                var missingBlocklistEntries =
-                    $@"SELECT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"" LEFT OUTER JOIN ""BlocksetEntry"" ON ""BlocksetEntry"".""Index"" = (""BlocklistHash"".""Index"" * {blocksize / hashsize}) AND ""BlocksetEntry"".""BlocksetID"" = ""BlocklistHash"".""BlocksetID"" WHERE ""BlocksetEntry"".""BlocksetID"" IS NULL";
+                var missingBlocklistEntries = $@"
+                    SELECT ""BlocklistHash"".""Hash""
+                    FROM ""BlocklistHash""
+                    LEFT OUTER JOIN ""BlocksetEntry""
+                        ON ""BlocksetEntry"".""Index"" = (""BlocklistHash"".""Index"" * {blocksize / hashsize})
+                        AND ""BlocksetEntry"".""BlocksetID"" = ""BlocklistHash"".""BlocksetID""
+                    WHERE ""BlocksetEntry"".""BlocksetID"" IS NULL
+                ";
 
-                var missingBlockInfo =
-                    @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""VolumeID"" < 0 AND SIZE > 0";
+                var missingBlockInfo = @"
+                    SELECT ""VolumeID""
+                    FROM ""Block""
+                    WHERE
+                        ""VolumeID"" < 0
+                        AND SIZE > 0
+                ";
 
-                var missingBlocklistVolumes =
-                    $@"SELECT ""VolumeID"" FROM ""Block"", ({missingBlocklistEntries}) A WHERE ""A"".""Hash"" = ""Block"".""Hash"" "
-                ;
+                var missingBlocklistVolumes = $@"
+                    SELECT ""VolumeID""
+                    FROM
+                        ""Block"",
+                        ({missingBlocklistEntries}) A
+                    WHERE ""A"".""Hash"" = ""Block"".""Hash""
+                ";
 
-                var countMissingInformation = $@"SELECT COUNT(*) FROM (SELECT DISTINCT ""VolumeID"" FROM ({missingBlockInfo} UNION {missingBlocklistVolumes}))";
+                var countMissingInformation = $@"
+                    SELECT COUNT(*)
+                    FROM (
+                        SELECT DISTINCT ""VolumeID""
+                        FROM (
+                            {missingBlockInfo}
+                            UNION {missingBlocklistVolumes}
+                        )
+                    )
+                ";
 
                 if (passNo == 0)
                 {
                     // On the first pass, we select all the volumes we know we need,
                     // which may be an empty list
-                    cmd.SetCommandAndParameters($@"{selectCommand} WHERE ""ID"" IN ({missingBlocklistVolumes})");
+                    cmd.SetCommandAndParameters($@"
+                        {selectCommand}
+                        WHERE ""ID"" IN ({missingBlocklistVolumes})
+                    ");
 
                     // Reset the list
                     m_proccessedVolumes.Clear();
@@ -574,11 +960,18 @@ BE.BlocksetID IS NULL ";
                     {
                         // On the second pass, we select all volumes that are not mentioned in the db
 
-                        var mentionedVolumes =
-                            @"SELECT DISTINCT ""VolumeID"" FROM ""Block"" ";
+                        var mentionedVolumes = @"
+                            SELECT DISTINCT ""VolumeID""
+                            FROM ""Block""
+                        ";
 
                         cmd
-                            .SetCommandAndParameters($@"{selectCommand} WHERE ""ID"" IN ({mentionedVolumes}) AND ""Type"" = @Type ")
+                            .SetCommandAndParameters($@"
+                                {selectCommand}
+                                WHERE
+                                    ""ID"" IN ({mentionedVolumes})
+                                    AND ""Type"" = @Type
+                            ")
                             .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString());
 
 
@@ -588,7 +981,10 @@ BE.BlocksetID IS NULL ";
                         // On the final pass, we select all volumes
                         // the filter will ensure that we do not download anything twice
                         cmd
-                            .SetCommandAndParameters($@"{selectCommand} WHERE ""Type"" = @Type")
+                            .SetCommandAndParameters($@"
+                                {selectCommand}
+                                WHERE ""Type"" = @Type
+                            ")
                             .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString());
                     }
                 }
@@ -622,50 +1018,118 @@ BE.BlocksetID IS NULL ";
             // The second part removes references to the non-present remote files,
             // and marks the index files that pointed to them, such that they will be removed later on
             var sql = $@"
-CREATE TEMPORARY TABLE ""{tablename}"" AS
-SELECT
-  ""A"".""ID"" AS ""BlockID"", ""A"".""VolumeID"" AS ""SourceVolumeID"", ""A"".""State"" AS ""SourceVolumeState"", ""B"".""VolumeID"" AS ""TargetVolumeID"", ""B"".""State"" AS ""TargetVolumeState""
-FROM
-  (SELECT
-    ""Block"".""ID"", ""Block"".""VolumeID"", ""Remotevolume"".""State""
-    FROM ""Block"", ""Remotevolume""
-    WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Remotevolume"".""State"" = '{RemoteVolumeState.Temporary}'
-  ) A,
-  (SELECT
-    ""DuplicateBlock"".""BlockID"",  MIN(""DuplicateBlock"".""VolumeID"") AS ""VolumeID"", ""Remotevolume"".""State""
-    FROM ""DuplicateBlock"", ""Remotevolume""
-    WHERE ""DuplicateBlock"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Remotevolume"".""State"" = '{RemoteVolumeState.Verified}'
-    GROUP BY ""DuplicateBlock"".""BlockID"", ""Remotevolume"".""State""
-  ) B
-WHERE ""A"".""ID"" = ""B"".""BlockID"";
+                CREATE TEMPORARY TABLE ""{tablename}"" AS
+                SELECT
+                    ""A"".""ID"" AS ""BlockID"",
+                    ""A"".""VolumeID"" AS ""SourceVolumeID"",
+                    ""A"".""State"" AS ""SourceVolumeState"",
+                    ""B"".""VolumeID"" AS ""TargetVolumeID"",
+                    ""B"".""State"" AS ""TargetVolumeState""
+                FROM
+                    (
+                        SELECT
+                            ""Block"".""ID"",
+                            ""Block"".""VolumeID"",
+                            ""Remotevolume"".""State""
+                        FROM
+                            ""Block"",
+                            ""Remotevolume""
+                        WHERE
+                            ""Block"".""VolumeID"" = ""Remotevolume"".""ID""
+                            AND ""Remotevolume"".""State"" = '{RemoteVolumeState.Temporary}'
+                    ) A,
+                    (
+                        SELECT
+                            ""DuplicateBlock"".""BlockID"",
+                            MIN(""DuplicateBlock"".""VolumeID"") AS ""VolumeID"",
+                            ""Remotevolume"".""State""
+                        FROM
+                            ""DuplicateBlock"",
+                            ""Remotevolume""
+                        WHERE
+                            ""DuplicateBlock"".""VolumeID"" = ""Remotevolume"".""ID""
+                            AND ""Remotevolume"".""State"" = '{RemoteVolumeState.Verified}'
+                        GROUP BY
+                            ""DuplicateBlock"".""BlockID"",
+                            ""Remotevolume"".""State""
+                    ) B
+                WHERE ""A"".""ID"" = ""B"".""BlockID"";
 
-UPDATE ""Block""
-  SET ""VolumeID"" = (SELECT
-    ""TargetVolumeID"" FROM ""{tablename}""
-    WHERE ""Block"".""ID"" = ""{tablename}"".""BlockID""
-  )
-  WHERE ""Block"".""ID"" IN (SELECT ""BlockID"" FROM ""{tablename}"");
+                UPDATE ""Block""
+                SET ""VolumeID"" = (
+                    SELECT ""TargetVolumeID""
+                    FROM ""{tablename}""
+                    WHERE ""Block"".""ID"" = ""{tablename}"".""BlockID""
+                )
+                WHERE ""Block"".""ID"" IN (
+                    SELECT ""BlockID""
+                    FROM ""{tablename}""
+                );
 
-UPDATE ""DuplicateBlock""
-  SET ""VolumeID"" = (SELECT
-    ""SourceVolumeID"" FROM ""{tablename}""
-    WHERE ""DuplicateBlock"".""BlockID"" = ""{tablename}"".""BlockID""
-  )
-WHERE
-  (""DuplicateBlock"".""BlockID"", ""DuplicateBlock"".""VolumeID"")
-  IN (SELECT ""BlockID"", ""TargetVolumeID"" FROM ""{tablename}"");
+                UPDATE ""DuplicateBlock""
+                SET ""VolumeID"" = (
+                    SELECT ""SourceVolumeID""
+                    FROM ""{tablename}""
+                    WHERE ""DuplicateBlock"".""BlockID"" = ""{tablename}"".""BlockID""
+                )
+                WHERE (
+                    ""DuplicateBlock"".""BlockID"",
+                    ""DuplicateBlock"".""VolumeID""
+                ) IN (
+                    SELECT
+                        ""BlockID"",
+                        ""TargetVolumeID""
+                    FROM ""{tablename}""
+                );
 
-DROP TABLE ""{tablename}"";
+                DROP TABLE ""{tablename}"";
 
-DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""State"" = '{RemoteVolumeState.Temporary}' AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));
-DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""State"" = '{RemoteVolumeState.Temporary}' AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));
-DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""State"" = '{RemoteVolumeState.Temporary}' AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block"");
-";
+                DELETE FROM ""IndexBlockLink""
+                WHERE ""BlockVolumeID"" IN (
+                    SELECT ""ID""
+                    FROM ""RemoteVolume""
+                    WHERE
+                        ""Type"" = '{RemoteVolumeType.Blocks}'
+                        AND ""State"" = '{RemoteVolumeState.Temporary}'
+                        AND ""ID"" NOT IN (
+                            SELECT DISTINCT ""VolumeID""
+                            FROM ""Block""
+                        )
+                );
+
+                DELETE FROM ""DuplicateBlock""
+                WHERE ""VolumeID"" IN (
+                    SELECT ""ID""
+                    FROM ""RemoteVolume""
+                    WHERE
+                        ""Type"" = '{RemoteVolumeType.Blocks}'
+                        AND ""State"" = '{RemoteVolumeState.Temporary}'
+                        AND ""ID"" NOT IN (
+                            SELECT DISTINCT ""VolumeID""
+                            FROM ""Block""
+                        )
+                );
+
+                DELETE FROM ""RemoteVolume""
+                WHERE
+                    ""Type"" = '{RemoteVolumeType.Blocks}'
+                    AND ""State"" = '{RemoteVolumeState.Temporary}'
+                    AND ""ID"" NOT IN (
+                        SELECT DISTINCT ""VolumeID""
+                        FROM ""Block""
+                    );
+            ";
 
             // We could delete these, but we don't have to, so we keep them around until the next compact is done
             // UPDATE ""RemoteVolume"" SET ""State"" = ""{3}"" WHERE ""Type"" = ""{5}"" AND ""ID"" NOT IN (SELECT ""IndexVolumeID"" FROM ""IndexBlockLink"");
 
-            var countsql = $@"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""State"" = '{RemoteVolumeState.Temporary}' AND ""Type"" = '{RemoteVolumeType.Blocks}' ";
+            var countsql = $@"
+                SELECT COUNT(*)
+                FROM ""RemoteVolume""
+                WHERE
+                    ""State"" = '{RemoteVolumeState.Temporary}'
+                    AND ""Type"" = '{RemoteVolumeType.Blocks}'
+            ";
 
             using (var cmd = m_connection.CreateCommand(m_rtr))
             {
@@ -700,14 +1164,48 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
 
             using var cmd = m_connection.CreateCommand(m_rtr);
             // 1. Select blocks not used by any file and not as a blocklist into temporary table
-            await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{tmptablename}""
-                    AS SELECT ""Block"".""ID"", ""Block"".""Hash"", ""Block"".""Size"", ""Block"".""VolumeID"" FROM ""Block""
-                        WHERE ""Block"".""ID"" NOT IN (SELECT ""BlocksetEntry"".""BlockID"" FROM ""BlocksetEntry"")
-                        AND ""Block"".""Hash"" NOT IN (SELECT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"")");
+            await cmd.ExecuteNonQueryAsync($@"
+                CREATE TEMPORARY TABLE ""{tmptablename}"" AS
+                SELECT
+                    ""Block"".""ID"",
+                    ""Block"".""Hash"",
+                    ""Block"".""Size"",
+                    ""Block"".""VolumeID""
+                FROM ""Block""
+                WHERE
+                    ""Block"".""ID"" NOT IN (
+                        SELECT ""BlocksetEntry"".""BlockID""
+                        FROM ""BlocksetEntry""
+                    )
+                    AND ""Block"".""Hash"" NOT IN (
+                        SELECT ""BlocklistHash"".""Hash""
+                        FROM ""BlocklistHash""
+                    )
+            ");
+
             // 2. Insert blocks into DeletedBlock table
-            await cmd.ExecuteNonQueryAsync($@"INSERT INTO ""DeletedBlock"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""{tmptablename}""");
+            await cmd.ExecuteNonQueryAsync($@"
+                INSERT INTO ""DeletedBlock"" (
+                    ""Hash"",
+                    ""Size"",
+                    ""VolumeID""
+                )
+                SELECT
+                    ""Hash"",
+                    ""Size"",
+                    ""VolumeID""
+                FROM ""{tmptablename}""
+            ");
+
             // 3. Remove blocks from Block table
-            await cmd.ExecuteNonQueryAsync($@"DELETE FROM ""Block"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""{tmptablename}"")");
+            await cmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""Block""
+                WHERE ""ID"" IN (
+                    SELECT ""ID""
+                    FROM ""{tmptablename}""
+                )
+            ");
+
             await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tmptablename}""");
             await m_rtr.CommitAsync();
         }
