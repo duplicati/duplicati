@@ -220,11 +220,11 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction))
                 {
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" {tableFormat}"));
+                    cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{tablename}"" {tableFormat}");
                     bl.m_tablename = tablename;
                 }
 
-                bl.m_insertCommand = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction, FormatInvariant($@"INSERT INTO ""{bl.m_tablename}"" {insertCommand}"));
+                bl.m_insertCommand = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction, $@"INSERT INTO ""{bl.m_tablename}"" {insertCommand}");
 
                 return bl;
             }
@@ -235,7 +235,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction.Transaction))
-                            cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"""));
+                            cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""{m_tablename}""");
                     }
                     catch { }
                     finally { m_tablename = null!; }
@@ -286,11 +286,11 @@ namespace Duplicati.Library.Main.Database
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-                var create = FormatInvariant($@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT ""A"".""Path"" AS ""Path"", CASE WHEN ""B"".""Fullhash"" IS NULL THEN -1 ELSE ""B"".""Length"" END AS ""Size"", ""B"".""Fullhash"" AS ""Hash"", ""C"".""Length"" AS ""Metasize"", ""C"".""Fullhash"" AS ""Metahash"" FROM (SELECT ""File"".""Path"", ""File"".""BlocksetID"" AS ""FileBlocksetID"", ""Metadataset"".""BlocksetID"" AS ""MetadataBlocksetID"" from ""Remotevolume"", ""Fileset"", ""FilesetEntry"", ""File"", ""Metadataset"" WHERE ""Remotevolume"".""Name"" = @Name AND ""Fileset"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""MetadataID"" = ""Metadataset"".""ID"") A LEFT OUTER JOIN ""Blockset"" B ON ""B"".""ID"" = ""A"".""FileBlocksetID"" LEFT OUTER JOIN ""Blockset"" C ON ""C"".""ID""=""A"".""MetadataBlocksetID"" ");
-                var extra = FormatInvariant($@"SELECT @TypeExtra AS ""Type"", ""{m_tablename}"".""Path"" AS ""Path"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Path"" NOT IN ( SELECT ""Path"" FROM ""{cmpName}"" )");
-                var missing = FormatInvariant($@"SELECT @TypeMissing AS ""Type"", ""Path"" AS ""Path"" FROM ""{cmpName}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{m_tablename}"")");
-                var modified = FormatInvariant($@"SELECT @TypeModified AS ""Type"", ""E"".""Path"" AS ""Path"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Path"" = ""E"".""Path"" AND (""D"".""Size"" != ""E"".""Size"" OR ""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Metasize"" != ""E"".""Metasize"" OR ""D"".""Metahash"" != ""E"".""Metahash"")  ");
-                var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
+                var create = $@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT ""A"".""Path"" AS ""Path"", CASE WHEN ""B"".""Fullhash"" IS NULL THEN -1 ELSE ""B"".""Length"" END AS ""Size"", ""B"".""Fullhash"" AS ""Hash"", ""C"".""Length"" AS ""Metasize"", ""C"".""Fullhash"" AS ""Metahash"" FROM (SELECT ""File"".""Path"", ""File"".""BlocksetID"" AS ""FileBlocksetID"", ""Metadataset"".""BlocksetID"" AS ""MetadataBlocksetID"" from ""Remotevolume"", ""Fileset"", ""FilesetEntry"", ""File"", ""Metadataset"" WHERE ""Remotevolume"".""Name"" = @Name AND ""Fileset"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""MetadataID"" = ""Metadataset"".""ID"") A LEFT OUTER JOIN ""Blockset"" B ON ""B"".""ID"" = ""A"".""FileBlocksetID"" LEFT OUTER JOIN ""Blockset"" C ON ""C"".""ID""=""A"".""MetadataBlocksetID"" ";
+                var extra = $@"SELECT @TypeExtra AS ""Type"", ""{m_tablename}"".""Path"" AS ""Path"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Path"" NOT IN ( SELECT ""Path"" FROM ""{cmpName}"" )";
+                var missing = $@"SELECT @TypeMissing AS ""Type"", ""Path"" AS ""Path"" FROM ""{cmpName}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{m_tablename}"")";
+                var modified = $@"SELECT @TypeModified AS ""Type"", ""E"".""Path"" AS ""Path"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Path"" = ""E"".""Path"" AND (""D"".""Size"" != ""E"".""Size"" OR ""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Metasize"" != ""E"".""Metasize"" OR ""D"".""Metahash"" != ""E"".""Metahash"")  ";
+                var drop = $@"DROP TABLE IF EXISTS ""{cmpName}"" ";
 
                 using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
@@ -300,7 +300,7 @@ namespace Duplicati.Library.Main.Database
                             .SetParameterValue("@Name", m_volumename)
                             .ExecuteNonQuery();
 
-                        cmd.SetCommandAndParameters(FormatInvariant($"{extra} UNION {missing} UNION {modified}"))
+                        cmd.SetCommandAndParameters($"{extra} UNION {missing} UNION {modified}")
                             .SetParameterValue("@TypeExtra", (int)Interface.TestEntryStatus.Extra)
                             .SetParameterValue("@TypeMissing", (int)Interface.TestEntryStatus.Missing)
                             .SetParameterValue("@TypeModified", (int)Interface.TestEntryStatus.Modified);
@@ -358,11 +358,11 @@ namespace Duplicati.Library.Main.Database
             public IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare()
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                var create = FormatInvariant($@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT ""A"".""Name"", ""A"".""Hash"", ""A"".""Size"" FROM ""Remotevolume"" A, ""Remotevolume"" B, ""IndexBlockLink"" WHERE ""B"".""Name"" = @Name AND ""A"".""ID"" = ""IndexBlockLink"".""BlockVolumeID"" AND ""B"".""ID"" = ""IndexBlockLink"".""IndexVolumeID"" ");
-                var extra = FormatInvariant($@"SELECT @TypeExtra AS ""Type"", ""{m_tablename}"".""Name"" AS ""Name"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Name"" NOT IN ( SELECT ""Name"" FROM ""{cmpName}"" )");
-                var missing = FormatInvariant($@"SELECT @TypeMissing AS ""Type"", ""Name"" AS ""Name"" FROM ""{cmpName}"" WHERE ""Name"" NOT IN (SELECT ""Name"" FROM ""{m_tablename}"")");
-                var modified = FormatInvariant($@"SELECT @TypeModified AS ""Type"", ""E"".""Name"" AS ""Name"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Name"" = ""E"".""Name"" AND (""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Size"" != ""E"".""Size"") ");
-                var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
+                var create = $@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT ""A"".""Name"", ""A"".""Hash"", ""A"".""Size"" FROM ""Remotevolume"" A, ""Remotevolume"" B, ""IndexBlockLink"" WHERE ""B"".""Name"" = @Name AND ""A"".""ID"" = ""IndexBlockLink"".""BlockVolumeID"" AND ""B"".""ID"" = ""IndexBlockLink"".""IndexVolumeID"" ";
+                var extra = $@"SELECT @TypeExtra AS ""Type"", ""{m_tablename}"".""Name"" AS ""Name"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Name"" NOT IN ( SELECT ""Name"" FROM ""{cmpName}"" )";
+                var missing = $@"SELECT @TypeMissing AS ""Type"", ""Name"" AS ""Name"" FROM ""{cmpName}"" WHERE ""Name"" NOT IN (SELECT ""Name"" FROM ""{m_tablename}"")";
+                var modified = $@"SELECT @TypeModified AS ""Type"", ""E"".""Name"" AS ""Name"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Name"" = ""E"".""Name"" AND (""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Size"" != ""E"".""Size"") ";
+                var drop = $@"DROP TABLE IF EXISTS ""{cmpName}"" ";
 
                 using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
@@ -372,7 +372,7 @@ namespace Duplicati.Library.Main.Database
                             .SetParameterValue("@Name", m_volumename)
                             .ExecuteNonQuery();
 
-                        cmd.SetCommandAndParameters(FormatInvariant($"{extra} UNION {missing} UNION {modified}"))
+                        cmd.SetCommandAndParameters($"{extra} UNION {missing} UNION {modified}")
                             .SetParameterValue("@TypeExtra", (int)Interface.TestEntryStatus.Extra)
                             .SetParameterValue("@TypeMissing", (int)Interface.TestEntryStatus.Missing)
                             .SetParameterValue("@TypeModified", (int)Interface.TestEntryStatus.Modified);
@@ -432,11 +432,11 @@ namespace Duplicati.Library.Main.Database
                 var curBlocks = @"SELECT ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" FROM ""Remotevolume"", ""Block"" WHERE ""Remotevolume"".""Name"" = @Name AND ""Remotevolume"".""ID"" = ""Block"".""VolumeID""";
                 var duplBlocks = @"SELECT ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" FROM ""DuplicateBlock"", ""Block"" WHERE ""DuplicateBlock"".""VolumeID"" = (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = @Name) AND ""Block"".""ID"" = ""DuplicateBlock"".""BlockID""";
                 var delBlocks = @"SELECT ""DeletedBlock"".""Hash"" AS ""Hash"", ""DeletedBlock"".""Size"" AS ""Size"" FROM ""DeletedBlock"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = @Name AND ""RemoteVolume"".""ID"" = ""DeletedBlock"".""VolumeID""";
-                var create = FormatInvariant($@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT DISTINCT ""Hash"" AS ""Hash"", ""Size"" AS ""Size"" FROM ({curBlocks} UNION {delBlocks} UNION {duplBlocks})");
-                var extra = FormatInvariant($@"SELECT @TypeExtra AS ""Type"", ""{m_tablename}"".""Hash"" AS ""Hash"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Hash"" NOT IN ( SELECT ""Hash"" FROM ""{cmpName}"" )");
-                var missing = FormatInvariant($@"SELECT @TypeMissing AS ""Type"", ""Hash"" AS ""Hash"" FROM ""{cmpName}"" WHERE ""Hash"" NOT IN (SELECT ""Hash"" FROM ""{m_tablename}"")");
-                var modified = FormatInvariant($@"SELECT @TypeModified AS ""Type"", ""E"".""Hash"" AS ""Hash"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Hash"" = ""E"".""Hash"" AND ""D"".""Size"" != ""E"".""Size""  ");
-                var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
+                var create = $@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT DISTINCT ""Hash"" AS ""Hash"", ""Size"" AS ""Size"" FROM ({curBlocks} UNION {delBlocks} UNION {duplBlocks})";
+                var extra = $@"SELECT @TypeExtra AS ""Type"", ""{m_tablename}"".""Hash"" AS ""Hash"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Hash"" NOT IN ( SELECT ""Hash"" FROM ""{cmpName}"" )";
+                var missing = $@"SELECT @TypeMissing AS ""Type"", ""Hash"" AS ""Hash"" FROM ""{cmpName}"" WHERE ""Hash"" NOT IN (SELECT ""Hash"" FROM ""{m_tablename}"")";
+                var modified = $@"SELECT @TypeModified AS ""Type"", ""E"".""Hash"" AS ""Hash"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Hash"" = ""E"".""Hash"" AND ""D"".""Size"" != ""E"".""Size""  ";
+                var drop = $@"DROP TABLE IF EXISTS ""{cmpName}"" ";
 
                 using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
@@ -446,7 +446,7 @@ namespace Duplicati.Library.Main.Database
                             .SetParameterValue("@Name", m_volumename)
                             .ExecuteNonQuery();
 
-                        cmd.SetCommandAndParameters(FormatInvariant($"{extra} UNION {missing} UNION {modified}"))
+                        cmd.SetCommandAndParameters($"{extra} UNION {missing} UNION {modified}")
                             .SetParameterValue("@TypeExtra", (int)Library.Interface.TestEntryStatus.Extra)
                             .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
                             .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
