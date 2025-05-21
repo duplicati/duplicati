@@ -55,26 +55,26 @@ namespace Duplicati.Library.Main.Operation
 
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
-                using (var db = new Database.LocalListDatabase(m_options.Dbpath, m_options.SqlitePageCache))
+                using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache))
                 {
-                    using (var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
+                    using (var filesets = await db.SelectFileSets(m_options.Time, m_options.Version))
                     {
                         if (!filter.Empty)
                         {
                             if (simpleList || (m_options.ListFolderContents && !m_options.AllVersions))
                             {
-                                filesets.TakeFirst();
+                                await filesets.TakeFirst();
                             }
                         }
 
                         IEnumerable<Database.LocalListDatabase.IFileversion> files;
                         if (m_options.ListFolderContents)
                         {
-                            files = filesets.SelectFolderContents(filter);
+                            files = filesets.SelectFolderContents(filter).ToEnumerable();
                         }
                         else if (m_options.ListPrefixOnly)
                         {
-                            files = filesets.GetLargestPrefix(filter);
+                            files = filesets.GetLargestPrefix(filter).ToEnumerable();
                         }
                         else if (filter.Empty)
                         {
@@ -82,21 +82,26 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            files = filesets.SelectFiles(filter);
+                            files = filesets.SelectFiles(filter).ToEnumerable();
                         }
 
                         if (m_options.ListSetsOnly)
                         {
                             m_result.SetResult(
-                                filesets.QuickSets.Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes)).ToArray(),
+                                await filesets
+                                    .QuickSets()
+                                    .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
+                                    .ToArrayAsync(),
                                 null
                             );
                         }
                         else
                         {
                             m_result.SetResult(
-                                filesets.Sets.Select(x =>
-                                    new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes)).ToArray(),
+                                await filesets
+                                    .Sets()
+                                    .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
+                                    .ToArrayAsync(),
                                 files == null
                                     ? null
                                     : (from n in files
@@ -120,7 +125,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new TempFile())
-            using (var db = new LocalDatabase(tmpdb, "List", true, m_options.SqlitePageCache))
+            using (var db = await LocalDatabase.CreateLocalDatabaseAsync(tmpdb, "List", true, m_options.SqlitePageCache))
             {
                 var filteredList = ParseAndFilterFilesets(await backendManager.ListAsync(cancellationToken).ConfigureAwait(false), m_options);
                 if (filteredList.Count == 0)
