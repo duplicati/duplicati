@@ -57,7 +57,6 @@ namespace Duplicati.Library.Main.Database
         protected long m_operationid = -1;
         protected long m_pagecachesize;
         private bool m_hasExecutedVacuum;
-        // TODO use this rather than passing down transactions.
         // TODO dispose should check this, and report if it was not disposed prior to calling dispose. Maybe the rtr itself should check this during dispose? And just throw a warning during runtime.
         protected ReusableTransaction m_rtr;
         public ReusableTransaction Transaction { get { return m_rtr; } }
@@ -128,27 +127,6 @@ namespace Duplicati.Library.Main.Database
 
             return c;
         }
-
-        // TODO Create these once the signature is stable.
-        // public static LocalDatabase CreateLocalDatabase(string path, string operation, bool shouldclose, long pagecachesize)
-        // {
-        //     return CreateLocalDatabaseAsync(path, operation, shouldclose, pagecachesize).Await();
-        // }
-
-        // public static LocalDatabase CreateLocalDatabase(LocalDatabase db)
-        // {
-        //     return CreateLocalDatabaseAsync(db).Await();
-        // }
-
-        // public static LocalDatabase CreateLocalDatabase(SqliteConnection connection, string operation)
-        // {
-        //     return CreateLocalDatabaseAsync(connection, operation).Await();
-        // }
-
-        // private static LocalDatabase CreateLocalDatabase(SqliteConnection connection)
-        // {
-        //     return CreateLocalDatabaseAsync(connection).Await();
-        // }
 
         public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string operation, bool shouldclose, long pagecachesize, LocalDatabase? db = null)
         {
@@ -1938,7 +1916,6 @@ namespace Duplicati.Library.Main.Database
             {
                 var ftt = new FilteredFilenameTable(db);
 
-                // TODO factory
                 var type = FilterType.Regexp;
                 if (filter is FilterExpression expression)
                     type = expression.Type;
