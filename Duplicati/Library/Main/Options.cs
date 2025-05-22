@@ -95,6 +95,11 @@ namespace Duplicati.Library.Main
         private const int DEFAULT_ASYNCHRONOUS_CONCURRENT_UPLOAD_LIMIT = 4;
 
         /// <summary>
+        /// The backends where throttling is disabled by default
+        /// </summary>
+        private const string DEFAULT_THROTTLE_DISABLED_BACKENDS = "file";
+
+        /// <summary>
         /// The default retry delay
         /// </summary>
         private const string DEFAULT_RETRY_DELAY = "10s";
@@ -375,6 +380,8 @@ namespace Duplicati.Library.Main
 
             new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0kb"),
             new CommandLineArgument("throttle-download", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottledownloadShort, Strings.Options.ThrottledownloadLong, "0kb"),
+            new CommandLineArgument("throttle-disabled", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablethrottleShort, Strings.Options.DisablethrottleLong, "false"),
+            new CommandLineArgument("throttle-disabled-backends", CommandLineArgument.ArgumentType.String, Strings.Options.DisablethrottlebackendsShort, Strings.Options.DisablethrottlebackendsLong("disable-throttle"), DEFAULT_THROTTLE_DISABLED_BACKENDS),
             new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
 
             new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
@@ -870,6 +877,17 @@ namespace Duplicati.Library.Main
                     m_options["throttle-download"] = value <= 0 ? "" : $"{value}b";
             }
         }
+
+        /// <summary>
+        /// A value indicating if the throttling is disabled
+        /// </summary>
+        public bool DisableThrottle => GetBool("throttle-disabled");
+
+        /// <summary>
+        /// The backends where the throttling is disabled
+        /// </summary>
+        public HashSet<string> ThrottleDisabledBackends
+            => GetString("throttle-disabled-backends", DEFAULT_THROTTLE_DISABLED_BACKENDS)?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
 
         /// <summary>
         /// A value indicating if the backup is a full backup
