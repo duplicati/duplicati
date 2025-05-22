@@ -46,7 +46,7 @@ namespace Duplicati.Library.Main.Operation
                 Directory.CreateDirectory(m_options.Restorepath);
 
             using (var tmpdb = new TempFile())
-            using (var db = new Database.LocalDatabase(File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true, m_options.SqlitePageCache))
+            using (var db = await Database.LocalDatabase.CreateLocalDatabaseAsync(File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true, m_options.SqlitePageCache))
             {
                 var filter = JoinedFilterExpression.Join(new FilterExpression(filterstrings), compositefilter);
 
@@ -63,12 +63,12 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                 return;
                             }
 
                             var file = fileversion.Value.File;
-                            var entry = db.GetRemoteVolume(file.Name);
+                            var entry = await db.GetRemoteVolume(file.Name);
 
                             var res = new List<string>();
                             using (var tmpfile = await backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
@@ -99,7 +99,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    await backendManager.WaitForEmptyAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 }
             }
         }
