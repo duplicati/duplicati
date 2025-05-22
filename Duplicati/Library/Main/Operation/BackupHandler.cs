@@ -541,10 +541,10 @@ namespace Duplicati.Library.Main.Operation
             await backendManager.WaitForEmptyAsync(m_database, m_taskReader.ProgressToken);
 
             // Calculate the number of samples to test, using the largest number of file of a given type
-            long remoteVolumeCount = await await m_database.GetRemoteVolumes()
+            long remoteVolumeCount = await m_database.GetRemoteVolumes()
                 .Where(x => x.State == RemoteVolumeState.Verified)
                 .GroupBy(x => x.Type)
-                .Select(async x => await x.LongCountAsync())
+                .SelectAwait(async x => await x.LongCountAsync())
                 .MaxAsync();
 
             long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100m), MidpointRounding.AwayFromZero));
