@@ -44,7 +44,8 @@ internal class TemporaryDbValueList : IDisposable
     /// The command to use
     /// </summary>
     private SqliteCommand? _cmd;
-    private readonly LocalDatabase _db;
+    private SqliteConnection _con;
+    private ReusableTransaction _rtr;
     /// <summary>
     /// The table to use
     /// </summary>
@@ -73,9 +74,10 @@ internal class TemporaryDbValueList : IDisposable
     /// <param name="cmd">The command to use</param>
     /// <param name="con">The connection to use</param>
     /// <param name="values">The values to use</param>
-    private TemporaryDbValueList(LocalDatabase db, IEnumerable<object> values, string valuesType)
+    private TemporaryDbValueList(SqliteConnection con, ReusableTransaction rtr, IEnumerable<object> values, string valuesType)
     {
-        _db = db;
+        _con = con;
+        _rtr = rtr;
         _valuesType = valuesType;
         _values = values;
 
@@ -84,12 +86,22 @@ internal class TemporaryDbValueList : IDisposable
 
     internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<long> values)
     {
-        return await DoCreateAsync(new TemporaryDbValueList(db, values.Cast<object>(), "INTEGER"));
+        return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "INTEGER"));
     }
 
     internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<string> values)
     {
-        return await DoCreateAsync(new TemporaryDbValueList(db, values.Cast<object>(), "TEXT"));
+        return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "TEXT"));
+    }
+
+    internal static async Task<TemporaryDbValueList> CreateAsync(SqliteConnection con, ReusableTransaction rtr, IEnumerable<long> values)
+    {
+        return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "INTEGER"));
+    }
+
+    internal static async Task<TemporaryDbValueList> CreateAsync(SqliteConnection con, ReusableTransaction rtr, IEnumerable<string> values)
+    {
+        return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "TEXT"));
     }
 
     private static async Task<TemporaryDbValueList> DoCreateAsync(TemporaryDbValueList valueList)
@@ -138,7 +150,7 @@ internal class TemporaryDbValueList : IDisposable
         if (_isTable)
             return;
 
-        _cmd = _db.Connection.CreateCommand(_db.Transaction);
+        _cmd = _con.CreateCommand(_rtr);
         await _cmd.ExecuteNonQueryAsync($@"
             CREATE TEMPORARY TABLE ""{_tableName}"" (""Value"" {_valuesType})
         ");

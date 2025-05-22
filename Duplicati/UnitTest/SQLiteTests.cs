@@ -67,6 +67,7 @@ namespace Duplicati.UnitTest
         {
             using var tf = new TempFile();
             using var connection = CreateDummyDatabase(tf);
+            using var rtr = new ReusableTransaction(connection);
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
@@ -98,7 +99,7 @@ namespace Duplicati.UnitTest
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
-                using var tmplist = new TemporaryDbValueList(connection, null, list);
+                using var tmplist = await TemporaryDbValueList.CreateAsync(connection, rtr, list);
                 command.ExpandInClauseParameter("@List", list);
                 Assert.AreEqual(3, command.ExecuteScalarInt64());
             }
@@ -108,7 +109,7 @@ namespace Duplicati.UnitTest
                 list.Remove(1);
                 list.Remove(2);
 
-                using var tmplist = new TemporaryDbValueList(connection, null, list);
+                using var tmplist = await TemporaryDbValueList.CreateAsync(connection, rtr, list);
                 command.ExpandInClauseParameter("@List", list);
                 Assert.AreEqual(1, command.ExecuteScalarInt64());
             }

@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Database;
 /// </remarks>
 /// <param name="db">The database to use.</param>
 /// <param name="transaction">The transaction to use. If null, a new transaction is created.</param>
-internal class ReusableTransaction(LocalDatabase db, SqliteTransaction? transaction = null) : IDisposable
+internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? transaction = null) : IDisposable
 {
     /// <summary>
     /// The tag used for logging.
@@ -46,20 +46,22 @@ internal class ReusableTransaction(LocalDatabase db, SqliteTransaction? transact
     /// <summary>
     /// The database to use.
     /// </summary>
-    private readonly LocalDatabase m_db = db;
+    private readonly SqliteConnection m_con = con;
     /// <summary>
     /// The current transaction.
     /// </summary>
-    private SqliteTransaction m_transaction = transaction ?? db.Connection.BeginTransaction();
+    private SqliteTransaction m_transaction = transaction ?? con.BeginTransaction(deferred: true);
     /// <summary>
     /// True if the transaction is disposed.
     /// </summary>
     private bool m_disposed = false;
 
+    public ReusableTransaction(LocalDatabase db, SqliteTransaction? transaction = null) : this(db.Connection, transaction) { }
+
     /// <summary>
     /// The current transaction.
     /// </summary>
-    public SqliteTransaction Transaction => m_disposed ? m_transaction : throw new InvalidOperationException("Transaction is disposed");
+    public SqliteTransaction Transaction => m_disposed ? throw new InvalidOperationException("Transaction is disposed") : m_transaction;
 
     /// <summary>
     /// Commits the current transaction and optionally restarts it.
@@ -92,7 +94,7 @@ internal class ReusableTransaction(LocalDatabase db, SqliteTransaction? transact
         await m_transaction.DisposeAsync();
 
         if (restart)
-            m_transaction = m_db.Connection.BeginTransaction();
+            m_transaction = m_con.BeginTransaction();
         else
             m_disposed = true;
     }
@@ -130,7 +132,7 @@ internal class ReusableTransaction(LocalDatabase db, SqliteTransaction? transact
 
         if (restart)
         {
-            m_transaction = m_db.Connection.BeginTransaction();
+            m_transaction = m_con.BeginTransaction();
         }
         else
         {
