@@ -204,7 +204,7 @@ namespace Duplicati.Library.Main.Database
                 ")
                     .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
                     .SetParameterValue("@CurrentType", RemoteVolumeType.Files.ToString())
-                    .ExpandInClauseParameter("@AllowedStates", [
+                    .ExpandInClauseParameterAsync("@AllowedStates", [
                         RemoteVolumeState.Uploaded.ToString(),
                         RemoteVolumeState.Verified.ToString(),
                         RemoteVolumeState.Temporary.ToString(),
@@ -427,7 +427,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     await cmd.SetCommandAndParameters(createtable)
                         .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
-                        .ExpandInClauseParameter("@AllowedStates", [
+                        .ExpandInClauseParameterAsync("@AllowedStates", [
                             RemoteVolumeState.Uploaded.ToString(),
                             RemoteVolumeState.Verified.ToString()
                         ])

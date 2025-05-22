@@ -1616,7 +1616,7 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
-                .ExpandInClauseParameter("@States", [
+                .ExpandInClauseParameterAsync("@States", [
                     RemoteVolumeState.Deleting.ToString(),
                     RemoteVolumeState.Deleted.ToString()
                 ]);
@@ -1643,7 +1643,7 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
-                .ExpandInClauseParameter("@States", [
+                .ExpandInClauseParameterAsync("@States", [
                     RemoteVolumeState.Deleting.ToString(),
                     RemoteVolumeState.Deleted.ToString()
                 ]);
@@ -1674,7 +1674,7 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Type", RemoteVolumeType.Index.ToString())
-                .ExpandInClauseParameter("@States", [
+                .ExpandInClauseParameterAsync("@States", [
                     RemoteVolumeState.Uploaded.ToString(),
                     RemoteVolumeState.Verified.ToString()
                 ]);

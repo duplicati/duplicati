@@ -301,7 +301,7 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
-            using (var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameter("@Names", items.ToArray()))
+            using (var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameterAsync("@Names", items.ToArray()))
             using (var rd = await cmd.ExecuteReaderAsync())
                 while (await rd.ReadAsync())
                     yield return new ListResultRemoteVolume()

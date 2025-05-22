@@ -668,7 +668,7 @@ namespace Duplicati.Library.Main.Database
                 FROM ""RemoteVolume""
                 WHERE ""Name"" IN (@VolumeNames)
             ")
-                .ExpandInClauseParameter("@VolumeNames", [.. names])
+                .ExpandInClauseParameterAsync("@VolumeNames", [.. names])
                 .ExecuteNonQueryAsync();
 
             var volIdsSubQuery = $@"SELECT ""ID"" FROM ""{volidstable}"" ";
@@ -867,7 +867,7 @@ namespace Duplicati.Library.Main.Database
                     AND ""State"" IN (@AllowedStates)
             ")
                 .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
-                .ExpandInClauseParameter("@AllowedStates", [
+                .ExpandInClauseParameterAsync("@AllowedStates", [
                         RemoteVolumeState.Uploading.ToString(),
                         RemoteVolumeState.Uploaded.ToString(),
                         RemoteVolumeState.Verified.ToString(),

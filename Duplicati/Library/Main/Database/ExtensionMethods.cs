@@ -263,7 +263,8 @@ public static partial class ExtensionMethods
         return await ExecuteScalarInt64Async(self, defaultvalue).ConfigureAwait(false);
     }
 
-    public static SqliteCommand ExpandInClauseParameter(this SqliteCommand cmd, string originalParamName, IEnumerable<object> values)
+    [Obsolete("Technically this method isn't async, but it is used in an async context and to differntiate this with the IDb version. ")]
+    public static SqliteCommand ExpandInClauseParameterAsync(this SqliteCommand cmd, string originalParamName, IEnumerable<object> values)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
             throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));
@@ -297,7 +298,7 @@ public static partial class ExtensionMethods
             throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));
 
         if (!values.IsTableCreated)
-            return ExpandInClauseParameter(cmd, originalParamName, values.Values);
+            return ExpandInClauseParameterAsync(cmd, originalParamName, values.Values);
 
         // We have a temporary table, so we need to replace the parameter with the table name
         cmd.CommandText = cmd.CommandText.Replace(originalParamName, await values.GetInClause(), StringComparison.OrdinalIgnoreCase);

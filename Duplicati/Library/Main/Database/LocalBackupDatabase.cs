@@ -320,7 +320,7 @@ namespace Duplicati.Library.Main.Database
                             ""Hash"",
                             ""Size""
                     ")
-                        .ExpandInClauseParameter("@States", [
+                        .ExpandInClauseParameterAsync("@States", [
                             RemoteVolumeState.Deleted,
                             RemoteVolumeState.Deleting
                         ])
@@ -1412,7 +1412,7 @@ namespace Duplicati.Library.Main.Database
                         AND ""State"" IN (@States)
                 ")
                 .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
-                .ExpandInClauseParameter("@States", [
+                .ExpandInClauseParameterAsync("@States", [
                     RemoteVolumeState.Uploaded.ToString(),
                     RemoteVolumeState.Verified.ToString()
                 ]);

@@ -835,7 +835,7 @@ namespace Duplicati.Library.Main.Database
                         fe.FilesetID = @filesetid
                         AND fl.PrefixID IN (@PrefixIds)
                 ")
-                .ExpandInClauseParameter("@PrefixIds", prefixIds.Cast<object>())
+                .ExpandInClauseParameterAsync("@PrefixIds", prefixIds.Cast<object>())
                 .SetParameterValue("@filesetid", filesetid)
                 .ExecuteScalarInt64Async(0);
             }
@@ -938,7 +938,7 @@ namespace Duplicati.Library.Main.Database
                         AND fl.""PrefixId"" IN (@PrefixIds)
                 ")
                     .SetParameterValue("@FilesetId", filesetid)
-                    .ExpandInClauseParameter("@PrefixIds", prefixIds.Cast<object>())
+                    .ExpandInClauseParameterAsync("@PrefixIds", prefixIds.Cast<object>())
                     .ExecuteScalarInt64Async(0);
             }
 
