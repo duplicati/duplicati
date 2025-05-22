@@ -90,7 +90,10 @@ namespace Duplicati.Library.Main.Database
         public bool ShouldCloseConnection { get; set; }
 
         // Constructor is private to force use of CreateLocalDatabaseAsync
-        protected LocalDatabase() { }
+        protected LocalDatabase()
+        {
+            m_rtr = new ReusableTransaction(this);
+        }
 
         // Arguments are not used, but are required to match the constructor signatures
         [Obsolete("Calling the constructor will throw an exception. Use the CreateLocalDatabaseAsync or CreateLocalDatabase functions instead")]
