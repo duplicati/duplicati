@@ -2400,16 +2400,16 @@ namespace Duplicati.Library.Main.Database
             {
                 if (m_connection.State == ConnectionState.Open && !m_hasExecutedVacuum)
                 {
-                    using (var transaction = m_connection.BeginTransaction())
                     using (var command = m_connection.CreateCommand())
                     {
-                        command.Transaction = transaction;
                         // SQLite recommends that PRAGMA optimize is run just before closing each database connection.
-                        await command.ExecuteNonQueryAsync("PRAGMA optimize");
+                        await command
+                            .SetTransaction(m_rtr)
+                            .ExecuteNonQueryAsync("PRAGMA optimize");
 
                         try
                         {
-                            await transaction.CommitAsync();
+                            await m_rtr.CommitAsync(restart: false);
                         }
                         catch (Exception ex)
                         {
