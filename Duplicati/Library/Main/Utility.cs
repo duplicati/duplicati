@@ -22,11 +22,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Newtonsoft.Json;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
-using System.Linq;
 
 namespace Duplicati.Library.Main
 {
