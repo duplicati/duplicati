@@ -260,10 +260,10 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public void FlushLog(LocalDatabase db)
+        public async Task FlushLog(LocalDatabase db)
         {
             if (m_parent != null)
-                m_parent.FlushLog(db);
+                await m_parent.FlushLog(db);
             else
             {
                 lock (m_lock)
@@ -271,7 +271,7 @@ namespace Duplicati.Library.Main
                     while (m_dbqueue.Count > 0)
                     {
                         var el = m_dbqueue.Dequeue();
-                        db.LogMessage(el.Type, el.Message, el.Exception, null);
+                        await db.LogMessage(el.Type, el.Message, el.Exception);
                     }
                 }
             }
