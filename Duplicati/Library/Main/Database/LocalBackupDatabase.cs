@@ -1447,7 +1447,7 @@ namespace Duplicati.Library.Main.Database
 
         public async Task SafeDeleteRemoteVolume(string name)
         {
-            var volumeid = GetRemoteVolumeID(name);
+            var volumeid = await GetRemoteVolumeID(name);
 
             using (var cmd = m_connection.CreateCommand(m_rtr))
             {
