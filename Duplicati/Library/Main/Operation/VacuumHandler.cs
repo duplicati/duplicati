@@ -35,15 +35,12 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public virtual Task RunAsync()
-            => Task.Run(() =>
-            {
-                using (var db = new Database.LocalDatabase(m_options.Dbpath, "Vacuum", false, m_options.SqlitePageCache))
-                {
-                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
-                    db.Vacuum();
-                    m_result.EndTime = DateTime.UtcNow;
-                }
-            });
+        public virtual async Task RunAsync()
+        {
+            using var db = await Database.LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "Vacuum", false, m_options.SqlitePageCache);
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
+            await db.Vacuum();
+            m_result.EndTime = DateTime.UtcNow;
+        }
     }
 }
