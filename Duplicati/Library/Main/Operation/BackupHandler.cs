@@ -741,8 +741,9 @@ namespace Duplicati.Library.Main.Operation
 
                     if (!m_options.Dryrun)
                         await database.TerminatedWithActiveUploads(false);
+
                     // Make sure we have the database up-to-date
-                    await db.CommitTransactionAsync("CommitAfterUpload", false);
+                    await db.CommitTransactionAsync("CommitAfterUpload");
 
                     // If this throws, we should roll back the transaction
                     if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
