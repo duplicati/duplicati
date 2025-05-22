@@ -341,7 +341,7 @@ public static partial class ExtensionMethods
         if (value is not null && value is System.Collections.IEnumerable && value is not string)
             throw new ArgumentException($"Cannot set parameter '{name}' to an array or enumerable type, as the SQLite bindings does not support it.", nameof(value));
 #endif
-        self.Parameters[name].Value = value;
+        self.Parameters[name].Value = value ?? DBNull.Value;
 
         return self;
     }
