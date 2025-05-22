@@ -20,10 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Collections.Generic;
-using System.Data;
+using System.Threading.Tasks;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
+using Microsoft.Data.Sqlite;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -31,17 +32,17 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class SQLiteTests : BasicSetupHelper
     {
-        private static IDbConnection CreateDummyDatabase(string path)
+        private static async Task<SqliteConnection> CreateDummyDatabase(string path)
         {
             var connection = SQLiteLoader.LoadConnection(path, 0);
 
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "CREATE TABLE TestTable (ID INTEGER PRIMARY KEY, Name TEXT)";
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync();
 
                 command.CommandText = "INSERT INTO TestTable (ID, Name) VALUES (1, 'Test1'), (2, 'Test2'), (3, 'Test3')";
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync();
             }
 
             return connection;
@@ -50,48 +51,48 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("SQLite")]
-        public void TestEmptyTransaction()
+        public async Task TestEmptyTransaction()
         {
             using var tf = new TempFile();
-            using var connection = CreateDummyDatabase(tf);
+            using var connection = await CreateDummyDatabase(tf);
 
             using var t1 = connection.BeginTransaction();
-            t1.Commit(); // No exception should be thrown
+            await t1.CommitAsync(); // No exception should be thrown
 
             using var t2 = connection.BeginTransaction();
-            t2.Rollback(); // No exception should be thrown
+            await t2.RollbackAsync(); // No exception should be thrown
         }
 
         [Test]
         [Category("SQLite")]
-        public void TestListExpansion()
+        public async Task TestListExpansion()
         {
             using var tf = new TempFile();
-            using var connection = CreateDummyDatabase(tf);
+            using var connection = await CreateDummyDatabase(tf);
             using var rtr = new ReusableTransaction(connection);
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
                 command.ExpandInClauseParameter("@List", new long[] { 1, 2, 3 });
-                Assert.AreEqual(3, command.ExecuteScalarInt64());
+                Assert.AreEqual(3, await command.ExecuteScalarInt64Async());
             }
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
                 command.ExpandInClauseParameter("@List", new long[] { 1, 2 });
-                Assert.AreEqual(2, command.ExecuteScalarInt64());
+                Assert.AreEqual(2, await command.ExecuteScalarInt64Async());
             }
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
                 command.ExpandInClauseParameter("@List", new long[] { 1 });
-                Assert.AreEqual(1, command.ExecuteScalarInt64());
+                Assert.AreEqual(1, await command.ExecuteScalarInt64Async());
             }
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
                 command.ExpandInClauseParameter("@List", new long[0]);
-                Assert.AreEqual(0, command.ExecuteScalarInt64());
+                Assert.AreEqual(0, await command.ExecuteScalarInt64Async());
             }
 
             var list = new List<long>();
@@ -102,7 +103,7 @@ namespace Duplicati.UnitTest
             {
                 using var tmplist = await TemporaryDbValueList.CreateAsync(connection, rtr, list);
                 command.ExpandInClauseParameter("@List", list);
-                Assert.AreEqual(3, command.ExecuteScalarInt64());
+                Assert.AreEqual(3, await command.ExecuteScalarInt64Async());
             }
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
@@ -112,7 +113,7 @@ namespace Duplicati.UnitTest
 
                 using var tmplist = await TemporaryDbValueList.CreateAsync(connection, rtr, list);
                 command.ExpandInClauseParameter("@List", list);
-                Assert.AreEqual(1, command.ExecuteScalarInt64());
+                Assert.AreEqual(1, await command.ExecuteScalarInt64Async());
             }
         }
     }
