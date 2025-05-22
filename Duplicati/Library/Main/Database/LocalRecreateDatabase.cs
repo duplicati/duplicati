@@ -343,7 +343,7 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
-        public async Task FindMissingBlocklistHashes(long hashsize, long blocksize, SqliteTransaction transaction)
+        public async Task FindMissingBlocklistHashes(long hashsize, long blocksize)
         {
             using var cmd = m_connection.CreateCommand(m_rtr);
             //Update all small blocklists and matching blocks
@@ -532,7 +532,7 @@ namespace Duplicati.Library.Main.Database
         /// temp small list structure: filehash, blockhash, blocksize: as the small files are defined
         /// by the fact that they are contained in a single block, blockhash is the same as the filehash,
         /// and blocksize can vary from 0 to the configured block size for the backup
-        public async Task AddBlockAndBlockSetEntryFromTemp(long hashsize, long blocksize, SqliteTransaction transaction, bool hashOnly = false)
+        public async Task AddBlockAndBlockSetEntryFromTemp(long hashsize, long blocksize, bool hashOnly = false)
         {
             using var cmd = m_connection.CreateCommand(m_rtr);
             var extra = hashOnly ? "" : $@"
@@ -658,22 +658,22 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public async Task AddDirectoryEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid, SqliteTransaction transaction)
+        public async Task AddDirectoryEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid)
         {
-            await AddEntry(filesetid, pathprefixid, path, time, FOLDER_BLOCKSET_ID, metadataid, transaction);
+            await AddEntry(filesetid, pathprefixid, path, time, FOLDER_BLOCKSET_ID, metadataid);
         }
 
-        public async Task AddSymlinkEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid, SqliteTransaction transaction)
+        public async Task AddSymlinkEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid)
         {
-            await AddEntry(filesetid, pathprefixid, path, time, SYMLINK_BLOCKSET_ID, metadataid, transaction);
+            await AddEntry(filesetid, pathprefixid, path, time, SYMLINK_BLOCKSET_ID, metadataid);
         }
 
-        public async Task AddFileEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid, SqliteTransaction transaction)
+        public async Task AddFileEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid)
         {
-            await AddEntry(filesetid, pathprefixid, path, time, blocksetid, metadataid, transaction);
+            await AddEntry(filesetid, pathprefixid, path, time, blocksetid, metadataid);
         }
 
-        private async Task AddEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid, SqliteTransaction transaction)
+        private async Task AddEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid)
         {
             var fileid = await m_findFilesetCommand
                 .SetTransaction(m_rtr)
@@ -703,7 +703,7 @@ namespace Duplicati.Library.Main.Database
                 .ExecuteNonQueryAsync();
         }
 
-        public async Task<long> AddMetadataset(string metahash, long metahashsize, IEnumerable<string> metablocklisthashes, long expectedmetablocklisthashes, SqliteTransaction transaction)
+        public async Task<long> AddMetadataset(string metahash, long metahashsize, IEnumerable<string> metablocklisthashes, long expectedmetablocklisthashes)
         {
             var metadataid = -1L;
             if (metahash == null)
@@ -718,7 +718,7 @@ namespace Duplicati.Library.Main.Database
             if (metadataid != -1)
                 return metadataid;
 
-            var blocksetid = await AddBlockset(metahash, metahashsize, metablocklisthashes, expectedmetablocklisthashes, transaction);
+            var blocksetid = await AddBlockset(metahash, metahashsize, metablocklisthashes, expectedmetablocklisthashes);
 
             metadataid = await m_insertMetadatasetCommand
                 .SetTransaction(m_rtr)
@@ -728,7 +728,7 @@ namespace Duplicati.Library.Main.Database
             return metadataid;
         }
 
-        public async Task<long> AddBlockset(string fullhash, long size, IEnumerable<string> blocklisthashes, long expectedblocklisthashes, SqliteTransaction transaction)
+        public async Task<long> AddBlockset(string fullhash, long size, IEnumerable<string> blocklisthashes, long expectedblocklisthashes)
         {
             var blocksetid = await m_findBlocksetCommand
                 .SetTransaction(m_rtr)
@@ -775,7 +775,7 @@ namespace Duplicati.Library.Main.Database
             return blocksetid;
         }
 
-        public async Task<(bool, bool)> UpdateBlock(string hash, long size, long volumeID, SqliteTransaction transaction)
+        public async Task<(bool, bool)> UpdateBlock(string hash, long size, long volumeID)
         {
             var anyChange = false;
             var currentVolumeId = await m_findHashBlockCommand
@@ -828,7 +828,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public async Task AddSmallBlocksetLink(string filehash, string blockhash, long blocksize, SqliteTransaction transaction)
+        public async Task AddSmallBlocksetLink(string filehash, string blockhash, long blocksize)
         {
             await m_insertSmallBlockset
                 .SetTransaction(m_rtr)
@@ -838,7 +838,7 @@ namespace Duplicati.Library.Main.Database
                 .ExecuteNonQueryAsync();
         }
 
-        public async Task<bool> AddTempBlockListHash(string hash, IEnumerable<string> blocklisthashes, SqliteTransaction transaction)
+        public async Task<bool> AddTempBlockListHash(string hash, IEnumerable<string> blocklisthashes)
         {
             var r = await m_findTempBlockListHashCommand
                 .SetTransaction(m_rtr)
@@ -1155,7 +1155,7 @@ namespace Duplicati.Library.Main.Database
         /// Move blocks that are not referenced by any files to DeletedBlock table.
         /// </summary>
         /// Needs to be called after the last FindMissingBlocklistHashes, otherwise the tables are not up to date.
-        public async Task CleanupDeletedBlocks(SqliteTransaction transaction)
+        public async Task CleanupDeletedBlocks()
         {
             // Find out which blocks are deleted and move them into DeletedBlock, so that compact notices these blocks are empty
             // Deleted blocks do not appear in the BlocksetEntry and not in the BlocklistHash table
