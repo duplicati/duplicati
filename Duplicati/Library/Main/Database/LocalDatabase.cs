@@ -2459,7 +2459,7 @@ namespace Duplicati.Library.Main.Database
             {
                 if (result is BasicResults basicResults)
                 {
-                    basicResults.FlushLog(this);
+                    await basicResults.FlushLog(this);
                     if (basicResults.EndTime.Ticks == 0)
                         basicResults.EndTime = DateTime.UtcNow;
                 }
