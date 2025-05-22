@@ -188,9 +188,9 @@ public class Jottacloud : IStreamingBackend
         try
         {
             // Send request and load XML response.
-            var req = await CreateRequest(HttpMethod.Get, "", "", false).ConfigureAwait(false);
+            using var req = await CreateRequest(HttpMethod.Get, "", "", false).ConfigureAwait(false);
 
-            var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
+            using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
                 innerCancellationToken => m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
