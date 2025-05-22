@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main.Database;
 
@@ -17,7 +18,7 @@ partial class BackendManager
     /// Since the backend communication is done in parallel with the actual operations,
     /// we store the performed operations in a queue and flush them to the database when the database is available.
     /// The main operations are responsible for flushing the messages when comitting a transaction.
-    /// If the operation fails, the logged messages here should still be flushed to the database, 
+    /// If the operation fails, the logged messages here should still be flushed to the database,
     /// as they have already been performed on the remote destination.
     /// </summary>
     private class DatabaseCollector
@@ -116,7 +117,7 @@ partial class BackendManager
         /// <param name="db">The database to write pending messages to</param>
         /// <param name="transaction">The transaction to use, if any</param>
         /// <returns>Whether any messages were flushed</returns>
-        public bool FlushPendingMessages(LocalDatabase db, System.Data.IDbTransaction? transaction)
+        public async Task<bool> FlushPendingMessages(LocalDatabase db)
         {
             List<IRemoteOperationEntry> entries;
             lock (m_dbqueuelock)
@@ -134,22 +135,22 @@ partial class BackendManager
             // As we replace the list, we can now freely access the elements without locking
             foreach (var e in entries)
                 if (e is RemoteOperationLogEntry operation)
-                    db.LogRemoteOperation(operation.Action, operation.File, operation.Result, transaction);
+                    await db.LogRemoteOperation(operation.Action, operation.File, operation.Result);
                 else if (e is RemoteVolumeUpdate update && update.State == RemoteVolumeState.Deleted)
                 {
-                    db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), null, transaction);
+                    await db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), null);
                     volsRemoved.Add(update.Remotename);
                 }
                 else if (e is RemoteVolumeUpdate dbUpdate)
-                    db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash, transaction);
+                    await db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash);
                 else if (e is RenameRemoteVolume rename)
-                    db.RenameRemoteFile(rename.Oldname, rename.Newname, transaction);
+                    await db.RenameRemoteFile(rename.Oldname, rename.Newname);
                 else if (e != null)
                     Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
 
             // Finally remove volumes from DB.
             if (volsRemoved.Count > 0)
-                db.RemoveRemoteVolumes(volsRemoved);
+                await db.RemoveRemoteVolumes(volsRemoved);
 
             return true;
         }

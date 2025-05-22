@@ -295,10 +295,9 @@ internal partial class BackendManager : IBackendManager
     /// <param name="transaction">The transaction to use</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns></returns>
-    public Task FlushPendingMessagesAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken)
+    public async Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken)
     {
-        context.Database.FlushPendingMessages(database, transaction);
-        return Task.CompletedTask;
+        await context.Database.FlushPendingMessages(database);
     }
 
     /// <summary>
@@ -320,11 +319,11 @@ internal partial class BackendManager : IBackendManager
     /// <param name="transaction">The transaction to use</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken)
+    public async Task WaitForEmptyAsync(LocalDatabase database, CancellationToken cancellationToken)
     {
-        await FlushPendingMessagesAsync(database, transaction, cancellationToken).ConfigureAwait(false);
+        await FlushPendingMessagesAsync(database, cancellationToken).ConfigureAwait(false);
         await WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
-        await FlushPendingMessagesAsync(database, transaction, cancellationToken).ConfigureAwait(false);
+        await FlushPendingMessagesAsync(database, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -332,10 +331,10 @@ internal partial class BackendManager : IBackendManager
     /// </summary>
     /// <param name="database">The database to write pending messages to</param>
     /// <param name="transaction">The transaction to use, if any</param>
-    public async Task StopRunnerAndFlushMessages(LocalDatabase database, IDbTransaction? transaction)
+    public async Task StopRunnerAndFlushMessages(LocalDatabase database)
     {
         await requestChannel.RetireAsync().ConfigureAwait(false);
-        await FlushPendingMessagesAsync(database, transaction, CancellationToken.None).ConfigureAwait(false);
+        await FlushPendingMessagesAsync(database, CancellationToken.None).ConfigureAwait(false);
 
         if (queueRunner.IsFaulted)
             Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
