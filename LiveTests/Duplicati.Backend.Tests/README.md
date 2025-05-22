@@ -1,4 +1,3 @@
-
 # Environment variables for tests
 
 On Github actions these are mapped 1:1 to secrets, even the non password fields are stored in secrets.
@@ -15,7 +14,7 @@ NUMBER_OF_FILES  default is 20
 ## Backends CI Status
 
 | Backend        | CI Planned       | CI Status |
-|----------------|------------------|-----------|
+| -------------- | ---------------- | --------- |
 | pCloud         | Planned          | Live      |
 | WebDav         | Planned          | Live      |
 | Shhv2          | Planned          | Live      |
@@ -37,25 +36,24 @@ NUMBER_OF_FILES  default is 20
 | TahoeLAFS      | Planned          |           |
 | TescentCOS     | Pending Decision |           |
 | Storj          | Pending Decision |           |
-| Sia            | Pending Decision |           |
+| Sia            | Removed          |           |
 | SharePoint     | Pending Decision |           |
 | Rclone         | Pending Decision |           |
 | OpenStack      | Pending Decision |           |
-| Mega           | Pending Decision |           |
+| Mega           | Deprecated       |           |
 | Jottacloud     | Pending Decision |           |
 | AliyunOSS      | Pending Decision |           |
 
 ## Backends that do not require Environment variables
 
-* FTP _(TestContainers required)_
-* SSH _(TestContainers required)_
-* Webdav _(TestContainers required)_
-* CIFS _(TestContainers required)_
+- FTP _(TestContainers required)_
+- SSH _(TestContainers required)_
+- Webdav _(TestContainers required)_
+- CIFS _(TestContainers required)_
 
 Please note that TestContainers token has to be configured in secrets/Github actions yml.
 
 ## Backends that require Environment variables
-
 
 # iDrivee2
 
@@ -134,7 +132,6 @@ TESTCREDENTIAL_DROPBOX_TOKEN
 
 Attention: **TESTCREDENTIAL_AZURE_ACCESSKEY is URI escaped automatically, supply the raw value.**
 
-
 ```
 TESTCREDENTIAL_AZURE_ACCOUNTNAME
 TESTCREDENTIAL_AZURE_ACCESSKEY
@@ -148,6 +145,7 @@ TESTCREDENTIAL_PCLOUD_SERVER
 TESTCREDENTIAL_PCLOUD_TOKEN
 TESTCREDENTIAL_PCLOUD_FOLDER
 ```
+
 For PCloud the server is the API server(eapi.pcloud.com for EU hosted account or api.pcloud.com for non EU). The token is the OAuth token.
 
 ## Running the tests
@@ -167,5 +165,3 @@ Running with full verbosity (useful if tests are failing):
 Running specific tests:
 
 `dotnet test Duplicati.Backend.Tests.sln --logger:"console;verbosity=detailed" --filter="Name=TestDropBox"`
-
-
