@@ -161,6 +161,18 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
         using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         return await ReadJsonResponseAsync<T>(resp, cancellationToken).ConfigureAwait(false);
     }
+    
+    /// <summary>
+    /// Exposes GetStreamAsync to the inheritors
+    /// </summary>
+    /// <param name="req">Request object</param>
+    /// <param name="cancellationToken">Cancellation Token</param>
+    /// <returns></returns>
+    public virtual async Task<Stream> GetStreamAsync(HttpRequestMessage req, CancellationToken cancellationToken)
+    {
+        using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+        return await resp.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// Read the JSON response from the server and deserialize it into the given type asynchronously

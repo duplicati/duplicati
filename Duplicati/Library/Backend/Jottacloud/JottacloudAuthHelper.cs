@@ -20,57 +20,64 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 
-namespace Duplicati.Library.Backend
+namespace Duplicati.Library.Backend;
+
+public class JottacloudAuthHelper : OAuthHelperHttpClient, IDisposable
 {
-    public class JottacloudAuthHelper : OAuthHelper
+    private const string USERINFO_URL = "https://id.jottacloud.com/auth/realms/jottacloud/protocol/openid-connect/userinfo";
+    
+    public JottacloudAuthHelper(string accessToken)
+        : base(accessToken, "jottacloud", HttpClientHelper.CreateClient()) // This will purposefully create a new HttpClient instance per AuthHelper instance
     {
-        private const string USERINFO_URL = "https://id.jottacloud.com/auth/realms/jottacloud/protocol/openid-connect/userinfo";
-        private string m_username;
+        AutoAuthHeader = true;
+        AutoV2 = false; // Jottacloud is not v2 compatible because it generates a new refresh token with every access token refresh and invalidates the old.
+    }
 
-        public JottacloudAuthHelper(string accessToken)
-            : base(accessToken, "jottacloud")
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        try
         {
-            base.AutoAuthHeader = true;
-            base.AutoV2 = false; // Jottacloud is not v2 compatible because it generates a new refresh token with every access token refresh and invalidates the old.
-
-            var userinfo = GetJSONData<UserInfo>(USERINFO_URL);
+            var userinfo = await base.GetJsonDataAsync<UserInfo>(USERINFO_URL, cancellationToken);
             if (userinfo == null || string.IsNullOrEmpty(userinfo.Username))
                 throw new UserInformationException(Strings.Jottacloud.NoUsernameError, "JottaNoUsername");
-            m_username = userinfo.Username;
-        }
 
-        public string Username
-        {
-            get
-            {
-                return m_username;
-            }
+            Username = userinfo.Username;
         }
-
-        private class UserInfo
+        catch (Exception ex)
         {
-            [JsonProperty("sub")]
-            public string? Subject { get; set; }
-            [JsonProperty("email_verified")]
-            public bool EmailVerified { get; set; }
-            [JsonProperty("name")]
-            public string? Name { get; set; }
-            [JsonProperty("realm")]
-            public string? Realm { get; set; }
-            [JsonProperty("preferred_username")]
-            public string? PreferredUsername { get; set; } // The numeric internal username, same as Username
-            [JsonProperty("given_name")]
-            public string? GivenName { get; set; }
-            [JsonProperty("family_name")]
-            public string? FamilyName { get; set; }
-            [JsonProperty("email")]
-            public string? Email { get; set; }
-            [JsonProperty("username")]
-            public string? Username { get; set; } // The numeric internal username, same as PreferredUsername
+            throw new UserInformationException($"Failed to retrieve user information: {ex.Message}", "JottaUserInfoError", ex);
         }
     }
 
-}
+    public string Username { get; private set; }
 
+    private class UserInfo
+    {
+        [JsonProperty("sub")]
+        public string? Subject { get; set; }
+        [JsonProperty("email_verified")]
+        public bool EmailVerified { get; set; }
+        [JsonProperty("name")]
+        public string? Name { get; set; }
+        [JsonProperty("realm")]
+        public string? Realm { get; set; }
+        [JsonProperty("preferred_username")]
+        public string? PreferredUsername { get; set; } // The numeric internal username, same as Username
+        [JsonProperty("given_name")]
+        public string? GivenName { get; set; }
+        [JsonProperty("family_name")]
+        public string? FamilyName { get; set; }
+        [JsonProperty("email")]
+        public string? Email { get; set; }
+        [JsonProperty("username")]
+        public string? Username { get; set; } // The numeric internal username, same as PreferredUsername
+    }
+
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+    }
+}
