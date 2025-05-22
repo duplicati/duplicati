@@ -116,4 +116,11 @@ namespace Duplicati.Library.Utility.Strings
         public static string UnsupportedTimeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid time", optionname, value); }
         public static string NonQualifiedSizeValue(string optionname, string value) { return LC.L(@"The size ""{1}"" supplied to --{0} does not have a multiplier (b, kb, mb, etc). A multiplier is recommended to avoid unexpected changes if the program is updated.", optionname, value); }
     }
+
+    internal static class BackendExtensions
+    {
+        public static string ErrorDeleteFile(string filename, string message) { return LC.L(@"Error on deleting file: {0}, error: {1}", filename, message); }
+        public static string ErrorReadFile(string filename, string message) { return LC.L(@"Error reading file: {0}, error: {1}", filename, message); }
+        public static string ErrorWriteFile(string filename, string message) { return LC.L(@"Error writing file: {0}, error: {1}", filename, message); }
+    }
 }

@@ -221,7 +221,7 @@ public class FilenBackend : IStreamingBackend
 
     /// <inheritdoc/>
     public Task TestAsync(CancellationToken cancellationToken)
-        => this.TestListAsync(cancellationToken);
+        => this.TestReadWritePermissionsAsync(cancellationToken);
 
     /// <inheritdoc/>
     public async Task CreateFolderAsync(CancellationToken cancellationToken)

@@ -429,9 +429,7 @@ public class pCloudBackend : IStreamingBackend
         if (string.IsNullOrWhiteSpace(_Path) || _Path.Split(PATH_SEPARATORS, StringSplitOptions.RemoveEmptyEntries).Length == 0)
             return;
 
-        // This method will search for the folderId recursively and throw an exception if the folder is not found
-        await GetFolderId(cancellationToken).ConfigureAwait(false);
-
+        await this.TestReadWritePermissionsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

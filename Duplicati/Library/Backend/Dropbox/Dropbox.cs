@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using System.Runtime.CompilerServices;
 
@@ -159,7 +160,7 @@ namespace Duplicati.Library.Backend
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.Dropbox.Hosts());
 
         public Task TestAsync(CancellationToken cancelToken)
-            => this.TestListAsync(cancelToken);
+            => this.TestReadWritePermissionsAsync(cancelToken);
 
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {

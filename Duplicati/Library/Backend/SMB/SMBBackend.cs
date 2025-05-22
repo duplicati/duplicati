@@ -27,6 +27,7 @@ using Duplicati.Library.SourceProvider;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility.Options;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend;
 
@@ -286,12 +287,8 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend
     /// </summary>
     /// <param name="cancellationToken">The cancellation token (not used)</param>
     /// <exception cref="FolderMissingException">Thrown when configured path does not exist</exception>
-    public async Task TestAsync(CancellationToken cancellationToken)
-    {
-        // This will throw an exception if the folder is missing
-        var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
-        await con.ListAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false);
-    }
+    public Task TestAsync(CancellationToken cancellationToken)
+        => this.TestReadWritePermissionsAsync(cancellationToken);
 
     /// <summary>
     /// Creates the configured remote folder path if it doesn't exist

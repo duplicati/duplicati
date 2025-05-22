@@ -171,7 +171,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-            => this.TestListAsync(cancelToken);
+            => this.TestReadWritePermissionsAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

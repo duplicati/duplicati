@@ -424,6 +424,7 @@ namespace Duplicati.Library.Backend
         {
             var ctx = await GetSpClientContextAsync(true, cancelToken).ConfigureAwait(false);
             await TestContextForWebAsync(ctx, true, m_timeouts.ShortTimeout, cancelToken).ConfigureAwait(false);
+            await this.TestReadWritePermissionsAsync(cancelToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
