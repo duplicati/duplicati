@@ -359,7 +359,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Start the progress updater
             using (new Logging.Timer(LOGTAG, "RestoreNetworkWait", "RestoreNetworkWait"))
-            using (var kill_updater = new CancellationTokenSource())
+            using (var kill_updater = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
                 var updater = Task.Run(async () =>
                 {

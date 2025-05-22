@@ -33,7 +33,6 @@ namespace Duplicati.Server.Database
         private readonly string[] UrlPasswords = {
             "authid",
             "auth-password",
-            "sia-password",
             "storj-secret",
             "storj-shared-access",
         };
@@ -135,6 +134,7 @@ namespace Duplicati.Server.Database
                 // breaks assumptions made by the decode_uri function in AppUtils.js. Since we are simply
                 // removing password parameters, we will leave the parameters as they are in the target URL.
                 filteredParameters = Library.Utility.Uri.ParseQueryString(url.Query, false);
+                // TODO: This list is not exhaustive, look at the BackendLoader and find all password fields + aliases
                 foreach (string field in this.UrlPasswords)
                 {
                     filteredParameters.Remove(field);
