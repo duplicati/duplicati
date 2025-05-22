@@ -54,8 +54,8 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Compact", m_options.SqlitePageCache))
             {
-                Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+                await Utility.UpdateOptionsFromDb(db, m_options);
+                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
                 var changed = await DoCompactAsync(db, false, backendManager).ConfigureAwait(false);
 

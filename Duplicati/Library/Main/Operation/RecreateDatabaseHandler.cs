@@ -98,12 +98,12 @@ namespace Duplicati.Library.Main.Operation
             // Mark as incomplete
             await db.PartiallyRecreated(true);
 
-            var preexistingOptionsInDatabase = Utility.ContainsOptionsForVerification(db);
-            Utility.UpdateOptionsFromDb(db, m_options, null);
+            var preexistingOptionsInDatabase = await Utility.ContainsOptionsForVerification(db);
+            await Utility.UpdateOptionsFromDb(db, m_options);
 
             // Make sure the options have not changed between calls, unless there are no previous options
             if (preexistingOptionsInDatabase)
-                Utility.VerifyOptionsAndUpdateDatabase(db, m_options, null);
+                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
             await DoRunAsync(backendManager, db, true, filter, filelistfilter, blockprocessor).ConfigureAwait(false);
         }
@@ -280,7 +280,7 @@ namespace Duplicati.Library.Main.Operation
 
             //Make sure we write the config if it has been read from a manifest
             if (hasUpdatedOptions)
-                Utility.VerifyOptionsAndUpdateDatabase(restoredb, m_options);
+                await Utility.VerifyOptionsAndUpdateDatabase(restoredb, m_options);
 
             using (new Logging.Timer(LOGTAG, "CommitUpdateFilesetFromRemote", "CommitUpdateFilesetFromRemote"))
                 await restoredb.Transaction.CommitAsync();

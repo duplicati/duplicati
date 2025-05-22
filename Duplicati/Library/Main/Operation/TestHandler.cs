@@ -52,8 +52,8 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = await LocalTestDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache))
             {
-                Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+                await Utility.UpdateOptionsFromDb(db, m_options);
+                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
                 await db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks);
                 await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly).ConfigureAwait(false);
                 await DoRunAsync(samples, db, backendManager).ConfigureAwait(false);

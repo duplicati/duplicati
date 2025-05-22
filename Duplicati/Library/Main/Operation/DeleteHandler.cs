@@ -53,8 +53,8 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Delete", m_options.SqlitePageCache))
             {
-                Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+                await Utility.UpdateOptionsFromDb(db, m_options);
+                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
                 await DoRunAsync(db, false, false, backendManager).ConfigureAwait(false);
 

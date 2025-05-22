@@ -323,8 +323,8 @@ namespace Duplicati.Library.Main.Operation
                     result.Dryrun = options.Dryrun;
 
                     // Check the database integrity
-                    Utility.UpdateOptionsFromDb(database, options);
-                    Utility.VerifyOptionsAndUpdateDatabase(database, options);
+                    await Utility.UpdateOptionsFromDb(database, options);
+                    await Utility.VerifyOptionsAndUpdateDatabase(database, options);
 
                     var probe_path = await database.GetFirstPath();
                     if (probe_path != null && Util.GuessDirSeparator(probe_path) != Util.DirectorySeparatorString)

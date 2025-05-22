@@ -308,8 +308,8 @@ namespace Duplicati.Library.Main.Operation
         private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
         {
             // Perform initial setup
-            Utility.UpdateOptionsFromDb(database, m_options);
-            Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
+            await Utility.UpdateOptionsFromDb(database, m_options);
+            await Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
 
             // Verify the backend if necessary
             if (!m_options.NoBackendverification)
@@ -421,8 +421,8 @@ namespace Duplicati.Library.Main.Operation
             //using (var database = new LocalRestoreDatabase(dbparent))
             using (var metadatastorage = new RestoreHandlerMetadataStorage())
             {
-                Utility.UpdateOptionsFromDb(database, m_options);
-                Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
+                await Utility.UpdateOptionsFromDb(database, m_options);
+                await Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
                 m_blockbuffer = new byte[m_options.Blocksize];
 
                 if (!m_options.NoBackendverification)

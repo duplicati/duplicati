@@ -104,10 +104,10 @@ namespace Duplicati.Library.Main
         /// <param name="db">The database to read from</param>
         /// <param name="options">The options to update</param>
         /// <param name="transaction">The transaction to use, if any</param>
-        internal static void UpdateOptionsFromDb(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
+        internal static async Task UpdateOptionsFromDb(LocalDatabase db, Options options)
         {
             string n = null;
-            var opts = db.GetDbOptions(transaction);
+            var opts = await db.GetDbOptions();
             if (opts.ContainsKey("blocksize") && (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n)))
                 options.RawOptions["blocksize"] = opts["blocksize"] + "b";
 
@@ -122,9 +122,9 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="db">The database to check</param>
         /// <returns><c>true</c> if the database contains options that need to be verified; <c>false</c> otherwise</returns>
-        internal static bool ContainsOptionsForVerification(LocalDatabase db)
+        internal static async Task<bool> ContainsOptionsForVerification(LocalDatabase db)
         {
-            var opts = db.GetDbOptions();
+            var opts = await db.GetDbOptions();
             return new[] { "blocksize", "blockhash", "filehash", "passphrase" }.Any(opts.ContainsKey);
         }
 
@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main
         /// <param name="db">The database to check</param>
         /// <param name="options">The options to verify</param>
         /// <param name="transaction">The transaction to use, if any</param>
-        internal static void VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
+        internal static async Task VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options)
         {
             var newDict = new Dictionary<string, string>
             {
@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main
                 { "blockhash", options.BlockHashAlgorithm },
                 { "filehash", options.FileHashAlgorithm }
             };
-            var opts = db.GetDbOptions(transaction);
+            var opts = await db.GetDbOptions();
 
             if (options.NoEncryption)
             {
@@ -163,7 +163,7 @@ namespace Duplicati.Library.Main
 
                 newDict["passphrase-salt"] = salt;
 
-                // We avoid storing the passphrase directly, 
+                // We avoid storing the passphrase directly,
                 // instead we salt and rehash repeatedly
                 newDict.Add("passphrase", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(options.Passphrase, salt, 1200)));
             }
@@ -192,7 +192,7 @@ namespace Duplicati.Library.Main
                 }
 
             //Extra sanity check
-            if (db.GetBlocksLargerThan(options.Blocksize) > 0)
+            if (await db.GetBlocksLargerThan(options.Blocksize) > 0)
                 throw new Duplicati.Library.Interface.UserInformationException("You have attempted to change the block-size on an existing backup, which is not supported. Please configure a new clean backup if you want to change the block-size.", "BlockSizeChangeNotSupported");
 
             if (needsUpdate)
@@ -202,7 +202,7 @@ namespace Duplicati.Library.Main
                     if (!newDict.ContainsKey(k.Key))
                         newDict[k.Key] = k.Value;
 
-                db.SetDbOptions(newDict, transaction);
+                await db.SetDbOptions(newDict);
             }
         }
     }

@@ -86,8 +86,8 @@ namespace Duplicati.Library.Main.Operation
             if (orphans != 0)
                 throw new UserInformationException(string.Format("Unable to start the purge process as there are {0} orphan file(s)", orphans), "CannotPurgeWithOrphans");
 
-            Utility.UpdateOptionsFromDb(db, m_options);
-            Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+            await Utility.UpdateOptionsFromDb(db, m_options);
+            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
             if (filtercommand == null)
             {

@@ -130,8 +130,8 @@ namespace Duplicati.Library.Main.Operation
 
             using var db = await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
 
-            Utility.UpdateOptionsFromDb(db, m_options);
-            Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+            await Utility.UpdateOptionsFromDb(db, m_options);
+            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
             if (await db.PartiallyRecreated())
                 throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
@@ -1134,7 +1134,7 @@ namespace Duplicati.Library.Main.Operation
 
             using var db = await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
 
-            Utility.UpdateOptionsFromDb(db, m_options);
+            await Utility.UpdateOptionsFromDb(db, m_options);
 
             if (await db.RepairInProgress() || await db.PartiallyRecreated())
                 Logging.Log.WriteWarningMessage(LOGTAG, "InProgressDatabase", null, "The database is marked as \"in-progress\" and may be incomplete.");
