@@ -1471,7 +1471,7 @@ namespace Duplicati.Library.Main.Database
 
                 try
                 {
-                    await VerifyConsistency(blocksize, hashsize, true, m_rtr.Transaction);
+                    await VerifyConsistency(blocksize, hashsize, true);
                 }
                 catch (Exception ex)
                 {
