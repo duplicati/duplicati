@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.Operation
             long knownRemotes = -1;
             try
             {
-                using var db = new LocalRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
+                using var db = await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
                 knownRemotes = await db.GetRemoteVolumes().CountAsync();
             }
             catch (Exception ex)
@@ -128,32 +128,31 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
-            using var db = new LocalRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
-            using var rtr = new ReusableTransaction(db);
+            using var db = await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
 
             Utility.UpdateOptionsFromDb(db, m_options);
             Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
-            if (db.PartiallyRecreated)
+            if (await db.PartiallyRecreated())
                 throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
 
-            if (db.RepairInProgress)
+            if (await db.RepairInProgress())
                 throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
 
             // Ensure the database is consistent before we start fixing the remote
-            await db.VerifyConsistencyForRepair(m_options.Blocksize, m_options.BlockhashSize, true, rtr.Transaction);
+            await db.VerifyConsistencyForRepair(m_options.Blocksize, m_options.BlockhashSize, true);
 
             // If the last backup failed, guard the incomplete fileset, so we can create a synthetic filelist
-            var lastTempFilelist = await db.GetLastIncompleteFilesetVolume(rtr.Transaction);
-            var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, rtr.Transaction, m_result.BackendWriter, [lastTempFilelist.Name], null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
-            await rtr.CommitAsync("CommitRemoteListAnalysisTransaction");
+            var lastTempFilelist = await db.GetLastIncompleteFilesetVolume();
+            var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, [lastTempFilelist.Name], null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
+            await db.Transaction.CommitAsync("CommitRemoteListAnalysisTransaction");
 
             var buffer = new byte[m_options.Blocksize];
             var hashsize = m_options.BlockhashSize;
 
-            var missingRemoteFilesets = await db.MissingRemoteFilesets(rtr.Transaction).ToListAsync(cancellationToken: cancellationToken);
-            var missingLocalFilesets = await db.MissingLocalFilesets(rtr.Transaction).ToListAsync(cancellationToken: cancellationToken);
-            var emptyIndexFiles = await db.EmptyIndexFiles(rtr.Transaction).ToListAsync(cancellationToken: cancellationToken);
+            var missingRemoteFilesets = await db.MissingRemoteFilesets().ToListAsync(cancellationToken: cancellationToken);
+            var missingLocalFilesets = await db.MissingLocalFilesets().ToListAsync(cancellationToken: cancellationToken);
+            var emptyIndexFiles = await db.EmptyIndexFiles().ToListAsync(cancellationToken: cancellationToken);
 
             var progress = 0;
             var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count() + missingRemoteFilesets.Count + missingLocalFilesets.Count + emptyIndexFiles.Count;
@@ -189,16 +188,16 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (tp.VerificationRequiredVolumes.Any())
                 {
-                    using var testdb = new LocalTestDatabase(db);
+                    using var testdb = await LocalTestDatabase.CreateAsync(db);
 
                     foreach (var n in tp.VerificationRequiredVolumes)
                         try
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(testdb, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(testdb, cancellationToken).ConfigureAwait(false);
                                 if (!m_options.Dryrun)
-                                    await rtr.CommitAsync("CommitEarlyExit", false);
+                                    await testdb.Transaction.CommitAsync("CommitEarlyExit", false);
                                 return;
                             }
 
@@ -208,7 +207,7 @@ namespace Duplicati.Library.Main.Operation
                             KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
                             var (tf, hash, size) = await backendManager.GetWithInfoAsync(n.Name, n.Hash, n.Size, cancellationToken).ConfigureAwait(false);
                             using (tf)
-                                res = TestHandler.TestVolumeInternals(testdb, rtr, n, tf, m_options, 1);
+                                res = await TestHandler.TestVolumeInternals(testdb, n, tf, m_options, 1);
 
                             if (res.Value.Any())
                                 throw new Exception(string.Format("Remote verification failure: {0}", res.Value.First()));
@@ -216,7 +215,7 @@ namespace Duplicati.Library.Main.Operation
                             if (!m_options.Dryrun)
                             {
                                 Logging.Log.WriteInformationMessage(LOGTAG, "CapturedRemoteFileHash", "Sucessfully captured hash for {0}, updating database", n.Name);
-                                await db.UpdateRemoteVolume(n.Name, RemoteVolumeState.Verified, size, hash, rtr.Transaction);
+                                await db.UpdateRemoteVolume(n.Name, RemoteVolumeState.Verified, size, hash);
                             }
 
                         }
@@ -227,7 +226,7 @@ namespace Duplicati.Library.Main.Operation
                                 throw;
                         }
 
-                    await rtr.CommitAsync("CommitVerificationTransaction");
+                    await db.Transaction.CommitAsync("CommitVerificationTransaction");
                 }
 
                 // TODO: It is actually possible to use the extra files if we parse them
@@ -236,9 +235,9 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
-                            await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+                            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                             if (!m_options.Dryrun)
-                                await rtr.CommitAsync("CommitEarlyExit", false);
+                                await db.Transaction.CommitAsync("CommitEarlyExit", false);
                             return;
                         }
 
@@ -267,31 +266,31 @@ namespace Duplicati.Library.Main.Operation
                                         if (entry.Hash != rv.Hash || entry.Size != rv.Length || !new[] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
                                             throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, entry.Hash, entry.Size, rv.Hash, rv.Length));
 
-                                        await db.CheckAllBlocksAreInVolume(rv.Filename, rv.Blocks, rtr.Transaction);
+                                        await db.CheckAllBlocksAreInVolume(rv.Filename, rv.Blocks);
                                     }
 
                                     var blocksize = m_options.Blocksize;
                                     foreach (var ixb in ifr.BlockLists)
-                                        await db.CheckBlocklistCorrect(ixb.Hash, ixb.Length, ixb.Blocklist, blocksize, hashsize, rtr.Transaction);
+                                        await db.CheckBlocklistCorrect(ixb.Hash, ixb.Length, ixb.Blocklist, blocksize, hashsize);
 
                                     // Register the new index file and link it to the block files
-                                    var selfid = await db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, RemoteVolumeState.Uploading, size, new TimeSpan(0), rtr.Transaction);
+                                    var selfid = await db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, RemoteVolumeState.Uploading, size, new TimeSpan(0));
                                     foreach (var rv in ifr.Volumes)
                                     {
                                         // Guard against unknown block files
-                                        long id = await db.GetRemoteVolumeID(rv.Filename, rtr.Transaction);
+                                        long id = await db.GetRemoteVolumeID(rv.Filename);
                                         if (id == -1)
                                             Logging.Log.WriteWarningMessage(LOGTAG, "UnknownBlockFile", null, "Index file {0} references unknown block file: {1}", n.File.Name, rv.Filename);
                                         else
-                                            await db.AddIndexBlockLink(selfid, id, rtr.Transaction);
+                                            await db.AddIndexBlockLink(selfid, id);
                                     }
                                     if (!m_options.Dryrun)
-                                        await rtr.CommitAsync("CommitIndexFileTransaction");
+                                        await db.Transaction.CommitAsync("CommitIndexFileTransaction");
                                 }
 
                                 // All checks fine, we accept the new index file
                                 Logging.Log.WriteInformationMessage(LOGTAG, "AcceptNewIndexFile", "Accepting new index file {0}", n.File.Name);
-                                await db.UpdateRemoteVolume(n.File.Name, RemoteVolumeState.Verified, size, hash, rtr.Transaction);
+                                await db.UpdateRemoteVolume(n.File.Name, RemoteVolumeState.Verified, size, hash);
                                 continue;
                             }
                             catch (Exception rex)
@@ -324,15 +323,15 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                     {
-                        await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+                        await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                         if (!m_options.Dryrun)
-                            await rtr.CommitAsync("CommitEarlyExit", false);
+                            await db.Transaction.CommitAsync("CommitEarlyExit", false);
                         return;
                     }
 
                     progress++;
                     m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
-                    var fileTime = FilesetVolumeWriter.ProbeUnusedFilenameName(db, rtr.Transaction, m_options, timestamp);
+                    var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp);
 
                     var fsw = new FilesetVolumeWriter(m_options, fileTime);
                     Logging.Log.WriteInformationMessage(LOGTAG, "ReuploadingFileset", "Re-uploading fileset {0} from {1} as remote volume registration is missing, new filename: {2}", filesetId, timestamp, fsw.RemoteFilename);
@@ -342,12 +341,12 @@ namespace Duplicati.Library.Main.Operation
                             fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 
                     fsw.CreateFilesetFile(isfull);
-                    await db.WriteFileset(fsw, filesetId, null);
+                    await db.WriteFileset(fsw, filesetId);
                     fsw.Close();
 
 
                     fsw.VolumeID = await db.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, -1, RemoteVolumeState.Temporary);
-                    await db.LinkFilesetToVolume(filesetId, fsw.VolumeID, null);
+                    await db.LinkFilesetToVolume(filesetId, fsw.VolumeID);
                     if (m_options.Dryrun)
                     {
                         fsw.Dispose();
@@ -359,10 +358,10 @@ namespace Duplicati.Library.Main.Operation
 
                 if (anyDlistUploads)
                 {
-                    await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
-                    await backendManager.FlushPendingMessagesAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
+                    await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
                     if (!m_options.Dryrun)
-                        await rtr.CommitAsync("CommitFilesetTransaction");
+                        await db.Transaction.CommitAsync("CommitFilesetTransaction");
                 }
 
                 foreach (var volumename in missingLocalFilesets)
@@ -373,22 +372,22 @@ namespace Duplicati.Library.Main.Operation
                         var parsed = VolumeBase.ParseFilename(remoteVolume.Name);
                         using (var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read))
                         using (var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions))
-                        using (var recreatedb = new LocalRecreateDatabase(db, m_options))
+                        using (var recreatedb = await LocalRecreateDatabase.CreateAsync(db, m_options))
                         {
                             if (compressor == null)
                                 throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
 
-                            var filesetid = await db.CreateFileset(remoteVolume.ID, parsed.Time, rtr.Transaction);
+                            var filesetid = await db.CreateFileset(remoteVolume.ID, parsed.Time);
 
-                            await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, rtr.Transaction, compressor, filesetid, m_options, new FilterExpression());
+                            await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, compressor, filesetid, m_options, new FilterExpression());
                             if (!m_options.Dryrun)
-                                await rtr.CommitAsync("CommitRecreateFilesetTransaction");
+                                await recreatedb.Transaction.CommitAsync("CommitRecreateFilesetTransaction");
                         }
                     }
                 }
 
                 if (!m_options.Dryrun && tp.MissingVolumes.Any())
-                    db.TerminatedWithActiveUploads = true;
+                    await db.TerminatedWithActiveUploads(true);
 
                 if (tp.MissingVolumes.Any(x => x.Type != RemoteVolumeType.Index && x.Type != RemoteVolumeType.Files && x.Type != RemoteVolumeType.Blocks))
                     throw new InvalidOperationException(string.Format("Unknown volume type {0} detected", tp.MissingVolumes.First(x => x.Type != RemoteVolumeType.Index && x.Type != RemoteVolumeType.Files && x.Type != RemoteVolumeType.Blocks).Type));
@@ -403,7 +402,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 // Blocks are recreated with the entire list of missing files to handle cases where partial recreation is needed
-                await RunRepairDblocks(backendManager, db, rtr, missingDblocks, incrementProgress, cancellationToken).ConfigureAwait(false);
+                await RunRepairDblocks(backendManager, db, missingDblocks, incrementProgress, cancellationToken).ConfigureAwait(false);
 
                 // Filesets are recreated one at a time
                 foreach (var n in tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Files))
@@ -414,10 +413,10 @@ namespace Duplicati.Library.Main.Operation
                     try
                     {
                         var timestamp = VolumeBase.ParseFilename(n.Name).Time;
-                        var fileTime = FilesetVolumeWriter.ProbeUnusedFilenameName(db, rtr.Transaction, m_options, timestamp);
+                        var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp);
                         var volumeWriter = newEntry = new FilesetVolumeWriter(m_options, fileTime);
 
-                        await RunRepairDlist(backendManager, db, rtr, volumeWriter, n, fileTime, cancellationToken).ConfigureAwait(false);
+                        await RunRepairDlist(backendManager, db, volumeWriter, n, fileTime, cancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -441,12 +440,12 @@ namespace Duplicati.Library.Main.Operation
                     try
                     {
                         // Check if the index file has already been deleted, beause the dblock was recreated
-                        var currentState = (await db.GetRemoteVolume(n.Name, rtr.Transaction)).State;
+                        var currentState = (await db.GetRemoteVolume(n.Name)).State;
                         if (currentState == RemoteVolumeState.Deleted || currentState == RemoteVolumeState.Temporary || currentState == RemoteVolumeState.Deleting)
                             continue;
 
                         var w = newEntry = new IndexVolumeWriter(m_options);
-                        await RunRepairDindex(backendManager, db, rtr, w, n, cancellationToken).ConfigureAwait(false);
+                        await RunRepairDindex(backendManager, db, w, n, cancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -467,7 +466,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
-                            await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                             return;
                         }
 
@@ -486,7 +485,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 Logging.Log.WriteInformationMessage(LOGTAG, "DeletingEmptyIndexFile", "Deleting empty index file {0}", emptyIndexFile.Name);
                                 await backendManager.DeleteAsync(emptyIndexFile.Name, emptyIndexFile.Size, false, cancellationToken).ConfigureAwait(false);
-                                await backendManager.FlushPendingMessagesAsync(db, null, cancellationToken).ConfigureAwait(false);
+                                await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
                             }
                         }
                     }
@@ -505,11 +504,11 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_result.OperationProgressUpdater.UpdateProgress(1);
-            await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
             if (!m_options.Dryrun)
             {
-                db.TerminatedWithActiveUploads = false;
-                await rtr.CommitAsync("CommitRepairTransaction", false);
+                await db.TerminatedWithActiveUploads(false);
+                await db.Transaction.CommitAsync("CommitRepairTransaction", false);
             }
         }
 
@@ -524,40 +523,40 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="filesetTime">The time of the new fileset to create</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
         /// <returns>A task representing the asynchronous operation</returns>
-        private async Task RunRepairDlist(IBackendManager backendManager, LocalRepairDatabase db, ReusableTransaction rtr, FilesetVolumeWriter volumeWriter, RemoteVolumeEntry originalVolume, DateTime filesetTime, CancellationToken cancellationToken)
+        private async Task RunRepairDlist(IBackendManager backendManager, LocalRepairDatabase db, FilesetVolumeWriter volumeWriter, RemoteVolumeEntry originalVolume, DateTime filesetTime, CancellationToken cancellationToken)
         {
-            volumeWriter.VolumeID = await db.RegisterRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, -1, TimeSpan.Zero, rtr.Transaction);
-            (var prevFilesetId, var _, var isPrevFull) = await db.GetFilesetFromRemotename(originalVolume.Name, rtr.Transaction);
+            volumeWriter.VolumeID = await db.RegisterRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, -1, TimeSpan.Zero);
+            (var prevFilesetId, var _, var isPrevFull) = await db.GetFilesetFromRemotename(originalVolume.Name);
 
             if (!string.IsNullOrEmpty(m_options.ControlFiles))
                 foreach (var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
                     volumeWriter.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 
             volumeWriter.CreateFilesetFile(isPrevFull);
-            var newFilesetID = await db.CreateFileset(volumeWriter.VolumeID, filesetTime, rtr.Transaction);
-            await db.UpdateFullBackupStateInFileset(newFilesetID, isPrevFull, rtr.Transaction);
+            var newFilesetID = await db.CreateFileset(volumeWriter.VolumeID, filesetTime);
+            await db.UpdateFullBackupStateInFileset(newFilesetID, isPrevFull);
 
-            await db.LinkFilesetToVolume(newFilesetID, volumeWriter.VolumeID, rtr.Transaction);
-            await db.MoveFilesFromFileset(newFilesetID, prevFilesetId, rtr.Transaction);
+            await db.LinkFilesetToVolume(newFilesetID, volumeWriter.VolumeID);
+            await db.MoveFilesFromFileset(newFilesetID, prevFilesetId);
 
-            await db.WriteFileset(volumeWriter, newFilesetID, rtr.Transaction);
+            await db.WriteFileset(volumeWriter, newFilesetID);
             volumeWriter.Close();
 
-            await db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null, rtr.Transaction);
-            await db.UpdateRemoteVolume(originalVolume.Name, RemoteVolumeState.Deleted, originalVolume.Size, originalVolume.Hash, false, TimeSpan.FromHours(2), null, rtr.Transaction);
-            await backendManager.FlushPendingMessagesAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+            await db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+            await db.UpdateRemoteVolume(originalVolume.Name, RemoteVolumeState.Deleted, originalVolume.Size, originalVolume.Hash, false, TimeSpan.FromHours(2), null);
+            await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
 
             if (m_options.Dryrun)
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would upload fileset {0}, with size {1}, previous size {2}", originalVolume.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(volumeWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(originalVolume.Size));
             else
             {
-                await rtr.CommitAsync("CommitPriorToFilesetUpload");
+                await db.Transaction.CommitAsync("CommitPriorToFilesetUpload");
                 await backendManager.PutAsync(volumeWriter, null, null, false, null, cancellationToken).ConfigureAwait(false);
             }
 
-            await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
             if (!m_options.Dryrun)
-                await rtr.CommitAsync("CommitFilesetTransaction");
+                await db.Transaction.CommitAsync("CommitFilesetTransaction");
         }
 
         /// <summary>
@@ -572,25 +571,25 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
         /// <returns>A task representing the asynchronous operation</returns>
 
-        private async Task RunRepairDindex(IBackendManager backendManager, LocalRepairDatabase db, ReusableTransaction rtr, IndexVolumeWriter indexWriter, RemoteVolumeEntry originalVolume, CancellationToken cancellationToken)
+        private async Task RunRepairDindex(IBackendManager backendManager, LocalRepairDatabase db, IndexVolumeWriter indexWriter, RemoteVolumeEntry originalVolume, CancellationToken cancellationToken)
         {
-            indexWriter.VolumeID = await db.RegisterRemoteVolume(indexWriter.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Uploading, -1, TimeSpan.Zero, rtr.Transaction);
+            indexWriter.VolumeID = await db.RegisterRemoteVolume(indexWriter.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Uploading, -1, TimeSpan.Zero);
 
             var blockvolumeids = new List<long>();
             using var h = HashFactory.CreateHasher(m_options.BlockHashAlgorithm);
-            await foreach (var blockvolume in db.GetBlockVolumesFromIndexName(originalVolume.Name, rtr.Transaction))
+            await foreach (var blockvolume in db.GetBlockVolumesFromIndexName(originalVolume.Name))
             {
                 indexWriter.StartVolume(blockvolume.Name);
-                var volumeid = await db.GetRemoteVolumeID(blockvolume.Name, rtr.Transaction);
+                var volumeid = await db.GetRemoteVolumeID(blockvolume.Name);
 
-                await foreach (var b in db.GetBlocks(volumeid, rtr.Transaction))
+                await foreach (var b in db.GetBlocks(volumeid))
                     indexWriter.AddBlock(b.Hash, b.Size);
 
                 indexWriter.FinishVolume(blockvolume.Hash, blockvolume.Size);
                 blockvolumeids.Add(volumeid);
 
                 if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                    await foreach (var b in db.GetBlocklists(volumeid, m_options.Blocksize, m_options.BlockhashSize, rtr.Transaction))
+                    await foreach (var b in db.GetBlocklists(volumeid, m_options.Blocksize, m_options.BlockhashSize))
                     {
                         var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
                         if (bh != b.Item1)
@@ -601,7 +600,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             foreach (var blockvolumeid in blockvolumeids)
-                await db.AddIndexBlockLink(indexWriter.VolumeID, blockvolumeid, rtr.Transaction);
+                await db.AddIndexBlockLink(indexWriter.VolumeID, blockvolumeid);
 
             indexWriter.Close();
 
@@ -609,14 +608,14 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadIndexFile", "would re-upload index file {0}, with size {1}, previous size {2}", originalVolume.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(indexWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(originalVolume.Size));
             else
             {
-                await db.UpdateRemoteVolume(originalVolume.Name, RemoteVolumeState.Deleted, originalVolume.Size, originalVolume.Hash, false, TimeSpan.FromHours(2), null, rtr.Transaction);
-                await backendManager.FlushPendingMessagesAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+                await db.UpdateRemoteVolume(originalVolume.Name, RemoteVolumeState.Deleted, originalVolume.Size, originalVolume.Hash, false, TimeSpan.FromHours(2), null);
+                await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
                 await backendManager.PutAsync(indexWriter, null, null, false, null, cancellationToken).ConfigureAwait(false);
             }
 
-            await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
             if (!m_options.Dryrun)
-                await rtr.CommitAsync("CommitRepairTransaction");
+                await db.Transaction.CommitAsync("CommitRepairTransaction");
         }
 
         /// <summary>
@@ -628,10 +627,6 @@ namespace Duplicati.Library.Main.Operation
             /// Database to use for the operation
             /// </summary>
             private readonly LocalDatabase m_database;
-            /// <summary>
-            /// Transaction to use for the operation
-            /// </summary>
-            private readonly ReusableTransaction m_transaction;
             /// <summary>
             /// List of volumes to delete after the upload is complete
             /// </summary>
@@ -663,14 +658,14 @@ namespace Duplicati.Library.Main.Operation
             /// <param name="options">The options for the current operation</param>
             /// <param name="db">The database to use for registering a volume in progress</param>
             /// <param name="transaction">The transaction to use for the operation</param>
-            public InProgressDblockVolumes(Options options, LocalDatabase db, ReusableTransaction transaction)
+            public InProgressDblockVolumes(Options options, LocalDatabase db)
             {
                 m_database = db;
-                m_transaction = transaction;
                 m_options = options;
                 m_maxVolumeSize = options.VolumeSize - m_options.Blocksize;
                 m_activeWriter = new BlockVolumeWriter(options);
-                m_activeWriter.VolumeID = m_database.RegisterRemoteVolume(m_activeWriter.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, -1, TimeSpan.Zero, m_transaction.Transaction).Await();
+                // TODO this constructor should be converted to a factory method
+                m_activeWriter.VolumeID = m_database.RegisterRemoteVolume(m_activeWriter.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, -1, TimeSpan.Zero).Await();
             }
 
             /// <summary>
@@ -726,7 +721,7 @@ namespace Duplicati.Library.Main.Operation
                 m_completedWriters.Add(m_activeWriter);
 
                 m_activeWriter = new BlockVolumeWriter(m_options);
-                m_activeWriter.VolumeID = await m_database.RegisterRemoteVolume(m_activeWriter.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, -1, TimeSpan.Zero, m_transaction.Transaction);
+                m_activeWriter.VolumeID = await m_database.RegisterRemoteVolume(m_activeWriter.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, -1, TimeSpan.Zero);
                 m_anyData = false;
             }
         }
@@ -741,9 +736,9 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="incrementProgress"><The callback to increment the progress</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
         /// <returns>>A task representing the asynchronous operation</returns>
-        private async Task RunRepairDblocks(IBackendManager backendManager, LocalRepairDatabase db, ReusableTransaction rtr, IEnumerable<RemoteVolumeEntry> missingDblockFiles, Action incrementProgress, CancellationToken cancellationToken)
+        private async Task RunRepairDblocks(IBackendManager backendManager, LocalRepairDatabase db, IEnumerable<RemoteVolumeEntry> missingDblockFiles, Action incrementProgress, CancellationToken cancellationToken)
         {
-            var currentVolume = new InProgressDblockVolumes(m_options, db, rtr);
+            var currentVolume = new InProgressDblockVolumes(m_options, db);
 
             foreach (var n in missingDblockFiles)
             {
@@ -751,17 +746,17 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                     {
-                        await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+                        await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                         if (!m_options.Dryrun)
-                            await rtr.CommitAsync("CommitEarlyExit", false);
+                            await db.Transaction.CommitAsync("CommitEarlyExit", false);
                         return;
                     }
 
                     incrementProgress();
 
-                    await RunRepairDblock(backendManager, db, rtr, n, currentVolume, cancellationToken).ConfigureAwait(false);
+                    await RunRepairDblock(backendManager, db, n, currentVolume, cancellationToken).ConfigureAwait(false);
                     if (currentVolume.CompletedWriters.Count > 0)
-                        await UploadCompletedBlockVolumes(backendManager, currentVolume, db, rtr, cancellationToken).ConfigureAwait(false);
+                        await UploadCompletedBlockVolumes(backendManager, currentVolume, db, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -775,10 +770,10 @@ namespace Duplicati.Library.Main.Operation
             if (currentVolume.AnyData)
                 await currentVolume.StartNewVolume();
             // Complete any pending uploads
-            await UploadCompletedBlockVolumes(backendManager, currentVolume, db, rtr, cancellationToken).ConfigureAwait(false);
+            await UploadCompletedBlockVolumes(backendManager, currentVolume, db, cancellationToken).ConfigureAwait(false);
 
             // After reset, we need to remove the temporary volume from the database
-            await db.RemoveRemoteVolume(currentVolume.RemoteFilename, rtr.Transaction);
+            await db.RemoveRemoteVolume(currentVolume.RemoteFilename);
         }
 
         /// <summary>
@@ -790,11 +785,11 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="rtr">>The transaction to use for the upload</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
         /// <returns>>A task representing the asynchronous operation</returns>
-        async Task UploadCompletedBlockVolumes(IBackendManager backendManager, InProgressDblockVolumes activeVolume, LocalRepairDatabase db, ReusableTransaction rtr, CancellationToken cancellationToken)
+        async Task UploadCompletedBlockVolumes(IBackendManager backendManager, InProgressDblockVolumes activeVolume, LocalRepairDatabase db, CancellationToken cancellationToken)
         {
             foreach (var completedVolume in activeVolume.CompletedWriters)
             {
-                await db.UpdateRemoteVolume(completedVolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, rtr.Transaction);
+                await db.UpdateRemoteVolume(completedVolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
 
                 // Create a new index file that points to the new volume
                 IndexVolumeWriter newvolindex = null;
@@ -802,41 +797,41 @@ namespace Duplicati.Library.Main.Operation
                 if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
                 {
                     newvolindex = new IndexVolumeWriter(m_options);
-                    newvolindex.VolumeID = await db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, rtr.Transaction);
+                    newvolindex.VolumeID = await db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
                     newvolindex.StartVolume(completedVolume.RemoteFilename);
-                    await foreach (var b in db.GetBlocks(completedVolume.VolumeID, rtr.Transaction))
+                    await foreach (var b in db.GetBlocks(completedVolume.VolumeID))
                         newvolindex.AddBlock(b.Hash, b.Size);
 
-                    await db.AddIndexBlockLink(newvolindex.VolumeID, completedVolume.VolumeID, rtr.Transaction);
+                    await db.AddIndexBlockLink(newvolindex.VolumeID, completedVolume.VolumeID);
                     if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                         indexVolumeFinished = async () =>
                         {
-                            await foreach (var blocklist in db.GetBlocklists(completedVolume.VolumeID, m_options.Blocksize, m_options.BlockhashSize, rtr.Transaction))
+                            await foreach (var blocklist in db.GetBlocklists(completedVolume.VolumeID, m_options.Blocksize, m_options.BlockhashSize))
                                 newvolindex.WriteBlocklist(blocklist.Item1, blocklist.Item2, 0, blocklist.Item3);
                         };
                 }
 
                 // All information is in place, we can now upload the new volume
-                await backendManager.FlushPendingMessagesAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+                await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
                 if (m_options.Dryrun)
                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReplaceBlockFile", "would upload new block file {0}", completedVolume.RemoteFilename);
                 else
                 {
-                    await rtr.CommitAsync("PostRepairPreUploadBlockVolume");
+                    await db.Transaction.CommitAsync("PostRepairPreUploadBlockVolume");
                     await backendManager.PutAsync(completedVolume, newvolindex, indexVolumeFinished, false, null, cancellationToken).ConfigureAwait(false);
                 }
             }
 
             // Flush the database as we have new volumes uploaded
-            await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
 
             // Prepare for deleting the old stuff
             foreach (var vol in activeVolume.VolumesToDelete)
-                await db.UpdateRemoteVolume(vol.Name, RemoteVolumeState.Deleting, vol.Size, vol.Hash, false, TimeSpan.FromHours(2), null, rtr.Transaction);
+                await db.UpdateRemoteVolume(vol.Name, RemoteVolumeState.Deleting, vol.Size, vol.Hash, false, TimeSpan.FromHours(2), null);
 
             // Persist desired state prior to deleting the old files
             if (!m_options.Dryrun)
-                await rtr.CommitAsync("PostRepairBlockVolume");
+                await db.Transaction.CommitAsync("PostRepairBlockVolume");
 
             // Delete the old files
             foreach (var vol in activeVolume.VolumesToDelete)
@@ -846,9 +841,9 @@ namespace Duplicati.Library.Main.Operation
                     await backendManager.DeleteAsync(vol.Name, vol.Size, false, cancellationToken).ConfigureAwait(false);
 
             // All done, the new dblocks are now in place
-            await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
             if (!m_options.Dryrun)
-                await rtr.CommitAsync("PostRepairBlockVolume");
+                await db.Transaction.CommitAsync("PostRepairBlockVolume");
 
             activeVolume.CompletedWriters.Clear();
             activeVolume.VolumesToDelete.Clear();
@@ -864,12 +859,12 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="pendingVolume">The in-progress dblock volume to use for the recreate</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
         /// <returns>>A task representing the asynchronous operation</returns>
-        private async Task RunRepairDblock(IBackendManager backendManager, LocalRepairDatabase db, ReusableTransaction rtr, RemoteVolumeEntry originalVolume, InProgressDblockVolumes pendingVolume, CancellationToken cancellationToken)
+        private async Task RunRepairDblock(IBackendManager backendManager, LocalRepairDatabase db, RemoteVolumeEntry originalVolume, InProgressDblockVolumes pendingVolume, CancellationToken cancellationToken)
         {
             // The dblock files are the most complex to recreate
             // as data can be either file contents, metadata or blocklist hashes
             // We attempt to recover all three source parts in the steps below
-            using var mbl = db.CreateBlockList(originalVolume.Name, rtr);
+            using var mbl = await db.CreateBlockList(originalVolume.Name);
 
             var originalMissingBlockCount = await mbl.GetMissingBlockCount();
             var recoveredSourceBlocks = 0L;
@@ -1071,15 +1066,15 @@ namespace Duplicati.Library.Main.Operation
                 if (missingBlocks == 0)
                 {
                     pendingVolume.VolumesToDelete.Add(originalVolume);
-                    var oldIndexFiles = await db.GetIndexFilesReferencingBlockFile(originalVolume.ID, rtr.Transaction).ToListAsync(cancellationToken: cancellationToken);
+                    var oldIndexFiles = await db.GetIndexFilesReferencingBlockFile(originalVolume.ID).ToListAsync(cancellationToken: cancellationToken);
 
                     // Find all index files that point to the old volume
                     foreach (var oldIndexFile in oldIndexFiles)
                     {
-                        var oldVolume = await db.GetRemoteVolume(oldIndexFile, rtr.Transaction);
+                        var oldVolume = await db.GetRemoteVolume(oldIndexFile);
                         if (oldVolume.State == RemoteVolumeState.Uploading || oldVolume.State == RemoteVolumeState.Uploaded || oldVolume.State == RemoteVolumeState.Verified)
                         {
-                            var blockVolumesReferenced = await db.GetBlockVolumesFromIndexName(oldIndexFile, rtr.Transaction).ToListAsync(cancellationToken: cancellationToken);
+                            var blockVolumesReferenced = await db.GetBlockVolumesFromIndexName(oldIndexFile).ToListAsync(cancellationToken: cancellationToken);
                             if (blockVolumesReferenced.Any(x => x.Name != originalVolume.Name))
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "IndexFileNotDeleted", null, "Index file {0} references multiple remote volumes, skipping", oldVolume.Name);
                             else
@@ -1099,10 +1094,9 @@ namespace Duplicati.Library.Main.Operation
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using var db = new LocalRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
-            using var tr = new ReusableTransaction(db);
+            using var db = await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
 
-            var sets = await db.GetFilesetsWithMissingFiles(null).ToListAsync();
+            var sets = await db.GetFilesetsWithMissingFiles().ToListAsync();
             if (sets.Count == 0)
                 return;
 
@@ -1112,7 +1106,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 ix++;
                 Logging.Log.WriteInformationMessage(LOGTAG, "RepairingBrokenFileset", "Repairing broken fileset {0} of {1}: {2}", ix, sets.Count, entry.Value);
-                var volume = await db.GetRemoteVolumeFromFilesetID(entry.Key, tr.Transaction);
+                var volume = await db.GetRemoteVolumeFromFilesetID(entry.Key);
                 var parsed = VolumeBase.ParseFilename(volume.Name);
                 using var tmpfile = await backendManager.GetAsync(volume.Name, volume.Hash, volume.Size, CancellationToken.None).ConfigureAwait(false);
                 using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -1121,13 +1115,13 @@ namespace Duplicati.Library.Main.Operation
                     throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
 
                 // Clear out the old fileset
-                await db.DeleteFilesetEntries(entry.Key, tr.Transaction);
-                using (var rdb = new LocalRecreateDatabase(db, m_options))
+                await db.DeleteFilesetEntries(entry.Key);
+                using (var rdb = await LocalRecreateDatabase.CreateAsync(db, m_options))
                 {
-                    await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(rdb, tr.Transaction, compressor, entry.Key, m_options, new FilterExpression());
+                    await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(rdb, compressor, entry.Key, m_options, new FilterExpression());
                 }
 
-                await tr.CommitAsync("PostRepairFileset");
+                await db.Transaction.CommitAsync("PostRepairFileset");
             }
         }
 
@@ -1138,11 +1132,11 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
-            using var db = new LocalRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
+            using var db = await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
 
             Utility.UpdateOptionsFromDb(db, m_options);
 
-            if (db.RepairInProgress || db.PartiallyRecreated)
+            if (await db.RepairInProgress() || await db.PartiallyRecreated())
                 Logging.Log.WriteWarningMessage(LOGTAG, "InProgressDatabase", null, "The database is marked as \"in-progress\" and may be incomplete.");
 
             await db.FixDuplicateMetahash();
