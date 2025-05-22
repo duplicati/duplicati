@@ -951,7 +951,7 @@ namespace Duplicati.Library.Main.Database
         {
             var r = await m_createremotevolumeCommand
                 .SetTransaction(m_rtr)
-                .SetParameterValue("@OperationId", m_operationid)
+                .SetParameterValue("@OperationID", m_operationid)
                 .SetParameterValue("@Name", name)
                 .SetParameterValue("@Type", type.ToString())
                 .SetParameterValue("@State", state.ToString())

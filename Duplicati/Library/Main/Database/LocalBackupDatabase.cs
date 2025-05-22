@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main.Database
                 SELECT ""ID""
                 FROM ""Block""
                 WHERE
-                    ""Hash"" = @hash
+                    ""Hash"" = @Hash
                     AND ""Size"" = @Size
             ");
 
