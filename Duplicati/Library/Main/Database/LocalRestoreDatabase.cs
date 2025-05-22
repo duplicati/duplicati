@@ -335,7 +335,7 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 cmd.SetTransaction(m_rtr);
-                var filesetIds = (await GetFilesetIDs(Library.Utility.Utility.NormalizeDateTime(restoretime), versions)).ToList();
+                var filesetIds = await GetFilesetIDs(Library.Utility.Utility.NormalizeDateTime(restoretime), versions).ToListAsync();
                 while (filesetIds.Count > 0)
                 {
                     var filesetId = filesetIds[0];
