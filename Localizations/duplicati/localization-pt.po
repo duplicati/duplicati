@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-30 18:10+0200\n"
+"POT-Creation-Date: 2025-05-21 12:54+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Sérgio Marques <smarquespt@gmail.com>, 2025\n"
 "Language-Team: Portuguese (https://app.transifex.com/duplicati/teams/67655/pt/)\n"
@@ -210,27 +210,6 @@ msgstr "Ficheiro não encontrado: {0}"
 msgid "Team drive ID"
 msgstr "ID de Disco de Equipa"
 
-#: Library/Backend/CloudFiles/Strings.cs:29
-msgid "Provide another authentication URL"
-msgstr "Providenciar outro URL de autenticação"
-
-#: Library/Backend/CloudFiles/Strings.cs:33
-msgid "Use a UK account"
-msgstr "Usar uma conta UK"
-
-#: Library/Backend/CloudFiles/Strings.cs:37
-msgid "Failed to delete file"
-msgstr "Falha ao eliminar o ficheiro"
-
-#: Library/Backend/CloudFiles/Strings.cs:38
-#: Library/Backend/Jottacloud/Strings.cs:31
-msgid "Failed to upload file"
-msgstr "Falha ao carregar o ficheiro"
-
-#: Library/Backend/CloudFiles/Strings.cs:40
-msgid "No CloudFiles userID given"
-msgstr "Não foi introduzido um ID de utilizador CloudFiles"
-
 #: Library/Backend/S3/Strings.cs:27
 msgid "S3 compatible"
 msgstr "Compatível com S3"
@@ -363,6 +342,10 @@ msgstr "Chave de acesso"
 #: Library/Backend/Jottacloud/Strings.cs:27
 msgid "Jottacloud"
 msgstr "Jottacloud"
+
+#: Library/Backend/Jottacloud/Strings.cs:31
+msgid "Failed to upload file"
+msgstr "Falha ao carregar o ficheiro"
 
 #: Library/Backend/Mega/Strings.cs:25
 msgid "mega.nz"
@@ -518,16 +501,6 @@ msgstr ""
 "'any' significa todas as interfaces disponíveis, e 'loopback' corresponde ao"
 " adaptador virtual acessível apenas por utilizadores locais."
 
-#: Library/RestAPI/Strings.cs:59
-msgid ""
-"The password required to access the webserver. This option is saved so you "
-"do not need to set it on each run. Setting an empty value disables the "
-"password."
-msgstr ""
-"A palavra-passe necessária para aceder à interface web. Esta é gravada para "
-"não precisar de a fornecer sempre, ao deixar aberta desactiva a palavra-"
-"passe."
-
 #: Library/RestAPI/Strings.cs:60
 msgid ""
 "The hostnames that are accepted, separated with semicolons. If any of the "
@@ -537,13 +510,13 @@ msgstr ""
 "Os hostnames que são autorizados a ligar, separados por ponto-e-vírgula. Um "
 "'*' permite a ligação as todos e desactiva esta protecção."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:251
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:253
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
 "Definir o tempo depois do que os dados de registo serão eliminados da base "
 "de dados."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:252
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:254
 msgid "Clean up old log data"
 msgstr "Apagar dados de registo antigos"
 
@@ -574,12 +547,12 @@ msgstr ""
 msgid "Temporary storage folder"
 msgstr "Pasta temporária de armazenamento"
 
-#: Library/RestAPI/Strings.cs:91 Library/RestAPI/Strings.cs:113
+#: Library/RestAPI/Strings.cs:91 Library/RestAPI/Strings.cs:120
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "O servidor foi iniciado e está a escutar em {0}, porta {1}"
 
-#: Library/RestAPI/Strings.cs:109
+#: Library/RestAPI/Strings.cs:116
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -588,7 +561,7 @@ msgstr ""
 "Não foi possível encontrar uma data válida, utilizando a data de início {0},"
 " o intervalo de repetição {1} e os dias permitidos {2}"
 
-#: Library/RestAPI/Strings.cs:115
+#: Library/RestAPI/Strings.cs:122
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Não foi possível abrir uma porta para escutar, tentou utilizar: {0}"
@@ -626,23 +599,23 @@ msgstr "Prioridade"
 msgid "Limit the size of the volumes"
 msgstr "Limitar o tamanho dos volumes"
 
-#: Library/Main/Strings.cs:141
+#: Library/Main/Strings.cs:143
 msgid "Do not re-use connections"
 msgstr "Não reutilizar ligações"
 
-#: Library/Main/Strings.cs:153
+#: Library/Main/Strings.cs:155
 msgid "Symlink handling"
 msgstr "Gestão de ligações simbólicas"
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:163
 msgid "Name of the backup"
 msgstr "Nome da cópia de segurança"
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:181
 msgid "List of deleted files"
 msgstr "Lista de ficheiros eliminados"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:223
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -654,11 +627,11 @@ msgstr ""
 "hashes SHA256 de todos os ficheiros remotos e pode ser usado para verificar "
 "a integridade dos ficheiros."
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:235
 msgid "Allow the passphrase to change"
 msgstr "Permitir alteração da palavra-passe"
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:246
 msgid "Do not use local data"
 msgstr "Não utilizar dados locais"
 

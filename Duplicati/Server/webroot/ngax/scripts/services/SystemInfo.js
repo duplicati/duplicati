@@ -62,7 +62,6 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'onedrivev2': null,
                 'sharepoint': null,
                 'msgroup': null,
-                'cloudfiles': null,
                 'gcs': null,
                 'openstack': null,
                 'b2': null,

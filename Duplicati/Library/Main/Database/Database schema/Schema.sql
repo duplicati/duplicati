@@ -175,6 +175,7 @@ CREATE TABLE "BlocksetEntry" (
 /* As this table is a cross table we need fast lookup */
 CREATE INDEX "BlocksetEntry_IndexIdsBackwards" ON "BlocksetEntry" ("BlockID");
 CREATE INDEX "nnc_BlocksetEntry" ON "BlocksetEntry" ("Index", "BlocksetID", "BlockID");
+CREATE INDEX IF NOT EXISTS "BlocksetEntry_BlocksetID" ON "BlocksetEntry" ("BlocksetID");
 
 /*
 The individual block hashes,
@@ -295,4 +296,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (16);
+INSERT INTO "Version" ("Version") VALUES (17);

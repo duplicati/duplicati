@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-30 18:10+0200\n"
+"POT-Creation-Date: 2025-05-21 12:54+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: joyfuI <jong970105@gmail.com>, 2025\n"
 "Language-Team: Korean (https://app.transifex.com/duplicati/teams/67655/ko/)\n"
@@ -299,35 +299,6 @@ msgstr "파일을 찾을 수 없습니다: {0}"
 msgid "Team drive ID"
 msgstr "팀 드라이브 ID"
 
-#: Library/Backend/CloudFiles/Strings.cs:29
-msgid "Provide another authentication URL"
-msgstr "다른 인증 URL 제공"
-
-#: Library/Backend/CloudFiles/Strings.cs:33
-msgid "Use a UK account"
-msgstr "영국 계정 사용"
-
-#: Library/Backend/CloudFiles/Strings.cs:36
-msgid "MD5 Hash (ETag) verification failed"
-msgstr "ETag (MD5 해시) 확인 실패"
-
-#: Library/Backend/CloudFiles/Strings.cs:37
-msgid "Failed to delete file"
-msgstr "파일을 삭제하지 못했습니다"
-
-#: Library/Backend/CloudFiles/Strings.cs:38
-#: Library/Backend/Jottacloud/Strings.cs:31
-msgid "Failed to upload file"
-msgstr "파일을 업로드하지 못했습니다"
-
-#: Library/Backend/CloudFiles/Strings.cs:39
-msgid "No CloudFiles API Access Key given"
-msgstr "CloudFiles API 액세스 키가 제공되지 않았습니다"
-
-#: Library/Backend/CloudFiles/Strings.cs:40
-msgid "No CloudFiles userID given"
-msgstr "CloudFiles 사용자 ID가 제공되지 않습니다."
-
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
 #: Library/Utility/Strings.cs:93
 msgid ""
@@ -335,13 +306,13 @@ msgid ""
 " environment variable \"AUTH_PASSWORD\"."
 msgstr "서버에 연결하는 데 사용되는 암호입니다. 환경 변수 \"AUTH_PASSWORD\"로 제공될 수도 있습니다."
 
-#: Library/Backend/S3/Strings.cs:50
+#: Library/Backend/S3/Strings.cs:52
 msgid ""
 "Use this option to specify a storage class. If this option is not used, the "
 "server will choose a default storage class."
 msgstr "스토리지 클래스를 지정하려면이 옵션을 사용하십시오. 이 옵션을 사용하지 않으면 서버는 기본 스토리지 클래스를 선택합니다."
 
-#: Library/Backend/S3/Strings.cs:51
+#: Library/Backend/S3/Strings.cs:53
 msgid "Specify storage class"
 msgstr "스토리지 클래스 지정"
 
@@ -612,6 +583,10 @@ msgstr "Jottacloud"
 msgid "Illegal mount point given."
 msgstr "주어진 마운트 포인트가 잘못되었습니다."
 
+#: Library/Backend/Jottacloud/Strings.cs:31
+msgid "Failed to upload file"
+msgstr "파일을 업로드하지 못했습니다"
+
 #: Library/Backend/Jottacloud/Strings.cs:32
 #, csharp-format
 msgid ""
@@ -855,15 +830,6 @@ msgstr ""
 "웹 서버가 수신하는 인터페이스입니다. 특수 값 \"*\"및 \"any\"는 모든 인터페이스를 의미합니다. 특수한 값 "
 "\"loopback\"은 루프백 어댑터를 의미합니다."
 
-#: Library/RestAPI/Strings.cs:59
-msgid ""
-"The password required to access the webserver. This option is saved so you "
-"do not need to set it on each run. Setting an empty value disables the "
-"password."
-msgstr ""
-"웹 서버에 액세스하는 데 필요한 암호입니다. 이 옵션은 저장되므로 각 실행에 설정할 필요가 없습니다. 빈 값을 설정하면 암호가 "
-"비활성화됩니다."
-
 #: Library/RestAPI/Strings.cs:60
 msgid ""
 "The hostnames that are accepted, separated with semicolons. If any of the "
@@ -873,11 +839,11 @@ msgstr ""
 "허용되는 호스트 이름은 세미콜론으로 구분됩니다. 호스트 이름이 \"*\"인 경우 모든 호스트 이름이 허용되며 호스트 이름 확인이 "
 "비활성화됩니다."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:251
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:253
 msgid "Set the time after which log data will be purged from the database."
 msgstr "데이터베이스에서 로그 데이터가 제거되는 시간을 설정하십시오."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:252
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:254
 msgid "Clean up old log data"
 msgstr "오래된 로그 데이터 정리"
 
@@ -1076,89 +1042,89 @@ msgstr "볼륨의 크기를 제한"
 msgid "Select what module to use for compression"
 msgstr "압축에 사용할 모듈을 선택하십시오"
 
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:157
 msgid "Hardlink handling"
 msgstr "하드링크 처리"
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:163
 msgid "Name of the backup"
 msgstr "백업 이름"
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:175
 msgid "Block size used in hashing"
 msgstr "해싱에 사용되는 블록 크기"
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:177
 msgid "List of files to examine for changes"
 msgstr "변경 사항을 검사 할 파일 목록"
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:179
 msgid "Path to the local state database"
 msgstr "로컬 상태 데이터베이스의 경로"
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:181
 msgid "List of deleted files"
 msgstr ""
 "삭제 된 파일 목록\n"
 " "
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:186
 msgid "Do not query backend at startup"
 msgstr "시작할 때 백엔드를 쿼리하지 마십시오"
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:194
 msgid "The hash algorithm used on blocks"
 msgstr "블록에 사용되는 해시 알고리즘"
 
-#: Library/Main/Strings.cs:194
+#: Library/Main/Strings.cs:196
 msgid "The hash algorithm used on files"
 msgstr "파일에 사용 된 해시 알고리즘입니다"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:198
 msgid "Disable automatic compacting"
 msgstr "자동 압축 비활성화"
 
-#: Library/Main/Strings.cs:200
+#: Library/Main/Strings.cs:202
 msgid "Maximum number of small volumes"
 msgstr "작은 볼륨의 최대 수"
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:204
 msgid "Use local file data when restoring"
 msgstr "복원시 로컬 파일 데이터 사용"
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:209
 msgid "Keep a number of versions"
 msgstr "여러 버전 유지"
 
-#: Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:210
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr "백업이 유지되는 시간을 설정하려면 이 옵션을 사용하십시오."
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:211
 msgid "Keep all versions within a timespan"
 msgstr "모든 버전을 기간 내에 유지"
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:213
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr "오래된 중간 백업을 삭제하여 버전 수를 줄입니다."
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:214
 msgid "Use this option to continue even if some source entries are missing."
 msgstr "일부 소스 항목이 누락 된 경우에도 이 옵션을 사용하여 계속하십시오."
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:215
 msgid "Ignore missing source elements"
 msgstr "누락 된 소스 요소 무시"
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:217
 msgid "Overwrite files when restoring"
 msgstr "복원시 파일 덮어 쓰기"
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:219
 msgid "Output more progress information"
 msgstr "더 많은 진행 정보 출력합니다"
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:221
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -1166,86 +1132,86 @@ msgstr ""
 "모든 파일 이름을 포함하여 작업의 결과로 생성 된 출력량을 늘리려면\n"
 "이 옵션을 사용하십시오."
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:222
 msgid "Output full results"
 msgstr "전체 결과 출력"
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:224
 msgid "Determine if verification files are uploaded"
 msgstr "확인 파일이 업로드되었는지 확인"
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:226
 msgid "The number of samples to test after a backup"
 msgstr "백업 후 테스트 할 샘플 수"
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:228
 msgid "The percentage of samples to test after a backup"
 msgstr "백업 후 테스트 할 샘플의 비율"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:232
 msgid "Size of the file read buffer"
 msgstr "파일 읽기 버퍼의 크기"
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:235
 msgid "Allow the passphrase to change"
 msgstr "암호 변경 허용"
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:237
 msgid "List only filesets"
 msgstr "파일세트만 나열"
 
-#: Library/Main/Strings.cs:240
+#: Library/Main/Strings.cs:242
 msgid "Restore file permissions"
 msgstr "파일 권한 복원"
 
-#: Library/Main/Strings.cs:242
+#: Library/Main/Strings.cs:244
 msgid "Skip restored file check"
 msgstr "복원 된 파일 검사 건너 뛰기"
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:246
 msgid "Do not use local data"
 msgstr "로컬 데이터를 사용하지 마십시오"
 
-#: Library/Main/Strings.cs:250
+#: Library/Main/Strings.cs:252
 msgid "Check block hashes"
 msgstr "블록 해시 확인"
 
-#: Library/Main/Strings.cs:254
+#: Library/Main/Strings.cs:256
 msgid "Repair database with paths"
 msgstr "경로가 있는 데이터베이스 복구"
 
-#: Library/Main/Strings.cs:265
+#: Library/Main/Strings.cs:267
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr "데이터 해싱을 수행하는 프로세스 수를 설정하려면 이 옵션을 사용하십시오."
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:269
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
 msgstr "출력 데이터 압축을 수행하는 프로세스 수를 설정하려면 이 옵션을 사용하십시오."
 
-#: Library/Main/Strings.cs:278
+#: Library/Main/Strings.cs:280
 msgid "Allow removing all filesets"
 msgstr "모든 파일 세트 제거 허용"
 
-#: Library/Main/Strings.cs:282
+#: Library/Main/Strings.cs:284
 msgid "Disable the read-ahead scanner"
 msgstr "미리 읽기 스캐너 비활성화"
 
-#: Library/Main/Strings.cs:286
+#: Library/Main/Strings.cs:288
 msgid "Disable the backup when on battery power"
 msgstr "배터리 사용시 백업 비활성화"
 
-#: Library/Main/Strings.cs:289
+#: Library/Main/Strings.cs:291
 msgid "Log file information level"
 msgstr "로그 파일 정보 수준"
 
-#: Library/Main/Strings.cs:303
+#: Library/Main/Strings.cs:309
 msgid "List of filenames that exclude folders"
 msgstr "폴더를 제외한 파일 이름 목록"
 
-#: Library/Main/Strings.cs:358
+#: Library/Main/Strings.cs:368
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "기존 백업에 대해 암호를 변경할 수 없습니다"
 

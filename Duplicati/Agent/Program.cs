@@ -275,7 +275,7 @@ public static class Program
 
         using var cts = new CancellationTokenSource();
 
-        var target = new ControllerMultiLogTarget(new ConsoleLogDestination(), LogMessageType.Information, null);
+        var target = new ControllerMultiLogTarget(new ConsoleLogDestination(), LogMessageType.Information, null, null);
         using (Log.StartScope(target))
         {
             if (OperatingSystem.IsWindows() && !string.IsNullOrWhiteSpace(agentConfig.WindowsEventLog))

@@ -1139,7 +1139,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 
     EditUriBackendConfig.validaters['webdav'] = EditUriBackendConfig.validaters['webdav'];
-    EditUriBackendConfig.validaters['cloudfiles'] = EditUriBackendConfig.validaters['ssh'];
     EditUriBackendConfig.validaters['tahoe'] = EditUriBackendConfig.validaters['ssh'];
 
     EditUriBackendConfig.validaters['pcloud'] = function (scope, continuation) {

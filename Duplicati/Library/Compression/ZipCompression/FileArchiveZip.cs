@@ -82,7 +82,7 @@ namespace Duplicati.Library.Compression.ZipCompression
         /// <summary>
         /// The default compression level
         /// </summary>
-        private const SharpCompress.Compressors.Deflate.CompressionLevel DEFAULT_COMPRESSION_LEVEL = SharpCompress.Compressors.Deflate.CompressionLevel.Level9;
+        private const int DEFAULT_COMPRESSION_LEVEL = 9;
 
         /// <summary>
         /// The default compression method
@@ -121,7 +121,7 @@ namespace Duplicati.Library.Compression.ZipCompression
         public FileArchiveZip(Stream stream, ArchiveMode mode, IDictionary<string, string?> options)
         {
             var compressionType = DEFAULT_COMPRESSION_METHOD;
-            var compressionLevel = DEFAULT_COMPRESSION_LEVEL;
+            var compressionLevel = (SharpCompress.Compressors.Deflate.CompressionLevel)DEFAULT_COMPRESSION_LEVEL;
 
             CompressionType tmptype;
             if (options.TryGetValue(COMPRESSION_METHOD_OPTION, out var cpmethod) && Enum.TryParse<SharpCompress.Common.CompressionType>(cpmethod, true, out tmptype))

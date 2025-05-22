@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-30 18:10+0200\n"
+"POT-Creation-Date: 2025-05-21 12:54+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Jason Cheng <sanyu3u@gmail.com>, 2025\n"
 "Language-Team: Chinese (Taiwan) (https://app.transifex.com/duplicati/teams/67655/zh_TW/)\n"
@@ -173,15 +173,6 @@ msgstr "Google Cloud Storage"
 msgid "Google Drive"
 msgstr "Google Drive"
 
-#: Library/Backend/CloudFiles/Strings.cs:37
-msgid "Failed to delete file"
-msgstr "刪除檔案失敗"
-
-#: Library/Backend/CloudFiles/Strings.cs:38
-#: Library/Backend/Jottacloud/Strings.cs:31
-msgid "Failed to upload file"
-msgstr "上傳檔案失敗"
-
 #: Library/Backend/SSHv2/Strings.cs:27
 msgid "SSH Key Generator"
 msgstr "SSH Key 產生器"
@@ -258,6 +249,10 @@ msgstr "Azure blob"
 msgid "Jottacloud"
 msgstr "Jottacloud"
 
+#: Library/Backend/Jottacloud/Strings.cs:31
+msgid "Failed to upload file"
+msgstr "上傳檔案失敗"
+
 #: Library/Backend/Mega/Strings.cs:25
 msgid "mega.nz"
 msgstr "mega.nz"
@@ -319,7 +314,7 @@ msgstr ""
 msgid "--{0}: {1}"
 msgstr "--{0}: {1}"
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:252
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:254
 msgid "Clean up old log data"
 msgstr "清理舊的記錄資料"
 
@@ -379,43 +374,43 @@ msgstr "記錄內部資訊到檔案"
 msgid "Log information level"
 msgstr "記錄資訊等級"
 
-#: Library/Main/Strings.cs:143
+#: Library/Main/Strings.cs:145
 msgid "Show error messages when a retry is performed"
 msgstr "當重新嘗試時顯示錯誤訊息"
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:181
 msgid "List of deleted files"
 msgstr "已刪除檔案清單"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:232
 msgid "Size of the file read buffer"
 msgstr "檔案讀取緩衝區大小"
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:235
 msgid "Allow the passphrase to change"
 msgstr "允許變更密碼"
 
-#: Library/Main/Strings.cs:242
+#: Library/Main/Strings.cs:244
 msgid "Skip restored file check"
 msgstr "略過已還原檔案檢查"
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:246
 msgid "Do not use local data"
 msgstr "不要使用本機資料"
 
-#: Library/Main/Strings.cs:286
+#: Library/Main/Strings.cs:288
 msgid "Disable the backup when on battery power"
 msgstr "在低電量時停用備份作業"
 
-#: Library/Main/Strings.cs:289
+#: Library/Main/Strings.cs:291
 msgid "Log file information level"
 msgstr "記錄檔案資訊等級"
 
-#: Library/Main/Strings.cs:293
+#: Library/Main/Strings.cs:297
 msgid "Console information level"
 msgstr "主控台資訊等級"
 
-#: Library/Main/Strings.cs:359
+#: Library/Main/Strings.cs:369
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "建立快照失敗：{0}"

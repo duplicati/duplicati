@@ -142,8 +142,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         if (ex.IsRetiredException())
                             return;
-                        else
-                            Logging.Log.WriteWarningMessage(FILELOGTAG, "PathProcessingFailed", ex, "Failed to process path: {0}", e.Entry.Path);
+
+                        LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FileProcessingFailed", e.Entry.Path);
                     }
                 }
             });

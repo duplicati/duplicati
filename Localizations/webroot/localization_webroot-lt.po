@@ -20,18 +20,18 @@ msgstr "- pasirinkite parametrą -"
 msgid "...loading..."
 msgstr "...įkeliama..."
 
-#: scripts/services/EditUriBuiltins.js:1368
+#: scripts/services/EditUriBuiltins.js:1367
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
 #: templates/backends/storj.html:22
 msgid "API key"
 msgstr "API raktas"
 
-#: scripts/services/EditUriBuiltins.js:1242 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1241 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWS prieigos ID"
 
-#: scripts/services/EditUriBuiltins.js:1243 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1242 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWS prieigos raktas"
@@ -48,7 +48,7 @@ msgstr "Apie"
 msgid "About {{appname}}"
 msgstr "Apie {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1191
+#: scripts/services/EditUriBuiltins.js:1190
 msgid "Access Key"
 msgstr "Prieigos raktas"
 
@@ -64,7 +64,7 @@ msgstr "Prieiga leista"
 msgid "Access to user interface"
 msgstr "Pasiekti vartotojo sąsają"
 
-#: scripts/services/EditUriBuiltins.js:1190 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1189 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Paskyros vardas"
@@ -97,8 +97,8 @@ msgstr "Pridėti kelią"
 msgid "Added"
 msgstr "Pridėta"
 
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 msgid "Adjust bucket name?"
 msgstr "Keisti saugyklos pavadinimą?"
 
@@ -181,8 +181,8 @@ msgstr "Programos"
 msgid "As Command-line"
 msgstr "Kaip komandinę eilutę"
 
-#: scripts/services/EditUriBuiltins.js:1148
-#: scripts/services/EditUriBuiltins.js:1158 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1147
+#: scripts/services/EditUriBuiltins.js:1157 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -192,7 +192,7 @@ msgstr "Kaip komandinę eilutę"
 msgid "AuthID"
 msgstr "AuthID"
 
-#: scripts/services/EditUriBuiltins.js:1359 templates/backends/storj.html:2
+#: scripts/services/EditUriBuiltins.js:1358 templates/backends/storj.html:2
 msgid "Authentication method"
 msgstr "Autorizacijos metodas"
 
@@ -224,7 +224,7 @@ msgstr "B2 programos ID"
 msgid "B2 Application Key"
 msgstr "B2 programos raktas"
 
-#: scripts/services/EditUriBuiltins.js:1288
+#: scripts/services/EditUriBuiltins.js:1287
 msgid "B2 Cloud Storage Account ID"
 msgstr "B2 debesų saugyklos paskyros ID"
 
@@ -232,7 +232,7 @@ msgstr "B2 debesų saugyklos paskyros ID"
 msgid "B2 Cloud Storage Application ID"
 msgstr "B2 debesų saugyklos programos ID"
 
-#: scripts/services/EditUriBuiltins.js:1289 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1288 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "B2 debesų saugyklos programos raktas"
 
@@ -281,14 +281,14 @@ msgstr "Naršyklės numatyta reišmė"
 msgid "Bucket create location"
 msgstr "Sukurti saugyklos vietą"
 
-#: scripts/services/EditUriBuiltins.js:1201
-#: scripts/services/EditUriBuiltins.js:1241
-#: scripts/services/EditUriBuiltins.js:1287
-#: scripts/services/EditUriBuiltins.js:1301
-#: scripts/services/EditUriBuiltins.js:1364
-#: scripts/services/EditUriBuiltins.js:1370
-#: scripts/services/EditUriBuiltins.js:1426
-#: scripts/services/EditUriBuiltins.js:1438 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1200
+#: scripts/services/EditUriBuiltins.js:1240
+#: scripts/services/EditUriBuiltins.js:1286
+#: scripts/services/EditUriBuiltins.js:1300
+#: scripts/services/EditUriBuiltins.js:1363
+#: scripts/services/EditUriBuiltins.js:1369
+#: scripts/services/EditUriBuiltins.js:1425
+#: scripts/services/EditUriBuiltins.js:1437 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -357,8 +357,8 @@ msgstr "Canary"
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 #: scripts/services/EditUriBuiltins.js:62 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
@@ -446,7 +446,7 @@ msgstr "Prisijungimas nutrūko"
 msgid "Connection worked!"
 msgstr "Prisijungti pavyko!"
 
-#: scripts/services/EditUriBuiltins.js:1192 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1191 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "Konteinerio pavadinimas"
@@ -939,7 +939,7 @@ msgstr "Generuoti"
 msgid "Generate IAM access policy"
 msgstr "Generuoti IAM prieigos politiką"
 
-#: scripts/services/EditUriBuiltins.js:1181 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1180 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "Grupės el. paštas"
 
@@ -1055,7 +1055,7 @@ msgstr ""
 msgid "Information"
 msgstr "Informacija"
 
-#: scripts/services/EditUriBuiltins.js:1345
+#: scripts/services/EditUriBuiltins.js:1344
 msgid "Invalid characters in path"
 msgstr "Kelio pavadinime yra netinkamų simbolių"
 
@@ -1146,7 +1146,7 @@ msgstr "Lokalios duomenų bazės kelias:"
 msgid "Local repository"
 msgstr "Vietinė saugykla"
 
-#: scripts/services/SystemInfo.js:88
+#: scripts/services/SystemInfo.js:87
 msgid "Local storage"
 msgstr "Lokali saugykla"
 
@@ -1212,7 +1212,7 @@ msgstr "Microsoft SQL duomenų bazės"
 msgid "Minimum redundancy"
 msgstr "Minimalus perteklinių kopijų kiekis"
 
-#: scripts/services/EditUriBuiltins.js:1349
+#: scripts/services/EditUriBuiltins.js:1348
 msgid "Minimum redundancy is 1.0"
 msgstr "Minimalus perteklinių kopijų skaičius yra 1.0"
 
@@ -1317,8 +1317,8 @@ msgstr "Kitą kartą"
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 #: scripts/services/EditUriBuiltins.js:62
 msgid "No"
 msgstr "Ne"
@@ -1423,7 +1423,7 @@ msgstr "Parametrai"
 msgid "Original location"
 msgstr "Originali vieta"
 
-#: scripts/services/SystemInfo.js:91
+#: scripts/services/SystemInfo.js:90
 msgid "Others"
 msgstr "Kiti"
 
@@ -1458,7 +1458,7 @@ msgstr "Slapta frazė pakeista"
 msgid "Passphrases are not matching"
 msgstr "Slaptos frazės nesutampa"
 
-#: scripts/services/EditUriBuiltins.js:1333 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1332 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -1467,8 +1467,8 @@ msgstr "Slaptos frazės nesutampa"
 msgid "Password"
 msgstr "Slaptažodis"
 
-#: scripts/services/EditUriBuiltins.js:1317
-#: scripts/services/EditUriBuiltins.js:1454
+#: scripts/services/EditUriBuiltins.js:1316
+#: scripts/services/EditUriBuiltins.js:1453
 msgid "Path"
 msgstr "Kelias"
 
@@ -1534,7 +1534,7 @@ msgstr "Progresas:"
 msgid "ProjectID is optional if the bucket exist"
 msgstr "ProjectID yra neprivalomas, jei egzistuoja saugykla"
 
-#: scripts/services/SystemInfo.js:90
+#: scripts/services/SystemInfo.js:89
 msgid "Proprietary"
 msgstr "Patentuota"
 
@@ -1554,11 +1554,11 @@ msgstr "Užkrauti iš naujo"
 msgid "Remote"
 msgstr "Nuotolinis"
 
-#: scripts/services/EditUriBuiltins.js:1392
+#: scripts/services/EditUriBuiltins.js:1391
 msgid "Remote Path"
 msgstr "Kelias iki nutolusio serverio"
 
-#: scripts/services/EditUriBuiltins.js:1391
+#: scripts/services/EditUriBuiltins.js:1390
 msgid "Remote Repository"
 msgstr "Nutolusi saugykla"
 
@@ -1697,7 +1697,7 @@ msgstr ""
 msgid "Select files"
 msgstr "Pasirinkite failus"
 
-#: scripts/services/EditUriBuiltins.js:1341 templates/backends/pcloud.html:2
+#: scripts/services/EditUriBuiltins.js:1340 templates/backends/pcloud.html:2
 #: templates/backends/s3.html:8 templates/backends/sia.html:2
 #: templates/backends/smb.html:17
 msgid "Server"
@@ -1790,7 +1790,7 @@ msgstr ""
 "Specifinės versijos skirtos tik programuotojams. Netinkamos naudoti su "
 "svarbiais duomenimis."
 
-#: scripts/services/SystemInfo.js:89
+#: scripts/services/SystemInfo.js:88
 msgid "Standard protocols"
 msgstr "Standartiniai protokolai"
 
@@ -1888,10 +1888,10 @@ msgstr "Laikini failai"
 msgid "Test connection"
 msgstr "Patikrinti prisijungimą"
 
-#: scripts/services/EditUriBuiltins.js:1297
-#: scripts/services/EditUriBuiltins.js:1313
-#: scripts/services/EditUriBuiltins.js:1434
-#: scripts/services/EditUriBuiltins.js:1450
+#: scripts/services/EditUriBuiltins.js:1296
+#: scripts/services/EditUriBuiltins.js:1312
+#: scripts/services/EditUriBuiltins.js:1433
+#: scripts/services/EditUriBuiltins.js:1449
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
@@ -1899,7 +1899,7 @@ msgstr ""
 "'{{fieldname}}' yra netinkamas simbolis: {{character}} (reikšmė: {{value}}, "
 "pozicija: {{pos}})"
 
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1268
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 "Saugyklos pavadinimas turi būti iš mažųjų raidžių, konvertuoti automatiškai?"
@@ -2116,8 +2116,8 @@ msgid "User interface settings"
 msgstr "Naudotojo aplinkos nustatymai"
 
 #: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1200
-#: scripts/services/EditUriBuiltins.js:1332 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1199
+#: scripts/services/EditUriBuiltins.js:1331 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -2200,8 +2200,8 @@ msgstr "Metai"
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1269
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 #: scripts/services/EditUriBuiltins.js:62
 msgid "Yes"
 msgstr "Taip"

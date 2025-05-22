@@ -77,7 +77,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     catch (Exception ex)
                     {
-                        Logging.Log.WriteExplicitMessage(FILELOGTAG, "FailedToReadSize", ex, "Failed to read size of file: {0}", e.Entry.Path);
+                        LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FailedToReadSize", e.Entry.Path, "Failed to read size on \"{0}\"");
                     }
 
                     await stats.AddExaminedFile(filestatsize);

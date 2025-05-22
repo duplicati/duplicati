@@ -157,7 +157,13 @@ namespace Duplicati.Library.Main.Operation
             var progress = 0;
             var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count() + missingRemoteFilesets.Count + missingLocalFilesets.Count + emptyIndexFiles.Count;
 
-            var mostRecentLocal = await db.FilesetTimes().Select(x => x.Value.ToLocalTime()).Append(DateTime.MinValue).MaxAsync(cancellationToken: cancellationToken);
+            // Find the most recent timestamp from either a fileset or a remote volume
+            var mostRecentLocal = db.GetRemoteVolumes(rtr.Transaction)
+                .Where(x => x.Type == RemoteVolumeType.Files)
+                .Select(x => VolumeBase.ParseFilename(x.Name).Time.ToLocalTime())
+                .Concat(db.FilesetTimes.Select(x => x.Value.ToLocalTime()))
+                .Append(DateTime.MinValue).Max();
+
             var mostRecentRemote = tp.ParsedVolumes.Select(x => x.Time.ToLocalTime()).Append(DateTime.MinValue).Max();
             if (mostRecentLocal < DateTime.UnixEpoch)
                 throw new UserInformationException("The local database has no fileset times. Consider deleting the local database and run the repair operation again.", "LocalDatabaseHasNoFilesetTimes");
@@ -591,11 +597,11 @@ namespace Duplicati.Library.Main.Operation
                 if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                     await foreach (var b in db.GetBlocklists(volumeid, m_options.Blocksize, m_options.BlockhashSize))
                     {
-                        var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
-                        if (bh != b.Item1)
+                        var bh = Convert.ToBase64String(h.ComputeHash(b.Buffer, 0, b.Size));
+                        if (bh != b.Hash)
                             throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
 
-                        indexWriter.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+                        indexWriter.WriteBlocklist(b.Hash, b.Buffer, 0, b.Size);
                     }
             }
 

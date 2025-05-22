@@ -203,6 +203,14 @@ namespace Duplicati.Library.Main.Operation
                                                 // Commit as we have uploaded a volume
                                                 if (!m_options.Dryrun)
                                                     await db.Transaction.CommitAsync("CommitCompact");
+
+                                                if (deleteableVolumes.Any())
+                                                {
+                                                    // Preserve space by deleting the old volume
+                                                    await foreach (var d in DoDelete(db, backendManager, deleteableVolumes, rtr, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                                                        deletedVolumes.Add(d);
+                                                    deleteableVolumes.Clear();
+                                                }
                                             }
                                         }
                                     }
@@ -329,13 +337,18 @@ namespace Duplicati.Library.Main.Operation
             if (newvolindex != null && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                 indexVolumeFinished = async () =>
                 {
-                    await foreach (var blocklist in db.GetBlocklists(newvol.VolumeID, m_options.Blocksize, m_options.BlockhashSize))
-                        newvolindex.WriteBlocklist(blocklist.Item1, blocklist.Item2, 0, blocklist.Item3);
+                    await foreach (var blocklist in db.GetBlocklists(newvol.VolumeID, m_options.Blocksize, m_options.BlockhashSize, rtr.Transaction))
+                        newvolindex.WriteBlocklist(blocklist.Hash, blocklist.Buffer, 0, blocklist.Size);
                 };
 
             uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
             if (newvolindex != null)
                 uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
+
+            // We can handle at most one in-flight upload at a time,
+            // because the transaction is not thread-safe, and shared with the upload
+            await backendManager.WaitForEmptyAsync(db, rtr.Transaction, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            db.UpdateRemoteVolume(newvol.RemoteFilename, RemoteVolumeState.Uploading, -1, null, rtr.Transaction);
 
             // TODO: The upload here does not flush the database messages,
             // and this can leave the database in a state where it does not know of the remote file

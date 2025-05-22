@@ -96,7 +96,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (ignorenames != null && ignorenames.Length == 0)
                         ignorenames = null;
 
-
                     // Shared filter function with bound variables
                     ValueTask<bool> FilterEntry(ISourceProviderEntry entry)
                         => SourceFileEntryFilter(entry, blacklistPaths, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributeFilter, enumeratefilter, ignorenames, mixinqueue, token);
@@ -303,7 +302,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     catch (Exception ex)
                     {
-                        Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorEnumerate", ex, "Failed to enumerate path: {0}", e.Path);
+                        LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorEnumerate", e.Path, "Failed to enumerate path: {0}");
                     }
                 }
             }
@@ -369,7 +368,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorBlockDevice", ex, "Failed to process path: {0}", entry.Path);
+                LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorBlockDevice", entry.Path);
                 return false;
             }
 
@@ -384,7 +383,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorCharacterDevice", ex, "Failed to process path: {0}", entry.Path);
+                LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorCharacterDevice", entry.Path);
                 return false;
             }
 
@@ -444,7 +443,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorHardLink", ex, "Failed to process path: {0}", entry.Path);
+                    LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorHardLink", entry.Path);
                     return false;
                 }
             }
@@ -465,7 +464,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorIgnoreFile", ex, "Failed to process path: {0}", entry.Path);
+                    LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorIgnoreFile", entry.Path);
                 }
             }
 
@@ -480,7 +479,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorAttributes", ex, "Failed to process path, using default attributes: {0}", entry.Path);
+                LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorAttributes", entry.Path, "Failed to process path, using default attributes: {0}");
             }
 
             // If we exclude files based on attributes, filter that
@@ -511,7 +510,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteExplicitMessage(FILTER_LOGTAG, "SymlinkTargetReadError", ex, "Failed to read symlink target for path: {0}", entry.Path);
+                LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "SymlinkTargetReadError", entry.Path, "Failed to read symlink target for path: {0}");
             }
 
             if (symlinkTarget != null)

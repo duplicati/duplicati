@@ -69,7 +69,7 @@ namespace Duplicati.UnitTest
             public Task GetAsync(string remotename, string filename, CancellationToken cancellationToken)
                 => backend.GetAsync(remotename, filename, cancellationToken);
             public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
-                => GetDNSNamesAsync(cancelToken);
+                => backend.GetDNSNamesAsync(cancelToken);
             public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
                 => ListModifier(backend.ListAsync(cancellationToken));
 
@@ -132,8 +132,7 @@ namespace Duplicati.UnitTest
                 using (var c = new Library.Main.Controller(ArchiveEnabledBackend.Key + "://" + TARGETFOLDER, testopts, null))
                 {
                     var res = c.Test(remotefilenames.Count);
-                    Assert.AreEqual(0, res.Errors.Count());
-                    Assert.AreEqual(0, res.Warnings.Count());
+                    TestUtils.AssertResults(res);
                     Assert.AreEqual(remotefilenames.Where(x => !x.Value).Count() + protectedfiles.Count, res.Verifications.Count());
                 }
             }

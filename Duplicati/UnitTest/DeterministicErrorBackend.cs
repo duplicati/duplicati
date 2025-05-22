@@ -123,20 +123,8 @@ namespace Duplicati.UnitTest
         {
             return m_backend.GetDNSNamesAsync(cancelToken);
         }
-        public string DisplayName
-        {
-            get
-            {
-                return "Deterministic Error Backend";
-            }
-        }
-        public string ProtocolKey
-        {
-            get
-            {
-                return "deterror";
-            }
-        }
+        public string DisplayName => "Deterministic Error Backend";
+        public string ProtocolKey => "deterror";
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -148,13 +136,7 @@ namespace Duplicati.UnitTest
                 return m_backend.SupportedCommands;
             }
         }
-        public string Description
-        {
-            get
-            {
-                return "A testing backend that randomly fails";
-            }
-        }
+        public string Description => "A testing backend that randomly fails";
         #endregion
         #region IDisposable implementation
         public void Dispose()

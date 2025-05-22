@@ -478,7 +478,7 @@ namespace Duplicati.Library.Main
         {
             OnOperationStarted?.Invoke(result);
             var resultSetter = result as ISetCommonOptions;
-            using (var logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null))
+            using (var logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null, m_options.SuppressWarningsFilter))
             using (Logging.Log.StartScope(logTarget, null))
             {
                 logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);
@@ -506,25 +506,25 @@ namespace Duplicati.Library.Main
                         finally
                         {
                             m_currentBackendManager = null;
-                        }
 
-                        // TODO: Should also have a single shared database connection for all operations
-                        // The transactions should be managed inside the connection, and not passed around
+                            // TODO: Should also have a single shared database connection for all operations
+                            // The transactions should be managed inside the connection, and not passed around
 
-                        // This would allow us to pass the database instance to the backend manager
-                        // And safeguard against remote operations not being logged in the database
+                            // This would allow us to pass the database instance to the backend manager
+                            // And safeguard against remote operations not being logged in the database
 
-                        // This would also allow us to control the unclean shutdown flag,
-                        // by toggling this on start and completion of transfers in the manager,
-                        // instead of relying on the operations to correctly toggle the flag
-                        if (File.Exists(m_options.Dbpath))
-                        {
-                            using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache).Await())
-                                backend.StopRunnerAndFlushMessages(db).Await();
-                        }
-                        else
-                        {
-                            backend.StopRunnerAndDiscardMessages();
+                            // This would also allow us to control the unclean shutdown flag,
+                            // by toggling this on start and completion of transfers in the manager,
+                            // instead of relying on the operations to correctly toggle the flag
+                            if (File.Exists(m_options.Dbpath) && !m_options.NoLocalDb)
+                            {
+                                using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache).Await())
+                                    backend.StopRunnerAndFlushMessages(db).Await();
+                            }
+                            else
+                            {
+                                backend.StopRunnerAndDiscardMessages();
+                            }
                         }
                     }
 

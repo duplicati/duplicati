@@ -150,7 +150,7 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend
 
         var writeBufferSizeConfig = options.GetValueOrDefault(WRITE_BUFFER_SIZE_OPTION);
         if (!string.IsNullOrWhiteSpace(writeBufferSizeConfig))
-            writeBufferSize = int.TryParse(readBufferSizeConfig, out int value) ? value : null;
+            writeBufferSize = int.TryParse(writeBufferSizeConfig, out int value) ? value : null;
 
         // Normalize to 10KB minimum buffers size
         readBufferSize = readBufferSize < 1024 * 10 ? null : readBufferSize;

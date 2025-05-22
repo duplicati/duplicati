@@ -127,7 +127,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(storageClass))
                 return DEFAULT_ARCHIVE_CLASSES;
 
-            return new HashSet<S3StorageClass>(storageClass.Split([','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => new S3StorageClass(x)));
+            return new HashSet<S3StorageClass>(storageClass.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => new S3StorageClass(x)));
         }
 
         /// <inheritdoc/>

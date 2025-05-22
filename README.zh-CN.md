@@ -37,7 +37,7 @@ Duplicati 由一个[活跃的社区支持，您可以通过我们的论坛与他
 - Duplicati 最初上传完整备份，之后存储较小的增量更新，以节省带宽和存储空间。
 - 计划程序自动保持备份的最新状态。
 - 集成的更新器会通知您新版本发布
-- 加密的备份文件被传输到像 FTP、Cloudfiles、WebDAV、SSH (SFTP)、Amazon S3 等目标。
+- 加密的备份文件被传输到像 FTP、WebDAV、SSH (SFTP)、Amazon S3 等目标。
 - Duplicati 允许备份文件夹、文档类型（如文档或图像）或自定义过滤规则。
 - Duplicati 有易于使用的用户界面和命令行工具。
 - Duplicati 可以使用 Windows 下的卷快照服务 (VSS) 或 Linux 下的逻辑卷管理器 (LVM) 对打开或锁定的文件进行正确备份。这允许 Duplicati 在 Outlook 运行时备份 Microsoft Outlook PST 文件。

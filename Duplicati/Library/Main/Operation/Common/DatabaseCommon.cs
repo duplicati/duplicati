@@ -111,7 +111,7 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunOnMain(async () => await m_db.GetRemoteVolume(remotename));
         }
 
-        public Task<Tuple<string, byte[], int>[]> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
+        public Task<(string Hash, byte[] Buffer, int Size)[]> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory

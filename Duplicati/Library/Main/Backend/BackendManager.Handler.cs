@@ -310,18 +310,13 @@ partial class BackendManager
                 // Terminate any active uploads and downloads. Exceptions thrown by the downloads should be captured by the callers.
                 tcs.Cancel();
 
-                if (activeUploads.Count > 0)
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeWhileActive", null, "Terminating {0} active uploads", activeUploads.Count);
+                await WaitForPendingItems("upload", activeUploads).ConfigureAwait(false);
+                await WaitForPendingItems("download", activeDownloads).ConfigureAwait(false);
 
-                    await WaitForPendingItems("upload", activeUploads).ConfigureAwait(false);
-                    await WaitForPendingItems("download", activeDownloads).ConfigureAwait(false);
-
-                    // Dispose of any remaining backends
-                    while (backendPool.TryDequeue(out var backend))
-                        try { backend.Dispose(); }
-                        catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
-                }
+                // Dispose of any remaining backends
+                while (backendPool.TryDequeue(out var backend))
+                    try { backend.Dispose(); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
             }
         }
 
@@ -333,6 +328,12 @@ partial class BackendManager
         /// <returns></returns>
         private static async Task WaitForPendingItems(string description, List<Task> tasks)
         {
+            // If we have tasks that have completed successfully, remove them from the list
+            // as they should not trigger any warnings
+            for (var i = tasks.Count - 1; i >= 0; i--)
+                if (tasks[i].IsCompletedSuccessfully)
+                    tasks.RemoveAt(i);
+
             if (tasks.Count > 0)
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeWhileActive", null, "Terminating {0} active {1}s", tasks.Count, description);
@@ -422,7 +423,7 @@ partial class BackendManager
                     }
 
                     // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
-                    var dnsFailure = Library.Utility.Utility.FlattenException(ex).Any(x => x is System.Net.WebException wex && wex.Status == System.Net.WebExceptionStatus.NameResolutionFailure);
+                    var dnsFailure = Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is System.Net.WebException wex && wex.Status == System.Net.WebExceptionStatus.NameResolutionFailure);
                     if (dnsFailure)
                     {
                         try
@@ -443,7 +444,7 @@ partial class BackendManager
                     var recovered = false;
 
                     // Check if this was a folder missing exception and we are allowed to autocreate folders
-                    if (!(anyDownloaded || anyUploaded) && context.Options.AutocreateFolders && Library.Utility.Utility.FlattenException(ex).Any(x => x is FolderMissingException))
+                    if (!(anyDownloaded || anyUploaded) && context.Options.AutocreateFolders && Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
                     {
                         if (await TryCreateFolder().ConfigureAwait(false))
                             recovered = true;

@@ -20,4 +20,5 @@
     <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
   </ItemGroup>
+
 </Project>

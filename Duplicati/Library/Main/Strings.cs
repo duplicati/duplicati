@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main.Strings
         public static string RetrydelayShort { get { return LC.L(@"Time to wait between retries"); } }
         public static string RetrywithexponentialbackoffLong { get { return LC.L(@"After a failed transmission, Duplicati will wait a short period before attempting again. This period is controlled by the retry-delay option. Use this option to double that period after each consecutive failure."); } }
         public static string RetrywithexponentialbackoffShort { get { return LC.L(@"Exponential backoff for backend errors"); } }
-        public static string ControlfilesLong { get { return LC.L(@"Use this option to attach extra files to the newly uploaded filelists."); } }
+        public static string ControlfilesLong { get { return LC.L(@"Use this option to attach extra files to the newly uploaded filelists. The argument is a path to the file to include. Multiple files can be supplied using the path separator (""{0}"")", System.IO.Path.PathSeparator); } }
         public static string ControlfilesShort { get { return LC.L(@"Set control files"); } }
         public static string SkipfilehashchecksLong { get { return LC.L(@"If the hash for the volume does not match, Duplicati will refuse to use the backup. Activate this option to allow Duplicati to proceed anyway."); } }
         public static string SkipfilehashchecksShort { get { return LC.L(@"Skip hash checks"); } }
@@ -123,6 +123,8 @@ namespace Duplicati.Library.Main.Strings
         public static string LoglevelLong { get { return LC.L(@"Specify the amount of log information to write into the file specified by the option --{0}.", "log-file"); } }
         public static string LoglevelShort { get { return LC.L(@"Log information level"); } }
         public static string LogLevelDeprecated(string option1, string option2) { return LC.L("Use the options --{0} and --{1} instead.", option1, option2); }
+        public static string SuppresswarningsLong { get { return LC.L(@"Suppress warnings and log them as information instead. Use this if you need to silence specific warnings. This option accepts a comma separated list of warning IDs."); } }
+        public static string SuppresswarningsShort { get { return LC.L(@"Suppress specific warnings"); } }
         public static string DisableautocreatefolderLong { get { return LC.L(@"If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation."); } }
         public static string DisableautocreatefolderShort { get { return LC.L(@"Disable automatic folder creation"); } }
         public static string VssexcludewritersLong { get { return LC.L(@"Use this option to exclude faulty writers from a snapshot. This is equivalent to the -wx flag of the vshadow.exe tool, except that it only accepts writer class GUIDs, and not component names or instance GUIDs. Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs are allowed, including with and without curly braces."); } }
@@ -289,10 +291,14 @@ namespace Duplicati.Library.Main.Strings
         public static string LogfileloglevelShort { get { return LC.L(@"Log file information level"); } }
         public static string LogfilelogfiltersLong(string delimiter) { return LC.L(@"This option accepts filters that removes or includes messages regardless of their log level. Multiple filters are supported by separating with {0}. Filters are matched against the log tag and assumed to be including, unless they start with '-'. Regular expressions are supported within hard braces. Example: ""+Path*{0}+*Mail*{0}-[.*DNS]"" ", delimiter); }
         public static string LogfilelogfiltersShort { get { return LC.L(@"Apply filters to the file log data"); } }
+        public static string LogfilelogignoreLong(string option) { return LC.L(@"This is a simplified version of the --{0} option. It will ignore all log messages that have an ID in the list. The list is a comma separated list of log message ids.", option); }
+        public static string LogfilelogignoreShort { get { return LC.L(@"Ignore log messages with the specified IDs"); } }
         public static string ConsoleloglevelLong { get { return LC.L(@"Specify the amount of log information to output to the console."); } }
         public static string ConsoleloglevelShort { get { return LC.L(@"Console information level"); } }
         public static string ConsolelogfiltersLong(string delimiter) { return LogfilelogfiltersLong(delimiter); }
         public static string ConsolelogfiltersShort { get { return LC.L(@"Apply filters to the console log data"); } }
+        public static string ConsolelogignoreLong(string option) { return LogfilelogignoreLong(option); }
+        public static string ConsolelogignoreShort { get { return LC.L(@"Ignore log messages with the specified IDs"); } }
 
         public static string UsebackgroundiopriorityLong { get { return LC.L("This option instructs the operating system to set the current process to use the lowest IO priority level, which can make operations run slower but will interfere less with other operations running at the same time."); } }
         public static string UsebackgroundiopriorityShort { get { return LC.L("Set the process to use low IO priority"); } }

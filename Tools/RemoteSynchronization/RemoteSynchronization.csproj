@@ -8,9 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Duplicati\Library\Main\Duplicati.Library.Main.csproj" />
-    <ProjectReference Include="..\..\Duplicati\CommandLine\CLI\Duplicati.CommandLine.csproj" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="System.CommandLine.NamingConventionBinder" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Duplicati\Library\Main\Duplicati.Library.Main.csproj" />
+    <ProjectReference Include="..\..\Duplicati\CommandLine\CLI\Duplicati.CommandLine.csproj" />
+  </ItemGroup>
+
 </Project>

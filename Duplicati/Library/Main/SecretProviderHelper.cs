@@ -223,6 +223,10 @@ public static class SecretProviderHelper
         if (translated.Any(x => string.IsNullOrWhiteSpace(x.Value)))
             throw new InvalidOperationException("The secret provider returned an empty key");
 
+        // Sanity check the results to guard against faulty providers
+        if (secrets.Any(x => !translated.ContainsKey(x)))
+            throw new InvalidOperationException("The secret provider did not return all values");
+
         // Update options by replacing values
         foreach (var v in optionsMap)
             foreach (var k in v.Value)
