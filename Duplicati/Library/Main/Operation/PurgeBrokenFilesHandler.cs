@@ -25,6 +25,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -51,13 +52,12 @@ namespace Duplicati.Library.Main.Operation
             if (filter != null && !filter.Empty)
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersNotAllowedOnPurgeBrokenFiles");
 
-            using (var db = new LocalListBrokenFilesDatabase(m_options.Dbpath, m_options.SqlitePageCache))
-            using (var tr = db.BeginTransaction())
+            using (var db = await LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache))
             {
-                if (db.PartiallyRecreated)
+                if (await db.PartiallyRecreated())
                     throw new UserInformationException("The command does not work on partially recreated databases", "CannotPurgeOnPartialDatabase");
 
-                (var sets, var missing) = await ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(backendManager, m_result, db, tr, m_options).ConfigureAwait(false);
+                var (sets, missing) = await ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(backendManager, m_result, db, m_options).ConfigureAwait(false);
                 if (sets == null)
                     return;
 
@@ -77,22 +77,24 @@ namespace Duplicati.Library.Main.Operation
                     var pgoffset = 0.0f;
                     var pgspan = 0.95f / sets.Length;
 
-                    var filesets = db.FilesetTimes.ToList();
+                    var filesets = await db.FilesetTimes().ToListAsync();
 
                     var compare_list = sets.Select(x => new
                     {
-                        FilesetID = x.Item2,
-                        Timestamp = x.Item1,
-                        RemoveCount = x.Item3,
-                        Version = filesets.FindIndex(y => y.Key == x.Item2),
-                        SetCount = db.GetFilesetFileCount(x.Item2, tr)
+                        FilesetID = x.FilesetID,
+                        Timestamp = x.FilesetTime,
+                        RemoveCount = x.RemoveCount,
+                        Version = filesets.FindIndex(y => y.Key == x.FilesetID),
+                        // TODO if we await this properly, we'll have to await
+                        // it again when using it.
+                        SetCount = db.GetFilesetFileCount(x.FilesetID).Await()
                     }).ToArray();
 
                     var emptyBlocksetId = -1L;
                     if (!m_options.DisableReplaceMissingMetadata)
                     {
                         var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), m_options);
-                        emptyBlocksetId = db.GetEmptyMetadataBlocksetId(missing.Select(x => x.ID), emptymetadata.FileHash, emptymetadata.Blob.Length, null);
+                        emptyBlocksetId = await db.GetEmptyMetadataBlocksetId(missing.Select(x => x.ID), emptymetadata.FileHash, emptymetadata.Blob.Length);
                         if (emptyBlocksetId < 0)
                             throw new UserInformationException($"Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.", "FailedToLocateEmptyMetadataBlockset");
                     }
@@ -100,11 +102,11 @@ namespace Duplicati.Library.Main.Operation
                     var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
                     var to_purge = compare_list.Where(x => x.RemoveCount != x.SetCount).ToArray();
 
-                    if (fully_emptied.Length == db.FilesetTimes.Count())
+                    if (fully_emptied.Length == await db.FilesetTimes().CountAsync())
                         throw new UserInformationException("All filesets are fully broken and needs to be removed. To avoid unexpected deletions, you must manually remove the remote files and delete the database.", "AllFilesetsBroken");
 
                     if (!m_options.Dryrun)
-                        tr.Commit();
+                        await db.Transaction.CommitAsync();
 
 
                     if (fully_emptied.Length != 0)
@@ -115,8 +117,7 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteInformationMessage(LOGTAG, "RemovingFilesets", "Removing {0} filesets where all file(s) are broken: {1}", fully_emptied.Length, string.Join(", ", fully_emptied.Select(x => x.Timestamp.ToLocalTime().ToString())));
 
                         m_result.DeleteResults = new DeleteResults(m_result);
-                        using (var rmdb = new LocalDeleteDatabase(db))
-                        using (var deltr = new ReusableTransaction(rmdb))
+                        using (var rmdb = await LocalDeleteDatabase.CreateAsync(db))
                         {
                             var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
                             opts.RawOptions["version"] = string.Join(",", fully_emptied.Select(x => x.Version.ToString()));
@@ -124,10 +125,10 @@ namespace Duplicati.Library.Main.Operation
                             opts.RawOptions["no-auto-compact"] = "true";
 
                             await new DeleteHandler(opts, (DeleteResults)m_result.DeleteResults)
-                                .DoRunAsync(rmdb, deltr, true, false, backendManager).ConfigureAwait(false);
+                                .DoRunAsync(rmdb, true, false, backendManager).ConfigureAwait(false);
 
                             if (!m_options.Dryrun)
-                                deltr.Commit("CommitDelete", restart: false);
+                                await rmdb.Transaction.CommitAsync("CommitDelete", restart: false);
                         }
 
                         pgoffset += (pgspan * fully_emptied.Length);
@@ -143,10 +144,10 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteInformationMessage(LOGTAG, "PurgingFiles", "Purging {0} file(s) from fileset {1}", bs.RemoveCount, bs.Timestamp.ToLocalTime());
                             var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
 
-                            using (var pgdb = new Database.LocalPurgeDatabase(db))
+                            using (var pgdb = await Database.LocalPurgeDatabase.CreateAsync(db))
                             {
                                 // Recompute the version number after we deleted the versions before
-                                filesets = pgdb.FilesetTimes.ToList();
+                                filesets = await pgdb.FilesetTimes().ToListAsync();
                                 var thisversion = filesets.FindIndex(y => y.Key == bs.FilesetID);
                                 if (thisversion < 0)
                                     throw new Exception(string.Format("Failed to find match for {0} ({1}) in {2}", bs.FilesetID, bs.Timestamp.ToLocalTime(), string.Join(", ", filesets.Select(x => x.ToString()))));
@@ -155,7 +156,7 @@ namespace Duplicati.Library.Main.Operation
                                 opts.RawOptions.Remove("time");
                                 opts.RawOptions["no-auto-compact"] = "true";
 
-                                await new PurgeFilesHandler(opts, (PurgeFilesResults)m_result.PurgeResults).RunAsync(backendManager, pgdb, pgoffset, pgspan, (cmd, filesetid, tablename) =>
+                                await new PurgeFilesHandler(opts, (PurgeFilesResults)m_result.PurgeResults).RunAsync(backendManager, pgdb, pgoffset, pgspan, async (cmd, filesetid, tablename) =>
                                 {
                                     if (filesetid != bs.FilesetID)
                                         throw new Exception(string.Format("Unexpected filesetid: {0}, expected {1}", filesetid, bs.FilesetID));
@@ -163,9 +164,9 @@ namespace Duplicati.Library.Main.Operation
                                     // Update entries that would be removed because of missing metadata
                                     var updatedEntries = 0;
                                     if (!m_options.DisableReplaceMissingMetadata)
-                                        updatedEntries = db.ReplaceMetadata(filesetid, emptyBlocksetId, cmd.Transaction);
+                                        updatedEntries = await db.ReplaceMetadata(filesetid, emptyBlocksetId);
 
-                                    db.InsertBrokenFileIDsIntoTable(filesetid, tablename, "FileID", cmd.Transaction);
+                                    await db.InsertBrokenFileIDsIntoTable(filesetid, tablename, "FileID");
                                     return updatedEntries;
                                 }).ConfigureAwait(false);
                             }
@@ -178,16 +179,16 @@ namespace Duplicati.Library.Main.Operation
 
                 m_result.OperationProgressUpdater.UpdateProgress(0.95f);
 
-                if (!m_options.Dryrun && db.RepairInProgress)
+                if (!m_options.Dryrun && await db.RepairInProgress())
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "ValidatingDatabase", "Database was previously marked as in-progress, checking if it is valid after purging files");
-                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+                    await db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true);
                     Logging.Log.WriteInformationMessage(LOGTAG, "UpdatingDatabase", "Purge completed, and consistency checks completed, marking database as complete");
-                    db.RepairInProgress = false;
+                    await db.RepairInProgress(false);
                 }
                 else
                 {
-                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+                    await db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true);
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(1.0f);
