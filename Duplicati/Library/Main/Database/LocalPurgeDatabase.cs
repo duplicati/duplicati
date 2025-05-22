@@ -51,6 +51,11 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        public async Task<ITemporaryFileset> CreateTemporaryFileset(long parentid)
+        {
+            return await TemporaryFileset.CreateAsync(parentid, this);
+        }
+
         public async Task<string> GetRemoteVolumeNameForFileset(long id)
         {
             using var cmd = m_connection.CreateCommand(@"
