@@ -44,16 +44,16 @@ internal static class SearchEntriesHandler
     /// <param name="offset">The offset to start searching from</param>
     /// <param name="limit">The maximum number of results to return</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    public static Task RunAsync(Options options, SearchFilesResults result, string[] paths, IFilter filter, long offset, long limit)
+    public static async Task RunAsync(Options options, SearchFilesResults result, string[] paths, IFilter filter, long offset, long limit)
     {
         if (!System.IO.File.Exists(options.Dbpath))
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
-        using var db = new Database.LocalListDatabase(options.Dbpath, options.SqlitePageCache);
+        using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache);
         long[]? filesetIds = null;
         if (!options.AllVersions)
         {
-            filesetIds = db.GetFilesetIDs(options.Time, options.Version).ToArray();
+            filesetIds = await db.GetFilesetIDs(options.Time, options.Version).ToArrayAsync();
             if (filesetIds.Length == 0)
                 throw new UserInformationException("No filesets found", "NoFilesetsFound");
         }
@@ -61,7 +61,6 @@ internal static class SearchEntriesHandler
         if (paths != null)
             paths = paths.Select(path => Util.AppendDirSeparator(path)).ToArray();
 
-        result.FileVersions = db.SearchEntries(paths, filter, filesetIds, offset, limit);
-        return Task.CompletedTask;
+        result.FileVersions = await db.SearchEntries(paths, filter, filesetIds, offset, limit);
     }
 }
