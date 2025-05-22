@@ -158,11 +158,12 @@ namespace Duplicati.Library.Main.Operation
             var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count() + missingRemoteFilesets.Count + missingLocalFilesets.Count + emptyIndexFiles.Count;
 
             // Find the most recent timestamp from either a fileset or a remote volume
-            var mostRecentLocal = db.GetRemoteVolumes(rtr.Transaction)
+            var mostRecentLocal = await db.GetRemoteVolumes()
                 .Where(x => x.Type == RemoteVolumeType.Files)
                 .Select(x => VolumeBase.ParseFilename(x.Name).Time.ToLocalTime())
-                .Concat(db.FilesetTimes.Select(x => x.Value.ToLocalTime()))
-                .Append(DateTime.MinValue).Max();
+                .Concat(db.FilesetTimes().Select(x => x.Value.ToLocalTime()))
+                .Append(DateTime.MinValue)
+                .MaxAsync();
 
             var mostRecentRemote = tp.ParsedVolumes.Select(x => x.Time.ToLocalTime()).Append(DateTime.MinValue).Max();
             if (mostRecentLocal < DateTime.UnixEpoch)

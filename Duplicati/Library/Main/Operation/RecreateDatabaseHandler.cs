@@ -423,7 +423,7 @@ namespace Duplicati.Library.Main.Operation
                 for (var i = 0; i < 3; i++)
                 {
                     // Grab the list matching the pass type
-                    var lst = restoredb.GetMissingBlockListVolumes(i, m_options.Blocksize, hashsize, m_options.RepairForceBlockUse).ToList();
+                    var lst = await restoredb.GetMissingBlockListVolumes(i, m_options.Blocksize, hashsize, m_options.RepairForceBlockUse).ToListAsync();
                     if (lst.Count == 0)
                         continue;
 

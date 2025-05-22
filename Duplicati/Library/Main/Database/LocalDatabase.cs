@@ -58,7 +58,7 @@ namespace Duplicati.Library.Main.Database
         protected long m_pagecachesize;
         private bool m_hasExecutedVacuum;
         // TODO dispose should check this, and report if it was not disposed prior to calling dispose. Maybe the rtr itself should check this during dispose? And just throw a warning during runtime.
-        protected ReusableTransaction m_rtr;
+        protected ReusableTransaction m_rtr = null!;
         public ReusableTransaction Transaction { get { return m_rtr; } }
 
         private SqliteCommand m_updateremotevolumeCommand = null!;
@@ -1958,7 +1958,7 @@ namespace Duplicati.Library.Main.Database
                         while (await rd.ReadAsync())
                         {
                             var p = rd.ConvertValueToString(0);
-                            if (FilterExpression.Matches(filter, p))
+                            if (p != null && FilterExpression.Matches(filter, p))
                             {
                                 await cmd.SetParameterValue("@Path", p)
                                     .ExecuteNonQueryAsync();
@@ -2060,7 +2060,7 @@ namespace Duplicati.Library.Main.Database
 
             //Create a fake new entry with the old name and mark as deleting
             // as this ensures we will remove it, if it shows up in some later listing
-            RegisterRemoteVolume(oldname, type, RemoteVolumeState.Deleting, tr.Parent);
+            await RegisterRemoteVolume(oldname, type, RemoteVolumeState.Deleting);
 
             await m_rtr.CommitAsync();
         }
@@ -2127,45 +2127,63 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hashsize">The size of the hash</param>
         /// <param name="transaction">An optional external transaction</param>
         /// <returns>An enumerable of tuples containing the blocklist hash, the blocklist data and the length of the data</returns>
-        public IEnumerable<(string Hash, byte[] Buffer, int Size)> GetBlocklists(long volumeid, long blocksize, int hashsize, IDbTransaction? transaction = null)
+        public async IAsyncEnumerable<(string Hash, byte[] Buffer, int Size)> GetBlocklists(long volumeid, long blocksize, int hashsize)
         {
-            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var cmd = m_connection.CreateCommand(m_rtr))
             {
                 // Group subquery by hash to ensure that each blocklist hash appears only once in the result
                 // The AllBlocks CTE is used to map both active and duplicate blocks from the volume,
                 // because the new volume is initially registered with only duplicate blocks.
                 var sql = @"
-WITH ""AllBlocksInVolume"" AS (
-  SELECT DISTINCT ""ID"", ""Hash"", ""Size"" FROM (
-    SELECT ""ID"", ""Hash"", ""Size""
-    FROM ""Block""
-    WHERE ""VolumeID"" = @VolumeId
+                    WITH ""AllBlocksInVolume"" AS (
+                        SELECT DISTINCT
+                            ""ID"",
+                            ""Hash"",
+                            ""Size""
+                        FROM (
+                            SELECT
+                                ""ID"",
+                                ""Hash"",
+                                ""Size""
+                            FROM ""Block""
+                            WHERE ""VolumeID"" = @VolumeId
+                            UNION
+                            SELECT
+                                ""DuplicateBlock"".""BlockID"" AS ""ID"",
+                                ""Block"".""Hash"" AS ""Hash"",
+                                ""Block"".""Size"" AS ""Size""
+                            FROM ""DuplicateBlock""
+                            INNER JOIN ""Block""
+                                ON ""DuplicateBlock"".""BlockID"" = ""Block"".""ID""
+                            WHERE ""DuplicateBlock"".""VolumeID"" = @VolumeId
+                        )
+                    )
 
-    UNION
+                    SELECT
+                        ""A"".""Hash"" AS ""BlockHash"",
+                        ""C"".""Hash"" AS ""ItemHash""
+                    FROM
+                        (
+                            SELECT
+                                ""BlocklistHash"".""BlocksetID"",
+                                ""AllBlocksInVolume"".""Hash"",
+                                ""BlocklistHash"".""Index""
+                            FROM ""BlocklistHash"",""AllBlocksInVolume""
+                            WHERE ""BlocklistHash"".""Hash"" = ""AllBlocksInVolume"".""Hash""
+                            GROUP BY
+                                ""AllBlocksInVolume"".""Hash"",
+                                ""AllBlocksInVolume"".""Size""
+                        ) A,
+                        ""BlocksetEntry"" B,
+                        ""Block"" C
 
-  	SELECT ""DuplicateBlock"".""BlockID"" AS ""ID"", ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size""
-  	FROM ""DuplicateBlock"" INNER JOIN ""Block""
-  	ON ""DuplicateBlock"".""BlockID"" = ""Block"".""ID""
-  	WHERE ""DuplicateBlock"".""VolumeID"" = @VolumeId
-  )
-)
-
-SELECT ""A"".""Hash"" AS ""BlockHash"", ""C"".""Hash"" AS ""ItemHash""
-FROM (
-  SELECT ""BlocklistHash"".""BlocksetID"", ""AllBlocksInVolume"".""Hash"", ""BlocklistHash"".""Index""
-  FROM ""BlocklistHash"",""AllBlocksInVolume""
-  WHERE ""BlocklistHash"".""Hash"" = ""AllBlocksInVolume"".""Hash"" GROUP BY ""AllBlocksInVolume"".""Hash"", ""AllBlocksInVolume"".""Size""
-) A,
-""BlocksetEntry"" B,
-""Block"" C
-
-WHERE
-  ""B"".""BlocksetID"" = ""A"".""BlocksetID""
-  AND ""B"".""Index"" >= (""A"".""Index"" * @HashesPerBlock)
-  AND ""B"".""Index"" < ((""A"".""Index"" + 1) * @HashesPerBlock)
-  AND ""C"".""ID"" = ""B"".""BlockID""
-ORDER BY ""A"".""BlocksetID"", ""B"".""Index""
-";
+                    WHERE
+                        ""B"".""BlocksetID"" = ""A"".""BlocksetID""
+                        AND ""B"".""Index"" >= (""A"".""Index"" * @HashesPerBlock)
+                        AND ""B"".""Index"" < ((""A"".""Index"" + 1) * @HashesPerBlock)
+                        AND ""C"".""ID"" = ""B"".""BlockID""
+                        ORDER BY ""A"".""BlocksetID"", ""B"".""Index""
+                    ";
 
                 string? curHash = null;
                 var count = 0;
@@ -2175,8 +2193,8 @@ ORDER BY ""A"".""BlocksetID"", ""B"".""Index""
                     .SetParameterValue("@VolumeId", volumeid)
                     .SetParameterValue("@HashesPerBlock", blocksize / hashsize);
 
-                using (var rd = cmd.ExecuteReader())
-                    while (rd.Read())
+                using (var rd = await cmd.ExecuteReaderAsync())
+                    while (await rd.ReadAsync())
                     {
                         var blockhash = rd.ConvertValueToString(0);
                         if (curHash != null && (blockhash != curHash || count + hashsize > buffer.Length))
