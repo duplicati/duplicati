@@ -706,7 +706,7 @@ namespace Duplicati.Library.Main.Database
 
             // Create a temp table to associate metadata that is being deleted to a fileset
             var metadataFilesetQuery = $@"
-                SELECT Metadataset.ID, FilesetEntry.FilesetD
+                SELECT Metadataset.ID, FilesetEntry.FilesetID
                 FROM Metadataset
                 INNER JOIN FileLookup
                     ON FileLookup.MetadataID = Metadataset.ID
