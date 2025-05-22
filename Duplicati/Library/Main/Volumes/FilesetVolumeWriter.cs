@@ -250,8 +250,8 @@ namespace Duplicati.Library.Main.Volumes
         /// <param name="increment">The time to increment by each probe</param>
         /// <param name="maxTries">The maximum number of tries to probe</param>
         /// <returns>The first unused filename</returns>
-        internal static DateTime ProbeUnusedFilenameName(LocalDatabase database, IDbTransaction transaction, Options options, DateTime start, TimeSpan increment = default, int maxTries = 60)
-            => ProbeUnusedFilenameName((name) => Task.FromResult(database.GetRemoteVolumeID(name, transaction)), options, start, increment, maxTries).Await();
+        internal static async Task<DateTime> ProbeUnusedFilenameName(LocalDatabase database, Options options, DateTime start, TimeSpan increment = default, int maxTries = 60)
+            => await ProbeUnusedFilenameName(database.GetRemoteVolumeID, options, start, increment, maxTries);
 
         /// <summary>
         /// Probes for an unused filename, using the current time as a starting point

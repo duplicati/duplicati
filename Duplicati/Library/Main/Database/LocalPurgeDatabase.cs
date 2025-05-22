@@ -103,7 +103,7 @@ namespace Duplicati.Library.Main.Database
             long UpdatedFileCount { get; }
 
             Task ApplyFilter(Library.Utility.IFilter filter);
-            Task ApplyFilter(Func<SqliteCommand, long, string, int> filtercommand);
+            Task ApplyFilter(Func<SqliteCommand, long, string, Task<int>> filtercommand);
             Task<Tuple<long, long>> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup);
             IAsyncEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles();
         }
@@ -145,11 +145,11 @@ namespace Duplicati.Library.Main.Database
                 return tempf;
             }
 
-            public async Task ApplyFilter(Func<SqliteCommand, long, string, int> filtercommand)
+            public async Task ApplyFilter(Func<SqliteCommand, long, string, Task<int>> filtercommand)
             {
                 int updated;
                 using (var cmd = m_db.Connection.CreateCommand())
-                    updated = filtercommand(cmd, ParentID, m_tablename);
+                    updated = await filtercommand(cmd, ParentID, m_tablename);
 
                 await PostFilterChecks(updated);
             }
