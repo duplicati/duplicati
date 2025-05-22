@@ -89,10 +89,7 @@ namespace Duplicati.Library.Main.Database
         public bool ShouldCloseConnection { get; set; }
 
         // Constructor is private to force use of CreateLocalDatabaseAsync
-        protected LocalDatabase()
-        {
-            m_rtr = new ReusableTransaction(this);
-        }
+        protected LocalDatabase() { }
 
         // Arguments are not used, but are required to match the constructor signatures
         [Obsolete("Calling the constructor will throw an exception. Use the CreateLocalDatabaseAsync or CreateLocalDatabase functions instead")]
@@ -145,10 +142,11 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalDatabase();
 
+            dbnew.m_connection = dbparent.m_connection;
+            dbnew.m_rtr = dbparent.m_rtr;
             dbnew = await CreateLocalDatabaseAsync(dbparent.m_connection, dbnew);
 
             dbnew.OperationTimestamp = dbparent.OperationTimestamp;
-            dbnew.m_connection = dbparent.m_connection;
             dbnew.m_operationid = dbparent.m_operationid;
             dbnew.m_pagecachesize = dbparent.m_pagecachesize;
 
@@ -165,9 +163,8 @@ namespace Duplicati.Library.Main.Database
             if (dbnew.m_connection.State != ConnectionState.Open)
                 await dbnew.m_connection.OpenAsync();
 
-            using var cmd = dbnew.m_connection.CreateCommand();
-            using var transaction = dbnew.m_connection.BeginTransaction();
-            cmd.Transaction = transaction;
+            using var cmd = dbnew.m_connection.CreateCommand()
+                .SetTransaction(dbnew.m_rtr);
             if (operation != null)
             {
                 dbnew.m_operationid = await cmd.SetCommandAndParameters(@"
@@ -211,6 +208,7 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalDatabase();
             dbnew.m_connection = connection;
+            dbnew.m_rtr ??= new ReusableTransaction(connection);
 
             var selectremotevolumes_sql = @"
                 SELECT
