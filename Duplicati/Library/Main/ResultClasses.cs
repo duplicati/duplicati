@@ -181,7 +181,7 @@ namespace Duplicati.Library.Main
 
         protected readonly BasicResults m_parent;
         protected System.Threading.Thread m_callerThread;
-        protected readonly object m_lock = new object();
+        protected readonly SemaphoreSlim m_lock = new(1, 1);
         protected readonly Queue<DbMessage> m_dbqueue;
 
         public virtual ParsedResultType ParsedResult
@@ -266,13 +266,18 @@ namespace Duplicati.Library.Main
                 await m_parent.FlushLog(db);
             else
             {
-                lock (m_lock)
+                await m_lock.WaitAsync();
+                try
                 {
                     while (m_dbqueue.Count > 0)
                     {
                         var el = m_dbqueue.Dequeue();
                         await db.LogMessage(el.Type, el.Message, el.Exception);
                     }
+                }
+                finally
+                {
+                    m_lock.Release();
                 }
             }
         }
