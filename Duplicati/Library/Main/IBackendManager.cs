@@ -53,7 +53,7 @@ internal interface IBackendManager : IDisposable
     /// <param name="transaction">The transaction to use, if any</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken);
+    Task WaitForEmptyAsync(LocalDatabase database, CancellationToken cancellationToken);
 
     /// <summary>
     /// Lists the files on the backend
@@ -133,7 +133,7 @@ internal interface IBackendManager : IDisposable
     /// <param name="transaction">The transaction to use</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns></returns>
-    Task FlushPendingMessagesAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken);
+    Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken);
 
     /// <summary>
     /// Updates the throttle values for upload and download
