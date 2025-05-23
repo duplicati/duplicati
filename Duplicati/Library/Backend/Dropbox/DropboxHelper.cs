@@ -48,76 +48,50 @@ namespace Duplicati.Library.Backend
 
         public async Task<ListFolderResult> ListFiles(string path, CancellationToken cancelToken)
         {
-            try
-            {
-                return await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
-                    async ct =>
-                    {
-                        using var req = await CreateRequestAsync(WebApi.Dropbox.ListFilesUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
-                        req.Content = JsonContent.Create(new PathArg { path = path });
-                        using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-                        resp.EnsureSuccessStatusCode();
+            return await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
+                async ct =>
+                {
+                    using var req = await CreateRequestAsync(WebApi.Dropbox.ListFilesUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
+                    req.Content = JsonContent.Create(new PathArg { path = path });
+                    using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
 
-                        return await resp.Content.ReadFromJsonAsync<ListFolderResult>(ct).ConfigureAwait(false)
-                            ?? throw new InvalidOperationException("Failed to deserialize ListFolderResult");
-                    }).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                HandleDropboxException(ex, false);
-                throw;
-            }
+                    return await resp.Content.ReadFromJsonAsync<ListFolderResult>(ct).ConfigureAwait(false)
+                        ?? throw new InvalidOperationException("Failed to deserialize ListFolderResult");
+                }).ConfigureAwait(false);
         }
 
         public async Task<ListFolderResult> ListFilesContinue(string cursor, CancellationToken cancelToken)
         {
-            try
-            {
-                return await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
-                    async ct =>
-                    {
-                        using var req = await CreateRequestAsync(WebApi.Dropbox.ListFilesContinueUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
-                        req.Content = JsonContent.Create(new ListFolderContinueArg() { cursor = cursor });
-                        using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-                        resp.EnsureSuccessStatusCode();
-                        return await resp.Content.ReadFromJsonAsync<ListFolderResult>(ct).ConfigureAwait(false)
-                            ?? throw new InvalidOperationException("Failed to deserialize ListFolderResult");
-                    }).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                HandleDropboxException(ex, false);
-                throw;
-            }
+            return await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
+                async ct =>
+                {
+                    using var req = await CreateRequestAsync(WebApi.Dropbox.ListFilesContinueUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
+                    req.Content = JsonContent.Create(new ListFolderContinueArg() { cursor = cursor });
+                    using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+                    return await resp.Content.ReadFromJsonAsync<ListFolderResult>(ct).ConfigureAwait(false)
+                        ?? throw new InvalidOperationException("Failed to deserialize ListFolderResult");
+                }).ConfigureAwait(false);
         }
 
         public async Task<FolderMetadata> CreateFolderAsync(string path, CancellationToken cancellationToken)
         {
-            try
-            {
-                return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken,
-                    async ct =>
-                    {
-                        using var req = await CreateRequestAsync(WebApi.Dropbox.CreateFolderUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
-                        req.Content = JsonContent.Create(new PathArg() { path = path });
-                        using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-                        resp.EnsureSuccessStatusCode();
+            return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken,
+                async ct =>
+                {
+                    using var req = await CreateRequestAsync(WebApi.Dropbox.CreateFolderUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
+                    req.Content = JsonContent.Create(new PathArg() { path = path });
+                    using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
 
-                        return await resp.Content.ReadFromJsonAsync<FolderMetadata>(ct).ConfigureAwait(false)
-                            ?? throw new InvalidOperationException("Failed to deserialize FolderMetadata");
-                    }).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                HandleDropboxException(ex, false);
-                throw;
-            }
+                    return await resp.Content.ReadFromJsonAsync<FolderMetadata>(ct).ConfigureAwait(false)
+                        ?? throw new InvalidOperationException("Failed to deserialize FolderMetadata");
+                }).ConfigureAwait(false);
         }
 
         private async Task<HttpRequestMessage> CreateChunkRequestAsync<T>(string url, T arg, CancellationToken cancelToken)
         {
             var req = await CreateRequestAsync(url, HttpMethod.Post, cancelToken).ConfigureAwait(false);
             req.Headers.TryAddWithoutValidation(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(arg));
+            req.Options.Set(FileRequestOption, true);
             return req;
         }
 
@@ -131,7 +105,6 @@ namespace Duplicati.Library.Backend
             req.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
 
             using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
-            resp.EnsureSuccessStatusCode();
 
             if (typeof(TRes) == typeof(object))
                 return default!;
@@ -170,137 +143,119 @@ namespace Duplicati.Library.Backend
             }
 
             // finish session and commit
-            try
-            {
-                var usfa = new UploadSessionFinishArg();
-                usfa.cursor.session_id = uploadStartArgs.session_id;
-                usfa.cursor.offset = (ulong)stream.Length;
-                usfa.commit.path = path;
+            var usfa = new UploadSessionFinishArg();
+            usfa.cursor.session_id = uploadStartArgs.session_id;
+            usfa.cursor.offset = (ulong)stream.Length;
+            usfa.commit.path = path;
 
-                using var commitReq = await CreateChunkRequestAsync(WebApi.Dropbox.UploadSessionFinishUrl(), usfa, cancelToken).ConfigureAwait(false);
+            using var commitReq = await CreateChunkRequestAsync(WebApi.Dropbox.UploadSessionFinishUrl(), usfa, cancelToken).ConfigureAwait(false);
+            commitReq.Options.Set(FileRequestOption, true);
 
-                return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
-                    async ct =>
-                    {
-                        using var resp = await GetResponseAsync(commitReq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-                        resp.EnsureSuccessStatusCode();
-
-                        return await resp.Content.ReadFromJsonAsync<FileMetaData>(ct).ConfigureAwait(false)
-                            ?? throw new InvalidOperationException("Failed to deserialize FileMetaData");
-                    }
-                ).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                HandleDropboxException(ex, true);
-                throw;
-            }
+            return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
+                async ct =>
+                {
+                    using var resp = await GetResponseAsync(commitReq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+                    return await resp.Content.ReadFromJsonAsync<FileMetaData>(ct).ConfigureAwait(false)
+                        ?? throw new InvalidOperationException("Failed to deserialize FileMetaData");
+                }
+            ).ConfigureAwait(false);
         }
 
         public async Task DownloadFileAsync(string path, Stream fs, CancellationToken cancelToken)
         {
-            try
-            {
-                var req = await CreateRequestAsync(WebApi.Dropbox.DownloadFilesUrl(), HttpMethod.Post, cancelToken).ConfigureAwait(false);
-                req.Headers.TryAddWithoutValidation(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(new PathArg { path = path }));
+            var req = await CreateRequestAsync(WebApi.Dropbox.DownloadFilesUrl(), HttpMethod.Post, cancelToken).ConfigureAwait(false);
+            req.Options.Set(FileRequestOption, true);
+            req.Headers.TryAddWithoutValidation(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(new PathArg { path = path }));
 
-                using (var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false))
-                {
-                    response.EnsureSuccessStatusCode();
-                    using (var rs = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => response.Content.ReadAsStreamAsync(ct)))
-                    using (var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
-                        await Utility.Utility.CopyStreamAsync(ts, fs, cancelToken).ConfigureAwait(false);
-                }
-            }
-            catch (Exception ex)
+            using (var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false))
             {
-                HandleDropboxException(ex, true);
-                throw;
+                using (var rs = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => response.Content.ReadAsStreamAsync(ct)))
+                using (var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                    await Utility.Utility.CopyStreamAsync(ts, fs, cancelToken).ConfigureAwait(false);
             }
         }
 
         public async Task DeleteAsync(string path, CancellationToken cancelToken)
         {
-            try
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
             {
-                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
-                {
-                    using var req = await CreateRequestAsync(WebApi.Dropbox.DeleteUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
-                    req.Headers.TryAddWithoutValidation(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(new PathArg { path = path }));
-                    using var response = await GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
-                    response.EnsureSuccessStatusCode();
-                }).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                HandleDropboxException(ex, true);
-                throw;
-            }
+                using var req = await CreateRequestAsync(WebApi.Dropbox.DeleteUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
+                req.Options.Set(FileRequestOption, true);
+                req.Headers.TryAddWithoutValidation(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(new PathArg { path = path }));
+                using var response = await GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+            }).ConfigureAwait(false);
         }
 
-        private void HandleDropboxException(Exception ex, bool filerequest)
+        private static readonly HttpRequestOptionsKey<bool> FileRequestOption = new HttpRequestOptionsKey<bool>("FileRequestOption");
+
+        public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage response, CancellationToken cancellationToken)
         {
-            if (ex is WebException exception)
+            string json = string.Empty;
+
+            if (response != null)
             {
-                string json = string.Empty;
-
                 try
                 {
-                    if (exception.Response != null)
-                        using (var sr = new StreamReader(exception.Response.GetResponseStream()))
-                            json = sr.ReadToEnd();
-                }
-                catch { }
-
-                // Special mapping for exceptions:
-                //    https://www.dropbox.com/developers-v1/core/docs
-
-                if (exception.Response is HttpWebResponse httpResp)
-                {
-                    if (httpResp.StatusCode == HttpStatusCode.NotFound)
-                    {
-                        if (filerequest)
-                            throw new Interface.FileMissingException(json);
-                        else
-                            throw new Interface.FolderMissingException(json);
-                    }
-                    if (httpResp.StatusCode == HttpStatusCode.Conflict)
-                    {
-                        //TODO: Should actually parse and see if something else happens
-                        if (filerequest)
-                            throw new Interface.FileMissingException(json);
-                        else
-                            throw new Interface.FolderMissingException(json);
-                    }
-                    if (httpResp.StatusCode == HttpStatusCode.Unauthorized)
-                        throw new Interface.UserInformationException(Strings.Dropbox.AuthorizationFailure(json, OAuthLoginUrl), "OAuthLoginError", ex);
-
-                    if ((int)httpResp.StatusCode == 429 || (int)httpResp.StatusCode == 507)
-                        throw new Interface.UserInformationException(Strings.Dropbox.OverQuotaError(string.IsNullOrWhiteSpace(json) ? exception.Message : json), "DropboxOverQuotaError", ex);
-                }
-
-
-                JObject? errJson = null;
-                try
-                {
-                    errJson = JObject.Parse(json);
+                    json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 }
                 catch
                 {
+                    // If reading fails, continue with empty string
                 }
 
-                if (errJson != null)
-                    throw new DropboxException() { errorJSON = errJson };
-                else if (exception.Response is HttpWebResponse wresp)
-                    throw new InvalidDataException($"Non-json response (code: {wresp.StatusCode}, message: {wresp.StatusDescription}): {json}", ex);
-                else
-                    throw new InvalidDataException($"Non-json response: {json}", ex);
+                var isFileRequest = response.RequestMessage?.Options.TryGetValue(FileRequestOption, out var fileRequest) == true && fileRequest;
+
+                // Map HTTP status codes
+                switch (response.StatusCode)
+                {
+                    case HttpStatusCode.NotFound:
+                    case HttpStatusCode.Conflict:
+                        if (isFileRequest)
+                            throw new Interface.FileMissingException(json);
+                        else
+                            throw new Interface.FolderMissingException(json);
+
+                    case HttpStatusCode.Unauthorized:
+                        throw new Interface.UserInformationException(
+                            Strings.Dropbox.AuthorizationFailure(json, OAuthLoginUrl),
+                            "OAuthLoginError",
+                            ex);
+
+                    case (HttpStatusCode)429: // Too Many Requests
+                    case (HttpStatusCode)507: // Insufficient Storage
+                        throw new Interface.UserInformationException(
+                            Strings.Dropbox.OverQuotaError(string.IsNullOrWhiteSpace(json) ? ex.Message : json),
+                            "DropboxOverQuotaError",
+                            ex);
+                }
             }
+
+            JObject? errJson = null;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(json))
+                    errJson = JObject.Parse(json);
+            }
+            catch
+            {
+                // Parsing failed
+            }
+
+            if (errJson != null)
+                throw new DropboxException(ex) { errorJSON = errJson };
+            else if (response != null)
+                throw new InvalidDataException($"Non-json response (code: {(int)response.StatusCode}, message: {response.ReasonPhrase}): {json}", ex);
+            else
+                throw new InvalidDataException($"Non-json response: {json}", ex);
         }
     }
 
     public class DropboxException : Exception
     {
+        public DropboxException(Exception innerException)
+            : base("Dropbox API error", innerException)
+        {
+        }
         public JObject? errorJSON { get; set; }
     }
 
