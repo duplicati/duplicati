@@ -2352,9 +2352,7 @@ namespace Duplicati.Library.Main.Database
 
         public async Task PurgeLogData(DateTime threshold)
         {
-            using var transaction = m_connection.BeginTransaction();
-            using var cmd = m_connection.CreateCommand();
-            cmd.Transaction = transaction;
+            using var cmd = m_connection.CreateCommand(m_rtr);
             var t = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(threshold);
 
             await cmd.SetCommandAndParameters(@"
@@ -2371,19 +2369,17 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@Timestamp", t)
                 .ExecuteNonQueryAsync();
 
-            await transaction.CommitAsync();
+            await m_rtr.CommitAsync();
         }
 
         public async Task PurgeDeletedVolumes(DateTime threshold)
         {
-            using var transaction = m_connection.BeginTransaction();
-
             await m_removedeletedremotevolumeCommand
-                .SetTransaction(transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Now", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(threshold))
                 .ExecuteNonQueryAsync();
 
-            await transaction.CommitAsync();
+            await m_rtr.CommitAsync();
         }
 
         public virtual void Dispose()
