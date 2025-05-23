@@ -94,7 +94,7 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
         await m_transaction.DisposeAsync();
 
         if (restart)
-            m_transaction = m_con.BeginTransaction();
+            m_transaction = m_con.BeginTransaction(deferred: true);
         else
             m_disposed = true;
     }
