@@ -60,7 +60,6 @@ public static class BackendModules
         new Backend.OneDriveForBusinessBackend(),
         new Backend.SharePointBackend(),
         new Backend.SharePointV2(),
-        new Backend.Sia.Sia(),
         IsStorjSupported? new Backend.Storj.Storj() : null,
         new Backend.TahoeBackend(),
         new Backend.TencentCOS.COS(),
