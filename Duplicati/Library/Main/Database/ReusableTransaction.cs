@@ -116,8 +116,21 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     {
         if (!m_disposed)
         {
-            m_disposed = true;
-            await m_transaction.DisposeAsync();
+            try
+            {
+                using (var timer = new Logging.Timer(LOGTAG, "Dispose", "Commit during transaction dispose"))
+                    await m_transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "ReusableTransaction dispose", ex, "Transaction disposed with error: {0}", ex.Message);
+                throw;
+            }
+            finally
+            {
+                m_disposed = true;
+                await m_transaction.DisposeAsync();
+            }
         }
     }
 

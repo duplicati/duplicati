@@ -137,7 +137,6 @@ namespace Duplicati.Library.Main.Operation.Common
             RunOnMain(async () =>
             {
                 base.Dispose(isDisposing);
-                await m_db.Transaction.CommitAsync(restart: false);
                 await m_db.Transaction.DisposeAsync();
             }).Await();
         }
