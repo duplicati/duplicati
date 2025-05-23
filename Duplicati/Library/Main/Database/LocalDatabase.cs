@@ -276,7 +276,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public (string Query, Dictionary<string, object?> Values) GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>>? filesetslist = null, bool singleTimeMatch = false)
+        public (string Query, Dictionary<string, object?> Values) GetFilelistWhereClause(DateTime time, long[]? versions, IEnumerable<KeyValuePair<long, DateTime>>? filesetslist = null, bool singleTimeMatch = false)
         {
             var filesets = (filesetslist ?? FilesetTimes).ToArray();
             var query = new StringBuilder();
@@ -623,7 +623,7 @@ AND ""Fileset"".""ID"" NOT IN
             }
         }
 
-        public IEnumerable<long> GetFilesetIDs(DateTime restoretime, long[] versions, bool singleTimeMatch = false)
+        public IEnumerable<long> GetFilesetIDs(DateTime restoretime, long[]? versions, bool singleTimeMatch = false)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
                 throw new Exception("Invalid DateTime given, must be either local or UTC");
@@ -653,14 +653,14 @@ AND ""Fileset"".""ID"" NOT IN
             }
         }
 
-        public IEnumerable<long> FindMatchingFilesets(DateTime restoretime, long[] versions)
+        public IEnumerable<long> FindMatchingFilesets(DateTime restoretime, long[]? versions)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
                 throw new Exception("Invalid DateTime given, must be either local or UTC");
 
             var tmp = GetFilelistWhereClause(restoretime, versions, singleTimeMatch: true);
-            string query = tmp.Item1;
-            var args = tmp.Item2;
+            string query = tmp.Query;
+            var args = tmp.Values;
 
             var res = new List<long>();
             using (var cmd = m_connection.CreateCommand())
@@ -1405,7 +1405,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                             using (var rd = c2.ExecuteReader(@"SELECT DISTINCT ""Path"" FROM ""File"" "))
                                 while (rd.Read())
                                 {
-                                    var p = rd.ConvertValueToString(0);
+                                    var p = rd.ConvertValueToString(0) ?? "";
                                     if (FilterExpression.Matches(filter, p))
                                         cmd.SetParameterValue("@Path", p)
                                             .ExecuteNonQuery();
