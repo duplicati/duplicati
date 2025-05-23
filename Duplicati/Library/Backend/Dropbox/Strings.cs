@@ -29,5 +29,6 @@ namespace Duplicati.Library.Backend.Strings
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
         public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string OverQuotaError(string message) { return LC.L(@"The Dropbox account is over quota: {0}", message); }
+        public static string AuthorizationFailure(string message, string url) { return LC.L(@"Failed to authorize using the OAuth service: {0}. If the problem persists, try generating a new authid token from: {1}", message, url); }
     }
 }

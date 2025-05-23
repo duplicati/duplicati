@@ -35,7 +35,7 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
     private string _Token;
     private string _Authid;
     private DateTime _mTokenExpires = DateTime.UtcNow;
-    private string OAuthLoginUrl { get; }
+    protected string OAuthLoginUrl { get; }
 
     /// <summary>
     /// Timeout for authentication requests

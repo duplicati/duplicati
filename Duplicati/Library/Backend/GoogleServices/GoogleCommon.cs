@@ -110,7 +110,6 @@ namespace Duplicati.Library.Backend.GoogleServices
             req.Headers.TryAddWithoutValidation("X-Upload-Content-Type", "application/octet-stream");
             req.Headers.TryAddWithoutValidation("X-Upload-Content-Length", stream.Length.ToString());
 
-
             var uploaduri = await Utility.Utility.WithTimeout(shortTimeout, cancelToken, async ct =>
             {
                 using var resp = await oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
