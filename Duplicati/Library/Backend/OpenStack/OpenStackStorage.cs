@@ -205,7 +205,7 @@ public class OpenStackStorage : IStreamingBackend
                 innerCancellationToken => _httpClient.Value.SendAsync(request, innerCancellationToken))
             .ConfigureAwait(false);
 
-        if (response.StatusCode != HttpStatusCode.OK)
+        if (!response.IsSuccessStatusCode)
             throw new Exception("Failed to fetch region endpoint");
 
         await using var s = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
@@ -219,7 +219,7 @@ public class OpenStackStorage : IStreamingBackend
         if (parsedResult.token == null)
             throw new Exception("No token received");
 
-        var token = response.Headers.GetValues("X-Subject-Token").FirstOrDefault(); //TODO: 
+        var token = response.Headers.GetValues("X-Subject-Token").FirstOrDefault(); 
         if (string.IsNullOrWhiteSpace(token))
             throw new Exception("No token received");
 
@@ -341,9 +341,9 @@ public class OpenStackStorage : IStreamingBackend
         {
             return await func().ConfigureAwait(false);
         }
-        catch (WebException wex)
+        catch (HttpRequestException wex)
         {
-            if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
+            if (wex.StatusCode == HttpStatusCode.NotFound)
                 throw new FolderMissingException();
             throw;
         }
