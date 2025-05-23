@@ -24,50 +24,6 @@ using System.Net;
 using Duplicati.Library.Utility;
 namespace Duplicati.Library
 {
-    /// <summary>
-    /// Class for providing call-context access to http settings
-    /// </summary>
-    public static class OAuthContextSettings
-    {
-        /// <summary>
-        /// The struct wrapping the OAuth settings
-        /// </summary>
-        private struct OAuthSettings
-        {
-            /// <summary>
-            /// The server url
-            /// </summary>
-            public string ServerURL;
-        }
-
-        /// <summary>
-        /// Starts the session.
-        /// </summary>
-        /// <returns>The session.</returns>
-        /// <param name="serverurl">The url to use for the server.</param>
-        public static IDisposable StartSession(string serverurl)
-        {
-            return CallContextSettings<OAuthSettings>.StartContext(new OAuthSettings { ServerURL = serverurl });
-        }
-
-        /// <summary>
-        /// Gets the server URL to use for OAuth.
-        /// </summary>
-        public static string ServerURL
-        {
-            get
-            {
-                var r = CallContextSettings<OAuthSettings>.Settings.ServerURL;
-                return string.IsNullOrWhiteSpace(r) ? OAuthHelper.DUPLICATI_OAUTH_SERVICE : r;
-            }
-        }
-
-        /// <summary>
-        /// Gets the server URL to use for OAuth, without applying a default.
-        /// </summary>
-        public static string? ServerURLRaw => CallContextSettings<OAuthSettings>.Settings.ServerURL;
-    }
-
     public class OAuthHelper : JSONWebHelper
     {
         private string m_token;
