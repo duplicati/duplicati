@@ -45,7 +45,7 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalRepairDatabase();
 
-            dbnew = (LocalRepairDatabase)await CreateLocalDatabaseAsync(path, "Repair", false, pagecachesize, dbnew);
+            dbnew = (LocalRepairDatabase)await CreateLocalDatabaseAsync(path, "Repair", true, pagecachesize, dbnew);
 
             return dbnew;
         }
