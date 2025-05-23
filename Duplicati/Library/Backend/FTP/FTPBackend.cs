@@ -136,15 +136,6 @@ namespace Duplicati.Library.Backend
         private static string CONFIG_KEY_FTP_LEGACY_USESSL => "use-ssl";
 
         /// <summary>
-        /// The test file name used to test access permissions
-        /// </summary>
-        private const string TEST_FILE_NAME = "duplicati-access-privileges-test.tmp";
-        /// <summary>
-        /// The test file content used to test access permissions
-        /// </summary>
-        private const string TEST_FILE_CONTENT = "This file is used by Duplicati to test access permissions and can be safely deleted.";
-
-        /// <summary>
         /// The default data connection type as a string
         /// </summary>
         protected static readonly string DEFAULT_DATA_CONNECTION_TYPE_STRING = DEFAULT_DATA_CONNECTION_TYPE.ToString();
@@ -377,9 +368,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception e)
             {
-                if (TranslateException(null, ref e))
-                    throw e;
-
+                TranslateException(null, e);
                 throw;
             }
 
@@ -463,9 +452,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception e)
             {
-                if (TranslateException(remotename, ref e))
-                    throw e;
-
+                TranslateException(remotename, e);
                 throw;
             }
         }
@@ -490,9 +477,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception e)
             {
-                if (TranslateException(remotename, ref e))
-                    throw e;
-
+                TranslateException(remotename, e);
                 throw;
             }
         }
@@ -517,9 +502,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception e)
             {
-                if (TranslateException(remotename, ref e))
-                    throw e;
-
+                TranslateException(remotename, e);
                 throw;
             }
 
@@ -534,7 +517,6 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc />
         public async Task TestAsync(CancellationToken cancellationToken)
         {
-
             // Start with a simple list and pureFTP detection
             try
             {
@@ -550,9 +532,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception e)
             {
-                if (TranslateException(null, ref e))
-                    throw e;
-
+                TranslateException(null, e);
                 throw;
             }
 
@@ -571,74 +551,12 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception e)
             {
-                if (TranslateException(null, ref e))
-                    throw e;
-
+                TranslateException(null, e);
                 throw;
             }
 
-            // Remove the file if it exists
-            try
-            {
-                if (await ListAsync(cancellationToken).AnyAsync(entry => entry.Name == TEST_FILE_NAME, cancellationToken: cancellationToken).ConfigureAwait(false))
-                    await DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                if (TranslateException(TEST_FILE_NAME, ref e))
-                    throw e;
-
-                throw new UserInformationException(Strings.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestPreparationError");
-            }
-
-            // Test write permissions
-            using (var testStream = new MemoryStream(Encoding.UTF8.GetBytes(TEST_FILE_CONTENT)))
-            {
-                try
-                {
-                    await PutAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    // Do not pass the filename here because a not-found should be treated as folder-not-found
-                    if (TranslateException(null, ref e))
-                        throw e;
-
-                    throw new UserInformationException(Strings.ErrorWriteFile(TEST_FILE_NAME, e.Message), "TestWriteError");
-                }
-            }
-
-            // Test read permissions
-            using (var testStream = new MemoryStream())
-            {
-                try
-                {
-                    await GetAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
-                    var readValue = Encoding.UTF8.GetString(testStream.ToArray());
-                    if (readValue != TEST_FILE_CONTENT)
-                        throw new Exception("Test file corrupted.");
-                }
-                catch (Exception e)
-                {
-                    if (TranslateException(TEST_FILE_NAME, ref e))
-                        throw e;
-
-                    throw new UserInformationException(Strings.ErrorReadFile(TEST_FILE_NAME, e.Message), "TestReadError");
-                }
-            }
-
-            // Cleanup
-            try
-            {
-                await DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                if (TranslateException(TEST_FILE_NAME, ref e))
-                    throw e;
-
-                throw new UserInformationException(Strings.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestCleanupError");
-            }
+            // Test the read/write permissions in folder
+            await this.TestReadWritePermissionsAsync(cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -675,8 +593,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                if (TranslateException(null, ref ex))
-                    throw ex;
+                TranslateException(null, ex);
                 throw;
             }
         }
@@ -798,8 +715,7 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="filename">The filename provided.</param>
         /// <param name="ex">The exception to translate.</param>
-        /// <returns>True if the exception was translated, otherwise false.</returns>
-        private bool TranslateException(string? filename, ref Exception ex)
+        private void TranslateException(string? filename, Exception ex)
         {
             if (ex.InnerException != null && (ex.InnerException is FtpCommandException || ex.InnerException is SslCertificateValidator.InvalidCertificateException))
                 ex = ex.InnerException;
@@ -810,13 +726,11 @@ namespace Duplicati.Library.Backend
                     ? new FolderMissingException(Strings.MissingFolderError(_url.AbsolutePath, ftpEx.Message), ftpEx)
                     : new FileMissingException(Strings.FileMissingError(filename, ftpEx.Message), ftpEx);
 
-                return true;
+                throw ex;
             }
 
             if (ex is SslCertificateValidator.InvalidCertificateException)
-                return true;
-
-            return false;
+                throw ex;
         }
 
         private sealed class DiagnosticsLogger : IFtpLogger

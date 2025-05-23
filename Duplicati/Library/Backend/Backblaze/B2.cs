@@ -571,7 +571,7 @@ public class B2 : IStreamingBackend
     /// </summary>
     /// <param name="cancelToken">Cancellation Token</param>
     public Task TestAsync(CancellationToken cancelToken)
-        => this.TestListAsync(cancelToken);
+        => this.TestReadWritePermissionsAsync(cancelToken);
 
     /// <summary>
     /// Create remote folder

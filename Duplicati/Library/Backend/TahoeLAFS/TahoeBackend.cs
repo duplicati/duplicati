@@ -78,7 +78,7 @@ public class TahoeBackend : IStreamingBackend
 
     /// <inheritdoc />
     public Task TestAsync(CancellationToken cancelToken)
-        => this.TestListAsync(cancelToken);
+        => this.TestReadWritePermissionsAsync(cancelToken);
 
     /// <inheritdoc />
     public async Task CreateFolderAsync(CancellationToken cancelToken)

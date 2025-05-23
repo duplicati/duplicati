@@ -315,7 +315,7 @@ namespace Duplicati.Library.Backend
         public string Description => Strings.FileBackend.Description;
 
         public Task TestAsync(CancellationToken cancelToken)
-            => this.TestListAsync(cancelToken);
+            => this.TestReadWritePermissionsAsync(cancelToken);
 
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
