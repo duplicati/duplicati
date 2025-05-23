@@ -61,6 +61,17 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     }
 
     /// <summary>
+    /// Centralized method to prepare a request with the given URL and method setting useragent
+    /// </summary>
+    /// <param name="url">Url</param>
+    /// <param name="method">Method</param>
+    public virtual HttpRequestMessage CreateRequest(string url, string? method = null)
+    {
+        var request = new HttpRequestMessage(method != null ? HttpMethod.Parse(method) : HttpMethod.Get, url);
+        request.Headers.Add("User-Agent", UserAgent);
+        return request;
+    }
+    /// <summary>
     /// Performs a multipart post and parses the response as JSON
     /// </summary>
     /// <returns>The parsed JSON item.</returns>
@@ -156,7 +167,7 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// <param name="req">Request object</param>
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <typeparam name="T">Destination Type</typeparam>
-    protected virtual async Task<T> ReadJsonResponseAsync<T>(HttpRequestMessage req, CancellationToken cancellationToken)
+    public virtual async Task<T> ReadJsonResponseAsync<T>(HttpRequestMessage req, CancellationToken cancellationToken)
     {
         using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         return await ReadJsonResponseAsync<T>(resp, cancellationToken).ConfigureAwait(false);

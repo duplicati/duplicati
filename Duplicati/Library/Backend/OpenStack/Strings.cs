@@ -21,37 +21,34 @@
 
 using Duplicati.Library.Localization.Short;
 
-namespace Duplicati.Library.Backend.Strings
+namespace Duplicati.Library.Backend.Strings;
+internal static class OpenStack
 {
-    internal static class OpenStack
-    {
-        public static string Description { get { return LC.L(@"This backend can read and write data to Swift (OpenStack Object Storage). Allowed format is ""openstack://container/folder""."); } }
-        public static string DisplayName { get { return LC.L(@"OpenStack Simple Storage"); } }
-        public static string MissingOptionError(string optionname) { return LC.L(@"Missing required option: {0}", optionname); }
-        public static string PasswordOptionLong(string tenantnameoption) { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD"". If the password is supplied, --{0} must also be set.", tenantnameoption); }
-        public static string PasswordOptionShort { get { return LC.L(@"Supply the password used to connect to the server"); } }
-        public static string DomainnameOptionLong { get { return LC.L(@"The domain name of the user used to connect to the server."); } }
-        public static string DomainnameOptionShort { get { return LC.L(@"Supply the domain used to connect to the server"); } }
-        public static string UsernameOptionLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
-        public static string UsernameOptionShort { get { return LC.L(@"Supply the username used to connect to the server"); } }
-        public static string TenantnameOptionLong { get { return LC.L(@"The Tenant Name is commonly the paying user account name. This option must be supplied when authenticating with a password, but is not required when using an API key."); } }
-        public static string TenantnameOptionShort { get { return LC.L(@"Supply the Tenant Name used to connect to the server"); } }
-        public static string ApikeyOptionLong { get { return LC.L(@"The API key can be used to connect without supplying a password and tenant ID with some providers."); } }
-        public static string ApikeyOptionShort { get { return LC.L(@"Supply the API key used to connect to the server"); } }
-        public static string AuthuriOptionLong(string providers) { return LC.L(@"The authentication URL is used to authenticate the user and find the storage service. The URL commonly ends with ""/v2.0"" for v2 and ""/v3"" for v3. Known providers are: {0}{1}", System.Environment.NewLine, providers); }
-        public static string AuthuriOptionShort { get { return LC.L(@"Supply the authentication URL"); } }
-        public static string VersionOptionLong { get { return LC.L(@"The keystone API version to use. Valid values are 'v2' and 'v3'."); } }
-        public static string VersionOptionShort { get { return LC.L(@"The keystone API version to use"); } }
-        public static string RegionOptionLong { get { return LC.L(@"By default, the first reported endpoint will be used for file transfers. To select a specific region, provide the region name. If no such region is supported, the default (first reported) endpoint is used."); } }
-        public static string RegionOptionShort { get { return LC.L(@"Supply the prefered region for endpoints"); } }
-    }
+    public static string Description => LC.L(@"This backend can read and write data to Swift (OpenStack Object Storage). Allowed format is ""openstack://container/folder"".");
+    public static string DisplayName => LC.L(@"OpenStack Simple Storage");
+    public static string MissingOptionError(string optionname) { return LC.L(@"Missing required option: {0}", optionname); }
+    public static string PasswordOptionLong(string tenantnameoption) { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD"". If the password is supplied, --{0} must also be set.", tenantnameoption); }
+    public static string PasswordOptionShort => LC.L(@"Supply the password used to connect to the server");
+    public static string DomainnameOptionLong => LC.L(@"The domain name of the user used to connect to the server.");
+    public static string DomainnameOptionShort => LC.L(@"Supply the domain used to connect to the server");
+    public static string UsernameOptionLong => LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME"".");
+    public static string UsernameOptionShort => LC.L(@"Supply the username used to connect to the server");
+    public static string TenantnameOptionLong => LC.L(@"The Tenant Name is commonly the paying user account name. This option must be supplied when authenticating with a password, but is not required when using an API key.");
+    public static string TenantnameOptionShort => LC.L(@"Supply the Tenant Name used to connect to the server");
+    public static string ApikeyOptionLong => LC.L(@"The API key can be used to connect without supplying a password and tenant ID with some providers.");
+    public static string ApikeyOptionShort => LC.L(@"Supply the API key used to connect to the server");
+    public static string AuthuriOptionLong(string providers) { return LC.L(@"The authentication URL is used to authenticate the user and find the storage service. The URL commonly ends with ""/v2.0"" for v2 and ""/v3"" for v3. Known providers are: {0}{1}", Environment.NewLine, providers); }
+    public static string AuthuriOptionShort => LC.L(@"Supply the authentication URL");
+    public static string VersionOptionLong => LC.L(@"The keystone API version to use. Valid values are 'v2' and 'v3'.");
+    public static string VersionOptionShort => LC.L(@"The keystone API version to use");
+    public static string RegionOptionLong => LC.L(@"By default, the first reported endpoint will be used for file transfers. To select a specific region, provide the region name. If no such region is supported, the default (first reported) endpoint is used.");
+    public static string RegionOptionShort => LC.L(@"Supply the prefered region for endpoints");
+}
+internal static class SwiftConfig
+{
+    public static string Description { get { return LC.L(@"Expose OpenStack configuration as a web module"); } }
+    public static string DisplayName { get { return LC.L(@"OpenStack configuration module"); } }
+    public static string ConfigTypeOptionLong { get { return LC.L(@"Provide different config values"); } }
+    public static string ConfigTypeOptionShort { get { return LC.L(@"The config to get"); } }
 
-    internal static class SwiftConfig
-    {
-        public static string Description { get { return LC.L(@"Expose OpenStack configuration as a web module"); } }
-        public static string DisplayName { get { return LC.L(@"OpenStack configuration module"); } }
-        public static string ConfigTypeOptionLong { get { return LC.L(@"Provide different config values"); } }
-        public static string ConfigTypeOptionShort { get { return LC.L(@"The config to get"); } }
-
-    }
 }
