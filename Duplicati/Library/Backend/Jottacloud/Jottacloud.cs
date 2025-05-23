@@ -49,9 +49,6 @@ public class Jottacloud : IStreamingBackend
     private readonly bool m_device_builtin;
     private readonly string m_mountPoint;
     private readonly string m_path;
-    private readonly string m_url_device;
-    private readonly string m_url;
-    private readonly string m_url_upload;
 
     private static readonly string JFS_DEFAULT_CHUNKSIZE = "5mb";
     private static readonly string JFS_DEFAULT_THREADS = "4";
@@ -59,18 +56,19 @@ public class Jottacloud : IStreamingBackend
     private readonly long m_chunksize;
     private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
-    private readonly JottacloudAuthHelper m_oauth;
+    private JottacloudAuthHelper? m_oauth;
+    private readonly AuthIdOptionsHelper.AuthIdOptions m_authIdOptions;
+
+    private record Urls(string Url, string DeviceUrl, string UploadUrl);
+    private Urls? m_urls;
 
     public Jottacloud()
     {
         m_device = null!;
         m_mountPoint = null!;
         m_path = null!;
-        m_url_device = null!;
-        m_url = null!;
-        m_url_upload = null!;
         m_timeouts = null!;
-        m_oauth = null!;
+        m_authIdOptions = null!;
     }
 
     /// <inheritdoc/>
@@ -133,12 +131,8 @@ public class Jottacloud : IStreamingBackend
                 JFS_DEFAULT_CUSTOM_MOUNT_POINT; // Set a suitable default mount point for custom (backup) devices.
         }
 
-        var authId = AuthIdOptionsHelper.Parse(options)
+        m_authIdOptions = AuthIdOptionsHelper.Parse(options)
             .RequireCredentials(TOKEN_URL);
-
-        m_oauth = new JottacloudAuthHelper(authId.AuthId!);
-
-        m_oauth.InitializeAsync(CancellationToken.None).Await();
 
         // Build URL
         var u = new Utility.Uri(url);
@@ -146,10 +140,6 @@ public class Jottacloud : IStreamingBackend
         if (string.IsNullOrEmpty(m_path)) // Require a folder. Actually it is possible to store files directly on the root level of the mount point, but that does not seem to be a good option.
             throw new UserInformationException(Strings.Jottacloud.NoPathError, "JottaNoPath");
         m_path = Util.AppendDirSeparator(m_path, "/");
-
-        m_url_device = JFS_ROOT + "/" + m_oauth.Username + "/" + m_device;
-        m_url = m_url_device + "/" + m_mountPoint + "/" + m_path;
-        m_url_upload = JFS_ROOT_UPLOAD + "/" + m_oauth.Username + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
 
         var jfsThreads = options.GetValueOrDefault(JFS_THREADS);
         if (string.IsNullOrWhiteSpace(jfsThreads))
@@ -178,20 +168,39 @@ public class Jottacloud : IStreamingBackend
     /// <inheritdoc/>
     public string ProtocolKey => "jottacloud";
 
+    /// <summary>
+    /// Creates a request client and configures the request URLs
+    /// </summary>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The request client and the URLs</returns>
+    private async Task<(JottacloudAuthHelper, Urls)> GetClient(CancellationToken cancelToken)
+    {
+        if (m_oauth == null || m_urls == null)
+        {
+            m_oauth = await JottacloudAuthHelper.CreateAsync(m_authIdOptions.AuthId!, cancelToken).ConfigureAwait(false);
+
+            var url_device = JFS_ROOT + "/" + m_oauth.Username + "/" + m_device;
+            var url = url_device + "/" + m_mountPoint + "/" + m_path;
+            var url_upload = JFS_ROOT_UPLOAD + "/" + m_oauth.Username + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
+
+            m_urls = new Urls(url, url_device, url_upload);
+        }
+
+        return (m_oauth, m_urls);
+    }
+
     /// <inheritdoc />
     public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
     {
-        // Remove warning until this backend is rewritten with HttpClient
-        await Task.CompletedTask;
-
         var doc = new System.Xml.XmlDocument();
+        (var client, var _) = await GetClient(cancelToken).ConfigureAwait(false);
         try
         {
             // Send request and load XML response.
-            using var req = await CreateRequest(HttpMethod.Get, "", "", false).ConfigureAwait(false);
+            using var req = await CreateRequest(HttpMethod.Get, "", "", false, cancelToken).ConfigureAwait(false);
 
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
-                innerCancellationToken => m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
+                innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
             await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
@@ -281,15 +290,16 @@ public class Jottacloud : IStreamingBackend
     /// <returns>The file entry</returns>
     private async Task<IFileEntry?> Info(string remotename, CancellationToken cancelToken)
     {
+        (var client, var _) = await GetClient(cancelToken).ConfigureAwait(false);
         var doc = new System.Xml.XmlDocument();
         try
         {
             // Send request and load XML response.
-            using var req = await CreateRequest(HttpMethod.Get, remotename, "", false).ConfigureAwait(false);
+            using var req = await CreateRequest(HttpMethod.Get, remotename, "", false, cancelToken).ConfigureAwait(false);
 
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
                     innerCancellationToken =>
-                        m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken))
+                        client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken))
                 .ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
@@ -331,9 +341,11 @@ public class Jottacloud : IStreamingBackend
     /// <inheritdoc/>
     public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
     {
-        using var req = await CreateRequest(HttpMethod.Post, remotename, "rm=true", false).ConfigureAwait(false); // rm=true means permanent delete, dl=true would be move to trash.
+        (var client, var _) = await GetClient(cancelToken).ConfigureAwait(false);
+
+        using var req = await CreateRequest(HttpMethod.Post, remotename, "rm=true", false, cancelToken).ConfigureAwait(false); // rm=true means permanent delete, dl=true would be move to trash.
         using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
-            innerCancellationToken => m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
+            innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
     }
@@ -354,34 +366,38 @@ public class Jottacloud : IStreamingBackend
     /// <inheritdoc/>
     public Task TestAsync(CancellationToken cancelToken)
         => this.TestReadWritePermissionsAsync(cancelToken);
-    
+
     /// <inheritdoc/>
     public async Task CreateFolderAsync(CancellationToken cancelToken)
     {
+        (var client, var urls) = await GetClient(cancelToken).ConfigureAwait(false);
+
         // When using custom (backup) device we must create the device first (if not already exists).
         if (!m_device_builtin)
         {
-            using var request = await CreateRequest(m_url_device, "type=WORKSTATION", HttpMethod.Post).ConfigureAwait(false); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
+            using var request = await CreateRequest(urls.DeviceUrl, "type=WORKSTATION", HttpMethod.Post, cancelToken).ConfigureAwait(false); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
 
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
-                innerCancellationToken => m_oauth.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
+                innerCancellationToken => client.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
         }
         // Create the folder path, and if using custom mount point it will be created as well in the same operation.
         {
-            using var request = await CreateRequest(HttpMethod.Post, "", "mkDir=true", false).ConfigureAwait(false);
+            using var request = await CreateRequest(HttpMethod.Post, "", "mkDir=true", false, cancelToken).ConfigureAwait(false);
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
-                innerCancellationToken => m_oauth.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
+                innerCancellationToken => client.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
         }
     }
-    
+
     /// <inheritdoc/>
     public void Dispose()
     {
-        m_oauth.Dispose();
+        m_oauth?.Dispose();
+        m_oauth = null;
+        m_urls = null;
     }
 
     /// <summary>
@@ -390,13 +406,15 @@ public class Jottacloud : IStreamingBackend
     /// <param name="url">url</param>
     /// <param name="queryparams">Querystring parameters</param>
     /// <param name="method">HttpMethod</param>
+    /// <param name="cancelToken">Cancellation token</param>
     /// <returns></returns>
-    private async Task<HttpRequestMessage> CreateRequest(string url, string queryparams, HttpMethod? method = null)
+    private async Task<HttpRequestMessage> CreateRequest(string url, string queryparams, HttpMethod? method, CancellationToken cancelToken)
     {
-        return await m_oauth.CreateRequestAsync(url + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams),
+        (var client, var _) = await GetClient(cancelToken).ConfigureAwait(false);
+        return await client.CreateRequestAsync(url + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams),
              method == null ? HttpMethod.Get : method, CancellationToken.None).ConfigureAwait(false);
     }
-    
+
     /// <summary>
     /// Creates the request configured with the OAuth token.
     /// </summary>
@@ -404,10 +422,12 @@ public class Jottacloud : IStreamingBackend
     /// <param name="remotename">remotefilename</param>
     /// <param name="queryparams">Query parameters</param>
     /// <param name="upload">If its an upload</param>
+    /// <param name="cancelToken">Cancellation token</param>
     /// <returns></returns>
-    private async Task<HttpRequestMessage> CreateRequest(HttpMethod method, string remotename, string queryparams, bool upload)
+    private async Task<HttpRequestMessage> CreateRequest(HttpMethod method, string remotename, string queryparams, bool upload, CancellationToken cancelToken)
     {
-        return await CreateRequest((upload ? m_url_upload : m_url) + Utility.Uri.UrlEncode(remotename).Replace("+", "%20"), queryparams, method).ConfigureAwait(false);
+        (var _, var urls) = await GetClient(cancelToken).ConfigureAwait(false);
+        return await CreateRequest((upload ? urls.UploadUrl : urls.Url) + Utility.Uri.UrlEncode(remotename).Replace("+", "%20"), queryparams, method, cancelToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -429,9 +449,10 @@ public class Jottacloud : IStreamingBackend
         // Downloading from Jottacloud: Will only succeed if the file has a completed revision,
         // and if there are multiple versions of the file we will only get the latest completed version,
         // ignoring any incomplete or corrupt versions.
-        using var req = await CreateRequest(HttpMethod.Get, remotename, "mode=bin", false).ConfigureAwait(false);
+        (var client, var _) = await GetClient(cancelToken).ConfigureAwait(false);
+        using var req = await CreateRequest(HttpMethod.Get, remotename, "mode=bin", false, cancelToken).ConfigureAwait(false);
         using var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, innerCancellationToken =>
-              m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
+              client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
 
@@ -486,10 +507,11 @@ public class Jottacloud : IStreamingBackend
                 {
                     try
                     {
-                        using var request = await CreateRequest(HttpMethod.Get, remotename, "mode=bin", false).ConfigureAwait(false);
+                        (var client, var _) = await GetClient(cancelToken).ConfigureAwait(false);
+                        using var request = await CreateRequest(HttpMethod.Get, remotename, "mode=bin", false, cancelToken).ConfigureAwait(false);
                         request.Headers.Range = new RangeHeaderValue(chunk.start, chunk.end - 1);
 
-                        using var response = await m_oauth.GetResponseAsync(
+                        using var response = await client.GetResponseAsync(
                             request,
                             HttpCompletionOption.ResponseHeadersRead,
                             cancelToken
@@ -515,7 +537,7 @@ public class Jottacloud : IStreamingBackend
                     }
                     catch (Exception ex)
                     {
-                        return (Array.Empty<byte>(), chunk.start, ex);
+                        return (Array.Empty<byte>(), chunk.start, (Exception?)ex);
                     }
                     finally
                     {
@@ -584,7 +606,7 @@ public class Jottacloud : IStreamingBackend
         // HTTP 404 (Not Found) if file does not exists or it exists with a different hash, in which
         // case we must send a new request to upload the new content.
         var fileSize = stream.Length;
-        using var req = await CreateRequest(HttpMethod.Post, remotename, "umode=nomultipart", true).ConfigureAwait(false);
+        using var req = await CreateRequest(HttpMethod.Post, remotename, "umode=nomultipart", true, cancelToken).ConfigureAwait(false);
 
         req.Headers.TryAddWithoutValidation("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
         req.Headers.TryAddWithoutValidation("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
@@ -595,7 +617,8 @@ public class Jottacloud : IStreamingBackend
         req.Content.Headers.Add("Content-Type", "application/octet-stream");
         req.Content.Headers.Add("Content-Length", fileSize.ToString());
 
-        using var response = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
+        (var client, var _) = await GetClient(cancelToken).ConfigureAwait(false);
+        using var response = await client.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
 
