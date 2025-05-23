@@ -11,7 +11,7 @@ Store securely encrypted backups on cloud storage services!
 
 Duplicati is a free, open-source backup client that securely stores encrypted, incremental, and compressed backups on cloud storage services and remote file servers. It supports:
 
-&nbsp;&nbsp; _Amazon S3, [IDrive e2](https://www.idrive.com/e2/duplicati "Using Duplicati with IDrive e2"), [Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati with Backblaze B2 Cloud Storage"), Box, Dropbox, FTP, Google Cloud and Drive, MEGA, Microsoft Azure and OneDrive, Rackspace Cloud Files, OpenStack Storage (Swift), Sia, Storj DCS, SSH (SFTP), WebDAV, Tencent Cloud Object Storage (COS), Aliyun OSS, [and more!](https://docs.duplicati.com/backup-destinations/destination-overview)_
+&nbsp;&nbsp; _Amazon S3, [IDrive e2](https://www.idrive.com/e2/duplicati "Using Duplicati with IDrive e2"), [Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati with Backblaze B2 Cloud Storage"), Box, Dropbox, FTP, Google Cloud and Drive, MEGA, Microsoft Azure and OneDrive, Rackspace Cloud Files, OpenStack Storage (Swift), Storj DCS, SSH (SFTP), WebDAV, Tencent Cloud Object Storage (COS), Aliyun OSS, [and more!](https://docs.duplicati.com/backup-destinations/destination-overview)_
 
 Duplicati is licensed under the MIT license and is available for Windows, macOS, and Linux.
 
