@@ -322,7 +322,7 @@ public class B2 : IStreamingBackend
             using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrlData.UploadUrl);
             using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
 
-            request.Headers.Add("Authorization", uploadUrlData.AuthorizationToken);
+            request.Headers.TryAddWithoutValidation("Authorization", uploadUrlData.AuthorizationToken);
             request.Headers.Add("X-Bz-Content-Sha1", sha1);
             request.Headers.Add("X-Bz-File-Name", _urlencodedPrefix + Utility.Uri.UrlPathEncode(remotename));
             request.Content = new StreamContent(timeoutStream, B2_RECOMMENDED_CHUNK_SIZE);

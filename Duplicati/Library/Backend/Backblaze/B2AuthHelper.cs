@@ -81,7 +81,7 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient,
     {
         var request = await base.CreateRequestAsync(url, method, cancellationToken).ConfigureAwait(false);
         var config = await GetConfigAsync(cancellationToken).ConfigureAwait(false);
-        request.Headers.Add("Authorization", config.AuthorizationToken);
+        request.Headers.TryAddWithoutValidation("Authorization", config.AuthorizationToken);
         request.Headers.Add("User-Agent", UserAgent);
         return request;
     }
