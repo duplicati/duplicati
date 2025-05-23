@@ -28,7 +28,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['idrive']      = 'templates/backends/idrive.html';
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['sia']         = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['storj']       = 'templates/backends/storj.html';
     EditUriBackendConfig.templates['rclone']      = 'templates/backends/rclone.html';
     EditUriBackendConfig.templates['cos']         = 'templates/backends/cos.html';
@@ -543,20 +542,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             delete options[nukeopts[x]];
     }
 
-
-    EditUriBackendConfig.parsers['sia'] = function (scope, module, server, port, path, options) {
-        if (options['--sia-targetpath'])
-            scope.sia_targetpath = options['--sia-targetpath'];
-        if (options['--sia-redundancy'])
-            scope.sia_redundancy = options['--sia-redundancy'];
-        if (options['--sia-password'])
-            scope.sia_password = options['--sia-password'];
-
-        var nukeopts = ['--sia-targetpath', '--sia-redundancy', '--sia-password'];
-        for (var x in nukeopts)
-            delete options[nukeopts[x]];
-    }
-	
     EditUriBackendConfig.parsers['storj'] = function (scope, module, server, port, path, options) {
         if (options['--storj-auth-method'])
             scope.storj_auth_method = options['--storj-auth-method'];
@@ -893,25 +878,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         return url;
     };
 
-    EditUriBackendConfig.builders['sia'] = function (scope) {
-        var opts = {
-            'sia-password': scope.sia_password,
-            'sia-targetpath': scope.sia_targetpath,
-            'sia-redundancy': scope.sia_redundancy
-        };
-
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
-
-        var url = AppUtils.format('{0}://{1}/{2}{3}',
-            scope.Backend.Key,
-            scope.Server || '',
-            scope.sia_targetpath || '',
-            AppUtils.encodeDictAsUrl(opts)
-        );
-
-        return url;
-    }
-	
 	EditUriBackendConfig.builders['storj'] = function (scope) {
         var opts = {
             'storj-auth-method': scope.storj_auth_method,
@@ -1330,22 +1296,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         var res =
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
             EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Password'));
-
-        if (res)
-            continuation();
-    };
-
-    EditUriBackendConfig.validaters['sia'] = function (scope, continuation) {
-        var res =
-            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Server'));
-
-        var re = new RegExp('^(([a-zA-Z0-9-])|(\/(?!\/)))*$');
-        if (res && !re.test(scope['sia_targetpath'])) {
-            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Invalid characters in path'));
-        }
-
-        if (res && (scope['sia_redundancy'] || '').trim().length == 0 || parseFloat(scope['sia_redundancy']) < 1.0)
-            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 1.0')); // Do not forget to update SiaRedundancyDescriptionLong as well if the value is changed
 
         if (res)
             continuation();
