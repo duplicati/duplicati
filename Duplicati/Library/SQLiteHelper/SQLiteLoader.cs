@@ -276,7 +276,7 @@ namespace Duplicati.Library.SQLiteHelper
         private static async Task OpenSQLiteFileAsync(Microsoft.Data.Sqlite.SqliteConnection con, string path)
         {
             con.ConnectionString = "Data Source=" + path;
-            await con.OpenAsync();
+            con.Open();
             // TODO legacy configuration?
             //if (con is Microsoft.Data.Sqlite.SqliteConnection sqlitecon && !OperatingSystem.IsMacOS())
             //{
