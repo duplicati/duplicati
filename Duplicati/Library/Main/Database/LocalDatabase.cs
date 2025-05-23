@@ -2388,7 +2388,7 @@ namespace Duplicati.Library.Main.Database
 
         public virtual void Dispose()
         {
-            DisposeAsync().Await();
+            this.DisposeAsync().Await();
         }
 
         public virtual async Task DisposeAsync()

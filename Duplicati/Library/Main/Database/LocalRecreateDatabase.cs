@@ -1250,7 +1250,7 @@ namespace Duplicati.Library.Main.Database
 
             }
 
-            base.Dispose();
+            await base.DisposeAsync();
         }
     }
 }

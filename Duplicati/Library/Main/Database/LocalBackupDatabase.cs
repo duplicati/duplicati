@@ -1050,7 +1050,7 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose()
         {
-            DisposeAsync().Await();
+            this.DisposeAsync().Await();
         }
 
         public override async Task DisposeAsync()
@@ -1066,7 +1066,7 @@ namespace Duplicati.Library.Main.Database
                     Logging.Log.WriteWarningMessage(LOGTAG, "DropTempTableFailed", ex, "Failed to drop temporary table {0}: {1}", m_tempDeletedBlockTable, ex.Message);
                 }
 
-            base.Dispose();
+            await base.DisposeAsync();
         }
 
         public async Task<long> GetLastWrittenDBlockVolumeSize()
