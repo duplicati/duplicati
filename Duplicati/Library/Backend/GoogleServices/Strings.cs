@@ -46,6 +46,9 @@ namespace Duplicati.Library.Backend.Strings
         public static string FilenotFound(string name) { return LC.L(@"File not found: {0}", name); }
         public static string TeamDriveIdLong { get { return LC.L("This option sets the team drive to use. Leaving it empty uses the personal drive."); } }
         public static string TeamDriveIdShort { get { return LC.L("Team drive ID"); } }
+        public static string ListResponseError { get { return LC.L(@"The list response was not valid."); } }
+        public static string AboutResponseError { get { return LC.L(@"The about response was not valid."); } }
+        public static string CreateFolderResponseError { get { return LC.L(@"The create folder response was not valid."); } }
     }
 
     internal static class GCSConfig

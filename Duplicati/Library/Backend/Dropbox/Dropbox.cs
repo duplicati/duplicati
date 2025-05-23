@@ -30,7 +30,7 @@ namespace Duplicati.Library.Backend
     // This class is instantiated dynamically in the BackendLoader.
     public class Dropbox : IBackend, IStreamingBackend
     {
-        private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL("dropbox");
+        private static readonly string TOKEN_URL = OAuthHelperHttpClient.OAUTH_LOGIN_URL("dropbox");
         private readonly string m_path;
         private readonly DropboxHelper dbx;
 

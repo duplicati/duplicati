@@ -48,15 +48,29 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
     private const int MAX_AUTHORIZATION_RETRIES = 5;
 
     /// <summary>
-    /// URL to use for OAuth login
+    /// Returns the URL to use for obtaining an OAuth token for the given module.
     /// </summary>
-    /// <param name="modulename">The name of the module</param>
-    /// <returns>The URL to use for OAuth login</returns>
-    private static string OAUTH_LOGIN_URL(string modulename)
+    /// <param name="modulename">The name of the module to use.</param>
+    /// <returns>The URL to use for obtaining an OAuth token.</returns>
+    public static string OAUTH_LOGIN_URL(string modulename)
     {
-        var u = new Utility.Uri(OAuthContextSettings.ServerURL);
-        var addr = u.SetPath("")
-            .SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
+        var u = new Library.Utility.Uri(OAuthContextSettings.ServerURL);
+        var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
+        return string.Format(addr.ToString(), modulename);
+    }
+
+    /// <summary>
+    /// Returns the URL to use for obtaining an OAuth token for the given module, defaulting to the new server.
+    /// </summary>
+    /// <param name="modulename">The name of the module to use.</param>
+    public static string OAUTH_LOGIN_URL_NEW(string modulename)
+    {
+        var baseUrl = OAuthContextSettings.ServerURLRaw;
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            baseUrl = OAuthContextSettings.DUPLICATI_OAUTH_SERVICE_NEW;
+
+        var u = new Library.Utility.Uri(baseUrl);
+        var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
         return string.Format(addr.ToString(), modulename);
     }
 
@@ -104,7 +118,7 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
     public override Task<HttpRequestMessage> CreateRequestAsync(string url, HttpMethod method, CancellationToken cancellationToken)
         => CreateRequestAsync(url, method, false, cancellationToken);
 
-    private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
+    public async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
     {
         if (AccessTokenOnly)
             return _Authid;

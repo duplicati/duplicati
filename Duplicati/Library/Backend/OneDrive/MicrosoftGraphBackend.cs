@@ -115,7 +115,7 @@ namespace Duplicati.Library.Backend
 
         private readonly Lazy<string> rootPathFromURL;
         private string RootPath => this.rootPathFromURL.Value;
-        private string TokenUrl => OAuthHelper.OAUTH_LOGIN_URL(ProtocolKey);
+        private string TokenUrl => OAuthHelperHttpClient.OAUTH_LOGIN_URL(ProtocolKey);
 
         protected MicrosoftGraphBackend()
         {

@@ -33,7 +33,7 @@ namespace Duplicati.Library.Backend.Box
 {
     public class BoxBackend : IStreamingBackend
     {
-        private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL("box.com");
+        private static readonly string TOKEN_URL = OAuthHelperHttpClient.OAUTH_LOGIN_URL("box.com");
         private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
 
