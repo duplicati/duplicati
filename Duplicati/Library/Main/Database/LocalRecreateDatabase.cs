@@ -677,7 +677,6 @@ namespace Duplicati.Library.Main.Database
         {
             var fileid = await m_findFilesetCommand
                 .SetTransaction(m_rtr)
-                .SetParameterValue("@FilesetId", filesetid)
                 .SetParameterValue("@PrefixId", pathprefixid)
                 .SetParameterValue("@Path", path)
                 .SetParameterValue("@BlocksetId", blocksetid)
