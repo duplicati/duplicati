@@ -760,7 +760,7 @@ namespace Duplicati.Library.Main.Database
                         if (c <= expectedblocklisthashes)
                         {
                             await m_insertBlocklistHashCommand
-                                .SetParameterValue("@Index", index)
+                                .SetParameterValue("@Index", index++)
                                 .SetParameterValue("@Hash", hash)
                                 .ExecuteNonQueryAsync();
                         }
