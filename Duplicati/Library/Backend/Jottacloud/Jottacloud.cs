@@ -201,8 +201,6 @@ public class Jottacloud : IStreamingBackend
 
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
                 innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
             await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
             doc.Load(rs);
 
@@ -302,7 +300,6 @@ public class Jottacloud : IStreamingBackend
                         client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken))
                 .ConfigureAwait(false);
 
-            response.EnsureSuccessStatusCode();
             await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
             doc.Load(rs);
         }
@@ -346,8 +343,6 @@ public class Jottacloud : IStreamingBackend
         using var req = await CreateRequest(HttpMethod.Post, remotename, "rm=true", false, cancelToken).ConfigureAwait(false); // rm=true means permanent delete, dl=true would be move to trash.
         using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
             innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
-
-        response.EnsureSuccessStatusCode();
     }
 
     /// <inheritdoc/>
@@ -379,16 +374,12 @@ public class Jottacloud : IStreamingBackend
 
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
                 innerCancellationToken => client.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
         }
         // Create the folder path, and if using custom mount point it will be created as well in the same operation.
         {
             using var request = await CreateRequest(HttpMethod.Post, "", "mkDir=true", false, cancelToken).ConfigureAwait(false);
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
                 innerCancellationToken => client.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
         }
     }
 
@@ -454,8 +445,6 @@ public class Jottacloud : IStreamingBackend
         using var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, innerCancellationToken =>
               client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
 
-        response.EnsureSuccessStatusCode();
-
         await using var s = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
         await using var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
         await Utility.Utility.CopyStreamAsync(s, stream, true, cancelToken).ConfigureAwait(false);
@@ -516,9 +505,6 @@ public class Jottacloud : IStreamingBackend
                             HttpCompletionOption.ResponseHeadersRead,
                             cancelToken
                         ).ConfigureAwait(false);
-
-                        if (!response.IsSuccessStatusCode)
-                            throw new HttpRequestException($"HTTP {response.StatusCode} for chunk {chunk.start}-{chunk.end - 1}");
 
                         // Verify Content-Range header
                         var contentRange = response.Content.Headers.ContentRange;
@@ -619,8 +605,6 @@ public class Jottacloud : IStreamingBackend
 
         (var client, var _) = await GetClient(cancelToken).ConfigureAwait(false);
         using var response = await client.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
-
-        response.EnsureSuccessStatusCode();
 
         if (response.StatusCode != HttpStatusCode.Created)
             throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);

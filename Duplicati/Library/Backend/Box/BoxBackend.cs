@@ -249,7 +249,6 @@ namespace Duplicati.Library.Backend.Box
             var fileId = await GetFileIdAsync(remotename, cancelToken).ConfigureAwait(false);
             using var request = await _oAuthHelper.CreateRequestAsync($"{BOX_API_URL}/files/{fileId}/content", HttpMethod.Get, cancelToken).ConfigureAwait(false);
             using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => _oAuthHelper.GetResponseAsync(request, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
-            resp.EnsureSuccessStatusCode();
             await using var responseStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => resp.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false);
             using var ts = responseStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
             await Utility.Utility.CopyStreamAsync(ts, stream, cancelToken).ConfigureAwait(false);
