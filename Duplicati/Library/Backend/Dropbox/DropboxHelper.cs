@@ -150,6 +150,8 @@ namespace Duplicati.Library.Backend
 
             using var commitReq = await CreateChunkRequestAsync(WebApi.Dropbox.UploadSessionFinishUrl(), usfa, cancelToken).ConfigureAwait(false);
             commitReq.Options.Set(FileRequestOption, true);
+            commitReq.Content = new ByteArrayContent(Array.Empty<byte>());
+            commitReq.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
 
             return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
                 async ct =>
@@ -181,7 +183,7 @@ namespace Duplicati.Library.Backend
             {
                 using var req = await CreateRequestAsync(WebApi.Dropbox.DeleteUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
                 req.Options.Set(FileRequestOption, true);
-                req.Headers.Add(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(new PathArg { path = path }));
+                req.Content = JsonContent.Create(new PathArg { path = path });
                 using var response = await GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
             }).ConfigureAwait(false);
         }
