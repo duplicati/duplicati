@@ -161,7 +161,7 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
         using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         return await ReadJsonResponseAsync<T>(resp, cancellationToken).ConfigureAwait(false);
     }
-    
+
     /// <summary>
     /// Exposes GetStreamAsync to the inheritors
     /// </summary>
@@ -226,6 +226,20 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
 
             response.EnsureSuccessStatusCode();
             return response;
+        }
+        catch (Exception ex)
+        {
+            await AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    public async Task<HttpResponseMessage> GetResponseUncheckedAsync(HttpRequestMessage req, HttpCompletionOption httpCompletionOption, CancellationToken cancellationToken)
+    {
+        HttpResponseMessage response = null;
+        try
+        {
+            return await _httpClient.SendAsync(req, httpCompletionOption, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

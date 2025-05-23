@@ -50,7 +50,7 @@ namespace Duplicati.Library.Backend.GoogleServices
         {
             using var req = await oauth.CreateRequestAsync(uploaduri, HttpMethod.Put, cancellationToken);
             req.Content = new ByteArrayContent(Array.Empty<byte>());
-            req.Headers.TryAddWithoutValidation("Content-Range", $"bytes */{streamlength}");
+            req.Content.Headers.Add("Content-Range", $"bytes */{streamlength}");
 
             using var resp = await Library.Utility.Utility.WithTimeout(
                 shortTimeout,
@@ -107,18 +107,14 @@ namespace Duplicati.Library.Backend.GoogleServices
             using var req = await oauth.CreateRequestAsync(url, method, cancelToken);
             if (requestdata != null)
                 req.Content = JsonContent.Create(requestdata);
-            req.Headers.TryAddWithoutValidation("X-Upload-Content-Type", "application/octet-stream");
-            req.Headers.TryAddWithoutValidation("X-Upload-Content-Length", stream.Length.ToString());
+            req.Headers.Add("X-Upload-Content-Type", "application/octet-stream");
+            req.Headers.Add("X-Upload-Content-Length", stream.Length.ToString());
 
             var uploaduri = await Utility.Utility.WithTimeout(shortTimeout, cancelToken, async ct =>
             {
                 using var resp = await oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
-                if (resp.StatusCode != HttpStatusCode.OK ||
-                    !resp.Headers.TryGetValues("Location", out var locationValues) ||
-                    string.IsNullOrWhiteSpace(locationValues.FirstOrDefault()))
-                {
+                if (!resp.Headers.TryGetValues("Location", out var locationValues) || string.IsNullOrWhiteSpace(locationValues.FirstOrDefault()))
                     throw new HttpRequestException(HttpRequestError.Unknown, "Failed to start upload session", null, resp.StatusCode);
-                }
 
                 return locationValues.First();
             }).ConfigureAwait(false);
@@ -145,7 +141,6 @@ namespace Duplicati.Library.Backend.GoogleServices
             var queryRange = false;
             var retries = 0;
             var offset = 0L;
-            var buffer = new byte[Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
             // Repeatedly try uploading until all retries are done
             while (true)
@@ -172,8 +167,8 @@ namespace Duplicati.Library.Backend.GoogleServices
                     using var ts = ls.ObserveWriteTimeout(readWriteTimeout);
                     req.Content = new StreamContent(ts);
                     req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                    req.Headers.TryAddWithoutValidation("Content-Range", $"bytes {offset}-{offset + chunkSize - 1}/{stream.Length}");
-                    using var resp = await oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
+                    req.Content.Headers.Add("Content-Range", $"bytes {offset}-{offset + chunkSize - 1}/{stream.Length}");
+                    using var resp = await oauth.GetResponseUncheckedAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
 
                     // Check the response
                     var code = (int)resp.StatusCode;

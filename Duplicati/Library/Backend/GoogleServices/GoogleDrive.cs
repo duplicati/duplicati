@@ -202,8 +202,6 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             var req = await m_oauth.CreateRequestAsync(WebApi.GoogleDrive.GetUrl(fileId), HttpMethod.Get, cancelToken).ConfigureAwait(false);
             using var resp = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
-            resp.EnsureSuccessStatusCode();
-
             using var rs = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => resp.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false);
             using (var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
                 await Utility.Utility.CopyStreamAsync(ts, stream, cancelToken);
@@ -297,7 +295,6 @@ namespace Duplicati.Library.Backend.GoogleDrive
                         {
                             using var req = await m_oauth.CreateRequestAsync(url, HttpMethod.Delete, ct).ConfigureAwait(false);
                             using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
-                            resp.EnsureSuccessStatusCode();
                         }).ConfigureAwait(false);
                 }
 
@@ -454,8 +451,6 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 {
                     using var req = await m_oauth.CreateRequestAsync(url, HttpMethod.Get, ct).ConfigureAwait(false);
                     using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-                    resp.EnsureSuccessStatusCode();
-
                     return await resp.Content.ReadFromJsonAsync<GoogleDriveListResponse>(ct).ConfigureAwait(false)
                         ?? throw new UserInformationException(Strings.GoogleDrive.ListResponseError, "GoogleDriveListResponseError");
                 }).ConfigureAwait(false);
@@ -477,8 +472,6 @@ namespace Duplicati.Library.Backend.GoogleDrive
             {
                 using var req = await m_oauth.CreateRequestAsync(WebApi.GoogleDrive.AboutInfoUrl(), HttpMethod.Get, ct).ConfigureAwait(false);
                 using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-                resp.EnsureSuccessStatusCode();
-
                 return await resp.Content.ReadFromJsonAsync<GoogleDriveAboutResponse>(ct).ConfigureAwait(false)
                     ?? throw new UserInformationException(Strings.GoogleDrive.AboutResponseError, "GoogleDriveAboutResponseError");
             });
@@ -503,8 +496,6 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 req.Content = JsonContent.Create(data);
 
                 using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-                resp.EnsureSuccessStatusCode();
-
                 return await resp.Content.ReadFromJsonAsync<GoogleDriveFolderItem>(ct).ConfigureAwait(false)
                     ?? throw new UserInformationException(Strings.GoogleDrive.CreateFolderResponseError, "GoogleDriveListResponseError");
             });
