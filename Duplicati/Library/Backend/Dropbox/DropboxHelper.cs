@@ -90,7 +90,7 @@ namespace Duplicati.Library.Backend
         private async Task<HttpRequestMessage> CreateChunkRequestAsync<T>(string url, T arg, CancellationToken cancelToken)
         {
             var req = await CreateRequestAsync(url, HttpMethod.Post, cancelToken).ConfigureAwait(false);
-            req.Headers.TryAddWithoutValidation(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(arg));
+            req.Headers.Add(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(arg));
             req.Options.Set(FileRequestOption, true);
             return req;
         }
@@ -165,7 +165,7 @@ namespace Duplicati.Library.Backend
         {
             var req = await CreateRequestAsync(WebApi.Dropbox.DownloadFilesUrl(), HttpMethod.Post, cancelToken).ConfigureAwait(false);
             req.Options.Set(FileRequestOption, true);
-            req.Headers.TryAddWithoutValidation(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(new PathArg { path = path }));
+            req.Headers.Add(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(new PathArg { path = path }));
 
             using (var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false))
             {
@@ -181,7 +181,7 @@ namespace Duplicati.Library.Backend
             {
                 using var req = await CreateRequestAsync(WebApi.Dropbox.DeleteUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
                 req.Options.Set(FileRequestOption, true);
-                req.Headers.TryAddWithoutValidation(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(new PathArg { path = path }));
+                req.Headers.Add(API_ARG_HEADER, System.Text.Json.JsonSerializer.Serialize(new PathArg { path = path }));
                 using var response = await GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
             }).ConfigureAwait(false);
         }

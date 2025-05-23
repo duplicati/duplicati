@@ -594,8 +594,8 @@ public class Jottacloud : IStreamingBackend
         var fileSize = stream.Length;
         using var req = await CreateRequest(HttpMethod.Post, remotename, "umode=nomultipart", true, cancelToken).ConfigureAwait(false);
 
-        req.Headers.TryAddWithoutValidation("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
-        req.Headers.TryAddWithoutValidation("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
+        req.Headers.Add("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
+        req.Headers.Add("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
 
         await using var timeoutStream = stream.ObserveReadTimeout(this.m_timeouts.ReadWriteTimeout, false);
         req.Content = new StreamContent(timeoutStream);

@@ -136,7 +136,7 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
 
                     return await Utility.Utility.WithTimeout(AUTHENTICATION_TIMEOUT, cancellationToken, async ct =>
                     {
-                        request.Headers.TryAddWithoutValidation("X-AuthID", _Authid);
+                        request.Headers.Add("X-AuthID", _Authid);
                         response = await _httpClient.SendAsync(request, ct).ConfigureAwait(false);
                         response.EnsureSuccessStatusCode();
 
