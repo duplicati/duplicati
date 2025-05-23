@@ -53,6 +53,8 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// The number of file processors that are still restoring files. It is set by the <see cref="RestoreHandler"/>.
         /// </summary>
         public static int file_processors_restoring_files;
+        public static object file_processor_continue_lock = new object();
+        public static TaskCompletionSource file_processor_continue = new();
 
         /// <summary>
         /// Runs the file processor process that restores the files that need to be restored.
@@ -110,7 +112,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                             // Check if there are other FileProcessor's still restoring files
                             if (!decremented)
                             {
-                                await RendezvousBeforeProcessingFolderMetadata();
+                                if (file_processors_restoring_files <= 0 && !file_processor_continue.Task.IsCompleted)
+                                    file_processor_continue.SetResult();
+                                else
+                                    await RendezvousBeforeProcessingFolderMetadata();
                                 decremented = true;
                             }
 
@@ -459,7 +464,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 finally
                 {
                     if (!decremented)
-                        Interlocked.Decrement(ref file_processors_restoring_files);
+                        lock (file_processor_continue_lock)
+                        {
+                            file_processors_restoring_files--;
+                            if (file_processors_restoring_files <= 0 && !file_processor_continue.Task.IsCompleted)
+                                file_processor_continue.SetResult();
+                        }
 
                     block_request.Retire();
                     block_response.Retire();
@@ -554,11 +564,18 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <returns>An awaitable task that completes once all of the FileProcessor's have rendezvoused.</returns>
         private static async Task RendezvousBeforeProcessingFolderMetadata()
         {
-            Interlocked.Decrement(ref file_processors_restoring_files);
-
-            while (file_processors_restoring_files > 0)
+            var should_wait = false;
+            lock (file_processor_continue_lock)
             {
-                await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+                file_processors_restoring_files--;
+                if (file_processors_restoring_files <= 0 && !file_processor_continue.Task.IsCompleted)
+                    file_processor_continue.SetResult();
+                should_wait = file_processors_restoring_files > 0;
+            }
+
+            if (should_wait)
+            {
+                await file_processor_continue.Task.ConfigureAwait(false);
             }
         }
 
