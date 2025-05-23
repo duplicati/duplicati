@@ -10,7 +10,7 @@
 
 Duplicati は、フリー（自由）でオープンソースのバックアップ用クライアントです。圧縮し、暗号化した増分バックアップを、クラウドストレージサービスや遠隔のファイルサーバー上に安全に保存できます。Duplicati は、主に以下のサービスやソフトウェアで使うことができます。
 
-&nbsp;&nbsp; _Amazon S3、[IDrive e2](https://www.idrive.com/e2/duplicati "Using Duplicati with IDrive e2")、[Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati with Backblaze B2 Cloud Storage")、Box、Dropbox、FTP、Google クラウド、Google ドライブ、MEGA、Microsoft Azure、Microsoft OneDrive、Rackspace Cloud Files、OpenStack Storage (Swift)、Sia、Storj DCS、SSH (SFTP)、WebDAV、Tencent クラウドオブジェクトストレージ（COS）、Aliyun OSS、[その他にも対応しています！](https://docs.duplicati.com/backup-destinations/destination-overview)_
+&nbsp;&nbsp; _Amazon S3、[IDrive e2](https://www.idrive.com/e2/duplicati "Using Duplicati with IDrive e2")、[Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati with Backblaze B2 Cloud Storage")、Box、Dropbox、FTP、Google クラウド、Google ドライブ、MEGA、Microsoft Azure、Microsoft OneDrive、Rackspace Cloud Files、OpenStack Storage (Swift)、Storj DCS、SSH (SFTP)、WebDAV、Tencent クラウドオブジェクトストレージ（COS）、Aliyun OSS、[その他にも対応しています！](https://docs.duplicati.com/backup-destinations/destination-overview)_
 
 Duplicati は MIT ライセンスで公開されており、Windows、OSX、Linux で利用できます（.NET 4.7.1 以上、または Mono 5.10.0 以上が必要です）。
 

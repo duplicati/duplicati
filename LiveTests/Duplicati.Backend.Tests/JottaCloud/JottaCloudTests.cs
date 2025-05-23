@@ -18,18 +18,28 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings
+
+namespace Duplicati.Backend.Tests.JottaCloud;
+
+/// <summary>
+/// OneDrive Tests
+/// </summary>
+[TestClass]
+public sealed class JottaCloudTests : BaseTest
 {
-    internal static class Sia
+    [TestMethod]
+    public Task TestJottaCloud()
     {
-        public static string Description => LC.L(@"This backend can read and write data to Sia.");
-        public static string DisplayName => LC.L(@"Sia Decentralized Cloud");
-        public static string SiaPathDescriptionLong => LC.L(@"Set the target path. Example: /backup");
-        public static string SiaPathDescriptionShort => LC.L(@"Backup path");
-        public static string SiaPasswordLong => LC.L(@"Supply a password for Sia server.");
-        public static string SiaPasswordShort => LC.L(@"Sia password");
-        public static string SiaRedundancyDescriptionLong => LC.L(@"The minimum value for redundancy is 1.0.");
-        public static string SiaRedundancyDescriptionShort => LC.L(@"Set the minimum redundancy");
+        CheckRequiredEnvironment(["TESTCREDENTIAL_JOTTACLOUD_AUTHID", "TESTCREDENTIAL_JOTTACLOUD_FOLDER"]);
+
+        var exitCode = CommandLine.BackendTester.Program.Main(
+            new[]
+            {
+                $"jottacloud://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_JOTTACLOUD_FOLDER")}?authid={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY")!)}",
+            }.Concat(Parameters.GlobalTestParameters).ToArray());
+
+        if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
+
+        return Task.CompletedTask;
     }
 }
