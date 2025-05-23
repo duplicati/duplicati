@@ -33,12 +33,12 @@ public sealed class GCSTests : BaseTest
     [TestMethod]
     public Task TestGCS()
     {
-        CheckRequiredEnvironment(["TESTCREDENTIAL_GCS_BUCKET", "TESTCREDENTIAL_GCS_FOLDER", "TESTCREDENTIAL_GCS_TOKEN"]);
+        CheckRequiredEnvironment(["TESTCREDENTIAL_GCS_BUCKET", "TESTCREDENTIAL_GCS_FOLDER", "TESTCREDENTIAL_GCS_AUTHID"]);
 
         var exitCode = CommandLine.BackendTester.Program.Main(
             new[]
             {
-                $"gcs://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_GCS_BUCKET")}/{Environment.GetEnvironmentVariable("TESTCREDENTIAL_GCS_FOLDER")}/?authid={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_GCS_TOKEN"))}"
+                $"gcs://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_GCS_BUCKET")}/{Environment.GetEnvironmentVariable("TESTCREDENTIAL_GCS_FOLDER")}/?authid={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_GCS_AUTHID"))}"
             }.Concat(Parameters.GlobalTestParameters).ToArray());
 
         if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
