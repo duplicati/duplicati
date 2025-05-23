@@ -1,5 +1,7 @@
 name: Backend Live Tests
 on: [pull_request, workflow_dispatch]
+permissions:
+  contents: read
 concurrency:
   group: duplicati-ci-livetests
   cancel-in-progress: false
