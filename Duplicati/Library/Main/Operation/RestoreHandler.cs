@@ -326,6 +326,9 @@ namespace Duplicati.Library.Main.Operation
             using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
                 await CreateDirectoryStructure(database, m_options, m_result).ConfigureAwait(false);
 
+            // At this point, there should be no more writes to the database, so we have to unlock the database:
+            await database.Transaction.CommitAsync("CommitBeforeRestore", restart: true).ConfigureAwait(false);
+
             using var setup_log_timer = new Logging.Timer(LOGTAG, "RestoreNetworkSetup", "RestoreNetworkSetup");
             // Create the channels between BlockManager and FileProcessor
             Restore.Channels.BufferSize = m_options.RestoreChannelBufferSize;
@@ -373,6 +376,10 @@ namespace Duplicati.Library.Main.Operation
                 await Task.WhenAll(all).ConfigureAwait(false);
                 kill_updater.Cancel();
             }
+
+            await database.Transaction.CommitAsync("CommitAfterRestore", restart: true).ConfigureAwait(false);
+
+            await database.DisposePoolAsync().ConfigureAwait(false);
 
             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                 return;

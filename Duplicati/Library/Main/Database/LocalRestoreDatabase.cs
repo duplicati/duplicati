@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         protected string? m_tempfiletable;
         protected string? m_tempblocktable;
-        protected ConcurrentBag<SqliteConnection> m_connection_pool = [];
+        protected ConcurrentBag<(SqliteConnection, ReusableTransaction)> m_connection_pool = [];
         protected string? m_latestblocktable;
         protected string? m_fileprogtable;
         protected string? m_totalprogtable;
@@ -1450,18 +1450,20 @@ namespace Duplicati.Library.Main.Database
         /// Returns a connection from the connection pool.
         /// </summary>
         /// <returns>A connection from the connection pool.</returns>
-        public async Task<SqliteConnection> GetConnectionFromPool()
+        public async Task<(SqliteConnection, ReusableTransaction)> GetConnectionFromPool()
         {
-            if (!m_connection_pool.TryTake(out var connection))
+            if (!m_connection_pool.TryTake(out var entry))
             {
-                connection = await SQLiteLoader.LoadConnectionAsync();
+                var connection = await SQLiteLoader.LoadConnectionAsync();
                 connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared";
-                connection.Open();
-
+                await connection.OpenAsync();
                 await SQLiteLoader.ApplyCustomPragmasAsync(connection, m_pagecachesize);
+                var transaction = new ReusableTransaction(connection);
+
+                return (connection, transaction);
             }
 
-            return connection;
+            return entry;
         }
 
         private class FileToRestore : IFileToRestore
@@ -1538,7 +1540,7 @@ namespace Duplicati.Library.Main.Database
         public async IAsyncEnumerable<FileRequest> GetFolderMetadataToRestore()
         {
             using var cmd = m_connection.CreateCommand();
-            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            cmd.SetTransaction(m_rtr);
             using var rd = await cmd.ExecuteReaderAsync($@"
                 SELECT
                     F.ID,
@@ -1563,8 +1565,6 @@ namespace Duplicati.Library.Main.Database
                     rd.ConvertValueToInt64(4),
                     rd.ConvertValueToInt64(5)
                 );
-
-            await m_rtr.CommitAsync();
         }
 
         /// <summary>
@@ -1616,8 +1616,11 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A list of <see cref="BlockRequest"/> needed to restore the given file.</returns>
         public async IAsyncEnumerable<BlockRequest> GetBlocksFromFile(long blocksetID)
         {
-            var connection = await GetConnectionFromPool();
-            using var cmd = connection.CreateCommand(@$"
+            var (connection, transaction) = await GetConnectionFromPool();
+            try
+            {
+
+                using var cmd = connection.CreateCommand(@$"
                 SELECT
                     ""Block"".""ID"",
                     ""Block"".""Hash"",
@@ -1628,24 +1631,25 @@ namespace Duplicati.Library.Main.Database
                     ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
                 WHERE ""BlocksetEntry"".""BlocksetID"" = @BlocksetID
             ")
-                .SetTransaction(m_rtr)
-                .SetParameterValue("@BlocksetID", blocksetID);
+                    .SetTransaction(transaction)
+                    .SetParameterValue("@BlocksetID", blocksetID);
 
-            using var reader = await cmd.ExecuteReaderAsync();
-            for (long i = 0; await reader.ReadAsync(); i++)
-                yield return new BlockRequest(
-                    reader.ConvertValueToInt64(0),
-                    i,
-                    reader.ConvertValueToString(1),
-                    reader.ConvertValueToInt64(2),
-                    reader.ConvertValueToInt64(3),
-                    false
-                );
-
-            await m_rtr.CommitAsync();
-
-            // Return the connection to the pool
-            m_connection_pool.Add(connection);
+                using var reader = await cmd.ExecuteReaderAsync();
+                for (long i = 0; await reader.ReadAsync(); i++)
+                    yield return new BlockRequest(
+                        reader.ConvertValueToInt64(0),
+                        i,
+                        reader.ConvertValueToString(1),
+                        reader.ConvertValueToInt64(2),
+                        reader.ConvertValueToInt64(3),
+                        false
+                    );
+            }
+            finally
+            {
+                // Return the connection to the pool
+                m_connection_pool.Add((connection, transaction));
+            }
         }
 
         /// <summary>
@@ -1655,8 +1659,10 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A list of <see cref="BlockRequest"/> needed to restore the metadata of the given file.</returns>
         public async IAsyncEnumerable<BlockRequest> GetMetadataBlocksFromFile(long fileID)
         {
-            var connection = await GetConnectionFromPool();
-            using var cmd = connection.CreateCommand($@"
+            var (connection, transaction) = await GetConnectionFromPool();
+            try
+            {
+                using var cmd = connection.CreateCommand($@"
                 SELECT
                     ""Block"".""ID"",
                     ""Block"".""Hash"",
@@ -1671,19 +1677,20 @@ namespace Duplicati.Library.Main.Database
                     ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
                 WHERE ""File"".""ID"" = @FileID
             ")
-                .SetTransaction(m_rtr)
-                .SetParameterValue("@FileID", fileID);
+                    .SetTransaction(transaction)
+                    .SetParameterValue("@FileID", fileID);
 
-            using var reader = await cmd.ExecuteReaderAsync();
-            for (long i = 0; await reader.ReadAsync(); i++)
-            {
-                yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
+                using var reader = await cmd.ExecuteReaderAsync();
+                for (long i = 0; await reader.ReadAsync(); i++)
+                {
+                    yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
+                }
             }
-
-            await m_rtr.CommitAsync();
-
-            // Return the connection to the pool
-            m_connection_pool.Add(connection);
+            finally
+            {
+                // Return the connection to the pool
+                m_connection_pool.Add((connection, transaction));
+            }
         }
 
         /// <summary>
@@ -1968,14 +1975,25 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose()
         {
-            foreach (var connection in m_connection_pool)
+            DisposeAsync().Await();
+        }
+
+        public override async Task DisposeAsync()
+        {
+            await DisposePoolAsync();
+            await DropRestoreTable();
+            await base.DisposeAsync();
+        }
+
+        public async Task DisposePoolAsync()
+        {
+            foreach (var (connection, transaction) in m_connection_pool)
             {
-                connection.Close();
-                connection.Dispose();
+                await transaction.DisposeAsync();
+                await connection.CloseAsync();
+                await connection.DisposeAsync();
             }
             m_connection_pool.Clear();
-            DropRestoreTable().Await();
-            base.Dispose();
         }
 
         public async IAsyncEnumerable<string> GetTargetFolders()
