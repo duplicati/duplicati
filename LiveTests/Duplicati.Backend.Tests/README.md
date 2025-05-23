@@ -32,16 +32,15 @@ NUMBER_OF_FILES  default is 20
 | IDrive2        | Planned          | Live      |
 | backBlaze      | Planned          | Live      |
 | Filen          | Planned          | Live      |
+| Jottacloud     | Pannned          | Live      |
 | File           | Planned          |           |
 | TahoeLAFS      | Planned          |           |
 | TescentCOS     | Pending Decision |           |
 | Storj          | Pending Decision |           |
-| Sia            | Removed          |           |
 | SharePoint     | Pending Decision |           |
 | Rclone         | Pending Decision |           |
 | OpenStack      | Pending Decision |           |
 | Mega           | Deprecated       |           |
-| Jottacloud     | Pending Decision |           |
 | AliyunOSS      | Pending Decision |           |
 
 ## Backends that do not require Environment variables
@@ -54,6 +53,13 @@ NUMBER_OF_FILES  default is 20
 Please note that TestContainers token has to be configured in secrets/Github actions yml.
 
 ## Backends that require Environment variables
+
+# JottaCloud
+
+```
+TESTCREDENTIAL_JOTTACLOUD_AUTHID
+TESTCREDENTIAL_JOTTACLOUD_FOLDER
+```
 
 # iDrivee2
 
