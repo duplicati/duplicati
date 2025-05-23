@@ -607,7 +607,7 @@ public class Jottacloud : IStreamingBackend
         using var response = await client.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
 
         if (response.StatusCode != HttpStatusCode.Created)
-            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
+            throw new HttpRequestException(HttpRequestError.HttpProtocolError, Strings.Jottacloud.FileUploadError, null, response.StatusCode);
 
         // Request seems to be successful, but we must verify the response XML content to be sure that the file
         // was correctly uploaded: The server will verify the JSize header and mark the file as incomplete if
@@ -622,9 +622,9 @@ public class Jottacloud : IStreamingBackend
         await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
         var doc = new System.Xml.XmlDocument();
         try { doc.Load(rs); }
-        catch (System.Xml.XmlException)
+        catch (System.Xml.XmlException xex)
         {
-            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
+            throw new HttpRequestException(HttpRequestError.HttpProtocolError, Strings.Jottacloud.FileUploadError, xex, response.StatusCode);
         }
         bool uploadCompletedSuccessfully = false;
         var xFile = doc["file"];
@@ -639,6 +639,6 @@ public class Jottacloud : IStreamingBackend
             }
         }
         if (!uploadCompletedSuccessfully) // Report error (and we just let the incomplete/corrupt file revision stay on the server..)
-            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
+            throw new HttpRequestException(HttpRequestError.HttpProtocolError, Strings.Jottacloud.FileUploadError, null, response.StatusCode);
     }
 }
