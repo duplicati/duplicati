@@ -22,12 +22,13 @@
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend.OpenStack;
+
 internal class OpenStackWebHelper(OpenStackStorage parent, HttpClient httpClient) : JsonWebHelperHttpClient(httpClient)
 {
     public override HttpRequestMessage CreateRequest(string url, string? method = null)
     {
         var request = base.CreateRequest(url, method);
-        request.Headers.TryAddWithoutValidation("X-Auth-Token", parent.GetAccessToken(CancellationToken.None).Await());
+        request.Headers.Add("X-Auth-Token", parent.GetAccessToken(CancellationToken.None).Await());
         return request;
     }
 }

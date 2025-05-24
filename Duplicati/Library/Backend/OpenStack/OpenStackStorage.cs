@@ -21,6 +21,7 @@
 
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -28,7 +29,6 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
-using Newtonsoft.Json;
 using Exception = System.Exception;
 using Uri = Duplicati.Library.Utility.Uri;
 
@@ -57,13 +57,16 @@ public class OpenStackStorage : IStreamingBackend
     private readonly string? m_apikey;
     private readonly string? m_region;
     private readonly TimeoutOptionsHelper.Timeouts _timeouts;
-    
+
     /// <summary>
     /// Lazy cached HttpClient
     /// </summary>
-    private readonly Lazy<HttpClient> _httpClient = new(HttpClientHelper.CreateClient);
+    private readonly HttpClient m_httpClient;
 
-    private string m_simplestorageendpoint;
+    /// <summary>
+    /// The simplestorage endpoint URL, set after authentication.
+    /// </summary>
+    private string? m_simplestorageendpoint;
 
     private readonly OpenStackWebHelper m_helper;
     private OpenStackAuthResponse.TokenClass? m_accessToken;
@@ -90,7 +93,7 @@ public class OpenStackStorage : IStreamingBackend
         new("v2.0", "v2"),
         new("v3", "v3")
     ];
-    
+
     public OpenStackStorage()
     {
         m_container = null!;
@@ -100,6 +103,7 @@ public class OpenStackStorage : IStreamingBackend
         m_authUri = null!;
         m_helper = null!;
         m_simplestorageendpoint = null!;
+        m_httpClient = null!;
     }
 
     public OpenStackStorage(string url, Dictionary<string, string?> options)
@@ -156,7 +160,8 @@ public class OpenStackStorage : IStreamingBackend
                 break;
         }
 
-        m_helper = new OpenStackWebHelper(this, _httpClient.Value);
+        m_httpClient = HttpClientHelper.CreateClient();
+        m_helper = new OpenStackWebHelper(this, m_httpClient);
     }
 
     internal async Task<string> GetAccessToken(CancellationToken cancelToken)
@@ -177,57 +182,53 @@ public class OpenStackStorage : IStreamingBackend
         return JoinUrls(JoinUrls(uri, fragment1), fragment2);
     }
 
-    private Task GetAuthResponse(CancellationToken cancellationToken)
+    /// <summary>
+    /// Gets the authentication response from OpenStack.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to use for the request.</param>
+    /// <returns>The simplestorage endpoint URL.</returns>
+    private async Task<string> GetAuthResponse(CancellationToken cancellationToken)
     {
-        return m_version switch
-        {
-            "v3" => GetKeystone3AuthResponse(cancellationToken),
-            _ => GetOpenstackAuthResponse(cancellationToken)
-        };
+        if (m_version == "v3")
+            (m_accessToken, m_simplestorageendpoint) = await GetKeystone3AuthResponse(cancellationToken).ConfigureAwait(false);
+        else
+            (m_accessToken, m_simplestorageendpoint) = await GetOpenstackAuthResponse(cancellationToken).ConfigureAwait(false);
+
+        return m_simplestorageendpoint ?? throw new Exception("No endpoint received from OpenStack authentication");
     }
 
-    private async Task<Keystone3AuthResponse> GetKeystone3AuthResponse(CancellationToken cancellationToken)
+    /// <summary>
+    /// Gets the Keystone v3 authentication response from OpenStack.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to use for the request.</param>
+    /// <returns>The authentication token and the simplestorage endpoint URL.</returns>
+    private async Task<(OpenStackAuthResponse.TokenClass, string? endpoint)> GetKeystone3AuthResponse(CancellationToken cancellationToken)
     {
-        string result;
         using var request = new HttpRequestMessage(HttpMethod.Post, JoinUrls(m_authUri, "auth/tokens"));
         request.Headers.UserAgent.ParseAdd(
             $"Duplicati CloudStack Client {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
 
-        var authRequestBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(
-            new Keystone3AuthRequest(m_domainName, m_username, m_password, m_tenantName)
-        ));
-                        
-        request.Content = new ByteArrayContent(authRequestBytes);
-        request.Content.Headers.Add("Content-Length", authRequestBytes.Length.ToString());
-        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-    
-        using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken,
-                innerCancellationToken => _httpClient.Value.SendAsync(request, innerCancellationToken))
+        request.Content = JsonContent.Create(new Keystone3AuthRequest(m_domainName, m_username, m_password, m_tenantName));
+        (var parsedResult, var token) = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken,
+                async ct =>
+                {
+                    using var resp = await m_httpClient.SendAsync(request, ct).ConfigureAwait(false);
+                    if (!resp.IsSuccessStatusCode)
+                        throw new Exception("Failed to fetch region endpoint");
+
+                    var parsedResult = (await resp.Content.ReadFromJsonAsync<Keystone3AuthResponse>(ct).ConfigureAwait(false))
+                        ?? throw new Exception("Failed to parse response"); ;
+
+                    var token = resp.Headers.GetValues("X-Subject-Token").FirstOrDefault();
+                    if (string.IsNullOrWhiteSpace(token))
+                        throw new Exception("No token received");
+
+                    return (parsedResult, token);
+                })
             .ConfigureAwait(false);
-
-        if (!response.IsSuccessStatusCode)
-            throw new Exception("Failed to fetch region endpoint");
-
-        await using var s = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
-        using var reader = new StreamReader(t);
-        result = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-
-       var parsedResult = JsonConvert.DeserializeObject<Keystone3AuthResponse>(result)
-            ?? throw new Exception("Failed to parse response");
 
         if (parsedResult.token == null)
             throw new Exception("No token received");
-
-        var token = response.Headers.GetValues("X-Subject-Token").FirstOrDefault(); 
-        if (string.IsNullOrWhiteSpace(token))
-            throw new Exception("No token received");
-
-        m_accessToken = new OpenStackAuthResponse.TokenClass
-        {
-            id = token,
-            expires = parsedResult.token.expires_at
-        };
 
         // Grab the endpoint now that we have received it anyway
         var fileService = (parsedResult.token.catalog ?? []).FirstOrDefault(x => string.Equals(x.type, "object-store", StringComparison.OrdinalIgnoreCase));
@@ -240,43 +241,41 @@ public class OpenStackStorage : IStreamingBackend
         var endpoint = fileService.endpoints.FirstOrDefault(x => string.Equals(m_region, x.region) && string.Equals(x.interface_name, "public", StringComparison.OrdinalIgnoreCase)) ?? fileService.endpoints.First();
         m_simplestorageendpoint = endpoint.url;
 
-        return parsedResult;
+        var result = new OpenStackAuthResponse.TokenClass
+        {
+            id = token,
+            expires = parsedResult.token.expires_at
+        };
+
+        return (result, m_simplestorageendpoint);
     }
 
-    private async Task<OpenStackAuthResponse> GetOpenstackAuthResponse(CancellationToken cancellationToken)
+    /// <summary>
+    /// Gets the OpenStack authentication response.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to use for the request.</param>
+    /// <returns>A tuple containing the authentication token and the simplestorage endpoint URL.</returns>
+    private async Task<(OpenStackAuthResponse.TokenClass, string? endpoint)> GetOpenstackAuthResponse(CancellationToken cancellationToken)
     {
-        string result;
         using var request = new HttpRequestMessage(HttpMethod.Post, JoinUrls(m_authUri, "tokens"));
         request.Headers.UserAgent.ParseAdd(
             $"Duplicati CloudStack Client {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
 
-        var authRequestBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(
-            new OpenStackAuthRequest(m_tenantName, m_username, m_password, m_apikey)
-        ));
-                        
-        request.Content = new ByteArrayContent(authRequestBytes);
-        request.Content.Headers.Add("Content-Length", authRequestBytes.Length.ToString());
-        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-    
-        using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken,
-                innerCancellationToken => _httpClient.Value.SendAsync(request, innerCancellationToken))
+        request.Content = JsonContent.Create(new OpenStackAuthRequest(m_tenantName, m_username, m_password, m_apikey));
+        var parsedResult = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken,
+                async ct =>
+                {
+                    using var resp = await m_httpClient.SendAsync(request, ct).ConfigureAwait(false);
+                    if (resp.StatusCode != HttpStatusCode.OK)
+                        throw new Exception("Failed to fetch region endpoint");
+
+                    return (await resp.Content.ReadFromJsonAsync<OpenStackAuthResponse>(ct).ConfigureAwait(false))
+                        ?? throw new Exception("Failed to parse response");
+                })
             .ConfigureAwait(false);
 
-        if (response.StatusCode != HttpStatusCode.OK)
-            throw new Exception("Failed to fetch region endpoint");
-
-        await using var s = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
-        using var reader = new StreamReader(t);
-        result = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-
-        var parsedResult = JsonConvert.DeserializeObject<OpenStackAuthResponse>(result)
-                           ?? throw new Exception("Failed to parse response");
-
-        m_accessToken = parsedResult.access?.token ?? throw new Exception("No token received");
-
         // Grab the endpoint now that we have received it anyway
-        var fileservice = (parsedResult.access.serviceCatalog ?? []).FirstOrDefault(x => string.Equals(x.type, "object-store", StringComparison.OrdinalIgnoreCase));
+        var fileservice = (parsedResult.access?.serviceCatalog ?? []).FirstOrDefault(x => string.Equals(x.type, "object-store", StringComparison.OrdinalIgnoreCase));
         if (fileservice == null)
             throw new Exception("No object-store service found, is this service supported by the provider?");
 
@@ -287,15 +286,18 @@ public class OpenStackStorage : IStreamingBackend
         if (endpoint == null)
             throw new Exception("No endpoint found for object-store service");
 
-        m_simplestorageendpoint = endpoint.publicURL;
-
-        return parsedResult;
+        return (parsedResult.access?.token ?? throw new Exception("No token received"), endpoint.publicURL);
     }
 
+    /// <summary>
+    /// Gets the simplestorage endpoint URL.
+    /// </summary>
+    /// <param name="cancelToken">The cancellation token to use for the request.</param>
+    /// <returns>The simplestorage endpoint URL.</returns>
     private async Task<string> GetSimpleStorageEndPoint(CancellationToken cancelToken)
     {
         if (m_simplestorageendpoint == null)
-            await GetAuthResponse(cancelToken);
+            return await GetAuthResponse(cancelToken);
 
         return m_simplestorageendpoint;
     }
@@ -305,12 +307,12 @@ public class OpenStackStorage : IStreamingBackend
     {
         var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, Uri.UrlPathEncode(m_prefix + remotename));
         using var req = m_helper.CreateRequest(url, "PUT");
-        await using var ts = stream.ObserveReadTimeout(_timeouts.ShortTimeout, false);
-        
+        await using var ts = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+
         req.Content = new StreamContent(ts);
         req.Content.Headers.Add("Content-Type", "application/octet-stream");
         req.Content.Headers.Add("Content-Length", stream.Length.ToString());
-        using var response = await _httpClient.Value.UploadStream(req, cancelToken).ConfigureAwait(false);
+        using var response = await m_httpClient.UploadStream(req, cancelToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
     }
 
@@ -324,7 +326,7 @@ public class OpenStackStorage : IStreamingBackend
             using var req = m_helper.CreateRequest(url);
             using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => m_helper.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
             await using var rs = await resp.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-            await using var ts = rs.ObserveReadTimeout(_timeouts.ShortTimeout);
+            await using var ts = rs.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
             await Utility.Utility.CopyStreamAsync(ts, stream, cancelToken).ConfigureAwait(false);
         }
         catch (HttpRequestException wex)
@@ -335,6 +337,12 @@ public class OpenStackStorage : IStreamingBackend
         }
     }
 
+    /// <summary>
+    /// Handles exceptions that may occur during listing operations.
+    /// </summary>
+    /// <typeparam name="T">The type of the result returned by the function.</typeparam>
+    /// <param name="func">The function to execute that may throw exceptions.</param>
+    /// <returns>The result of the function if successful.</returns>
     private async Task<T> HandleListExceptions<T>(Func<Task<T>> func)
     {
         try
@@ -395,14 +403,14 @@ public class OpenStackStorage : IStreamingBackend
         await using FileStream fs = File.OpenRead(filename);
         await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
     }
-    
+
     /// <inheritdoc />
     public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
     {
         await using FileStream fs = File.Create(filename);
         await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
     }
-    
+
     /// <inheritdoc />
     public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
     {
@@ -411,7 +419,7 @@ public class OpenStackStorage : IStreamingBackend
         using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => m_helper.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct)).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
     }
-    
+
     /// <inheritdoc />
     public Task TestAsync(CancellationToken cancelToken)
         => this.TestReadWritePermissionsAsync(cancelToken);
@@ -425,13 +433,13 @@ public class OpenStackStorage : IStreamingBackend
             ct => m_helper.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct)).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
     }
-    
+
     /// <inheritdoc />
     public string DisplayName => Strings.OpenStack.DisplayName;
-    
+
     /// <inheritdoc />
     public string ProtocolKey => "openstack";
-    
+
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands
     {
@@ -454,7 +462,7 @@ public class OpenStackStorage : IStreamingBackend
             ];
         }
     }
-    
+
     /// <inheritdoc />
     public string Description => Strings.OpenStack.Description;
 
