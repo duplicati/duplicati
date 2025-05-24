@@ -423,7 +423,12 @@ partial class BackendManager
                     }
 
                     // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
-                    var dnsFailure = Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is System.Net.WebException wex && wex.Status == System.Net.WebExceptionStatus.NameResolutionFailure);
+                    var dnsFailure = Library.Utility.ExceptionExtensions.FlattenException(ex)
+                        .Any(x =>
+                            (x is System.Net.WebException wex && wex.Status == System.Net.WebExceptionStatus.NameResolutionFailure)
+                            ||
+                            (x is System.Net.Sockets.SocketException sockEx && sockEx.SocketErrorCode == System.Net.Sockets.SocketError.HostNotFound)
+                        );
                     if (dnsFailure)
                     {
                         try

@@ -185,7 +185,8 @@ namespace Duplicati.Library.Main.Database
                             while (rd.Read())
                             {
                                 rd.GetValues(values);
-                                if (values[0] != null && values[0] != DBNull.Value && FilterExpression.Matches(filter, values[0].ToString()))
+                                var path = values[0] as string;
+                                if (path != null && FilterExpression.Matches(filter, path.ToString()))
                                 {
                                     cmd2.SetParameterValue("@Path", values[0])
                                         .SetParameterValue("@FileHash", values[1])

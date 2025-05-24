@@ -33,12 +33,14 @@ namespace Duplicati.Library
         /// </summary>
         public const string DISABLE_AUTHENTICATION_PROPERTY = "OAuthHttpMessageHandler_DisableAuthentication";
 
-        private readonly OAuthHelper m_oauth;
+        private readonly OAuthHelperHttpClient m_oauth;
 
         public OAuthHttpMessageHandler(string authid, string protocolKey)
         {
-            this.m_oauth = new OAuthHelper(authid, protocolKey);
+            this.m_oauth = new OAuthHelperHttpClient(authid, protocolKey);
         }
+
+        private static readonly HttpRequestOptionsKey<bool> PreventAuthenticationOption = new HttpRequestOptionsKey<bool>("PreventAuthentication");
 
         /// <summary>
         /// Prevents authentication from being applied on the given request
@@ -47,18 +49,15 @@ namespace Duplicati.Library
         /// <returns>Request to not authenticate</returns>
         public HttpRequestMessage PreventAuthentication(HttpRequestMessage request)
         {
-            request.Properties[DISABLE_AUTHENTICATION_PROPERTY] = true;
+            request.Options.Set(PreventAuthenticationOption, true);
             return request;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (!request.Properties.ContainsKey(DISABLE_AUTHENTICATION_PROPERTY))
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.m_oauth.AccessToken);
-            }
-
-            return base.SendAsync(request, cancellationToken);
+            if (!request.Options.TryGetValue(PreventAuthenticationOption, out var preventAuth) || !preventAuth)
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await this.m_oauth.GetAccessTokenAsync(cancellationToken).ConfigureAwait(false));
+            return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
         }
     }
 }

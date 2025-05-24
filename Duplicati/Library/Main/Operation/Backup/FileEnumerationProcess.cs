@@ -90,7 +90,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     Library.Utility.FilterExpression.AnalyzeFilters(emitfilter, out var includes, out var excludes);
                     if (includes && !excludes)
-                        enumeratefilter = Library.Utility.FilterExpression.Combine(emitfilter, new Duplicati.Library.Utility.FilterExpression("*" + System.IO.Path.DirectorySeparatorChar, true));
+                        enumeratefilter = Library.Utility.FilterExpression.Combine(emitfilter, new Duplicati.Library.Utility.FilterExpression("*" + System.IO.Path.DirectorySeparatorChar, true))
+                            ?? new Duplicati.Library.Utility.FilterExpression();
 
                     // Simplify checking for an empty list
                     if (ignorenames != null && ignorenames.Length == 0)
@@ -316,7 +317,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="mixinqueue">The mix in queue.</param>
         /// <param name="emitfilter">The emitfilter.</param>
         /// <param name="enumeratefilter">The enumeratefilter.</param>
-        private static async IAsyncEnumerable<ISourceProviderEntry> ExpandWorkList(IAsyncEnumerable<ISourceProviderEntry> worklist, Queue<ISourceProviderEntry> mixinqueue, Library.Utility.IFilter emitfilter, Library.Utility.IFilter enumeratefilter, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<ISourceProviderEntry> ExpandWorkList(IAsyncEnumerable<ISourceProviderEntry> worklist, Queue<ISourceProviderEntry> mixinqueue, Library.Utility.IFilter emitfilter, Library.Utility.IFilter? enumeratefilter, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             // Process each path, and dequeue the mixins with symlinks as we go
             await foreach (var s in worklist.WithCancellation(cancellationToken).ConfigureAwait(false))

@@ -31,24 +31,24 @@ public sealed class CloudStackTests : BaseTest
     public Task TestCloudStack()
     {
         CheckRequiredEnvironment(
-            ["TESTCREDENTIAL_CLOUDSTACK_USERNAME", 
-            "TESTCREDENTIAL_CLOUDSTACK_PASSWORD", 
-            "TESTCREDENTIAL_CLOUDSTACK_LOCATION", 
+            ["TESTCREDENTIAL_CLOUDSTACK_USERNAME",
+            "TESTCREDENTIAL_CLOUDSTACK_PASSWORD",
+            "TESTCREDENTIAL_CLOUDSTACK_LOCATION",
             "TESTCREDENTIAL_CLOUDSTACK_TENANT",
-            "TESTCREDENTIAL_CLOUDSTACK_DOMAIN", 
+            "TESTCREDENTIAL_CLOUDSTACK_DOMAIN",
             "TESTCREDENTIAL_CLOUDSTACK_REGION",
             "TESTCREDENTIAL_CLOUDSTACK_FOLDER"]);
         var exitCode = CommandLine.BackendTester.Program.Main(
             new[]
             {
-                $"openstack://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_CLOUDSTACK_FOLDER")}" + 
-                $"?openstack-domain-name={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY")!)}" +
+                $"openstack://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_CLOUDSTACK_FOLDER")}" +
+                $"?openstack-domain-name={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_CLOUDSTACK_DOMAIN")!)}" +
                 $"&openstack-authuri={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_CLOUDSTACK_LOCATION")!)}" +
                 $"&openstack-version=v3" +
                 $"&openstack-tenant-name={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_CLOUDSTACK_TENANT")!)}" +
                 $"&openstack-region={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_CLOUDSTACK_REGION")!)}" +
                 $"&auth-username={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_CLOUDSTACK_USERNAME")!)}" +
-                $"&auth-password={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_CLOUDSTACK_PASSWORD")!)}" 
+                $"&auth-password={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_CLOUDSTACK_PASSWORD")!)}"
             }.Concat(Parameters.GlobalTestParameters).ToArray());
 
         if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");

@@ -329,7 +329,7 @@ namespace Duplicati.Library.Backend
                 {
                     (m_spWebUrl, m_spContext) = await FindCorrectWebPathAsync(m_orgUrl, m_userInfo, m_timeouts.ShortTimeout, cancelToken).ConfigureAwait(false);
                     if (m_spWebUrl == null || m_spContext == null)
-                        throw new System.Net.WebException(Strings.SharePoint.NoSharePointWebFoundError(m_orgUrl.ToString()));
+                        throw new HttpRequestException(Strings.SharePoint.NoSharePointWebFoundError(m_orgUrl.ToString()));
                 }
                 else
                 {

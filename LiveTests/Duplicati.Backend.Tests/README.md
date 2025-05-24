@@ -33,6 +33,7 @@ NUMBER_OF_FILES  default is 20
 | backBlaze      | Planned          | Live      |
 | Filen          | Planned          | Live      |
 | Jottacloud     | Pannned          | Live      |
+| GCS            | Planned          | Live      |
 | File           | Planned          |           |
 | TahoeLAFS      | Planned          |           |
 | TescentCOS     | Pending Decision |           |
@@ -153,6 +154,14 @@ TESTCREDENTIAL_PCLOUD_FOLDER
 ```
 
 For PCloud the server is the API server(eapi.pcloud.com for EU hosted account or api.pcloud.com for non EU). The token is the OAuth token.
+
+## Google Cloud Services
+
+```
+TESTCREDENTIAL_GCS_BUCKET
+TESTCREDENTIAL_GCS_FOLDER
+TESTCREDENTIAL_GCS_TOKEN
+```
 
 ## Running the tests
 

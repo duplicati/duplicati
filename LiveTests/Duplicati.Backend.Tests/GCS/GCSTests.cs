@@ -19,16 +19,31 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings
+namespace Duplicati.Backend.Tests.GCS;
+
+/// <summary>
+/// Tests for GCS backend
+/// </summary>
+[TestClass]
+public sealed class GCSTests : BaseTest
 {
-    internal static class Dropbox
+    /// <summary>
+    /// Basic GCS test. There are no adicional parameters to be set or tested.
+    /// </summary>
+    [TestMethod]
+    public Task TestGCS()
     {
-        public static string Description { get { return LC.L(@"This backend can read and write data to Dropbox. Allowed format is ""dropbox://folder/subfolder""."); } }
-        public static string DisplayName { get { return LC.L(@"Dropbox"); } }
-        public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
-        public static string OverQuotaError(string message) { return LC.L(@"The Dropbox account is over quota: {0}", message); }
-        public static string AuthorizationFailure(string message, string url) { return LC.L(@"Failed to authorize using the OAuth service: {0}. If the problem persists, try generating a new authid token from: {1}", message, url); }
+        CheckRequiredEnvironment(["TESTCREDENTIAL_GCS_BUCKET", "TESTCREDENTIAL_GCS_FOLDER", "TESTCREDENTIAL_GCS_AUTHID"]);
+
+        var exitCode = CommandLine.BackendTester.Program.Main(
+            new[]
+            {
+                $"gcs://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_GCS_BUCKET")}/{Environment.GetEnvironmentVariable("TESTCREDENTIAL_GCS_FOLDER")}/?authid={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_GCS_AUTHID"))}"
+            }.Concat(Parameters.GlobalTestParameters).ToArray());
+
+        if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
+
+        return Task.CompletedTask;
     }
+
 }

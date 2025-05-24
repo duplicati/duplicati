@@ -65,11 +65,14 @@ public static class BackendExtensions
             }
         }
         catch (Exception e)
+            // Don't catch FolderMissingException or FileMissingException
+            // so we can pass those through to the caller
+            when (e is not FolderMissingException && e is not FileMissingException)
         {
             if (connected)
                 throw new TestAfterConnectException(Strings.BackendExtensions.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestPreparationError", e);
 
-            throw new UserInformationException(Strings.BackendExtensions.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestPreparationError", e);
+            throw new UserInformationException(Strings.BackendExtensions.ErrorListContent(e.Message), "TestPreparationError", e);
         }
 
         // Test write permissions
@@ -88,6 +91,9 @@ public static class BackendExtensions
             }
         }
         catch (Exception e)
+            // Don't catch FolderMissingException List may return empty results
+            // even if the folder is missing, and we report that exception up the chain
+            when (e is not FolderMissingException)
         {
             throw new TestAfterConnectException(Strings.BackendExtensions.ErrorWriteFile(TEST_FILE_NAME, e.Message), "TestWriteError", e);
         }

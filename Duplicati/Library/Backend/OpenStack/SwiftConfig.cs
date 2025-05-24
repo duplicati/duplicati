@@ -29,7 +29,7 @@ namespace Duplicati.Library.Backend.OpenStack
         private static readonly string DEFAULT_CONFIG_TYPE_STR = DEFAULT_CONFIG_TYPE.ToString();
         private const string KEY_CONFIGTYPE = "openstack-config";
 
-        public enum ConfigType
+        private enum ConfigType
         {
             Providers,
             Versions,
@@ -50,9 +50,9 @@ namespace Duplicati.Library.Backend.OpenStack
             switch (ct)
             {
                 case ConfigType.Versions:
-                    return OpenStackStorage.OPENSTACK_VERSIONS.ToDictionary((x) => x.Key, (y) => y.Value);
+                    return OpenStackStorage.OpenstackVersions.ToDictionary((x) => x.Key, (y) => y.Value);
                 default:
-                    return OpenStackStorage.KNOWN_OPENSTACK_PROVIDERS.ToDictionary((x) => x.Key, (y) => y.Value);
+                    return OpenStackStorage.KnownOpenstackProviders.ToDictionary((x) => x.Key, (y) => y.Value);
             }
         }
 

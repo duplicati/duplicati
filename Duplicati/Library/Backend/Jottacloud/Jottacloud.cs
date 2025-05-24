@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend;
 
 public class Jottacloud : IStreamingBackend
 {
-    private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL("jottacloud");
+    private static readonly string TOKEN_URL = OAuthHelperHttpClient.OAUTH_LOGIN_URL("jottacloud");
     private const string JFS_ROOT = "https://jfs.jottacloud.com/jfs";
     private const string JFS_ROOT_UPLOAD = "https://up.jottacloud.com/jfs"; // Separate host for uploading files
     private const string JFS_BUILTIN_DEVICE = "Jotta"; // The built-in device used for the built-in Sync and Archive mount points.
@@ -201,8 +201,6 @@ public class Jottacloud : IStreamingBackend
 
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
                 innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
             await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
             doc.Load(rs);
 
@@ -302,7 +300,6 @@ public class Jottacloud : IStreamingBackend
                         client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken))
                 .ConfigureAwait(false);
 
-            response.EnsureSuccessStatusCode();
             await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
             doc.Load(rs);
         }
@@ -346,8 +343,6 @@ public class Jottacloud : IStreamingBackend
         using var req = await CreateRequest(HttpMethod.Post, remotename, "rm=true", false, cancelToken).ConfigureAwait(false); // rm=true means permanent delete, dl=true would be move to trash.
         using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
             innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
-
-        response.EnsureSuccessStatusCode();
     }
 
     /// <inheritdoc/>
@@ -379,16 +374,12 @@ public class Jottacloud : IStreamingBackend
 
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
                 innerCancellationToken => client.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
         }
         // Create the folder path, and if using custom mount point it will be created as well in the same operation.
         {
             using var request = await CreateRequest(HttpMethod.Post, "", "mkDir=true", false, cancelToken).ConfigureAwait(false);
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
                 innerCancellationToken => client.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
         }
     }
 
@@ -454,8 +445,6 @@ public class Jottacloud : IStreamingBackend
         using var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, innerCancellationToken =>
               client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
 
-        response.EnsureSuccessStatusCode();
-
         await using var s = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
         await using var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
         await Utility.Utility.CopyStreamAsync(s, stream, true, cancelToken).ConfigureAwait(false);
@@ -516,9 +505,6 @@ public class Jottacloud : IStreamingBackend
                             HttpCompletionOption.ResponseHeadersRead,
                             cancelToken
                         ).ConfigureAwait(false);
-
-                        if (!response.IsSuccessStatusCode)
-                            throw new HttpRequestException($"HTTP {response.StatusCode} for chunk {chunk.start}-{chunk.end - 1}");
 
                         // Verify Content-Range header
                         var contentRange = response.Content.Headers.ContentRange;
@@ -608,8 +594,8 @@ public class Jottacloud : IStreamingBackend
         var fileSize = stream.Length;
         using var req = await CreateRequest(HttpMethod.Post, remotename, "umode=nomultipart", true, cancelToken).ConfigureAwait(false);
 
-        req.Headers.TryAddWithoutValidation("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
-        req.Headers.TryAddWithoutValidation("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
+        req.Headers.Add("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
+        req.Headers.Add("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
 
         await using var timeoutStream = stream.ObserveReadTimeout(this.m_timeouts.ReadWriteTimeout, false);
         req.Content = new StreamContent(timeoutStream);
@@ -620,10 +606,8 @@ public class Jottacloud : IStreamingBackend
         (var client, var _) = await GetClient(cancelToken).ConfigureAwait(false);
         using var response = await client.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
 
-        response.EnsureSuccessStatusCode();
-
         if (response.StatusCode != HttpStatusCode.Created)
-            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
+            throw new HttpRequestException(HttpRequestError.HttpProtocolError, Strings.Jottacloud.FileUploadError, null, response.StatusCode);
 
         // Request seems to be successful, but we must verify the response XML content to be sure that the file
         // was correctly uploaded: The server will verify the JSize header and mark the file as incomplete if
@@ -638,9 +622,9 @@ public class Jottacloud : IStreamingBackend
         await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
         var doc = new System.Xml.XmlDocument();
         try { doc.Load(rs); }
-        catch (System.Xml.XmlException)
+        catch (System.Xml.XmlException xex)
         {
-            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
+            throw new HttpRequestException(HttpRequestError.HttpProtocolError, Strings.Jottacloud.FileUploadError, xex, response.StatusCode);
         }
         bool uploadCompletedSuccessfully = false;
         var xFile = doc["file"];
@@ -655,6 +639,6 @@ public class Jottacloud : IStreamingBackend
             }
         }
         if (!uploadCompletedSuccessfully) // Report error (and we just let the incomplete/corrupt file revision stay on the server..)
-            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
+            throw new HttpRequestException(HttpRequestError.HttpProtocolError, Strings.Jottacloud.FileUploadError, null, response.StatusCode);
     }
 }

@@ -33,7 +33,7 @@ namespace Duplicati.Library.Backend.Box
 {
     public class BoxBackend : IStreamingBackend
     {
-        private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL("box.com");
+        private static readonly string TOKEN_URL = OAuthHelperHttpClient.OAUTH_LOGIN_URL("box.com");
         private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
 
@@ -60,7 +60,7 @@ namespace Duplicati.Library.Backend.Box
                 _timeouts = timeouts;
                 _httpClient.Timeout = Timeout.InfiniteTimeSpan;
             }
-            public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage responseContext, CancellationToken cancellationToken)
+            public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage? responseContext, CancellationToken cancellationToken)
             {
                 if (ex is not HttpRequestException || responseContext == null)
                     return;
@@ -249,7 +249,6 @@ namespace Duplicati.Library.Backend.Box
             var fileId = await GetFileIdAsync(remotename, cancelToken).ConfigureAwait(false);
             using var request = await _oAuthHelper.CreateRequestAsync($"{BOX_API_URL}/files/{fileId}/content", HttpMethod.Get, cancelToken).ConfigureAwait(false);
             using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => _oAuthHelper.GetResponseAsync(request, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
-            resp.EnsureSuccessStatusCode();
             await using var responseStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => resp.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false);
             using var ts = responseStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
             await Utility.Utility.CopyStreamAsync(ts, stream, cancelToken).ConfigureAwait(false);

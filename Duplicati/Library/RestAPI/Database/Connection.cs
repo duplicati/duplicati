@@ -64,7 +64,7 @@ namespace Duplicati.Server.Database
                 .Concat(CompressionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
                 .Concat(GenericLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
                 .Concat(WebLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
-                .Concat(new Options(new Dictionary<string, string>()).SupportedCommands)
+                .Concat(new Options(new Dictionary<string, string?>()).SupportedCommands)
                 .Where(x => x.Type == Library.Interface.CommandLineArgument.ArgumentType.Password)
                 .SelectMany(x => new string[] { x.Name }.Concat(x.Aliases ?? []))
                 .SelectMany(x => new string[] { x, $"--{x}" })
