@@ -208,13 +208,25 @@ public class OpenStackStorage : IStreamingBackend
         request.Headers.UserAgent.ParseAdd(
             $"Duplicati CloudStack Client {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
 
-        request.Content = JsonContent.Create(new Keystone3AuthRequest(m_domainName, m_username, m_password, m_tenantName));
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            new Keystone3AuthRequest(m_domainName, m_username, m_password, m_tenantName),
+            new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = null,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            });
+
+        // NOTE: We need to control the serialization to ensure the correct format
+        // don't use JsonContent.Create() as it will not serialize the request correctly
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
         (var parsedResult, var token) = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken,
                 async ct =>
                 {
                     using var resp = await m_httpClient.SendAsync(request, ct).ConfigureAwait(false);
                     if (!resp.IsSuccessStatusCode)
-                        throw new Exception("Failed to fetch region endpoint");
+                        throw new Exception($"Failed to fetch region endpoint: {await resp.Content.ReadAsStringAsync()}");
 
                     var parsedResult = (await resp.Content.ReadFromJsonAsync<Keystone3AuthResponse>(ct).ConfigureAwait(false))
                         ?? throw new Exception("Failed to parse response"); ;
@@ -238,7 +250,7 @@ public class OpenStackStorage : IStreamingBackend
         if (fileService.endpoints == null || fileService.endpoints.Length == 0)
             throw new Exception("No endpoints found for object-store service");
 
-        var endpoint = fileService.endpoints.FirstOrDefault(x => string.Equals(m_region, x.region) && string.Equals(x.interface_name, "public", StringComparison.OrdinalIgnoreCase)) ?? fileService.endpoints.First();
+        var endpoint = fileService.endpoints.FirstOrDefault(x => string.Equals(m_region, x.region) && string.Equals(x.@interface, "public", StringComparison.OrdinalIgnoreCase)) ?? fileService.endpoints.First();
         m_simplestorageendpoint = endpoint.url;
 
         var result = new OpenStackAuthResponse.TokenClass
@@ -261,7 +273,19 @@ public class OpenStackStorage : IStreamingBackend
         request.Headers.UserAgent.ParseAdd(
             $"Duplicati CloudStack Client {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
 
-        request.Content = JsonContent.Create(new OpenStackAuthRequest(m_tenantName, m_username, m_password, m_apikey));
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            new OpenStackAuthRequest(m_tenantName, m_username, m_password, m_apikey),
+            new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = null,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            });
+
+        // NOTE: We need to control the serialization to ensure the correct format
+        // don't use JsonContent.Create() as it will not serialize the request correctly
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
         var parsedResult = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken,
                 async ct =>
                 {

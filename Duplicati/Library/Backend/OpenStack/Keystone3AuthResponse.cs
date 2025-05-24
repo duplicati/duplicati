@@ -19,18 +19,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Newtonsoft.Json;
-
 namespace Duplicati.Library.Backend.OpenStack;
+
 internal class Keystone3AuthResponse
 {
     public TokenClass? token { get; set; }
 
     public class EndpointItem
     {
-        // 'interface' is a reserved keyword, so we need this decorator to map it
-        [JsonProperty(PropertyName = "interface")]
-        public string? interface_name { get; set; }
+        public string? @interface { get; set; }
         public string? region { get; set; }
         public string? url { get; set; }
     }

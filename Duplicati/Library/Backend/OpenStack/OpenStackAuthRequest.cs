@@ -19,24 +19,20 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Newtonsoft.Json;
-
 namespace Duplicati.Library.Backend.OpenStack;
+
 internal class OpenStackAuthRequest
 {
     public class AuthContainer
     {
-        [JsonProperty("RAX-KSKEY:apiKeyCredentials", NullValueHandling = NullValueHandling.Ignore)]
+        [System.Text.Json.Serialization.JsonPropertyName("RAX-KSKEY:apiKeyCredentials")]
         public ApiKeyBasedRequest? ApiCredentials { get; set; }
 
-        [JsonProperty("passwordCredentials", NullValueHandling = NullValueHandling.Ignore)]
-        public PasswordBasedRequest? PasswordCredentials { get; set; }
+        public PasswordBasedRequest? passwordCredentials { get; set; }
 
-        [JsonProperty("tenantName", NullValueHandling = NullValueHandling.Ignore)]
-        public string? TenantName { get; set; }
+        public string? tenantName { get; set; }
 
-        [JsonProperty("token", NullValueHandling = NullValueHandling.Ignore)]
-        public TokenBasedRequest? Token { get; set; }
+        public TokenBasedRequest? token { get; set; }
 
     }
 
@@ -57,19 +53,19 @@ internal class OpenStackAuthRequest
     {
         public string? id { get; set; }
     }
-    
+
     public AuthContainer auth { get; set; }
 
     public OpenStackAuthRequest(string? tenantname, string username, string? password, string? apikey)
     {
         auth = new AuthContainer
         {
-            TenantName = tenantname
+            tenantName = tenantname
         };
 
         if (string.IsNullOrEmpty(apikey))
         {
-            auth.PasswordCredentials = new PasswordBasedRequest
+            auth.passwordCredentials = new PasswordBasedRequest
             {
                 username = username,
                 password = password,

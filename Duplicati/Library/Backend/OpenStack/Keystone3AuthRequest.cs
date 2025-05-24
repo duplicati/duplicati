@@ -19,10 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-
 namespace Duplicati.Library.Backend.OpenStack;
+
 internal class Keystone3AuthRequest
 {
     public class AuthContainer
@@ -33,11 +31,9 @@ internal class Keystone3AuthRequest
 
     public class Identity
     {
-        [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
         public IdentityMethods[] methods { get; set; }
 
-        [JsonProperty("password", NullValueHandling = NullValueHandling.Ignore)]
-        public PasswordBasedRequest? PasswordCredentials { get; set; }
+        public PasswordBasedRequest? password { get; set; }
 
         public Identity()
         {
@@ -47,7 +43,7 @@ internal class Keystone3AuthRequest
 
     public class Scope
     {
-        public Project? project;
+        public Project? project { get; set; }
     }
 
     public enum IdentityMethods
@@ -111,8 +107,8 @@ internal class Keystone3AuthRequest
 
         auth = new AuthContainer();
         auth.identity = new Identity();
-        auth.identity.PasswordCredentials = new PasswordBasedRequest();
-        auth.identity.PasswordCredentials.user = new UserCredentials(domain, username, password!);
+        auth.identity.password = new PasswordBasedRequest();
+        auth.identity.password.user = new UserCredentials(domain, username, password!);
         auth.scope = new Scope();
         auth.scope.project = new Project(domain, project_name!);
     }
