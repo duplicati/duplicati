@@ -190,7 +190,7 @@ namespace Duplicati.Library.Backend
 
         private static readonly HttpRequestOptionsKey<bool> FileRequestOption = new HttpRequestOptionsKey<bool>("FileRequestOption");
 
-        public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage response, CancellationToken cancellationToken)
+        public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage? response, CancellationToken cancellationToken)
         {
             string json = string.Empty;
 

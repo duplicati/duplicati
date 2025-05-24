@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -107,7 +109,7 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <param name="setup">Setup Actions for customizing the request</param>
     /// <typeparam name="T">Destination Type</typeparam>
-    protected virtual async Task<T> GetJsonDataAsync<T>(string url, CancellationToken cancellationToken, Action<HttpRequestMessage> setup = null)
+    protected virtual async Task<T> GetJsonDataAsync<T>(string url, CancellationToken cancellationToken, Action<HttpRequestMessage>? setup = null)
     {
         using var req = await CreateRequestAsync(url, HttpMethod.Get, cancellationToken).ConfigureAwait(false);
 
@@ -201,7 +203,8 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
         {
             using var tr = new StreamReader(ps);
             await using var jr = new JsonTextReader(tr);
-            return new JsonSerializer().Deserialize<T>(jr);
+            return new JsonSerializer().Deserialize<T>(jr)
+                ?? throw new IOException($"Failed to deserialize JSON response to type {typeof(T).FullName}");
         }
         catch (Exception ex)
         {
@@ -217,7 +220,7 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// Use this method to register an exception handler,
     /// which can throw another, more meaningful exception
     /// </summary>
-    public virtual Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage responseContext, CancellationToken cancellationToken)
+    public virtual Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage? responseContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -230,7 +233,7 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// <returns></returns>
     public async Task<HttpResponseMessage> GetResponseAsync(HttpRequestMessage req, HttpCompletionOption httpCompletionOption, CancellationToken cancellationToken)
     {
-        HttpResponseMessage response = null;
+        HttpResponseMessage? response = null;
         try
         {
             response = await _httpClient.SendAsync(req, httpCompletionOption, cancellationToken).ConfigureAwait(false);
@@ -240,21 +243,35 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
         }
         catch (Exception ex)
         {
-            await AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                response?.Dispose();
+            }
             throw;
         }
     }
 
     public async Task<HttpResponseMessage> GetResponseUncheckedAsync(HttpRequestMessage req, HttpCompletionOption httpCompletionOption, CancellationToken cancellationToken)
     {
-        HttpResponseMessage response = null;
+        HttpResponseMessage? response = null;
         try
         {
             return await _httpClient.SendAsync(req, httpCompletionOption, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            await AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                response?.Dispose();
+            }
             throw;
         }
     }
@@ -285,8 +302,8 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
         public override long Seek(long offset, SeekOrigin origin) => source.Seek(offset, origin);
         public override void SetLength(long value) => source.SetLength(value);
         public override void Write(byte[] buffer, int offset, int count) => source.Write(buffer, offset, count);
-        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state) => source.BeginRead(buffer, offset, count, callback, state);
-        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state) => source.BeginWrite(buffer, offset, count, callback, state);
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state) => source.BeginRead(buffer, offset, count, callback, state);
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state) => source.BeginWrite(buffer, offset, count, callback, state);
         public override bool CanTimeout => source.CanTimeout;
         public override void Close() => source.Close();
         public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken) => source.CopyToAsync(destination, bufferSize, cancellationToken);
