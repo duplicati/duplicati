@@ -187,7 +187,7 @@ namespace Duplicati.Library.Backend
                 Strings.SSHv2Backend.DescriptionSshkeyfileLong),
             new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password,
                 Strings.SSHv2Backend.DescriptionSshkeyShort,
-                Strings.SSHv2Backend.DescriptionSshkeyLong(KEYFILE_URI)),
+                Strings.SSHv2Backend.DescriptionSshkeyLong),
             new CommandLineArgument(SSH_TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan,
                 Strings.SSHv2Backend.DescriptionSshtimeoutShort, Strings.SSHv2Backend.DescriptionSshtimeoutLong,
                 "0", null,null, Strings.SSHv2Backend.TimeoutDeprecated(SSH_TIMEOUT_OPTION, TimeoutOptionsHelper.ShortTimeoutOption, TimeoutOptionsHelper.ListTimeoutOption, TimeoutOptionsHelper.ReadWriteTimeoutOption)),
@@ -296,11 +296,10 @@ namespace Duplicati.Library.Backend
             SftpClient con;
 
             m_options.TryGetValue(SSH_KEYFILE_OPTION, out var keyFile);
-            if (string.IsNullOrWhiteSpace(keyFile))
-                m_options.TryGetValue(SSH_KEYFILE_INLINE, out keyFile);
+            m_options.TryGetValue(SSH_KEYFILE_INLINE, out var keyInline);
 
-            if (!string.IsNullOrWhiteSpace(keyFile))
-                con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(keyFile, m_password));
+            if (!string.IsNullOrWhiteSpace(keyFile) || !string.IsNullOrWhiteSpace(keyInline))
+                con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(keyFile, keyInline, m_password));
             else
                 con = new SftpClient(m_server, m_port, m_username, m_password ?? string.Empty);
 
@@ -387,21 +386,44 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        private static PrivateKeyFile ValidateKeyFile(string filename, string? password)
+        private static PrivateKeyFile ValidateKeyFile(string? filename, string? inline, string? password)
         {
             try
             {
-                if (!filename.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrWhiteSpace(filename) && !filename.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
                 {
                     return string.IsNullOrEmpty(password)
                         ? new PrivateKeyFile(filename)
                         : new PrivateKeyFile(filename, password);
                 }
 
+                // Legacy inline file was using a URI scheme, which meant double url-encoding.                
+                var legacyInline = false;
+                if (inline != null && inline.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
+                {
+                    legacyInline = true;
+                    inline = inline.Substring(KEYFILE_URI.Length);
+                }
+                if (string.IsNullOrWhiteSpace(inline) && filename != null && filename.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
+                {
+                    legacyInline = true;
+                    inline = filename.Substring(KEYFILE_URI.Length);
+                }
+
+                if (string.IsNullOrWhiteSpace(inline))
+                    throw new UserInformationException("Expected a keyfile or inline key, but none was found", "SSHKeyFileNotFound");
+
+                // We now also support inline keys that are not URL encoded
+                if (!legacyInline)
+                {
+                    using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(inline));
+                    return string.IsNullOrEmpty(password) ? new PrivateKeyFile(ms) : new PrivateKeyFile(ms, password);
+                }
+
                 using (var ms = new MemoryStream())
                 using (var sr = new StreamWriter(ms))
                 {
-                    sr.Write(Utility.Uri.UrlDecode(filename.Substring(KEYFILE_URI.Length)));
+                    sr.Write(Utility.Uri.UrlDecode(inline));
                     sr.Flush();
 
                     ms.Position = 0;
