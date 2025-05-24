@@ -22,6 +22,7 @@ jobs:
       onedrive_secrets_available: "${{ steps.check_onedrive.outputs.available }}"
       idrivee2_secrets_available: "${{ steps.check_idrivee2.outputs.available }}"
       gcs_secrets_available: "${{ steps.check_gcs.outputs.available }}"
+      cloudstack_secrets_available: "${{ steps.check_cloudstack.outputs.available }}"
     steps:
       - id: check_pcloud
         name: Check pCloud secrets
@@ -216,6 +217,25 @@ jobs:
             echo "available=false" >> $GITHUB_OUTPUT
           fi
           echo "GCS check completed"
+      - id: check_cloudstack
+        name: Check CloudStack secrets
+        shell: bash
+        run: |
+          echo "Starting CloudStack secrets check..."
+          if [[ -n "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_USERNAME }}" ]] && \
+             [[ -n "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_PASSWORD }}" ]] && \
+             [[ -n "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_LOCATION }}" ]] && \
+             [[ -n "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_TENANT }}" ]] && \
+             [[ -n "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_DOMAIN }}" ]] && \
+             [[ -n "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_REGION }}" ]] && \
+             [[ -n "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_FOLDER }}" ]]; then
+            echo "All CloudStack secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing some CloudStack secrets"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "CloudStack check completed"
 
       - name: Debug Output
         shell: bash
@@ -233,6 +253,7 @@ jobs:
           echo "OneDrive Available: ${{ steps.check_onedrive.outputs.available }}"
           echo "iDrivee2 Available: ${{ steps.check_idrivee2.outputs.available }}"
           echo "GCS Available: ${{ steps.check_gcs.outputs.available }}"
+          echo "CloudStack Available: ${{ steps.check_cloudstack.outputs.available }}"
   test_ftp:
     needs: check_secrets
     if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
@@ -782,7 +803,7 @@ jobs:
         run: >-
           dotnet build --no-restore
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-      - name: Run OneDrive tests
+      - name: Run iDrivee2 tests
         env:
           TESTCREDENTIAL_IDRIVEE2_BUCKET: "${{ secrets.TESTCREDENTIAL_IDRIVEE2_BUCKET }}"
           TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY: "${{ secrets.TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY }}"
@@ -793,11 +814,10 @@ jobs:
           dotnet test --no-build --filter="ClassName~iDrivee2.iDrivee2Tests"
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-
   test_gcs:
     needs: check_secrets
     if: needs.check_secrets.outputs.gcs_secrets_available == 'true'
-    name: gCS Tests
+    name: GCS Tests
     runs-on: "${{ matrix.os }}"
     strategy:
       max-parallel: 1
@@ -822,7 +842,7 @@ jobs:
         run: >-
           dotnet build --no-restore
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-      - name: Run OneDrive tests
+      - name: Run GCS tests
         env:
           TESTCREDENTIAL_GCS_BUCKET: "${{ secrets.TESTCREDENTIAL_GCS_BUCKET }}"
           TESTCREDENTIAL_GCS_AUTHID: "${{ secrets.TESTCREDENTIAL_GCS_AUTHID}}"
@@ -830,5 +850,46 @@ jobs:
 
         run: >-
           dotnet test --no-build --filter="ClassName~GCS.GCSTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  test_cloudstack:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.cloudstack_secrets_available == 'true'
+    name: CloudStack Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run CloudStack tests
+        env:
+          TESTCREDENTIAL_CLOUDSTACK_USERNAME: "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_USERNAME }}"
+          TESTCREDENTIAL_CLOUDSTACK_PASSWORD: "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_PASSWORD }}"
+          TESTCREDENTIAL_CLOUDSTACK_LOCATION: "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_LOCATION }}"
+          TESTCREDENTIAL_CLOUDSTACK_TENANT: "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_TENANT }}"
+          TESTCREDENTIAL_CLOUDSTACK_DOMAIN: "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_DOMAIN }}"
+          TESTCREDENTIAL_CLOUDSTACK_REGION: "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_REGION }}"
+          TESTCREDENTIAL_CLOUDSTACK_FOLDER: "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_FOLDER }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~CloudStack.CloudStackTests"
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
