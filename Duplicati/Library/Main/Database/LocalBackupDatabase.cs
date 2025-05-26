@@ -1058,8 +1058,9 @@ namespace Duplicati.Library.Main.Database
             if (!string.IsNullOrWhiteSpace(m_tempDeletedBlockTable))
                 try
                 {
-                    using (var cmd = m_connection.CreateCommand())
+                    using (var cmd = m_connection.CreateCommand(m_rtr))
                         await cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{m_tempDeletedBlockTable}""");
+                    await m_rtr.CommitAsync();
                 }
                 catch (Exception ex)
                 {
