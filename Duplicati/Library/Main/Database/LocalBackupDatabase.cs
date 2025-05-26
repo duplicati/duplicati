@@ -90,9 +90,10 @@ namespace Duplicati.Library.Main.Database
             dbnew ??= new LocalBackupDatabase();
 
             dbnew = (LocalBackupDatabase)await CreateLocalDatabaseAsync(path, "Backup", false, options.SqlitePageCache, dbnew);
+            dbnew = await CreateAsync(dbnew, options);
             dbnew.ShouldCloseConnection = true;
 
-            return await CreateAsync(dbnew, options);
+            return dbnew;
         }
 
         public static async Task<LocalBackupDatabase> CreateAsync(LocalDatabase dbparent, Options options, LocalBackupDatabase? dbnew = null)
