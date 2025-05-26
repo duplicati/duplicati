@@ -31,12 +31,12 @@ public static class GenericModules
     /// </summary>
     public static IReadOnlyList<IGenericModule> BuiltInGenericModules => [
         new ConsolePasswordInput(),
-        new HttpOptions(),
+        new CommonOptions(),
         new HyperVOptions(),
         new MSSQLOptions(),
         new RunScript(),
         new SendHttpMessage(),
-        new SendJabberMessage(), 
+        new SendJabberMessage(),
         new SendTelegramMessage(),
         new SendMail(),
     ];
