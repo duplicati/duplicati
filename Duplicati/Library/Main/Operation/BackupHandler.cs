@@ -768,7 +768,7 @@ namespace Duplicati.Library.Main.Operation
                             else
                                 await PostBackupVerification(filesetvolume.RemoteFilename, lastTempFilelist.Name, backendManager).ConfigureAwait(false);
                         }
-                        await database.Transaction.CommitAsync("CommitAfterVerification", restart: false);
+                        await database.Transaction.CommitAsync("CommitAfterVerification");
                     }
 
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
