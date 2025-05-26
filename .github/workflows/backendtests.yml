@@ -1,5 +1,7 @@
 name: Backend Live Tests
 on: [pull_request, workflow_dispatch]
+permissions:
+  contents: read
 concurrency:
   group: duplicati-ci-livetests
   cancel-in-progress: false
@@ -19,6 +21,7 @@ jobs:
       filejump_secrets_available: "${{ steps.check_filejump.outputs.available }}"
       onedrive_secrets_available: "${{ steps.check_onedrive.outputs.available }}"
       idrivee2_secrets_available: "${{ steps.check_idrivee2.outputs.available }}"
+      gcs_secrets_available: "${{ steps.check_gcs.outputs.available }}"
       cloudstack_secrets_available: "${{ steps.check_cloudstack.outputs.available }}"
     steps:
       - id: check_pcloud
@@ -199,6 +202,21 @@ jobs:
             echo "available=false" >> $GITHUB_OUTPUT
           fi
           echo "iDrivee2 check completed"
+      - id: check_gcs
+        name: Check GCS secrets
+        shell: bash
+        run: |
+          echo "Starting GCS secrets check..."
+          if [[ -n "${{ secrets.TESTCREDENTIAL_GCS_BUCKET }}" ]] && \
+             [[ -n "${{ secrets.TESTCREDENTIAL_GCS_AUTHID }}" ]] && \
+             [[ -n "${{ secrets.TESTCREDENTIAL_GCS_FOLDER }}" ]]; then
+            echo "All GCS secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing some GCS secrets"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "GCS check completed"
       - id: check_cloudstack
         name: Check CloudStack secrets
         shell: bash
@@ -218,6 +236,7 @@ jobs:
             echo "available=false" >> $GITHUB_OUTPUT
           fi
           echo "CloudStack check completed"
+
       - name: Debug Output
         shell: bash
         run: |
@@ -233,6 +252,7 @@ jobs:
           echo "Filejump Available: ${{ steps.check_filejump.outputs.available }}"
           echo "OneDrive Available: ${{ steps.check_onedrive.outputs.available }}"
           echo "iDrivee2 Available: ${{ steps.check_idrivee2.outputs.available }}"
+          echo "GCS Available: ${{ steps.check_gcs.outputs.available }}"
           echo "CloudStack Available: ${{ steps.check_cloudstack.outputs.available }}"
   test_ftp:
     needs: check_secrets
@@ -789,9 +809,47 @@ jobs:
           TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY: "${{ secrets.TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY }}"
           TESTCREDENTIAL_IDRIVEE2_SECRET_KEY: "${{ secrets.TESTCREDENTIAL_IDRIVEE2_SECRET_KEY }}"
           TESTCREDENTIAL_IDRIVEE2_FOLDER: "${{ secrets.TESTCREDENTIAL_IDRIVEE2_FOLDER }}"
-          
+
         run: >-
           dotnet test --no-build --filter="ClassName~iDrivee2.iDrivee2Tests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  test_gcs:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.gcs_secrets_available == 'true'
+    name: GCS Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run GCS tests
+        env:
+          TESTCREDENTIAL_GCS_BUCKET: "${{ secrets.TESTCREDENTIAL_GCS_BUCKET }}"
+          TESTCREDENTIAL_GCS_AUTHID: "${{ secrets.TESTCREDENTIAL_GCS_AUTHID}}"
+          TESTCREDENTIAL_GCS_FOLDER: "${{ secrets.TESTCREDENTIAL_GCS_FOLDER }}"
+
+        run: >-
+          dotnet test --no-build --filter="ClassName~GCS.GCSTests"
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
   test_cloudstack:

@@ -122,5 +122,6 @@ namespace Duplicati.Library.Utility.Strings
         public static string ErrorDeleteFile(string filename, string message) { return LC.L(@"Error on deleting file: {0}, error: {1}", filename, message); }
         public static string ErrorReadFile(string filename, string message) { return LC.L(@"Error reading file: {0}, error: {1}", filename, message); }
         public static string ErrorWriteFile(string filename, string message) { return LC.L(@"Error writing file: {0}, error: {1}", filename, message); }
+        public static string ErrorListContent(string message) { return LC.L(@"Error listing content: {0}", message); }
     }
 }
