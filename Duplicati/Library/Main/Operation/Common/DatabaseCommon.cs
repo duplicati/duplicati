@@ -134,11 +134,7 @@ namespace Duplicati.Library.Main.Operation.Common
             if (m_workerSource.IsCancellationRequested)
                 return;
 
-            RunOnMain(async () =>
-            {
-                base.Dispose(isDisposing);
-                await m_db.Transaction.DisposeAsync();
-            }).Await();
+            base.Dispose(isDisposing);
         }
 
     }
