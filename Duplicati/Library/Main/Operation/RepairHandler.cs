@@ -451,7 +451,7 @@ namespace Duplicati.Library.Main.Operation
                                 continue;
 
                             var w = newEntry = new IndexVolumeWriter(m_options);
-                            await RunRepairDindex(backendManager, db, rtr, w, n, cancellationToken).ConfigureAwait(false);
+                            await RunRepairDindex(backendManager, db, rtr, w, n, m_options, cancellationToken).ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
@@ -575,15 +575,16 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="indexWriter">The volume writer to use for the repair</param>
         /// <param name="originalVolume">The remote volume entry to repair</param>
         /// <param name="filesetTime">The time of the new fileset to create</param>
+        /// <param name="options">The options for the current operation</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
         /// <returns>A task representing the asynchronous operation</returns>
 
-        private async Task RunRepairDindex(IBackendManager backendManager, LocalRepairDatabase db, ReusableTransaction rtr, IndexVolumeWriter indexWriter, RemoteVolumeEntry originalVolume, CancellationToken cancellationToken)
+        public static async Task RunRepairDindex(IBackendManager backendManager, LocalRepairDatabase db, ReusableTransaction rtr, IndexVolumeWriter indexWriter, IRemoteVolume originalVolume, Options options, CancellationToken cancellationToken)
         {
             indexWriter.VolumeID = db.RegisterRemoteVolume(indexWriter.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Uploading, -1, TimeSpan.Zero, rtr.Transaction);
 
             var blockvolumeids = new List<long>();
-            using var h = HashFactory.CreateHasher(m_options.BlockHashAlgorithm);
+            using var h = HashFactory.CreateHasher(options.BlockHashAlgorithm);
             foreach (var blockvolume in db.GetBlockVolumesFromIndexName(originalVolume.Name))
             {
                 indexWriter.StartVolume(blockvolume.Name);
@@ -595,8 +596,8 @@ namespace Duplicati.Library.Main.Operation
                 indexWriter.FinishVolume(blockvolume.Hash, blockvolume.Size);
                 blockvolumeids.Add(volumeid);
 
-                if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                    foreach (var b in db.GetBlocklists(volumeid, m_options.Blocksize, m_options.BlockhashSize))
+                if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                    foreach (var b in db.GetBlocklists(volumeid, options.Blocksize, options.BlockhashSize))
                     {
                         var bh = Convert.ToBase64String(h.ComputeHash(b.Buffer, 0, b.Size));
                         if (bh != b.Hash)
@@ -611,7 +612,7 @@ namespace Duplicati.Library.Main.Operation
 
             indexWriter.Close();
 
-            if (m_options.Dryrun)
+            if (options.Dryrun)
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadIndexFile", "would re-upload index file {0}, with size {1}, previous size {2}", originalVolume.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(indexWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(originalVolume.Size));
             else
             {
@@ -621,7 +622,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
-            if (!m_options.Dryrun)
+            if (!options.Dryrun)
                 rtr.Commit("CommitRepairTransaction");
         }
 

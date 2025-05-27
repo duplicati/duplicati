@@ -231,19 +231,29 @@ namespace Duplicati.Library.Main
         public enum RemoteTestStrategy
         {
             /// <summary>
-            /// test the remote volumes
+            /// Test the remote volumes
             /// </summary>
-            True,
+            True = 0,
 
             /// <summary>
-            /// do not test the remote volumes
+            /// Do not test the remote volumes
             /// </summary>
-            False,
+            False = 1,
 
             /// <summary>
-            /// test only the list and index volumes
+            /// Test only the list and index volumes
             /// </summary>
-            ListAndIndexes
+            ListAndIndexes = 2,
+
+            /// <summary>
+            /// Test only the index files
+            /// </summary>
+            IndexesOnly = 3,
+
+            /// <summary>
+            /// Alias for IndexesOnly
+            /// </summary>
+            IndexOnly = 3
         }
 
         /// <summary>
@@ -458,6 +468,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), DEFAULT_BACKUP_TEST_SAMPLES.ToString()),
             new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Decimal, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0.1"),
             new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), Enum.GetName(typeof(RemoteTestStrategy), RemoteTestStrategy.False), null, Enum.GetNames(typeof(RemoteTestStrategy))),
+            new CommandLineArgument("replace-faulty-index-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ReplaceFaultyIndexFilesShort, Strings.Options.ReplaceFaultyIndexFilesLong, "true"),
 
             new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
@@ -1334,6 +1345,11 @@ namespace Duplicati.Library.Main
         /// Gets a value indicating if the remote verification is deep
         /// </summary>
         public RemoteTestStrategy FullRemoteVerification => GetEnum("full-remote-verification", RemoteTestStrategy.True);
+
+        /// <summary>
+        /// Gets a value indicating if defective index files should be replaced
+        /// </summary>
+        public bool ReplaceFaultyIndexFiles => GetBool("replace-faulty-index-files");
 
         /// <summary>
         /// The block hash algorithm to use
