@@ -1213,10 +1213,8 @@ namespace Duplicati.Library.Main.Database
             // One could also use like the average block number in a volume, that needs to be measured.
 
             using var rd = await cmd.ExecuteReaderAsync();
-            object[] r = new object[3];
             while (await rd.ReadAsync())
             {
-                rd.GetValues(r);
                 yield return new RemoteVolume(
                     rd.ConvertValueToString(0),
                     rd.ConvertValueToString(1),
