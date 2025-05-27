@@ -345,7 +345,7 @@ namespace Duplicati.Library.Main.Database
                             ""FileLookup"",
                             ""FilesetEntry""
                         WHERE
-                            ""FilesetEntry"".""FilesetId"" = @FilesetId
+                            ""FilesetEntry"".""FilesetId"" = @FilesetID
                             AND ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID""
                     )
                     AND ""BlocksetID"" NOT IN (
@@ -355,8 +355,8 @@ namespace Duplicati.Library.Main.Database
                     )
             ")
                 .SetTransaction(m_rtr)
-                .SetParameterValue("@EmptyBlocksetId", emptyBlocksetId)
-                .SetParameterValue("@FilesetId", filesetId);
+                .SetParameterValue("@EmptyBlocksetID", emptyBlocksetId)
+                .SetParameterValue("@FilesetID", filesetId);
             return await cmd.ExecuteNonQueryAsync();
         }
 
