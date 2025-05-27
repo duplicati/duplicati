@@ -52,7 +52,7 @@ namespace Duplicati.UnitTest
             var data1 = new byte[1024 * 1024 * 10];
             rnd.NextBytes(data1);
             var data2 = new byte[1024 * 1024 * 10];
-            rnd.NextBytes(data1);
+            rnd.NextBytes(data2);
 
             // Create some files
             for (var i = 0; i < 10; i++)
