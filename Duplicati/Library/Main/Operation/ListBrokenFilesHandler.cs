@@ -143,15 +143,14 @@ namespace Duplicati.Library.Main.Operation
 
 
             m_result.BrokenFiles =
-                brokenfilesets.Select(
-                    x => new Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>(
+                await Task.WhenAll(brokenfilesets.Select(
+                    async x => new Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>(
                                 x.Version,
                                 x.Timestamp,
                                 callbackhandler == null && !m_options.ListSetsOnly
-                                    ? db.GetBrokenFilenames(x.FilesetID).ToEnumerable()
+                                    ? await db.GetBrokenFilenames(x.FilesetID).ToArrayAsync()
                                     : new MockList<Tuple<string, long>>((int)x.BrokenCount)
-                    ))
-                .ToArray();
+                )));
 
 
             if (callbackhandler != null)
