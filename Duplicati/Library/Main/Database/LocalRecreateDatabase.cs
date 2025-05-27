@@ -888,7 +888,7 @@ namespace Duplicati.Library.Main.Database
 
         public async IAsyncEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo, long blocksize, long hashsize, bool forceBlockUse)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(m_rtr))
             {
                 var selectCommand = @"
                     SELECT DISTINCT
