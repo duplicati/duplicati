@@ -25,6 +25,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
@@ -401,7 +402,7 @@ namespace Duplicati.UnitTest
         [Category("RepairHandler")]
         [TestCase("true")]
         [TestCase("false")]
-        public void RepairExtraIndexFiles(string noEncryption)
+        public async Task RepairExtraIndexFiles(string noEncryption)
         {
             // Extra index files will be added to the database and should have a correct link established
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) { ["no-encryption"] = noEncryption };
@@ -425,18 +426,18 @@ namespace Duplicati.UnitTest
             }
 
             // Check database block link
-            using (LocalDatabase db = new LocalDatabase(DBFILE, "Test", true, 0))
+            using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "Test", true, 0))
             {
-                var indexVolumeId = db.GetRemoteVolumeID(Path.GetFileName(origFile));
-                var duplicateVolumeId = db.GetRemoteVolumeID(Path.GetFileName(dupFile));
+                var indexVolumeId = await db.GetRemoteVolumeID(Path.GetFileName(origFile));
+                var duplicateVolumeId = await db.GetRemoteVolumeID(Path.GetFileName(dupFile));
                 Assert.AreNotEqual(-1, indexVolumeId);
                 Assert.AreNotEqual(-1, duplicateVolumeId);
 
                 using (var cmd = db.Connection.CreateCommand())
                 {
                     var sql = @"SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = @VolumeId";
-                    var linkedIndexId = cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", indexVolumeId).ExecuteScalarInt64(-1);
-                    var linkedDuplicateId = cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", duplicateVolumeId).ExecuteScalarInt64(-1);
+                    var linkedIndexId = await cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", indexVolumeId).ExecuteScalarInt64Async(-1);
+                    var linkedDuplicateId = await cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", duplicateVolumeId).ExecuteScalarInt64Async(-1);
                     Assert.AreEqual(linkedIndexId, linkedDuplicateId);
                 }
             }
