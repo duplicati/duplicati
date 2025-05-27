@@ -822,7 +822,7 @@ namespace Duplicati.Library.Main.Database
                     .SetTransaction(m_rtr)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
-                    .SetParameterValue("@VolumeId", currentVolumeId)
+                    .SetParameterValue("@VolumeId", volumeID)
                     .ExecuteNonQueryAsync();
 
                 return (anyChange, false);
