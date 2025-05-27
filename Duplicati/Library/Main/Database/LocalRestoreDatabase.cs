@@ -1794,7 +1794,7 @@ namespace Duplicati.Library.Main.Database
             private SqliteCommand m_updateAsRestoredCommand = null!;
             private SqliteCommand m_updateFileAsDataVerifiedCommand = null!;
             private SqliteCommand m_statUpdateCommand = null!;
-            private ReusableTransaction m_rtr = null!;
+            private LocalDatabase m_db = null!;
             private bool m_hasUpdates = false;
 
             private string m_blocktablename = null!;
@@ -1812,7 +1812,7 @@ namespace Duplicati.Library.Main.Database
             {
                 var dbm = new DirectBlockMarker()
                 {
-                    m_rtr = db.Transaction,
+                    m_db = db,
                     m_blocktablename = blocktablename,
                     m_filetablename = filetablename,
 
