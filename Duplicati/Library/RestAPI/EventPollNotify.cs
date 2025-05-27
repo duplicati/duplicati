@@ -18,8 +18,12 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
+#nullable enable
+
 using System;
 using System.Collections.Generic;
+using Duplicati.Server.Serialization.Interface;
 
 namespace Duplicati.Server
 {
@@ -44,7 +48,32 @@ namespace Duplicati.Server
         /// <summary>
         /// An eventhandler for subscribing to event updates without blocking
         /// </summary>
-        public event EventHandler NewEvent;
+        public event EventHandler<EventArgs?>? NewEvent;
+
+        /// <summary>
+        /// An eventhandler for subscribing to progress updates without blocking
+        /// </summary>
+        public event EventHandler<Func<IProgressEventData>?>? ProgressUpdate;
+
+        /// <summary>
+        /// An eventhandler for subscribing to queue updates without blocking
+        /// </summary>
+        public event EventHandler<EventArgs?>? TaskQueueUpdate;
+
+        /// <summary>
+        /// An eventhandler for subscribing backup list updates without blocking
+        /// </summary>
+        public event EventHandler<EventArgs?>? BackupListUpdate;
+
+        /// <summary>
+        /// An eventhandler for subscribing to notifications updates without blocking
+        /// </summary>
+        public event EventHandler<EventArgs?>? NotificationsUpdated;
+
+        /// <summary>
+        /// An eventhandler for subscribing to server settings updates without blocking
+        /// </summary>
+        public event EventHandler? ServerSettingsUpdate;
 
         /// <summary>
         /// Gets the current event ID
@@ -89,7 +118,21 @@ namespace Duplicati.Server
             }
 
             if (NewEvent != null)
-                NewEvent(this, null);
+                NewEvent(this, null!);
         }
+
+        public void SignalProgressUpdate(Func<IProgressEventData>? pg)
+            => ProgressUpdate?.Invoke(this, pg);
+
+        public void SignalTaskQueueUpdate()
+            => TaskQueueUpdate?.Invoke(this, null);
+
+        public void SignalServerSettingsUpdated()
+            => ServerSettingsUpdate?.Invoke(this, null!);
+
+        public void SignalBackupListUpdate()
+            => BackupListUpdate?.Invoke(this, null!);
+        public void SignalNotificationUpdate()
+            => NotificationsUpdated?.Invoke(this, null!);
     }
 }

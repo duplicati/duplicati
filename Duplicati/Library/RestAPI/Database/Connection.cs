@@ -752,6 +752,7 @@ namespace Duplicati.Server.Database
                     tr.Commit();
                     m_notificationUpdateService?.IncrementLastDataUpdateId();
                     m_eventPollNotifyer?.SignalNewEvent();
+                    m_eventPollNotifyer?.SignalBackupListUpdate();
                 }
             }
         }
@@ -765,6 +766,7 @@ namespace Duplicati.Server.Database
                     tr.Commit();
                     m_notificationUpdateService?.IncrementLastDataUpdateId();
                     m_eventPollNotifyer?.SignalNewEvent();
+                    m_eventPollNotifyer?.SignalBackupListUpdate();
                 }
         }
 
@@ -830,6 +832,7 @@ namespace Duplicati.Server.Database
 
             m_notificationUpdateService?.IncrementLastDataUpdateId();
             m_eventPollNotifyer?.SignalNewEvent();
+            m_eventPollNotifyer?.SignalBackupListUpdate();
         }
 
         public void DeleteBackup(IBackup backup)
@@ -940,6 +943,7 @@ namespace Duplicati.Server.Database
 
             m_notificationUpdateService?.IncrementLastNotificationUpdateId();
             m_eventPollNotifyer?.SignalNewEvent();
+            m_eventPollNotifyer?.SignalNotificationUpdate();
 
             return true;
         }
@@ -990,6 +994,7 @@ namespace Duplicati.Server.Database
 
             m_notificationUpdateService?.IncrementLastNotificationUpdateId();
             m_eventPollNotifyer?.SignalNewEvent();
+            m_eventPollNotifyer?.SignalNotificationUpdate();
         }
 
         //Workaround to clean up the database after invalid settings update

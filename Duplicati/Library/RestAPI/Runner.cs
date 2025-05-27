@@ -32,6 +32,7 @@ using System.Threading.Tasks;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
+using System.Threading;
 
 namespace Duplicati.Server
 {
@@ -305,6 +306,8 @@ namespace Duplicati.Server
                 internal long m_backendSpeed;
                 internal bool m_backendIsBlocking;
 
+                internal ActiveTransfer[] m_activeTransfers = [];
+
                 internal string? m_currentFilename;
                 internal long m_currentFilesize;
                 internal long m_currentFileoffset;
@@ -326,7 +329,9 @@ namespace Duplicati.Server
 
                 internal ProgressState Clone()
                 {
-                    return (ProgressState)this.MemberwiseClone();
+                    var res = (ProgressState)this.MemberwiseClone();
+                    res.m_activeTransfers = m_activeTransfers.ToArray();
+                    return res;
                 }
 
                 #region IProgressEventData implementation
@@ -349,6 +354,8 @@ namespace Duplicati.Server
                 public long TotalFileCount { get { return m_totalFileCount; } }
                 public long TotalFileSize { get { return m_totalFileSize; } }
                 public bool StillCounting { get { return m_stillCounting; } }
+                public ActiveTransfer[] ActiveTransfers => m_activeTransfers;
+
                 #endregion
             }
 
@@ -367,7 +374,38 @@ namespace Duplicati.Server
                 lock (m_lock)
                 {
                     if (m_backendProgress != null)
-                        m_backendProgress.Update(out m_state.m_backendAction, out m_state.m_backendPath, out m_state.m_backendFileSize, out m_state.m_backendFileProgress, out m_state.m_backendSpeed, out m_state.m_backendIsBlocking);
+                    {
+                        var transfers = m_backendProgress.GetActiveTransfers();
+                        m_state.m_activeTransfers = transfers
+                            .Select(st => new ActiveTransfer(
+                                st.Action.ToString(),
+                                st.Path,
+                                st.Size,
+                                st.Progress,
+                                st.BytesPerSecond,
+                                st.IsBlocking
+                            )).ToArray();
+
+                        if (transfers.Any())
+                        {
+                            var st = transfers.First();
+                            m_state.m_backendAction = st.Action;
+                            m_state.m_backendPath = st.Path;
+                            m_state.m_backendFileSize = st.Size;
+                            m_state.m_backendFileProgress = st.Progress;
+                            m_state.m_backendSpeed = st.BytesPerSecond;
+                            m_state.m_backendIsBlocking = st.IsBlocking;
+                        }
+                        else
+                        {
+                            m_state.m_backendAction = Library.Main.BackendActionType.Get;
+                            m_state.m_backendPath = null;
+                            m_state.m_backendFileSize = 0;
+                            m_state.m_backendFileProgress = 0;
+                            m_state.m_backendSpeed = -1;
+                            m_state.m_backendIsBlocking = false;
+                        }
+                    }
                     if (m_operationProgress != null)
                     {
                         m_operationProgress.UpdateFile(out m_state.m_currentFilename, out m_state.m_currentFilesize, out m_state.m_currentFileoffset, out m_state.m_currentFilecomplete);
@@ -410,7 +448,6 @@ namespace Duplicati.Server
             }
             #endregion
         }
-
         public static string GetCommandLine(Connection databaseConnection, IRunnerData data)
         {
             var backup = data.Backup;
@@ -515,8 +552,28 @@ namespace Duplicati.Server
                     var sink = new MessageSink(task.TaskID, null);
                     progressStateProviderService.GenerateProgressState = sink.Copy;
                     eventPollNotify.SignalNewEvent();
+                    eventPollNotify.SignalProgressUpdate(sink.Copy);
+
+                    // Attach a log scope that tags all messages to relay the TaskID and BackupID
+                    using var _ = Library.Logging.Log.StartScope(log =>
+                    {
+                        log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_TASKID] = data.TaskID.ToString();
+                    });
+
+                    // Keep emitting progress updates during the operation
+                    using var cts = new CancellationTokenSource();
+                    Task.Run(async () =>
+                    {
+                        while (!cts.IsCancellationRequested)
+                        {
+                            await Task.Delay(1000, cts.Token);
+                            if (!cts.IsCancellationRequested)
+                                eventPollNotify.SignalProgressUpdate(sink.Copy);
+                        }
+                    });
 
                     task.Run(sink);
+                    eventPollNotify.SignalProgressUpdate(sink.Copy);
                 }
                 catch (Exception ex)
                 {
@@ -524,6 +581,7 @@ namespace Duplicati.Server
                 }
                 finally
                 {
+                    eventPollNotify.SignalProgressUpdate(null);
                     data.TaskFinished = DateTime.Now;
                 }
 
@@ -540,10 +598,26 @@ namespace Duplicati.Server
             try
             {
                 var sink = new MessageSink(data.TaskID, backup.ID);
+                using var cts = new CancellationTokenSource();
+                // Non-queue are "wrong" tasks that are running directly and often cause
+                // timeouts. They should be removed, but for now we keep them,
+                // but do not report progress updates.
                 if (fromQueue)
                 {
                     progressStateProviderService.GenerateProgressState = () => sink.Copy();
                     eventPollNotify.SignalNewEvent();
+                    eventPollNotify.SignalProgressUpdate(sink.Copy);
+
+                    // Keep emitting progress updates during the operation
+                    Task.Run(async () =>
+                    {
+                        while (!cts.IsCancellationRequested)
+                        {
+                            await Task.Delay(1000, cts.Token);
+                            if (!cts.IsCancellationRequested)
+                                eventPollNotify.SignalProgressUpdate(sink.Copy);
+                        }
+                    });
                 }
 
                 var options = ApplyOptions(databaseConnection, backup, GetCommonOptions(databaseConnection));
@@ -553,9 +627,7 @@ namespace Duplicati.Server
 
                 // Pack in the system or task config for easy restore
                 if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
-                {
                     tempfolder = StoreTaskConfigAndGetTempFolder(databaseConnection, data, options);
-                }
 
                 // Attach a log scope that tags all messages to relay the TaskID and BackupID
                 using (Library.Logging.Log.StartScope(log =>
@@ -753,6 +825,7 @@ namespace Duplicati.Server
             {
                 data.SetController(null);
                 data.TaskFinished = DateTime.Now;
+                eventPollNotify.SignalProgressUpdate(progressStateProviderService?.GenerateProgressState);
             }
         }
 

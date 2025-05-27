@@ -300,7 +300,7 @@ partial class BackendManager
             }
             finally
             {
-                Context.ProgressHandler.EndTransfer(RemoteFilename);
+                Context.ProgressHandler.EndTransfer(BackendActionType.Put, RemoteFilename);
             }
 
             var duration = DateTime.Now - begin;

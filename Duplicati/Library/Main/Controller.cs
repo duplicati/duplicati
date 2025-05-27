@@ -501,6 +501,7 @@ namespace Duplicati.Library.Main
                         try
                         {
                             m_currentBackendManager = backend;
+                            m_currentBackendManager.UpdateThrottleValues(m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond);
                             method(result, backend).Await();
                         }
                         finally

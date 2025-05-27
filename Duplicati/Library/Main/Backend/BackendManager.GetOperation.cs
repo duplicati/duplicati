@@ -155,7 +155,7 @@ partial class BackendManager
             {
                 // Remove temp files on failure
                 dlTarget?.Dispose();
-                Context.ProgressHandler.EndTransfer(RemoteFilename);
+                Context.ProgressHandler.EndTransfer(BackendActionType.Get, RemoteFilename);
             }
         }
 

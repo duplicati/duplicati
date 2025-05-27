@@ -45,6 +45,15 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings) : ISys
         "v2:destination:test",
         "v1:gettask:taskstarted",
         "v1:gettask:taskfinished",
+        "v1:websocket:authenticate",
+        "v1:subscribe:legacystatus",
+        "v1:subscribe:backuplist",
+        "v1:subscribe:serversettings",
+        "v1:subscribe:progress",
+        "v1:subscribe:taskqueue",
+        "v1:subscribe:notifications",
+
+        // "v1:subscribe:scheduler",
     ];
 
     /// <summary>

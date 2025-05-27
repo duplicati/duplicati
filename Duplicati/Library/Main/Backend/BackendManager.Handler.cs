@@ -245,8 +245,10 @@ partial class BackendManager
         /// <returns>An awaitable task</returns>        
         private async Task EnsureAtMostNActiveTasks(int uploads, int downloads)
         {
+            context.ProgressHandler?.SetIsBlocking(true);
             await EnsureAtMostNActiveTasks(uploads, activeUploads).ConfigureAwait(false);
             await EnsureAtMostNActiveTasks(downloads, activeDownloads).ConfigureAwait(false);
+            context.ProgressHandler?.SetIsBlocking(false);
         }
 
         /// <summary>

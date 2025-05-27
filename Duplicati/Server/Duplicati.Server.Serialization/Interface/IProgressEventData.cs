@@ -19,21 +19,41 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 namespace Duplicati.Server.Serialization.Interface
 {
+    /// <summary>
+    /// Representation of the current active transfer.
+    /// </summary>
+    /// <param name="BackendAction">The action being performed by the backend</param>
+    /// <param name="BackendPath">The path of the file being transferred</param>
+    /// <param name="BackendFileSize">The total size of the file being transferred</param>
+    /// <param name="BackendFileProgress">The current progress of the file transfer</param>
+    /// <param name="BackendSpeed">The current speed of the file transfer</param>
+    /// <param name="BackendIsBlocking">Indicates if the backend operation is blocking</param>
+    public sealed record ActiveTransfer(
+        string BackendAction,
+        string BackendPath,
+        long BackendFileSize,
+        long BackendFileProgress,
+        long BackendSpeed,
+        bool BackendIsBlocking
+    );
+
     public interface IProgressEventData
     {
-        string BackupID { get; }
+        string? BackupID { get; }
         long TaskID { get; }
 
         string BackendAction { get; }
-        string BackendPath { get; }
+        string? BackendPath { get; }
         long BackendFileSize { get; }
         long BackendFileProgress { get; }
         long BackendSpeed { get; }
         bool BackendIsBlocking { get; }
 
-        string CurrentFilename { get; }
+        string? CurrentFilename { get; }
         long CurrentFilesize { get; }
         long CurrentFileoffset { get; }
         bool CurrentFilecomplete { get; }
@@ -46,5 +66,6 @@ namespace Duplicati.Server.Serialization.Interface
         long TotalFileSize { get; }
         bool StillCounting { get; }
 
+        ActiveTransfer[]? ActiveTransfers { get; }
     }
 }

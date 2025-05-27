@@ -18,14 +18,17 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System.Text;
 
-namespace Duplicati.WebserverCore.Extensions;
+namespace Duplicati.WebserverCore.Abstractions;
 
-public static class StringExtensions
+/// <summary>
+/// Provides methods for handling stored backups
+/// </summary>
+public interface IBackupListService
 {
-    public static byte[] GetBytes(this string str)
-    {
-        return Encoding.Default.GetBytes(str);
-    }
+    IEnumerable<Dto.BackupAndScheduleOutputDto> List(string? orderBy);
+
+    Dto.ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, string passphrase, string tempfile);
+
+    Dto.CreateBackupDto Add(Dto.BackupAndScheduleInputDto data, bool temporary, bool existingDb);
 }

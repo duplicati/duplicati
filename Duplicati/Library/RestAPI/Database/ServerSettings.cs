@@ -151,6 +151,7 @@ namespace Duplicati.Server.Database
             {
                 provider?.GetRequiredService<INotificationUpdateService>()?.IncrementLastDataUpdateId();
                 provider?.GetRequiredService<EventPollNotify>()?.SignalNewEvent();
+                provider?.GetRequiredService<EventPollNotify>()?.SignalServerSettingsUpdated();
                 // If throttle options were changed, update now
                 provider?.GetRequiredService<IQueueRunnerService>()?.GetCurrentTask()?.UpdateThrottleSpeeds(UploadSpeedLimit, DownloadSpeedLimit);
             }
