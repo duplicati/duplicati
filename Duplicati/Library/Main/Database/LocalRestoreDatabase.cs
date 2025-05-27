@@ -1384,7 +1384,7 @@ namespace Duplicati.Library.Main.Database
                             more = await rd.ReadAsync();
                     }
                 }
-                await m_db.Transaction.Transaction.CommitAsync();
+                await m_db.Transaction.CommitAsync();
             }
 
             public async IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks()
