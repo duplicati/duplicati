@@ -970,7 +970,7 @@ namespace Duplicati.Library.Main.Database
                             .SetCommandAndParameters($@"
                                 {selectCommand}
                                 WHERE
-                                    ""ID"" IN ({mentionedVolumes})
+                                    ""ID"" NOT IN ({mentionedVolumes})
                                     AND ""Type"" = @Type
                             ")
                             .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString());
