@@ -235,7 +235,7 @@ namespace Duplicati.Library.Main.Operation
                             .DoCompactAsync(cdb, true, backendManager)
                             .ConfigureAwait(false);
 
-                        await cdb.Transaction.CommitAsync("PostCompact", restart: false);
+                        await cdb.Transaction.CommitAsync("PostCompact");
                     }
                 }
 
