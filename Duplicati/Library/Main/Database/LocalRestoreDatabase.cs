@@ -1867,12 +1867,6 @@ namespace Duplicati.Library.Main.Database
                         ")
                 };
 
-                dbm.m_insertblockCommand.SetTransaction(db.Transaction);
-                dbm.m_resetfileCommand.SetTransaction(db.Transaction);
-                dbm.m_updateAsRestoredCommand.SetTransaction(db.Transaction);
-                dbm.m_updateFileAsDataVerifiedCommand.SetTransaction(db.Transaction);
-                dbm.m_statUpdateCommand.SetTransaction(db.Transaction);
-
                 return dbm;
             }
 
@@ -1882,7 +1876,9 @@ namespace Duplicati.Library.Main.Database
                     return;
 
                 m_hasUpdates = false;
-                using var rd = await m_statUpdateCommand.ExecuteReaderAsync();
+                using var rd = await m_statUpdateCommand
+                    .SetTransaction(m_db.Transaction)
+                    .ExecuteReaderAsync();
                 var filesprocessed = 0L;
                 var processedsize = 0L;
 
@@ -1898,7 +1894,9 @@ namespace Duplicati.Library.Main.Database
             public async Task SetAllBlocksMissing(long targetfileid)
             {
                 m_hasUpdates = true;
-                m_resetfileCommand.SetParameterValue("@TargetFileId", targetfileid);
+                m_resetfileCommand
+                    .SetTransaction(m_db.Transaction)
+                    .SetParameterValue("@TargetFileId", targetfileid);
 
                 var r = await m_resetfileCommand.ExecuteNonQueryAsync();
                 if (r <= 0)
@@ -1908,7 +1906,9 @@ namespace Duplicati.Library.Main.Database
             public async Task SetAllBlocksRestored(long targetfileid, bool includeMetadata)
             {
                 m_hasUpdates = true;
-                m_updateAsRestoredCommand.SetParameterValue("@TargetFileId", targetfileid)
+                m_updateAsRestoredCommand
+                    .SetTransaction(m_db.Transaction)
+                    .SetParameterValue("@TargetFileId", targetfileid)
                     .SetParameterValue("@Metadata", includeMetadata ? 1 : 0);
 
                 var r = await m_updateAsRestoredCommand.ExecuteNonQueryAsync();
@@ -1919,7 +1919,9 @@ namespace Duplicati.Library.Main.Database
             public async Task SetFileDataVerified(long targetfileid)
             {
                 m_hasUpdates = true;
-                m_updateFileAsDataVerifiedCommand.SetParameterValue("@TargetFileId", targetfileid);
+                m_updateFileAsDataVerifiedCommand
+                    .SetTransaction(m_db.Transaction)
+                    .SetParameterValue("@TargetFileId", targetfileid);
 
                 var r = await m_updateFileAsDataVerifiedCommand.ExecuteNonQueryAsync();
                 if (r != 1)
@@ -1929,7 +1931,9 @@ namespace Duplicati.Library.Main.Database
             public async Task SetBlockRestored(long targetfileid, long index, string hash, long size, bool metadata)
             {
                 m_hasUpdates = true;
-                m_insertblockCommand.SetParameterValue("@TargetFileId", targetfileid)
+                m_insertblockCommand
+                    .SetTransaction(m_db.Transaction)
+                    .SetParameterValue("@TargetFileId", targetfileid)
                     .SetParameterValue("@Index", index)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
@@ -1943,7 +1947,7 @@ namespace Duplicati.Library.Main.Database
             public async Task CommitAsync()
             {
                 using (new Logging.Timer(LOGTAG, "CommitBlockMarker", "CommitBlockMarker"))
-                    await m_rtr.CommitAsync();
+                    await m_db.Transaction.CommitAsync();
             }
 
             public void Dispose()
