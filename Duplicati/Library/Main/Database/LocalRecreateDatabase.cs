@@ -514,6 +514,8 @@ namespace Duplicati.Library.Main.Database
 
                 throw new Exception("The recreate failed, please create a bug-report from this database and send it to the developers for further analysis");
             }
+
+            await m_rtr.CommitAsync();
         }
 
         /// <summary>
