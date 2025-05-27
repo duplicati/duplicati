@@ -545,7 +545,8 @@ namespace Duplicati.Library.Main.Database
                         while (await rd.ReadAsync())
                         {
                             rd.GetValues(values);
-                            if (values[1] != null && values[1] != DBNull.Value && FilterExpression.Matches(filter, values[1].ToString()))
+                            var path = values[1] as string;
+                            if (path != null && FilterExpression.Matches(filter, path.ToString()!))
                             {
                                 await cmd2.SetParameterValue("@ID", values[0])
                                     .SetParameterValue("@Path", values[1])

@@ -447,7 +447,7 @@ namespace Duplicati.Library.Main.Database
                 yield return new KeyValuePair<long, DateTime>(rd.ConvertValueToInt64(0), ParseFromEpochSeconds(rd.ConvertValueToInt64(1)).ToLocalTime());
         }
 
-        public async Task<(string Query, Dictionary<string, object?> Values)> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>>? filesetslist = null, bool singleTimeMatch = false)
+        public async Task<(string Query, Dictionary<string, object?> Values)> GetFilelistWhereClause(DateTime time, long[]? versions, IEnumerable<KeyValuePair<long, DateTime>>? filesetslist = null, bool singleTimeMatch = false)
         {
             KeyValuePair<long, DateTime>[] filesets;
             if (filesetslist != null)
@@ -966,7 +966,7 @@ namespace Duplicati.Library.Main.Database
             return r;
         }
 
-        public async IAsyncEnumerable<long> GetFilesetIDs(DateTime restoretime, long[] versions, bool singleTimeMatch = false)
+        public async IAsyncEnumerable<long> GetFilesetIDs(DateTime restoretime, long[]? versions, bool singleTimeMatch = false)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
                 throw new Exception("Invalid DateTime given, must be either local or UTC");
@@ -1006,7 +1006,7 @@ namespace Duplicati.Library.Main.Database
                 yield return el;
         }
 
-        public async Task<IEnumerable<long>> FindMatchingFilesets(DateTime restoretime, long[] versions)
+        public async Task<IEnumerable<long>> FindMatchingFilesets(DateTime restoretime, long[]? versions)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
                 throw new Exception("Invalid DateTime given, must be either local or UTC");
@@ -1957,8 +1957,8 @@ namespace Duplicati.Library.Main.Database
                     using (var rd = await c2.ExecuteReaderAsync())
                         while (await rd.ReadAsync())
                         {
-                            var p = rd.ConvertValueToString(0);
-                            if (p != null && FilterExpression.Matches(filter, p))
+                            var p = rd.ConvertValueToString(0) ?? "";
+                            if (FilterExpression.Matches(filter, p))
                             {
                                 await cmd.SetParameterValue("@Path", p)
                                     .ExecuteNonQueryAsync();

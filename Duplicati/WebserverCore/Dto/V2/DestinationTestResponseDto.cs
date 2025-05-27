@@ -31,6 +31,7 @@ public sealed record DestinationTestResponseDto : ResponseEnvelope<DestinationTe
     /// <param name="error">The error message</param>
     /// <param name="statusCode">The status code</param>
     /// <param name="folderExists">Flag indicating if the folder exists</param>
+    /// <param name="afterConnect">Flag indicating if the connection was made and authenticated</param>
     /// <param name="hostCertificate">The host certificate, if any</param>
     /// <param name="reportedHostKey">The reported host key, if any</param>
     /// <param name="acceptedHostKey">The currently accepted host key, if any</param>
@@ -39,6 +40,7 @@ public sealed record DestinationTestResponseDto : ResponseEnvelope<DestinationTe
         string error,
         string statusCode,
         bool? folderExists = null,
+        bool? afterConnect = null,
         string? hostCertificate = null,
         string? reportedHostKey = null,
         string? acceptedHostKey = null
@@ -47,11 +49,12 @@ public sealed record DestinationTestResponseDto : ResponseEnvelope<DestinationTe
         Success = false,
         Error = error,
         StatusCode = statusCode,
-        Data = hostCertificate == null && reportedHostKey == null && acceptedHostKey == null
+        Data = hostCertificate == null && reportedHostKey == null && acceptedHostKey == null && afterConnect == null
             ? null
             : new DestinationTestResult()
             {
                 FolderExists = folderExists,
+                AfterConnect = afterConnect,
                 FolderIsEmpty = null,
                 FolderContainsBackupFiles = null,
                 FolderContainsEncryptedBackupFiles = null,
@@ -78,6 +81,7 @@ public sealed record DestinationTestResponseDto : ResponseEnvelope<DestinationTe
             Data = new DestinationTestResult()
             {
                 FolderExists = true,
+                AfterConnect = true,
                 FolderIsEmpty = !anyFiles,
                 FolderContainsBackupFiles = anyBackups,
                 FolderContainsEncryptedBackupFiles = anyEncryptedFiles,
@@ -111,9 +115,13 @@ public sealed record DestinationTestResult
     /// </summary>
     public required bool? FolderContainsEncryptedBackupFiles { get; init; }
     /// <summary>
+    /// Flag indicating if the connection was made and authenticated
+    /// </summary>
+    public required bool? AfterConnect { get; init; }
+    /// <summary>
     /// The host certificate, if any
     /// </summary>
-    public string? HostCertificate { get; init; }
+    public required string? HostCertificate { get; init; }
     /// <summary>
     /// The reported host key, if any
     /// </summary>

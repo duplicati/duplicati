@@ -19,31 +19,28 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Threading;
-using System.Threading.Tasks;
+namespace Duplicati.Library.Backend.OpenStack;
 
-namespace Duplicati.Library.Interface
+internal class Keystone3AuthResponse
 {
-    /// <summary>
-    /// Contains extension methods for the IBackend interfaces
-    /// </summary>
-    public static class BackendExtensions
+    public TokenClass? token { get; set; }
+
+    public class EndpointItem
     {
-        /// <summary>
-        /// Tests a backend by invoking the List() method.
-        /// As long as the iteration can either complete or find at least one file without throwing, the test is successful
-        /// </summary>
-        /// <param name="backend">Backend to test</param>
-        /// <param name="cancelToken">Cancellation token</param>
-        public static async Task TestListAsync(this IBackend backend, CancellationToken cancelToken)
-        {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
-            // If we can iterate successfully, even if it's empty, then the backend test is successful
-            await foreach (IFileEntry file in backend.ListAsync(cts.Token).ConfigureAwait(false))
-            {
-                cts.Cancel();
-                return;
-            }
-        }
+        public string? @interface { get; set; }
+        public string? region { get; set; }
+        public string? url { get; set; }
+    }
+
+    public class CatalogItem
+    {
+        public EndpointItem[]? endpoints { get; set; }
+        public string? name { get; set; }
+        public string? type { get; set; }
+    }
+    public class TokenClass
+    {
+        public CatalogItem[]? catalog { get; set; }
+        public DateTime? expires_at { get; set; }
     }
 }

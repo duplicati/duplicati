@@ -18,18 +18,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings
+
+namespace Duplicati.Library.Backend.OpenStack;
+
+internal class OpenStackStorageItem
 {
-    internal static class Sia
-    {
-        public static string Description => LC.L(@"This backend can read and write data to Sia.");
-        public static string DisplayName => LC.L(@"Sia Decentralized Cloud");
-        public static string SiaPathDescriptionLong => LC.L(@"Set the target path. Example: /backup");
-        public static string SiaPathDescriptionShort => LC.L(@"Backup path");
-        public static string SiaPasswordLong => LC.L(@"Supply a password for Sia server.");
-        public static string SiaPasswordShort => LC.L(@"Sia password");
-        public static string SiaRedundancyDescriptionLong => LC.L(@"The minimum value for redundancy is 1.0.");
-        public static string SiaRedundancyDescriptionShort => LC.L(@"Set the minimum redundancy");
-    }
+    public string? name { get; set; }
+    public DateTime? last_modified { get; set; }
+    public long? bytes { get; set; }
+    public string? content_type { get; set; }
+    public string? subdir { get; set; }
 }

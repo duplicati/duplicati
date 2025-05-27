@@ -27,6 +27,7 @@ using COSXML.Model.Tag;
 using COSXML.Utils;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
 using System.Runtime.CompilerServices;
@@ -269,6 +270,8 @@ namespace Duplicati.Library.Backend.TencentCOS
                 Logging.Log.WriteErrorMessage(LOGTAG, "Test", serverEx, "Request failed: {0}, {1}", json, serverEx.GetInfo());
                 throw;
             }
+
+            await this.TestReadWritePermissionsAsync(cancelToken).ConfigureAwait(false);
         }
 
         public Task CreateFolderAsync(CancellationToken cancelToken)

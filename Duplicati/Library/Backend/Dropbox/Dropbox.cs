@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using System.Runtime.CompilerServices;
 
@@ -29,7 +30,7 @@ namespace Duplicati.Library.Backend
     // This class is instantiated dynamically in the BackendLoader.
     public class Dropbox : IBackend, IStreamingBackend
     {
-        private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL("dropbox");
+        private static readonly string TOKEN_URL = OAuthHelperHttpClient.OAUTH_LOGIN_URL("dropbox");
         private readonly string m_path;
         private readonly DropboxHelper dbx;
 
@@ -92,6 +93,12 @@ namespace Duplicati.Library.Backend
             return ife;
         }
 
+        private void ThrowFolderMissingException(DropboxException de)
+        {
+            if (de.errorJSON?["error"]?[".tag"]?.ToString() == "path" && de.errorJSON?["error"]?["path"]?[".tag"]?.ToString() == "not_found")
+                throw new FolderMissingException();
+        }
+
         private async Task<T> HandleListExceptions<T>(Func<Task<T>> func)
         {
             try
@@ -100,9 +107,7 @@ namespace Duplicati.Library.Backend
             }
             catch (DropboxException de)
             {
-                if (de.errorJSON?["error"]?[".tag"]?.ToString() == "path" && de.errorJSON?["error"]?["path"]?[".tag"]?.ToString() == "not_found")
-                    throw new FolderMissingException();
-
+                ThrowFolderMissingException(de);
                 throw;
             }
         }
@@ -141,9 +146,9 @@ namespace Duplicati.Library.Backend
                 var path = $"{m_path}/{remotename}";
                 await dbx.DeleteAsync(path, cancelToken).ConfigureAwait(false);
             }
-            catch (DropboxException)
+            catch (DropboxException de)
             {
-                // we can catch some events here and convert them to Duplicati exceptions
+                ThrowFolderMissingException(de);
                 throw;
             }
         }
@@ -159,7 +164,7 @@ namespace Duplicati.Library.Backend
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.Dropbox.Hosts());
 
         public Task TestAsync(CancellationToken cancelToken)
-            => this.TestListAsync(cancelToken);
+            => this.TestReadWritePermissionsAsync(cancelToken);
 
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
@@ -183,9 +188,9 @@ namespace Duplicati.Library.Backend
                 string path = $"{m_path}/{remotename}";
                 await dbx.UploadFileAsync(path, stream, cancelToken);
             }
-            catch (DropboxException)
+            catch (DropboxException de)
             {
-                // we can catch some events here and convert them to Duplicati exceptions
+                ThrowFolderMissingException(de);
                 throw;
             }
         }
@@ -197,9 +202,9 @@ namespace Duplicati.Library.Backend
                 string path = string.Format("{0}/{1}", m_path, remotename);
                 await dbx.DownloadFileAsync(path, stream, cancelToken).ConfigureAwait(false);
             }
-            catch (DropboxException)
+            catch (DropboxException de)
             {
-                // we can catch some events here and convert them to Duplicati exceptions
+                ThrowFolderMissingException(de);
                 throw;
             }
         }

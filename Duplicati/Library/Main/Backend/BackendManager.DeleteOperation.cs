@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -64,9 +65,11 @@ partial class BackendManager
                 // Check if the file was not found, and if so, check if it was actually deleted
                 var isFileMissingException = ex is Library.Interface.FileMissingException || ex is System.IO.FileNotFoundException;
                 var wr = (ex as System.Net.WebException)?.Response as System.Net.HttpWebResponse;
+                var isWrFileMissingException = wr != null && (wr.StatusCode == System.Net.HttpStatusCode.NotFound || wr.StatusCode == System.Net.HttpStatusCode.Gone);
+                var isHttpFileMissingException = ex is HttpRequestException && (ex as HttpRequestException)?.StatusCode == System.Net.HttpStatusCode.NotFound;
                 bool recovered = false;
 
-                if (isFileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
+                if (isFileMissingException || isWrFileMissingException || isHttpFileMissingException)
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileFailed", LC.L($"Delete operation failed for {RemoteFilename} with FileNotFound, listing contents"));
 

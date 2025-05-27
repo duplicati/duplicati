@@ -1,4 +1,3 @@
-
 # Environment variables for tests
 
 On Github actions these are mapped 1:1 to secrets, even the non password fields are stored in secrets.
@@ -15,7 +14,7 @@ NUMBER_OF_FILES  default is 20
 ## Backends CI Status
 
 | Backend        | CI Planned       | CI Status |
-|----------------|------------------|-----------|
+| -------------- | ---------------- | --------- |
 | pCloud         | Planned          | Live      |
 | WebDav         | Planned          | Live      |
 | Shhv2          | Planned          | Live      |
@@ -33,29 +32,48 @@ NUMBER_OF_FILES  default is 20
 | IDrive2        | Planned          | Live      |
 | backBlaze      | Planned          | Live      |
 | Filen          | Planned          | Live      |
+| Jottacloud     | Pannned          | Live      |
+| GCS            | Planned          | Live      |
+| OpenStack      | Planned          | Live      |
 | File           | Planned          |           |
 | TahoeLAFS      | Planned          |           |
 | TescentCOS     | Pending Decision |           |
 | Storj          | Pending Decision |           |
-| Sia            | Pending Decision |           |
 | SharePoint     | Pending Decision |           |
 | Rclone         | Pending Decision |           |
-| OpenStack      | Pending Decision |           |
-| Mega           | Pending Decision |           |
-| Jottacloud     | Pending Decision |           |
+| Mega           | Deprecated       |           |
 | AliyunOSS      | Pending Decision |           |
 
 ## Backends that do not require Environment variables
 
-* FTP _(TestContainers required)_
-* SSH _(TestContainers required)_
-* Webdav _(TestContainers required)_
-* CIFS _(TestContainers required)_
+- FTP _(TestContainers required)_
+- SSH _(TestContainers required)_
+- Webdav _(TestContainers required)_
+- CIFS _(TestContainers required)_
 
 Please note that TestContainers token has to be configured in secrets/Github actions yml.
 
 ## Backends that require Environment variables
 
+
+# CloudStack
+
+```
+TESTCREDENTIAL_CLOUDSTACK_USERNAME
+TESTCREDENTIAL_CLOUDSTACK_PASSWORD
+TESTCREDENTIAL_CLOUDSTACK_LOCATION
+TESTCREDENTIAL_CLOUDSTACK_TENANT
+TESTCREDENTIAL_CLOUDSTACK_DOMAIN
+TESTCREDENTIAL_CLOUDSTACK_REGION
+TESTCREDENTIAL_CLOUDSTACK_FOLDER
+```
+
+# JottaCloud
+
+```
+TESTCREDENTIAL_JOTTACLOUD_AUTHID
+TESTCREDENTIAL_JOTTACLOUD_FOLDER
+```
 
 # iDrivee2
 
@@ -134,7 +152,6 @@ TESTCREDENTIAL_DROPBOX_TOKEN
 
 Attention: **TESTCREDENTIAL_AZURE_ACCESSKEY is URI escaped automatically, supply the raw value.**
 
-
 ```
 TESTCREDENTIAL_AZURE_ACCOUNTNAME
 TESTCREDENTIAL_AZURE_ACCESSKEY
@@ -148,7 +165,16 @@ TESTCREDENTIAL_PCLOUD_SERVER
 TESTCREDENTIAL_PCLOUD_TOKEN
 TESTCREDENTIAL_PCLOUD_FOLDER
 ```
+
 For PCloud the server is the API server(eapi.pcloud.com for EU hosted account or api.pcloud.com for non EU). The token is the OAuth token.
+
+## Google Cloud Services
+
+```
+TESTCREDENTIAL_GCS_BUCKET
+TESTCREDENTIAL_GCS_FOLDER
+TESTCREDENTIAL_GCS_TOKEN
+```
 
 ## Running the tests
 
@@ -167,5 +193,3 @@ Running with full verbosity (useful if tests are failing):
 Running specific tests:
 
 `dotnet test Duplicati.Backend.Tests.sln --logger:"console;verbosity=detailed" --filter="Name=TestDropBox"`
-
-

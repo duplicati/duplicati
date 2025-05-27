@@ -25,6 +25,7 @@ using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
+using InvalidCertificateException = Duplicati.Library.Utility.SslCertificateValidator.InvalidCertificateException;
 
 namespace Duplicati.WebserverCore.Endpoints.V1
 {
@@ -101,6 +102,24 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             return new TupleDisposeWrapper(backend, modules);
         }
 
+        private static Exception GetInnerException<T>(Exception ex) where T : Exception
+        {
+            var original = ex;
+            while (true)
+            {
+                if (ex == null)
+                    return original;
+
+                if (ex is T)
+                    return (T)ex;
+
+                if (ex.InnerException == null)
+                    throw new ArgumentNullException(nameof(ex.InnerException));
+
+                ex = ex.InnerException;
+            }
+        }
+
         private static async Task ExecuteTest(Connection connection, IApplicationSettings applicationSettings, string url, bool autoCreate, CancellationToken cancelToken)
         {
             TupleDisposeWrapper? wrapper = null;
@@ -112,7 +131,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                 using (var b = wrapper.Backend)
                 {
                     try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
-                    catch (FolderMissingException)
+                    catch (Exception ex) when (GetInnerException<FolderMissingException>(ex) is FolderMissingException)
                     {
                         if (!autoCreate)
                             throw;
@@ -124,21 +143,20 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                     return;
                 }
             }
-            // TODO: These should be wrapped in a JSON response, possibly with 200 status code
-            catch (FolderMissingException)
+            catch (Exception ex) when (GetInnerException<FolderMissingException>(ex) is FolderMissingException)
             {
                 if (autoCreate)
                     throw new ServerErrorException("error-creating-folder");
                 throw new ServerErrorException("missing-folder");
             }
-            catch (Library.Utility.SslCertificateValidator.InvalidCertificateException icex)
+            catch (Exception ex) when (GetInnerException<InvalidCertificateException>(ex) is InvalidCertificateException icex)
             {
                 if (string.IsNullOrWhiteSpace(icex.Certificate))
                     throw new ServerErrorException(icex.Message);
                 else
                     throw new ServerErrorException("incorrect-cert:" + icex.Certificate);
             }
-            catch (Library.Utility.HostKeyException hex)
+            catch (Exception ex) when (GetInnerException<Library.Utility.HostKeyException>(ex) is Library.Utility.HostKeyException hex)
             {
                 if (string.IsNullOrWhiteSpace(hex.ReportedHostKey))
                     throw new ServerErrorException(hex.Message);

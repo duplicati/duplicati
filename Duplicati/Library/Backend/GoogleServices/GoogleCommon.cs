@@ -22,6 +22,8 @@
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace Duplicati.Library.Backend.GoogleServices
 {
@@ -35,49 +37,54 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// <summary>
         /// Helper method that queries a resumeable upload uri for progress
         /// </summary>
-        /// <returns>The upload range.</returns>
+        /// <typeparam name="T">The type of data in the response.</typeparam>
         /// <param name="oauth">The Oauth instance</param>
         /// <param name="uploaduri">The resumeable uploaduri</param>
         /// <param name="streamlength">The length of the entire stream</param>
-        private static long QueryUploadRange<T>(OAuthHelper oauth, string uploaduri, long streamlength, out T? response)
+        /// <param name="shortTimeout">The short request timeout.</param>
+        /// <param name="readWriteTimeout">The read write timeout.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>Tuple with the range and the response.</returns>
+        private static async Task<(long, T? Response)> QueryUploadRange<T>(OAuthHelperHttpClient oauth, string uploaduri, long streamlength, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancellationToken)
             where T : class
         {
-            response = null;
-            var req = oauth.CreateRequest(uploaduri);
-            req.Method = "PUT";
-            req.ContentLength = 0;
-            req.Headers["Content-Range"] = string.Format("bytes */{0}", streamlength);
+            using var req = await oauth.CreateRequestAsync(uploaduri, HttpMethod.Put, cancellationToken);
+            req.Content = new ByteArrayContent(Array.Empty<byte>());
+            req.Content.Headers.Add("Content-Range", $"bytes */{streamlength}");
 
-            // TODO: Apply timeout when this is upgraded to HttpClient
-            var areq = new AsyncHttpRequest(req);
-            using (var resp = oauth.GetResponseWithoutException(areq))
+            using var resp = await Library.Utility.Utility.WithTimeout(
+                shortTimeout,
+                cancellationToken,
+                ct => oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct)
+            ).ConfigureAwait(false);
+
+            var code = (int)resp.StatusCode;
+
+            // If the upload is completed, we get 201 or 200
+            if (code >= 200 && code <= 299)
             {
-                var code = (int)resp.StatusCode;
+                // No timeout here, beause the response content is already read
+                var response = await resp.Content.ReadFromJsonAsync<T>(cancellationToken);
+                if (response == null)
+                    throw new Exception(string.Format("Upload succeeded, but no data was returned, status code: {0}", code));
 
-                // If the upload is completed, we get 201 or 200
-                if (code >= 200 && code <= 299)
-                {
-                    response = oauth.ReadJSONResponse<T>(resp);
-                    if (response == null)
-                        throw new Exception(string.Format("Upload succeeded, but no data was returned, status code: {0}", code));
-
-                    return streamlength;
-                }
-
-                if (code == 308)
-                {
-                    // A lack of a Range header is undocumented, 
-                    // but seems to occur when no data has reached the server:
-                    // https://code.google.com/a/google.com/p/apps-api-issues/issues/detail?id=3884
-
-                    if (resp.Headers["Range"] == null)
-                        return 0;
-                    else
-                        return long.Parse(resp.Headers["Range"]!.Split(new char[] { '-' })[1]) + 1;
-                }
-                else
-                    throw new WebException(string.Format("Unexpected status code: {0}", code), null, WebExceptionStatus.ServerProtocolViolation, resp);
+                return (streamlength, response);
             }
+
+            if (code == 308)
+            {
+                // A lack of a Range header is undocumented, 
+                // but seems to occur when no data has reached the server:
+                // https://code.google.com/a/google.com/p/apps-api-issues/issues/detail?id=3884
+
+                if (!resp.Content.Headers.TryGetValues("Range", out var rangeValues))
+                    return (0, null);
+
+                return (long.Parse(rangeValues.First().Split('-')[1]) + 1, null);
+            }
+            else
+                throw new HttpRequestException(HttpRequestError.HttpProtocolError, string.Format("Unexpected status code: {0}", code), null, resp.StatusCode);
+
         }
 
         /// <summary>
@@ -93,36 +100,23 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// <param name="method">The HTTP Method.</param>
         /// <typeparam name="TRequest">The type of data to upload as metadata.</typeparam>
         /// <typeparam name="TResponse">The type of data returned from the upload.</typeparam>
-        public static async Task<TResponse> ChunkedUploadWithResumeAsync<TRequest, TResponse>(OAuthHelper oauth, TRequest requestdata, string url, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancelToken, string method = "POST")
+        public static async Task<TResponse> ChunkedUploadWithResumeAsync<TRequest, TResponse>(OAuthHelperHttpClient oauth, TRequest requestdata, string url, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancelToken, HttpMethod method)
             where TRequest : class
             where TResponse : class
         {
-            var data = requestdata == null ? null : System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
-
-            var req = oauth.CreateRequest(url);
-            req.Method = method;
-            req.ContentLength = data == null ? 0 : data.Length;
-
-            if (data != null)
-                req.ContentType = "application/json; charset=UTF-8";
-
-            req.Headers["X-Upload-Content-Type"] = "application/octet-stream";
-            req.Headers["X-Upload-Content-Length"] = stream.Length.ToString();
+            using var req = await oauth.CreateRequestAsync(url, method, cancelToken);
+            if (requestdata != null)
+                req.Content = JsonContent.Create(requestdata);
+            req.Headers.Add("X-Upload-Content-Type", "application/octet-stream");
+            req.Headers.Add("X-Upload-Content-Length", stream.Length.ToString());
 
             var uploaduri = await Utility.Utility.WithTimeout(shortTimeout, cancelToken, async ct =>
             {
-                var areq = new AsyncHttpRequest(req);
-                if (data != null)
-                    using (var rs = areq.GetRequestStream())
-                        await rs.WriteAsync(data, 0, data.Length, cancelToken).ConfigureAwait(false);
+                using var resp = await oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+                if (!resp.Headers.TryGetValues("Location", out var locationValues) || string.IsNullOrWhiteSpace(locationValues.FirstOrDefault()))
+                    throw new HttpRequestException(HttpRequestError.Unknown, "Failed to start upload session", null, resp.StatusCode);
 
-                using (var resp = (HttpWebResponse)areq.GetResponse())
-                {
-                    if (resp.StatusCode != HttpStatusCode.OK || string.IsNullOrWhiteSpace(resp.Headers["Location"]))
-                        throw new WebException("Failed to start upload session", null, WebExceptionStatus.UnknownError, resp);
-
-                    return resp.Headers["Location"];
-                }
+                return locationValues.First();
             }).ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(uploaduri))
@@ -141,14 +135,12 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// <param name="shortTimeout">The short request timeout.</param>
         /// <param name="readWriteTimeout">The read write timeout.</param>
         /// <typeparam name="T">The type of data in the response.</typeparam>
-        private static async Task<T> ChunkedUploadAsync<T>(OAuthHelper oauth, string uploaduri, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancelToken)
+        private static async Task<T> ChunkedUploadAsync<T>(OAuthHelperHttpClient oauth, string uploaduri, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancelToken)
             where T : class
         {
             var queryRange = false;
             var retries = 0;
             var offset = 0L;
-            var buffer = new byte[Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
-            HttpWebResponse? resp = null;
 
             // Repeatedly try uploading until all retries are done
             while (true)
@@ -157,7 +149,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                 {
                     if (queryRange)
                     {
-                        offset = QueryUploadRange<T>(oauth, uploaduri, stream.Length, out var re);
+                        (offset, var re) = await QueryUploadRange<T>(oauth, uploaduri, stream.Length, shortTimeout, readWriteTimeout, cancelToken).ConfigureAwait(false);
                         queryRange = false;
 
                         if (re != null)
@@ -168,75 +160,55 @@ namespace Duplicati.Library.Backend.GoogleServices
                     if (stream.Position != offset)
                         stream.Position = offset;
 
-                    var req = oauth.CreateRequest(uploaduri);
-                    req.Method = "PUT";
-                    req.ContentType = "application/octet-stream";
+                    using var req = await oauth.CreateRequestAsync(uploaduri, HttpMethod.Put, cancelToken);
 
                     var chunkSize = Math.Min(UPLOAD_CHUNK_SIZE, stream.Length - offset);
-
-                    req.ContentLength = chunkSize;
-                    req.Headers["Content-Range"] = string.Format("bytes {0}-{1}/{2}", offset, offset + chunkSize - 1, stream.Length);
-
-                    // Upload the remaining data
-                    var areq = new AsyncHttpRequest(req);
-                    using (var rs = areq.GetRequestStream())
-                    using (var ts = rs.ObserveWriteTimeout(readWriteTimeout))
-                    {
-                        var remaining = chunkSize;
-                        while (remaining > 0)
-                        {
-                            var n = stream.Read(buffer, 0, (int)Math.Min(remaining, Library.Utility.Utility.DEFAULT_BUFFER_SIZE));
-                            await ts.WriteAsync(buffer, 0, n, cancelToken);
-                            remaining -= n;
-                        }
-                    }
+                    using var ls = new ReadLimitLengthStream(stream, offset, chunkSize);
+                    using var ts = ls.ObserveWriteTimeout(readWriteTimeout);
+                    req.Content = new StreamContent(ts);
+                    req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                    req.Content.Headers.Add("Content-Range", $"bytes {offset}-{offset + chunkSize - 1}/{stream.Length}");
+                    using var resp = await oauth.GetResponseUncheckedAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
 
                     // Check the response
-                    resp = await Utility.Utility.WithTimeout(shortTimeout, cancelToken, _ => oauth.GetResponseWithoutException(areq)).ConfigureAwait(false);
                     var code = (int)resp.StatusCode;
 
-                    if (code == 308 && resp.Headers["Range"] != null)
+                    if ((int)resp.StatusCode == 308 &&
+                        resp.Headers.TryGetValues("Range", out var rangeValues) &&
+                        !string.IsNullOrWhiteSpace(rangeValues.FirstOrDefault()))
                     {
-                        offset = long.Parse(resp.Headers["Range"]!.Split(new char[] { '-' })[1]) + 1;
+                        offset = long.Parse(rangeValues.First().Split('-')[1]) + 1;
                         retries = 0;
                     }
                     else if (code >= 200 && code <= 299)
                     {
                         offset += chunkSize;
                         if (offset != stream.Length)
-                            throw new Exception(string.Format("Upload succeeded prematurely. Uploaded: {0}, total size: {1}", offset, stream.Length));
+                            throw new HttpRequestException(HttpRequestError.HttpProtocolError, string.Format("Upload succeeded prematurely. Uploaded: {0}, total size: {1}", offset, stream.Length), null, resp.StatusCode);
 
-                        //Verify that the response is also valid
-                        var res = oauth.ReadJSONResponse<T>(resp);
-                        if (res == null)
-                            throw new Exception(string.Format("Upload succeeded, but no data was returned, status code: {0}", code));
-
-                        return res;
+                        //Verify that the response is also valid (no timeout guard, as we already read the content)
+                        return await resp.Content.ReadFromJsonAsync<T>(cancelToken).ConfigureAwait(false)
+                            ?? throw new HttpRequestException(HttpRequestError.HttpProtocolError, string.Format("Upload succeeded, but no data was returned, status code: {0}", code), null, resp.StatusCode);
                     }
                     else
                     {
-                        throw new WebException(string.Format("Unexpected status code: {0}", code), null, WebExceptionStatus.ServerProtocolViolation, resp);
+                        throw new HttpRequestException(HttpRequestError.HttpProtocolError, string.Format("Unexpected status code: {0}", code), null, resp.StatusCode);
                     }
                 }
                 catch (Exception ex)
                 {
                     var retry = false;
 
-                    // If we get a 5xx error, or some network issue, we retry
-                    if (ex is WebException exception && exception.Response is HttpWebResponse response)
+                    // Check for HttpRequestException and inspect status code if available
+                    if (ex is HttpRequestException httpEx && httpEx.StatusCode.HasValue)
                     {
-                        try
-                        {
-                            var code = (int)response.StatusCode;
-                            retry = code >= 500 && code <= 599;
-                        }
-                        catch
-                        {
-                            // Assume this is a transient error
-                            retry = true;
-                        }
+                        var code = (int)httpEx.StatusCode.Value;
+                        retry = code >= 500 && code <= 599;
                     }
-                    else if (ex is System.Net.Sockets.SocketException || ex is IOException || ex.InnerException is System.Net.Sockets.SocketException || ex.InnerException is System.IO.IOException)
+                    else if (ex is IOException ||
+                             ex is System.Net.Sockets.SocketException ||
+                             ex.InnerException is IOException ||
+                             ex.InnerException is System.Net.Sockets.SocketException)
                     {
                         retry = true;
                     }
@@ -251,12 +223,9 @@ namespace Duplicati.Library.Backend.GoogleServices
                         queryRange = true;
                     }
                     else
+                    {
                         throw;
-                }
-                finally
-                {
-                    // Wait until the end of the request to dispose of the response, as it may be needed for error handling
-                    resp?.Dispose();
+                    }
                 }
             }
         }

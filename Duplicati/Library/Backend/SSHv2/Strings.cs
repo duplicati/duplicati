@@ -53,7 +53,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string DescriptionAnyFingerprintShort => LC.L(@"Disable fingerprint validation");
         public static string DescriptionSshkeyfileLong => LC.L(@"Point to a valid OpenSSH keyfile. If the file is encrypted, the password supplied is used to decrypt it. If the keyfile is specified, the password is not used to authenticate.");
         public static string DescriptionSshkeyfileShort => LC.L(@"Use a SSH private key to authenticate");
-        public static string DescriptionSshkeyLong(string urlprefix) { return LC.L(@"An url-encoded SSH private key. The private key must be prefixed with {0}. If the key is encrypted, the password supplied is used to decrypt it. If the private key is specified, the password is not used to authenticate.", urlprefix); }
+        public static string DescriptionSshkeyLong => LC.L(@"An url-encoded SSH private key. If the key is encrypted, the password supplied is used to decrypt it. If the private key is specified, the password is not used to authenticate.");
         public static string DescriptionSshkeyShort => LC.L(@"Use a SSH private key to authenticate");
         public static string DescriptionSshtimeoutLong => LC.L(@"Use this option to manage the internal timeout for SSH operations. If the value is set to zero, the operations will not time out.");
         public static string DescriptionSshtimeoutShort => LC.L(@"Set the operation timeout value");

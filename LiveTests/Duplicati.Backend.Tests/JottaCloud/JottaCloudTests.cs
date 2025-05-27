@@ -19,16 +19,27 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings
+namespace Duplicati.Backend.Tests.JottaCloud;
+
+/// <summary>
+/// OneDrive Tests
+/// </summary>
+[TestClass]
+public sealed class JottaCloudTests : BaseTest
 {
-    internal static class Dropbox
+    [TestMethod]
+    public Task TestJottaCloud()
     {
-        public static string Description { get { return LC.L(@"This backend can read and write data to Dropbox. Allowed format is ""dropbox://folder/subfolder""."); } }
-        public static string DisplayName { get { return LC.L(@"Dropbox"); } }
-        public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
-        public static string OverQuotaError(string message) { return LC.L(@"The Dropbox account is over quota: {0}", message); }
-        public static string AuthorizationFailure(string message, string url) { return LC.L(@"Failed to authorize using the OAuth service: {0}. If the problem persists, try generating a new authid token from: {1}", message, url); }
+        CheckRequiredEnvironment(["TESTCREDENTIAL_JOTTACLOUD_AUTHID", "TESTCREDENTIAL_JOTTACLOUD_FOLDER"]);
+
+        var exitCode = CommandLine.BackendTester.Program.Main(
+            new[]
+            {
+                $"jottacloud://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_JOTTACLOUD_FOLDER")}?authid={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY")!)}",
+            }.Concat(Parameters.GlobalTestParameters).ToArray());
+
+        if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
+
+        return Task.CompletedTask;
     }
 }

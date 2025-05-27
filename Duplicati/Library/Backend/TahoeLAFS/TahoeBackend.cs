@@ -78,7 +78,7 @@ public class TahoeBackend : IStreamingBackend
 
     /// <inheritdoc />
     public Task TestAsync(CancellationToken cancelToken)
-        => this.TestListAsync(cancelToken);
+        => this.TestReadWritePermissionsAsync(cancelToken);
 
     /// <inheritdoc />
     public async Task CreateFolderAsync(CancellationToken cancelToken)
@@ -185,10 +185,10 @@ public class TahoeBackend : IStreamingBackend
                        }).ConfigureAwait(false))
             { }
         }
-        catch (WebException wex)
-            when (wex.Response is HttpWebResponse { StatusCode: HttpStatusCode.NotFound })
+        catch (HttpRequestException wex)
+            when (wex.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.NotFound)
         {
-            throw new FileMissingException(wex);
+            throw new FolderMissingException(Strings.TahoeBackend.MissingFolderError(_url, wex.Message), wex);
         }
     }
 

@@ -228,7 +228,8 @@ namespace Duplicati.Library.Main.Database
                             while (await rd.ReadAsync())
                             {
                                 rd.GetValues(values);
-                                if (values[0] != null && values[0] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[0].ToString()))
+                                var path = values[0] as string;
+                                if (path != null && Library.Utility.FilterExpression.Matches(filter, path.ToString()))
                                 {
                                     await cmd2
                                         .SetParameterValue("@FileId", values[1])

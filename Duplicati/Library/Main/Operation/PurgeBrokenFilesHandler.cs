@@ -124,7 +124,7 @@ namespace Duplicati.Library.Main.Operation
                         m_result.DeleteResults = new DeleteResults(m_result);
                         using (var rmdb = await LocalDeleteDatabase.CreateAsync(db))
                         {
-                            var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
+                            var opts = new Options(new Dictionary<string, string?>(m_options.RawOptions));
                             opts.RawOptions["version"] = string.Join(",", fully_emptied.Select(x => x.Version.ToString()));
                             opts.RawOptions.Remove("time");
                             opts.RawOptions["no-auto-compact"] = "true";
@@ -147,7 +147,7 @@ namespace Duplicati.Library.Main.Operation
                         foreach (var bs in to_purge)
                         {
                             Logging.Log.WriteInformationMessage(LOGTAG, "PurgingFiles", "Purging {0} file(s) from fileset {1}", bs.RemoveCount, bs.Timestamp.ToLocalTime());
-                            var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
+                            var opts = new Options(new Dictionary<string, string?>(m_options.RawOptions));
 
                             using (var pgdb = await Database.LocalPurgeDatabase.CreateAsync(db))
                             {

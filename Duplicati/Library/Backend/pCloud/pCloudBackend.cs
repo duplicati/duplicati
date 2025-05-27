@@ -39,7 +39,7 @@ public class pCloudBackend : IStreamingBackend
     /// <summary>
     /// The URL used to get a new token
     /// </summary>
-    private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL_NEW("pcloud");
+    private static readonly string TOKEN_URL = OAuthHelperHttpClient.OAUTH_LOGIN_URL_NEW("pcloud");
     /// <summary>
     /// Implementation of interface property for the backend key
     /// </summary>
@@ -429,9 +429,7 @@ public class pCloudBackend : IStreamingBackend
         if (string.IsNullOrWhiteSpace(_Path) || _Path.Split(PATH_SEPARATORS, StringSplitOptions.RemoveEmptyEntries).Length == 0)
             return;
 
-        // This method will search for the folderId recursively and throw an exception if the folder is not found
-        await GetFolderId(cancellationToken).ConfigureAwait(false);
-
+        await this.TestReadWritePermissionsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

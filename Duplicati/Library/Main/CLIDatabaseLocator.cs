@@ -108,7 +108,7 @@ namespace Duplicati.Library.Main
         /// <returns>The database path or null</returns>
         public static string? GetDatabasePathForCLI(string backend, Options? options, bool autoCreate = true, bool anyUsername = false)
         {
-            options ??= new Options(new Dictionary<string, string>());
+            options ??= new Options(new Dictionary<string, string?>());
 
             if (!string.IsNullOrEmpty(options.Dbpath))
                 return options.Dbpath;

@@ -69,7 +69,7 @@ namespace Duplicati.Library.Main
         /// <param name="target">The log target.</param>
         /// <param name="loglevel">The minimum log level to consider</param>
         /// <param name="filter">The log filter.</param>
-        public void AddTarget(ILogDestination target, LogMessageType loglevel, Library.Utility.IFilter? filter)
+        public void AddTarget(ILogDestination? target, LogMessageType loglevel, Library.Utility.IFilter? filter)
         {
             if (target == null)
                 return;

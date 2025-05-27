@@ -158,7 +158,7 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
-        public async IAsyncEnumerable<(DateTime FilesetTime, long FilesetID, long RemoveFileCount)> GetBrokenFilesets(DateTime time, long[] versions)
+        public async IAsyncEnumerable<(DateTime FilesetTime, long FilesetID, long RemoveFileCount)> GetBrokenFilesets(DateTime time, long[]? versions)
         {
             var query = BROKEN_FILE_SETS;
             var clause = await GetFilelistWhereClause(time, versions);

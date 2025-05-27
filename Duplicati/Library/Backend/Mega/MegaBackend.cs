@@ -251,7 +251,7 @@ namespace Duplicati.Library.Backend.Mega
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-            => this.TestListAsync(cancelToken);
+            => this.TestReadWritePermissionsAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

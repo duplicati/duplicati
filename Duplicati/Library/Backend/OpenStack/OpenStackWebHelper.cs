@@ -19,16 +19,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings
+using Duplicati.Library.Utility;
+
+namespace Duplicati.Library.Backend.OpenStack;
+
+internal class OpenStackWebHelper(OpenStackStorage parent, HttpClient httpClient) : JsonWebHelperHttpClient(httpClient)
 {
-    internal static class Dropbox
+    public override HttpRequestMessage CreateRequest(string url, string? method = null)
     {
-        public static string Description { get { return LC.L(@"This backend can read and write data to Dropbox. Allowed format is ""dropbox://folder/subfolder""."); } }
-        public static string DisplayName { get { return LC.L(@"Dropbox"); } }
-        public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
-        public static string OverQuotaError(string message) { return LC.L(@"The Dropbox account is over quota: {0}", message); }
-        public static string AuthorizationFailure(string message, string url) { return LC.L(@"Failed to authorize using the OAuth service: {0}. If the problem persists, try generating a new authid token from: {1}", message, url); }
+        var request = base.CreateRequest(url, method);
+        request.Headers.Add("X-Auth-Token", parent.GetAccessToken(CancellationToken.None).Await());
+        return request;
     }
 }

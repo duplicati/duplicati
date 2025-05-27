@@ -21,6 +21,7 @@ partial class BackendManager
     /// <param name="UploadThrottleManager">The upload throttle manager</param>
     /// <param name="DownloadThrottleManager">The download throttle manager</param>
     /// <param name="TaskReader">The task reader</param>
+    /// <param name="IsThrottleDisabled">Whether throttling is disabled</param>
     /// <param name="Options">The options</param>
     private sealed record ExecuteContext(
         ProgressHandler ProgressHandler,
@@ -29,6 +30,7 @@ partial class BackendManager
         ThrottleManager UploadThrottleManager,
         ThrottleManager DownloadThrottleManager,
         ITaskReader TaskReader,
+        bool IsThrottleDisabled,
         Options Options);
 
     /// <summary>

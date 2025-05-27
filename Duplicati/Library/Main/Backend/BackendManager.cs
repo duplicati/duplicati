@@ -59,14 +59,17 @@ internal partial class BackendManager : IBackendManager
         if (string.IsNullOrWhiteSpace(backendUrl))
             throw new ArgumentNullException(nameof(backendUrl));
 
+        var isThrottleDisabled = options.DisableThrottle || options.ThrottleDisabledBackends.Contains(Library.Utility.Utility.GuessScheme(backendUrl) ?? string.Empty);
+
         // To avoid excessive parameter passing, the context is captured here
         context = new ExecuteContext(
             new ProgressHandler(backendWriter, taskReader),
             backendWriter ?? throw new ArgumentNullException(nameof(backendWriter)),
             new DatabaseCollector(),
-            new ThrottleManager() { Limit = options.MaxUploadPrSecond },
-            new ThrottleManager() { Limit = options.MaxDownloadPrSecond },
+            new ThrottleManager() { Limit = isThrottleDisabled ? 0 : options.MaxUploadPrSecond },
+            new ThrottleManager() { Limit = isThrottleDisabled ? 0 : options.MaxDownloadPrSecond },
             taskReader ?? throw new ArgumentNullException(nameof(taskReader)),
+            isThrottleDisabled,
             options ?? throw new ArgumentNullException(nameof(options))
         );
 
@@ -392,6 +395,9 @@ internal partial class BackendManager : IBackendManager
     /// <param name="maxDownloadPrSecond">The maximum download speed in bytes per second</param>
     public void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond)
     {
+        if (context.IsThrottleDisabled)
+            return;
+
         context.UploadThrottleManager.Limit = maxUploadPrSecond;
         context.DownloadThrottleManager.Limit = maxDownloadPrSecond;
     }
