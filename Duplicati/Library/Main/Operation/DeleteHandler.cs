@@ -59,7 +59,7 @@ namespace Duplicati.Library.Main.Operation
                 await DoRunAsync(db, false, false, backendManager).ConfigureAwait(false);
 
                 if (!m_options.Dryrun)
-                    await db.Transaction.CommitAsync("ComitDelete", restart: false);
+                    await db.Transaction.CommitAsync("ComitDelete");
             }
         }
 

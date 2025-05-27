@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!m_options.Dryrun)
                 {
-                    await db.Transaction.CommitAsync("CommitCompact", restart: false);
+                    await db.Transaction.CommitAsync("CommitCompact");
                     if (changed)
                     {
                         await db.WriteResults(m_result);
