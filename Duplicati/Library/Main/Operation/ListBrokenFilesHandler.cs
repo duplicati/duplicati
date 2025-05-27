@@ -54,8 +54,8 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = await Database.LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache))
             {
-                Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+                await Utility.UpdateOptionsFromDb(db, m_options);
+                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
                 await DoRunAsync(backendManager, db, filter, callbackhandler).ConfigureAwait(false);
             }
         }
