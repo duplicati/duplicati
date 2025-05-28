@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.Globalization;
+using Duplicati.Library;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Localization;
 using Duplicati.Server;
@@ -357,8 +358,10 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
                 DisplayName = browserlanguage.NativeName
             },
             SupportedLocales = systeminfo.SupportedLocales,
-            BrowserLocaleSupported = Library.Localization.LocalizationService.IsCultureSupported(browserlanguage),
+            BrowserLocaleSupported = LocalizationService.IsCultureSupported(browserlanguage),
             TimeZones = systeminfo.TimeZones,
+            DefaultOAuthURL = OAuthContextSettings.ServerURL,
+            DefaultOAuthURLv2 = OAuthContextSettings.DUPLICATI_OAUTH_SERVICE_NEW,
         };
     }
 }

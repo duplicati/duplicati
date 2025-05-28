@@ -52,6 +52,11 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <returns><c>true</c> if the transfer should continue, <c>false</c> if it should stop</returns>
         Task<bool> TransferRendevouz();
 
+        /// <summary>
+        /// A cancellation token that can be used to monitor stop requests
+        /// </summary>
+        CancellationToken StopToken { get; }
+
 #if DEBUG
         /// <summary>
         /// Callback for testing the task control
@@ -143,6 +148,11 @@ namespace Duplicati.Library.Main.Operation.Common
         private readonly CancellationTokenSource m_transferTcs = new();
 
         /// <summary>
+        /// Cancellation token source that is cancelled if the operation is stopped
+        /// </summary>
+        private readonly CancellationTokenSource m_stopTcs = new CancellationTokenSource();
+
+        /// <summary>
         /// The control lock instance
         /// </summary>
         private readonly object m_lock = new object();
@@ -166,6 +176,11 @@ namespace Duplicati.Library.Main.Operation.Common
         /// A cancellation token that is cancelled if the transfers are aborted
         /// </summary>
         public CancellationToken TransferToken => m_transferTcs.Token;
+
+        /// <summary>
+        /// A cancellation token that is cancelled if the operation is stopped
+        /// </summary>
+        public CancellationToken StopToken => m_stopTcs.Token;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> class.
@@ -269,6 +284,8 @@ namespace Duplicati.Library.Main.Operation.Common
                     m_transfer.SetResult(false);
                     m_transferstate = State.Stopped;
                 }
+
+                m_stopTcs.Cancel();
             }
         }
 
@@ -298,6 +315,8 @@ namespace Duplicati.Library.Main.Operation.Common
                     m_transferstate = State.Terminated;
                     m_transferTcs.Cancel();
                 }
+
+                m_stopTcs.Cancel();
             }
         }
 
