@@ -18,6 +18,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Server.Serialization.Interface;
+
 namespace Duplicati.WebserverCore.Dto
 {
     /// <summary>
@@ -80,5 +82,25 @@ namespace Duplicati.WebserverCore.Dto
         /// </summary>
         public required string MessageLogTag { get; set; }
 
+        /// <summary>
+        /// Converts an INotification entity to a NotificationDto.
+        /// </summary>
+        /// <param name="notification">The INotification entity to convert.</param>
+        /// <returns>A NotificationDto representing the INotification entity.</returns>
+        public static NotificationDto FromEntity(INotification notification)
+            => new NotificationDto
+            {
+                ID = notification.ID,
+                Type = notification.Type,
+                Title = notification.Title,
+                Message = notification.Message,
+                Exception = notification.Exception,
+                BackupID = notification.BackupID,
+                Action = notification.Action,
+                Timestamp = notification.Timestamp,
+                LogEntryID = notification.LogEntryID,
+                MessageID = notification.MessageID,
+                MessageLogTag = notification.MessageLogTag
+            };
     }
 }

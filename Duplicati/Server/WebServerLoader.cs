@@ -73,11 +73,6 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_ENABLE_FOREVER_TOKEN = "webservice-enable-forever-token";
 
     /// <summary>
-    /// Option for disabling the visual captcha
-    /// </summary>
-    public const string OPTION_WEBSERVICE_DISABLE_VISUAL_CAPTCHA = "webservice-disable-visual-captcha";
-
-    /// <summary>
     /// Option for setting the webservice allowed hostnames
     /// </summary>
     public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES = "webservice-allowed-hostnames";
@@ -145,6 +140,11 @@ public static class WebServerLoader
     /// Option for setting the webservice SSL certificate key
     /// </summary>
     public const string OPTION_WEBSERVICE_SSLCERTIFICATEFILEPASSWORD = "webservice-sslcertificatepassword";
+
+    /// <summary>
+    /// Option for disabling API extensions
+    /// </summary>
+    public const string OPTION_WEBSERVICE_DISABLEAPIEXTENSIONS = "webservice-disable-api-extensions";
 
     /// <summary>
     /// The default listening interface

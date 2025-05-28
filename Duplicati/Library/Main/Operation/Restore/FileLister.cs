@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 try
                 {
                     sw_get_files?.Start();
-                    var files = db.GetFilesAndSymlinksToRestore().OrderByDescending(x => x.Length).ToArray(); // Get started on big files first
+                    var files = db.GetFilesAndSymlinksToRestore().ToArray();
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_get_files?.Stop();
 

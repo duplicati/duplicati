@@ -72,13 +72,13 @@ Error message: {0}", error); }
                 public static string TempdirShort { get { return LC.L(@"Temporary storage folder"); } }
                 public static string WebserverResetJwtConfigDescription { get { return LC.L(@"Reset the JWT configuration, invalidating any issued login tokens"); } }
                 public static string WebserverEnableForeverTokenDescription { get { return LC.L(@"Enable the use of long-lived access tokens"); } }
-                public static string WebserverDisableVisualCaptchaDescription { get { return LC.L(@"Disable the visual captcha"); } }
                 public static string WebserverApiOnlyDescription { get { return LC.L(@"Disable the web interface and only allow API access"); } }
                 public static string WebserverDisableSigninTokensDescription { get { return LC.L(@"Disable the use of signin tokens"); } }
                 public static string WebserverSpaPathsDescription { get { return LC.L(@"The relative paths that should be served as single page applications, separated with semicolons."); } }
                 public static string WebserverCorsOriginsDescription { get { return LC.L(@"A list of CORS origins to allow, separated with semicolons. Each origin must be a valid URL."); } }
                 public static string WebserverTimezoneDescription { get { return LC.L(@"The timezone to use for the webserver. The timezone must be a valid timezone identifier, such as ""America/New_York"" or ""UTC"". Common three-letter abbreviations like ""CET"" are supported, but ambiguous in some cases."); } }
                 public static string WebserverPreAuthTokensDescription { get { return LC.L(@"A list of pre-authenticated tokens, separated with semicolons. These can be used in cases where the authentication is provided by a proxy. Each token must be at least 10 characters and not contain extended characters. The token must be provided by setting the header on each request to contain: Authentication: PreAuth <token>"); } }
+                public static string WebserverDisableApiExtensionsDescription { get { return LC.L(@"Disable the API extensions reported by the server. This will not disable the functionality, but will not report the extensions in the API responses. Use this option to degrade the server to a more basic API."); } }
                 public static string DisabledbencryptionLong { get { return LC.L(@"Use this option to disable database encryption of sensitive fields"); } }
                 public static string DisabledbencryptionShort { get { return LC.L(@"Disable database encryption"); } }
                 public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log. The provided name is in the format Log:Source. If no log name is provided, Duplicati is used."); } }

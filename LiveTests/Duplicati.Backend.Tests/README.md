@@ -34,13 +34,13 @@ NUMBER_OF_FILES  default is 20
 | Filen          | Planned          | Live      |
 | Jottacloud     | Pannned          | Live      |
 | GCS            | Planned          | Live      |
+| OpenStack      | Planned          | Live      |
 | File           | Planned          |           |
 | TahoeLAFS      | Planned          |           |
 | TescentCOS     | Pending Decision |           |
 | Storj          | Pending Decision |           |
 | SharePoint     | Pending Decision |           |
 | Rclone         | Pending Decision |           |
-| OpenStack      | Pending Decision |           |
 | Mega           | Deprecated       |           |
 | AliyunOSS      | Pending Decision |           |
 
@@ -54,6 +54,19 @@ NUMBER_OF_FILES  default is 20
 Please note that TestContainers token has to be configured in secrets/Github actions yml.
 
 ## Backends that require Environment variables
+
+
+# CloudStack
+
+```
+TESTCREDENTIAL_CLOUDSTACK_USERNAME
+TESTCREDENTIAL_CLOUDSTACK_PASSWORD
+TESTCREDENTIAL_CLOUDSTACK_LOCATION
+TESTCREDENTIAL_CLOUDSTACK_TENANT
+TESTCREDENTIAL_CLOUDSTACK_DOMAIN
+TESTCREDENTIAL_CLOUDSTACK_REGION
+TESTCREDENTIAL_CLOUDSTACK_FOLDER
+```
 
 # JottaCloud
 

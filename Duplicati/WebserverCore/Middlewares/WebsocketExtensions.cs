@@ -43,18 +43,22 @@ public static class WebsocketExtensions
             {
                 if (context.User.Identity?.IsAuthenticated == false)
                 {
-                    using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                    await webSocket.CloseAsync((WebSocketCloseStatus)4401, "User is not authenticated!",
-                        CancellationToken.None);
+                    if (context.WebSockets.IsWebSocketRequest)
+                    {
+                        using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                        await context.RequestServices.GetRequiredService<IWebsocketAuthenticator>().AddConnection(webSocket);
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    }
                     return;
                 }
 
-                var websocketAccessor = context.RequestServices.GetRequiredService<IWebsocketAccessor>();
                 if (context.WebSockets.IsWebSocketRequest)
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                    await websocketAccessor.AddConnection(webSocket);
-                    await HandleClientData(webSocket, websocketAccessor);
+                    await context.RequestServices.GetRequiredService<IWebsocketAccessor>().AddConnection(webSocket, true);
                 }
                 else
                 {
@@ -62,48 +66,5 @@ public static class WebsocketExtensions
                 }
             }
         });
-    }
-
-    private static async Task HandleClientData(WebSocket webSocket, IWebsocketAccessor websocketAccessor,
-        CancellationToken cancellationToken = default)
-    {
-        var buffer = new byte[1024 * 4];
-
-        var result = await ReceiveAsync();
-
-        while (!result?.CloseStatus.HasValue == true)
-        {
-            result = await ReceiveAsync();
-        }
-
-        if (result?.CloseStatus is not null)
-        {
-            await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
-        }
-
-        return;
-
-        async Task<WebSocketReceiveResult?> ReceiveAsync()
-        {
-            WebSocketReceiveResult? receiveResult;
-            try
-            {
-                receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
-            }
-            catch (WebSocketException e)
-                when (e is { WebSocketErrorCode: WebSocketError.ConnectionClosedPrematurely })
-            {
-                Console.WriteLine("[WebSocket] Client closed connection prematurely.");
-                receiveResult = null;
-            }
-
-            if (receiveResult?.CloseStatus is not null)
-            {
-                var message = Encoding.Default.GetString(buffer[..receiveResult.Count]);
-                await websocketAccessor.HandleClientMessage(message);
-            }
-
-            return receiveResult;
-        }
     }
 }
