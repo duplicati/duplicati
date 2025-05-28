@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             new
             {
                 Input = channels.DecryptRequest.AsRead(),
-                Output = channels.VolumeRequestResponse.AsWrite()
+                Output = channels.VolumeResponse.AsWrite()
             },
             async self =>
             {
