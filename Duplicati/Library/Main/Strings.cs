@@ -234,6 +234,8 @@ namespace Duplicati.Library.Main.Strings
         public static string BackendtestpercentageShort { get { return LC.L(@"The percentage of samples to test after a backup"); } }
         public static string FullremoteverificationLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash. If the option --{0} is set, no remote files are verified. This option is automatically set when then verification is performed directly. ListAndIndexes is like True but only dlist and index volumes are handled.", optionname); }
         public static string FullremoteverificationShort { get { return LC.L(@"Activate in-depth verification of files"); } }
+        public static string ReplaceFaultyIndexFilesLong { get { return LC.L(@"Use this option to replace index files that are missing content during the testing phase. This takes slightly longer, but will prevent very slow database recreates"); } }
+        public static string ReplaceFaultyIndexFilesShort { get { return LC.L(@"Replace defective index files"); } }
         public static string FilereadbuffersizeLong { get { return LC.L(@"Use this size to control how many bytes are read from a file before processing."); } }
         public static string FilereadbuffersizeShort { get { return LC.L(@"Size of the file read buffer"); } }
         public static string FilereadbuffersizeDeprecated { get { return LC.L(@"The option --{0} is no longer used and has been deprecated.", "file-read-buffer-size"); } }

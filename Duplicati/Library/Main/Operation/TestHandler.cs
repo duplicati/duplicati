@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System.Threading.Tasks;
+using Duplicati.Library.Main.Volumes;
+using System.Threading;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -72,6 +74,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (m_options.FullRemoteVerification != Options.RemoteTestStrategy.False)
             {
+                var faultyIndexFiles = new List<IRemoteVolume>();
                 await foreach (var (tf, hash, size, name) in backend.GetFilesOverlappedAsync(files, m_results.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
                     var vol = new RemoteVolume(name, hash, size);
@@ -90,6 +93,23 @@ namespace Duplicati.Library.Main.Operation
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
                         using (tf)
                             res = TestVolumeInternals(db, rtr, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
+
+                        var parsedInfo = VolumeBase.ParseFilename(vol.Name);
+                        if (parsedInfo.FileType == RemoteVolumeType.Index)
+                        {
+                            if (res.Value.Any(x => x.Key == TestEntryStatus.Extra))
+                            {
+                                // Bad hack, but for now, the index files sometimes have extra blocklist hashes
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "IndexFileExtraBlocks", null, "Index file {0} has extra blocks", vol.Name);
+                                res = new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(
+                                    res.Key, res.Value.Where(x => x.Key != TestEntryStatus.Extra).ToList()
+                                );
+                            }
+
+                            if (res.Value.Any(x => x.Key == TestEntryStatus.Missing || x.Key == TestEntryStatus.Modified))
+                                faultyIndexFiles.Add(vol);
+                        }
+
                         m_results.AddResult(res.Key, res.Value);
 
                         if (!string.IsNullOrWhiteSpace(vol.Hash) && vol.Size > 0)
@@ -120,7 +140,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                     catch (Exception ex)
                     {
-                        m_results.AddResult(vol.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
+                        m_results.AddResult(vol.Name, [new KeyValuePair<TestEntryStatus, string>(TestEntryStatus.Error, ex.Message)]);
                         Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileProcessingFailed", ex, "Failed to process file {0}", vol.Name);
                         if (ex.IsAbortException())
                         {
@@ -128,6 +148,18 @@ namespace Duplicati.Library.Main.Operation
                             throw;
                         }
                     }
+                }
+
+                if (faultyIndexFiles.Any())
+                {
+                    if (m_options.ReplaceFaultyIndexFiles)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, "Found {0} faulty index files, repairing now", faultyIndexFiles.Count);
+                        await ReplaceFaultyIndexFilesAsync(faultyIndexFiles, backend, db, rtr, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
+                    }
+                    else
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, "Found {0} faulty index files, use the option {1} to repair them", faultyIndexFiles.Count, "--replace-faulty-index-files");
+
                 }
             }
             else
@@ -236,10 +268,11 @@ namespace Duplicati.Library.Main.Operation
 
                 case RemoteVolumeType.Index:
                     var blocklinks = new List<Tuple<string, string, long>>();
-                    IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> combined = new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0];
+                    var combined = new List<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>>();
 
                     //Compare with db and see that all hashes and volumes are listed
                     using (var rd = new Volumes.IndexVolumeReader(parsedInfo.CompressionModule, tf, options, hashsize))
+                    {
                         foreach (var v in rd.Volumes)
                         {
                             blocklinks.Add(new Tuple<string, string, long>(v.Filename, v.Hash, v.Length));
@@ -248,19 +281,33 @@ namespace Duplicati.Library.Main.Operation
                                 foreach (var h in v.Blocks)
                                     bl.AddBlock(h.Key, h.Value);
 
-                                combined = combined.Union(bl.Compare().ToArray());
+                                combined.AddRange(bl.Compare());
                             }
                         }
 
+                        if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                        {
+                            var hashesPerBlock = options.Blocksize / options.BlockhashSize;
+                            using (var bl = db.CreateBlocklistHashList(vol.Name, rtr))
+                            {
+                                foreach (var b in rd.BlockLists)
+                                    bl.AddBlockHash(b.Hash, b.Length);
+
+                                combined.AddRange(bl.Compare(hashesPerBlock, options.BlockhashSize, options.Blocksize));
+                            }
+                        }
+                    }
+
+                    // Compare with db and see that all blocklists are listed
                     using (var il = db.CreateIndexlist(vol.Name, rtr))
                     {
                         foreach (var t in blocklinks)
                             il.AddBlockLink(t.Item1, t.Item2, t.Item3);
 
-                        combined = combined.Union(il.Compare()).ToList();
+                        combined.AddRange(il.Compare());
                     }
 
-                    return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, combined.ToList());
+                    return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, combined);
                 case RemoteVolumeType.Blocks:
                     using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
                     using (var bl = db.CreateBlocklist(vol.Name, rtr))
@@ -299,6 +346,43 @@ namespace Duplicati.Library.Main.Operation
 
             Logging.Log.WriteWarningMessage(LOGTAG, "UnexpectedFileType", null, "Unexpected file type {0} for {1}", parsedInfo.FileType, vol.Name);
             return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, null);
+        }
+
+        private async Task ReplaceFaultyIndexFilesAsync(List<IRemoteVolume> faultyIndexFiles, IBackendManager backendManager, LocalTestDatabase db, ReusableTransaction rtr, CancellationToken cancellationToken)
+        {
+            using var repairdb = new LocalRepairDatabase(db);
+            foreach (var vol in faultyIndexFiles)
+            {
+                if (!await m_results.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                {
+                    m_results.EndTime = DateTime.UtcNow;
+                    return;
+                }
+
+                IndexVolumeWriter newEntry = null;
+                try
+                {
+                    var w = newEntry = new IndexVolumeWriter(m_options);
+                    await RepairHandler.RunRepairDindex(backendManager, repairdb, rtr, w, vol, m_options, cancellationToken).ConfigureAwait(false);
+                    if (m_options.Dryrun)
+                    {
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "ReplaceFaultyIndexFile", "Would replace faulty index file {0} with {1}", vol.Name, w.RemoteFilename);
+                    }
+                    else
+                    {
+                        await backendManager.DeleteAsync(vol.Name, vol.Size, true, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
+                        await backendManager.WaitForEmptyAsync(repairdb, rtr.Transaction, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
+                        rtr.Commit("ReplaceFaultyIndexFileCommit");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    newEntry?.Dispose();
+                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedToReplaceFaultyIndexFile", ex, "Failed to replace faulty index file {0}", vol.Name);
+                    if (ex.IsAbortException())
+                        throw;
+                }
+            }
         }
     }
 }

@@ -125,39 +125,41 @@ namespace Duplicati.Library.Main.Database
             samples = Math.Max(1, samples);
             using (var cmd = m_connection.CreateCommand(tr))
             {
-                // Select any broken items
-                cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" IN (@States)) AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0) AND (""ArchiveTime"" = 0)")
-                    .ExpandInClauseParameter("@States", [RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()]);
-
-                using (var rd = cmd.ExecuteReader())
-                    while (rd.Read())
-                        yield return new RemoteVolume(rd);
-
-                //Grab the max value
+                var files = new List<RemoteVolume>();
                 var max = cmd.ExecuteScalarInt64(@"SELECT MAX(""VerificationCount"") FROM ""RemoteVolume""", 0);
 
-                //First we select some filesets
-                var files = new List<RemoteVolume>();
-                var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
-                using (var rd = cmd.SetCommandAndParameters(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"", ""A"".""VerificationCount"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""ArchiveTime"" = 0 AND ""State"" IN (@State1, @State2)) A, ""Fileset"" " + whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" ")
-                    .SetParameterValue("@State1", RemoteVolumeState.Uploaded.ToString())
-                    .SetParameterValue("@State2", RemoteVolumeState.Verified.ToString())
-                    .SetParameterValues(tp.Item2)
-                    .ExecuteReader())
-                    while (rd.Read())
-                        files.Add(new RemoteVolume(rd));
+                if (options.FullRemoteVerification != Options.RemoteTestStrategy.IndexesOnly)
+                {
+                    // Select any broken items
+                    cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" IN (@States)) AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0) AND (""ArchiveTime"" = 0)")
+                    .ExpandInClauseParameter("@States", [RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()]);
 
-                if (files.Count == 0)
-                    yield break;
+                    using (var rd = cmd.ExecuteReader())
+                        while (rd.Read())
+                            yield return new RemoteVolume(rd);
 
-                if (string.IsNullOrEmpty(tp.Item1))
-                    files = FilterByVerificationCount(files, samples, max).ToList();
+                    //First we select some filesets
+                    var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
+                    using (var rd = cmd.SetCommandAndParameters(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"", ""A"".""VerificationCount"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""ArchiveTime"" = 0 AND ""State"" IN (@State1, @State2)) A, ""Fileset"" " + whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" ")
+                        .SetParameterValue("@State1", RemoteVolumeState.Uploaded.ToString())
+                        .SetParameterValue("@State2", RemoteVolumeState.Verified.ToString())
+                        .SetParameterValues(tp.Item2)
+                        .ExecuteReader())
+                        while (rd.Read())
+                            files.Add(new RemoteVolume(rd));
 
-                foreach (var f in files)
-                    yield return f;
+                    if (files.Count == 0)
+                        yield break;
 
-                //Then we select some index files
-                files.Clear();
+                    if (string.IsNullOrEmpty(tp.Item1))
+                        files = FilterByVerificationCount(files, samples, max).ToList();
+
+                    foreach (var f in files)
+                        yield return f;
+
+                    //Then we select some index files
+                    files.Clear();
+                }
 
                 cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""Type"" = @Type AND ""State"" IN (@States) AND ""ArchiveTime"" = 0")
                     .SetParameterValue("@Type", RemoteVolumeType.Index.ToString())
@@ -170,7 +172,7 @@ namespace Duplicati.Library.Main.Database
                 foreach (var f in FilterByVerificationCount(files, samples, max))
                     yield return f;
 
-                if (options.FullRemoteVerification == Options.RemoteTestStrategy.ListAndIndexes)
+                if (options.FullRemoteVerification == Options.RemoteTestStrategy.ListAndIndexes || options.FullRemoteVerification == Options.RemoteTestStrategy.IndexesOnly)
                     yield break;
 
                 //And finally some block files
@@ -360,6 +362,12 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
         }
 
+        public interface IBlocklistHashList : IDisposable
+        {
+            void AddBlockHash(string hash, long size);
+            IEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize);
+        }
+
         private class Blocklist : Basiclist, IBlocklist
         {
             private const string TABLE_PREFIX = "Blocklist";
@@ -416,6 +424,124 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        private class BlocklistHashList : Basiclist, IBlocklistHashList
+        {
+            private const string TABLE_PREFIX = "BlocklistHashList";
+            private const string TABLE_FORMAT = @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
+            private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (@Hash,@Size)";
+
+            public BlocklistHashList(IDbConnection connection, string volumename, ReusableTransaction rtr)
+                : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
+            { }
+
+            public void AddBlockHash(string hash, long size)
+            {
+                m_insertCommand.SetTransaction(m_rtr.Transaction)
+                    .SetParameterValue("@Hash", hash)
+                    .SetParameterValue("@Size", size)
+                    .ExecuteNonQuery();
+            }
+
+            public IEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize)
+            {
+                var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+
+                var create = FormatInvariant($@"
+                    CREATE TEMPORARY TABLE ""{cmpName}"" (
+                        ""Hash"" TEXT NOT NULL,
+                        ""Size"" INTEGER NOT NULL
+                    );
+            
+                    INSERT INTO ""{cmpName}"" (""Hash"", ""Size"")
+                    SELECT b.""Hash"", b.""Size""
+                    FROM Block b
+                    JOIN (
+                        SELECT
+                            blh.""Hash"",
+                            CASE
+                                WHEN blh.""Index"" = (((bs.""Length"" + {blockSize} - 1) / {blockSize} - 1) / {hashesPerBlock})
+                                     AND ((bs.""Length"" + {blockSize} - 1) / {blockSize}) % {hashesPerBlock} != 0
+                                THEN {hashSize} * ((bs.""Length"" + {blockSize} - 1) / {blockSize} % {hashesPerBlock})
+                                ELSE {hashSize} * {hashesPerBlock}
+                            END AS ""Size""
+                        FROM BlocklistHash blh
+                        JOIN Blockset bs ON bs.""ID"" = blh.""BlocksetID""
+                    ) expected ON b.""Hash"" = expected.""Hash"" AND b.""Size"" = expected.""Size""
+                    WHERE b.""VolumeID"" IN (
+                        SELECT ibl.""BlockVolumeID""
+                        FROM Remotevolume idx
+                        JOIN IndexBlockLink ibl ON ibl.""IndexVolumeID"" = idx.""ID""
+                        WHERE idx.""Name"" = @Name
+                    );
+                ");
+
+                var compare = FormatInvariant($@"
+                    WITH
+                        Expected AS (
+                            SELECT ""Hash"", ""Size"" FROM ""{cmpName}""
+                        ),
+                        Actual AS (
+                            SELECT ""Hash"", ""Size"" FROM ""{m_tablename}""
+                        ),
+                        Extra AS (
+                            SELECT @TypeExtra AS Type, a.""Hash""
+                            FROM Actual a
+                            LEFT JOIN Expected e ON a.""Hash"" = e.""Hash"" AND a.""Size"" = e.""Size""
+                            WHERE e.""Hash"" IS NULL
+                        ),
+                        Missing AS (
+                            SELECT @TypeMissing AS Type, e.""Hash""
+                            FROM Expected e
+                            LEFT JOIN Actual a ON a.""Hash"" = e.""Hash"" AND a.""Size"" = e.""Size""
+                            WHERE a.""Hash"" IS NULL
+                        ),
+                        Modified AS (
+                            SELECT @TypeModified AS Type, a.""Hash""
+                            FROM Actual a
+                            JOIN Expected e ON a.""Hash"" = e.""Hash""
+                            WHERE a.""Size"" != e.""Size""
+                              AND NOT EXISTS (
+                                  SELECT 1 FROM Extra x WHERE x.""Hash"" = a.""Hash""
+                              )
+                        )
+                    SELECT * FROM Extra
+                    UNION
+                    SELECT * FROM Missing
+                    UNION
+                    SELECT * FROM Modified;
+                ");
+
+                var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}""");
+
+                using (var cmd = m_connection.CreateCommand(m_rtr.Transaction))
+                {
+                    try
+                    {
+                        // Create expected hash+size table filtered by volume
+                        cmd.SetCommandAndParameters(create)
+                            .SetParameterValue("@Name", m_volumename)
+                            .ExecuteNonQuery();
+
+                        // Compare against actual values inserted into temp table
+                        cmd.SetCommandAndParameters(compare)
+                            .SetParameterValue("@TypeExtra", (int)Library.Interface.TestEntryStatus.Extra)
+                            .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
+                            .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
+
+                        using (var rd = cmd.ExecuteReader())
+                            while (rd.Read())
+                                yield return new KeyValuePair<Library.Interface.TestEntryStatus, string>(
+                                    (Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0),
+                                    rd.ConvertValueToString(1) ?? "");
+                    }
+                    finally
+                    {
+                        try { cmd.ExecuteNonQuery(drop); } catch { }
+                    }
+                }
+            }
+        }
+
         public IFilelist CreateFilelist(string name, ReusableTransaction rtr)
         {
             return new Filelist(m_connection, name, rtr);
@@ -429,6 +555,11 @@ namespace Duplicati.Library.Main.Database
         public IBlocklist CreateBlocklist(string name, ReusableTransaction rtr)
         {
             return new Blocklist(m_connection, name, rtr);
+        }
+
+        public IBlocklistHashList CreateBlocklistHashList(string name, ReusableTransaction rtr)
+        {
+            return new BlocklistHashList(m_connection, name, rtr);
         }
     }
 }

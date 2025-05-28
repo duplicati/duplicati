@@ -43,7 +43,15 @@ namespace Duplicati.Library.Main.Database
         public LocalRepairDatabase(string path, long pagecachesize)
             : base(path, "Repair", true, pagecachesize)
         {
+        }
 
+        /// <summary>
+        /// Creates a new local repair database from an existing local database
+        /// </summary>
+        /// <param name="db">The existing local database</param>
+        public LocalRepairDatabase(LocalDatabase db)
+            : base(db)
+        {
         }
 
         /// <summary>
