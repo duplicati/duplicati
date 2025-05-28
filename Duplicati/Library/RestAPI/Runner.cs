@@ -330,7 +330,7 @@ namespace Duplicati.Server
                 internal ProgressState Clone()
                 {
                     var res = (ProgressState)this.MemberwiseClone();
-                    res.m_activeTransfers = m_activeTransfers.ToArray();
+                    res.m_activeTransfers = [.. m_activeTransfers];
                     return res;
                 }
 

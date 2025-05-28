@@ -68,10 +68,11 @@ partial class BackendManager
         public override async Task<(TempFile File, string Hash, long Size)> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
         {
             TempFile? tmpfile = null;
-            Context.Statwriter.SendEvent(BackendActionType.Get, BackendEventType.Started, RemoteFilename, Size);
 
             try
             {
+                Context.Statwriter.SendEvent(BackendActionType.Get, BackendEventType.Started, RemoteFilename, Size);
+
                 // Start and time the donwload
                 var begin = DateTime.Now;
 
@@ -104,6 +105,10 @@ partial class BackendManager
             {
                 tmpfile?.Dispose();
                 throw;
+            }
+            finally
+            {
+                Context.ProgressHandler.EndTransfer(BackendActionType.Get, RemoteFilename);
             }
         }
 
@@ -155,7 +160,6 @@ partial class BackendManager
             {
                 // Remove temp files on failure
                 dlTarget?.Dispose();
-                Context.ProgressHandler.EndTransfer(BackendActionType.Get, RemoteFilename);
             }
         }
 

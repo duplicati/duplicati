@@ -249,7 +249,7 @@ namespace Duplicati.Library.Main
         public void StartAction(BackendActionType action, string path, long size)
         {
             lock (m_lock)
-                m_activeTransferInfo.Add(path, new TransferInfo(path, DateTime.UtcNow, action, size));
+                m_activeTransferInfo[path] = new TransferInfo(path, DateTime.UtcNow, action, size);
         }
 
         /// <inheritdoc />
@@ -259,7 +259,7 @@ namespace Duplicati.Library.Main
             {
                 var ts = (long)(DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds;
                 if (!m_activeTransferProgress.TryGetValue(path, out var pg))
-                    m_activeTransferProgress[path] = pg = new List<ProgressEvent>();
+                    m_activeTransferProgress[path] = pg = new List<ProgressEvent>(MaxProgressEvents);
 
                 if (pg.Count == 0 || pg.Last().When != ts)
                     pg.Add(new ProgressEvent { When = ts, Progress = progress });
@@ -285,11 +285,8 @@ namespace Duplicati.Library.Main
         {
             lock (m_lock)
             {
-                if (m_activeTransferProgress.ContainsKey(path))
-                {
-                    m_activeTransferProgress.Remove(path);
-                    m_activeTransferInfo.Remove(path);
-                }
+                m_activeTransferProgress.Remove(path);
+                m_activeTransferInfo.Remove(path);
             }
         }
 
