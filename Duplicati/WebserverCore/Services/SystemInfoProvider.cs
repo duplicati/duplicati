@@ -32,17 +32,18 @@ namespace Duplicati.WebserverCore.Services;
 /// <summary>
 /// Produces system information.
 /// </summary>
-public class SystemInfoProvider(IApplicationSettings applicationSettings) : ISystemInfoProvider
+public class SystemInfoProvider(IApplicationSettings applicationSettings, Connection connection) : ISystemInfoProvider
 {
     /// <summary>
     /// The API extensions that are available
     /// </summary>
-    private static readonly string[] APIExtensions = [
+    private static readonly string[] SupportedAPIExtensions = [
         "v2:backup:list-filesets",
         "v2:backup:list-folder",
         "v2:backup:list-versions",
         "v2:backup:search",
         "v2:destination:test",
+        "v1:websocket",
         "v1:gettask:taskstarted",
         "v1:gettask:taskfinished",
         "v1:websocket:authenticate",
@@ -309,6 +310,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings) : ISys
             }
         }
 
+        var disabledAPIExtensions = connection.ApplicationSettings.DisabledAPIExtensions;
+
         // Return the system information, patch in dynamic values
         return new SystemInfoDto()
         {
@@ -345,7 +348,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings) : ISys
             UsingAlternateUpdateURLs = systeminfo.UsingAlternateUpdateURLs,
             LogLevels = systeminfo.LogLevels,
             SpecialFolders = systeminfo.SpecialFolders,
-            APIExtensions = APIExtensions,
+            APIExtensions = SupportedAPIExtensions.Where(ext => !disabledAPIExtensions.Contains(ext)).ToArray(),
             APIScopes = APIScopes,
             BrowserLocale = new SystemInfoDto.LocaleDto()
             {

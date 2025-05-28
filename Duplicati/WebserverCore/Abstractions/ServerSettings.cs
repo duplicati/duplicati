@@ -121,11 +121,6 @@ public class ServerSettings
         set => applicationSettings.SetAllowedHostnames(value);
     }
 
-    public bool DisableVisualCaptcha
-    {
-        get => applicationSettings.DisableVisualCaptcha;
-    }
-
     public bool HasSSLCertificate
     {
         get => applicationSettings.ServerSSLCertificate != null;
