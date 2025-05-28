@@ -970,11 +970,13 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
         /// <returns>A list of files and symlinks to restore.</returns>
         public IEnumerable<FileRequest> GetFilesAndSymlinksToRestore()
         {
+            // Order by length descending, so that larger files are restored first.
             using var cmd = m_connection.CreateCommand(FormatInvariant($@"
-                SELECT F.ID, F.Path, F.TargetPath, IFNULL(B.FullHash, ''), IFNULL(B.Length, 0), F.BlocksetID
+                SELECT F.ID, F.Path, F.TargetPath, IFNULL(B.FullHash, ''), IFNULL(B.Length, 0) AS ""Length"", F.BlocksetID
                 FROM ""{m_tempfiletable}"" F
                 LEFT JOIN Blockset B ON F.BlocksetID = B.ID
-                WHERE F.BlocksetID != {FOLDER_BLOCKSET_ID}"));
+                WHERE F.BlocksetID != {FOLDER_BLOCKSET_ID}
+                ORDER BY ""Length"" DESC"));
             using var rd = cmd.ExecuteReader();
             while (rd.Read())
                 yield return new FileRequest(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));

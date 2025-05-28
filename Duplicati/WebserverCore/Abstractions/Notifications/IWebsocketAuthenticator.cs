@@ -18,23 +18,19 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.WebserverCore.Abstractions;
-using Microsoft.AspNetCore.Mvc;
+using System.Net.WebSockets;
 
-namespace Duplicati.WebserverCore.Endpoints.V1;
+namespace Duplicati.WebserverCore.Abstractions.Notifications;
 
-public class Tasks : IEndpointV1
+/// <summary>
+/// Interface for managing WebSocket connections and handling messages.
+/// </summary>
+public interface IWebsocketAuthenticator
 {
-    private enum TaskStopState
-    {
-        Stop,
-        Abort
-    }
-    public static void Map(RouteGroupBuilder group)
-    {
-        group.MapGet("/tasks", ([FromServices] ITaskQueueService taskQueueService) => taskQueueService.GetTaskQueue()).RequireAuthorization();
-        group.MapGet("/task/{taskid}", ([FromRoute] long taskId, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.GetTaskInfo(taskId)).RequireAuthorization();
-        group.MapPost("/task/{taskid}/stop", ([FromRoute] long taskId, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.StopTask(taskId)).RequireAuthorization();
-        group.MapPost("/task/{taskid}/abort", ([FromRoute] long taskId, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.AbortTask(taskId)).RequireAuthorization();
-    }
+    /// <summary>
+    /// Adds a new WebSocket connection to the list of active (unauthorized) connections.
+    /// </summary>
+    /// <param name="newConnection">The new WebSocket connection to add.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task AddConnection(WebSocket newConnection);
 }

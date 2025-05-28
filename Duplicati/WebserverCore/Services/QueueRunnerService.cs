@@ -67,6 +67,7 @@ public class QueueRunnerService(
                 _tasks.Add(task);
 
         eventPollNotify.SignalNewEvent();
+        eventPollNotify.SignalTaskQueueUpdate();
         StartNextTask();
         return task.TaskID;
     }
@@ -134,6 +135,7 @@ public class QueueRunnerService(
         try
         {
             eventPollNotify.SignalNewEvent();
+            eventPollNotify.SignalTaskQueueUpdate();
             task.TaskStarted = DateTime.UtcNow;
             if (task.OnStarting != null)
                 await task.OnStarting().ConfigureAwait(false);
@@ -162,6 +164,7 @@ public class QueueRunnerService(
             lock (_lock)
                 _current = (null, null);
             eventPollNotify.SignalNewEvent();
+            eventPollNotify.SignalTaskQueueUpdate();
             StartNextTask();
         }
     }

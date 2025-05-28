@@ -111,7 +111,11 @@ namespace Duplicati.UnitTest
             var target = u.SetScheme(new RandomErrorBackend().ProtocolKey).ToString();
             Library.DynamicLoader.BackendLoader.AddBackend(new RandomErrorBackend());
 
-            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, target);
+            var opts = TestOptions;
+            // opts["restore-legacy"] = "true";
+            opts["retry-delay"] = "0s";
+
+            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), opts, target);
         }
 
         [Test]

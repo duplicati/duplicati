@@ -497,11 +497,13 @@ namespace Duplicati.Server
             if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOREVER_TOKEN))
                 connection.ApplicationSettings.EnableForeverTokens();
 
-            if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_DISABLE_VISUAL_CAPTCHA))
-                connection.ApplicationSettings.DisableVisualCaptcha = Library.Utility.Utility.ParseBool(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_DISABLE_VISUAL_CAPTCHA], true);
-
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS))
                 connection.ApplicationSettings.DisableSigninTokens = Library.Utility.Utility.ParseBool(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS], true);
+
+            if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_DISABLEAPIEXTENSIONS))
+                connection.ApplicationSettings.DisabledAPIExtensions = commandlineOptions.GetValueOrDefault(WebServerLoader.OPTION_WEBSERVICE_DISABLEAPIEXTENSIONS)?
+                    .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_PASSWORD))
                 connection.ApplicationSettings.SetWebserverPassword(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_PASSWORD]);
@@ -940,7 +942,7 @@ namespace Duplicati.Server
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverAllowedhostnamesDescription, Strings.Program.WebserverAllowedhostnamesDescription, null, [WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT]),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_RESET_JWT_CONFIG, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverResetJwtConfigDescription, Strings.Program.WebserverResetJwtConfigDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOREVER_TOKEN, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverEnableForeverTokenDescription, Strings.Program.WebserverEnableForeverTokenDescription),
-            new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DISABLE_VISUAL_CAPTCHA, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverDisableVisualCaptchaDescription, Strings.Program.WebserverDisableVisualCaptchaDescription),
+            new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DISABLEAPIEXTENSIONS, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverDisableApiExtensionsDescription, Strings.Program.WebserverDisableApiExtensionsDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_API_ONLY, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverApiOnlyDescription, Strings.Program.WebserverApiOnlyDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverDisableSigninTokensDescription, Strings.Program.WebserverDisableSigninTokensDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_SPAPATHS, CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverSpaPathsDescription, Strings.Program.WebserverSpaPathsDescription, WebServerLoader.DEFAULT_OPTION_SPAPATHS),

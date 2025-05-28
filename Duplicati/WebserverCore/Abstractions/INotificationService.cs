@@ -18,23 +18,29 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.WebserverCore.Abstractions;
-using Microsoft.AspNetCore.Mvc;
 
-namespace Duplicati.WebserverCore.Endpoints.V1;
+namespace Duplicati.WebserverCore.Abstractions;
 
-public class Tasks : IEndpointV1
+/// <summary>
+/// Provides methods for handling notifications.
+/// </summary>
+public interface INotificationService
 {
-    private enum TaskStopState
-    {
-        Stop,
-        Abort
-    }
-    public static void Map(RouteGroupBuilder group)
-    {
-        group.MapGet("/tasks", ([FromServices] ITaskQueueService taskQueueService) => taskQueueService.GetTaskQueue()).RequireAuthorization();
-        group.MapGet("/task/{taskid}", ([FromRoute] long taskId, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.GetTaskInfo(taskId)).RequireAuthorization();
-        group.MapPost("/task/{taskid}/stop", ([FromRoute] long taskId, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.StopTask(taskId)).RequireAuthorization();
-        group.MapPost("/task/{taskid}/abort", ([FromRoute] long taskId, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.AbortTask(taskId)).RequireAuthorization();
-    }
+    /// <summary>
+    /// Gets all notifications.
+    /// </summary>
+    /// <returns>An enumerable collection of notification DTOs.</returns>
+    IEnumerable<Dto.NotificationDto> GetNotifications();
+
+    /// <summary>
+    /// Gets a specific notification by its ID.
+    /// </summary>
+    /// <param name="id">The ID of the notification to retrieve.</param>
+    /// <returns>The notification DTO corresponding to the specified ID.</returns>
+    Dto.NotificationDto GetNotification(long id);
+
+    /// <summary>
+    /// Deletes a notification by its ID.
+    /// </summary>
+    void DeleteNotification(long id);
 }

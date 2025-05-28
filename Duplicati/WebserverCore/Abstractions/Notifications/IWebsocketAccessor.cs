@@ -22,9 +22,52 @@ using System.Net.WebSockets;
 
 namespace Duplicati.WebserverCore.Abstractions.Notifications;
 
+/// <summary>
+/// The services that can be subscribed to via the websocket connection.
+/// </summary>
+public enum SubscriptionService
+{
+    /// <summary>
+    /// The legacy status of the server, including active tasks.
+    /// </summary>
+    LegacyStatus,
+    /// <summary>
+    /// Data has been updated or changed, such as backup configurations
+    /// </summary>
+    BackupList,
+    /// <summary>
+    /// Server settings updates
+    /// </summary>
+    ServerSettings,
+    /// <summary>
+    /// Progress updates for ongoing tasks, such as backups or restores.
+    /// </summary>
+    Progress,
+    /// <summary>
+    /// The task queue updates, when tasks are added, removed, or changed in the queue.
+    /// </summary>
+    TaskQueue,
+    /// <summary>
+    /// Notification messages
+    /// </summary>
+    Notifications,
+    /// <summary>
+    /// Scheduler updates, such as when scheduled tasks are added, removed, or changed.
+    /// </summary>
+    Scheduler
+}
+
+
+/// <summary>
+/// Interface for managing WebSocket connections and handling messages.
+/// </summary>
 public interface IWebsocketAccessor
 {
-    Task AddConnection(WebSocket newConnection);
-    Task Send<T>(T data);
-    Task HandleClientMessage(string message);
+    /// <summary>
+    /// Adds a new WebSocket connection to the list of active connections.
+    /// </summary>
+    /// <param name="newConnection">The new WebSocket connection to add.</param>
+    /// <param name="subscribeToLegacyStatus">If true, the connection will subscribe to legacy status updates.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task AddConnection(WebSocket newConnection, bool subscribeToLegacyStatus);
 }
