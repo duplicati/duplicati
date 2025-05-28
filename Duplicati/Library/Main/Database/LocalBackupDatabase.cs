@@ -401,7 +401,7 @@ namespace Duplicati.Library.Main.Database
                             DELETE FROM ""DeletedBlock""
                             WHERE ""ID"" = @DeletedBlockId;
 
-                            DELETE FROM {dbnew.m_tempDeletedBlockTable}
+                            DELETE FROM ""{dbnew.m_tempDeletedBlockTable}""
                             WHERE ""ID"" = @DeletedBlockId;
 
                             SELECT last_insert_rowid()
