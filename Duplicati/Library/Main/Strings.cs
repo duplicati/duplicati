@@ -36,11 +36,13 @@ namespace Duplicati.Library.Main.Strings
         public static string UnsupportedOptionWarning(string optionname) { return LC.L(@"The supplied option --{0} is not supported and will be ignored", optionname); }
         public static string StartingOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has started", operationname); }
         public static string CompletedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has completed", operationname); }
-        public static string FailedOperationMessage(OperationMode operationname, string errormessage) { return LC.L(@"The operation {0} has failed with error: {1}", operationname, errormessage); }
+        public static string FailedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has failed", operationname); }
         public static string InvalidPathError(string path, string message) { return LC.L(@"Invalid path: ""{0}"" ({1})", path, message); }
         public static string FailedForceLocaleError(string exMsg) { return LC.L(@"Failed to apply 'force-locale' setting. Please try to update .NET-Framework. Exception was: ""{0}"" ", exMsg); }
         public static string SourceVolumeNameInvalidError(string filename) { return LC.L(@"The source {0} uses an invalid volume name, aborting backup", filename); }
         public static string SourceVolumeNameNotFoundError(string filename, Guid volumeGuid) { return LC.L(@"The source {0} is on volume {1}, which could not be found, aborting backup", filename, volumeGuid); }
+        public static string BackendNotSupportedHttpError => LC.L(@"The backend url cannot start with {0} or {1}. If you intend to use a webdav backend, please use a url starting with {2}", "http://", "https://", "webdav://");
+        public static string BackendNotSupportedError(string protocol, string supported) { return LC.L(@"The backend protocol {0} is not supported. Please use one of the following protocols: {1}", protocol, supported); }
     }
 
     internal static class Options

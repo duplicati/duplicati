@@ -593,7 +593,7 @@ namespace Duplicati.Library.Main
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction));
 
                     try
                     {
@@ -793,16 +793,16 @@ namespace Duplicati.Library.Main
 
             if (selectedRetentionOptions.Count() > 1)
             {
-                throw new Interface.UserInformationException(string.Format("Setting multiple retention options ({0}) is not permitted",
-                    String.Join(", ", selectedRetentionOptions.Select(x => "--" + x))), "MultipleRetentionOptionsNotSupported");
+                throw new UserInformationException(string.Format("Setting multiple retention options ({0}) is not permitted",
+                    string.Join(", ", selectedRetentionOptions.Select(x => "--" + x))), "MultipleRetentionOptionsNotSupported");
             }
 
             // Check Prefix
             if (!string.IsNullOrWhiteSpace(m_options.Prefix) && m_options.Prefix.Contains("-"))
-                throw new Interface.UserInformationException("The prefix cannot contain hyphens (-)", "PrefixCannotContainHyphens");
+                throw new UserInformationException("The prefix cannot contain hyphens (-)", "PrefixCannotContainHyphens");
 
             if (m_options.VolumeSize < m_options.Blocksize * 2)
-                throw new Interface.UserInformationException("The volume size must be at least twice the block size", "VolumeSizeTooSmall");
+                throw new UserInformationException("The volume size must be at least twice the block size", "VolumeSizeTooSmall");
 
             //Check validity of retention-policy option value
             try
@@ -920,12 +920,22 @@ namespace Duplicati.Library.Main
                 }
             }
 
+            var scheme = Library.Utility.Utility.GuessScheme(m_backendUrl);
+            if (DynamicLoader.BackendLoader.GetSupportedCommands(m_backendUrl) == null)
+            {
+                // If the backend is HTTP or HTTPS, give a custom error message
+                if (string.Equals(scheme, "http", StringComparison.OrdinalIgnoreCase) || string.Equals(scheme, "https", StringComparison.OrdinalIgnoreCase))
+                    throw new UserInformationException(Strings.Controller.BackendNotSupportedHttpError, "BackendNotSupportedHttp");
+
+                throw new UserInformationException(Strings.Controller.BackendNotSupportedError(scheme, string.Join(", ", DynamicLoader.BackendLoader.Keys)), "BackendNotSupported");
+            }
+
             //Inform the user about the deprecated Tardigrade-Backend. They should switch to Storj DCS instead.
-            if (string.Equals(new Library.Utility.Uri(m_backendUrl).Scheme, "tardigrade", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(scheme, "tardigrade", StringComparison.OrdinalIgnoreCase))
                 Logging.Log.WriteWarningMessage(LOGTAG, "TardigradeRename", null, "The Tardigrade-backend got renamed to Storj DCS - please migrate your backups to the new configuration by changing the destination storage type to Storj DCS.");
 
             //Inform the user about the unmaintained Mega support library
-            if (string.Equals(new Library.Utility.Uri(m_backendUrl).Scheme, "mega", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(scheme, "mega", StringComparison.OrdinalIgnoreCase))
                 Logging.Log.WriteWarningMessage(LOGTAG, "MegaUnmaintained", null, "The Mega support library is currently unmaintained and may not work as expected. Mega has not published an official API so it may break at any moment. Please consider migrating to another backend.");
 
             //TODO: Based on the action, see if all options are relevant
