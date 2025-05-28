@@ -665,6 +665,7 @@ namespace Duplicati.Library.Main.Database
                     {
                         // No transaction on the temporary table
                         var id = await m_findindeletedCommand
+                            .SetTransaction(m_rtr)
                             .SetParameterValue("@Hash", key)
                             .SetParameterValue("@Size", size)
                             .ExecuteScalarInt64Async(m_logQueries, -1);
