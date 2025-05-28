@@ -424,11 +424,11 @@ partial class BackendManager
 
                     // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
                     var dnsFailure = Library.Utility.ExceptionExtensions.FlattenException(ex)
-                        .Any(x =>
-                            (x is System.Net.WebException wex && wex.Status == System.Net.WebExceptionStatus.NameResolutionFailure)
-                            ||
-                            (x is System.Net.Sockets.SocketException sockEx && sockEx.SocketErrorCode == System.Net.Sockets.SocketError.HostNotFound)
-                        );
+                    .Any(x =>
+                        (x is System.Net.WebException wex && wex.Status == System.Net.WebExceptionStatus.NameResolutionFailure)
+                        ||
+                        (x is System.Net.Sockets.SocketException sockEx && sockEx.SocketErrorCode == System.Net.Sockets.SocketError.HostNotFound)
+                    );
                     if (dnsFailure)
                     {
                         try
@@ -459,8 +459,15 @@ partial class BackendManager
                     if (!recovered && retries <= maxRetries && retryDelay.Ticks != 0)
                     {
                         var delay = Library.Utility.Utility.GetRetryDelay(retryDelay, retries, retryWithExponentialBackoff);
-                        await Task.Delay(delay, context.TaskReader.ProgressToken).ConfigureAwait(false);
+                        using var ct = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, context.TaskReader.ProgressToken, context.TaskReader.TransferToken, context.TaskReader.StopToken);
+                        await Task.Delay(delay, ct.Token).ConfigureAwait(false);
                     }
+                }
+
+                if (!await context.TaskReader.ProgressRendevouz())
+                {
+                    op.SetCancelled();
+                    return;
                 }
 
             } while (retries <= maxRetries);
