@@ -1,3 +1,125 @@
+2025-05-29 - 2.1.0.119_canary_2025-05-29
+==========
+This release is a canary release intended to be used for testing.
+
+The intention is to tap this release as an experimental release if no significant issues are uncovered.
+
+# Major changes in this version
+
+## Index file corruption fixed
+This update fixes a long-standing issue with index files being incomplete over time.
+The effect of this is that the recreate database step takes much longer than expected.
+With this update the index files no longer loose information during the compact step.
+
+To remedy existing data, the test method can now be run and only check index files (`--full-remote-verification=indexesonly`).
+By default, any defective index files that are found will be replaced with correct versions, so simply running the test command with a large sample size will fix the backup.
+
+## Suppress warnings
+A new option is added that can change warning messages to information messages, so the warnings no longer generate notifications.
+The file access errors are now better grouped so it shows if the error is a permission error, a locked file error and others.
+With the suppress feature it is possible to suppress one or more categories of these warnings.
+
+## Better backend Test
+The test feature has been updated to now check for write permissions, instead of just listing the remote folder.
+For ngclient, the Test check now uses this extended check to inform the user if there are files in the destination folder.
+This shows a warning if creating a new backup pointing to a folder with existing data, and a warning if attempting to restore from a folder with no files.
+If the write part fails for a test during the restore flow, this is not treated as an error in ngclient. 
+
+## Auto VSS on Windows
+If the user has Administrator privileges (`SeBackupPrivilege`) VSS is now set to `Auto` by default.
+
+## Updated backends
+Updated the backends: Jottacloud, Google Drive, Google Cloud Storage, Dropbox, and OpenStack.
+Removed the Sia backend as the current implementation is not compatible with the pending hard-fork.
+
+## No throttle for the file backend
+The file backend is now excempt (by default) from throttle settings via `--throttle-disabled-backends`.
+Individual backups can set `--throttle-disable` to opt-out of throttling.
+
+## Disabling reported options on Webserver
+The ngclient is using the reported options to figure out what features can be enabled.
+This can now be configured with `--webservice-disable-api-extensions` so websocket usage can be disabled, among others.
+
+## ngclient updates
+A number of fixes and additions are made to ngclient, including a new grid-view for users with many backups.
+
+## Database version upgrade to v17
+The local database is again upgraded with an index changes performance.
+The bundled `Duplicati.CommandLine.DatabaseTool.exe` / `duplicati-database-tool` can downgrade databases.
+Since the change is only index addition, there is no data loss on downgrades.
+
+
+## Detailed list of changes:
+- Fixed issue with empty filesets being created
+- Fixed issue with transactions being double comitted
+- Fixed a case where a purge could loose a version
+- Added option to register for remote control on TrayIcon startup
+- Fixed an issue with purge-broken-files
+- Fixed list-broken-files and purge-broken-files not reading database config
+- Removed multiple unused libraries
+- Fixed dbtool checks on Windows
+- Added an extra check for the secret provider to ensure the modules behave
+- Fixed a crash on serialization of result message
+- Added an index to blockset entry
+- Fixed an issue with compact not writing blocklists into index files
+- Prevent overwriting config files with RPM install
+- Add classification of file access errors
+- Added feature to suppress warnings
+- Fixed CIFS backend not parsing the writebuffer option
+- More robust flushing of database messages on stops
+- VSS is set to Auto on Windows, if the user has permissions to make snapshots
+- Fixed incorrect text on compression level
+- Removed mentions of removed backends
+- Preserve space during compact by deleting files early, instead of at the end of the compact
+- Reduced memory usage in SyncTool
+- Fixed an issue where timestamps could drift and cause validation errors
+- Updated translations, thanks to all translators
+- Updated the Test method to also test for write-permissions (all backends)
+- Removed the Sia backend due to incompatibility with hard-fork
+- Updated GoogleDrive, GCS, and Dropbox to use HttpClient
+- Updated Jottacloud to use HttpClient
+- Updated OpenStack to use HttpClient
+- Added simpler format for SSH key
+- Removed old libraries and files that caused build warnings
+- Default disable throttle for the file backend (configurable)
+- Removed global options to set various unsupported options, in favor of per-backend options
+- Improved error message if the backend is not a supported one
+- Added support for repairing broken remote index files
+- Improved response time for the Stop command
+- Added a number of messages to websockets to automatically push updates to the browser
+- Added support for toggling reported server features off
+- Fixed a deadlock on restore when transfers failed
+
+## Ngclient changes:
+- Fixed avoiding colon for default port on destination url
+- Fixed buttons on database page to update
+- Fixed an issue where commandline would have extra options
+- Showing the name of the backup being edited
+- Fixed showing the correct relative time
+- Sliders now show correctly when editing
+- Added Server State to About page
+- Added a grid-based view of the backup list
+- Showing the backend type in the backup list
+- Ask to resume server if paused when activating command
+- Improved throttle dialog
+- Updated translations, thanks to all translators
+- Added pluralization and other minor fixes to the backup view
+- Improved color scheme
+- Added drop-area for SSH keyfile
+- Added warning on leading slash for paths in destination
+- Advanced options show a warning if they are overriding a global option when editing
+- Fixed tooltips
+- Minor fixes to the SSH page
+- Notifications are slightly more visible now
+- Added page to do advanced job delete
+- Added warnings when leaving the backup page without saving
+- Removed HttpOptions area on destination
+- Support for custom OAuth url
+- Added deprecation information to advanced options
+- Fixed advanced options not behaving the same in ngax and ngclient
+- Added a stop / abort button to tasks
+- Don't show warnings when checking if files exist
+
 2025-05-12 - 2.1.0.118_canary_2025-05-12
 ==========
 This release is a canary release intended to be used for testing.
