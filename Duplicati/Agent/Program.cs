@@ -475,6 +475,10 @@ public static class Program
             return $"{option}={value}";
         }
 
+        // Disable extensions for websocket, until it is supported by the relay
+        var disabledExtensions = SystemInfoProvider.SupportedAPIExtensions
+            .Where(x => x.Contains(":websocket") || x.Contains(":subscribe:"));
+
         // Lock down the instance, reset tokens and password,
         // and forward relevant settings from agent to the webserver
         var args = new[] {
@@ -487,8 +491,9 @@ public static class Program
             EncodeOption("--webservice-disable-signin-tokens", agentConfig.WebserviceDisableSigninTokens.ToString()),
             EncodeOption("--disable-db-encryption", agentConfig.DisableDbEncryption.ToString()),
             EncodeOption("--settings-encryption-key", settingsEncryptionKey),
+            EncodeOption("--webservice-disable-api-extensions", string.Join(",", disabledExtensions))
             }
-            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .WhereNotNullOrWhiteSpace()
             .ToArray();
 
         // Set the global origin
