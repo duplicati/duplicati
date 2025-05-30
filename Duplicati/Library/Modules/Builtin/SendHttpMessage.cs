@@ -285,7 +285,7 @@ namespace Duplicati.Library.Modules.Builtin
             if (reportTargets.Count == 0)
                 return false;
 
-            m_report_targets = reportTargets;
+            m_report_targets = reportTargets.DistinctBy(x => (x.Url, x.Verb, x.Format)).ToList();
 
             commandlineOptions.TryGetValue(OPTION_MESSAGE_PARAMETER_NAME, out m_messageParameterName);
             if (string.IsNullOrEmpty(m_messageParameterName))
