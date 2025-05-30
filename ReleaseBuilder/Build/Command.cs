@@ -145,11 +145,12 @@ public static partial class Command
         /// Create a new release info
         /// </summary>
         /// <param name="type">The release type</param>
+        /// <param name="date">The release date</param>
         /// <param name="version">The version</param>
         /// <param name="increment">The build version increment</param>
         /// <returns>The release info</returns>
-        public static ReleaseInfo Create(ReleaseChannel type, Version version, int increment)
-            => new ReleaseInfo(new Version(version.Major, version.Minor, version.Build, version.Revision + increment), type, DateTime.Today);
+        public static ReleaseInfo Create(ReleaseChannel type, DateTime date, Version version, int increment)
+            => new ReleaseInfo(new Version(version.Major, version.Minor, version.Build, version.Revision + increment), type, date);
     }
 
     /// <summary>
@@ -272,6 +273,12 @@ public static partial class Command
             getDefaultValue: () => null
         );
 
+        var dateOverrideOption = new Option<string?>(
+            name: "--date",
+            description: "Sets a custom date to use for the release, in the format yyyy-MM-dd",
+            getDefaultValue: () => null
+        );
+
         var disableS3UploadOption = new Option<bool>(
             name: "--disable-s3-upload",
             description: "Disables uploading to S3",
@@ -345,6 +352,7 @@ public static partial class Command
             disableNotarizeSigningOption,
             disableGpgSigningOption,
             versionOverrideOption,
+            dateOverrideOption,
             disableS3UploadOption,
             disableGithubUploadOption,
             disableUpdateServerReloadOption,
@@ -369,6 +377,7 @@ public static partial class Command
     /// <param name="GitStashPush">If the git stash should be performed</param>
     /// <param name="Channel">The release channel</param>
     /// <param name="Version">The version override to use</param>
+    /// <param name="Date">The date override to use</param>
     /// <param name="KeepBuilds">If the builds should be kept</param>
     /// <param name="CompileOnly">If only the build should be performed</param>
     /// <param name="DisableAuthenticode">If authenticode signing should be disabled</param>
@@ -397,6 +406,7 @@ public static partial class Command
         bool GitStashPush,
         ReleaseChannel Channel,
         string? Version,
+        string? Date,
         bool KeepBuilds,
         bool CompileOnly,
         bool DisableAuthenticode,
@@ -499,10 +509,23 @@ public static partial class Command
         }
 
         var changelogNews = File.ReadAllText(input.ChangelogNewsFile.FullName);
+        var buildDate = DateTime.Today;
+        var buildDatePath = Path.Combine(input.BuildPath.FullName, "build-date.txt");
+        if (!string.IsNullOrWhiteSpace(input.Date))
+        {
+            if (!DateTime.TryParse(input.Date, out buildDate))
+                throw new Exception($"Invalid date format: {input.Date}. Expected format is yyyy-MM-dd");
+        }
+        else if (input.KeepBuilds && File.Exists(buildDatePath))
+        {
+            // If the build path already exists, use the existing date
+            buildDate = DateTime.Parse(File.ReadAllText(buildDatePath));
+            Console.WriteLine($"Using existing build date: {buildDate:yyyy-MM-dd}");
+        }
 
         var releaseInfo = string.IsNullOrWhiteSpace(input.Version)
-            ? ReleaseInfo.Create(input.Channel, Version.Parse(File.ReadAllText(versionFilePath)), 1)
-            : ReleaseInfo.Create(input.Channel, Version.Parse(input.Version), 0);
+            ? ReleaseInfo.Create(input.Channel, buildDate, Version.Parse(File.ReadAllText(versionFilePath)), 1)
+            : ReleaseInfo.Create(input.Channel, buildDate, Version.Parse(input.Version), 0);
         Console.WriteLine($"Building {releaseInfo.ReleaseName} ...");
 
         var keyfilePassword = input.Password;
@@ -566,6 +589,9 @@ public static partial class Command
 
         if (!Directory.Exists(input.BuildPath.FullName))
             Directory.CreateDirectory(input.BuildPath.FullName);
+
+        // Write the build date to the build path, to support resuming builds
+        File.WriteAllText(buildDatePath, buildDate.ToString("yyyy-MM-dd"));
 
         // Generally, the builds should happen with a clean source tree, 
         // but this can be disabled for debugging
