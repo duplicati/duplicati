@@ -283,7 +283,10 @@ public class KeepRemoteConnection : IDisposable
                 return;
 
             _lastMessageReceived = DateTimeOffset.Now;
-            Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
+            if (_state == ConnectionState.NotConnected)
+                Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
+            else // Encrypted messages are not logged, as the content has no meaning before being decrypted
+                Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received encrypted message from server");
 
             try
             {
@@ -381,6 +384,7 @@ public class KeepRemoteConnection : IDisposable
                 }
                 else if (_state == ConnectionState.Authenticated)
                 {
+                    Log.WriteVerboseMessage(LogTag, "WebsocketMessage", "Processing message of type {0}", envelope.GetMessageType());
                     switch (envelope.GetMessageType())
                     {
                         case MessageType.Pong:
@@ -630,6 +634,8 @@ public class KeepRemoteConnection : IDisposable
         {
             try
             {
+                Log.WriteVerboseMessage(LogTag, "WebsocketCommand", "Handling command {0} {1}", CommandRequestMessage.Method, CommandRequestMessage.Path);
+
                 var request = new HttpRequestMessage(new HttpMethod(CommandRequestMessage.Method), CommandRequestMessage.Path);
                 if (!string.IsNullOrWhiteSpace(CommandRequestMessage.Body))
                     request.Content = new ByteArrayContent(Convert.FromBase64String(CommandRequestMessage.Body));
