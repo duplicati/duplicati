@@ -38,7 +38,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     /// <summary>
     /// The API extensions that are available
     /// </summary>
-    private static readonly string[] SupportedAPIExtensions = [
+    public static readonly string[] SupportedAPIExtensions = [
         "v2:backup:list-filesets",
         "v2:backup:list-folder",
         "v2:backup:list-versions",
