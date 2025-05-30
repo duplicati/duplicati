@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.IO.Compression;
+using Duplicati.Library.Utility;
 
 namespace ReleaseBuilder.Build;
 
@@ -42,7 +43,15 @@ public static partial class Command
             if (File.Exists(tmpfile))
                 File.Delete(tmpfile);
 
-            var (gpgid, passphrase) = GetGpgIdAndPassphrase(rtcfg);
+            // This retry is needed if the key is stored on mounted media
+            var (gpgid, passphrase) = await RetryHelper.Retry(
+                    () => Task.FromResult(GetGpgIdAndPassphrase(rtcfg)),
+                    (ex, i) => Console.WriteLine($"Failed to read GPG keyfile, attempt {i + 1}: {ex.Message}"),
+                    3,
+                    TimeSpan.FromSeconds(5),
+                    CancellationToken.None
+            );
+
             using (var zip = ZipFile.Open(tmpfile, ZipArchiveMode.Create))
             {
                 foreach (var file in files)
