@@ -250,8 +250,16 @@ namespace Duplicati.UnitTest
                 string expectedParsedResult;
                 switch (exitCode)
                 {
-                    case 0: // OK, run operation
-                        TestUtils.AssertResults(backupResults);
+                    case 0: // OK, run operation                    
+                        if (OperatingSystem.IsWindows())
+                        {
+                            // Windows reports warnings due to CI test mounted folders
+                            AssertWithMessage(backupResults.Errors, 0);
+                        }
+                        else
+                        {
+                            TestUtils.AssertResults(backupResults);
+                        }
                         expectBackup = true;
                         expectedParsedResult = ParsedResultType.Success.ToString();
                         break;
