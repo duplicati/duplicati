@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Logging;
 
@@ -112,6 +113,23 @@ namespace Duplicati.Library.Main
     }
 
     /// <summary>
+    /// State of a single backend action.
+    /// </summary>
+    /// <param name="Action">The type of action being performed.</param>
+    /// <param name="Path">The path being operated on.</param>
+    /// <param name="Size">The size of the file being transferred.</param>
+    /// <param name="Progress">The current number of transferred bytes.</param>
+    /// <param name="BytesPerSecond">The transfer speed in bytes per second, -1 for unknown.</param>
+    /// <param name="IsBlocking">A value indicating if the backend action is blocking operation progress.</param>
+    public record BackendActionProgress(
+        BackendActionType Action,
+        string Path,
+        long Size,
+        long Progress,
+        long BytesPerSecond,
+        bool IsBlocking);
+
+    /// <summary>
     /// Backend progress update object.
     /// The engine updates these statistics very often,
     /// so an event based system would take up too many resources.
@@ -121,15 +139,10 @@ namespace Duplicati.Library.Main
     public interface IBackendProgress
     {
         /// <summary>
-        /// Update with the current action, path, size, progress and bytes_pr_second.
+        /// Returns a snapshot of the current backend progress.
         /// </summary>
-        /// <param name="action">The current action</param>
-        /// <param name="path">The current path</param>
-        /// <param name="size">The current size</param>
-        /// <param name="progress">The current number of transferred bytes</param>
-        /// <param name="bytes_pr_second">Transfer speed in bytes pr second, -1 for unknown</param>
-        /// <param name="isBlocking">A value indicating if the backend is blocking operation progress</param>
-        void Update(out BackendActionType action, out string path, out long size, out long progress, out long bytes_pr_second, out bool isBlocking);
+        /// <returns>A list of backend action progress items.</returns>
+        BackendActionProgress[] GetActiveTransfers();
     }
 
     /// <summary>
@@ -145,24 +158,17 @@ namespace Duplicati.Library.Main
         /// <param name="size">The size of the file being transferred</param>
         void StartAction(BackendActionType action, string path, long size);
         /// <summary>
-        /// Register the start of a new action
+        /// Ends an active transfer action
         /// </summary>
-        /// <param name="action">The action that is starting</param>
+        /// <param name="action">The action that is ending</param>
         /// <param name="path">The path being operated on</param>
-        /// <param name="size">The size of the file being transferred</param>
-        /// <param name="actionStart">The time the action started</param>
-        void StartAction(BackendActionType action, string path, long size, DateTime actionStart);
+        void EndAction(BackendActionType action, string path);
         /// <summary>
         /// Updates the current progress
         /// </summary>
+        /// <param name="path">The path being operated on</param>
         /// <param name="progress">The current number of transferred bytes</param>
-        void UpdateProgress(long progress);
-
-        /// <summary>
-        /// Updates the total size
-        /// </summary>
-        /// <param name="size">The new total size</param>
-        void UpdateTotalSize(long size);
+        void UpdateProgress(string path, long progress);
 
         /// <summary>
         /// Sets a flag indicating if the backend operation is blocking progress
@@ -187,105 +193,128 @@ namespace Duplicati.Library.Main
         /// Lock object to provide snapshot-like access to the data
         /// </summary>
         private readonly object m_lock = new object();
-        /// <summary>
-        /// The current action
-        /// </summary>
-        private BackendActionType m_action;
-        /// <summary>
-        /// The current path
-        /// </summary>
-        private string m_path;
-        /// <summary>
-        /// The current file size
-        /// </summary>
-        private long m_size;
-        /// <summary>
-        /// The current number of transferred bytes
-        /// </summary>
-        private long m_progress;
-        /// <summary>
-        /// The time the last action started
-        /// </summary>
-        private DateTime m_actionStart;
+
         /// <summary>
         /// A value indicating when the last blocking was done
         /// </summary>
         private DateTime m_blockingSince;
 
         /// <summary>
-        /// Register the start of a new action
+        /// Information about an active transfer
         /// </summary>
-        /// <param name="action">The action that is starting</param>
-        /// <param name="path">The path being operated on</param>
-        /// <param name="size">The size of the file being transferred</param>
-        public void StartAction(BackendActionType action, string path, long size)
-            => StartAction(action, path, size, DateTime.UtcNow);
+        /// <param name="Filename">The filename of the transfer</param>
+        /// <param name="Started">When the transfer started</param>
+        /// <param name="Type">The type of the transfer</param>
+        /// <param name="Size">The size of the transfer</param>
+        private sealed record TransferInfo(string Filename, DateTime Started, BackendActionType Type, long Size);
 
         /// <summary>
-        /// Register the start of a new action
+        /// The number of progress events to keep for each transfer
         /// </summary>
-        /// <param name="action">The action that is starting</param>
-        /// <param name="path">The path being operated on</param>
-        /// <param name="size">The size of the file being transferred</param>
-        /// <param name="actionStart">The time the action started</param>
-        public void StartAction(BackendActionType action, string path, long size, DateTime actionStart)
+        private const int MaxProgressEvents = 30;
+
+        /// <summary>
+        /// If the backend manager is blocking progress, wait this long before considering it as blocking progress
+        /// </summary>
+        private static readonly TimeSpan BlockingWaitTime = TimeSpan.FromSeconds(5);
+
+        /// <summary>
+        /// A single recorded progress event
+        /// </summary>
+        private struct ProgressEvent
+        {
+            /// <summary>
+            /// The time in seconds since the epoch when the event was recorded
+            /// </summary>
+            public long When;
+            /// <summary>
+            /// The number of bytes transferred at the time of the event
+            /// </summary>
+            public long Progress;
+        }
+
+        /// <summary>
+        /// The information for the active transfers
+        /// </summary>
+        private Dictionary<string, TransferInfo> m_activeTransferInfo = new();
+        /// <summary>
+        /// The active transfer progress
+        /// </summary>
+        /// <remarks>
+        /// The list is sorted by the time of the event, so the last item is always the most recent progress.
+        /// </remarks>
+        private Dictionary<string, List<ProgressEvent>> m_activeTransferProgress = new();
+
+        /// <inheritdoc />
+        public void StartAction(BackendActionType action, string path, long size)
+        {
+            lock (m_lock)
+                m_activeTransferInfo[path] = new TransferInfo(path, DateTime.UtcNow, action, size);
+        }
+
+        /// <inheritdoc />
+        public void UpdateProgress(string path, long progress)
         {
             lock (m_lock)
             {
-                m_action = action;
-                m_path = path;
-                m_size = size;
-                m_progress = 0;
-                m_actionStart = actionStart;
+                var ts = (long)(DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds;
+                if (!m_activeTransferProgress.TryGetValue(path, out var pg))
+                    m_activeTransferProgress[path] = pg = new List<ProgressEvent>(MaxProgressEvents);
+
+                if (pg.Count == 0 || pg.Last().When != ts)
+                    pg.Add(new ProgressEvent { When = ts, Progress = progress });
+                else
+                    pg[^1] = new ProgressEvent { When = ts, Progress = progress };
+
+                // Each bucket is 1 second, so we keep the last MaxProgressEvents seconds of progress
+                var cutoff = ts - MaxProgressEvents;
+
+                // Remove old progress events
+                while (pg.Count > MaxProgressEvents || (pg.Count > 0 && pg[0].When < cutoff))
+                {
+                    if (pg.Count > 0)
+                        pg.RemoveAt(0);
+                    else
+                        break; // No more progress events to remove
+                }
             }
         }
 
-        /// <summary>
-        /// Updates the progress
-        /// </summary>
-        /// <param name="progress">The current number of transferred bytes</param>
-        public void UpdateProgress(long progress)
-        {
-            lock (m_lock)
-                m_progress = progress;
-        }
-
-        /// <summary>
-        /// Updates the total size
-        /// </summary>
-        /// <param name="size">The new total size</param>
-        public void UpdateTotalSize(long size)
-        {
-            lock (m_lock)
-                m_size = size;
-        }
-
-        /// <summary>
-        /// Update with the current action, path, size, progress and bytes_pr_second.
-        /// </summary>
-        /// <param name="action">The current action</param>
-        /// <param name="path">The current path</param>
-        /// <param name="size">The current size</param>
-        /// <param name="progress">The current number of transferred bytes</param>
-        /// <param name="bytes_pr_second">Transfer speed in bytes pr second, -1 for unknown</param>
-        /// <param name="isBlocking">A value indicating if the backend is blocking operation progress</param>
-        public void Update(out BackendActionType action, out string path, out long size, out long progress, out long bytes_pr_second, out bool isBlocking)
+        /// <inheritdoc />
+        public void EndAction(BackendActionType action, string path)
         {
             lock (m_lock)
             {
-                action = m_action;
-                path = m_path;
-                size = m_size;
-                progress = m_progress;
-                isBlocking = m_blockingSince.Ticks > 0 && (DateTime.UtcNow - m_blockingSince).TotalSeconds > 1;
+                m_activeTransferProgress.Remove(path);
+                m_activeTransferInfo.Remove(path);
+            }
+        }
 
-                //TODO: The speed should be more dynamic,
-                // so we need a sample window instead of always 
-                // calculating from the beginning
-                if (m_progress <= 0 || m_size <= 0 || m_actionStart.Ticks == 0)
-                    bytes_pr_second = -1;
-                else
-                    bytes_pr_second = (long)(m_progress / (DateTime.UtcNow - m_actionStart).TotalSeconds);
+        /// <inheritdoc />
+        public BackendActionProgress[] GetActiveTransfers()
+        {
+            lock (m_lock)
+            {
+                return m_activeTransferInfo.Values.OrderBy(x => x.Started).Select(x =>
+                {
+                    var pg = m_activeTransferProgress.GetValueOrDefault(x.Filename) ?? [];
+                    var speed = -1L;
+                    if (pg.Count > 1)
+                    {
+                        var start = pg.FirstOrDefault();
+                        var end = pg.LastOrDefault();
+                        speed = (end.Progress - start.Progress) / (end.When - start.When);
+                    }
+
+                    return new BackendActionProgress(
+                            x.Type,
+                            x.Filename,
+                            x.Size,
+                            pg.Count > 0 ? pg.Last().Progress : 0, // Use the last recorded progress or 0 if no progress
+                            speed,
+                            m_blockingSince > DateTime.MinValue && (DateTime.UtcNow - m_blockingSince) > BlockingWaitTime
+                        );
+                }).ToArray();
             }
         }
 

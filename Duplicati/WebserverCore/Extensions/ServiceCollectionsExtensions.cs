@@ -68,6 +68,10 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<ISystemInfoProvider, SystemInfoProvider>()
             .AddSingleton<IQueueRunnerService, QueueRunnerService>()
             .AddSingleton<IProgressStateProviderService, ProgressStateProviderService>()
+            .AddTransient<INotificationService, NotificationService>()
+            .AddTransient<IBackupListService, BackupListService>()
+            .AddTransient<ITaskQueueService, TaskQueueService>()
+            .AddSingleton<IWebsocketAuthenticator, WebsocketAuthenticator>()
             .AddSingleton(logWriteHandler)
             .AddSingleton(applicationSettings);
 

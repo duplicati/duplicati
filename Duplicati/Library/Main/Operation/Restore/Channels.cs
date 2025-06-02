@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Channel between <see cref="FileLister"/> and <see cref="FileProcessor"/>.
         /// </summary>
-        public readonly IChannel<FileRequest> FilesToRestore = ChannelManager.CreateChannel<FileRequest>(buffersize: BufferSize);
+        public readonly IChannel<FileRequest> FilesToRestore = ChannelManager.CreateChannel<FileRequest>(buffersize: 0 /* CoCoL deadlocks on retire if this is not zero */);
 
         /// <summary>
         /// Channel between <see cref="VolumeManager"/> and <see cref="VolumeDownloader"/>.
@@ -62,9 +62,13 @@ namespace Duplicati.Library.Main.Operation.Restore
         public readonly IChannel<(BlockRequest, byte[])> DecompressedBlock = ChannelManager.CreateChannel<(BlockRequest, byte[])>(buffersize: BufferSize);
 
         /// <summary>
-        /// Channel between <see cref="VolumeManager"/> and <see cref="BlockManager"/> / <see cref="VolumeDecryptor"/>, used for requesting and responding volumes to the manager.
+        /// Channel between <see cref="VolumeManager"/> <see cref="VolumeDecryptor"/>, used for requesting and responding volumes to the manager.
         /// </summary>
-        public readonly IChannel<object> VolumeRequestResponse = ChannelManager.CreateChannel<object>(buffersize: BufferSize);
+        public readonly IChannel<object> VolumeResponse = ChannelManager.CreateChannel<object>(buffersize: BufferSize);
+        /// <summary>
+        /// Channel between <see cref="VolumeManager"/> and <see cref="BlockManager"/>, used for requesting and responding volumes to the manager.
+        /// </summary>
+        public readonly IChannel<object> VolumeRequest = ChannelManager.CreateChannel<object>(buffersize: BufferSize);
     }
 
 }

@@ -663,7 +663,6 @@ namespace Duplicati.Library.Main.Operation
                 using (var db = new Backup.BackupDatabase(m_database, m_options))
                 // Setup runners and instances here
                 using (var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
-                using (var stats = new Backup.BackupStatsCollector(m_result))
                 {
                     long filesetid;
                     using var counterToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.ProgressToken);
@@ -713,6 +712,7 @@ namespace Duplicati.Library.Main.Operation
                             // Run the backup operation
                             if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
+                                var stats = new Backup.BackupStatsCollector(m_result);
                                 await RunMainOperation(channels, source, journalService, db, backendManager, stats, m_options, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
                             }
                         }

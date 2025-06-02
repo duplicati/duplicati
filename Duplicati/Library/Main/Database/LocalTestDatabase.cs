@@ -147,78 +147,41 @@ namespace Duplicati.Library.Main.Database
             samples = Math.Max(1, samples);
             using (var cmd = m_connection.CreateCommand(m_rtr))
             {
-                // Select any broken items
-                cmd.SetCommandAndParameters(@"
-                    SELECT
-                        ""ID"",
-                        ""Name"",
-                        ""Size"",
-                        ""Hash"",
-                        ""VerificationCount""
-                    FROM ""Remotevolume""
-                    WHERE
-                        (""State"" IN (@States))
-                        AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0)
-                        AND (""ArchiveTime"" = 0)
-                ")
+                var files = new List<RemoteVolume>();
+                var max = cmd.ExecuteScalarInt64(@"SELECT MAX(""VerificationCount"") FROM ""RemoteVolume""", 0);
+
+                if (options.FullRemoteVerification != Options.RemoteTestStrategy.IndexesOnly)
+                {
+                    // Select any broken items
+                    cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" IN (@States)) AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0) AND (""ArchiveTime"" = 0)")
                     .ExpandInClauseParameter("@States", [RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()]);
 
-                using (var rd = await cmd.ExecuteReaderAsync())
-                    while (await rd.ReadAsync())
-                        yield return new RemoteVolume(rd);
+                    using (var rd = cmd.ExecuteReader())
+                        while (rd.Read())
+                            yield return new RemoteVolume(rd);
 
-                //Grab the max value
-                var max = await cmd.ExecuteScalarInt64Async(@"
-                    SELECT MAX(""VerificationCount"")
-                    FROM ""RemoteVolume""
-                ", 0);
-
-                //First we select some filesets
-                var files = new List<RemoteVolume>();
-                var whereClause = string.IsNullOrEmpty(tp.Query) ? " WHERE " : (" " + tp.Query + " AND ");
-                using (var rd = await cmd.SetCommandAndParameters(@$"
-                    SELECT
-                        ""A"".""VolumeID"",
-                        ""A"".""Name"",
-                        ""A"".""Size"",
-                        ""A"".""Hash"",
-                        ""A"".""VerificationCount""
-                    FROM
-                        (
-                            SELECT
-                                ""ID"" AS ""VolumeID"",
-                                ""Name"",
-                                ""Size"",
-                                ""Hash"",
-                                ""VerificationCount""
-                            FROM ""Remotevolume""
-                            WHERE
-                                ""ArchiveTime"" = 0
-                                AND ""State"" IN (@State1, @State2)
-                        ) A,
-                        ""Fileset""
-                        {whereClause}
-                            ""A"".""VolumeID"" = ""Fileset"".""VolumeID""
-                        ORDER BY ""Fileset"".""Timestamp""
-                    ")
+                    //First we select some filesets
+                    var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
+                    using (var rd = cmd.SetCommandAndParameters(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"", ""A"".""VerificationCount"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""ArchiveTime"" = 0 AND ""State"" IN (@State1, @State2)) A, ""Fileset"" " + whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" ")
                         .SetParameterValue("@State1", RemoteVolumeState.Uploaded.ToString())
                         .SetParameterValue("@State2", RemoteVolumeState.Verified.ToString())
-                        .SetParameterValues(tp.Values)
-                        .ExecuteReaderAsync())
-                    while (await rd.ReadAsync())
-                        files.Add(new RemoteVolume(rd));
+                        .SetParameterValues(tp.Item2)
+                        .ExecuteReader())
+                        while (rd.Read())
+                            files.Add(new RemoteVolume(rd));
 
-                if (files.Count == 0)
-                    yield break;
+                    if (files.Count == 0)
+                        yield break;
 
-                if (string.IsNullOrEmpty(tp.Item1))
-                    files = FilterByVerificationCount(files, samples, max).ToList();
+                    if (string.IsNullOrEmpty(tp.Item1))
+                        files = FilterByVerificationCount(files, samples, max).ToList();
 
-                foreach (var f in files)
-                    yield return f;
+                    foreach (var f in files)
+                        yield return f;
 
-                //Then we select some index files
-                files.Clear();
+                    //Then we select some index files
+                    files.Clear();
+                }
 
                 cmd.SetCommandAndParameters(@"
                     SELECT
@@ -243,7 +206,7 @@ namespace Duplicati.Library.Main.Database
                 foreach (var f in FilterByVerificationCount(files, samples, max))
                     yield return f;
 
-                if (options.FullRemoteVerification == Options.RemoteTestStrategy.ListAndIndexes)
+                if (options.FullRemoteVerification == Options.RemoteTestStrategy.ListAndIndexes || options.FullRemoteVerification == Options.RemoteTestStrategy.IndexesOnly)
                     yield break;
 
                 //And finally some block files
@@ -654,172 +617,185 @@ namespace Duplicati.Library.Main.Database
 
         public interface IBlocklist : IDisposable
         {
-            Task AddBlock(string key, long value);
-            IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
+            void AddBlock(string key, long value);
+            IEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
+        }
+
+        public interface IBlocklistHashList : IDisposable
+        {
+            void AddBlockHash(string hash, long size);
+            IEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize);
         }
 
         private class Blocklist : Basiclist, IBlocklist
         {
             private const string TABLE_PREFIX = "Blocklist";
-            private const string TABLE_FORMAT = @"
-                (
-                    ""Hash"" TEXT NOT NULL,
-                    ""Size"" INTEGER NOT NULL
-                )
-            ";
+            private const string TABLE_FORMAT = @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
+            private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (@Hash,@Size)";
 
-            private const string INSERT_COMMAND = @"
-                (
-                    ""Hash"",
-                    ""Size""
-                )
-                VALUES (
-                    @Hash,
-                    @Size
-                )
-            ";
-
-            [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
-            public Blocklist(SqliteConnection connection, string volumename, ReusableTransaction rtr)
+            public Blocklist(IDbConnection connection, string volumename, ReusableTransaction rtr)
                 : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
-            {
-                throw new NotSupportedException("Use CreateAsync method instead.");
-            }
+            { }
 
-            private Blocklist() { }
-
-            public static async Task<Blocklist> CreateAsync(LocalDatabase db, string volumename)
+            public void AddBlock(string hash, long size)
             {
-                var bl = new Blocklist();
-                return (Blocklist)await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND);
-            }
-
-            public async Task AddBlock(string hash, long size)
-            {
-                await m_insertCommand.SetTransaction(m_db.Transaction)
+                m_insertCommand.SetTransaction(m_rtr.Transaction)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
-                    .ExecuteNonQueryAsync();
+                    .ExecuteNonQuery();
             }
 
-            public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare()
+            public IEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare()
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                var curBlocks = @"
-                    SELECT
-                        ""Block"".""Hash"" AS ""Hash"",
-                        ""Block"".""Size"" AS ""Size""
-                    FROM
-                        ""Remotevolume"",
-                        ""Block""
-                    WHERE
-                        ""Remotevolume"".""Name"" = @Name
-                        AND ""Remotevolume"".""ID"" = ""Block"".""VolumeID""
-                    ";
+                var curBlocks = @"SELECT ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" FROM ""Remotevolume"", ""Block"" WHERE ""Remotevolume"".""Name"" = @Name AND ""Remotevolume"".""ID"" = ""Block"".""VolumeID""";
+                var duplBlocks = @"SELECT ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" FROM ""DuplicateBlock"", ""Block"" WHERE ""DuplicateBlock"".""VolumeID"" = (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = @Name) AND ""Block"".""ID"" = ""DuplicateBlock"".""BlockID""";
+                var delBlocks = @"SELECT ""DeletedBlock"".""Hash"" AS ""Hash"", ""DeletedBlock"".""Size"" AS ""Size"" FROM ""DeletedBlock"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = @Name AND ""RemoteVolume"".""ID"" = ""DeletedBlock"".""VolumeID""";
+                var create = FormatInvariant($@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT DISTINCT ""Hash"" AS ""Hash"", ""Size"" AS ""Size"" FROM ({curBlocks} UNION {delBlocks} UNION {duplBlocks})");
+                var extra = FormatInvariant($@"SELECT @TypeExtra AS ""Type"", ""{m_tablename}"".""Hash"" AS ""Hash"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Hash"" NOT IN ( SELECT ""Hash"" FROM ""{cmpName}"" )");
+                var missing = FormatInvariant($@"SELECT @TypeMissing AS ""Type"", ""Hash"" AS ""Hash"" FROM ""{cmpName}"" WHERE ""Hash"" NOT IN (SELECT ""Hash"" FROM ""{m_tablename}"")");
+                var modified = FormatInvariant($@"SELECT @TypeModified AS ""Type"", ""E"".""Hash"" AS ""Hash"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Hash"" = ""E"".""Hash"" AND ""D"".""Size"" != ""E"".""Size""  ");
+                var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
 
-                var duplBlocks = @"
-                    SELECT
-                        ""Block"".""Hash"" AS ""Hash"",
-                        ""Block"".""Size"" AS ""Size""
-                    FROM
-                        ""DuplicateBlock"",
-                        ""Block""
-                    WHERE
-                        ""DuplicateBlock"".""VolumeID"" = (
-                            SELECT ""ID""
-                            FROM ""RemoteVolume""
-                            WHERE ""Name"" = @Name
-                        )
-                        AND ""Block"".""ID"" = ""DuplicateBlock"".""BlockID""
-                ";
-
-                var delBlocks = @"
-                    SELECT
-                        ""DeletedBlock"".""Hash"" AS ""Hash"",
-                        ""DeletedBlock"".""Size"" AS ""Size""
-                    FROM
-                        ""DeletedBlock"",
-                        ""RemoteVolume""
-                    WHERE
-                        ""RemoteVolume"".""Name"" = @Name
-                        AND ""RemoteVolume"".""ID"" = ""DeletedBlock"".""VolumeID""
-                ";
-
-                var create = $@"
-                    CREATE TEMPORARY TABLE ""{cmpName}"" AS
-                    SELECT DISTINCT
-                        ""Hash"" AS ""Hash"",
-                        ""Size"" AS ""Size""
-                    FROM (
-                        {curBlocks}
-                        UNION {delBlocks}
-                        UNION {duplBlocks}
-                    )
-                ";
-
-                var extra = $@"
-                    SELECT
-                        @TypeExtra AS ""Type"",
-                        ""{m_tablename}"".""Hash"" AS ""Hash""
-                    FROM ""{m_tablename}""
-                    WHERE ""{m_tablename}"".""Hash"" NOT IN (
-                        SELECT ""Hash""
-                        FROM ""{cmpName}""
-                    )
-                ";
-
-                var missing = $@"
-                    SELECT
-                        @TypeMissing AS ""Type"",
-                        ""Hash"" AS ""Hash""
-                    FROM ""{cmpName}""
-                    WHERE ""Hash"" NOT IN (
-                        SELECT ""Hash""
-                        FROM ""{m_tablename}""
-                    )
-                ";
-
-                var modified = $@"
-                    SELECT
-                        @TypeModified AS ""Type"",
-                        ""E"".""Hash"" AS ""Hash""
-                    FROM
-                        ""{m_tablename}"" E,
-                        ""{cmpName}"" D
-                    WHERE
-                        ""D"".""Hash"" = ""E"".""Hash""
-                        AND ""D"".""Size"" != ""E"".""Size""
-                ";
-
-                var drop = $@"DROP TABLE IF EXISTS ""{cmpName}"" ";
-
-                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
+                using (var cmd = m_connection.CreateCommand(m_rtr.Transaction))
                 {
                     try
                     {
-                        await cmd
-                            .SetCommandAndParameters(create)
+                        cmd.SetCommandAndParameters(create)
                             .SetParameterValue("@Name", m_volumename)
-                            .ExecuteNonQueryAsync();
+                            .ExecuteNonQuery();
 
-                        cmd
-                            .SetCommandAndParameters($"{extra} UNION {missing} UNION {modified}")
+                        cmd.SetCommandAndParameters(FormatInvariant($"{extra} UNION {missing} UNION {modified}"))
                             .SetParameterValue("@TypeExtra", (int)Library.Interface.TestEntryStatus.Extra)
                             .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
                             .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
-
-                        using (var rd = await cmd.ExecuteReaderAsync())
-                            while (await rd.ReadAsync())
+                        using (var rd = cmd.ExecuteReader())
+                            while (rd.Read())
                                 yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
                     }
                     finally
                     {
-                        try
-                        {
-                            await cmd.ExecuteNonQueryAsync(drop);
-                        }
+                        try { cmd.ExecuteNonQuery(drop); }
                         catch { }
+                    }
+                }
+            }
+        }
+
+        private class BlocklistHashList : Basiclist, IBlocklistHashList
+        {
+            private const string TABLE_PREFIX = "BlocklistHashList";
+            private const string TABLE_FORMAT = @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
+            private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (@Hash,@Size)";
+
+            public BlocklistHashList(IDbConnection connection, string volumename, ReusableTransaction rtr)
+                : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
+            { }
+
+            public void AddBlockHash(string hash, long size)
+            {
+                m_insertCommand.SetTransaction(m_rtr.Transaction)
+                    .SetParameterValue("@Hash", hash)
+                    .SetParameterValue("@Size", size)
+                    .ExecuteNonQuery();
+            }
+
+            public IEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize)
+            {
+                var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+
+                var create = FormatInvariant($@"
+                    CREATE TEMPORARY TABLE ""{cmpName}"" (
+                        ""Hash"" TEXT NOT NULL,
+                        ""Size"" INTEGER NOT NULL
+                    );
+
+                    INSERT INTO ""{cmpName}"" (""Hash"", ""Size"")
+                    SELECT b.""Hash"", b.""Size""
+                    FROM Block b
+                    JOIN (
+                        SELECT
+                            blh.""Hash"",
+                            CASE
+                                WHEN blh.""Index"" = (((bs.""Length"" + {blockSize} - 1) / {blockSize} - 1) / {hashesPerBlock})
+                                     AND ((bs.""Length"" + {blockSize} - 1) / {blockSize}) % {hashesPerBlock} != 0
+                                THEN {hashSize} * ((bs.""Length"" + {blockSize} - 1) / {blockSize} % {hashesPerBlock})
+                                ELSE {hashSize} * {hashesPerBlock}
+                            END AS ""Size""
+                        FROM BlocklistHash blh
+                        JOIN Blockset bs ON bs.""ID"" = blh.""BlocksetID""
+                    ) expected ON b.""Hash"" = expected.""Hash"" AND b.""Size"" = expected.""Size""
+                    WHERE b.""VolumeID"" IN (
+                        SELECT ibl.""BlockVolumeID""
+                        FROM Remotevolume idx
+                        JOIN IndexBlockLink ibl ON ibl.""IndexVolumeID"" = idx.""ID""
+                        WHERE idx.""Name"" = @Name
+                    );
+                ");
+
+                var compare = FormatInvariant($@"
+                    WITH
+                        Expected AS (
+                            SELECT ""Hash"", ""Size"" FROM ""{cmpName}""
+                        ),
+                        Actual AS (
+                            SELECT ""Hash"", ""Size"" FROM ""{m_tablename}""
+                        ),
+                        Extra AS (
+                            SELECT @TypeExtra AS Type, a.""Hash""
+                            FROM Actual a
+                            LEFT JOIN Expected e ON a.""Hash"" = e.""Hash"" AND a.""Size"" = e.""Size""
+                            WHERE e.""Hash"" IS NULL
+                        ),
+                        Missing AS (
+                            SELECT @TypeMissing AS Type, e.""Hash""
+                            FROM Expected e
+                            LEFT JOIN Actual a ON a.""Hash"" = e.""Hash"" AND a.""Size"" = e.""Size""
+                            WHERE a.""Hash"" IS NULL
+                        ),
+                        Modified AS (
+                            SELECT @TypeModified AS Type, a.""Hash""
+                            FROM Actual a
+                            JOIN Expected e ON a.""Hash"" = e.""Hash""
+                            WHERE a.""Size"" != e.""Size""
+                              AND NOT EXISTS (
+                                  SELECT 1 FROM Extra x WHERE x.""Hash"" = a.""Hash""
+                              )
+                        )
+                    SELECT * FROM Extra
+                    UNION
+                    SELECT * FROM Missing
+                    UNION
+                    SELECT * FROM Modified;
+                ");
+
+                var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}""");
+
+                using (var cmd = m_connection.CreateCommand(m_rtr.Transaction))
+                {
+                    try
+                    {
+                        // Create expected hash+size table filtered by volume
+                        cmd.SetCommandAndParameters(create)
+                            .SetParameterValue("@Name", m_volumename)
+                            .ExecuteNonQuery();
+
+                        // Compare against actual values inserted into temp table
+                        cmd.SetCommandAndParameters(compare)
+                            .SetParameterValue("@TypeExtra", (int)Library.Interface.TestEntryStatus.Extra)
+                            .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
+                            .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
+
+                        using (var rd = cmd.ExecuteReader())
+                            while (rd.Read())
+                                yield return new KeyValuePair<Library.Interface.TestEntryStatus, string>(
+                                    (Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0),
+                                    rd.ConvertValueToString(1) ?? "");
+                    }
+                    finally
+                    {
+                        try { cmd.ExecuteNonQuery(drop); } catch { }
                     }
                 }
             }
@@ -830,14 +806,19 @@ namespace Duplicati.Library.Main.Database
             return await Filelist.CreateAsync(this, name);
         }
 
-        public async Task<IIndexlist> CreateIndexlist(string name)
+        public IIndexlist CreateIndexlist(string name, ReusableTransaction rtr)
         {
-            return await Indexlist.CreateAsync(this, name);
+            return new Indexlist(m_connection, name, rtr);
         }
 
-        public async Task<IBlocklist> CreateBlocklist(string name)
+        public IBlocklist CreateBlocklist(string name, ReusableTransaction rtr)
         {
-            return await Blocklist.CreateAsync(this, name);
+            return new Blocklist(m_connection, name, rtr);
+        }
+
+        public IBlocklistHashList CreateBlocklistHashList(string name, ReusableTransaction rtr)
+        {
+            return new BlocklistHashList(m_connection, name, rtr);
         }
     }
 }

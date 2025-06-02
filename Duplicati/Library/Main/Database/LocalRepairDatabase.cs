@@ -51,6 +51,18 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
+        /// Creates a new local repair database from an existing local database
+        /// </summary>
+        /// <param name="db">The existing local database</param>
+        public static async Task<LocalRepairDatabase> CreateAsync(LocalDatabase dbparent, LocalRepairDatabase? dbnew = null)
+        {
+            dbnew ??= new LocalRepairDatabase();
+
+            return (LocalRepairDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
+
+        }
+
+        /// <summary>
         /// Gets the fileset ID from the remote name
         /// </summary>
         /// <param name="filelist">The remote name of the fileset</param>

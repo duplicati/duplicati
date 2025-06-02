@@ -43,6 +43,50 @@ namespace Duplicati.Library.Main.Operation.Restore
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeManager>();
 
         /// <summary>
+        /// Helper class to read from either of two channels.
+        /// This is a workaround for the fact that CoCoL seems to deadlock on ReadFroAnyAsync
+        /// </summary>
+        /// <param name="channel1">The first channel to read from.</param>
+        /// <param name="channel2">The second channel to read from.</param>
+        private sealed class ReadFromEither(IReadChannel<object> channel1, IReadChannel<object> channel2)
+        {
+            /// <summary>
+            /// The first task that is reading from the channels.
+            /// </summary>
+            private Task<object> t1;
+            /// <summary>
+            /// The second task that is reading from the channels.
+            /// </summary>
+            private Task<object> t2;
+
+            /// <summary>
+            /// Reads from either of the two channels asynchronously.
+            /// </summary>
+            /// <returns>The object read from the channel.</returns>
+            public async Task<object> ReadFromEitherAsync()
+            {
+                // NOTE: This is not a correct external choice,
+                // as we have actually consumed from both channels,
+                // but we only process one of them
+                // This is safe here, because the shutdown only happens on failure termination
+                t1 ??= channel1.ReadAsync();
+                t2 ??= channel2.ReadAsync();
+
+                var r = await Task.WhenAny(t1, t2).ConfigureAwait(false);
+                if (r == t1)
+                {
+                    t1 = null;
+                    return await r.ConfigureAwait(false);
+                }
+                else
+                {
+                    t2 = null;
+                    return await r.ConfigureAwait(false);
+                }
+            }
+        }
+
+        /// <summary>
         /// Runs the volume manager process.
         /// </summary>
         /// <param name="channels">The named channels for the restore operation.</param>
@@ -52,7 +96,8 @@ namespace Duplicati.Library.Main.Operation.Restore
             return AutomationExtensions.RunTask(
                 new
                 {
-                    VolumeRequestResponse = channels.VolumeRequestResponse.AsRead(),
+                    VolumeRequest = channels.VolumeRequest.AsRead(),
+                    VolumeResponse = channels.VolumeResponse.AsRead(),
                     DecompressRequest = channels.DecompressionRequest.AsWrite(),
                     DownloadRequest = channels.DownloadRequest.AsWrite(),
                 },
@@ -69,12 +114,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Stopwatch sw_request = options.InternalProfiling ? new() : null;
                     Stopwatch sw_wakeup = options.InternalProfiling ? new() : null;
 
+                    var rfa = new ReadFromEither(self.VolumeRequest, self.VolumeResponse);
                     try
                     {
                         while (true)
                         {
-                            var msg = await self.VolumeRequestResponse.ReadAsync().ConfigureAwait(false);
-
+                            // TODO: CoCol ReadFromAnyAsync deadlocks, so we use a workaround
+                            var msg = await rfa.ReadFromEitherAsync().ConfigureAwait(false);
                             switch (msg)
                             {
                                 case BlockRequest request:

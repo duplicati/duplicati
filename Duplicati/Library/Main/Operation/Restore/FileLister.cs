@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     sw_get_files?.Start();
                     // The enumerables are cast to arrays to force the query to be executed and release the database lock.
-                    var files = await db.GetFilesAndSymlinksToRestore().OrderByDescending(x => x.Length).ToArrayAsync(); // Get started on big files first
+                    var files = await db.GetFilesAndSymlinksToRestore().ToArrayAsync();
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_get_files?.Stop();
 

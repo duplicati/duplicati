@@ -21,37 +21,33 @@
 
 namespace Duplicati.WebserverCore.Abstractions;
 
-public interface ISettingsService
+/// <summary>
+/// Interface for a service that provides access to the task queue.
+/// </summary>
+public interface ITaskQueueService
 {
     /// <summary>
-    /// Gets the current server settings.
+    /// Gets the task queue.
     /// </summary>
-    /// <returns>The current server settings.</returns>
-    ServerSettings GetSettings();
+    /// <returns>A collection of task state DTOs representing the current task queue.</returns>
+    IEnumerable<Dto.GetTaskStateDto> GetTaskQueue();
 
     /// <summary>
-    /// Gets the current server settings with sensitive information masked.
+    /// Gets the task information for a specific task ID.
     /// </summary>
-    /// <returns>A dictionary of settings with sensitive information masked.</returns>
-    Dictionary<string, string> GetSettingsMasked();
+    /// <param name="taskid">The ID of the task to retrieve information for.</param>
+    /// <returns>A task state DTO containing the information for the specified task.</returns>
+    Dto.GetTaskStateDto GetTaskInfo(long taskid);
 
     /// <summary>
-    /// Patches the server settings with the provided values, ignoring any sensitive information.
+    /// Stops a task with the specified task ID. This will stop the task if it is currently running.
     /// </summary>
-    /// <param name="values">A dictionary of values to patch the settings with.</param>
-    void PatchSettingsMasked(Dictionary<string, object?>? values);
+    /// <param name="taskid">The ID of the task to stop.</param>
+    void StopTask(long taskid);
 
     /// <summary>
-    /// Gets a specific setting value, masking sensitive information if necessary.
+    /// Aborts a task with the specified task ID. This will immediately terminate the task with minimal waiting for it to finish.
     /// </summary>
-    /// <param name="key">The key of the setting to retrieve.</param>
-    /// <returns>The value of the setting, or null if not found.</returns>
-    string? GetSettingMasked(string key);
-
-    /// <summary>
-    /// Patches a specific setting with a masked value, ignoring any sensitive information.
-    /// </summary>
-    /// <param name="key">The key of the setting to patch.</param>
-    /// <param name="value">The masked value to set for the setting.</param>
-    void PatchSettingMasked(string key, string value);
+    /// <param name="taskid">The ID of the task to abort.</param>
+    void AbortTask(long taskid);
 }

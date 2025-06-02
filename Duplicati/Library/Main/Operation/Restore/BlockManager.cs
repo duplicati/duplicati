@@ -430,7 +430,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             new
             {
                 Input = channels.DecompressedBlock.AsRead(),
-                Output = channels.VolumeRequestResponse.AsWrite()
+                Output = channels.VolumeRequest.AsWrite()
             },
             async self =>
             {

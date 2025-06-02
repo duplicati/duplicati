@@ -1511,18 +1511,20 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A list of files and symlinks to restore.</returns>
         public async IAsyncEnumerable<FileRequest> GetFilesAndSymlinksToRestore()
         {
+            // Order by length descending, so that larger files are restored first.
             using var cmd = m_connection.CreateCommand($@"
                 SELECT
                     F.ID,
                     F.Path,
                     F.TargetPath,
                     IFNULL(B.FullHash, ''),
-                    IFNULL(B.Length, 0),
+                    IFNULL(B.Length, 0) AS ""Length"",
                     F.BlocksetID
                 FROM ""{m_tempfiletable}"" F
                 LEFT JOIN Blockset B
                     ON F.BlocksetID = B.ID
                 WHERE F.BlocksetID != {FOLDER_BLOCKSET_ID}
+                ORDER BY ""Length"" DESC
             ")
                 .SetTransaction(m_rtr);
             using var rd = await cmd.ExecuteReaderAsync();

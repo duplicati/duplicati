@@ -220,6 +220,15 @@ public sealed record SystemInfoDto
     public required IEnumerable<string> APIScopes { get; init; }
 
     /// <summary>
+    /// The default OAuth URL for authenticating.
+    /// </summary>
+    public required string DefaultOAuthURL { get; init; }
+    /// <summary>
+    /// The new default OAuth URL for v2 authentication.
+    /// </summary>
+    public required string DefaultOAuthURLv2 { get; init; }
+
+    /// <summary>
     /// Represents a timezone.
     /// </summary>
     public class TimeZoneDto

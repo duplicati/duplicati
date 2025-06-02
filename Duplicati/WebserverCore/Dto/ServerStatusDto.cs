@@ -101,4 +101,10 @@ public sealed record ServerStatusDto
     /// Gets the progress of the update download.
     /// </summary>
     public required double UpdateDownloadProgress { get; init; }
+
+    /// <summary>
+    /// Gets the type of the DTO, used for websocket messages.
+    /// </summary>
+    public string Type => "legacystatus";
+
 }

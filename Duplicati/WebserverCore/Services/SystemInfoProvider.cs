@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.Globalization;
+using Duplicati.Library;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Localization;
 using Duplicati.Server;
@@ -32,19 +33,29 @@ namespace Duplicati.WebserverCore.Services;
 /// <summary>
 /// Produces system information.
 /// </summary>
-public class SystemInfoProvider(IApplicationSettings applicationSettings) : ISystemInfoProvider
+public class SystemInfoProvider(IApplicationSettings applicationSettings, Connection connection) : ISystemInfoProvider
 {
     /// <summary>
     /// The API extensions that are available
     /// </summary>
-    private static readonly string[] APIExtensions = [
+    public static readonly string[] SupportedAPIExtensions = [
         "v2:backup:list-filesets",
         "v2:backup:list-folder",
         "v2:backup:list-versions",
         "v2:backup:search",
         "v2:destination:test",
+        "v1:websocket",
         "v1:gettask:taskstarted",
         "v1:gettask:taskfinished",
+        "v1:websocket:authenticate",
+        "v1:subscribe:legacystatus",
+        "v1:subscribe:backuplist",
+        "v1:subscribe:serversettings",
+        "v1:subscribe:progress",
+        "v1:subscribe:taskqueue",
+        "v1:subscribe:notifications",
+
+        // "v1:subscribe:scheduler",
     ];
 
     /// <summary>
@@ -300,6 +311,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings) : ISys
             }
         }
 
+        var disabledAPIExtensions = connection.ApplicationSettings.DisabledAPIExtensions;
+
         // Return the system information, patch in dynamic values
         return new SystemInfoDto()
         {
@@ -336,7 +349,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings) : ISys
             UsingAlternateUpdateURLs = systeminfo.UsingAlternateUpdateURLs,
             LogLevels = systeminfo.LogLevels,
             SpecialFolders = systeminfo.SpecialFolders,
-            APIExtensions = APIExtensions,
+            APIExtensions = SupportedAPIExtensions.Where(ext => !disabledAPIExtensions.Contains(ext)).ToArray(),
             APIScopes = APIScopes,
             BrowserLocale = new SystemInfoDto.LocaleDto()
             {
@@ -345,8 +358,10 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings) : ISys
                 DisplayName = browserlanguage.NativeName
             },
             SupportedLocales = systeminfo.SupportedLocales,
-            BrowserLocaleSupported = Library.Localization.LocalizationService.IsCultureSupported(browserlanguage),
+            BrowserLocaleSupported = LocalizationService.IsCultureSupported(browserlanguage),
             TimeZones = systeminfo.TimeZones,
+            DefaultOAuthURL = OAuthContextSettings.ServerURL,
+            DefaultOAuthURLv2 = OAuthContextSettings.DUPLICATI_OAUTH_SERVICE_NEW,
         };
     }
 }
