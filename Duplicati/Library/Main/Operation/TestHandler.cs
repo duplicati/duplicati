@@ -154,7 +154,7 @@ namespace Duplicati.Library.Main.Operation
                     if (m_options.ReplaceFaultyIndexFiles)
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, "Found {0} faulty index files, repairing now", faultyIndexFiles.Count);
-                        await ReplaceFaultyIndexFilesAsync(faultyIndexFiles, backend, db, rtr, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
+                        await ReplaceFaultyIndexFilesAsync(faultyIndexFiles, backend, db, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
                     }
                     else
                         Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, "Found {0} faulty index files, use the option {1} to repair them", faultyIndexFiles.Count, "--replace-faulty-index-files");
@@ -280,19 +280,19 @@ namespace Duplicati.Library.Main.Operation
                                 foreach (var h in v.Blocks)
                                     await bl.AddBlock(h.Key, h.Value);
 
-                                combined.AddRange(bl.Compare());
+                                combined.AddRange(await bl.Compare().ToListAsync());
                             }
                         }
 
                         if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                         {
                             var hashesPerBlock = options.Blocksize / options.BlockhashSize;
-                            using (var bl = db.CreateBlocklistHashList(vol.Name, rtr))
+                            using (var bl = await db.CreateBlocklistHashList(vol.Name))
                             {
                                 foreach (var b in rd.BlockLists)
-                                    bl.AddBlockHash(b.Hash, b.Length);
+                                    await bl.AddBlockHash(b.Hash, b.Length);
 
-                                combined.AddRange(bl.Compare(hashesPerBlock, options.BlockhashSize, options.Blocksize));
+                                combined.AddRange(await bl.Compare(hashesPerBlock, options.BlockhashSize, options.Blocksize).ToListAsync());
                             }
                         }
                     }
@@ -347,9 +347,10 @@ namespace Duplicati.Library.Main.Operation
             return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, null);
         }
 
-        private async Task ReplaceFaultyIndexFilesAsync(List<IRemoteVolume> faultyIndexFiles, IBackendManager backendManager, LocalTestDatabase db, ReusableTransaction rtr, CancellationToken cancellationToken)
+        private async Task ReplaceFaultyIndexFilesAsync(List<IRemoteVolume> faultyIndexFiles, IBackendManager backendManager, LocalTestDatabase db, CancellationToken cancellationToken)
         {
-            using var repairdb = new LocalRepairDatabase(db);
+            using var repairdb = await LocalRepairDatabase.CreateAsync(db);
+
             foreach (var vol in faultyIndexFiles)
             {
                 if (!await m_results.TaskControl.ProgressRendevouz().ConfigureAwait(false))
@@ -362,7 +363,7 @@ namespace Duplicati.Library.Main.Operation
                 try
                 {
                     var w = newEntry = new IndexVolumeWriter(m_options);
-                    await RepairHandler.RunRepairDindex(backendManager, repairdb, rtr, w, vol, m_options, cancellationToken).ConfigureAwait(false);
+                    await RepairHandler.RunRepairDindex(backendManager, repairdb, w, vol, m_options, cancellationToken).ConfigureAwait(false);
                     if (m_options.Dryrun)
                     {
                         Logging.Log.WriteDryrunMessage(LOGTAG, "ReplaceFaultyIndexFile", "Would replace faulty index file {0} with {1}", vol.Name, w.RemoteFilename);
@@ -370,8 +371,8 @@ namespace Duplicati.Library.Main.Operation
                     else
                     {
                         await backendManager.DeleteAsync(vol.Name, vol.Size, true, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
-                        await backendManager.WaitForEmptyAsync(repairdb, rtr.Transaction, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
-                        rtr.Commit("ReplaceFaultyIndexFileCommit");
+                        await backendManager.WaitForEmptyAsync(repairdb, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
+                        await repairdb.Transaction.CommitAsync("ReplaceFaultyIndexFileCommit");
                     }
                 }
                 catch (Exception ex)

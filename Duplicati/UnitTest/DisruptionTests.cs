@@ -731,7 +731,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Disruption")]
-        public void TestUploadExceptionWithNoRetries()
+        public async Task TestUploadExceptionWithNoRetries()
         {
             var testopts = TestOptions;
             testopts["number-of-retries"] = "0";
@@ -805,7 +805,7 @@ namespace Duplicati.UnitTest
                 }
                 catch (TestUtils.TestVerificationException e)
                 {
-                    using var db = new LocalDatabase(testopts["dbpath"], "test", true, 0);
+                    using var db = await LocalDatabase.CreateLocalDatabaseAsync(testopts["dbpath"], "test", true, 0).ConfigureAwait(false);
                     using var cmd = db.Connection.CreateCommand();
 
                     var sb = new StringBuilder();

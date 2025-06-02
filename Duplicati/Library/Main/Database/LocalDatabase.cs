@@ -1235,7 +1235,9 @@ namespace Duplicati.Library.Main.Database
                     ""CalcLen"",
                     ""Length"", ""A"".""BlocksetID"",
                     ""File"".""Path""
-                FROM ({combinedLengths}) A, ""File""
+                FROM
+                    ({combinedLengths}) A,
+                    ""File""
                 WHERE
                     ""A"".""BlocksetID"" = ""File"".""BlocksetID""
                     AND ""A"".""CalcLen"" != ""A"".""Length""
@@ -1729,7 +1731,7 @@ namespace Duplicati.Library.Main.Database
             ) L
             LEFT OUTER JOIN ""BlocklistHash"" M
                 ON ""M"".""BlocksetID"" = ""L"".""MetablocksetID""
-";
+        ";
 
         public const string LIST_FOLDERS_AND_SYMLINKS = @"
             SELECT
@@ -2175,7 +2177,9 @@ namespace Duplicati.Library.Main.Database
                                 ""BlocklistHash"".""BlocksetID"",
                                 ""AllBlocksInVolume"".""Hash"",
                                 ""BlocklistHash"".""Index""
-                            FROM ""BlocklistHash"",""AllBlocksInVolume""
+                            FROM
+                                ""BlocklistHash"",
+                                ""AllBlocksInVolume""
                             WHERE ""BlocklistHash"".""Hash"" = ""AllBlocksInVolume"".""Hash""
                             GROUP BY
                                 ""AllBlocksInVolume"".""Hash"",
