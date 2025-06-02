@@ -2048,19 +2048,26 @@ namespace Duplicati.Library.Main.Database
                 throw new Exception($"Unexpected result from renaming \"{oldname}\" to \"{newname}\", expected {1} got {c}");
 
             // Grab the type of entry
-            cmd.SetCommandAndParameters(@"
-                SELECT ""Type""
-                FROM ""Remotevolume""
-                WHERE ""Name"" = @Name
-            ")
-                .SetParameterValue("@Name", newname);
             var type = (RemoteVolumeType)Enum.Parse(
-                typeof(RemoteVolumeType), (await cmd.ExecuteScalarAsync())?.ToString() ?? "",
-                true);
+                typeof(RemoteVolumeType),
+                (await cmd.SetCommandAndParameters(@"
+                        SELECT ""Type""
+                        FROM ""Remotevolume""
+                        WHERE ""Name"" = @Name
+                    ")
+                    .SetParameterValue("@Name", newname)
+                    .ExecuteScalarAsync())
+                    ?.ToString() ?? "",
+                true
+            );
 
             //Create a fake new entry with the old name and mark as deleting
             // as this ensures we will remove it, if it shows up in some later listing
-            await RegisterRemoteVolume(oldname, type, RemoteVolumeState.Deleting);
+            var newvolId = await RegisterRemoteVolume(oldname, type, RemoteVolumeState.Deleting);
+
+            // IF needed, also create an empty fileset, so the validation works
+            if (type == RemoteVolumeType.Files)
+                await CreateFileset(newvolId, DateTime.UnixEpoch);
 
             await m_rtr.CommitAsync();
         }
