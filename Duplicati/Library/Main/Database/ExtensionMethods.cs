@@ -249,11 +249,8 @@ public static partial class ExtensionMethods
 
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, long defaultvalue = -1)
     {
-        using (var rd = await self.ExecuteReaderAsync().ConfigureAwait(false))
-            if (await rd.ReadAsync().ConfigureAwait(false))
-                return ConvertValueToInt64(rd, 0, defaultvalue);
+        return await ExecuteScalarInt64Async(self, true, defaultvalue).ConfigureAwait(false);
 
-        return defaultvalue;
     }
 
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string cmdtext, long defaultvalue = -1)
@@ -263,7 +260,7 @@ public static partial class ExtensionMethods
         return await ExecuteScalarInt64Async(self, defaultvalue).ConfigureAwait(false);
     }
 
-    [Obsolete("Technically this method isn't async, but it is used in an async context and to differntiate this with the IDb version. ")]
+    //[Obsolete("Technically this method isn't async, but it is used in an async context and to differntiate this with the IDb version. ")]
     public static SqliteCommand ExpandInClauseParameterAsync(this SqliteCommand cmd, string originalParamName, IEnumerable<object> values)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
