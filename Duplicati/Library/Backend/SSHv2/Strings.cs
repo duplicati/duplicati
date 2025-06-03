@@ -59,6 +59,12 @@ namespace Duplicati.Library.Backend.Strings
         public static string DescriptionSshtimeoutShort => LC.L(@"Set the operation timeout value");
         public static string DescriptionSshkeepaliveLong => LC.L(@"Use this option to enable the keep-alive interval for the SSH connection. If the connection is idle, aggressive firewalls might close the connection. Using keep-alive will keep the connection open in this scenario. If this value is set to zero, the keep-alive is disabled.");
         public static string DescriptionSshkeepaliveShort => LC.L(@"Set a keepalive value");
+        public static string DescriptionDisableAgentShort => LC.L(@"Disable ssh-agent authentication");
+        private static string MacOSAgentNotes => OperatingSystem.IsMacOS()
+            ? LC.L(@"On macOS, the ssh-agent is used, and an attempt is made to use the keychain to load private key passphrases. If the private key itself is stored in the keychain, it will not be available.")
+            : string.Empty;
+
+        public static string DescriptionDisableAgentLong => LC.L(@$"Prevent using ssh-agent for authentication. When not set and no password or keyfile is supplied, the agent will be used. {MacOSAgentNotes}");
         public static string DescriptionRelativePathShort => LC.L(@"Treat source path as relative to the initial path");
         public static string DescriptionRelativePathLong => LC.L(@"Use this option to treat the source path as relative to the initial path. This is useful when the full path of the system is not known.");
         public static string FolderNotFoundManagedError(string foldername, string message) { return LC.L(@"Unable to set folder to {0}, error message: {1}", foldername, message); }
