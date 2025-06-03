@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using NUnit.Framework;
 using Duplicati.Library.Main;
-using Duplicati.Library.Utility;
+using System.IO;
+
+#nullable enable
 
 namespace Duplicati.UnitTest
 {
@@ -17,18 +18,25 @@ namespace Duplicati.UnitTest
         {
             var options = new Options(new Dictionary<string, string?>
             {
-                { "file-hash-algorithm", HashFactory.MD5 }
+                { "file-hash-algorithm", Library.Utility.HashFactory.MD5 }
             });
             var values = new Dictionary<string, string> { { "a", "b" } };
 
             var metahash = Utility.WrapMetadata(values, options);
 
             var json = System.Text.Json.JsonSerializer.Serialize(values);
-            using var hasher = HashFactory.CreateHasher(HashFactory.MD5);
-            var expectedHash = Convert.ToBase64String(hasher.ComputeHash(Encoding.UTF8.GetBytes(json)));
+
+            using var ms = new MemoryStream();
+            ms.Write(Encoding.UTF8.GetPreamble());
+            ms.Write(Encoding.UTF8.GetBytes(json));
+            ms.Position = 0; // Reset position for reading
+
+            using var hasher = Library.Utility.HashFactory.CreateHasher(Library.Utility.HashFactory.MD5);
+            var expectedHash = Convert.ToBase64String(hasher.ComputeHash(ms));
 
             Assert.AreEqual(expectedHash, metahash.FileHash);
-            Assert.AreEqual(json, Encoding.UTF8.GetString(metahash.Blob));
+            var decodedString = Encoding.UTF8.GetString(metahash.Blob.AsSpan(Encoding.UTF8.GetPreamble().Length));
+            Assert.AreEqual(json, decodedString);
             CollectionAssert.AreEquivalent(values, metahash.Values);
         }
 
