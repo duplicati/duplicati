@@ -31,7 +31,11 @@ namespace Duplicati.UnitTest
             var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDir);
             var oldEnv = Environment.GetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME);
+            var portableModeEnvName = $"{AutoUpdateSettings.AppName}__{DataFolderManager.PORTABLE_MODE_OPTION.Replace('-', '_')}".ToUpperInvariant();
+            var oldPortableEnv = Environment.GetEnvironmentVariable(portableModeEnvName);
             Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, tempDir);
+            Environment.SetEnvironmentVariable(portableModeEnvName, "false");
+
             try
             {
                 // Ensure override flag is set by calling GetDataFolder
@@ -48,7 +52,7 @@ namespace Duplicati.UnitTest
                 File.WriteAllText(file, JsonConvert.SerializeObject(configs));
 
                 var paths = CLIDatabaseLocator.GetAllDatabasePaths();
-                Assert.That(paths, Is.EquivalentTo(new[]{db1, db2}));
+                Assert.That(paths, Is.EquivalentTo(new[] { db1, db2 }));
 
                 Assert.IsTrue(CLIDatabaseLocator.IsDatabasePathInUse(db1));
                 Assert.IsFalse(CLIDatabaseLocator.IsDatabasePathInUse(Path.Combine(tempDir, "other.sqlite")));
@@ -56,6 +60,7 @@ namespace Duplicati.UnitTest
             finally
             {
                 Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, oldEnv);
+                Environment.SetEnvironmentVariable(portableModeEnvName, oldPortableEnv);
                 // reset override by calling without env var
                 DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly);
                 if (Directory.Exists(tempDir))
