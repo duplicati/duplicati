@@ -22,19 +22,23 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Library.SourceProvider;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Renci.SshNet;
-using Renci.SshNet.Agent;
 using Renci.SshNet.Common;
+using SshNet.Agent;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Backend
 {
     public class SSHv2 : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
+        private static readonly string LOGTAG = Log.LogTagFromType<SSHv2>();
         private const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         private const string SSH_KEYFILE_INLINE = "ssh-key";
         private const string SSH_FINGERPRINT_OPTION = "ssh-fingerprint";
@@ -316,10 +320,24 @@ namespace Duplicati.Library.Backend
             }
             else if (m_useAgent)
             {
-                var connectionInfo = new ConnectionInfo(m_server, m_port, m_username, new AuthenticationMethod[]
+                if (OperatingSystem.IsMacOS())
                 {
-                    new AgentAuthenticationMethod(m_username)
-                });
+                    // On macOS, we can use ssh-add to add keys to the agent from the KeyChain
+                    // The keys are only visible to the current process
+                    var keyPaths = FindPrivateKeyPaths();
+                    if (keyPaths.Count > 0)
+                        await AddKeysToAgent(keyPaths, true, cancelToken);
+                }
+
+                var agentKeys = new SshAgent().RequestIdentities();
+
+                if (OperatingSystem.IsWindows())
+                    agentKeys = agentKeys.Concat(new Pageant().RequestIdentities()).ToArray();
+
+                var connectionInfo = new ConnectionInfo(m_server, m_port, m_username,
+                [
+                    new PrivateKeyAuthenticationMethod(m_username, agentKeys),
+                ]);
                 con = new SftpClient(connectionInfo);
             }
             else
@@ -367,6 +385,98 @@ namespace Duplicati.Library.Backend
             m_initialDirectory = con.WorkingDirectory;
 
             return m_con = con;
+        }
+
+        /// <summary>
+        /// Returns a list of common SSH private key file paths.
+        /// </summary>
+        /// <returns>A list of file paths to private keys, or an empty list if none are found.</returns>
+        private static List<string> FindPrivateKeyPaths()
+        {
+            var possibleKeyNames = new[]
+            {
+                "id_rsa",
+                "id_ecdsa",
+                "id_ed25519",
+                "id_dsa"
+            };
+
+            var sshDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh");
+            var foundKeys = new List<string>();
+
+            if (!Directory.Exists(sshDir))
+                return foundKeys;
+
+            // Get the common SSH key names
+            foundKeys.AddRange(
+                possibleKeyNames.Select(keyName => Path.Combine(sshDir, keyName))
+                    .Where(File.Exists));
+
+            // Also include any non-extension files in ~/.ssh that have a matching .pub file
+            foreach (var file in Directory.GetFiles(sshDir))
+            {
+                if (!Path.GetExtension(file).Equals(string.Empty)) continue;
+                if (File.Exists(Path.ChangeExtension(file, ".pub")) && !foundKeys.Contains(file))
+                    foundKeys.Add(file);
+            }
+
+            return foundKeys;
+        }
+
+        /// <summary>
+        /// Loads the given SSH private keys into the SSH agent, optionally storing the passphrases in the macOS Keychain.
+        /// </summary>
+        /// <param name="keyPaths">List of private key file paths to load</param>
+        /// <param name="useAppleKeychain">Whether to use --apple-use-keychain (macOS only)</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
+        /// <returns>Task representing the asynchronous operation</returns>
+        [SupportedOSPlatform("macos")]
+        private static async Task AddKeysToAgent(IEnumerable<string> keyPaths, bool useAppleKeychain, CancellationToken cancellationToken)
+        {
+            foreach (var keyPath in keyPaths)
+            {
+                if (!File.Exists(keyPath))
+                {
+                    Log.WriteVerboseMessage(LOGTAG, "KeyFileNotFound", "SSH key file not found: {0}", keyPath);
+                    continue;
+                }
+
+                using var ct = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                ct.CancelAfter(TimeSpan.FromSeconds(5));
+
+                var arguments = new List<string>();
+
+                // On macOS, we can use the --apple-use-keychain option to store the passphrase in the Keychain
+                if (useAppleKeychain && OperatingSystem.IsMacOS())
+                    arguments.Add("--apple-use-keychain");
+
+                arguments.Add(keyPath);
+
+                var psi = new ProcessStartInfo("ssh-add", arguments)
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false
+                };
+
+                try
+                {
+                    using var process = Process.Start(psi)
+                        ?? throw new InvalidOperationException("Failed to start ssh-add process");
+                    var output = process.StandardOutput.ReadToEndAsync(ct.Token);
+                    var error = process.StandardError.ReadToEndAsync(ct.Token);
+                    await process.WaitForExitAsync(ct.Token).ConfigureAwait(false);
+
+                    if (process.ExitCode == 0)
+                        Log.WriteVerboseMessage(LOGTAG, "SSHKeyAdded", "Successfully added key: {0}", keyPath);
+                    else
+                        Log.WriteVerboseMessage(LOGTAG, "SSHKeyAddFailed", "Failed to add key: {0}\nOutput: {1}\nError: {2}", keyPath, (await output).Trim(), (await error).Trim());
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteVerboseMessage(LOGTAG, "SSHKeyAddException", ex, "Exception adding key {0}", keyPath);
+                }
+            }
         }
 
         private async Task SetWorkingDirectory(SftpClient connection, CancellationToken cancelToken)
