@@ -89,7 +89,8 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
         if (m_disposed)
             throw new InvalidOperationException("Transaction is already disposed");
 
-        using (var timer = string.IsNullOrWhiteSpace(message) ? null : new Logging.Timer(LOGTAG, message, $"CommitTransaction: {message}"))
+        message ??= "Unnamed commit";
+        using (var timer = new Logging.Timer(LOGTAG, message, $"CommitTransaction: {message}"))
             await m_transaction.CommitAsync();
         await m_transaction.DisposeAsync();
 
