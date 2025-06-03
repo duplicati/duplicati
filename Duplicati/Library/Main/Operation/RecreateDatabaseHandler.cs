@@ -193,7 +193,7 @@ namespace Duplicati.Library.Main.Operation
 
             var hasUpdatedOptions = false;
 
-            //Record all blocksets and files needed
+            // Record all blocksets and files needed
             var filelistWork = (from n in filelists orderby n.Time select new RemoteVolume(n.File) as IRemoteVolume).ToList();
             Logging.Log.WriteInformationMessage(LOGTAG, "RebuildStarted", "Rebuild database started, downloading {0} filelists", filelistWork.Count);
 
@@ -217,6 +217,8 @@ namespace Duplicati.Library.Main.Operation
                     {
                         await backendManager.WaitForEmptyAsync(restoredb, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                         m_result.EndTime = DateTime.UtcNow;
+                        // TODO implicit rollback
+                        await restoredb.Transaction.RollBackAsync();
                         return;
                     }
 
@@ -263,18 +265,25 @@ namespace Duplicati.Library.Main.Operation
                     if (ex.IsAbortException())
                     {
                         m_result.EndTime = DateTime.UtcNow;
+                        // TODO implicit rollback
+                        await restoredb.Transaction.RollBackAsync();
                         throw;
                     }
 
                     if (isFirstFilelist && ex is System.Security.Cryptography.CryptographicException)
                     {
                         m_result.EndTime = DateTime.UtcNow;
+                        // TODO implicit rollback
+                        await restoredb.Transaction.RollBackAsync();
                         throw;
                     }
 
                     if (m_options.UnittestMode)
+                    {
+                        // TODO implicit rollback
+                        await restoredb.Transaction.RollBackAsync();
                         throw;
-
+                    }
                 }
             }
 
@@ -313,6 +322,8 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 await backendManager.WaitForEmptyAsync(restoredb, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                 m_result.EndTime = DateTime.UtcNow;
+                                // TODO implicit rollback
+                                await restoredb.Transaction.RollBackAsync();
                                 return;
                             }
 
@@ -392,11 +403,17 @@ namespace Duplicati.Library.Main.Operation
                             if (ex.IsAbortException())
                             {
                                 m_result.EndTime = DateTime.UtcNow;
+                                // TODO implicit rollback
+                                await restoredb.Transaction.RollBackAsync();
                                 throw;
                             }
 
                             if (m_options.UnittestMode)
+                            {
+                                // TODO implicit rollback
+                                await restoredb.Transaction.RollBackAsync();
                                 throw;
+                            }
                         }
                     }
 
@@ -456,6 +473,8 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     await backendManager.WaitForEmptyAsync(restoredb, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                     m_result.EndTime = DateTime.UtcNow;
+                                    // TODO implicit rollback
+                                    await restoredb.Transaction.RollBackAsync();
                                     return;
                                 }
 
@@ -514,7 +533,11 @@ namespace Duplicati.Library.Main.Operation
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "FailedRebuildingWithFile", ex, "Failed to use information from {0} to rebuild database: {1}", name, ex.Message);
                             if (m_options.UnittestMode)
+                            {
+                                // TODO implicit rollback
+                                await restoredb.Transaction.RollBackAsync();
                                 throw;
+                            }
                         }
                     }
                 }

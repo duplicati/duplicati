@@ -203,6 +203,8 @@ namespace Duplicati.Library.Main.Operation
                                 await backendManager.PutAsync(vol, null, null, true, async () =>
                                 {
                                     await backendManager.FlushPendingMessagesAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                    // TODO This commit mimics the old way of not passing down a transaction, but maybe is not needed anymore.
+                                    await db.Transaction.CommitAsync();
                                 }, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                 await backendManager.DeleteAsync(prevfilename, -1, true, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                 await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);

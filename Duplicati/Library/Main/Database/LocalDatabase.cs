@@ -635,8 +635,6 @@ namespace Duplicati.Library.Main.Database
 
             if (c != 1)
                 throw new Exception($"Unexpected number of remote volumes deleted: {c}, expected {1}");
-
-            await m_rtr.CommitAsync();
         }
 
         public async Task RemoveRemoteVolume(string name)
@@ -920,8 +918,6 @@ namespace Duplicati.Library.Main.Database
             ");
             if (nonAttachedFiles > 0)
                 throw new ConstraintException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry");
-
-            await m_rtr.CommitAsync();
         }
 
         public async Task Vacuum()
@@ -960,8 +956,6 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@DeleteGraceTime", deleteGraceTime.Ticks <= 0 ? 0 : (DateTime.UtcNow + deleteGraceTime).Ticks)
                 .SetParameterValue("@ArchiveTime", 0)
                 .ExecuteScalarInt64Async();
-
-            await m_rtr.CommitAsync();
 
             return r;
         }
@@ -1067,7 +1061,6 @@ namespace Duplicati.Library.Main.Database
             var res = await GetDbOptionList()
                 .ToDictionaryAsync(x => x.Key, x => x.Value);
 
-            await m_rtr.CommitAsync();
             return res;
         }
 
@@ -1162,8 +1155,6 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Value", kp.Value)
                     .ExecuteNonQueryAsync();
             }
-
-            await m_rtr.CommitAsync();
         }
 
         public async Task<long> GetBlocksLargerThan(long fhblocksize)
@@ -2069,9 +2060,10 @@ namespace Duplicati.Library.Main.Database
 
             // IF needed, also create an empty fileset, so the validation works
             if (type == RemoteVolumeType.Files)
+            {
                 await CreateFileset(newvolId, DateTime.UnixEpoch);
-
-            await m_rtr.CommitAsync();
+                await m_rtr.CommitAsync();
+            }
         }
 
         /// <summary>
@@ -2103,8 +2095,6 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@VolumeId", volumeid)
                 .SetParameterValue("@IsFullBackup", BackupType.PARTIAL_BACKUP)
                 .ExecuteScalarInt64Async(-1);
-
-            await m_rtr.CommitAsync();
 
             return id;
         }
@@ -2243,8 +2233,6 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@FilesetId", fileSetId)
                 .SetParameterValue("@IsFullBackup", isFullBackup ? BackupType.FULL_BACKUP : BackupType.PARTIAL_BACKUP)
                 .ExecuteNonQueryAsync();
-
-            await m_rtr.CommitAsync();
         }
 
         /// <summary>

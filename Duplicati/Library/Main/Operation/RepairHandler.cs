@@ -130,392 +130,416 @@ namespace Duplicati.Library.Main.Operation
 
             using var db = await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache);
 
-            await Utility.UpdateOptionsFromDb(db, m_options);
-            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
-
-            if (await db.PartiallyRecreated())
-                throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
-
-            if (await db.RepairInProgress())
-                throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
-
-            // Ensure the database is consistent before we start fixing the remote
-            await db.VerifyConsistencyForRepair(m_options.Blocksize, m_options.BlockhashSize, true);
-
-            // If the last backup failed, guard the incomplete fileset, so we can create a synthetic filelist
-            var lastTempFilelist = await db.GetLastIncompleteFilesetVolume();
-            var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, [lastTempFilelist.Name], null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
-            await db.Transaction.CommitAsync("CommitRemoteListAnalysisTransaction");
-
-            var buffer = new byte[m_options.Blocksize];
-            var hashsize = m_options.BlockhashSize;
-
-            var missingRemoteFilesets = await db.MissingRemoteFilesets().ToListAsync(cancellationToken: cancellationToken);
-            var missingLocalFilesets = await db.MissingLocalFilesets().ToListAsync(cancellationToken: cancellationToken);
-            var emptyIndexFiles = await db.EmptyIndexFiles().ToListAsync(cancellationToken: cancellationToken);
-
-            var progress = 0;
-            var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count() + missingRemoteFilesets.Count + missingLocalFilesets.Count + emptyIndexFiles.Count;
-
-            // Find the most recent timestamp from either a fileset or a remote volume
-            var mostRecentLocal = await db.GetRemoteVolumes()
-                .Where(x => x.Type == RemoteVolumeType.Files)
-                .Select(x => VolumeBase.ParseFilename(x.Name).Time.ToLocalTime())
-                .Concat(db.FilesetTimes().Select(x => x.Value.ToLocalTime()))
-                .Append(DateTime.MinValue)
-                .MaxAsync();
-
-            var mostRecentRemote = tp.ParsedVolumes.Select(x => x.Time.ToLocalTime()).Append(DateTime.MinValue).Max();
-            if (mostRecentLocal < DateTime.UnixEpoch)
-                throw new UserInformationException("The local database has no fileset times. Consider deleting the local database and run the repair operation again.", "LocalDatabaseHasNoFilesetTimes");
-            if (mostRecentRemote > mostRecentLocal)
+            try
             {
-                if (m_options.RepairIgnoreOutdatedDatabase)
-                    Logging.Log.WriteWarningMessage(LOGTAG, "RemoteFilesNewerThanLocalDatabase", null, "The remote files are newer ({0}) than the local database ({1}), this is likely because the database is outdated. Continuing as the options force ignoring this.", mostRecentRemote, mostRecentLocal);
-                else
-                    throw new UserInformationException($"The remote files are newer ({mostRecentRemote}) than the local database ({mostRecentLocal}), this is likely because the database is outdated. Consider deleting the local database and run the repair operation again. If this is expected, set the option \"--repair-ignore-outdated-database\" ", "RemoteFilesNewerThanLocalDatabase");
-            }
 
-            if (m_options.Dryrun)
-            {
-                if (!tp.ParsedVolumes.Any() && tp.OtherVolumes.Any())
+                await Utility.UpdateOptionsFromDb(db, m_options);
+                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+
+                if (await db.PartiallyRecreated())
+                    throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
+
+                if (await db.RepairInProgress())
+                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
+
+                // Ensure the database is consistent before we start fixing the remote
+                await db.VerifyConsistencyForRepair(m_options.Blocksize, m_options.BlockhashSize, true);
+
+                // If the last backup failed, guard the incomplete fileset, so we can create a synthetic filelist
+                var lastTempFilelist = await db.GetLastIncompleteFilesetVolume();
+                var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, [lastTempFilelist.Name], null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
+                await db.Transaction.CommitAsync("CommitRemoteListAnalysisTransaction");
+
+                var buffer = new byte[m_options.Blocksize];
+                var hashsize = m_options.BlockhashSize;
+
+                var missingRemoteFilesets = await db.MissingRemoteFilesets().ToListAsync(cancellationToken: cancellationToken);
+                var missingLocalFilesets = await db.MissingLocalFilesets().ToListAsync(cancellationToken: cancellationToken);
+                var emptyIndexFiles = await db.EmptyIndexFiles().ToListAsync(cancellationToken: cancellationToken);
+
+                var progress = 0;
+                var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count() + missingRemoteFilesets.Count + missingLocalFilesets.Count + emptyIndexFiles.Count;
+
+                // Find the most recent timestamp from either a fileset or a remote volume
+                var mostRecentLocal = await db.GetRemoteVolumes()
+                    .Where(x => x.Type == RemoteVolumeType.Files)
+                    .Select(x => VolumeBase.ParseFilename(x.Name).Time.ToLocalTime())
+                    .Concat(db.FilesetTimes().Select(x => x.Value.ToLocalTime()))
+                    .Append(DateTime.MinValue)
+                    .MaxAsync();
+
+                var mostRecentRemote = tp.ParsedVolumes.Select(x => x.Time.ToLocalTime()).Append(DateTime.MinValue).Max();
+                if (mostRecentLocal < DateTime.UnixEpoch)
+                    throw new UserInformationException("The local database has no fileset times. Consider deleting the local database and run the repair operation again.", "LocalDatabaseHasNoFilesetTimes");
+                if (mostRecentRemote > mostRecentLocal)
                 {
-                    if (tp.BackupPrefixes.Length == 1)
-                        throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup prefix?", m_options.Prefix, tp.BackupPrefixes[0]), "RemoteFolderEmptyWithPrefix");
+                    if (m_options.RepairIgnoreOutdatedDatabase)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "RemoteFilesNewerThanLocalDatabase", null, "The remote files are newer ({0}) than the local database ({1}), this is likely because the database is outdated. Continuing as the options force ignoring this.", mostRecentRemote, mostRecentLocal);
                     else
-                        throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)), "RemoteFolderEmptyWithPrefix");
+                        throw new UserInformationException($"The remote files are newer ({mostRecentRemote}) than the local database ({mostRecentLocal}), this is likely because the database is outdated. Consider deleting the local database and run the repair operation again. If this is expected, set the option \"--repair-ignore-outdated-database\" ", "RemoteFilesNewerThanLocalDatabase");
                 }
-                else if (!tp.ParsedVolumes.Any() && tp.ExtraVolumes.Any())
+
+                if (m_options.Dryrun)
                 {
-                    throw new UserInformationException(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()), "NoRemoteFilesMissing");
+                    if (!tp.ParsedVolumes.Any() && tp.OtherVolumes.Any())
+                    {
+                        if (tp.BackupPrefixes.Length == 1)
+                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup prefix?", m_options.Prefix, tp.BackupPrefixes[0]), "RemoteFolderEmptyWithPrefix");
+                        else
+                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)), "RemoteFolderEmptyWithPrefix");
+                    }
+                    else if (!tp.ParsedVolumes.Any() && tp.ExtraVolumes.Any())
+                    {
+                        throw new UserInformationException(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()), "NoRemoteFilesMissing");
+                    }
                 }
-            }
 
-            if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any() || missingRemoteFilesets.Any() || missingLocalFilesets.Any() || emptyIndexFiles.Any())
-            {
-                if (tp.VerificationRequiredVolumes.Any())
+                if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any() || missingRemoteFilesets.Any() || missingLocalFilesets.Any() || emptyIndexFiles.Any())
                 {
-                    using var testdb = await LocalTestDatabase.CreateAsync(db);
+                    if (tp.VerificationRequiredVolumes.Any())
+                    {
+                        using var testdb = await LocalTestDatabase.CreateAsync(db);
 
-                    foreach (var n in tp.VerificationRequiredVolumes)
+                        foreach (var n in tp.VerificationRequiredVolumes)
+                            try
+                            {
+                                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                                {
+                                    await backendManager.WaitForEmptyAsync(testdb, cancellationToken).ConfigureAwait(false);
+                                    if (!m_options.Dryrun)
+                                        await testdb.Transaction.CommitAsync("CommitEarlyExit", false);
+                                    else
+                                        await testdb.Transaction.RollBackAsync();
+                                    return;
+                                }
+
+                                progress++;
+                                m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
+
+                                KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
+                                var (tf, hash, size) = await backendManager.GetWithInfoAsync(n.Name, n.Hash, n.Size, cancellationToken).ConfigureAwait(false);
+                                using (tf)
+                                    res = await TestHandler.TestVolumeInternals(testdb, n, tf, m_options, 1);
+
+                                if (res.Value.Any())
+                                    throw new Exception(string.Format("Remote verification failure: {0}", res.Value.First()));
+
+                                if (!m_options.Dryrun)
+                                {
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "CapturedRemoteFileHash", "Sucessfully captured hash for {0}, updating database", n.Name);
+                                    await db.UpdateRemoteVolume(n.Name, RemoteVolumeState.Verified, size, hash);
+                                }
+
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileVerificationError", ex, "Failed to perform verification for file: {0}, please run verify; message: {1}", n.Name, ex.Message);
+                                if (ex.IsAbortException())
+                                    throw;
+                            }
+
+                        await db.Transaction.CommitAsync("CommitVerificationTransaction");
+                    }
+
+                    // TODO: It is actually possible to use the extra files if we parse them
+                    foreach (var n in tp.ExtraVolumes)
                         try
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(testdb, cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                                 if (!m_options.Dryrun)
-                                    await testdb.Transaction.CommitAsync("CommitEarlyExit", false);
+                                    await db.Transaction.CommitAsync("CommitEarlyExit", false);
+                                else
+                                    await db.Transaction.RollBackAsync();
                                 return;
                             }
 
                             progress++;
                             m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
 
-                            KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
-                            var (tf, hash, size) = await backendManager.GetWithInfoAsync(n.Name, n.Hash, n.Size, cancellationToken).ConfigureAwait(false);
-                            using (tf)
-                                res = await TestHandler.TestVolumeInternals(testdb, n, tf, m_options, 1);
+                            // If this is a new index file, we can accept it if it matches our local data
+                            // This makes it possible to augment the remote store with new index data
+                            if (n.FileType == RemoteVolumeType.Index && m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                            {
+                                try
+                                {
+                                    (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.File.Name, null, n.File.Size, cancellationToken).ConfigureAwait(false);
+                                    using (tf)
+                                    using (var ifr = new IndexVolumeReader(n.CompressionModule, tf, m_options, m_options.BlockhashSize))
+                                    {
+                                        foreach (var rv in ifr.Volumes)
+                                        {
+                                            var entry = await db.GetRemoteVolume(rv.Filename);
+                                            if (entry.ID < 0)
+                                                throw new Exception(string.Format("Unknown remote file {0} detected", rv.Filename));
 
-                            if (res.Value.Any())
-                                throw new Exception(string.Format("Remote verification failure: {0}", res.Value.First()));
+                                            if (!new[] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
+                                                throw new Exception(string.Format("Volume {0} has local state {1}", rv.Filename, entry.State));
+
+                                            if (entry.Hash != rv.Hash || entry.Size != rv.Length || !new[] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
+                                                throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, entry.Hash, entry.Size, rv.Hash, rv.Length));
+
+                                            await db.CheckAllBlocksAreInVolume(rv.Filename, rv.Blocks);
+                                        }
+
+                                        var blocksize = m_options.Blocksize;
+                                        foreach (var ixb in ifr.BlockLists)
+                                            await db.CheckBlocklistCorrect(ixb.Hash, ixb.Length, ixb.Blocklist, blocksize, hashsize);
+
+                                        // Register the new index file and link it to the block files
+                                        var selfid = await db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, RemoteVolumeState.Uploading, size, new TimeSpan(0));
+                                        foreach (var rv in ifr.Volumes)
+                                        {
+                                            // Guard against unknown block files
+                                            long id = await db.GetRemoteVolumeID(rv.Filename);
+                                            if (id == -1)
+                                                Logging.Log.WriteWarningMessage(LOGTAG, "UnknownBlockFile", null, "Index file {0} references unknown block file: {1}", n.File.Name, rv.Filename);
+                                            else
+                                                await db.AddIndexBlockLink(selfid, id);
+                                        }
+                                        if (!m_options.Dryrun)
+                                            await db.Transaction.CommitAsync("CommitIndexFileTransaction");
+                                    }
+
+                                    // All checks fine, we accept the new index file
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "AcceptNewIndexFile", "Accepting new index file {0}", n.File.Name);
+                                    await db.UpdateRemoteVolume(n.File.Name, RemoteVolumeState.Verified, size, hash);
+                                    continue;
+                                }
+                                catch (Exception rex)
+                                {
+                                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedNewIndexFile", rex, "Failed to accept new index file: {0}, message: {1}", n.File.Name, rex.Message);
+                                }
+                            }
 
                             if (!m_options.Dryrun)
                             {
-                                Logging.Log.WriteInformationMessage(LOGTAG, "CapturedRemoteFileHash", "Sucessfully captured hash for {0}, updating database", n.Name);
-                                await db.UpdateRemoteVolume(n.Name, RemoteVolumeState.Verified, size, hash);
+                                await db.RegisterRemoteVolume(n.File.Name, n.FileType, n.File.Size, RemoteVolumeState.Deleting);
+                                await backendManager.DeleteAsync(n.File.Name, n.File.Size, false, cancellationToken).ConfigureAwait(false);
                             }
-
+                            else
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteFile", "would delete file {0}", n.File.Name);
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileVerificationError", ex, "Failed to perform verification for file: {0}, please run verify; message: {1}", n.Name, ex.Message);
+                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedExtraFileCleanup", ex, "Failed to perform cleanup for extra file: {0}, message: {1}", n.File.Name, ex.Message);
                             if (ex.IsAbortException())
                                 throw;
                         }
 
-                    await db.Transaction.CommitAsync("CommitVerificationTransaction");
-                }
+                    var missingDblocks = tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Blocks);
+                    if (!m_options.RebuildMissingDblockFiles && missingDblocks.Count() > 0)
+                        throw new UserInformationException($"The backup storage destination is missing data files. You can either enable `--rebuild-missing-dblock-files` or run the purge command to remove these files. The following files are missing: {string.Join(", ", missingDblocks.Select(x => x.Name))}", "MissingDblockFiles");
 
-                // TODO: It is actually possible to use the extra files if we parse them
-                foreach (var n in tp.ExtraVolumes)
-                    try
+                    var anyDlistUploads = false;
+                    foreach (var (filesetId, timestamp, isfull) in missingRemoteFilesets)
                     {
                         if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
                             await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                             if (!m_options.Dryrun)
                                 await db.Transaction.CommitAsync("CommitEarlyExit", false);
+                            else
+                                await db.Transaction.RollBackAsync();
                             return;
                         }
 
                         progress++;
                         m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
+                        var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp);
 
-                        // If this is a new index file, we can accept it if it matches our local data
-                        // This makes it possible to augment the remote store with new index data
-                        if (n.FileType == RemoteVolumeType.Index && m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                        var fsw = new FilesetVolumeWriter(m_options, fileTime);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "ReuploadingFileset", "Re-uploading fileset {0} from {1} as remote volume registration is missing, new filename: {2}", filesetId, timestamp, fsw.RemoteFilename);
+
+                        if (!string.IsNullOrEmpty(m_options.ControlFiles))
+                            foreach (var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                                fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+
+                        fsw.CreateFilesetFile(isfull);
+                        await db.WriteFileset(fsw, filesetId);
+                        fsw.Close();
+
+
+                        fsw.VolumeID = await db.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, -1, RemoteVolumeState.Temporary);
+                        await db.LinkFilesetToVolume(filesetId, fsw.VolumeID);
+                        if (m_options.Dryrun)
                         {
-                            try
-                            {
-                                (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.File.Name, null, n.File.Size, cancellationToken).ConfigureAwait(false);
-                                using (tf)
-                                using (var ifr = new IndexVolumeReader(n.CompressionModule, tf, m_options, m_options.BlockhashSize))
-                                {
-                                    foreach (var rv in ifr.Volumes)
-                                    {
-                                        var entry = await db.GetRemoteVolume(rv.Filename);
-                                        if (entry.ID < 0)
-                                            throw new Exception(string.Format("Unknown remote file {0} detected", rv.Filename));
-
-                                        if (!new[] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
-                                            throw new Exception(string.Format("Volume {0} has local state {1}", rv.Filename, entry.State));
-
-                                        if (entry.Hash != rv.Hash || entry.Size != rv.Length || !new[] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
-                                            throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, entry.Hash, entry.Size, rv.Hash, rv.Length));
-
-                                        await db.CheckAllBlocksAreInVolume(rv.Filename, rv.Blocks);
-                                    }
-
-                                    var blocksize = m_options.Blocksize;
-                                    foreach (var ixb in ifr.BlockLists)
-                                        await db.CheckBlocklistCorrect(ixb.Hash, ixb.Length, ixb.Blocklist, blocksize, hashsize);
-
-                                    // Register the new index file and link it to the block files
-                                    var selfid = await db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, RemoteVolumeState.Uploading, size, new TimeSpan(0));
-                                    foreach (var rv in ifr.Volumes)
-                                    {
-                                        // Guard against unknown block files
-                                        long id = await db.GetRemoteVolumeID(rv.Filename);
-                                        if (id == -1)
-                                            Logging.Log.WriteWarningMessage(LOGTAG, "UnknownBlockFile", null, "Index file {0} references unknown block file: {1}", n.File.Name, rv.Filename);
-                                        else
-                                            await db.AddIndexBlockLink(selfid, id);
-                                    }
-                                    if (!m_options.Dryrun)
-                                        await db.Transaction.CommitAsync("CommitIndexFileTransaction");
-                                }
-
-                                // All checks fine, we accept the new index file
-                                Logging.Log.WriteInformationMessage(LOGTAG, "AcceptNewIndexFile", "Accepting new index file {0}", n.File.Name);
-                                await db.UpdateRemoteVolume(n.File.Name, RemoteVolumeState.Verified, size, hash);
-                                continue;
-                            }
-                            catch (Exception rex)
-                            {
-                                Logging.Log.WriteErrorMessage(LOGTAG, "FailedNewIndexFile", rex, "Failed to accept new index file: {0}, message: {1}", n.File.Name, rex.Message);
-                            }
+                            fsw.Dispose();
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}", fsw.RemoteFilename);
+                            continue;
                         }
-
-                        if (!m_options.Dryrun)
-                        {
-                            await db.RegisterRemoteVolume(n.File.Name, n.FileType, n.File.Size, RemoteVolumeState.Deleting);
-                            await backendManager.DeleteAsync(n.File.Name, n.File.Size, false, cancellationToken).ConfigureAwait(false);
-                        }
-                        else
-                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteFile", "would delete file {0}", n.File.Name);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedExtraFileCleanup", ex, "Failed to perform cleanup for extra file: {0}, message: {1}", n.File.Name, ex.Message);
-                        if (ex.IsAbortException())
-                            throw;
+                        await backendManager.PutAsync(fsw, null, null, false, null, cancellationToken).ConfigureAwait(false);
                     }
 
-                var missingDblocks = tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Blocks);
-                if (!m_options.RebuildMissingDblockFiles && missingDblocks.Count() > 0)
-                    throw new UserInformationException($"The backup storage destination is missing data files. You can either enable `--rebuild-missing-dblock-files` or run the purge command to remove these files. The following files are missing: {string.Join(", ", missingDblocks.Select(x => x.Name))}", "MissingDblockFiles");
-
-                var anyDlistUploads = false;
-                foreach (var (filesetId, timestamp, isfull) in missingRemoteFilesets)
-                {
-                    if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                    if (anyDlistUploads)
                     {
                         await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
+                        await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
                         if (!m_options.Dryrun)
-                            await db.Transaction.CommitAsync("CommitEarlyExit", false);
-                        return;
+                            await db.Transaction.CommitAsync("CommitFilesetTransaction");
                     }
 
-                    progress++;
-                    m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
-                    var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp);
-
-                    var fsw = new FilesetVolumeWriter(m_options, fileTime);
-                    Logging.Log.WriteInformationMessage(LOGTAG, "ReuploadingFileset", "Re-uploading fileset {0} from {1} as remote volume registration is missing, new filename: {2}", filesetId, timestamp, fsw.RemoteFilename);
-
-                    if (!string.IsNullOrEmpty(m_options.ControlFiles))
-                        foreach (var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-                            fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
-
-                    fsw.CreateFilesetFile(isfull);
-                    await db.WriteFileset(fsw, filesetId);
-                    fsw.Close();
-
-
-                    fsw.VolumeID = await db.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, -1, RemoteVolumeState.Temporary);
-                    await db.LinkFilesetToVolume(filesetId, fsw.VolumeID);
-                    if (m_options.Dryrun)
+                    foreach (var volumename in missingLocalFilesets)
                     {
-                        fsw.Dispose();
-                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}", fsw.RemoteFilename);
-                        continue;
-                    }
-                    await backendManager.PutAsync(fsw, null, null, false, null, cancellationToken).ConfigureAwait(false);
-                }
-
-                if (anyDlistUploads)
-                {
-                    await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
-                    await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
-                    if (!m_options.Dryrun)
-                        await db.Transaction.CommitAsync("CommitFilesetTransaction");
-                }
-
-                foreach (var volumename in missingLocalFilesets)
-                {
-                    var remoteVolume = await db.GetRemoteVolume(volumename);
-                    using (var tmpfile = await backendManager.GetAsync(remoteVolume.Name, remoteVolume.Hash, remoteVolume.Size, cancellationToken).ConfigureAwait(false))
-                    {
-                        var parsed = VolumeBase.ParseFilename(remoteVolume.Name);
-                        using (var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read))
-                        using (var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions))
-                        using (var recreatedb = await LocalRecreateDatabase.CreateAsync(db, m_options))
+                        var remoteVolume = await db.GetRemoteVolume(volumename);
+                        using (var tmpfile = await backendManager.GetAsync(remoteVolume.Name, remoteVolume.Hash, remoteVolume.Size, cancellationToken).ConfigureAwait(false))
                         {
-                            if (compressor == null)
-                                throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
+                            var parsed = VolumeBase.ParseFilename(remoteVolume.Name);
+                            using (var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            using (var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions))
+                            using (var recreatedb = await LocalRecreateDatabase.CreateAsync(db, m_options))
+                            {
+                                if (compressor == null)
+                                    throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
 
-                            var filesetid = await db.CreateFileset(remoteVolume.ID, parsed.Time);
+                                var filesetid = await db.CreateFileset(remoteVolume.ID, parsed.Time);
 
-                            await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, compressor, filesetid, m_options, new FilterExpression());
-                            if (!m_options.Dryrun)
-                                await recreatedb.Transaction.CommitAsync("CommitRecreateFilesetTransaction");
+                                await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, compressor, filesetid, m_options, new FilterExpression());
+                                if (!m_options.Dryrun)
+                                    await recreatedb.Transaction.CommitAsync("CommitRecreateFilesetTransaction");
+                            }
                         }
                     }
-                }
 
-                if (!m_options.Dryrun && tp.MissingVolumes.Any())
-                    await db.TerminatedWithActiveUploads(true);
+                    if (!m_options.Dryrun && tp.MissingVolumes.Any())
+                        await db.TerminatedWithActiveUploads(true);
 
-                if (tp.MissingVolumes.Any(x => x.Type != RemoteVolumeType.Index && x.Type != RemoteVolumeType.Files && x.Type != RemoteVolumeType.Blocks))
-                    throw new InvalidOperationException(string.Format("Unknown volume type {0} detected", tp.MissingVolumes.First(x => x.Type != RemoteVolumeType.Index && x.Type != RemoteVolumeType.Files && x.Type != RemoteVolumeType.Blocks).Type));
+                    if (tp.MissingVolumes.Any(x => x.Type != RemoteVolumeType.Index && x.Type != RemoteVolumeType.Files && x.Type != RemoteVolumeType.Blocks))
+                        throw new InvalidOperationException(string.Format("Unknown volume type {0} detected", tp.MissingVolumes.First(x => x.Type != RemoteVolumeType.Index && x.Type != RemoteVolumeType.Files && x.Type != RemoteVolumeType.Blocks).Type));
 
-                // Process each of the missing volumes in the order of blocks, files and index
-                // It is important that we process the blocks first, as the index files are derived from the blocks
+                    // Process each of the missing volumes in the order of blocks, files and index
+                    // It is important that we process the blocks first, as the index files are derived from the blocks
 
-                void incrementProgress()
-                {
-                    progress++;
-                    m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
-                }
-
-                // Blocks are recreated with the entire list of missing files to handle cases where partial recreation is needed
-                await RunRepairDblocks(backendManager, db, missingDblocks, incrementProgress, cancellationToken).ConfigureAwait(false);
-
-                // Filesets are recreated one at a time
-                foreach (var n in tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Files))
-                {
-                    FilesetVolumeWriter newEntry = null;
-                    incrementProgress();
-
-                    try
+                    void incrementProgress()
                     {
-                        var timestamp = VolumeBase.ParseFilename(n.Name).Time;
-                        var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp);
-                        var volumeWriter = newEntry = new FilesetVolumeWriter(m_options, fileTime);
-
-                        await RunRepairDlist(backendManager, db, volumeWriter, n, fileTime, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (newEntry != null)
-                            try { newEntry?.Dispose(); }
-                            catch { }
-
-                        Logging.Log.WriteErrorMessage(LOGTAG, "CleanupMissingFileError", ex, "Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message);
-
-                        if (ex.IsAbortException())
-                            throw;
-                    }
-                }
-
-                // Index files are recreated one at a time, as they are derived from the blocks
-                foreach (var n in tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Index))
-                {
-                    IndexVolumeWriter newEntry = null;
-                    incrementProgress();
-
-                    try
-                    {
-                        // Check if the index file has already been deleted, beause the dblock was recreated
-                        var currentState = (await db.GetRemoteVolume(n.Name)).State;
-                        if (currentState == RemoteVolumeState.Deleted || currentState == RemoteVolumeState.Temporary || currentState == RemoteVolumeState.Deleting)
-                            continue;
-
-                        var w = newEntry = new IndexVolumeWriter(m_options);
-                        await RunRepairDindex(backendManager, db, w, n, m_options, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (newEntry != null)
-                            try { newEntry?.Dispose(); }
-                            catch { }
-
-                        Logging.Log.WriteErrorMessage(LOGTAG, "CleanupMissingFileError", ex, "Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message);
-
-                        if (ex.IsAbortException())
-                            throw;
-                    }
-                }
-
-                foreach (var emptyIndexFile in emptyIndexFiles)
-                {
-                    try
-                    {
-                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                        {
-                            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
-                            return;
-                        }
-
                         progress++;
                         m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
+                    }
 
-                        if (m_options.Dryrun)
-                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteEmptyIndexFile", "would delete empty index file {0}", emptyIndexFile.Name);
-                        else
+                    // Blocks are recreated with the entire list of missing files to handle cases where partial recreation is needed
+                    await RunRepairDblocks(backendManager, db, missingDblocks, incrementProgress, cancellationToken).ConfigureAwait(false);
+
+                    // Filesets are recreated one at a time
+                    foreach (var n in tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Files))
+                    {
+                        FilesetVolumeWriter newEntry = null;
+                        incrementProgress();
+
+                        try
                         {
-                            if (emptyIndexFile.Size > 2048)
-                            {
-                                Logging.Log.WriteWarningMessage(LOGTAG, "LargeEmptyIndexFile", null, "The empty index file {0} is larger than expected ({1} bytes), choosing not to delete it", emptyIndexFile.Name, emptyIndexFile.Size);
-                            }
-                            else
-                            {
-                                Logging.Log.WriteInformationMessage(LOGTAG, "DeletingEmptyIndexFile", "Deleting empty index file {0}", emptyIndexFile.Name);
-                                await backendManager.DeleteAsync(emptyIndexFile.Name, emptyIndexFile.Size, false, cancellationToken).ConfigureAwait(false);
-                                await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
-                            }
+                            var timestamp = VolumeBase.ParseFilename(n.Name).Time;
+                            var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp);
+                            var volumeWriter = newEntry = new FilesetVolumeWriter(m_options, fileTime);
+
+                            await RunRepairDlist(backendManager, db, volumeWriter, n, fileTime, cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (newEntry != null)
+                                try { newEntry?.Dispose(); }
+                                catch { }
+
+                            Logging.Log.WriteErrorMessage(LOGTAG, "CleanupMissingFileError", ex, "Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message);
+
+                            if (ex.IsAbortException())
+                                throw;
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Logging.Log.WriteErrorMessage(LOGTAG, "CleanupEmptyIndexFileError", ex, "Failed to perform cleanup for empty index file: {0}, message: {1}", emptyIndexFile.Name, ex.Message);
 
-                        if (ex.IsAbortException())
-                            throw;
+                    // Index files are recreated one at a time, as they are derived from the blocks
+                    foreach (var n in tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Index))
+                    {
+                        IndexVolumeWriter newEntry = null;
+                        incrementProgress();
+
+                        try
+                        {
+                            // Check if the index file has already been deleted, beause the dblock was recreated
+                            var currentState = (await db.GetRemoteVolume(n.Name)).State;
+                            if (currentState == RemoteVolumeState.Deleted || currentState == RemoteVolumeState.Temporary || currentState == RemoteVolumeState.Deleting)
+                                continue;
+
+                            var w = newEntry = new IndexVolumeWriter(m_options);
+                            await RunRepairDindex(backendManager, db, w, n, m_options, cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (newEntry != null)
+                                try { newEntry?.Dispose(); }
+                                catch { }
+
+                            Logging.Log.WriteErrorMessage(LOGTAG, "CleanupMissingFileError", ex, "Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message);
+
+                            if (ex.IsAbortException())
+                                throw;
+                        }
+                    }
+
+                    foreach (var emptyIndexFile in emptyIndexFiles)
+                    {
+                        try
+                        {
+                            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                            {
+                                await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
+                                // TODO implicit rollback
+                                await db.Transaction.RollBackAsync();
+                                return;
+                            }
+
+                            progress++;
+                            m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
+
+                            if (m_options.Dryrun)
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteEmptyIndexFile", "would delete empty index file {0}", emptyIndexFile.Name);
+                            else
+                            {
+                                if (emptyIndexFile.Size > 2048)
+                                {
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "LargeEmptyIndexFile", null, "The empty index file {0} is larger than expected ({1} bytes), choosing not to delete it", emptyIndexFile.Name, emptyIndexFile.Size);
+                                }
+                                else
+                                {
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "DeletingEmptyIndexFile", "Deleting empty index file {0}", emptyIndexFile.Name);
+                                    await backendManager.DeleteAsync(emptyIndexFile.Name, emptyIndexFile.Size, false, cancellationToken).ConfigureAwait(false);
+                                    await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
+                                    // TODO this commit mimics the old way of not passing down a transaction to FlushPendingMessagesAsync, but maybe it is not needed anymore.
+                                    await db.Transaction.CommitAsync();
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteErrorMessage(LOGTAG, "CleanupEmptyIndexFileError", ex, "Failed to perform cleanup for empty index file: {0}, message: {1}", emptyIndexFile.Name, ex.Message);
+
+                            if (ex.IsAbortException())
+                                throw;
+                        }
                     }
                 }
-            }
-            else
-            {
-                Logging.Log.WriteInformationMessage(LOGTAG, "DatabaseIsSynchronized", "Destination and database are synchronized, not making any changes");
-            }
+                else
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DatabaseIsSynchronized", "Destination and database are synchronized, not making any changes");
+                }
 
-            m_result.OperationProgressUpdater.UpdateProgress(1);
-            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
-            if (!m_options.Dryrun)
+                m_result.OperationProgressUpdater.UpdateProgress(1);
+                await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
+                if (!m_options.Dryrun)
+                {
+                    await db.TerminatedWithActiveUploads(false);
+                    await db.Transaction.CommitAsync("CommitRepairTransaction");
+                }
+                else
+                {
+                    await db.Transaction.RollBackAsync("RollbackRepairTransaction");
+                }
+            }
+            catch (Exception)
             {
-                await db.TerminatedWithActiveUploads(false);
-                await db.Transaction.CommitAsync("CommitRepairTransaction");
+                // TODO Implicit rollback
+                await db.Transaction.RollBackAsync();
+                throw;
             }
         }
 
@@ -542,6 +566,9 @@ namespace Duplicati.Library.Main.Operation
             volumeWriter.CreateFilesetFile(isPrevFull);
             var newFilesetID = await db.CreateFileset(volumeWriter.VolumeID, filesetTime);
             await db.UpdateFullBackupStateInFileset(newFilesetID, isPrevFull);
+            // TODO this commit mimics the old way of not passing down a transaction to UpdateFullBackupStateInFileset, but maybe it is not needed anymore.
+            //await db.Transaction.CommitAsync();
+            // TODO The above only mimics it to some degree -the original implementation makes a new transaciton alongside the global reusable transaction, which means that this particular SQL statement is comitted to the database. As such, if this new implementation commits the global reusable transaction, all of the statements are comitted - which they shouldn't be! Instead, only whatever that function is trying to do should be committed. This happens at other points as well - all of which should be double checked wrt. whether they should be using the global one, or a new one. This is not supported in the new engine.
 
             await db.LinkFilesetToVolume(newFilesetID, volumeWriter.VolumeID);
             await db.MoveFilesFromFileset(newFilesetID, prevFilesetId);

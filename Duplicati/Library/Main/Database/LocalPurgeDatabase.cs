@@ -287,6 +287,8 @@ namespace Duplicati.Library.Main.Database
                 var remotevolid = await m_db.RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
                 var filesetid = await m_db.CreateFileset(remotevolid, timestamp);
                 await m_db.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
+                // TODO this commit mimics the old way of not passing down a transaction to UpdateFullBackupStateInFileset, but maybe it is not needed.
+                await m_db.Transaction.CommitAsync();
 
                 using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                     await cmd.SetCommandAndParameters($@"

@@ -229,7 +229,12 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task<long> CreateFilesetAsync(long volumeID, DateTime fileTime)
         {
-            return RunOnMain(async () => await m_database.CreateFileset(volumeID, fileTime));
+            return RunOnMain(async () =>
+                {
+                    var fs = await m_database.CreateFileset(volumeID, fileTime);
+                    await m_database.Transaction.CommitAsync();
+                    return fs;
+                });
         }
 
         public Task LinkFilesetToVolumeAsync(long filesetid, long volumeid)
