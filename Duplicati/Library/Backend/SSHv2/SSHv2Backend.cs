@@ -320,20 +320,7 @@ namespace Duplicati.Library.Backend
             }
             else if (m_useAgent)
             {
-                if (OperatingSystem.IsMacOS())
-                {
-                    // On macOS, we can use ssh-add to add keys to the agent from the KeyChain
-                    // The keys are only visible to the current process
-                    var keyPaths = FindPrivateKeyPaths();
-                    if (keyPaths.Count > 0)
-                        await AddKeysToAgent(keyPaths, true, cancelToken);
-                }
-
-                var agentKeys = new SshAgent().RequestIdentities();
-
-                if (OperatingSystem.IsWindows())
-                    agentKeys = agentKeys.Concat(new Pageant().RequestIdentities()).ToArray();
-
+                var agentKeys = await GetPrivateKeySources(cancelToken);
                 var connectionInfo = new ConnectionInfo(m_server, m_port, m_username,
                 [
                     new PrivateKeyAuthenticationMethod(m_username, agentKeys),
@@ -385,6 +372,52 @@ namespace Duplicati.Library.Backend
             m_initialDirectory = con.WorkingDirectory;
 
             return m_con = con;
+        }
+
+        /// <summary>
+        /// Attempts to read private keys from SSH Agents
+        /// </summary>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>The private keys that could be loaded</returns>
+        private static async Task<IPrivateKeySource[]> GetPrivateKeySources(CancellationToken cancelToken)
+        {
+            var agentKeys = new List<IPrivateKeySource>();
+            if (OperatingSystem.IsMacOS())
+            {
+                try
+                {
+                    // On macOS, we can use ssh-add to add keys to the agent from the KeyChain
+                    // The keys are only visible to the current process
+                    var keyPaths = FindPrivateKeyPaths();
+                    if (keyPaths.Count > 0)
+                        await AddKeysToAgent(keyPaths, true, cancelToken);
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteVerboseMessage(LOGTAG, "MacOsKeyLoadFailed", ex, "Failed to load macOS keys");
+                }
+            }
+
+            try
+            {
+                agentKeys.AddRange(new SshAgent().RequestIdentities());
+            }
+            catch (Exception ex)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "SshAgentKeyLoadFailed", ex, "Failed to load ssh agent keys");
+            }
+
+            try
+            {
+                if (OperatingSystem.IsWindows())
+                    agentKeys.AddRange(new Pageant().RequestIdentities());
+            }
+            catch (Exception ex)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "PageantNotFound", ex, "Failed to access Pageant");
+            }
+
+            return agentKeys.ToArray();
         }
 
         /// <summary>
