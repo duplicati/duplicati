@@ -26,6 +26,7 @@ using Duplicati.Library.SourceProvider;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Renci.SshNet;
+using Renci.SshNet.Agent;
 using Renci.SshNet.Common;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -42,6 +43,7 @@ namespace Duplicati.Library.Backend
         public const string KEYFILE_URI = "sshkey://";
         private const string SSH_TIMEOUT_OPTION = "ssh-operation-timeout";
         private const string SSH_KEEPALIVE_OPTION = "ssh-keepalive";
+        private const string SSH_DISABLE_AGENT_OPTION = "ssh-disable-agent";
 
         readonly Dictionary<string, string?> m_options;
 
@@ -56,6 +58,7 @@ namespace Duplicati.Library.Backend
 
         private readonly int m_port = 22;
         private readonly bool m_useRelativePath;
+        private readonly bool m_useAgent;
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
         private string? m_initialDirectory;
 
@@ -69,6 +72,7 @@ namespace Duplicati.Library.Backend
             m_options = null!;
             m_timeouts = null!;
             m_con = null!;
+            m_useAgent = true;
         }
 
         public SSHv2(string url, Dictionary<string, string?> options)
@@ -86,6 +90,7 @@ namespace Duplicati.Library.Backend
             m_fingerprint = options.GetValueOrDefault(SSH_FINGERPRINT_OPTION);
             m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
             m_useRelativePath = Utility.Utility.ParseBoolOption(options, SSH_RELATIVE_PATH_OPTION);
+            m_useAgent = !Utility.Utility.ParseBoolOption(options, SSH_DISABLE_AGENT_OPTION);
             m_timeouts = TimeoutOptionsHelper.Parse(options);
 
             m_path = uri.Path;
@@ -194,6 +199,9 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(SSH_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Timespan,
                 Strings.SSHv2Backend.DescriptionSshkeepaliveShort,
                 Strings.SSHv2Backend.DescriptionSshkeepaliveLong, "0"),
+            new CommandLineArgument(SSH_DISABLE_AGENT_OPTION, CommandLineArgument.ArgumentType.Boolean,
+                Strings.SSHv2Backend.DescriptionDisableAgentShort,
+                Strings.SSHv2Backend.DescriptionDisableAgentLong),
             new CommandLineArgument(SSH_RELATIVE_PATH_OPTION, CommandLineArgument.ArgumentType.Boolean,
                 Strings.SSHv2Backend.DescriptionRelativePathShort,
                 Strings.SSHv2Backend.DescriptionRelativePathLong),
@@ -299,9 +307,25 @@ namespace Duplicati.Library.Backend
             m_options.TryGetValue(SSH_KEYFILE_INLINE, out var keyInline);
 
             if (!string.IsNullOrWhiteSpace(keyFile) || !string.IsNullOrWhiteSpace(keyInline))
+            {
                 con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(keyFile, keyInline, m_password));
+            }
+            else if (!string.IsNullOrWhiteSpace(m_password))
+            {
+                con = new SftpClient(m_server, m_port, m_username, m_password);
+            }
+            else if (m_useAgent)
+            {
+                var connectionInfo = new ConnectionInfo(m_server, m_port, m_username, new AuthenticationMethod[]
+                {
+                    new AgentAuthenticationMethod(m_username)
+                });
+                con = new SftpClient(connectionInfo);
+            }
             else
-                con = new SftpClient(m_server, m_port, m_username, m_password ?? string.Empty);
+            {
+                con = new SftpClient(m_server, m_port, m_username, string.Empty);
+            }
 
             con.HostKeyReceived += (sender, e) =>
             {
