@@ -288,7 +288,8 @@ namespace Duplicati.Library.Main.Database
                 var filesetid = await m_db.CreateFileset(remotevolid, timestamp);
                 await m_db.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
                 // TODO this commit mimics the old way of not passing down a transaction to UpdateFullBackupStateInFileset, but maybe it is not needed.
-                await m_db.Transaction.CommitAsync();
+                //await m_db.Transaction.CommitAsync();
+                // TODO not exactly, since the old way was using a nested transaction, which the new backend doesn't support.
 
                 using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                     await cmd.SetCommandAndParameters($@"
