@@ -133,7 +133,7 @@ namespace Duplicati.Library.Main.Operation
                                 .DoRunAsync(rmdb, true, false, backendManager).ConfigureAwait(false);
 
                             if (!m_options.Dryrun)
-                                await rmdb.Transaction.CommitAsync("CommitDelete", restart: false);
+                                await rmdb.Transaction.CommitAsync("CommitDelete");
                         }
 
                         pgoffset += (pgspan * fully_emptied.Length);
