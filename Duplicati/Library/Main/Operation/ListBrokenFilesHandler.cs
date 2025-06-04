@@ -57,6 +57,7 @@ namespace Duplicati.Library.Main.Operation
                 await Utility.UpdateOptionsFromDb(db, m_options);
                 await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
                 await DoRunAsync(backendManager, db, filter, callbackhandler).ConfigureAwait(false);
+                await db.Transaction.RollBackAsync().ConfigureAwait(false);
             }
         }
 
