@@ -40,11 +40,13 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Targeted")]
-        [TestCase(true)]
-        [TestCase(false)]
-        public void TestDuplicatedBlocklists1(bool deleteAllIndexFiles)
+        public void TestDuplicatedBlocklists1([Values] bool deleteAllIndexFiles, [Values] bool restore_legacy)
         {
-            var testopts = TestOptions.Expand(new { blocksize = "1kb" });
+            var testopts = TestOptions.Expand(new
+            {
+                blocksize = "1kb",
+                restore_legacy = restore_legacy.ToString()
+            });
             var hashes = new List<string>();
 
             // Full blocklist with zeroes
