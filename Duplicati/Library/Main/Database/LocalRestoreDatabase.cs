@@ -1631,6 +1631,7 @@ namespace Duplicati.Library.Main.Database
                 INNER JOIN ""Block""
                     ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
                 WHERE ""BlocksetEntry"".""BlocksetID"" = @BlocksetID
+                ORDER BY ""BlocksetEntry"".""Index""
             ")
                     .SetTransaction(transaction)
                     .SetParameterValue("@BlocksetID", blocksetID);
