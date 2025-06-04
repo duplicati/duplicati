@@ -54,12 +54,12 @@ namespace Duplicati.Library.Main
             {
                 m_values = values;
 
-                using (var ms = new System.IO.MemoryStream())
+                using (var ms = new MemoryStream())
                 using (var w = new StreamWriter(ms, Encoding.UTF8))
                 using (var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
                 {
                     if (filehasher == null)
-                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
+                        throw new Interface.UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
 
                     w.Write(JsonConvert.SerializeObject(values));
                     w.Flush();
