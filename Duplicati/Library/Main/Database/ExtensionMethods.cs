@@ -178,9 +178,10 @@ public static partial class ExtensionMethods
 
     public static async IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self)
     {
-        using var rd = await self.ExecuteReaderAsync();
-        while (await rd.ReadAsync())
-            yield return rd;
+        using (new Logging.Timer(LOGTAG, "ExecuteReaderEnumerableAsync", $"ExecuteReaderEnumerableAsync: {self.GetPrintableCommandText()}"))
+        using (var rd = await self.ExecuteReaderAsync())
+            while (await rd.ReadAsync())
+                yield return rd;
     }
 
     public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmdtext)
