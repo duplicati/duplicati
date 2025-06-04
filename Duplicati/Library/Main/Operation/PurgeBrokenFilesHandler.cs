@@ -193,6 +193,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
+                    await db.Transaction.RollBackAsync();
                     await db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true);
                 }
 
