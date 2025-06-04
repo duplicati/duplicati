@@ -1301,7 +1301,7 @@ namespace Duplicati.Library.Main.Database
             {
                 if (m_tmptable != null)
                 {
-                    using var c = m_db.Connection.CreateCommand(@"DROP TABLE IF EXISTS ""{m_tmptable}""")
+                    using var c = m_db.Connection.CreateCommand(@$"DROP TABLE IF EXISTS ""{m_tmptable}""")
                         .SetTransaction(m_db.Transaction);
                     await c.ExecuteNonQueryAsync();
                     await m_db.Transaction.CommitAsync();
