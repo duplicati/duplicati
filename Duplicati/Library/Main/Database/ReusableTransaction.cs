@@ -119,8 +119,8 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
         {
             try
             {
-                using (var timer = new Logging.Timer(LOGTAG, "Dispose", "Commit during transaction dispose"))
-                    await m_transaction.CommitAsync();
+                using (var timer = new Logging.Timer(LOGTAG, "Dispose", "Rollback during transaction dispose"))
+                    await m_transaction.RollbackAsync();
             }
             catch (Exception ex)
             {
