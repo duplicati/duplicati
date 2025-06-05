@@ -619,8 +619,6 @@ namespace Duplicati.Library.Main.Database
             if (v0 == null || v0 == DBNull.Value)
                 return null;
 
-            await m_rtr.CommitAsync();
-
             return v0.ToString();
         }
 
@@ -671,8 +669,6 @@ namespace Duplicati.Library.Main.Database
                         maxpath = "";
                 }
             }
-
-            await m_rtr.CommitAsync();
 
             return maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep);
         }
@@ -1044,7 +1040,6 @@ namespace Duplicati.Library.Main.Database
                             more = await rd.ReadAsync();
                     }
                 }
-                await db.Transaction.CommitAsync();
             }
         }
 
@@ -1169,8 +1164,6 @@ namespace Duplicati.Library.Main.Database
                     while (more && current == f.TargetPath)
                         more = await rd.ReadAsync();
                 }
-
-                await db.Transaction.CommitAsync();
             }
         }
 
@@ -1222,8 +1215,6 @@ namespace Duplicati.Library.Main.Database
                     rd.ConvertValueToInt64(2, -1)
                 );
             }
-
-            await m_rtr.CommitAsync();
         }
 
         public interface IFilesAndMetadata : IDisposable
@@ -1385,7 +1376,6 @@ namespace Duplicati.Library.Main.Database
                             more = await rd.ReadAsync();
                     }
                 }
-                await m_db.Transaction.CommitAsync();
             }
 
             public async IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks()
@@ -1501,8 +1491,6 @@ namespace Duplicati.Library.Main.Database
             while (await rd.ReadAsync())
                 yield return new FileToRestore(
                     rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "", rd.ConvertValueToString(2) ?? "", rd.ConvertValueToInt64(3));
-
-            await m_rtr.CommitAsync();
         }
 
         /// <summary>
@@ -1530,8 +1518,6 @@ namespace Duplicati.Library.Main.Database
             using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())
                 yield return new FileRequest(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
-
-            await m_rtr.CommitAsync();
         }
 
         /// <summary>
@@ -1606,8 +1592,6 @@ namespace Duplicati.Library.Main.Database
                     reader.ConvertValueToInt64(0),
                     reader.ConvertValueToInt64(1)
                 );
-
-            await m_rtr.CommitAsync();
         }
 
         /// <summary>
@@ -1716,8 +1700,6 @@ namespace Duplicati.Library.Main.Database
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
                 yield return (reader.ConvertValueToString(0) ?? "", reader.ConvertValueToInt64(1), reader.ConvertValueToString(2) ?? "");
-
-            await m_rtr.CommitAsync();
         }
 
         public async Task DropRestoreTable()
@@ -2015,8 +1997,6 @@ namespace Duplicati.Library.Main.Database
             using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())
                 yield return rd.ConvertValueToString(0) ?? "";
-
-            await m_rtr.CommitAsync();
         }
 
         public interface IFastSource
