@@ -2414,7 +2414,7 @@ namespace Duplicati.Library.Main.Database
                         }
                     }
 
-                    await m_connection.CloseAsync();
+                    m_connection.Close();
                 }
 
                 await m_connection.DisposeAsync();

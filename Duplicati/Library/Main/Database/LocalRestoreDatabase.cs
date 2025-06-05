@@ -1996,7 +1996,7 @@ namespace Duplicati.Library.Main.Database
             foreach (var (connection, transaction) in m_connection_pool)
             {
                 await transaction.DisposeAsync();
-                await connection.CloseAsync();
+                connection.Close();
                 await connection.DisposeAsync();
             }
             m_connection_pool.Clear();
