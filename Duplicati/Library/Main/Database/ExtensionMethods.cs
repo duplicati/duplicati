@@ -222,7 +222,7 @@ public static partial class ExtensionMethods
         return defaultvalue;
     }
 
-    public static SqliteCommand ExpandInClauseParameterMssqlite(this SqliteCommand cmd, string originalParamName, IEnumerable<object> values)
+    public static SqliteCommand ExpandInClauseParameterMssqlite<T>(this SqliteCommand cmd, string originalParamName, IEnumerable<T> values)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
             throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));

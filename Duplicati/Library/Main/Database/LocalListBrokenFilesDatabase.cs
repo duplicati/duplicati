@@ -257,7 +257,6 @@ namespace Duplicati.Library.Main.Database
         /// <returns>The ID of the empty metadata blockset, or -1 if no suitable blockset is found</returns>
         public async Task<long> GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize)
         {
-            // TODO the casting to object is a typing fix for the extension method for now. Should be fixed properly.
             using var cmd = Connection.CreateCommand(@"
                 SELECT ""ID""
                 FROM ""Blockset""
@@ -275,7 +274,7 @@ namespace Duplicati.Library.Main.Database
                     )
             ")
                 .SetTransaction(m_rtr)
-                .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds.Cast<object>())
+                .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
                 .SetParameterValue("@EmptyHash", emptyHash)
                 .SetParameterValue("@EmptyHashSize", emptyHashSize);
 
