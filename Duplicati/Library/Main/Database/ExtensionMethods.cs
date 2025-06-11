@@ -467,23 +467,28 @@ public static partial class ExtensionMethods
     public static string GetPrintableCommandText(this IDbCommand self)
     {
         var txt = self.CommandText;
-        // TODO not adjusted to named parameters - it's using positional parameters.
 
-        foreach (var p in self.Parameters.Cast<SqliteParameter>())
+        // Replace each named parameter with its value
+        foreach (IDataParameter p in self.Parameters)
         {
-            var ix = txt.IndexOf('?');
-            if (ix >= 0)
-            {
-                string v;
-                if (p.Value is string)
-                    v = string.Format("\"{0}\"", p.Value);
-                else if (p.Value == null)
-                    v = "NULL";
-                else
-                    v = string.Format("{0}", p.Value);
+            var paramName = p.ParameterName;
+            if (string.IsNullOrEmpty(paramName))
+                continue;
 
-                txt = string.Concat(txt.AsSpan(0, ix), v, txt.AsSpan(ix + 1));
-            }
+            string v;
+            if (p.Value == null || p.Value == DBNull.Value)
+                v = "NULL";
+            else if (p.Value is string)
+                v = $"\"{p.Value}\"";
+            else if (p.Value is DateTime dt)
+                v = $"\"{dt:O}\"";
+            else if (p.Value is byte[] bytes)
+                v = $"X'{BitConverter.ToString(bytes).Replace("-", "")}'";
+            else
+                v = p.Value.ToString() ?? "NULL";
+
+            // Replace all occurrences of the parameter (with word boundary)
+            txt = Regex.Replace(txt, $@"\B{Regex.Escape(paramName)}\b", v, RegexOptions.IgnoreCase);
         }
 
         return txt;
