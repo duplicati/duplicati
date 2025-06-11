@@ -836,15 +836,9 @@ namespace Duplicati.UnitTest
             string target = "file://" + TARGETFOLDER;
 
             byte[] block1 = new byte[10 * 1024];
-            for (int i = 0; i < block1.Length; ++i)
-            {
-                block1[i] = 1;
-            }
+            block1.AsSpan().Fill(1);
             byte[] block2 = new byte[10 * 1024];
-            for (int i = 0; i < block1.Length; ++i)
-            {
-                block1[i] = 2;
-            }
+            block2.AsSpan().Fill(2);
 
             HashAlgorithm blockhasher = Library.Utility.HashFactory.CreateHasher(new Options(testopts).BlockHashAlgorithm);
 
