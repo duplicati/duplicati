@@ -357,11 +357,6 @@ namespace Duplicati.Library.Main.Database
             /// The name of the volume where blocks are missing
             /// </summary>
             private readonly string m_volumename;
-            // TODO remove
-            /// <summary>
-            /// The query to use for getting missing blocks
-            /// </summary>
-            //private readonly string m_missingBlocksQuery;
 
             /// <summary>
             /// Whether the object has been disposed

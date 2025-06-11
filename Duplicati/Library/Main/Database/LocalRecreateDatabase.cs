@@ -70,11 +70,6 @@ namespace Duplicati.Library.Main.Database
         private string m_tempblocklist = null!;
         private string m_tempsmalllist = null!;
 
-        // TODO why was this "new" ?
-        //private new readonly SqliteConnection m_connection;
-
-        //public new bool RepairInProgress { get; set; } = false;
-
         /// <summary>
         /// A lookup table that prevents multiple downloads of the same volume
         /// </summary>
