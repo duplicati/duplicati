@@ -297,7 +297,7 @@ namespace Duplicati.Library.Main.Database
                                 AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
                         )
                 ")
-                  .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds.Cast<object>())
+                  .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
                   .SetParameterValue("@EmptyHashSize", 0)
                   .ExecuteScalarInt64Async(-1);
 
@@ -318,7 +318,7 @@ namespace Duplicati.Library.Main.Database
                     ORDER BY ""Blockset"".""Length"" ASC
                     LIMIT 1
                 ")
-                  .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds.Cast<object>())
+                  .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
                   .ExecuteScalarInt64Async(-1);
 
             return res;

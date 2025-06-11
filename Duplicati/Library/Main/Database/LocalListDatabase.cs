@@ -789,7 +789,7 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
                 .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-                .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds.Cast<object>())
+                .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
                 .SetParameterValue("@filesetid", filesetid)
                 .SetParameterValue("@limit", limit)
                 .SetParameterValue("@offset", offset);
@@ -835,7 +835,7 @@ namespace Duplicati.Library.Main.Database
                         fe.FilesetID = @filesetid
                         AND fl.PrefixID IN (@PrefixIds)
                 ")
-                .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds.Cast<object>())
+                .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
                 .SetParameterValue("@filesetid", filesetid)
                 .ExecuteScalarInt64Async(0);
             }
@@ -899,7 +899,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
                 .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
                 .SetParameterValue("@FilesetId", filesetid)
-                .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds.Cast<object>())
+                .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
                 .SetParameterValue("@limit", limit)
                 .SetParameterValue("@offset", offset);
 
@@ -938,7 +938,7 @@ namespace Duplicati.Library.Main.Database
                         AND fl.""PrefixId"" IN (@PrefixIds)
                 ")
                     .SetParameterValue("@FilesetId", filesetid)
-                    .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds.Cast<object>())
+                    .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
                     .ExecuteScalarInt64Async(0);
             }
 
@@ -1143,7 +1143,7 @@ namespace Duplicati.Library.Main.Database
                .SetParameterValue("@offset", offset);
 
             if (filesetIds != null && filesetIds.Length > 0)
-                cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds.Cast<object>());
+                cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
 
             var results = new List<IListFileVersion>();
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
@@ -1192,7 +1192,7 @@ namespace Duplicati.Library.Main.Database
                    .ExpandInClauseParameter("@Paths", paths);
 
                 if (filesetIds != null && filesetIds.Length > 0)
-                    cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds.Cast<object>());
+                    cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
 
                 totalCount = await cmd.ExecuteScalarInt64Async(0);
             }
@@ -1403,7 +1403,7 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExpandInClauseParameter("@PathPrefixes", pathprefixes);
 
             if (filesetIds != null && filesetIds.Length > 0)
-                cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds.Cast<object>());
+                cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
 
             var results = new List<ISearchFileVersion>();
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
@@ -1453,7 +1453,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExpandInClauseParameter("@PathPrefixes", pathprefixes);
 
                 if (filesetIds != null && filesetIds.Length > 0)
-                    cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds.Cast<object>());
+                    cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
 
                 totalCount = await cmd.ExecuteScalarInt64Async(0);
             }
