@@ -274,7 +274,9 @@ namespace Duplicati.Library.Main.Database
 
             dbnew.m_findMetadatasetCommand = await dbnew.m_connection.CreateCommandAsync(@"
                 SELECT ""Metadataset"".""ID""
-                FROM ""Metadataset"",""Blockset""
+                FROM
+                    ""Metadataset"",
+                    ""Blockset""
                 WHERE
                     ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
                     AND ""Blockset"".""FullHash"" = @FullHash

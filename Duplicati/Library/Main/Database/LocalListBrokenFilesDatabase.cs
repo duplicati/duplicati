@@ -349,7 +349,9 @@ namespace Duplicati.Library.Main.Database
                     )
                     AND ""BlocksetID"" NOT IN (
                         SELECT ""BlocksetID""
-                        FROM ""BlocksetEntry"", ""Block""
+                        FROM
+                            ""BlocksetEntry"",
+                            ""Block""
                         WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
                     )
             ")

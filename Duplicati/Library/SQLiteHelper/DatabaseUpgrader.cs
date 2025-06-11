@@ -203,14 +203,21 @@ namespace Duplicati.Library.SQLiteHelper
                 try
                 {
                     //See if the version table is present,
-                    cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER WHERE Name LIKE 'Version'";
+                    cmd.CommandText = @"
+                        SELECT COUNT(*)
+                        FROM SQLITE_MASTER
+                        WHERE Name LIKE 'Version'
+                    ";
                     int count = Convert.ToInt32(cmd.ExecuteScalar());
 
                     if (count == 0)
                         dbversion = -1; //Empty
                     else if (count == 1)
                     {
-                        cmd.CommandText = "SELECT max(Version) FROM Version";
+                        cmd.CommandText = @"
+                            SELECT max(Version)
+                            FROM Version
+                        ";
                         dbversion = Convert.ToInt32(cmd.ExecuteScalar());
                     }
                     else

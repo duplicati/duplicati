@@ -270,7 +270,9 @@ namespace Duplicati.Library.Main.Database
             ");
 
             dbnew.m_selectduplicateRemoteVolumesCommand = await connection.CreateCommandAsync($@"
-                SELECT DISTINCT ""Name"", ""State""
+                SELECT DISTINCT
+                    ""Name"",
+                    ""State""
                 FROM ""Remotevolume""
                 WHERE
                     ""Name"" IN (
@@ -432,7 +434,9 @@ namespace Duplicati.Library.Main.Database
         public async IAsyncEnumerable<KeyValuePair<long, DateTime>> FilesetTimes()
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
-                SELECT ""ID"", ""Timestamp""
+                SELECT
+                    ""ID"",
+                    ""Timestamp""
                 FROM ""Fileset""
                 ORDER BY ""Timestamp"" DESC
             ");
@@ -661,12 +665,17 @@ namespace Duplicati.Library.Main.Database
                 .ExpandInClauseParameterMssqlite("@VolumeNames", [.. names])
                 .ExecuteNonQueryAsync();
 
-            var volIdsSubQuery = $@"SELECT ""ID"" FROM ""{volidstable}"" ";
+            var volIdsSubQuery = $@"
+                SELECT ""ID""
+                FROM ""{volidstable}""
+            ";
             deletecmd.Parameters.Clear();
 
             var bsIdsSubQuery = @$"
                 SELECT DISTINCT ""BlocksetEntry"".""BlocksetID""
-                FROM ""BlocksetEntry"", ""Block""
+                FROM
+                    ""BlocksetEntry"",
+                    ""Block""
                 WHERE
                     ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
                     AND ""Block"".""VolumeID"" IN ({volIdsSubQuery})
@@ -698,7 +707,9 @@ namespace Duplicati.Library.Main.Database
 
             // Create a temp table to associate metadata that is being deleted to a fileset
             var metadataFilesetQuery = $@"
-                SELECT Metadataset.ID, FilesetEntry.FilesetID
+                SELECT
+                    Metadataset.ID,
+                    FilesetEntry.FilesetID
                 FROM Metadataset
                 INNER JOIN FileLookup
                     ON FileLookup.MetadataID = Metadataset.ID
@@ -732,7 +743,8 @@ namespace Duplicati.Library.Main.Database
                 DELETE FROM FilesetEntry
                 WHERE
                     FilesetEntry.FilesetID IN (
-                        SELECT DISTINCT FilesetID FROM ""{metadataFilesetTable}""
+                        SELECT DISTINCT FilesetID
+                        FROM ""{metadataFilesetTable}""
                     )
                     AND FilesetEntry.FileID IN (
                         SELECT FilesetEntry.FileID
@@ -740,7 +752,8 @@ namespace Duplicati.Library.Main.Database
                         INNER JOIN FileLookup
                             ON FileLookup.ID = FilesetEntry.FileID
                         WHERE FileLookup.MetadataID IN (
-                            SELECT MetadataID FROM ""{metadataFilesetTable}""
+                            SELECT MetadataID
+                            FROM ""{metadataFilesetTable}""
                         )
                     )
             ");
@@ -907,7 +920,8 @@ namespace Duplicati.Library.Main.Database
                 SELECT COUNT(*)
                 FROM ""FilesetEntry""
                 WHERE ""FileID"" NOT IN (
-                    SELECT ""ID"" FROM ""FileLookup""
+                    SELECT ""ID""
+                    FROM ""FileLookup""
                 )
             ");
             if (nonAttachedFiles > 0)

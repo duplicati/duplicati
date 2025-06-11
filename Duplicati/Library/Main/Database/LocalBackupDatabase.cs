@@ -592,7 +592,9 @@ namespace Duplicati.Library.Main.Database
 
             dbnew.m_selectfileHashCommand = dbnew.m_connection.CreateCommand(@"
                 SELECT ""Blockset"".""Fullhash""
-                FROM ""Blockset"", ""FileLookup""
+                FROM
+                    ""Blockset"",
+                    ""FileLookup""
                 WHERE
                     ""Blockset"".""ID"" = ""FileLookup"".""BlocksetID""
                     AND ""FileLookup"".""ID"" = @FileId
