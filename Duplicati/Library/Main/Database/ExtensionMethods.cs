@@ -150,19 +150,33 @@ public static partial class ExtensionMethods
             return await self.ExecuteReaderAsync();
     }
 
-    public static async IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self)
+    public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self)
     {
-        using (new Logging.Timer(LOGTAG, "ExecuteReaderEnumerableAsync", $"ExecuteReaderEnumerableAsync: {self.GetPrintableCommandText()}"))
-        using (var rd = await self.ExecuteReaderAsync())
-            while (await rd.ReadAsync())
-                yield return rd;
+        return ExecuteReaderEnumerableAsync(self, true, null, null);
     }
 
     public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmdtext)
     {
-        self.SetCommandAndParameters(cmdtext);
+        return ExecuteReaderEnumerableAsync(self, true, cmdtext, null);
+    }
 
-        return ExecuteReaderEnumerableAsync(self);
+    public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
+    {
+        return ExecuteReaderEnumerableAsync(self, true, cmdtext, values);
+    }
+
+    public static async IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, bool writeLog, string? cmdtext = null, Dictionary<string, object?>? values = null)
+    {
+        if (cmdtext != null)
+            self.SetCommandAndParameters(cmdtext);
+
+        if (values != null && values.Count > 0)
+            self.SetParameterValues(values);
+
+        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReaderEnumerableAsync", $"ExecuteReaderEnumerableAsync: {self.GetPrintableCommandText()}") : null)
+        using (var rd = await self.ExecuteReaderAsync())
+            while (await rd.ReadAsync())
+                yield return rd;
     }
 
     public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self)
