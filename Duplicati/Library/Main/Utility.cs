@@ -125,10 +125,14 @@ namespace Duplicati.Library.Main
         internal static async Task<bool> ContainsOptionsForVerification(LocalDatabase db)
         {
             var opts = await db.GetDbOptions();
-            // TODO commit mimics old behavior of not passing down a transaction,
-            // but maybe it shouldn't be necessary?
             await db.Transaction.CommitAsync();
-            return new[] { "blocksize", "blockhash", "filehash", "passphrase" }.Any(opts.ContainsKey);
+            return new[] {
+                "blocksize",
+                "blockhash",
+                "filehash",
+                "passphrase"
+            }
+                .Any(opts.ContainsKey);
         }
 
         /// <summary>

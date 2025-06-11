@@ -483,7 +483,7 @@ namespace Duplicati.Library.Main.Operation
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
                                 await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
-                                // TODO implicit rollback
+                                // Implicit rollback
                                 await db.Transaction.RollBackAsync();
                                 return;
                             }
@@ -541,7 +541,7 @@ namespace Duplicati.Library.Main.Operation
             }
             catch (Exception)
             {
-                // TODO Implicit rollback
+                // Implicit rollback
                 await db.Transaction.RollBackAsync();
                 throw;
             }
