@@ -173,7 +173,7 @@ namespace Duplicati.Library.Main.Operation
                                             if (s != e.Value)
                                                 throw new Exception(string.Format("Size mismatch problem for block {0}, {1} vs {2}", e.Key, s, e.Value));
 
-                                            newvol.AddBlock(e.Key, buffer, 0, s, Interface.CompressionHint.Compressible);
+                                            await newvol.AddBlock(e.Key, buffer, 0, s, Interface.CompressionHint.Compressible);
                                             if (newvolindex != null)
                                                 newvolindex.AddBlock(e.Key, e.Value);
 

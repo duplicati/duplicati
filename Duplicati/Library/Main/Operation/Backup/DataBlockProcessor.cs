@@ -114,7 +114,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         if (newBlock)
                         {
-                            blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
+                            await blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
                             if (indexvolume != null)
                                 indexvolume.AddBlock(b.HashKey, b.Size);
 

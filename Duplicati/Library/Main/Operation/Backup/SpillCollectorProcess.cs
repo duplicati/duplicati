@@ -124,7 +124,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 target = await GetNextTarget(source).ConfigureAwait(false);
 
                             var len = rd.ReadBlock(file.Key, buffer);
-                            target.BlockVolume.AddBlock(file.Key, buffer, 0, len, Duplicati.Library.Interface.CompressionHint.Default);
+                            await target.BlockVolume.AddBlock(file.Key, buffer, 0, len, Duplicati.Library.Interface.CompressionHint.Default);
                             await database.MoveBlockToVolumeAsync(file.Key, len, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID).ConfigureAwait(false);
 
                             if (target.IndexVolume != null)

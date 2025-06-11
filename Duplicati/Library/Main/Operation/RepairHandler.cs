@@ -744,7 +744,7 @@ namespace Duplicati.Library.Main.Operation
             /// <param name="hint">The compression hint for the block</param>
             public async Task AddBlock(string hash, byte[] buffer, int offset, int size, CompressionHint hint)
             {
-                m_activeWriter.AddBlock(hash, buffer, offset, size, hint);
+                await m_activeWriter.AddBlock(hash, buffer, offset, size, hint);
                 m_anyData = true;
                 if (IsFull)
                     await StartNewVolume();
