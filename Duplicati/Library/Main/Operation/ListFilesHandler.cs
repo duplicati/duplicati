@@ -104,10 +104,12 @@ namespace Duplicati.Library.Main.Operation
                                     .ToArrayAsync(),
                                 files == null
                                     ? null
-                                    : (from n in files
-                                       select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Path,
-                                           n.Sizes.ToArray())))
-                                    .ToArray()
+                                    :
+                                    files.Select(async n =>
+                                        new ListResultFile(n.Path, await n.Sizes().ToArrayAsync())
+                                    )
+                                        .Select(x => x.Result)
+                                        .Cast<IListResultFile>()
                             );
                         }
 

@@ -47,7 +47,7 @@ namespace Duplicati.Library.Main.Database
         public interface IFileversion
         {
             string? Path { get; }
-            IEnumerable<long> Sizes { get; }
+            IAsyncEnumerable<long> Sizes();
         }
 
         public interface IFileset
@@ -148,15 +148,12 @@ namespace Duplicati.Library.Main.Database
                     More = true;
                 }
 
-                public IEnumerable<long> Sizes
+                public async IAsyncEnumerable<long> Sizes()
                 {
-                    get
+                    while (More && Path == m_reader.ConvertValueToString(0))
                     {
-                        while (More && Path == m_reader.ConvertValueToString(0))
-                        {
-                            yield return m_reader.ConvertValueToInt64(1, -1);
-                            More = m_reader.Read();
-                        }
+                        yield return m_reader.ConvertValueToInt64(1, -1);
+                        More = await m_reader.ReadAsync();
                     }
                 }
             }
@@ -164,7 +161,7 @@ namespace Duplicati.Library.Main.Database
             private class FileversionFixed : IFileversion
             {
                 public string? Path { get; internal set; }
-                public IEnumerable<long> Sizes { get { return new long[0]; } }
+                public IAsyncEnumerable<long> Sizes() => AsyncEnumerable.Empty<long>();
             }
 
             public IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter)
