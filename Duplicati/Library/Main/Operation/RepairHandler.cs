@@ -742,12 +742,12 @@ namespace Duplicati.Library.Main.Operation
             /// <param name="offset">The offset in the buffer where the block data starts</param>
             /// <param name="size">The size of the block data</param>
             /// <param name="hint">The compression hint for the block</param>
-            public void AddBlock(string hash, byte[] buffer, int offset, int size, CompressionHint hint)
+            public async Task AddBlock(string hash, byte[] buffer, int offset, int size, CompressionHint hint)
             {
                 m_activeWriter.AddBlock(hash, buffer, offset, size, hint);
                 m_anyData = true;
                 if (IsFull)
-                    StartNewVolume().Await();
+                    await StartNewVolume();
             }
 
             /// <summary>
@@ -951,7 +951,7 @@ namespace Duplicati.Library.Main.Operation
                     if (await mbl.SetBlockRestored(block.Hash, block.Size, pendingVolume.VolumeID))
                     {
                         recoveredSourceBlocks++;
-                        pendingVolume.AddBlock(block.Hash, buffer, 0, size, CompressionHint.Default);
+                        await pendingVolume.AddBlock(block.Hash, buffer, 0, size, CompressionHint.Default);
                     }
                 }
                 catch (Exception ex)
@@ -1000,7 +1000,7 @@ namespace Duplicati.Library.Main.Operation
                     if (await mbl.SetBlockRestored(block.Hash, block.Size, pendingVolume.VolumeID))
                     {
                         recoveredSourceBlocks++;
-                        pendingVolume.AddBlock(block.Hash, metahash.Blob, 0, metahash.Blob.Length, CompressionHint.Default);
+                        await pendingVolume.AddBlock(block.Hash, metahash.Blob, 0, metahash.Blob.Length, CompressionHint.Default);
                     }
                 }
                 catch (Exception ex)
@@ -1035,7 +1035,7 @@ namespace Duplicati.Library.Main.Operation
                     if (resulthash == lastBlocklist.BlocklistHash && targetsize == blocklistHash.Length)
                     {
                         if (await mbl.SetBlockRestored(resulthash, blocklistHash.Length, pendingVolume.VolumeID))
-                            pendingVolume.AddBlock(resulthash, blocklistHash.ToArray(), 0, (int)blocklistHash.Length, CompressionHint.Default);
+                            await pendingVolume.AddBlock(resulthash, blocklistHash.ToArray(), 0, (int)blocklistHash.Length, CompressionHint.Default);
                     }
                     else
                     {
@@ -1072,7 +1072,7 @@ namespace Duplicati.Library.Main.Operation
                             foreach (var b in f.Blocks)
                                 if (await mbl.SetBlockRestored(b.Key, b.Value, pendingVolume.VolumeID))
                                     if (f.ReadBlock(b.Key, buffer) == b.Value)
-                                        pendingVolume.AddBlock(b.Key, buffer, 0, (int)b.Value, CompressionHint.Default);
+                                        await pendingVolume.AddBlock(b.Key, buffer, 0, (int)b.Value, CompressionHint.Default);
                     }
                     catch (Exception ex)
                     {
