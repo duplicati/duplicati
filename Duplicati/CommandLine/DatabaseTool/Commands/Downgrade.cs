@@ -24,6 +24,7 @@ using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.DatabaseTool.Commands;
 
@@ -50,7 +51,7 @@ public static class Downgrade
         }
         .WithHandler(CommandHandler.Create<string[], DirectoryInfo, int, int, bool, bool>((databases, serverdatafolder, serverversion, localversion, nobackups, includeuntrackeddatabases) =>
             {
-                databases = Helper.FindAllDatabases(databases, serverdatafolder.FullName, includeuntrackeddatabases);
+                databases = Helper.FindAllDatabases(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
                 if (databases.Length == 0)
                 {
                     Console.WriteLine("No databases found to downgrade");
@@ -100,7 +101,7 @@ public static class Downgrade
                     bool isserverdb;
                     try
                     {
-                        (version, isserverdb) = Helper.ExamineDatabase(db);
+                        (version, isserverdb) = Helper.ExamineDatabase(db).Await();
                     }
                     catch (Exception ex)
                     {
@@ -112,7 +113,8 @@ public static class Downgrade
                     ApplyDowngrade(db, version,
                         isserverdb ? serverversion : localversion,
                         isserverdb ? serverVersions : localVersions,
-                    nobackups);
+                    nobackups)
+                        .Await();
                 }
             }));
 
@@ -132,7 +134,7 @@ public static class Downgrade
     /// <param name="targetversion">The target database version</param>
     /// <param name="scripts">The downgrade scripts</param>
     /// <param name="nobackups">Flag to disable backups</param>
-    private static void ApplyDowngrade(string db, int dbversion, int targetversion, IEnumerable<DowngradeScript> scripts, bool nobackups)
+    private static async Task ApplyDowngrade(string db, int dbversion, int targetversion, IEnumerable<DowngradeScript> scripts, bool nobackups)
     {
         if (dbversion > targetversion)
         {
@@ -158,7 +160,7 @@ public static class Downgrade
             if (!nobackups)
                 Helper.CreateFileBackup(db);
 
-            using var con = SQLiteLoader.LoadConnection(db, 0);
+            using var con = await SQLiteLoader.LoadConnectionAsync(db, 0);
             using var tr = con.BeginTransaction();
             using var cmd = con.CreateCommand(tr);
             foreach (var script in downgradeScripts)
@@ -167,12 +169,16 @@ public static class Downgrade
                 try
                 {
                     cmd.SetCommandAndParameters(script.Content);
-                    var r = cmd.ExecuteScalar();
+                    var r = await cmd.ExecuteScalarAsync();
                     if (r != null)
                         throw new UserInformationException($"{r}", "DowngradeScriptFailure");
-                    cmd.SetCommandAndParameters("UPDATE Version SET Version = @Version")
-                        .SetParameterValue("@Version", script.Version - 1);
-                    cmd.ExecuteNonQuery();
+
+                    await cmd.SetCommandAndParameters(@"
+                        UPDATE Version
+                        SET Version = @Version
+                    ")
+                        .SetParameterValue("@Version", script.Version - 1)
+                        .ExecuteNonQueryAsync();
                 }
                 catch (Exception ex)
                 {
@@ -180,7 +186,7 @@ public static class Downgrade
                 }
             }
 
-            tr.Commit();
+            await tr.CommitAsync();
             Console.WriteLine($"Downgraded {db} to version {targetversion}");
         }
         else if (dbversion == targetversion)

@@ -42,7 +42,7 @@ public static class Helper
     /// <param name="datafolder">The folder to scan</param>
     /// <param name="scanExtra">Whether to scan for extra databases</param>
     /// <returns>The list of databases</returns>
-    public static string[] FindAllDatabases(string[]? databases, string datafolder, bool scanExtra)
+    public static async Task<string[]> FindAllDatabases(string[]? databases, string datafolder, bool scanExtra)
     {
         databases ??= [];
         if (databases.Length != 0)
@@ -60,9 +60,12 @@ public static class Helper
         {
             try
             {
-                using var con = SQLiteLoader.LoadConnection(serverdb, 0);
-                using var cmd = con.CreateCommand();
-                foreach (var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""DBPath"" FROM ""Backup"""))
+                using var con = await SQLiteLoader.LoadConnectionAsync(serverdb, 0);
+                using var cmd = con.CreateCommand(@"
+                    SELECT ""DBPath""
+                    FROM ""Backup""
+                ");
+                await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
                     dbpaths.Add(rd.ConvertValueToString(0) ?? "");
             }
             catch
@@ -87,13 +90,26 @@ public static class Helper
     /// </summary>
     /// <param name="db">The path to the database</param>
     /// <returns>A tuple containing the version and whether it is a server database</returns>
-    public static (int Version, bool isserver) ExamineDatabase(string db)
+    public static async Task<(int Version, bool isserver)> ExamineDatabase(string db)
     {
-        using (var con = SQLiteLoader.LoadConnection(db, 0))
+        using (var con = await SQLiteLoader.LoadConnectionAsync(db, 0))
         {
             using var cmd = con.CreateCommand();
-            var isserverdb = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Backup' OR name='Schedule'") == 2;
-            var version = (int)cmd.ExecuteScalarInt64("SELECT MAX(Version) FROM Version");
+
+            var isserverdb = await cmd.ExecuteScalarInt64Async(@"
+                SELECT COUNT(*)
+                FROM sqlite_master
+                WHERE
+                    type='table'
+                    AND name='Backup'
+                    OR name='Schedule'
+            ") == 2;
+
+            var version = (int)await cmd.ExecuteScalarInt64Async(@"
+                SELECT MAX(Version)
+                FROM Version
+            ");
+
             return (version, isserverdb);
         }
     }
