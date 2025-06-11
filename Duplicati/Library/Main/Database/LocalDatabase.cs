@@ -58,7 +58,6 @@ namespace Duplicati.Library.Main.Database
         protected long m_operationid = -1;
         protected long m_pagecachesize;
         private bool m_hasExecutedVacuum;
-        // TODO dispose should check this, and report if it was not disposed prior to calling dispose. Maybe the rtr itself should check this during dispose? And just throw a warning during runtime.
         protected ReusableTransaction m_rtr = null!;
         public ReusableTransaction Transaction { get { return m_rtr; } }
 
@@ -360,7 +359,6 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// TODO Remove from here and call the utility function directly - or maybe rename this so that the utility function makes more sense?
         /// Creates a DateTime instance by adding the specified number of seconds to the EPOCH value
         /// </summary>
         public static DateTime ParseFromEpochSeconds(long seconds)
