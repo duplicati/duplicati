@@ -208,13 +208,26 @@ public static partial class ExtensionMethods
 
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, long defaultvalue = -1)
     {
-        return await ExecuteScalarInt64Async(self, writeLog, null, defaultvalue);
+        return await ExecuteScalarInt64Async(self, writeLog, null, null, defaultvalue);
     }
 
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, string? cmd, long defaultvalue)
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, long defaultvalue = -1)
+    {
+        return await ExecuteScalarInt64Async(self, true, cmd, null, defaultvalue);
+    }
+
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, Dictionary<string, object?>? values, long defaultvalue = -1)
+    {
+        return await ExecuteScalarInt64Async(self, true, cmd, values, defaultvalue);
+    }
+
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, string? cmd = null, Dictionary<string, object?>? values = null, long defaultvalue = -1)
     {
         if (cmd != null)
             self.SetCommandAndParameters(cmd);
+
+        if (values != null && values.Count > 0)
+            self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarInt64Async", string.Format("ExecuteScalarInt64Async: {0}", self.GetPrintableCommandText())) : null)
         using (var rd = await self.ExecuteReaderAsync())
