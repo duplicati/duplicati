@@ -84,16 +84,16 @@ namespace Duplicati.Library.Main.Operation
 
                     var filesets = await db.FilesetTimes().ToListAsync();
 
-                    var compare_list = sets.Select(x => new
+                    var compare_list = sets.Select(async x => new
                     {
                         FilesetID = x.FilesetID,
                         Timestamp = x.FilesetTime,
                         RemoveCount = x.RemoveCount,
                         Version = filesets.FindIndex(y => y.Key == x.FilesetID),
-                        // TODO if we await this properly, we'll have to await
-                        // it again when using it.
-                        SetCount = db.GetFilesetFileCount(x.FilesetID).Await()
-                    }).ToArray();
+                        SetCount = await db.GetFilesetFileCount(x.FilesetID)
+                    })
+                        .Select(x => x.Result)
+                        .ToArray();
 
                     var replacementMetadataBlocksetId = -1L;
                     if (!m_options.DisableReplaceMissingMetadata)
