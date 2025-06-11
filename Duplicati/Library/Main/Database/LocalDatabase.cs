@@ -99,11 +99,6 @@ namespace Duplicati.Library.Main.Database
             throw new NotImplementedException("Use the CreateLocalDatabaseAsync or CreateLocalDatabase functions instead");
         }
 
-        protected static SqliteConnection CreateConnection(string path, long pagecachesize)
-        {
-            return CreateConnectionAsync(path, pagecachesize).Await();
-        }
-
         protected static async Task<SqliteConnection> CreateConnectionAsync(string path, long pagecachesize)
         {
             path = Path.GetFullPath(path);
