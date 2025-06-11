@@ -86,19 +86,9 @@ public static partial class ExtensionMethods
         return self.CreateCommand(rtr.Transaction);
     }
 
-    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog)
-    {
-        return await ExecuteNonQueryAsync(self, writeLog, null, null);
-    }
-
     public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string? cmdtext)
     {
         return await ExecuteNonQueryAsync(self, true, cmdtext, null);
-    }
-
-    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, string? cmd)
-    {
-        return await ExecuteNonQueryAsync(self, writeLog, cmd, null);
     }
 
     public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string cmd, Dictionary<string, object?> values)
@@ -106,7 +96,7 @@ public static partial class ExtensionMethods
         return await ExecuteNonQueryAsync(self, true, cmd, values);
     }
 
-    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, string? cmd, Dictionary<string, object?>? values)
+    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, string? cmd = null, Dictionary<string, object?>? values = null)
     {
         if (cmd != null)
             self.SetCommandAndParameters(cmd);
@@ -118,19 +108,9 @@ public static partial class ExtensionMethods
             return await self.ExecuteNonQueryAsync();
     }
 
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string? cmdtext)
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext)
     {
         return await ExecuteReaderAsync(self, true, cmdtext, null).ConfigureAwait(false);
-    }
-
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog)
-    {
-        return await ExecuteReaderAsync(self, writeLog, null, null).ConfigureAwait(false);
-    }
-
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmdtext)
-    {
-        return await ExecuteReaderAsync(self, writeLog, cmdtext, null).ConfigureAwait(false);
     }
 
     public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
@@ -138,7 +118,7 @@ public static partial class ExtensionMethods
         return await ExecuteReaderAsync(self, true, cmdtext, values).ConfigureAwait(false);
     }
 
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmdtext, Dictionary<string, object?>? values)
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmdtext = null, Dictionary<string, object?>? values = null)
     {
         if (cmdtext != null)
             self.SetCommandAndParameters(cmdtext);
@@ -206,7 +186,12 @@ public static partial class ExtensionMethods
             return await self.ExecuteScalarAsync();
     }
 
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, long defaultvalue = -1)
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, long defaultvalue = -1)
+    {
+        return await ExecuteScalarInt64Async(self, true, null, null, defaultvalue).ConfigureAwait(false);
+    }
+
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, long defaultvalue)
     {
         return await ExecuteScalarInt64Async(self, writeLog, null, null, defaultvalue);
     }

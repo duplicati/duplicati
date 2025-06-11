@@ -719,7 +719,7 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Fullhash", filehash)
                 .SetParameterValue("@Length", size)
-                .ExecuteScalarInt64Async(m_logQueries, null, -1);
+                .ExecuteScalarInt64Async(m_logQueries, -1);
 
             if (blocksetid != -1)
                 return (false, blocksetid); //Found it
@@ -820,7 +820,7 @@ namespace Duplicati.Library.Main.Database
                     .SetTransaction(m_rtr)
                     .SetParameterValue("@Hash", filehash)
                     .SetParameterValue("@Size", size)
-                    .ExecuteScalarInt64Async(m_logQueries, null, -1);
+                    .ExecuteScalarInt64Async(m_logQueries, -1);
                 return (metadataid != -1, metadataid);
             }
 
@@ -961,7 +961,7 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Path", path)
                     .SetParameterValue("@FilesetId", filesetid);
 
-                using (var rd = await m_selectfilelastmodifiedCommand.ExecuteReaderAsync(m_logQueries, null))
+                using (var rd = await m_selectfilelastmodifiedCommand.ExecuteReaderAsync(m_logQueries))
                     if (await rd.ReadAsync())
                     {
                         length = -1;
