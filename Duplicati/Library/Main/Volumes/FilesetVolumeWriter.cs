@@ -82,17 +82,17 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
-        public void AddFile(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
+        public async Task AddFile(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
         {
-            AddFileEntry(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes);
+            await AddFileEntry(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes);
         }
 
-        public void AddAlternateStream(string name, string filehash, long size, DateTime lastmodified, string metahash, string metablockhash, long metasize, string blockhash, long blocksize, IEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
+        public async Task AddAlternateStream(string name, string filehash, long size, DateTime lastmodified, string metahash, string metablockhash, long metasize, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
         {
-            AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes);
+            await AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes);
         }
 
-        private void AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
+        private async Task AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
         {
             m_filecount++;
             m_writer.WriteStartObject();
@@ -112,14 +112,14 @@ namespace Duplicati.Library.Main.Volumes
             if (blocklisthashes != null)
             {
                 //Slightly awkward, but we avoid writing if there are no entries
-                using (var en = blocklisthashes.GetEnumerator())
+                await using (var en = blocklisthashes.GetAsyncEnumerator())
                 {
-                    if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
+                    if (await en.MoveNextAsync() && !string.IsNullOrEmpty(en.Current))
                     {
                         m_writer.WritePropertyName("blocklists");
                         m_writer.WriteStartArray();
                         m_writer.WriteValue(en.Current);
-                        while (en.MoveNext())
+                        while (await en.MoveNextAsync())
                             m_writer.WriteValue(en.Current);
                         m_writer.WriteEndArray();
                     }

@@ -33,6 +33,7 @@ using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
 using Microsoft.Data.Sqlite;
+using System.Threading;
 
 // Expose internal classes to UnitTests, so that Database classes can be tested
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
@@ -1554,10 +1555,9 @@ namespace Duplicati.Library.Main.Database
                 yield return new Block(rd.ConvertValueToString(0) ?? throw new Exception("Hash is null"), rd.ConvertValueToInt64(1));
         }
 
-        // TODO: Replace this with an enumerable method
-        private class BlocklistHashEnumerable : IEnumerable<string>
+        private class BlocklistHashEnumerable : IAsyncEnumerable<string>
         {
-            private class BlocklistHashEnumerator : IEnumerator<string>
+            private class BlocklistHashEnumerator : IAsyncEnumerator<string>
             {
                 private readonly SqliteDataReader m_reader;
                 private readonly BlocklistHashEnumerable m_parent;
@@ -1573,13 +1573,12 @@ namespace Duplicati.Library.Main.Database
 
                 public string Current { get { return m_current!; } }
 
-                public void Dispose()
-                {
-                }
+                public void Dispose() { }
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+                public async ValueTask DisposeAsync() { }
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 
-                object System.Collections.IEnumerator.Current { get { return Current; } }
-
-                public bool MoveNext()
+                public async ValueTask<bool> MoveNextAsync()
                 {
                     m_first = false;
 
@@ -1594,7 +1593,7 @@ namespace Duplicati.Library.Main.Database
                         if (m_current == null)
                             return false;
 
-                        if (!m_reader.ReadAsync().Await())
+                        if (!await m_reader.ReadAsync())
                         {
                             m_current = null;
                             m_parent.MoreData = false;
@@ -1632,12 +1631,12 @@ namespace Duplicati.Library.Main.Database
 
             public bool MoreData { get; protected set; }
 
-            public IEnumerator<string> GetEnumerator()
+            public IAsyncEnumerator<string> GetEnumerator()
             {
                 return new BlocklistHashEnumerator(this, m_reader);
             }
 
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+            IAsyncEnumerator<string> IAsyncEnumerable<string>.GetAsyncEnumerator(CancellationToken token)
             {
                 return GetEnumerator();
             }
@@ -1833,7 +1832,7 @@ namespace Duplicati.Library.Main.Database
                         if (metablockhash == metahash)
                             metablockhash = null;
 
-                        filesetvolume.AddFile(path, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blrd, string.IsNullOrWhiteSpace(metablocklisthash) ? null : new string[] { metablocklisthash });
+                        await filesetvolume.AddFile(path, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blrd, string.IsNullOrWhiteSpace(metablocklisthash) ? null : new string[] { metablocklisthash });
                         if (blrd == null)
                             more = await rd.ReadAsync();
                         else
