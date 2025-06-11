@@ -123,11 +123,15 @@ public static partial class ExtensionMethods
         return await ExecuteReaderAsync(self, true, cmdtext, null).ConfigureAwait(false);
     }
 
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog)
+    {
+        return await ExecuteReaderAsync(self, writeLog, null, null).ConfigureAwait(false);
+    }
+
     public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmdtext)
     {
         return await ExecuteReaderAsync(self, writeLog, cmdtext, null).ConfigureAwait(false);
     }
-
 
     public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
     {
