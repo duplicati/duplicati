@@ -125,46 +125,26 @@ public static partial class ExtensionMethods
             return await self.ExecuteNonQueryAsync();
     }
 
-    //public static SqliteDataReader ExecuteReader(this SqliteCommand self, string cmd)
-    //{
-    //    return ExecuteReader(self, true, cmd);
-    //}
-
-    //public static SqliteDataReader ExecuteReader(this SqliteCommand self, bool writeLog, string? cmd)
-    //{
-    //    if (cmd != null)
-    //        self.SetCommandAndParameters(cmd);
-    //    using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReader", string.Format("ExecuteReader: {0}", self.GetPrintableCommandText())) : null)
-    //        return self.ExecuteReader();
-    //}
-
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmd)
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string? cmdtext)
     {
-        if (cmd != null)
-            self.SetCommandAndParameters(cmd);
-
-        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReaderAsync", string.Format("ExecuteReaderAsync: {0}", self.GetPrintableCommandText())) : null)
-            return await self.ExecuteReaderAsync();
+        return await ExecuteReaderAsync(self, true, cmdtext, null).ConfigureAwait(false);
     }
 
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext)
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmdtext)
     {
-        self.SetCommandAndParameters(cmdtext);
-
-        // TODO "late format string-ing"
-        using (new Logging.Timer(LOGTAG, "ExecuteReaderAsync", $"ExecuteReaderAsync: {self.CommandText}"))
-            return await self.ExecuteReaderAsync().ConfigureAwait(false);
+        return await ExecuteReaderAsync(self, writeLog, cmdtext, null).ConfigureAwait(false);
     }
 
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmd, Dictionary<string, object?>? values)
+
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
     {
-        return await ExecuteReaderAsync(self, true, cmd, values);
+        return await ExecuteReaderAsync(self, true, cmdtext, values).ConfigureAwait(false);
     }
 
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmd, Dictionary<string, object?>? values)
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmdtext, Dictionary<string, object?>? values)
     {
-        if (cmd != null)
-            self.SetCommandAndParameters(cmd);
+        if (cmdtext != null)
+            self.SetCommandAndParameters(cmdtext);
 
         if (values != null && values.Count > 0)
             self.SetParameterValues(values);
