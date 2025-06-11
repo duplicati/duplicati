@@ -222,21 +222,7 @@ public static partial class ExtensionMethods
         return defaultvalue;
     }
 
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, long defaultvalue = -1)
-    {
-        return await ExecuteScalarInt64Async(self, true, defaultvalue).ConfigureAwait(false);
-
-    }
-
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string cmdtext, long defaultvalue = -1)
-    {
-        self.SetCommandAndParameters(cmdtext);
-
-        return await ExecuteScalarInt64Async(self, defaultvalue).ConfigureAwait(false);
-    }
-
-    //[Obsolete("Technically this method isn't async, but it is used in an async context and to differntiate this with the IDb version. ")]
-    public static SqliteCommand ExpandInClauseParameterAsync(this SqliteCommand cmd, string originalParamName, IEnumerable<object> values)
+    public static SqliteCommand ExpandInClauseParameterMssqlite(this SqliteCommand cmd, string originalParamName, IEnumerable<object> values)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
             throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));
@@ -264,13 +250,13 @@ public static partial class ExtensionMethods
         return cmd;
     }
 
-    internal static async Task<SqliteCommand> ExpandInClauseParameterAsync(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values)
+    internal static async Task<SqliteCommand> ExpandInClauseParameterMssqliteAsync(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
             throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));
 
         if (!values.IsTableCreated)
-            return ExpandInClauseParameterAsync(cmd, originalParamName, values.Values);
+            return ExpandInClauseParameterMssqlite(cmd, originalParamName, values.Values);
 
         // We have a temporary table, so we need to replace the parameter with the table name
         cmd.CommandText = cmd.CommandText.Replace(originalParamName, await values.GetInClause(), StringComparison.OrdinalIgnoreCase);

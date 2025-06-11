@@ -275,7 +275,7 @@ namespace Duplicati.Library.Main.Database
                     )
             ")
                 .SetTransaction(m_rtr)
-                .ExpandInClauseParameterAsync("@BlockVolumeIds", blockVolumeIds.Cast<object>())
+                .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds.Cast<object>())
                 .SetParameterValue("@EmptyHash", emptyHash)
                 .SetParameterValue("@EmptyHashSize", emptyHashSize);
 
@@ -298,7 +298,7 @@ namespace Duplicati.Library.Main.Database
                                 AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
                         )
                 ")
-                  .ExpandInClauseParameterAsync("@BlockVolumeIds", blockVolumeIds.Cast<object>())
+                  .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds.Cast<object>())
                   .SetParameterValue("@EmptyHashSize", 0)
                   .ExecuteScalarInt64Async(-1);
 
@@ -319,7 +319,7 @@ namespace Duplicati.Library.Main.Database
                     ORDER BY ""Blockset"".""Length"" ASC
                     LIMIT 1
                 ")
-                  .ExpandInClauseParameterAsync("@BlockVolumeIds", blockVolumeIds.Cast<object>())
+                  .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds.Cast<object>())
                   .ExecuteScalarInt64Async(-1);
 
             return res;
@@ -383,7 +383,7 @@ namespace Duplicati.Library.Main.Database
                         FROM ""RemoteVolume""
                         WHERE ""Name"" IN (@Names)
                     ")
-                      .ExpandInClauseParameterAsync("@Names", tmptable))
+                      .ExpandInClauseParameterMssqliteAsync("@Names", tmptable))
                       .ExecuteNonQueryAsync();
 
                 var volIdsSubQuery = $@"

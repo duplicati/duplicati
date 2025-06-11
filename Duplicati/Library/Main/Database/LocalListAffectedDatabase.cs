@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main.Database
             ";
 
             using (var tmptable = await TemporaryDbValueList.CreateAsync(this, items))
-            using (var cmd = await m_connection.CreateCommand(sql).SetTransaction(m_rtr).ExpandInClauseParameterAsync("@Names", tmptable))
+            using (var cmd = await m_connection.CreateCommand(sql).SetTransaction(m_rtr).ExpandInClauseParameterMssqliteAsync("@Names", tmptable))
             using (var rd = await cmd.ExecuteReaderAsync())
                 while (await rd.ReadAsync())
                 {
@@ -181,7 +181,7 @@ namespace Duplicati.Library.Main.Database
             ";
 
             using (var tmptable = await TemporaryDbValueList.CreateAsync(this, items))
-            using (var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterAsync("@Names", tmptable))
+            using (var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterMssqliteAsync("@Names", tmptable))
             using (var rd = await cmd.ExecuteReaderAsync())
                 while (await rd.ReadAsync())
                     yield return new ListResultFile()
@@ -220,7 +220,7 @@ namespace Duplicati.Library.Main.Database
                 ";
 
                 cmd.SetCommandAndParameters(sql)
-                    .ExpandInClauseParameter("@Paths", items.ToArray());
+                    .ExpandInClauseParameterMssqlite("@Paths", items.ToArray());
                 foreach ((var x, var i) in items.Select((x, i) => (x, i)))
                     cmd.SetParameterValue($"@Message{i}", "%" + x + "%");
 
@@ -301,7 +301,7 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
-            using (var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameterAsync("@Names", items.ToArray()))
+            using (var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameterMssqlite("@Names", items.ToArray()))
             using (var rd = await cmd.ExecuteReaderAsync())
                 while (await rd.ReadAsync())
                     yield return new ListResultRemoteVolume()

@@ -321,7 +321,7 @@ namespace Duplicati.Library.Main.Database
                             ""Hash"",
                             ""Size""
                     ")
-                        .ExpandInClauseParameterAsync("@States", [
+                        .ExpandInClauseParameterMssqlite("@States", [
                             RemoteVolumeState.Deleted,
                             RemoteVolumeState.Deleting
                         ])
@@ -1244,7 +1244,7 @@ namespace Duplicati.Library.Main.Database
                                 )
                         ")
                         .SetParameterValue("@FilesetId", filesetid)
-                        .ExpandInClauseParameterAsync("@Paths", tmplist))
+                        .ExpandInClauseParameterMssqliteAsync("@Paths", tmplist))
                         .ExecuteNonQueryAsync(m_logQueries);
                 }
 
@@ -1415,7 +1415,7 @@ namespace Duplicati.Library.Main.Database
                         AND ""State"" IN (@States)
                 ")
                 .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
-                .ExpandInClauseParameterAsync("@States", [
+                .ExpandInClauseParameterMssqlite("@States", [
                     RemoteVolumeState.Uploaded.ToString(),
                     RemoteVolumeState.Verified.ToString()
                 ]);

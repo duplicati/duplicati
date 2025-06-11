@@ -519,7 +519,7 @@ namespace Duplicati.Library.Main.Database
             ");
             cmd.SetTransaction(m_rtr);
             using var tmptable = await TemporaryDbValueList.CreateAsync(this, files);
-            await cmd.ExpandInClauseParameterAsync("@Name", tmptable);
+            await cmd.ExpandInClauseParameterMssqliteAsync("@Name", tmptable);
 
             using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())
@@ -660,7 +660,7 @@ namespace Duplicati.Library.Main.Database
                 FROM ""RemoteVolume""
                 WHERE ""Name"" IN (@VolumeNames)
             ")
-                .ExpandInClauseParameterAsync("@VolumeNames", [.. names])
+                .ExpandInClauseParameterMssqlite("@VolumeNames", [.. names])
                 .ExecuteNonQueryAsync();
 
             var volIdsSubQuery = $@"SELECT ""ID"" FROM ""{volidstable}"" ";
@@ -859,7 +859,7 @@ namespace Duplicati.Library.Main.Database
                     AND ""State"" IN (@AllowedStates)
             ")
                 .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
-                .ExpandInClauseParameterAsync("@AllowedStates", [
+                .ExpandInClauseParameterMssqlite("@AllowedStates", [
                         RemoteVolumeState.Uploading.ToString(),
                         RemoteVolumeState.Uploaded.ToString(),
                         RemoteVolumeState.Verified.ToString(),

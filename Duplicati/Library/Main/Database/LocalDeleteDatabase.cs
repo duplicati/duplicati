@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Database
                         DELETE FROM ""Fileset""
                         WHERE ""Timestamp"" IN (@Timestamps)
                     ")
-                        .ExpandInClauseParameterAsync("@Timestamps", tempTable))
+                        .ExpandInClauseParameterMssqliteAsync("@Timestamps", tempTable))
                         .ExecuteNonQueryAsync();
 
                 if (deleted != toDelete.Length)
@@ -204,7 +204,7 @@ namespace Duplicati.Library.Main.Database
                 ")
                     .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
                     .SetParameterValue("@CurrentType", RemoteVolumeType.Files.ToString())
-                    .ExpandInClauseParameterAsync("@AllowedStates", [
+                    .ExpandInClauseParameterMssqlite("@AllowedStates", [
                         RemoteVolumeState.Uploaded.ToString(),
                         RemoteVolumeState.Verified.ToString(),
                         RemoteVolumeState.Temporary.ToString(),
@@ -427,7 +427,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     await cmd.SetCommandAndParameters(createtable)
                         .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
-                        .ExpandInClauseParameterAsync("@AllowedStates", [
+                        .ExpandInClauseParameterMssqlite("@AllowedStates", [
                             RemoteVolumeState.Uploaded.ToString(),
                             RemoteVolumeState.Verified.ToString()
                         ])
@@ -714,7 +714,7 @@ namespace Duplicati.Library.Main.Database
                                 )
                                 GROUP BY ""BlockID""
                         ")
-                            .ExpandInClauseParameterAsync("@VolumeIds", tempTable))
+                            .ExpandInClauseParameterMssqliteAsync("@VolumeIds", tempTable))
                             .ExecuteNonQueryAsync();
 
                     var targetCount = await cmd.ExecuteScalarInt64Async($@"

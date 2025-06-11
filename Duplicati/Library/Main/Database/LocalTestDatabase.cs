@@ -154,7 +154,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     // Select any broken items
                     cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" IN (@States)) AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0) AND (""ArchiveTime"" = 0)")
-                    .ExpandInClauseParameter("@States", [RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()]);
+                    .ExpandInClauseParameterMssqlite("@States", [RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()]);
 
                     using (var rd = cmd.ExecuteReader())
                         while (rd.Read())
@@ -197,7 +197,7 @@ namespace Duplicati.Library.Main.Database
                         AND ""ArchiveTime"" = 0
                 ")
                     .SetParameterValue("@Type", RemoteVolumeType.Index.ToString())
-                    .ExpandInClauseParameter("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
+                    .ExpandInClauseParameterMssqlite("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
                 using (var rd = await cmd.ExecuteReaderAsync())
                     while (await rd.ReadAsync())
@@ -226,7 +226,7 @@ namespace Duplicati.Library.Main.Database
                         AND ""ArchiveTime"" = 0
                 ")
                     .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
-                    .ExpandInClauseParameter("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
+                    .ExpandInClauseParameterMssqlite("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
                 using (var rd = await cmd.ExecuteReaderAsync())
                     while (await rd.ReadAsync())
