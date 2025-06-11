@@ -147,9 +147,7 @@ namespace Duplicati.Library.SQLiteHelper
                 return con;
 
             using (var cmd = con.CreateCommand())
-            using (var transaction = con.BeginTransaction(deferred: true))
             {
-                cmd.Transaction = transaction;
                 foreach (var opt in opts.Split([';'], StringSplitOptions.RemoveEmptyEntries))
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
@@ -163,7 +161,6 @@ namespace Duplicati.Library.SQLiteHelper
                         Logging.Log.WriteWarningMessage(LOGTAG, "CustomSQLiteOption", ex, @"Error setting custom SQLite option '{0}'.", opt);
                     }
                 }
-                await transaction.CommitAsync();
             }
             return con;
         }
