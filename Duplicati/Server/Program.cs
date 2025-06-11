@@ -761,7 +761,7 @@ namespace Duplicati.Server
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(databasePath));
 
                 // Attempt to open the database, removing any encryption present
-                Library.SQLiteHelper.SQLiteLoader.OpenDatabase(con, databasePath, Library.SQLiteHelper.SQLiteRC4Decrypter.GetEncryptionPassword(commandlineOptions));
+                Library.SQLiteHelper.SQLiteLoader.OpenDatabaseAsync(con, databasePath, Library.SQLiteHelper.SQLiteRC4Decrypter.GetEncryptionPassword(commandlineOptions)).Await();
 
                 Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, databasePath, typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
             }

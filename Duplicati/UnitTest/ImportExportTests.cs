@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Server;
@@ -123,7 +124,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("ImportExport")]
-        public void RoundTrip()
+        public async Task RoundTrip()
         {
             var metadata = new Dictionary<string, string> { { "SourceFilesCount", "1" } };
             var advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };
@@ -133,7 +134,7 @@ namespace Duplicati.UnitTest
                 File.Delete(dbpath);
 
             var con = SQLiteLoader.LoadConnection();
-            SQLiteLoader.OpenDatabase(con, dbpath, null);
+            await SQLiteLoader.OpenDatabaseAsync(con, dbpath, null);
             DatabaseUpgrader.UpgradeDatabase(con, dbpath, typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
 
             using (var connection = new Connection(con, true, null, this.serverDatafolder, null))
