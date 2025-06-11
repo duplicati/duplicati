@@ -293,6 +293,7 @@ public static class WebServerLoader
             }
             catch (Exception ex) when
                 (ex is System.Net.Sockets.SocketException { SocketErrorCode: System.Net.Sockets.SocketError.AddressAlreadyInUse }
+                 || ex is System.Net.Sockets.SocketException { SocketErrorCode: System.Net.Sockets.SocketError.AccessDenied }
                 || ex is System.IO.IOException { InnerException: AddressInUseException })
             { }
 
