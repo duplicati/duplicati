@@ -35,7 +35,7 @@ internal static class RecreateMissingIndexFiles
 	{
 		if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
 		{
-			foreach (var blockfile in await database.GetMissingIndexFilesAsync().ConfigureAwait(false))
+			await foreach (var blockfile in await database.GetMissingIndexFilesAsync().ConfigureAwait(false))
 			{
 				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
 					return;

@@ -257,10 +257,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(async () => await m_database.UpdateFullBackupStateInFileset(filesetid, true));
         }
 
-        // TODO: Make IAsyncEnumerable or get rid of the SingleRunner setup
-        public Task<string[]> GetMissingIndexFilesAsync()
+        public Task<IAsyncEnumerable<string>> GetMissingIndexFilesAsync()
         {
-            return RunOnMain(async () => await m_database.GetMissingIndexFiles().ToArrayAsync());
+            return RunOnMain(() => m_database.GetMissingIndexFiles());
         }
 
         public Task UpdateChangeStatisticsAsync(BackupResults result)
