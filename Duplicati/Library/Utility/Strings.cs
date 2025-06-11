@@ -102,6 +102,8 @@ namespace Duplicati.Library.Utility.Strings
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
         public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string MissingAuthID(string url) { return LC.L(@"You need an AuthID to use this destination. You can get it from: {0}", url); }
+        public static string OauthurlLong { get { return LC.L(@"Duplicati uses an external server to support the OAuth authentication flow. If you have set up your own Duplicati OAuth server, you can supply the refresh URL."); } }
+        public static string OauthurlShort { get { return LC.L(@"Alternate OAuth URL"); } }
 
     }
 

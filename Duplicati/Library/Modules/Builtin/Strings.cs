@@ -39,8 +39,6 @@ namespace Duplicati.Library.Modules.Builtin.Strings
     {
         public static string Description { get { return LC.L(@"This module exposes a number of common properties that can be used to change the way backends are configured"); } }
         public static string DisplayName { get { return LC.L(@"Configure backend options"); } }
-        public static string OauthurlLong { get { return LC.L(@"Duplicati uses an external server to support the OAuth authentication flow. If you have set up your own Duplicati OAuth server, you can supply the refresh URL."); } }
-        public static string OauthurlShort { get { return LC.L(@"Alternate OAuth URL"); } }
     }
     internal static class HyperVOptions
     {
