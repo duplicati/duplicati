@@ -848,7 +848,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@BlocksetId", blocksetid)
                 .ExecuteScalarInt64Async(m_logQueries);
 
-            m_rtr.Commit();
+            await m_rtr.CommitAsync();
 
             return (true, metadataid);
         }

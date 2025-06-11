@@ -64,20 +64,6 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     public SqliteTransaction Transaction => m_disposed ? throw new InvalidOperationException("Transaction is disposed") : m_transaction;
 
     /// <summary>
-    /// Commits the current transaction and optionally restarts it.
-    /// </summary>
-    /// <remarks>
-    /// Calls the Async version of this method and awaits it.
-    /// </remarks>
-    /// <param name="message">The log message to use.</param>
-    /// <param name="restart">True if the transaction should be restarted.</param>
-    /// <exception cref="InvalidOperationException">If the transaction is already Disposed.</exception>
-    public void Commit(string? message = null, bool restart = true)
-    {
-        CommitAsync(message, restart).Await();
-    }
-
-    /// <summary>
     /// Async version of Commit: <inheritdoc cref="Commit(string?, bool)"/>
     /// </summary>
     /// <param name="message">The log message to use.</param>
