@@ -152,7 +152,9 @@ partial class BackendManager
             if (volsRemoved.Count > 0)
             {
                 await db.RemoveRemoteVolumes(volsRemoved);
-                // TODO this commit is to mimic the old behavior, in which RemoveRemoteVolumes started a new transaction, if none was passed down.
+                // This commit is to mimic the pre Microsoft.Data.Sqlite backend
+                // behavior, in which RemoveRemoteVolumes started a new
+                // transaction, if none was passed down.
                 await db.Transaction.CommitAsync();
             }
 

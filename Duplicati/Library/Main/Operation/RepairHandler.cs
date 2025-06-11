@@ -504,7 +504,11 @@ namespace Duplicati.Library.Main.Operation
                                     Logging.Log.WriteInformationMessage(LOGTAG, "DeletingEmptyIndexFile", "Deleting empty index file {0}", emptyIndexFile.Name);
                                     await backendManager.DeleteAsync(emptyIndexFile.Name, emptyIndexFile.Size, false, cancellationToken).ConfigureAwait(false);
                                     await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
-                                    // TODO this commit mimics the old way of not passing down a transaction to FlushPendingMessagesAsync, but maybe it is not needed anymore.
+                                    // This commit mimics the pre
+                                    // Microsoft.Data.Sqlite backend way of not
+                                    // passing down a transaction to
+                                    // FlushPendingMessagesAsync, but maybe it
+                                    // is not needed anymore.
                                     await db.Transaction.CommitAsync();
                                 }
                             }
@@ -566,9 +570,6 @@ namespace Duplicati.Library.Main.Operation
             volumeWriter.CreateFilesetFile(isPrevFull);
             var newFilesetID = await db.CreateFileset(volumeWriter.VolumeID, filesetTime);
             await db.UpdateFullBackupStateInFileset(newFilesetID, isPrevFull);
-            // TODO this commit mimics the old way of not passing down a transaction to UpdateFullBackupStateInFileset, but maybe it is not needed anymore.
-            //await db.Transaction.CommitAsync();
-            // TODO The above only mimics it to some degree -the original implementation makes a new transaciton alongside the global reusable transaction, which means that this particular SQL statement is comitted to the database. As such, if this new implementation commits the global reusable transaction, all of the statements are comitted - which they shouldn't be! Instead, only whatever that function is trying to do should be committed. This happens at other points as well - all of which should be double checked wrt. whether they should be using the global one, or a new one. This is not supported in the new engine.
 
             await db.LinkFilesetToVolume(newFilesetID, volumeWriter.VolumeID);
             await db.MoveFilesFromFileset(newFilesetID, prevFilesetId);
