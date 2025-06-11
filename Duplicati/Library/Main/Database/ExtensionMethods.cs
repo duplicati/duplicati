@@ -36,8 +36,6 @@ namespace Duplicati.Library.Main.Database;
 /// </summary>
 public static partial class ExtensionMethods
 {
-    // TODO parameter types and sizes
-
     public static long ConvertValueToInt64(this SqliteDataReader reader, int index, long defaultvalue = -1)
     {
         try
@@ -106,7 +104,6 @@ public static partial class ExtensionMethods
     {
         self.SetCommandAndParameters(cmdtext);
 
-        // TODO "late format string-ing"
         using (new Logging.Timer(LOGTAG, "ExecuteNonQueryAsync", $"ExecuteNonQueryAsync: {self.CommandText}"))
             return await self.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
@@ -400,7 +397,9 @@ public static partial class ExtensionMethods
         return self;
     }
 
-    // TODO commennt from here on
+    // TODO At some point, when the entire codebase is migrated to
+    // Microsoft.Data.Sqlite, the extension methods using IDb* should be
+    // removed. Currently, they're kept for compatibility.
 
     public static IDbCommand AddNamedParameter(this IDbCommand self, string name, object? value = null)
     {
@@ -933,5 +932,5 @@ public static partial class ExtensionMethods
         cmd.CommandText = cmd.CommandText.Replace(originalParamName, values.GetInClause().Await(), StringComparison.OrdinalIgnoreCase);
         return cmd;
     }
-    // TODO comment to here
+
 }
