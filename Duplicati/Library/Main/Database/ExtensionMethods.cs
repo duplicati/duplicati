@@ -88,24 +88,17 @@ public static partial class ExtensionMethods
 
     public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog)
     {
-        return await ExecuteNonQueryAsync(self, writeLog, null);
+        return await ExecuteNonQueryAsync(self, writeLog, null, null);
+    }
+
+    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string? cmdtext)
+    {
+        return await ExecuteNonQueryAsync(self, true, cmdtext, null);
     }
 
     public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, string? cmd)
     {
-        if (cmd != null)
-            self.SetCommandAndParameters(cmd);
-
-        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteNonQueryAsync", string.Format("ExecuteNonQueryAsync: {0}", self.GetPrintableCommandText())) : null)
-            return await self.ExecuteNonQueryAsync();
-    }
-
-    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string cmdtext)
-    {
-        self.SetCommandAndParameters(cmdtext);
-
-        using (new Logging.Timer(LOGTAG, "ExecuteNonQueryAsync", $"ExecuteNonQueryAsync: {self.CommandText}"))
-            return await self.ExecuteNonQueryAsync().ConfigureAwait(false);
+        return await ExecuteNonQueryAsync(self, writeLog, cmd, null);
     }
 
     public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string cmd, Dictionary<string, object?> values)
@@ -113,7 +106,7 @@ public static partial class ExtensionMethods
         return await ExecuteNonQueryAsync(self, true, cmd, values);
     }
 
-    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, string? cmd, Dictionary<string, object?> values)
+    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, string? cmd, Dictionary<string, object?>? values)
     {
         if (cmd != null)
             self.SetCommandAndParameters(cmd);
