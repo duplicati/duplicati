@@ -42,11 +42,6 @@ namespace Duplicati.Library.SQLiteHelper
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
 
-        public static void OpenDatabase(Microsoft.Data.Sqlite.SqliteConnection con, string databasePath, string? decryptionPassword)
-        {
-            OpenDatabaseAsync(con, databasePath, decryptionPassword).Await();
-        }
-
         /// <summary>
         /// Helper method with logic to handle opening a database in possibly encrypted format
         /// </summary>
@@ -115,11 +110,6 @@ namespace Duplicati.Library.SQLiteHelper
             }
 
             return con ?? throw new InvalidOperationException("Failed to load connection");
-        }
-
-        public static Microsoft.Data.Sqlite.SqliteConnection ApplyCustomPragmas(Microsoft.Data.Sqlite.SqliteConnection con, long pagecachesize)
-        {
-            return ApplyCustomPragmasAsync(con, pagecachesize).Await();
         }
 
         /// <summary>
@@ -244,11 +234,6 @@ namespace Duplicati.Library.SQLiteHelper
             Environment.SetEnvironmentVariable("TEMP", Utility.TempFolder.SystemTempPath);
         }
 
-        private static void DisposeConnection(Microsoft.Data.Sqlite.SqliteConnection? con)
-        {
-            DisposeConnectionAsync(con).Await();
-        }
-
         /// <summary>
         /// Wrapper to dispose the SQLite connection
         /// </summary>
@@ -260,11 +245,6 @@ namespace Duplicati.Library.SQLiteHelper
                 catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "ConnectionDisposeError", ex, "Failed to dispose connection"); }
         }
 
-        private static void OpenSQLiteFile(Microsoft.Data.Sqlite.SqliteConnection con, string path)
-        {
-            OpenSQLiteFileAsync(con, path).Await();
-        }
-
         /// <summary>
         /// Opens the SQLite file in the given connection, creating the file if required
         /// </summary>
@@ -274,23 +254,11 @@ namespace Duplicati.Library.SQLiteHelper
         {
             con.ConnectionString = $"Data Source={path};Pooling=false";
             await con.OpenAsync();
-            // TODO legacy configuration?
-            //if (con is Microsoft.Data.Sqlite.SqliteConnection sqlitecon && !OperatingSystem.IsMacOS())
-            //{
-            //    // These configuration options crash on MacOS (arm64), but the other platforms should be enough to detect incorrect SQL
-            //    sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DDL, false);
-            //    sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DML, false);
-            //}
 
             // Make the file only accessible by the current user, unless opting out
             if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
                 try { SystemIO.IO_OS.FileSetPermissionUserRWOnly(path); }
                 catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "SQLiteFilePermissionError", ex, "Failed to set permissions on SQLite file '{0}'", path); }
-        }
-
-        private static void TestSQLiteFile(Microsoft.Data.Sqlite.SqliteConnection con)
-        {
-            TestSQLiteFileAsync(con).Await();
         }
 
         /// <summary>
