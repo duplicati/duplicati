@@ -145,8 +145,9 @@ namespace Duplicati.Library.Main.Database
                 using (new Logging.Timer(LOGTAG, "CommitUpdateBugReport", "CommitUpdateBugReport"))
                     await m_rtr.CommitAsync();
 
-                // TODO maybe this needs a transaction.
+                cmd.SetTransaction(m_rtr);
                 await cmd.ExecuteNonQueryAsync("VACUUM");
+                await m_rtr.CommitAsync();
             }
         }
     }
