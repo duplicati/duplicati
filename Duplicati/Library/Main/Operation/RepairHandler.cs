@@ -693,14 +693,19 @@ namespace Duplicati.Library.Main.Operation
             /// <param name="options">The options for the current operation</param>
             /// <param name="db">The database to use for registering a volume in progress</param>
             /// <param name="transaction">The transaction to use for the operation</param>
-            public InProgressDblockVolumes(Options options, LocalDatabase db)
+            private InProgressDblockVolumes(Options options, LocalDatabase db)
             {
                 m_database = db;
                 m_options = options;
                 m_maxVolumeSize = options.VolumeSize - m_options.Blocksize;
                 m_activeWriter = new BlockVolumeWriter(options);
-                // TODO this constructor should be converted to a factory method
-                m_activeWriter.VolumeID = m_database.RegisterRemoteVolume(m_activeWriter.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, -1, TimeSpan.Zero).Await();
+            }
+
+            public static async Task<InProgressDblockVolumes> CreateAsync(Options options, LocalDatabase db)
+            {
+                var ipdv = new InProgressDblockVolumes(options, db);
+                ipdv.m_activeWriter.VolumeID = await db.RegisterRemoteVolume(ipdv.m_activeWriter.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, -1, TimeSpan.Zero);
+                return ipdv;
             }
 
             /// <summary>
@@ -773,7 +778,7 @@ namespace Duplicati.Library.Main.Operation
         /// <returns>>A task representing the asynchronous operation</returns>
         private async Task RunRepairDblocks(IBackendManager backendManager, LocalRepairDatabase db, IEnumerable<RemoteVolumeEntry> missingDblockFiles, Action incrementProgress, CancellationToken cancellationToken)
         {
-            var currentVolume = new InProgressDblockVolumes(m_options, db);
+            var currentVolume = await InProgressDblockVolumes.CreateAsync(m_options, db);
 
             foreach (var n in missingDblockFiles)
             {
