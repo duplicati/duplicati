@@ -181,42 +181,30 @@ public static partial class ExtensionMethods
 
     public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self)
     {
-        return await self.ExecuteScalarAsync().ConfigureAwait(false);
-    }
-
-    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, bool writeLog, string? cmd)
-    {
-        if (cmd != null)
-            self.SetCommandAndParameters(cmd);
-
-        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarAsync", string.Format("ExecuteScalarAsync: {0}", self.GetPrintableCommandText())) : null)
-            return await self.ExecuteScalarAsync();
+        return await self.ExecuteScalarAsync(true, null, null).ConfigureAwait(false);
     }
 
     public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext)
     {
-        self.SetCommandAndParameters(cmdtext);
-
-        return await ExecuteScalarAsync(self).ConfigureAwait(false);
+        return await self.ExecuteScalarAsync(true, cmdtext, null).ConfigureAwait(false);
     }
 
-    //public static long ExecuteScalarInt64(this SqliteCommand self, long defaultvalue = -1)
-    //{
-    //    return ExecuteScalarInt64(self, true, null, defaultvalue);
-    //}
+    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
+    {
+        return await self.ExecuteScalarAsync(true, cmdtext, values).ConfigureAwait(false);
+    }
 
-    //public static long ExecuteScalarInt64(this SqliteCommand self, bool writeLog, string? cmd, long defaultvalue)
-    //{
-    //    if (cmd != null)
-    //        self.SetCommandAndParameters(cmd);
-    //
-    //    using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarInt64", string.Format("ExecuteScalarInt64: {0}", self.GetPrintableCommandText())) : null)
-    //    using (var rd = self.ExecuteReader())
-    //        if (rd.Read())
-    //            return ConvertValueToInt64(rd, 0, defaultvalue);
-    //
-    //    return defaultvalue;
-    //}
+    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, bool writeLog, string? cmd = null, Dictionary<string, object?>? values = null)
+    {
+        if (cmd != null)
+            self.SetCommandAndParameters(cmd);
+
+        if (values != null && values.Count > 0)
+            self.SetParameterValues(values);
+
+        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarAsync", string.Format("ExecuteScalarAsync: {0}", self.GetPrintableCommandText())) : null)
+            return await self.ExecuteScalarAsync();
+    }
 
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, long defaultvalue = -1)
     {
