@@ -35,7 +35,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
     // This class is instantiated dynamically in the BackendLoader.
     public class GoogleCloudStorage : IBackend, IStreamingBackend
     {
-        private static readonly string TOKEN_URL = OAuthHelperHttpClient.OAUTH_LOGIN_URL("gcs");
+        private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("gcs", null);
         private const string PROJECT_OPTION = "gcs-project";
 
         private const string LOCATION_OPTION = "gcs-location";
@@ -77,7 +77,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             m_location = options.GetValueOrDefault(LOCATION_OPTION);
             m_storage_class = options.GetValueOrDefault(STORAGECLASS_OPTION);
 
-            m_oauth = new OAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey);
+            m_oauth = new OAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl);
             m_oauth.AutoAuthHeader = true;
         }
 

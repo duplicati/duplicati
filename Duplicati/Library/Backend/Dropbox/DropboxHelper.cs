@@ -36,14 +36,14 @@ namespace Duplicati.Library.Backend
 
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
-        public DropboxHelper(string accessToken, TimeoutOptionsHelper.Timeouts timeouts)
-            : base(accessToken, "dropbox")
+        public DropboxHelper(AuthIdOptionsHelper.AuthIdOptions authId, TimeoutOptionsHelper.Timeouts timeouts)
+            : base(authId.AuthId, "dropbox", authId.OAuthUrl)
         {
             m_timeouts = timeouts;
             base.AutoAuthHeader = true;
             // Pre 2022 tokens are direct Dropbox tokens (no ':')
             // Post 2022-02-21 tokens are regular authid tokens (with a ':')
-            base.AccessTokenOnly = !accessToken.Contains(":");
+            base.AccessTokenOnly = !authId.AuthId!.Contains(":");
         }
 
         public async Task<ListFolderResult> ListFiles(string path, CancellationToken cancelToken)
