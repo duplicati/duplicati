@@ -67,14 +67,14 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
-                        IEnumerable<Database.LocalListDatabase.IFileversion> files;
+                        IAsyncEnumerable<Database.LocalListDatabase.IFileversion> files;
                         if (m_options.ListFolderContents)
                         {
-                            files = filesets.SelectFolderContents(filter).ToEnumerable();
+                            files = filesets.SelectFolderContents(filter);
                         }
                         else if (m_options.ListPrefixOnly)
                         {
-                            files = filesets.GetLargestPrefix(filter).ToEnumerable();
+                            files = filesets.GetLargestPrefix(filter);
                         }
                         else if (filter.Empty)
                         {
@@ -82,7 +82,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            files = filesets.SelectFiles(filter).ToEnumerable();
+                            files = filesets.SelectFiles(filter);
                         }
 
                         if (m_options.ListSetsOnly)
@@ -105,11 +105,19 @@ namespace Duplicati.Library.Main.Operation
                                 files == null
                                     ? null
                                     :
-                                    files.Select(async n =>
-                                        new ListResultFile(n.Path, await n.Sizes().ToArrayAsync())
+                                    await files.Select(async n =>
+                                        new ListResultFile(
+                                            n.Path,
+                                            await n
+                                                .Sizes()
+                                                .ToArrayAsync()
+                                                .ConfigureAwait(false)
+                                        )
                                     )
                                         .Select(x => x.Result)
                                         .Cast<IListResultFile>()
+                                        .ToArrayAsync()
+                                        .ConfigureAwait(false)
                             );
                         }
 
