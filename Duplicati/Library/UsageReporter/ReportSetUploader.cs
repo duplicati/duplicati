@@ -26,6 +26,7 @@ using System.IO;
 using System.Net.Http;
 using Duplicati.Library.Utility;
 using System.Threading;
+using Timeout = System.Threading.Timeout;
 
 namespace Duplicati.Library.UsageReporter
 {
@@ -89,6 +90,7 @@ namespace Duplicati.Library.UsageReporter
                                         timeoutToken.CancelAfter(TimeSpan.FromSeconds(UPLOAD_OPERATION_TIMEOUT_SECONDS));
 
                                         using var client = HttpClientHelper.CreateClient();
+                                        client.Timeout = Timeout.InfiniteTimeSpan;
                                         using var response = await client.UploadStream(request, timeoutToken.Token);
                                         rc = (int)response.StatusCode;
                                     }

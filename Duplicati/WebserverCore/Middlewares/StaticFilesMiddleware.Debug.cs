@@ -59,8 +59,9 @@ internal static class NpmSpaHelper
 
             var tgzFile = Path.Combine(tempPath, "package.tgz");
             var tarFile = Path.ChangeExtension(tgzFile, ".tar");
-            using (var client = new HttpClient())
+            using (var client = HttpClientHelper.CreateClient())
             {
+                // Explicitly leaving the 100s default timeout
                 var response = client.GetAsync(packageUrl).Await();
                 response.EnsureSuccessStatusCode();
 

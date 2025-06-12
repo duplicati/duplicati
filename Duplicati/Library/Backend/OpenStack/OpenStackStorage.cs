@@ -161,6 +161,7 @@ public class OpenStackStorage : IStreamingBackend
         }
 
         m_httpClient = HttpClientHelper.CreateClient();
+        m_httpClient.Timeout = Timeout.InfiniteTimeSpan;
         m_helper = new OpenStackWebHelper(this, m_httpClient);
     }
 

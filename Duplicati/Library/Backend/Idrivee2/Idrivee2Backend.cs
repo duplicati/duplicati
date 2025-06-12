@@ -52,8 +52,13 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// Lazy cached HttpClient
         /// </summary>
-        private readonly Lazy<HttpClient> _httpClient = new(HttpClientHelper.CreateClient);
-
+        private readonly Lazy<HttpClient> _httpClient = new(() =>
+        {
+            var client = HttpClientHelper.CreateClient();
+            client.Timeout = Timeout.InfiniteTimeSpan;
+            return client;
+        });
+        
         /// <summary>
         /// The timeout options
         /// </summary>

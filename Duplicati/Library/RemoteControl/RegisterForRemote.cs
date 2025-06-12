@@ -165,7 +165,8 @@ public class RegisterForRemote : IDisposable
         _state = States.NotStarted;
         _registrationUrl = registrationUrl;
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _httpClient = httpClient ?? new HttpClient();
+        _httpClient = httpClient ?? HttpClientHelper.CreateClient();
+        // Timeout for _httpClient will be kept at default 100s (Which is already a long one for registration)
     }
 
     /// <summary>

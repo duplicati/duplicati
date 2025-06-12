@@ -393,7 +393,7 @@ namespace Duplicati.Library.Modules.Builtin
             using HttpClientHandler httpHandler = new HttpClientHandler();
             HttpClientHelper.ConfigureHandlerCertificateValidator(httpHandler, m_acceptAnyCertificate, m_acceptSpecificCertificates);
 
-            using var client = new HttpClient(httpHandler);
+            using var client = HttpClientHelper.CreateClient(httpHandler);
 
             Exception ex = null;
 
