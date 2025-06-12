@@ -133,8 +133,8 @@ namespace Duplicati.UnitTest
             if (File.Exists(dbpath))
                 File.Delete(dbpath);
 
-            var con = SQLiteLoader.LoadConnection();
-            await SQLiteLoader.OpenDatabaseAsync(con, dbpath, null);
+            var con = await SQLiteLoader.LoadConnectionAsync().ConfigureAwait(false);
+            await SQLiteLoader.OpenDatabaseAsync(con, dbpath, null).ConfigureAwait(false);
             DatabaseUpgrader.UpgradeDatabase(con, dbpath, typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
 
             using (var connection = new Connection(con, true, null, this.serverDatafolder, null))

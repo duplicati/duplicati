@@ -142,7 +142,9 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalListBrokenFilesDatabase();
 
-            dbnew = (LocalListBrokenFilesDatabase)await CreateLocalDatabaseAsync(path, "ListBrokenFiles", false, pagecachesize, dbnew);
+            dbnew = (LocalListBrokenFilesDatabase)
+                await CreateLocalDatabaseAsync(path, "ListBrokenFiles", false, pagecachesize, dbnew)
+                    .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 
             return dbnew;
@@ -152,7 +154,9 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalListBrokenFilesDatabase();
 
-            dbnew = (LocalListBrokenFilesDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
+            dbnew = (LocalListBrokenFilesDatabase)
+                await CreateLocalDatabaseAsync(dbparent, dbnew)
+                    .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = false;
 
             return dbnew;
@@ -161,7 +165,9 @@ namespace Duplicati.Library.Main.Database
         public async IAsyncEnumerable<(DateTime FilesetTime, long FilesetID, long RemoveFileCount)> GetBrokenFilesets(DateTime time, long[]? versions)
         {
             var query = BROKEN_FILE_SETS;
-            var clause = await GetFilelistWhereClause(time, versions);
+            var clause = await GetFilelistWhereClause(time, versions)
+                .ConfigureAwait(false);
+
             if (!string.IsNullOrWhiteSpace(clause.Query))
                 query += $@"
                     AND ""A"".""FilesetID"" IN (
@@ -177,7 +183,7 @@ namespace Duplicati.Library.Main.Database
                 .SetCommandAndParameters(query)
                 .SetParameterValues(clause.Values);
 
-            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))
                 if (!rd.IsDBNull(0))
                     yield return (
                         ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)),
@@ -192,7 +198,7 @@ namespace Duplicati.Library.Main.Database
                 .SetCommandAndParameters(BROKEN_FILE_NAMES)
                 .SetParameterValue("@FilesetId", filesetid);
 
-            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))
                 if (!rd.IsDBNull(0))
                     yield return new Tuple<string, long>(
                         rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"),
@@ -222,7 +228,7 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetTransaction(m_rtr);
 
-            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))
                 yield return new RemoteVolume(
                     rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"),
                     rd.ConvertValueToString(1) ?? throw new Exception("Hash was null"),
@@ -243,7 +249,8 @@ namespace Duplicati.Library.Main.Database
                 .SetCommandAndParameters(INSERT_BROKEN_IDS(tablename, IDfieldname))
                 .SetParameterValue("@FilesetId", filesetid);
 
-            await cmd.ExecuteNonQueryAsync();
+            await cmd.ExecuteNonQueryAsync()
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -278,7 +285,8 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@EmptyHash", emptyHash)
                 .SetParameterValue("@EmptyHashSize", emptyHashSize);
 
-            var res = await cmd.ExecuteScalarInt64Async(-1);
+            var res = await cmd.ExecuteScalarInt64Async(-1)
+                .ConfigureAwait(false);
 
             // No empty block found, try to find a zero-length block instead
             if (res < 0 && emptyHashSize != 0)
@@ -299,7 +307,8 @@ namespace Duplicati.Library.Main.Database
                 ")
                   .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
                   .SetParameterValue("@EmptyHashSize", 0)
-                  .ExecuteScalarInt64Async(-1);
+                  .ExecuteScalarInt64Async(-1)
+                  .ConfigureAwait(false);
 
             // No empty block found, pick the smallest one
             if (res < 0)
@@ -319,7 +328,8 @@ namespace Duplicati.Library.Main.Database
                     LIMIT 1
                 ")
                   .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
-                  .ExecuteScalarInt64Async(-1);
+                  .ExecuteScalarInt64Async(-1)
+                  .ConfigureAwait(false);
 
             return res;
         }
@@ -358,7 +368,8 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@EmptyBlocksetID", emptyBlocksetId)
                 .SetParameterValue("@FilesetID", filesetId);
-            return await cmd.ExecuteNonQueryAsync();
+
+            return await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
         public async Task RemoveMissingBlocks(IEnumerable<string> names)
@@ -375,17 +386,22 @@ namespace Duplicati.Library.Main.Database
                     CREATE TEMP TABLE ""{volidstable}"" (
                         ""ID"" INTEGER PRIMARY KEY
                     )
-                ");
+                ")
+                    .ConfigureAwait(false);
 
-                using (var tmptable = await TemporaryDbValueList.CreateAsync(this, names))
-                    await (await deletecmd.SetCommandAndParameters($@"
-                        INSERT OR IGNORE INTO ""{volidstable}"" (""ID"")
-                        SELECT ""ID""
-                        FROM ""RemoteVolume""
-                        WHERE ""Name"" IN (@Names)
-                    ")
-                      .ExpandInClauseParameterMssqliteAsync("@Names", tmptable))
-                      .ExecuteNonQueryAsync();
+                using (var tmptable = await TemporaryDbValueList.CreateAsync(this, names).ConfigureAwait(false))
+                    await (
+                        await deletecmd.SetCommandAndParameters($@"
+                            INSERT OR IGNORE INTO ""{volidstable}"" (""ID"")
+                            SELECT ""ID""
+                            FROM ""RemoteVolume""
+                            WHERE ""Name"" IN (@Names)
+                        ")
+                        .ExpandInClauseParameterMssqliteAsync("@Names", tmptable)
+                        .ConfigureAwait(false)
+                    )
+                      .ExecuteNonQueryAsync()
+                      .ConfigureAwait(false);
 
                 var volIdsSubQuery = $@"
                     SELECT ""ID""
@@ -398,31 +414,40 @@ namespace Duplicati.Library.Main.Database
                     WHERE
                         ""BlockVolumeID"" IN ({volIdsSubQuery})
                         OR ""IndexVolumeID"" IN ({volIdsSubQuery})
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await deletecmd.ExecuteNonQueryAsync($@"
                     DELETE FROM ""Block""
                     WHERE ""VolumeID"" IN ({volIdsSubQuery})
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await deletecmd.ExecuteNonQueryAsync($@"
                     DELETE FROM ""DeletedBlock""
                     WHERE ""VolumeID"" IN ({volIdsSubQuery})
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await deletecmd.ExecuteNonQueryAsync($@"
                     DELETE FROM ""DuplicateBlock""
                     WHERE ""VolumeID"" IN ({volIdsSubQuery})
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
                 // SQLite.SQLiteException (0x80004005): database table is locked
-                await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""{volidstable}"" ");
+                await deletecmd
+                    .ExecuteNonQueryAsync($@"DELETE FROM ""{volidstable}"" ")
+                    .ConfigureAwait(false);
+
                 try
                 {
                     deletecmd.CommandTimeout = 2;
-                    await deletecmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{volidstable}"" ");
+                    await deletecmd
+                        .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{volidstable}"" ")
+                        .ConfigureAwait(false);
                 }
                 catch { /* Ignore, will be deleted on close anyway. */ }
             }
@@ -438,7 +463,9 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", filesetid);
 
-            return await cmd.ExecuteScalarInt64Async(0);
+            return await cmd
+                .ExecuteScalarInt64Async(0)
+                .ConfigureAwait(false);
         }
     }
 }

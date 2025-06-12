@@ -51,15 +51,20 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseFileMissing");
 
-            using (var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Delete", m_options.SqlitePageCache))
+            using (var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Delete", m_options.SqlitePageCache).ConfigureAwait(false))
             {
-                await Utility.UpdateOptionsFromDb(db, m_options);
-                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+                await Utility.UpdateOptionsFromDb(db, m_options)
+                    .ConfigureAwait(false);
+
+                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
+                    .ConfigureAwait(false);
 
                 await DoRunAsync(db, false, false, backendManager).ConfigureAwait(false);
 
                 if (!m_options.Dryrun)
-                    await db.Transaction.CommitAsync("ComitDelete");
+                    await db.Transaction
+                        .CommitAsync("ComitDelete")
+                        .ConfigureAwait(false);
             }
         }
 
@@ -70,7 +75,11 @@ namespace Duplicati.Library.Main.Operation
 
             // We collapse the async enumerablo into a array to avoid multiple
             // enumerations (and thus multiple database queries)
-            var filesets = await db.FilesetsWithBackupVersion().ToArrayAsync();
+            var filesets = await db
+                .FilesetsWithBackupVersion()
+                .ToArrayAsync()
+                .ConfigureAwait(false);
+
             List<IListResultFileset> versionsToDelete =
             [
                 .. new SpecificVersionsRemover(m_options).GetFilesetsToDelete(filesets),
@@ -98,12 +107,24 @@ namespace Duplicati.Library.Main.Operation
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", versionsToDelete.Count);
 
-                var lst = await db.DropFilesetsFromTable(versionsToDelete.Select(x => x.Time).ToArray()).ToArrayAsync();
+                var lst = await db
+                    .DropFilesetsFromTable(
+                        versionsToDelete
+                            .Select(x => x.Time)
+                            .ToArray()
+                    )
+                    .ToArrayAsync()
+                    .ConfigureAwait(false);
+
                 foreach (var f in lst)
-                    await db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null);
+                    await db
+                        .UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null)
+                        .ConfigureAwait(false);
 
                 if (!m_options.Dryrun)
-                    await db.Transaction.CommitAsync("CommitBeforeDelete");
+                    await db.Transaction
+                        .CommitAsync("CommitBeforeDelete")
+                        .ConfigureAwait(false);
 
                 foreach (var f in lst)
                 {

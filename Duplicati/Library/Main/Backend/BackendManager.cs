@@ -300,7 +300,7 @@ internal partial class BackendManager : IBackendManager
     /// <returns></returns>
     public async Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken)
     {
-        await context.Database.FlushPendingMessages(database);
+        await context.Database.FlushPendingMessages(database).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -367,7 +367,8 @@ internal partial class BackendManager : IBackendManager
             yield break;
 
         // Get the first volume, so we do not have pending parallel transfers
-        var prevResult = await GetWithInfoAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken);
+        var prevResult = await GetWithInfoAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken)
+            .ConfigureAwait(false);
 
         foreach (var volume in volumes.Skip(1))
         {
@@ -380,7 +381,7 @@ internal partial class BackendManager : IBackendManager
 
             // Set up for next iteration
             prevVolume = volume;
-            prevResult = await nextTask;
+            prevResult = await nextTask.ConfigureAwait(false);
         }
 
         // Return the last result

@@ -326,7 +326,8 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, 1)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "/folder1/", // 1
                 "/folder1/sub1/",
@@ -336,7 +337,10 @@ namespace Duplicati.UnitTest
             ]);
 
             // Act
-            var result = await db.GetRootPrefixes(1).ToListAsync();
+            var result = await db
+                .GetRootPrefixes(1)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             // Assert
             Assert.That(result, Does.Contain(1L));
@@ -352,7 +356,8 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, 1)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "C:\\folder1\\",
                 "C:\\folder1\\sub1\\",
@@ -361,7 +366,10 @@ namespace Duplicati.UnitTest
             ]);
 
             // Act
-            var result = await db.GetRootPrefixes(1).ToListAsync();
+            var result = await db
+                .GetRootPrefixes(1)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             // Assert
             Assert.That(result, Does.Contain(1L));
@@ -376,7 +384,8 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, 1)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "\\\\server\\share\\folder\\",
                 "\\\\server\\share\\folder\\subfolder\\",
@@ -384,7 +393,10 @@ namespace Duplicati.UnitTest
             ]);
 
             // Act
-            var result = await db.GetRootPrefixes(1).ToListAsync();
+            var result = await db
+                .GetRootPrefixes(1)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             // Assert
             Assert.That(result, Does.Contain(1L));
@@ -398,7 +410,8 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, 1)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "C:\\data\\", // 1
                 "C:\\data\\sub1\\",
@@ -410,7 +423,10 @@ namespace Duplicati.UnitTest
             ]);
 
             // Act
-            var result = await db.GetRootPrefixes(1).ToListAsync();
+            var result = await db
+                .GetRootPrefixes(1)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             // Assert
             Assert.That(result, Does.Contain(1L));

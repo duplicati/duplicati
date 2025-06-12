@@ -47,11 +47,17 @@ internal static class ListFileVersionsHandler
         if (!System.IO.File.Exists(options.Dbpath) || options.NoLocalDb)
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
-        using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache);
+        using var db =
+            await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache)
+                .ConfigureAwait(false);
         long[]? filesetIds = null;
         if (!options.AllVersions)
         {
-            filesetIds = await db.GetFilesetIDs(options.Time, options.Version).ToArrayAsync();
+            filesetIds = await db
+                .GetFilesetIDs(options.Time, options.Version)
+                .ToArrayAsync()
+                .ConfigureAwait(false);
+
             if (filesetIds.Length == 0)
                 throw new UserInformationException("No filesets found", "NoFilesetsFound");
         }
@@ -60,6 +66,8 @@ internal static class ListFileVersionsHandler
             throw new UserInformationException("No path specified", "NoPathSpecified");
 
         paths = paths.Select(path => Util.AppendDirSeparator(path)).ToArray();
-        result.FileVersions = await db.ListFileVersions(paths, filesetIds, offset, limit);
+        result.FileVersions = await db
+            .ListFileVersions(paths, filesetIds, offset, limit)
+            .ConfigureAwait(false);
     }
 }

@@ -38,7 +38,9 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalBugReportDatabase();
 
-            dbnew = (LocalBugReportDatabase)await CreateLocalDatabaseAsync(path, "BugReportCreate", false, pagecachesize, dbnew);
+            dbnew = (LocalBugReportDatabase)
+                await CreateLocalDatabaseAsync(path, "BugReportCreate", false, pagecachesize, dbnew)
+                    .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 
             return dbnew;
@@ -60,14 +62,16 @@ namespace Duplicati.Library.Main.Database
                             ""RealPath"" TEXT NOT NULL,
                             ""Obfuscated"" TEXT NULL
                         )
-                    ");
+                    ")
+                        .ConfigureAwait(false);
 
                     await upcmd.ExecuteNonQueryAsync($@"
                         INSERT INTO ""{tablename}"" (""RealPath"")
                         SELECT DISTINCT ""Path""
                         FROM ""File""
                         ORDER BY ""Path""
-                    ");
+                    ")
+                        .ConfigureAwait(false);
 
                     await upcmd.SetCommandAndParameters($@"
                         UPDATE ""{tablename}""
@@ -87,7 +91,8 @@ namespace Duplicati.Library.Main.Database
                         .SetParameterValue("@StartPath", !OperatingSystem.IsWindows() ? "/" : "X:\\")
                         .SetParameterValue("@DirSep", Util.DirectorySeparatorString)
                         .SetParameterValue("@FileExt", ".bin")
-                        .ExecuteNonQueryAsync();
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
 
                     /*long id = 1;
                     using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""RealPath"", ""Obfuscated"" FROM ""{0}"" ", tablename)))
@@ -108,7 +113,8 @@ namespace Duplicati.Library.Main.Database
                     WHERE
                         ""Message"" LIKE '%/%'
                         OR ""Message"" LIKE '%:\%'
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync(@"
                     UPDATE ""LogData""
@@ -116,13 +122,15 @@ namespace Duplicati.Library.Main.Database
                     WHERE
                         ""Exception"" LIKE '%/%'
                         OR ""Exception"" LIKE '%:\%'
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync(@"
                     UPDATE ""Configuration""
                     SET ""Value"" = 'ERASED!'
                     WHERE ""Key"" = 'passphrase'
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync($@"
                     CREATE TABLE ""FixedFile"" AS
@@ -135,19 +143,24 @@ namespace Duplicati.Library.Main.Database
                         ""{tablename}"" ""A"",
                         ""File"" ""B""
                     WHERE ""A"".""RealPath"" = ""B"".""Path""
-                ");
+                ")
+                    .ConfigureAwait(false);
 
-                await cmd.ExecuteNonQueryAsync(@"DROP VIEW ""File"" ");
-                await cmd.ExecuteNonQueryAsync(@"DROP TABLE ""FileLookup"" ");
-                await cmd.ExecuteNonQueryAsync(@"DROP TABLE ""PathPrefix"" ");
-                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tablename}"" ");
+                await cmd.ExecuteNonQueryAsync(@"DROP VIEW ""File"" ")
+                    .ConfigureAwait(false);
+                await cmd.ExecuteNonQueryAsync(@"DROP TABLE ""FileLookup"" ")
+                    .ConfigureAwait(false);
+                await cmd.ExecuteNonQueryAsync(@"DROP TABLE ""PathPrefix"" ")
+                    .ConfigureAwait(false);
+                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tablename}"" ")
+                    .ConfigureAwait(false);
 
                 using (new Logging.Timer(LOGTAG, "CommitUpdateBugReport", "CommitUpdateBugReport"))
-                    await m_rtr.CommitAsync();
+                    await m_rtr.CommitAsync().ConfigureAwait(false);
 
                 cmd.SetTransaction(m_rtr);
-                await cmd.ExecuteNonQueryAsync("VACUUM");
-                await m_rtr.CommitAsync();
+                await cmd.ExecuteNonQueryAsync("VACUUM").ConfigureAwait(false);
+                await m_rtr.CommitAsync().ConfigureAwait(false);
             }
         }
     }

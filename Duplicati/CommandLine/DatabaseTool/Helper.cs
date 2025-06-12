@@ -60,12 +60,13 @@ public static class Helper
         {
             try
             {
-                using var con = await SQLiteLoader.LoadConnectionAsync(serverdb, 0);
+                using var con = await SQLiteLoader.LoadConnectionAsync(serverdb, 0)
+                    .ConfigureAwait(false);
                 using var cmd = con.CreateCommand(@"
                     SELECT ""DBPath""
                     FROM ""Backup""
                 ");
-                await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
+                await foreach (var rd in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))
                     dbpaths.Add(rd.ConvertValueToString(0) ?? "");
             }
             catch
@@ -92,7 +93,7 @@ public static class Helper
     /// <returns>A tuple containing the version and whether it is a server database</returns>
     public static async Task<(int Version, bool isserver)> ExamineDatabase(string db)
     {
-        using (var con = await SQLiteLoader.LoadConnectionAsync(db, 0))
+        using (var con = await SQLiteLoader.LoadConnectionAsync(db, 0).ConfigureAwait(false))
         {
             using var cmd = con.CreateCommand();
 
@@ -103,12 +104,14 @@ public static class Helper
                     type='table'
                     AND name='Backup'
                     OR name='Schedule'
-            ") == 2;
+            ")
+                .ConfigureAwait(false) == 2;
 
             var version = (int)await cmd.ExecuteScalarInt64Async(@"
                 SELECT MAX(Version)
                 FROM Version
-            ");
+            ")
+                .ConfigureAwait(false);
 
             return (version, isserverdb);
         }

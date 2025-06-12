@@ -115,11 +115,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 if (file_processors_restoring_files <= 0 && !file_processor_continue.Task.IsCompleted)
                                     file_processor_continue.SetResult();
                                 else
-                                    await RendezvousBeforeProcessingFolderMetadata();
+                                    await RendezvousBeforeProcessingFolderMetadata()
+                                        .ConfigureAwait(false);
                                 decremented = true;
                             }
 
-                            await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp);
+                            await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp)
+                                .ConfigureAwait(false);
 
                             continue;
                         }
@@ -127,7 +129,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Get information about the blocks for the file
                         // TODO rather than keeping all of the blocks in memory, we could do a single pass over the blocks using a cursor, only keeping the relevant block requests in memory. Maybe even only a single block request at a time.
                         sw_block?.Start();
-                        var blocks = await db.GetBlocksFromFile(file.BlocksetID).ToArrayAsync();
+                        var blocks = await db
+                            .GetBlocksFromFile(file.BlocksetID)
+                            .ToArrayAsync()
+                            .ConfigureAwait(false);
                         sw_block?.Stop();
 
                         sw_work_verify_target?.Start();
@@ -367,12 +372,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     else
                                     {
                                         // Not a missing block, so read from the file
-                                        sw_work_read?.Start();
-                                        var read = await fs?.ReadAsync(buffer, 0, buffer.Length);
-                                        sw_work_read?.Stop();
-                                        sw_work_hash?.Start();
-                                        filehasher.TransformBlock(buffer, 0, read, buffer, 0);
-                                        sw_work_hash?.Stop();
+                                        if (fs != null)
+                                        {
+                                            sw_work_read?.Start();
+                                            var read = await fs
+                                                .ReadAsync(buffer, 0, buffer.Length)
+                                                .ConfigureAwait(false);
+                                            sw_work_read?.Stop();
+                                            sw_work_hash?.Start();
+                                            filehasher.TransformBlock(buffer, 0, read, buffer, 0);
+                                            sw_work_hash?.Stop();
+                                        }
                                     }
                                 }
 
@@ -604,7 +614,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
             using var ms = new MemoryStream();
 
-            await foreach (var block in blocks)
+            await foreach (var block in blocks.ConfigureAwait(false))
             {
                 sw_work?.Stop();
                 sw_req?.Start();
@@ -790,7 +800,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 int j = 0;
                 for (long i = 0; i < total_blocks; i++)
                 {
-                    int read;
+                    int read = 0;
                     if (j < blocks.Count && blocks[j].BlockOffset == i)
                     {
                         // The current block is a missing block
@@ -819,18 +829,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 if (!options.Dryrun)
                                 {
-                                    try
+                                    if (f_target != null)
                                     {
-                                        f_target?.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
-                                        await f_target?.WriteAsync(buffer, 0, read);
-                                    }
-                                    catch (Exception)
-                                    {
-                                        lock (results)
+                                        try
                                         {
-                                            results.BrokenLocalFiles.Add(file.TargetPath);
+                                            f_target.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
+                                            await f_target
+                                                .WriteAsync(buffer, 0, read)
+                                                .ConfigureAwait(false);
                                         }
-                                        throw;
+                                        catch (Exception)
+                                        {
+                                            lock (results)
+                                            {
+                                                results.BrokenLocalFiles.Add(file.TargetPath);
+                                            }
+                                            throw;
+                                        }
                                     }
                                 }
                                 bytes_read += read;
@@ -863,18 +878,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                     else
                     {
                         // The current block is not a missing block - read from the target file.
-                        try
+                        if (f_target != null)
                         {
-                            f_target?.Seek(i * options.Blocksize, SeekOrigin.Begin);
-                            read = await f_target?.ReadAsync(buffer, 0, options.Blocksize);
-                        }
-                        catch (Exception)
-                        {
-                            lock (results)
+                            try
                             {
-                                results.BrokenLocalFiles.Add(file.TargetPath);
+                                f_target.Seek(i * options.Blocksize, SeekOrigin.Begin);
+                                read = await f_target
+                                    .ReadAsync(buffer, 0, options.Blocksize)
+                                    .ConfigureAwait(false);
                             }
-                            throw;
+                            catch (Exception)
+                            {
+                                lock (results)
+                                {
+                                    results.BrokenLocalFiles.Add(file.TargetPath);
+                                }
+                                throw;
+                            }
                         }
                     }
                     filehasher.TransformBlock(buffer, 0, read, buffer, 0);

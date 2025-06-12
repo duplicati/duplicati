@@ -68,12 +68,13 @@ namespace Duplicati.Library.SQLiteHelper
             try
             {
                 //Attempt to open in preferred state
-                await OpenSQLiteFileAsync(con, databasePath);
-                await TestSQLiteFileAsync(con);
+                await OpenSQLiteFileAsync(con, databasePath)
+                    .ConfigureAwait(false);
+                await TestSQLiteFileAsync(con).ConfigureAwait(false);
             }
             catch
             {
-                try { await con.DisposeAsync(); }
+                try { await con.DisposeAsync().ConfigureAwait(false); }
                 catch { }
 
                 throw;
@@ -104,7 +105,7 @@ namespace Duplicati.Library.SQLiteHelper
             catch (Exception ex)
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "FailedToLoadConnectionSQLite", ex, "Failed to load connection.");
-                await DisposeConnectionAsync(con);
+                await DisposeConnectionAsync(con).ConfigureAwait(false);
 
                 throw;
             }
@@ -144,7 +145,7 @@ namespace Duplicati.Library.SQLiteHelper
                     try
                     {
                         cmd.CommandText = string.Format(CultureInfo.InvariantCulture, "PRAGMA {0}", opt);
-                        await cmd.ExecuteNonQueryAsync();
+                        await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -171,22 +172,23 @@ namespace Duplicati.Library.SQLiteHelper
             if (string.IsNullOrWhiteSpace(targetpath))
                 throw new ArgumentNullException(nameof(targetpath));
 
-            var con = await LoadConnectionAsync();
+            var con = await LoadConnectionAsync().ConfigureAwait(false);
 
             try
             {
-                await OpenSQLiteFileAsync(con, targetpath);
+                await OpenSQLiteFileAsync(con, targetpath).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "FailedToLoadConnectionSQLite", ex, @"Failed to load connection with path '{0}'.", targetpath);
-                await DisposeConnectionAsync(con);
+                await DisposeConnectionAsync(con).ConfigureAwait(false);
 
                 throw;
             }
 
             // set custom Sqlite options
-            return await ApplyCustomPragmasAsync(con, pagecachesize);
+            return await ApplyCustomPragmasAsync(con, pagecachesize)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -241,7 +243,7 @@ namespace Duplicati.Library.SQLiteHelper
         private static async Task DisposeConnectionAsync(Microsoft.Data.Sqlite.SqliteConnection? con)
         {
             if (con != null)
-                try { await con.DisposeAsync(); }
+                try { await con.DisposeAsync().ConfigureAwait(false); }
                 catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "ConnectionDisposeError", ex, "Failed to dispose connection"); }
         }
 
@@ -253,7 +255,7 @@ namespace Duplicati.Library.SQLiteHelper
         private static async Task OpenSQLiteFileAsync(Microsoft.Data.Sqlite.SqliteConnection con, string path)
         {
             con.ConnectionString = $"Data Source={path};Pooling=false";
-            await con.OpenAsync();
+            await con.OpenAsync().ConfigureAwait(false);
 
             // Make the file only accessible by the current user, unless opting out
             if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
@@ -270,7 +272,7 @@ namespace Duplicati.Library.SQLiteHelper
             // Do a dummy query to make sure we have a working db
             using var cmd = con.CreateCommand();
             cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER";
-            await cmd.ExecuteScalarAsync();
+            await cmd.ExecuteScalarAsync().ConfigureAwait(false);
         }
     }
 }

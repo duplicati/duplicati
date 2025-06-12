@@ -135,27 +135,31 @@ partial class BackendManager
             // As we replace the list, we can now freely access the elements without locking
             foreach (var e in entries)
                 if (e is RemoteOperationLogEntry operation)
-                    await db.LogRemoteOperation(operation.Action, operation.File, operation.Result);
+                    await db.LogRemoteOperation(operation.Action, operation.File, operation.Result)
+                        .ConfigureAwait(false);
                 else if (e is RemoteVolumeUpdate update && update.State == RemoteVolumeState.Deleted)
                 {
-                    await db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), null);
+                    await db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), null)
+                        .ConfigureAwait(false);
                     volsRemoved.Add(update.Remotename);
                 }
                 else if (e is RemoteVolumeUpdate dbUpdate)
-                    await db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash);
+                    await db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash)
+                        .ConfigureAwait(false);
                 else if (e is RenameRemoteVolume rename)
-                    await db.RenameRemoteFile(rename.Oldname, rename.Newname);
+                    await db.RenameRemoteFile(rename.Oldname, rename.Newname)
+                        .ConfigureAwait(false);
                 else if (e != null)
                     Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
 
             // Finally remove volumes from DB.
             if (volsRemoved.Count > 0)
             {
-                await db.RemoveRemoteVolumes(volsRemoved);
+                await db.RemoveRemoteVolumes(volsRemoved).ConfigureAwait(false);
                 // This commit is to mimic the pre Microsoft.Data.Sqlite backend
                 // behavior, in which RemoveRemoteVolumes started a new
                 // transaction, if none was passed down.
-                await db.Transaction.CommitAsync();
+                await db.Transaction.CommitAsync().ConfigureAwait(false);
             }
 
             return true;

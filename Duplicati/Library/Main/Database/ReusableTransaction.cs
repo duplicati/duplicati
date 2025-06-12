@@ -77,8 +77,8 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
 
         message ??= "Unnamed commit";
         using (var timer = new Logging.Timer(LOGTAG, message, $"CommitTransaction: {message}"))
-            await m_transaction.CommitAsync();
-        await m_transaction.DisposeAsync();
+            await m_transaction.CommitAsync().ConfigureAwait(false);
+        await m_transaction.DisposeAsync().ConfigureAwait(false);
 
         if (restart)
             m_transaction = m_con.BeginTransaction(deferred: true);
@@ -106,7 +106,7 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
             try
             {
                 using (var timer = new Logging.Timer(LOGTAG, "Dispose", "Rollback during transaction dispose"))
-                    await m_transaction.RollbackAsync();
+                    await m_transaction.RollbackAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -116,7 +116,7 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
             finally
             {
                 m_disposed = true;
-                await m_transaction.DisposeAsync();
+                await m_transaction.DisposeAsync().ConfigureAwait(false);
             }
         }
     }
@@ -127,8 +127,8 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
             throw new InvalidOperationException("Transaction is already disposed");
 
         using (var timer = new Logging.Timer(LOGTAG, message, $"RollbackTransaction: {message}"))
-            await m_transaction.RollbackAsync();
-        await m_transaction.DisposeAsync();
+            await m_transaction.RollbackAsync().ConfigureAwait(false);
+        await m_transaction.DisposeAsync().ConfigureAwait(false);
 
         if (restart)
         {

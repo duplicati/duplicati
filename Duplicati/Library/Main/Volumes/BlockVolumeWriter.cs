@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Volumes
 
             //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications,
             using (var s = m_compression.CreateFile(Library.Utility.Utility.Base64PlainToBase64Url(hash), hint, DateTime.UtcNow))
-                await s.WriteAsync(data.AsMemory(offset, size));
+                await s.WriteAsync(data.AsMemory(offset, size)).ConfigureAwait(false);
         }
     }
 }

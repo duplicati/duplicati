@@ -172,7 +172,8 @@ public static class Upgrade
             if (!nobackups)
                 Helper.CreateFileBackup(db);
 
-            using var con = await SQLiteLoader.LoadConnectionAsync(db, 0);
+            using var con = await SQLiteLoader.LoadConnectionAsync(db, 0)
+                .ConfigureAwait(false);
             using var tr = con.BeginTransaction();
             using var cmd = con.CreateCommand(tr);
             foreach (var script in upgradeScripts)
@@ -181,7 +182,8 @@ public static class Upgrade
                 try
                 {
                     cmd.SetCommandAndParameters(script.Content);
-                    var r = await cmd.ExecuteScalarAsync();
+                    var r = await cmd.ExecuteScalarAsync()
+                        .ConfigureAwait(false);
                     if (r != null)
                         throw new UserInformationException($"{r}", "UpgradeScriptFailure");
                     await cmd.SetCommandAndParameters(@"
@@ -189,7 +191,8 @@ public static class Upgrade
                         SET Version = @Version
                     ")
                         .SetParameterValue("@Version", script.Version)
-                        .ExecuteNonQueryAsync();
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

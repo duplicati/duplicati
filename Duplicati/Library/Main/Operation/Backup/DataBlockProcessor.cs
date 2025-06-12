@@ -114,7 +114,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         if (newBlock)
                         {
-                            await blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
+                            await blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint)
+                                .ConfigureAwait(false);
                             if (indexvolume != null)
                                 indexvolume.AddBlock(b.HashKey, b.Size);
 
@@ -163,7 +164,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             if (blockvolume.SourceSize > 0 || blocklistHashesAdded > 0)
                             {
-                                await self.SpillPickup.WriteAsync(new SpillVolumeRequest(blockvolume, indexvolume));
+                                await self.SpillPickup
+                                    .WriteAsync(new SpillVolumeRequest(blockvolume, indexvolume))
+                                    .ConfigureAwait(false);
                             }
                             else
                             {

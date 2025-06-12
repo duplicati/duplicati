@@ -263,16 +263,18 @@ namespace Duplicati.Library.Main
         public async Task FlushLog(LocalDatabase db)
         {
             if (m_parent != null)
-                await m_parent.FlushLog(db);
+                await m_parent.FlushLog(db).ConfigureAwait(false);
             else
             {
-                await m_lock.WaitAsync();
+                await m_lock.WaitAsync().ConfigureAwait(false);
                 try
                 {
                     while (m_dbqueue.Count > 0)
                     {
                         var el = m_dbqueue.Dequeue();
-                        await db.LogMessage(el.Type, el.Message, el.Exception);
+                        await db
+                            .LogMessage(el.Type, el.Message, el.Exception)
+                            .ConfigureAwait(false);
                     }
                 }
                 finally

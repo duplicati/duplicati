@@ -86,28 +86,32 @@ internal class TemporaryDbValueList : IDisposable
 
     internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<long> values)
     {
-        return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "INTEGER"));
+        return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "INTEGER"))
+            .ConfigureAwait(false);
     }
 
     internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<string> values)
     {
-        return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "TEXT"));
+        return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "TEXT"))
+            .ConfigureAwait(false);
     }
 
     internal static async Task<TemporaryDbValueList> CreateAsync(SqliteConnection con, ReusableTransaction rtr, IEnumerable<long> values)
     {
-        return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "INTEGER"));
+        return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "INTEGER"))
+            .ConfigureAwait(false);
     }
 
     internal static async Task<TemporaryDbValueList> CreateAsync(SqliteConnection con, ReusableTransaction rtr, IEnumerable<string> values)
     {
-        return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "TEXT"));
+        return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "TEXT"))
+            .ConfigureAwait(false);
     }
 
     private static async Task<TemporaryDbValueList> DoCreateAsync(TemporaryDbValueList valueList)
     {
         if (valueList._values.Count() > LocalDatabase.CHUNK_SIZE)
-            await valueList.ForceToTable();
+            await valueList.ForceToTable().ConfigureAwait(false);
 
         return valueList;
     }
@@ -131,7 +135,7 @@ internal class TemporaryDbValueList : IDisposable
         if (_disposed)
             throw new ObjectDisposedException(nameof(TemporaryDbValueList));
 
-        await ForceToTable();
+        await ForceToTable().ConfigureAwait(false);
 
         return $@"
             SELECT ""Value""
@@ -153,7 +157,9 @@ internal class TemporaryDbValueList : IDisposable
         _cmd = _con.CreateCommand(_rtr);
         await _cmd.ExecuteNonQueryAsync($@"
             CREATE TEMPORARY TABLE ""{_tableName}"" (""Value"" {_valuesType})
-        ");
+        ")
+            .ConfigureAwait(false);
+
         _isTable = true;
         foreach (var slice in _values.Chunk(LocalDatabase.CHUNK_SIZE))
         {
@@ -167,7 +173,7 @@ internal class TemporaryDbValueList : IDisposable
             for (int i = 0; i < slice.Length; i++)
                 _cmd.SetParameterValue(parameterNames[i], slice[i]);
 
-            await _cmd.ExecuteNonQueryAsync();
+            await _cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
     }
 
@@ -194,8 +200,9 @@ internal class TemporaryDbValueList : IDisposable
         {
             if (_cmd != null)
             {
-                await _cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{_tableName}""");
-                await _cmd.DisposeAsync();
+                await _cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{_tableName}""")
+                    .ConfigureAwait(false);
+                await _cmd.DisposeAsync().ConfigureAwait(false);
             }
             _cmd = null;
         }

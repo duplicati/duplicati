@@ -426,18 +426,30 @@ namespace Duplicati.UnitTest
             }
 
             // Check database block link
-            using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "Test", true, 0))
+            using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "Test", true, 0).ConfigureAwait(false))
             {
-                var indexVolumeId = await db.GetRemoteVolumeID(Path.GetFileName(origFile));
-                var duplicateVolumeId = await db.GetRemoteVolumeID(Path.GetFileName(dupFile));
+                var indexVolumeId = await db
+                    .GetRemoteVolumeID(Path.GetFileName(origFile))
+                    .ConfigureAwait(false);
+                var duplicateVolumeId = await db
+                    .GetRemoteVolumeID(Path.GetFileName(dupFile))
+                    .ConfigureAwait(false);
                 Assert.AreNotEqual(-1, indexVolumeId);
                 Assert.AreNotEqual(-1, duplicateVolumeId);
 
                 using (var cmd = db.Connection.CreateCommand())
                 {
                     var sql = @"SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = @VolumeId";
-                    var linkedIndexId = await cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", indexVolumeId).ExecuteScalarInt64Async(-1);
-                    var linkedDuplicateId = await cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", duplicateVolumeId).ExecuteScalarInt64Async(-1);
+                    var linkedIndexId = await cmd
+                        .SetCommandAndParameters(sql)
+                        .SetParameterValue("@VolumeId", indexVolumeId)
+                        .ExecuteScalarInt64Async(-1)
+                        .ConfigureAwait(false);
+                    var linkedDuplicateId = await cmd
+                        .SetCommandAndParameters(sql)
+                        .SetParameterValue("@VolumeId", duplicateVolumeId)
+                        .ExecuteScalarInt64Async(-1)
+                        .ConfigureAwait(false);
                     Assert.AreEqual(linkedIndexId, linkedDuplicateId);
                 }
             }

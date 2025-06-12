@@ -51,12 +51,20 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, RemoteVolumeState state)
         {
-            return RunOnMain(async () => await m_db.RegisterRemoteVolume(name, type, state));
+            return RunOnMain(async () =>
+                await m_db
+                    .RegisterRemoteVolume(name, type, state)
+                    .ConfigureAwait(false)
+            );
         }
 
         public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup = false, TimeSpan deleteGraceTime = default(TimeSpan), bool? setArchived = null)
         {
-            return RunOnMain(async () => await m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, setArchived));
+            return RunOnMain(async () =>
+                await m_db
+                    .UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, setArchived)
+                    .ConfigureAwait(false)
+            );
         }
 
         public async Task FlushBackendMessagesAndCommitAsync(IBackendManager backendManager)
@@ -74,58 +82,96 @@ namespace Duplicati.Library.Main.Operation.Common
             {
                 if (m_options.Dryrun)
                 {
-                    await m_db.Transaction.RollBackAsync();
+                    await m_db.Transaction
+                        .RollBackAsync()
+                        .ConfigureAwait(false);
                 }
                 else
                 {
                     using (new Logging.Timer(LOGTAG, "CommitTransactionAsync", message))
-                        await m_db.Transaction.CommitAsync(message, restart);
+                        await m_db.Transaction
+                            .CommitAsync(message, restart)
+                            .ConfigureAwait(false);
                 }
             });
         }
 
         public Task RollbackTransactionAsync()
         {
-            return RunOnMain(async () => await m_db.Transaction.RollBackAsync());
+            return RunOnMain(async () =>
+                await m_db.Transaction
+                    .RollBackAsync()
+                    .ConfigureAwait(false)
+            );
         }
 
         public Task RenameRemoteFileAsync(string oldname, string newname)
         {
-            return RunOnMain(async () => await m_db.RenameRemoteFile(oldname, newname));
+            return RunOnMain(async () =>
+                await m_db
+                    .RenameRemoteFile(oldname, newname)
+                    .ConfigureAwait(false)
+            );
         }
 
         public Task LogRemoteOperationAsync(string operation, string path, string data)
         {
-            return RunOnMain(async () => await m_db.LogRemoteOperation(operation, path, data));
+            return RunOnMain(async () =>
+                await m_db
+                    .LogRemoteOperation(operation, path, data)
+                    .ConfigureAwait(false)
+            );
         }
 
         public Task<LocalDatabase.IBlock[]> GetBlocksAsync(long volumeid)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
-            return RunOnMain(async () => await m_db.GetBlocks(volumeid).ToArrayAsync());
+            return RunOnMain(async () =>
+                await m_db
+                    .GetBlocks(volumeid)
+                    .ToArrayAsync()
+                    .ConfigureAwait(false)
+            );
         }
 
         public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename)
         {
-            return RunOnMain(async () => await m_db.GetRemoteVolume(remotename));
+            return RunOnMain(async () =>
+                await m_db
+                    .GetRemoteVolume(remotename)
+                    .ConfigureAwait(false)
+            );
         }
 
         public Task<(string Hash, byte[] Buffer, int Size)[]> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
-            return RunOnMain(async () => await m_db.GetBlocklists(volumeid, blocksize, hashsize).ToArrayAsync());
+            return RunOnMain(async () =>
+                await m_db
+                    .GetBlocklists(volumeid, blocksize, hashsize)
+                    .ToArrayAsync()
+                    .ConfigureAwait(false)
+            );
         }
 
         public Task<long> GetRemoteVolumeIDAsync(string remotename)
         {
-            return RunOnMain(async () => await m_db.GetRemoteVolumeID(remotename));
+            return RunOnMain(async () =>
+                await m_db
+                    .GetRemoteVolumeID(remotename)
+                    .ConfigureAwait(false)
+            );
         }
 
         public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID)
         {
-            return RunOnMain(async () => await m_db.AddIndexBlockLink(indexVolumeID, blockVolumeID));
+            return RunOnMain(async () =>
+                await m_db
+                    .AddIndexBlockLink(indexVolumeID, blockVolumeID)
+                    .ConfigureAwait(false)
+            );
         }
 
 

@@ -36,7 +36,9 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalListChangesDatabase();
 
-            dbnew = (LocalListChangesDatabase)await CreateLocalDatabaseAsync(path, "ListChanges", false, pagecachesize, dbnew);
+            dbnew = (LocalListChangesDatabase)
+                await CreateLocalDatabaseAsync(path, "ListChanges", false, pagecachesize, dbnew)
+                    .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 
             return dbnew;
@@ -137,7 +139,8 @@ namespace Duplicati.Library.Main.Database
                             ""Size"" INTEGER NOT NULL,
                             ""Type"" INTEGER NOT NULL
                         )
-                    ");
+                    ")
+                        .ConfigureAwait(false);
 
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE TEMPORARY TABLE ""{sh.m_currentTable}"" (
@@ -147,42 +150,47 @@ namespace Duplicati.Library.Main.Database
                             ""Size"" INTEGER NOT NULL,
                             ""Type"" INTEGER NOT NULL
                         )
-                    ");
+                    ")
+                        .ConfigureAwait(false);
                 }
 
-                sh.m_insertPreviousElementCommand = await sh.m_db.Connection.CreateCommandAsync($@"
-                    INSERT INTO ""{sh.m_previousTable}"" (
-                        ""Path"",
-                        ""FileHash"",
-                        ""MetaHash"",
-                        ""Size"",
-                        ""Type""
-                    )
-                    VALUES (
-                        @Path,
-                        @FileHash,
-                        @MetaHash,
-                        @Size,
-                        @Type
-                    )
-                ");
+                sh.m_insertPreviousElementCommand = await sh.m_db.Connection
+                    .CreateCommandAsync($@"
+                        INSERT INTO ""{sh.m_previousTable}"" (
+                            ""Path"",
+                            ""FileHash"",
+                            ""MetaHash"",
+                            ""Size"",
+                            ""Type""
+                        )
+                        VALUES (
+                            @Path,
+                            @FileHash,
+                            @MetaHash,
+                            @Size,
+                            @Type
+                        )
+                    ")
+                    .ConfigureAwait(false);
 
-                sh.m_insertCurrentElementCommand = await sh.m_db.Connection.CreateCommandAsync($@"
-                    INSERT INTO ""{sh.m_currentTable}"" (
-                        ""Path"",
-                        ""FileHash"",
-                        ""MetaHash"",
-                        ""Size"",
-                        ""Type""
-                    )
-                    VALUES (
-                        @Path,
-                        @FileHash,
-                        @MetaHash,
-                        @Size,
-                        @Type
-                    )
-                ");
+                sh.m_insertCurrentElementCommand = await sh.m_db.Connection
+                    .CreateCommandAsync($@"
+                        INSERT INTO ""{sh.m_currentTable}"" (
+                            ""Path"",
+                            ""FileHash"",
+                            ""MetaHash"",
+                            ""Size"",
+                            ""Type""
+                        )
+                        VALUES (
+                            @Path,
+                            @FileHash,
+                            @MetaHash,
+                            @Size,
+                            @Type
+                        )
+                    ")
+                    .ConfigureAwait(false);
 
                 return sh;
             }
@@ -277,7 +285,8 @@ namespace Duplicati.Library.Main.Database
                             WHERE ""A"".""FilesetID"" = @FilesetId
                         ")
                             .SetParameterValue("@FilesetId", filesetId)
-                            .ExecuteNonQueryAsync();
+                            .ExecuteNonQueryAsync()
+                            .ConfigureAwait(false);
                     }
                     else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
                     {
@@ -290,17 +299,21 @@ namespace Duplicati.Library.Main.Database
                             CREATE TEMPORARY TABLE ""{filenamestable}"" (
                                 ""Path"" TEXT NOT NULL
                             )
-                        ");
+                        ")
+                            .ConfigureAwait(false);
 
                         await cmd.SetCommandAndParameters($@"
                             INSERT INTO ""{filenamestable}"" (""Path"")
                             VALUES (@Path)
                         ")
-                            .PrepareAsync();
+                            .PrepareAsync()
+                            .ConfigureAwait(false);
 
                         foreach (var s in p)
-                            await cmd.SetParameterValue("@Path", s)
-                                .ExecuteNonQueryAsync();
+                            await cmd
+                                .SetParameterValue("@Path", s)
+                                .ExecuteNonQueryAsync()
+                                .ConfigureAwait(false);
 
                         string whereClause;
                         if (expression.Result)
@@ -343,9 +356,12 @@ namespace Duplicati.Library.Main.Database
                             WHERE {whereClause}
                         ")
                             .SetParameterValue("@FilesetId", filesetId)
-                            .ExecuteNonQueryAsync();
+                            .ExecuteNonQueryAsync()
+                            .ConfigureAwait(false);
 
-                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{filenamestable}"" ");
+                        await cmd
+                            .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{filenamestable}"" ")
+                            .ConfigureAwait(false);
                     }
                     else
                     {
@@ -362,7 +378,8 @@ namespace Duplicati.Library.Main.Database
                             WHERE ""A"".""FilesetID"" = @FilesetId
                         ")
                             .SetParameterValue("@FilesetId", filesetId)
-                            .PrepareAsync();
+                            .PrepareAsync()
+                            .ConfigureAwait(false);
 
                         using var cmd2 = m_db.Connection.CreateCommand(m_db.Transaction)
                             .SetCommandAndParameters($@"
@@ -381,10 +398,13 @@ namespace Duplicati.Library.Main.Database
                                     @Type
                                 )
                             ");
-                        await cmd2.PrepareAsync();
+                        await cmd2.PrepareAsync().ConfigureAwait(false);
 
-                        using var rd = await cmd.ExecuteReaderAsync();
-                        while (await rd.ReadAsync())
+                        using var rd = await cmd
+                            .ExecuteReaderAsync()
+                            .ConfigureAwait(false);
+
+                        while (await rd.ReadAsync().ConfigureAwait(false))
                         {
                             rd.GetValues(values);
                             var path = values[0] as string;
@@ -396,7 +416,8 @@ namespace Duplicati.Library.Main.Database
                                     .SetParameterValue("@MetaHash", values[2])
                                     .SetParameterValue("@Size", values[3])
                                     .SetParameterValue("@Type", values[4])
-                                    .ExecuteNonQueryAsync();
+                                    .ExecuteNonQueryAsync()
+                                    .ConfigureAwait(false);
                             }
                         }
                     }
@@ -412,13 +433,14 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@MetaHash", metahash)
                     .SetParameterValue("@Size", size)
                     .SetParameterValue("@Type", (int)type)
-                    .ExecuteNonQueryAsync();
+                    .ExecuteNonQueryAsync()
+                    .ConfigureAwait(false);
             }
 
             private static async IAsyncEnumerable<string?> ReaderToStringList(SqliteDataReader rd)
             {
                 using (rd)
-                    while (await rd.ReadAsync())
+                    while (await rd.ReadAsync().ConfigureAwait(false))
                     {
                         var v = rd.GetValue(0);
                         if (v == null || v == DBNull.Value)
@@ -479,24 +501,28 @@ namespace Duplicati.Library.Main.Database
                         PreviousSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_previousTable}""
-                        ", 0),
+                        ", 0)
+                            .ConfigureAwait(false),
 
                         CurrentSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_currentTable}""
-                        ", 0),
+                        ", 0)
+                            .ConfigureAwait(false),
 
                         AddedSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_currentTable}""
                             WHERE ""{m_currentTable}"".""Path"" IN ({Added})
-                        ", 0),
+                        ", 0)
+                            .ConfigureAwait(false),
 
                         DeletedSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_previousTable}""
                             WHERE ""{m_previousTable}"".""Path"" IN ({Deleted})
                         ", 0)
+                            .ConfigureAwait(false)
                     };
 
                     return result;
@@ -526,35 +552,51 @@ namespace Duplicati.Library.Main.Database
 
                 var result = new ChangeCountReport
                 {
-                    AddedFolders = await cmd.SetCommandAndParameters(added)
+                    AddedFolders = await cmd
+                        .SetCommandAndParameters(added)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
-                        .ExecuteScalarInt64Async(0),
-                    AddedSymlinks = await cmd.SetCommandAndParameters(added)
+                        .ExecuteScalarInt64Async(0)
+                        .ConfigureAwait(false),
+                    AddedSymlinks = await cmd
+                        .SetCommandAndParameters(added)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
-                        .ExecuteScalarInt64Async(0),
-                    AddedFiles = await cmd.SetCommandAndParameters(added)
-                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
-                        .ExecuteScalarInt64Async(0),
-
-                    DeletedFolders = await cmd.SetCommandAndParameters(deleted)
-                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
-                        .ExecuteScalarInt64Async(0),
-                    DeletedSymlinks = await cmd.SetCommandAndParameters(deleted)
-                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
-                        .ExecuteScalarInt64Async(0),
-                    DeletedFiles = await cmd.SetCommandAndParameters(deleted)
-                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
-                        .ExecuteScalarInt64Async(0),
-
-                    ModifiedFolders = await cmd.SetCommandAndParameters(modified)
-                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
-                        .ExecuteScalarInt64Async(0),
-                    ModifiedSymlinks = await cmd.SetCommandAndParameters(modified)
-                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
-                        .ExecuteScalarInt64Async(0),
-                    ModifiedFiles = await cmd.SetCommandAndParameters(modified)
+                        .ExecuteScalarInt64Async(0)
+                        .ConfigureAwait(false),
+                    AddedFiles = await cmd
+                        .SetCommandAndParameters(added)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
                         .ExecuteScalarInt64Async(0)
+                        .ConfigureAwait(false),
+                    DeletedFolders = await cmd
+                        .SetCommandAndParameters(deleted)
+                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
+                        .ExecuteScalarInt64Async(0)
+                        .ConfigureAwait(false),
+                    DeletedSymlinks = await cmd
+                        .SetCommandAndParameters(deleted)
+                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
+                        .ExecuteScalarInt64Async(0)
+                        .ConfigureAwait(false),
+                    DeletedFiles = await cmd
+                        .SetCommandAndParameters(deleted)
+                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
+                        .ExecuteScalarInt64Async(0)
+                        .ConfigureAwait(false),
+                    ModifiedFolders = await cmd
+                        .SetCommandAndParameters(modified)
+                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
+                        .ExecuteScalarInt64Async(0)
+                        .ConfigureAwait(false),
+                    ModifiedSymlinks = await cmd
+                        .SetCommandAndParameters(modified)
+                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
+                        .ExecuteScalarInt64Async(0)
+                        .ConfigureAwait(false),
+                    ModifiedFiles = await cmd
+                        .SetCommandAndParameters(modified)
+                        .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
+                        .ExecuteScalarInt64Async(0)
+                        .ConfigureAwait(false)
                 };
 
                 return result;
@@ -576,15 +618,26 @@ namespace Duplicati.Library.Main.Database
                     {
                         cmd.SetCommandAndParameters(sql);
                         foreach (var type in elTypes)
-                            await foreach (var s in ReaderToStringList(await cmd.SetParameterValue("@Type", (int)type).ExecuteReaderAsync()))
+                            await foreach (var s in ReaderToStringList(await cmd.SetParameterValue("@Type", (int)type).ExecuteReaderAsync().ConfigureAwait(false)).ConfigureAwait(false))
                                 yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(changeType, type, s ?? "");
                     }
 
-                    await foreach (var r in BuildResult(cmd, Added, Interface.ListChangesChangeType.Added))
+                    await foreach (var r in
+                            BuildResult(cmd, Added, Interface.ListChangesChangeType.Added)
+                                .ConfigureAwait(false)
+                    )
                         yield return r;
-                    await foreach (var r in BuildResult(cmd, Deleted, Interface.ListChangesChangeType.Deleted))
+
+                    await foreach (var r in
+                        BuildResult(cmd, Deleted, Interface.ListChangesChangeType.Deleted)
+                            .ConfigureAwait(false)
+                    )
                         yield return r;
-                    await foreach (var r in BuildResult(cmd, Modified, Interface.ListChangesChangeType.Modified))
+
+                    await foreach (var r in
+                        BuildResult(cmd, Modified, Interface.ListChangesChangeType.Modified)
+                            .ConfigureAwait(false)
+                    )
                         yield return r;
                 }
             }
@@ -598,19 +651,34 @@ namespace Duplicati.Library.Main.Database
             {
                 if (m_insertPreviousElementCommand != null)
                 {
-                    try { await m_insertPreviousElementCommand.DisposeAsync(); }
+                    try
+                    {
+                        await m_insertPreviousElementCommand
+                            .DisposeAsync()
+                            .ConfigureAwait(false);
+                    }
                     catch { }
                     finally { m_insertPreviousElementCommand = null!; }
                 }
 
                 if (m_insertCurrentElementCommand != null)
                 {
-                    try { await m_insertCurrentElementCommand.DisposeAsync(); }
+                    try
+                    {
+                        await m_insertCurrentElementCommand
+                            .DisposeAsync()
+                            .ConfigureAwait(false);
+                    }
                     catch { }
                     finally { m_insertCurrentElementCommand = null!; }
                 }
 
-                try { await m_db.Transaction.RollBackAsync(); }
+                try
+                {
+                    await m_db.Transaction
+                        .RollBackAsync()
+                        .ConfigureAwait(false);
+                }
                 catch { }
                 finally
                 {
@@ -622,7 +690,7 @@ namespace Duplicati.Library.Main.Database
 
         public async Task<IStorageHelper> CreateStorageHelper()
         {
-            return await StorageHelper.CreateAsync(this);
+            return await StorageHelper.CreateAsync(this).ConfigureAwait(false);
         }
     }
 }

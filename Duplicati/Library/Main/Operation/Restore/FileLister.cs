@@ -67,7 +67,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     sw_get_files?.Start();
                     // The enumerables are cast to arrays to force the query to be executed and release the database lock.
-                    var files = await db.GetFilesAndSymlinksToRestore().ToArrayAsync();
+                    var files = await db
+                        .GetFilesAndSymlinksToRestore()
+                        .ToArrayAsync()
+                        .ConfigureAwait(false);
+
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_get_files?.Stop();
 
@@ -80,7 +84,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         sw_get_folders?.Start();
                         // The enumerables are cast to arrays to force the query to be executed and release the database lock.
-                        var folders = await db.GetFolderMetadataToRestore().ToArrayAsync();
+                        var folders = await db
+                            .GetFolderMetadataToRestore()
+                            .ToArrayAsync()
+                            .ConfigureAwait(false);
                         sw_get_folders?.Stop();
 
                         sw_write_folder?.Start();

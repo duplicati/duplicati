@@ -310,7 +310,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     sw_get_wait?.Stop();
                 }
 
-                return await new_tcs.Task;
+                return await new_tcs.Task.ConfigureAwait(false);
             }
 
             /// <summary>

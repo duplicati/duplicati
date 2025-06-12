@@ -52,10 +52,12 @@ namespace Duplicati.Library.Main.Operation
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = await Database.LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache))
+            using (var db = await Database.LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false))
             {
-                await Utility.UpdateOptionsFromDb(db, m_options);
-                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+                await Utility.UpdateOptionsFromDb(db, m_options)
+                    .ConfigureAwait(false);
+                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
+                    .ConfigureAwait(false);
                 await DoRunAsync(backendManager, db, filter, callbackhandler).ConfigureAwait(false);
                 await db.Transaction.RollBackAsync().ConfigureAwait(false);
             }
@@ -64,11 +66,14 @@ namespace Duplicati.Library.Main.Operation
         public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[]?, List<Database.RemoteVolumeEntry>? Missing)> GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, Options options)
         {
             List<Database.RemoteVolumeEntry>? missing = null;
-            var brokensets = await db.GetBrokenFilesets(options.Time, options.Version).ToArrayAsync();
+            var brokensets = await db
+                .GetBrokenFilesets(options.Time, options.Version)
+                .ToArrayAsync()
+                .ConfigureAwait(false);
 
             if (brokensets.Length == 0)
             {
-                if (await db.RepairInProgress())
+                if (await db.RepairInProgress().ConfigureAwait(false))
                     throw new UserInformationException("Cannot continue because the database is marked as being under repair, but does not have broken files.", "CannotListOnDatabaseInRepair");
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesetsInDatabase", "No broken filesets found in database, checking for missing remote files");
@@ -86,18 +91,27 @@ namespace Duplicati.Library.Main.Operation
 
                 // Mark all volumes as disposable
                 foreach (var f in missing)
-                    await db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash);
+                    await db
+                        .UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash)
+                        .ConfigureAwait(false);
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "MarkedRemoteFilesForDeletion", "Marked {0} remote files for deletion", missing.Count);
 
                 // Drop all content from tables
-                await db.RemoveMissingBlocks(missing.Select(x => x.Name));
+                await db
+                    .RemoveMissingBlocks(missing.Select(x => x.Name))
+                    .ConfigureAwait(false);
 
                 // Mark all orphaned index files as disposable after removing the missing block files
-                await foreach (var f in db.GetOrphanedIndexFiles())
-                    await db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash);
+                await foreach (var f in db.GetOrphanedIndexFiles().ConfigureAwait(false))
+                    await db
+                        .UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash)
+                        .ConfigureAwait(false);
 
-                brokensets = await db.GetBrokenFilesets(options.Time, options.Version).ToArrayAsync();
+                brokensets = await db
+                    .GetBrokenFilesets(options.Time, options.Version)
+                    .ToArrayAsync()
+                    .ConfigureAwait(false);
             }
 
             return (brokensets, missing);
@@ -108,7 +122,7 @@ namespace Duplicati.Library.Main.Operation
             if (filter != null && !filter.Empty)
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersAreNotSupportedForListBrokenFiles");
 
-            if (await db.PartiallyRecreated())
+            if (await db.PartiallyRecreated().ConfigureAwait(false))
                 throw new UserInformationException("The command does not work on partially recreated databases", "ListBrokenFilesDoesNotWorkOnPartialDatabase");
 
             (var brokensets, var missing) = await GetBrokenFilesetsFromRemote(backendManager, m_result, db, m_options).ConfigureAwait(false);
@@ -129,7 +143,10 @@ namespace Duplicati.Library.Main.Operation
                 return;
             }
 
-            var fstimes = await db.FilesetTimes().ToListAsync();
+            var fstimes = await db
+                .FilesetTimes()
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             var brokenfilesets =
                 brokensets.Select(x => new
@@ -149,14 +166,18 @@ namespace Duplicati.Library.Main.Operation
                                 x.Version,
                                 x.Timestamp,
                                 callbackhandler == null && !m_options.ListSetsOnly
-                                    ? await db.GetBrokenFilenames(x.FilesetID).ToArrayAsync()
+                                    ? await db
+                                        .GetBrokenFilenames(x.FilesetID)
+                                        .ToArrayAsync()
+                                        .ConfigureAwait(false)
                                     : new MockList<Tuple<string, long>>((int)x.BrokenCount)
-                )));
+                )))
+                    .ConfigureAwait(false);
 
 
             if (callbackhandler != null)
                 foreach (var bs in brokenfilesets)
-                    await foreach (var fe in db.GetBrokenFilenames(bs.FilesetID))
+                    await foreach (var fe in db.GetBrokenFilenames(bs.FilesetID).ConfigureAwait(false))
                         if (!callbackhandler(bs.Version, bs.Timestamp, bs.BrokenCount, fe.Item1, fe.Item2))
                             break;
         }

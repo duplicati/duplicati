@@ -52,20 +52,31 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = await LocalTestDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache))
+            using (var db = await LocalTestDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false))
             {
-                await Utility.UpdateOptionsFromDb(db, m_options);
-                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
-                await db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks);
+                await Utility.UpdateOptionsFromDb(db, m_options)
+                    .ConfigureAwait(false);
+                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
+                    .ConfigureAwait(false);
+
+                await db
+                    .VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks)
+                    .ConfigureAwait(false);
+
                 await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly).ConfigureAwait(false);
                 await DoRunAsync(samples, db, backendManager).ConfigureAwait(false);
-                await db.Transaction.CommitAsync("TestHandlerComplete");
+                await db.Transaction
+                    .CommitAsync("TestHandlerComplete")
+                    .ConfigureAwait(false);
             }
         }
 
         public async Task DoRunAsync(long samples, LocalTestDatabase db, IBackendManager backend)
         {
-            var files = await db.SelectTestTargets(samples, m_options).ToListAsync();
+            var files = await db
+                .SelectTestTargets(samples, m_options)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Verify_Running);
             m_results.OperationProgressUpdater.UpdateProgress(0);
@@ -91,7 +102,8 @@ namespace Duplicati.Library.Main.Operation
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
                         using (tf)
-                            res = await TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
+                            res = await TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2)
+                                .ConfigureAwait(false);
 
                         var parsedInfo = VolumeBase.ParseFilename(vol.Name);
                         if (parsedInfo.FileType == RemoteVolumeType.Index)
@@ -115,7 +127,9 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (res.Value == null || !res.Value.Any())
                             {
-                                var rv = await db.GetRemoteVolume(vol.Name);
+                                var rv = await db
+                                    .GetRemoteVolume(vol.Name)
+                                    .ConfigureAwait(false);
 
                                 if (rv.ID < 0)
                                 {
@@ -128,14 +142,18 @@ namespace Duplicati.Library.Main.Operation
                                         else
                                         {
                                             Logging.Log.WriteInformationMessage(LOGTAG, "CaptureHashAndSize", "Successfully captured hash and size for {0}, updating database", vol.Name);
-                                            await db.UpdateRemoteVolume(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash);
+                                            await db
+                                                .UpdateRemoteVolume(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash)
+                                                .ConfigureAwait(false);
                                         }
                                     }
                                 }
                             }
                         }
 
-                        await db.UpdateVerificationCount(vol.Name);
+                        await db
+                            .UpdateVerificationCount(vol.Name)
+                            .ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -184,7 +202,8 @@ namespace Duplicati.Library.Main.Operation
                             (var tf, var hash, var size) = await backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
 
                             using (tf)
-                                res = await TestVolumeInternals(db, f, tf, m_options, 1);
+                                res = await TestVolumeInternals(db, f, tf, m_options, 1)
+                                    .ConfigureAwait(false);
                             m_results.AddResult(res.Key, res.Value);
 
                             if (!string.IsNullOrWhiteSpace(hash) && size > 0)
@@ -198,7 +217,9 @@ namespace Duplicati.Library.Main.Operation
                                     else
                                     {
                                         Logging.Log.WriteInformationMessage(LOGTAG, "CapturedHashAndSize", "Successfully captured hash and size for {0}, updating database", f.Name);
-                                        await db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Verified, size, hash);
+                                        await db
+                                            .UpdateRemoteVolume(f.Name, RemoteVolumeState.Verified, size, hash)
+                                            .ConfigureAwait(false);
                                     }
                                 }
                             }
@@ -209,7 +230,9 @@ namespace Duplicati.Library.Main.Operation
                             { }
                         }
 
-                        await db.UpdateVerificationCount(f.Name);
+                        await db
+                            .UpdateVerificationCount(f.Name)
+                            .ConfigureAwait(false);
                         m_results.AddResult(f.Name, []);
                     }
                     catch (Exception ex)
@@ -256,13 +279,15 @@ namespace Duplicati.Library.Main.Operation
                 case RemoteVolumeType.Files:
                     //Compare with db and see if all files are accounted for
                     // with correct file hashes and blocklist hashes
-                    using (var fl = await db.CreateFilelist(vol.Name))
+                    using (var fl = await db.CreateFilelist(vol.Name).ConfigureAwait(false))
                     {
                         using (var rd = new Volumes.FilesetVolumeReader(parsedInfo.CompressionModule, tf, options))
                             foreach (var f in rd.Files)
-                                await fl.Add(f.Path, f.Size, f.Hash, f.Metasize, f.Metahash, f.BlocklistHashes, f.Type, f.Time);
+                                await fl
+                                    .Add(f.Path, f.Size, f.Hash, f.Metasize, f.Metahash, f.BlocklistHashes, f.Type, f.Time)
+                                    .ConfigureAwait(false);
 
-                        return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, await fl.Compare().ToListAsync());
+                        return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, await fl.Compare().ToListAsync().ConfigureAwait(false));
                     }
 
                 case RemoteVolumeType.Index:
@@ -275,46 +300,69 @@ namespace Duplicati.Library.Main.Operation
                         foreach (var v in rd.Volumes)
                         {
                             blocklinks.Add(new Tuple<string, string, long>(v.Filename, v.Hash, v.Length));
-                            using (var bl = await db.CreateBlocklist(v.Filename))
+                            using (var bl = await db.CreateBlocklist(v.Filename).ConfigureAwait(false))
                             {
                                 foreach (var h in v.Blocks)
-                                    await bl.AddBlock(h.Key, h.Value);
+                                    await bl
+                                        .AddBlock(h.Key, h.Value)
+                                        .ConfigureAwait(false);
 
-                                combined.AddRange(await bl.Compare().ToListAsync());
+                                combined.AddRange(
+                                    await bl
+                                        .Compare()
+                                        .ToListAsync()
+                                        .ConfigureAwait(false)
+                                );
                             }
                         }
 
                         if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                         {
                             var hashesPerBlock = options.Blocksize / options.BlockhashSize;
-                            using (var bl = await db.CreateBlocklistHashList(vol.Name))
+                            using (var bl = await db.CreateBlocklistHashList(vol.Name).ConfigureAwait(false))
                             {
                                 foreach (var b in rd.BlockLists)
-                                    await bl.AddBlockHash(b.Hash, b.Length);
+                                    await bl
+                                        .AddBlockHash(b.Hash, b.Length)
+                                        .ConfigureAwait(false);
 
-                                combined.AddRange(await bl.Compare(hashesPerBlock, options.BlockhashSize, options.Blocksize).ToListAsync());
+                                combined.AddRange(
+                                    await bl
+                                        .Compare(hashesPerBlock, options.BlockhashSize, options.Blocksize)
+                                        .ToListAsync()
+                                        .ConfigureAwait(false)
+                                );
                             }
                         }
                     }
 
                     // Compare with db and see that all blocklists are listed
-                    using (var il = await db.CreateIndexlist(vol.Name))
+                    using (var il = await db.CreateIndexlist(vol.Name).ConfigureAwait(false))
                     {
                         foreach (var t in blocklinks)
-                            await il.AddBlockLink(t.Item1, t.Item2, t.Item3);
+                            await il
+                                .AddBlockLink(t.Item1, t.Item2, t.Item3)
+                                .ConfigureAwait(false);
 
-                        combined.AddRange(await il.Compare().ToArrayAsync());
+                        combined.AddRange(
+                            await il
+                                .Compare()
+                                .ToArrayAsync()
+                                .ConfigureAwait(false)
+                        );
                     }
 
                     return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, combined);
                 case RemoteVolumeType.Blocks:
                     using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
-                    using (var bl = await db.CreateBlocklist(vol.Name))
+                    using (var bl = await db.CreateBlocklist(vol.Name).ConfigureAwait(false))
                     using (var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, options))
                     {
                         //Verify that all blocks are in the file
                         foreach (var b in rd.Blocks)
-                            await bl.AddBlock(b.Key, b.Value);
+                            await bl
+                                .AddBlock(b.Key, b.Value)
+                                .ConfigureAwait(false);
 
                         //Select random blocks and verify their hashes match the filename and size
                         var hashsamples = new List<KeyValuePair<string, long>>(rd.Blocks);
@@ -339,7 +387,15 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
-                        return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, changes.Union(await bl.Compare().ToListAsync()));
+                        return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(
+                            vol.Name,
+                            changes.Union(
+                                await bl
+                                    .Compare()
+                                    .ToListAsync()
+                                    .ConfigureAwait(false)
+                            )
+                        );
                     }
             }
 
@@ -349,7 +405,9 @@ namespace Duplicati.Library.Main.Operation
 
         private async Task ReplaceFaultyIndexFilesAsync(List<IRemoteVolume> faultyIndexFiles, IBackendManager backendManager, LocalTestDatabase db, CancellationToken cancellationToken)
         {
-            using var repairdb = await LocalRepairDatabase.CreateAsync(db);
+            using var repairdb =
+                await LocalRepairDatabase.CreateAsync(db)
+                    .ConfigureAwait(false);
 
             foreach (var vol in faultyIndexFiles)
             {
@@ -372,7 +430,9 @@ namespace Duplicati.Library.Main.Operation
                     {
                         await backendManager.DeleteAsync(vol.Name, vol.Size, true, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
                         await backendManager.WaitForEmptyAsync(repairdb, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
-                        await repairdb.Transaction.CommitAsync("ReplaceFaultyIndexFileCommit");
+                        await repairdb.Transaction
+                            .CommitAsync("ReplaceFaultyIndexFileCommit")
+                            .ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)

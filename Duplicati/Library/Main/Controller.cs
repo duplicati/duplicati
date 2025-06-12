@@ -253,7 +253,7 @@ namespace Duplicati.Library.Main
             return RunAction(new ListRemoteResults(), async (result, backendManager) =>
             {
                 using (var tf = File.Exists(m_options.Dbpath) ? null : new TempFile())
-                using (var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache))
+                using (var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache).ConfigureAwait(false))
                     result.SetResult(await backendManager.ListAsync(CancellationToken.None).ConfigureAwait(false));
             });
         }
@@ -277,11 +277,16 @@ namespace Duplicati.Library.Main
                     // and uses the same prefix (see issues #2678, #3845, and #4244).
                     if (File.Exists(m_options.Dbpath))
                     {
-                        using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache))
+                        using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache).ConfigureAwait(false))
                         {
                             var dbRemoteVolumes = db.GetRemoteVolumes();
-                            var dbRemoteFiles = await dbRemoteVolumes.Select(x => x.Name).ToHashSetAsync();
-                            list = list.Where(x => dbRemoteFiles.Contains(x.File.Name)).ToList();
+                            var dbRemoteFiles = await dbRemoteVolumes
+                                .Select(x => x.Name)
+                                .ToHashSetAsync()
+                                .ConfigureAwait(false);
+                            list = list.Where(x =>
+                                dbRemoteFiles.Contains(x.File.Name)
+                            ).ToList();
                         }
                     }
 
@@ -763,7 +768,7 @@ namespace Duplicati.Library.Main
         private async Task ApplySecretProvider(CancellationToken cancellationToken)
         {
             var args = new[] { new Library.Utility.Uri(m_backendUrl) };
-            await SecretProviderHelper.ApplySecretProviderAsync([], args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken);
+            await SecretProviderHelper.ApplySecretProviderAsync([], args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken).ConfigureAwait(false);
             // Write back the backend argument, if it was modified by the secret provider
             m_backendUrl = args[0].ToString();
         }

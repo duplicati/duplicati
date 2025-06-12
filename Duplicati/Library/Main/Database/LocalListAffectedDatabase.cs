@@ -34,7 +34,9 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalListAffectedDatabase();
 
-            dbnew = (LocalListAffectedDatabase)await CreateLocalDatabaseAsync(path, "ListAffected", false, pagecachesize, dbnew);
+            dbnew = (LocalListAffectedDatabase)
+                await CreateLocalDatabaseAsync(path, "ListAffected", false, pagecachesize, dbnew)
+                    .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 
             return dbnew;
@@ -68,7 +70,10 @@ namespace Duplicati.Library.Main.Database
 
         public async IAsyncEnumerable<Interface.IListResultFileset> GetFilesets(IEnumerable<string> items)
         {
-            var filesets = await FilesetTimes().ToArrayAsync();
+            var filesets = await FilesetTimes()
+                .ToArrayAsync()
+                .ConfigureAwait(false);
+
             var dict = new Dictionary<long, long>();
             for (var i = 0; i < filesets.Length; i++)
                 dict[filesets[i].Key] = i;
@@ -106,10 +111,10 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
-            using (var tmptable = await TemporaryDbValueList.CreateAsync(this, items))
-            using (var cmd = await m_connection.CreateCommand(sql).SetTransaction(m_rtr).ExpandInClauseParameterMssqliteAsync("@Names", tmptable))
-            using (var rd = await cmd.ExecuteReaderAsync())
-                while (await rd.ReadAsync())
+            using (var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false))
+            using (var cmd = await m_connection.CreateCommand(sql).SetTransaction(m_rtr).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false))
+            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                while (await rd.ReadAsync().ConfigureAwait(false))
                 {
                     var v = dict[rd.ConvertValueToInt64(0)];
                     yield return new ListResultFileset()
@@ -180,10 +185,10 @@ namespace Duplicati.Library.Main.Database
                 ORDER BY ""Path""
             ";
 
-            using (var tmptable = await TemporaryDbValueList.CreateAsync(this, items))
-            using (var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterMssqliteAsync("@Names", tmptable))
-            using (var rd = await cmd.ExecuteReaderAsync())
-                while (await rd.ReadAsync())
+            using (var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false))
+            using (var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false))
+            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                while (await rd.ReadAsync().ConfigureAwait(false))
                     yield return new ListResultFile()
                     {
                         Path = rd.ConvertValueToString(0) ?? throw new InvalidOperationException("Path is null"),
@@ -224,8 +229,8 @@ namespace Duplicati.Library.Main.Database
                 foreach ((var x, var i) in items.Select((x, i) => (x, i)))
                     cmd.SetParameterValue($"@Message{i}", "%" + x + "%");
 
-                using (var rd = await cmd.ExecuteReaderAsync())
-                    while (await rd.ReadAsync())
+                using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                    while (await rd.ReadAsync().ConfigureAwait(false))
                         yield return new ListResultRemoteLog()
                         {
                             Timestamp = ParseFromEpochSeconds(rd.ConvertValueToInt64(0)),
@@ -302,8 +307,8 @@ namespace Duplicati.Library.Main.Database
             ";
 
             using (var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameterMssqlite("@Names", items.ToArray()))
-            using (var rd = await cmd.ExecuteReaderAsync())
-                while (await rd.ReadAsync())
+            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                while (await rd.ReadAsync().ConfigureAwait(false))
                     yield return new ListResultRemoteVolume()
                     {
                         Name = rd.ConvertValueToString(0) ?? ""

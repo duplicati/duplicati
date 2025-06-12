@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main
         internal static async Task UpdateOptionsFromDb(LocalDatabase db, Options options)
         {
             string n = null;
-            var opts = await db.GetDbOptions();
+            var opts = await db.GetDbOptions().ConfigureAwait(false);
             if (opts.ContainsKey("blocksize") && (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n)))
                 options.RawOptions["blocksize"] = opts["blocksize"] + "b";
 
@@ -124,8 +124,8 @@ namespace Duplicati.Library.Main
         /// <returns><c>true</c> if the database contains options that need to be verified; <c>false</c> otherwise</returns>
         internal static async Task<bool> ContainsOptionsForVerification(LocalDatabase db)
         {
-            var opts = await db.GetDbOptions();
-            await db.Transaction.CommitAsync();
+            var opts = await db.GetDbOptions().ConfigureAwait(false);
+            await db.Transaction.CommitAsync().ConfigureAwait(false);
             return new[] {
                 "blocksize",
                 "blockhash",
@@ -149,7 +149,7 @@ namespace Duplicati.Library.Main
                 { "blockhash", options.BlockHashAlgorithm },
                 { "filehash", options.FileHashAlgorithm }
             };
-            var opts = await db.GetDbOptions();
+            var opts = await db.GetDbOptions().ConfigureAwait(false);
 
             if (options.NoEncryption)
             {
@@ -199,7 +199,7 @@ namespace Duplicati.Library.Main
                 }
 
             //Extra sanity check
-            if (await db.GetBlocksLargerThan(options.Blocksize) > 0)
+            if (await db.GetBlocksLargerThan(options.Blocksize).ConfigureAwait(false) > 0)
                 throw new Duplicati.Library.Interface.UserInformationException("You have attempted to change the block-size on an existing backup, which is not supported. Please configure a new clean backup if you want to change the block-size.", "BlockSizeChangeNotSupported");
 
             if (needsUpdate)
@@ -209,7 +209,7 @@ namespace Duplicati.Library.Main
                     if (!newDict.ContainsKey(k.Key))
                         newDict[k.Key] = k.Value;
 
-                await db.SetDbOptions(newDict);
+                await db.SetDbOptions(newDict).ConfigureAwait(false);
             }
         }
     }

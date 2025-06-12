@@ -160,7 +160,8 @@ public static class Downgrade
             if (!nobackups)
                 Helper.CreateFileBackup(db);
 
-            using var con = await SQLiteLoader.LoadConnectionAsync(db, 0);
+            using var con = await SQLiteLoader.LoadConnectionAsync(db, 0)
+                .ConfigureAwait(false);
             using var tr = con.BeginTransaction();
             using var cmd = con.CreateCommand(tr);
             foreach (var script in downgradeScripts)
@@ -169,7 +170,7 @@ public static class Downgrade
                 try
                 {
                     cmd.SetCommandAndParameters(script.Content);
-                    var r = await cmd.ExecuteScalarAsync();
+                    var r = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
                     if (r != null)
                         throw new UserInformationException($"{r}", "DowngradeScriptFailure");
 
@@ -178,7 +179,8 @@ public static class Downgrade
                         SET Version = @Version
                     ")
                         .SetParameterValue("@Version", script.Version - 1)
-                        .ExecuteNonQueryAsync();
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -186,7 +188,7 @@ public static class Downgrade
                 }
             }
 
-            await tr.CommitAsync();
+            await tr.CommitAsync().ConfigureAwait(false);
             Console.WriteLine($"Downgraded {db} to version {targetversion}");
         }
         else if (dbversion == targetversion)

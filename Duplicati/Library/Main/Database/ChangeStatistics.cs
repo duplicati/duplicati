@@ -77,7 +77,8 @@ public static class ChangeStatistics
             ")
                 .SetParameterValue("@LastFilesetId", previousFilesetId)
                 .SetParameterValue("@CurrentFilesetId", currentFilesetId)
-                .ExecuteNonQueryAsync();
+                .ExecuteNonQueryAsync()
+                .ConfigureAwait(false);
 
             // Index for fast comparison
             await cmd.ExecuteNonQueryAsync($@"
@@ -86,37 +87,48 @@ public static class ChangeStatistics
                     ""PrefixID"",
                     ""Path""
                 )
-            ");
+            ")
+                .ConfigureAwait(false);
 
             // Added
-            results.AddedFolders = await CountAdded(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID);
-            results.AddedSymlinks = await CountAdded(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID);
+            results.AddedFolders = await CountAdded(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID)
+                .ConfigureAwait(false);
+            results.AddedSymlinks = await CountAdded(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID)
+                .ConfigureAwait(false);
             results.AddedFiles = await CountAdded(cmd, tmpName, null, [
                 LocalDatabase.FOLDER_BLOCKSET_ID,
                 LocalDatabase.SYMLINK_BLOCKSET_ID
-            ]);
+            ])
+                .ConfigureAwait(false);
 
             // Deleted
-            results.DeletedFolders = await CountDeleted(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID);
-            results.DeletedSymlinks = await CountDeleted(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID);
+            results.DeletedFolders = await CountDeleted(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID)
+                .ConfigureAwait(false);
+            results.DeletedSymlinks = await CountDeleted(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID)
+                .ConfigureAwait(false);
             results.DeletedFiles = await CountDeleted(cmd, tmpName, null, [
                 LocalDatabase.FOLDER_BLOCKSET_ID,
                 LocalDatabase.SYMLINK_BLOCKSET_ID
-            ]);
+            ])
+                .ConfigureAwait(false);
 
             // Modified
-            results.ModifiedFolders = await CountModified(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID);
-            results.ModifiedSymlinks = await CountModified(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID);
+            results.ModifiedFolders = await CountModified(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID)
+                .ConfigureAwait(false);
+            results.ModifiedSymlinks = await CountModified(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID)
+                .ConfigureAwait(false);
             results.ModifiedFiles = await CountModified(cmd, tmpName, null, [
                 LocalDatabase.FOLDER_BLOCKSET_ID,
                 LocalDatabase.SYMLINK_BLOCKSET_ID
-            ]);
+            ])
+                .ConfigureAwait(false);
         }
         finally
         {
             try
             {
-                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tmpName}"";");
+                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tmpName}"";")
+                    .ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -147,7 +159,8 @@ public static class ChangeStatistics
             )
         ";
 
-        return await CountWithCondition(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets);
+        return await CountWithCondition(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -172,7 +185,8 @@ public static class ChangeStatistics
             )
         ";
 
-        return await CountWithCondition(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets);
+        return await CountWithCondition(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -225,8 +239,10 @@ public static class ChangeStatistics
             WHERE {conditions}
         ";
 
-        return await cmd.SetCommandAndParameters(sql)
-            .ExecuteScalarInt64Async(0);
+        return await cmd
+            .SetCommandAndParameters(sql)
+            .ExecuteScalarInt64Async(0)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -252,8 +268,10 @@ public static class ChangeStatistics
             WHERE {fullCondition}
         ";
 
-        return await cmd.SetCommandAndParameters(sql)
-            .ExecuteScalarInt64Async(0);
+        return await cmd
+            .SetCommandAndParameters(sql)
+            .ExecuteScalarInt64Async(0)
+            .ConfigureAwait(false);
     }
 
     /// <summary>

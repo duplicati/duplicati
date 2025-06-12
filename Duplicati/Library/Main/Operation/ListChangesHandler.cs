@@ -80,12 +80,16 @@ namespace Duplicati.Library.Main.Operation
             DateTime compareVersionTime;
 
             using (var tmpdb = useLocalDb ? null : new TempFile())
-            using (var db = await Database.LocalListChangesDatabase.CreateAsync(useLocalDb ? m_options.Dbpath : (string)tmpdb, m_options.SqlitePageCache))
-            using (var storageKeeper = await db.CreateStorageHelper())
+            using (var db = await Database.LocalListChangesDatabase.CreateAsync(useLocalDb ? m_options.Dbpath : (string)tmpdb, m_options.SqlitePageCache).ConfigureAwait(false))
+            using (var storageKeeper = await db.CreateStorageHelper().ConfigureAwait(false))
             {
                 if (useLocalDb)
                 {
-                    var dbtimes = await db.FilesetTimes().ToListAsync();
+                    var dbtimes = await db
+                        .FilesetTimes()
+                        .ToListAsync()
+                        .ConfigureAwait(false);
+
                     if (dbtimes.Count < 2)
                         throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", dbtimes.Count), "NeedTwoBackupsToStartDiff");
 
@@ -97,8 +101,12 @@ namespace Duplicati.Library.Main.Operation
                     times.Remove(bt);
                     SelectTime(compareVersion, times, out compareVersionIndex, out compareVersionTime, out compareVersionId);
 
-                    await storageKeeper.AddFromDb(baseVersionId, false, filter);
-                    await storageKeeper.AddFromDb(compareVersionId, true, filter);
+                    await storageKeeper
+                        .AddFromDb(baseVersionId, false, filter)
+                        .ConfigureAwait(false);
+                    await storageKeeper
+                        .AddFromDb(compareVersionId, true, filter)
+                        .ConfigureAwait(false);
                 }
                 else
                 {
@@ -143,7 +151,9 @@ namespace Duplicati.Library.Main.Operation
                     using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
                         foreach (var f in rd.Files)
                             if (FilterExpression.Matches(filter, f.Path))
-                                await storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false);
+                                await storageKeeper
+                                    .AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false)
+                                    .ConfigureAwait(false);
 
                     if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         return;
@@ -152,11 +162,18 @@ namespace Duplicati.Library.Main.Operation
                     using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
                         foreach (var f in rd.Files)
                             if (FilterExpression.Matches(filter, f.Path))
-                                await storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), true);
+                                await storageKeeper
+                                    .AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), true)
+                                    .ConfigureAwait(false);
                 }
 
-                var changes = await storageKeeper.CreateChangeCountReport();
-                var sizes = await storageKeeper.CreateChangeSizeReport();
+                var changes = await storageKeeper
+                    .CreateChangeCountReport()
+                    .ConfigureAwait(false);
+
+                var sizes = await storageKeeper
+                    .CreateChangeSizeReport()
+                    .ConfigureAwait(false);
 
                 var lst = (m_options.FullResult || callback != null) ?
                         (from n in storageKeeper.CreateChangedFileReport()
@@ -168,7 +185,7 @@ namespace Duplicati.Library.Main.Operation
                     changes.DeletedFolders, changes.DeletedSymlinks, changes.DeletedFiles,
                     changes.ModifiedFolders, changes.ModifiedSymlinks, changes.ModifiedFiles,
                     sizes.AddedSize, sizes.DeletedSize, sizes.PreviousSize, sizes.CurrentSize,
-                    (lst == null || callback == null) ? null : await lst.ToArrayAsync()
+                    (lst == null || callback == null) ? null : await lst.ToArrayAsync().ConfigureAwait(false)
                 );
 
                 if (callback != null)

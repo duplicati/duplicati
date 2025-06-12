@@ -55,15 +55,17 @@ namespace Duplicati.Library.Main.Operation
 
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
-                using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache))
+                using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false))
                 {
-                    using (var filesets = await db.SelectFileSets(m_options.Time, m_options.Version))
+                    using (var filesets = await db.SelectFileSets(m_options.Time, m_options.Version).ConfigureAwait(false))
                     {
                         if (!filter.Empty)
                         {
                             if (simpleList || (m_options.ListFolderContents && !m_options.AllVersions))
                             {
-                                await filesets.TakeFirst();
+                                await filesets
+                                    .TakeFirst()
+                                    .ConfigureAwait(false);
                             }
                         }
 
@@ -91,7 +93,8 @@ namespace Duplicati.Library.Main.Operation
                                 await filesets
                                     .QuickSets()
                                     .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
-                                    .ToArrayAsync(),
+                                    .ToArrayAsync()
+                                    .ConfigureAwait(false),
                                 null
                             );
                         }
@@ -101,7 +104,8 @@ namespace Duplicati.Library.Main.Operation
                                 await filesets
                                     .Sets()
                                     .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
-                                    .ToArrayAsync(),
+                                    .ToArrayAsync()
+                                    .ConfigureAwait(false),
                                 files == null
                                     ? null
                                     :
@@ -135,13 +139,14 @@ namespace Duplicati.Library.Main.Operation
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new TempFile())
-            using (var db = await LocalDatabase.CreateLocalDatabaseAsync(tmpdb, "List", true, m_options.SqlitePageCache))
+            using (var db = await LocalDatabase.CreateLocalDatabaseAsync(tmpdb, "List", true, m_options.SqlitePageCache).ConfigureAwait(false))
             {
                 var filteredList = ParseAndFilterFilesets(await backendManager.ListAsync(cancellationToken).ConfigureAwait(false), m_options);
                 if (filteredList.Count == 0)
                     throw new UserInformationException("No filesets found on remote target", "EmptyRemoteFolder");
 
-                var numberSeq = await CreateResultSequence(filteredList, backendManager, m_options, cancellationToken);
+                var numberSeq = await CreateResultSequence(filteredList, backendManager, m_options, cancellationToken)
+                    .ConfigureAwait(false);
                 if (filter.Empty)
                 {
                     m_result.SetResult(numberSeq, null);

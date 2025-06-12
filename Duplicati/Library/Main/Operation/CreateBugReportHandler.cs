@@ -68,11 +68,11 @@ namespace Duplicati.Library.Main.Operation
             using (var tmp = new TempFile())
             {
                 File.Copy(m_options.Dbpath, tmp, true);
-                using (var db = await LocalBugReportDatabase.CreateAsync(tmp, m_options.SqlitePageCache))
+                using (var db = await LocalBugReportDatabase.CreateAsync(tmp, m_options.SqlitePageCache).ConfigureAwait(false))
                 {
-                    await db.Fix();
+                    await db.Fix().ConfigureAwait(false);
                     if (m_options.AutoVacuum)
-                        await db.Vacuum();
+                        await db.Vacuum().ConfigureAwait(false);
                 }
 
                 // Apply zip64 option if not already set

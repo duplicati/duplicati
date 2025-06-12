@@ -50,9 +50,13 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalDeleteDatabase();
 
-            dbnew = (LocalDeleteDatabase)await CreateLocalDatabaseAsync(path, operation, true, pagecachesize, dbnew);
+            dbnew = (LocalDeleteDatabase)
+                await CreateLocalDatabaseAsync(path, operation, true, pagecachesize, dbnew)
+                    .ConfigureAwait(false);
 
-            dbnew.m_registerDuplicateBlockCommand = await dbnew.Connection.CreateCommandAsync(REGISTER_COMMAND);
+            dbnew.m_registerDuplicateBlockCommand =
+                await dbnew.Connection.CreateCommandAsync(REGISTER_COMMAND)
+                    .ConfigureAwait(false);
 
             return dbnew;
         }
@@ -61,9 +65,13 @@ namespace Duplicati.Library.Main.Database
         {
             dbnew ??= new LocalDeleteDatabase();
 
-            dbnew = (LocalDeleteDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
+            dbnew = (LocalDeleteDatabase)
+                await CreateLocalDatabaseAsync(dbparent, dbnew)
+                    .ConfigureAwait(false);
 
-            dbnew.m_registerDuplicateBlockCommand = await dbnew.Connection.CreateCommandAsync(REGISTER_COMMAND);
+            dbnew.m_registerDuplicateBlockCommand =
+                await dbnew.Connection.CreateCommandAsync(REGISTER_COMMAND)
+                    .ConfigureAwait(false);
 
             return dbnew;
         }
@@ -80,13 +88,17 @@ namespace Duplicati.Library.Main.Database
             {
                 var deleted = 0;
 
-                using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds)))
-                    deleted += await (await cmd.SetCommandAndParameters(@"
-                        DELETE FROM ""Fileset""
-                        WHERE ""Timestamp"" IN (@Timestamps)
-                    ")
-                        .ExpandInClauseParameterMssqliteAsync("@Timestamps", tempTable))
-                        .ExecuteNonQueryAsync();
+                using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds)).ConfigureAwait(false))
+                    deleted += await (
+                        await cmd.SetCommandAndParameters(@"
+                            DELETE FROM ""Fileset""
+                            WHERE ""Timestamp"" IN (@Timestamps)
+                        ")
+                        .ExpandInClauseParameterMssqliteAsync("@Timestamps", tempTable)
+                        .ConfigureAwait(false)
+                    )
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
 
                 if (deleted != toDelete.Length)
                     throw new Exception($"Unexpected number of deleted filesets {deleted} vs {toDelete.Length}");
@@ -98,7 +110,8 @@ namespace Duplicati.Library.Main.Database
                         SELECT DISTINCT ""ID""
                         FROM ""Fileset""
                     )
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync(@"
                     DELETE FROM ""ChangeJournalData""
@@ -106,7 +119,8 @@ namespace Duplicati.Library.Main.Database
                         SELECT DISTINCT ""ID""
                         FROM ""Fileset""
                     )
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync(@"
                     DELETE FROM ""FileLookup""
@@ -114,7 +128,8 @@ namespace Duplicati.Library.Main.Database
                         SELECT DISTINCT ""FileID""
                         FROM ""FilesetEntry""
                     )
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync(@"
                     DELETE FROM ""Metadataset""
@@ -122,7 +137,8 @@ namespace Duplicati.Library.Main.Database
                         SELECT DISTINCT ""MetadataID""
                         FROM ""FileLookup""
                     )
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync(@"
                     DELETE FROM ""Blockset""
@@ -133,7 +149,8 @@ namespace Duplicati.Library.Main.Database
                             SELECT DISTINCT ""BlocksetID""
                             FROM ""Metadataset""
                     )
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync(@"
                     DELETE FROM ""BlocksetEntry""
@@ -141,7 +158,8 @@ namespace Duplicati.Library.Main.Database
                         SELECT DISTINCT ""ID""
                         FROM ""Blockset""
                     )
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync(@"
                     DELETE FROM ""BlocklistHash""
@@ -149,7 +167,8 @@ namespace Duplicati.Library.Main.Database
                         SELECT DISTINCT ""ID""
                         FROM ""Blockset""
                     )
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 //We save the block info for the remote files, before we delete it
                 await cmd.ExecuteNonQueryAsync(@"
@@ -173,7 +192,8 @@ namespace Duplicati.Library.Main.Database
                                 ""BlocklistHash""
                             WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash""
                     )
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync(@"
                     DELETE FROM ""Block""
@@ -187,7 +207,8 @@ namespace Duplicati.Library.Main.Database
                                 ""BlocklistHash""
                             WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash""
                     )
-                ");
+                ")
+                    .ConfigureAwait(false);
 
                 //Find all remote filesets that are no longer required, and mark them as deleting
                 var updated = await cmd.SetCommandAndParameters(@"
@@ -209,7 +230,8 @@ namespace Duplicati.Library.Main.Database
                         RemoteVolumeState.Temporary.ToString(),
                         RemoteVolumeState.Deleting.ToString()
                     ])
-                    .ExecuteNonQueryAsync();
+                    .ExecuteNonQueryAsync()
+                    .ConfigureAwait(false);
 
                 if (deleted != updated)
                     throw new Exception($"Unexpected number of remote volumes marked as deleted. Found {deleted} filesets, but {updated} volumes");
@@ -226,8 +248,8 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
                     .SetParameterValue("@State", RemoteVolumeState.Deleting.ToString());
 
-                using (var rd = await cmd.ExecuteReaderAsync())
-                    while (await rd.ReadAsync())
+                using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                    while (await rd.ReadAsync().ConfigureAwait(false))
                         yield return new KeyValuePair<string, long>(
                             rd.ConvertValueToString(0) ?? "",
                             rd.ConvertValueToInt64(1)
@@ -256,10 +278,10 @@ namespace Duplicati.Library.Main.Database
                     ORDER BY ""Timestamp"" DESC
                 ");
 
-                using (var reader = await cmd.ExecuteReaderAsync())
+                using (var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
                 {
                     int version = 0;
-                    while (await reader.ReadAsync())
+                    while (await reader.ReadAsync().ConfigureAwait(false))
                     {
                         yield return new ListResultFileset(
                             version++,
@@ -424,13 +446,15 @@ namespace Duplicati.Library.Main.Database
             {
                 try
                 {
-                    await cmd.SetCommandAndParameters(createtable)
+                    await cmd
+                        .SetCommandAndParameters(createtable)
                         .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
                         .ExpandInClauseParameterMssqlite("@AllowedStates", [
                             RemoteVolumeState.Uploaded.ToString(),
                             RemoteVolumeState.Verified.ToString()
                         ])
-                        .ExecuteNonQueryAsync();
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
 
                     cmd.SetCommandAndParameters($@"
                         SELECT
@@ -445,8 +469,8 @@ namespace Duplicati.Library.Main.Database
                         ORDER BY ""B"".""Sorttime"" ASC
                     ");
 
-                    using (var rd = await cmd.ExecuteReaderAsync())
-                        while (await rd.ReadAsync())
+                    using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                        while (await rd.ReadAsync().ConfigureAwait(false))
                             yield return new VolumeUsage(
                                 rd.ConvertValueToString(0) ?? "",
                                 rd.ConvertValueToInt64(1, 0) + rd.ConvertValueToInt64(2, 0),
@@ -458,7 +482,9 @@ namespace Duplicati.Library.Main.Database
                 {
                     try
                     {
-                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tmptablename}"" ");
+                        await cmd
+                            .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tmptablename}"" ")
+                            .ConfigureAwait(false);
                     }
                     catch { }
                 }
@@ -565,7 +591,15 @@ namespace Duplicati.Library.Main.Database
 
         public async Task<ICompactReport> GetCompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount)
         {
-            return new CompactReport(volsize, wastethreshold, smallfilesize, maxsmallfilecount, await GetWastedSpaceReport().ToListAsync());
+            return new CompactReport(
+                volsize,
+                wastethreshold,
+                smallfilesize,
+                maxsmallfilecount,
+                await GetWastedSpaceReport()
+                    .ToListAsync()
+                    .ConfigureAwait(false)
+            );
         }
 
 
@@ -611,6 +645,7 @@ namespace Duplicati.Library.Main.Database
                             ""Hash"" = @Hash
                             AND ""Size"" = @Size
                     ")
+                        .ConfigureAwait(false)
                 };
             }
 
@@ -621,7 +656,8 @@ namespace Duplicati.Library.Main.Database
                     .SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
-                    .ExecuteScalarInt64Async(-1);
+                    .ExecuteScalarInt64Async(-1)
+                    .ConfigureAwait(false);
 
                 if (r == -1)
                 {
@@ -651,7 +687,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         public async Task<IBlockQuery> CreateBlockQueryHelper()
         {
-            return await BlockQuery.CreateAsync(this);
+            return await BlockQuery.CreateAsync(this).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -668,7 +704,8 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@VolumeId", volumeID)
                 .SetParameterValue("@Hash", hash)
                 .SetParameterValue("@Size", size)
-                .ExecuteNonQueryAsync();
+                .ExecuteNonQueryAsync()
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -679,7 +716,8 @@ namespace Duplicati.Library.Main.Database
         /// <param name="transaction">The transaction to execute the command in</param>
         public async Task PrepareForDelete(string filename, IEnumerable<long> volumeIdsToBeRemoved)
         {
-            var deletedVolume = await GetRemoteVolume(filename);
+            var deletedVolume = await GetRemoteVolume(filename)
+                .ConfigureAwait(false);
             if (deletedVolume.Type != RemoteVolumeType.Blocks)
                 return;
 
@@ -696,30 +734,36 @@ namespace Duplicati.Library.Main.Database
                         WHERE ""VolumeID"" = @VolumeId
                     ")
                         .SetParameterValue("@VolumeId", deletedVolume.ID)
-                        .ExecuteNonQueryAsync();
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
 
-                    using (var tempTable = await TemporaryDbValueList.CreateAsync(this, volumeIdsToBeRemoved))
-                        await (await cmd.SetCommandAndParameters($@"
-                            CREATE {TEMPORARY} TABLE ""{replacementBlocks}"" AS
-                            SELECT
-                                ""BlockID"",
-                                MAX(""VolumeID"") AS ""VolumeID""
-                            FROM ""DuplicateBlock""
-                            WHERE
-                                ""VolumeID"" NOT IN (@VolumeIds)
-                                AND ""BlockID"" IN (
-                                    SELECT ""ID""
-                                    FROM ""{updatedBlocks}""
-                                )
-                                GROUP BY ""BlockID""
-                        ")
-                            .ExpandInClauseParameterMssqliteAsync("@VolumeIds", tempTable))
-                            .ExecuteNonQueryAsync();
+                    using (var tempTable = await TemporaryDbValueList.CreateAsync(this, volumeIdsToBeRemoved).ConfigureAwait(false))
+                        await (
+                            await cmd.SetCommandAndParameters($@"
+                                CREATE {TEMPORARY} TABLE ""{replacementBlocks}"" AS
+                                SELECT
+                                    ""BlockID"",
+                                    MAX(""VolumeID"") AS ""VolumeID""
+                                FROM ""DuplicateBlock""
+                                WHERE
+                                    ""VolumeID"" NOT IN (@VolumeIds)
+                                    AND ""BlockID"" IN (
+                                        SELECT ""ID""
+                                        FROM ""{updatedBlocks}""
+                                    )
+                                    GROUP BY ""BlockID""
+                            ")
+                            .ExpandInClauseParameterMssqliteAsync("@VolumeIds", tempTable)
+                            .ConfigureAwait(false)
+                        )
+                            .ExecuteNonQueryAsync()
+                            .ConfigureAwait(false);
 
                     var targetCount = await cmd.ExecuteScalarInt64Async($@"
                         SELECT COUNT(*)
                         FROM ""{updatedBlocks}""
-                    ");
+                    ")
+                        .ConfigureAwait(false);
 
                     if (targetCount == 0)
                         return;
@@ -727,7 +771,8 @@ namespace Duplicati.Library.Main.Database
                     var replacementCount = await cmd.ExecuteScalarInt64Async($@"
                         SELECT COUNT(*)
                         FROM ""{replacementBlocks}""
-                    ");
+                    ")
+                        .ConfigureAwait(false);
 
                     var updateCount = await cmd.SetCommandAndParameters(@$"
                         UPDATE ""Block""
@@ -741,7 +786,8 @@ namespace Duplicati.Library.Main.Database
                         WHERE ""Block"".""VolumeID"" = @VolumeId
                     ")
                         .SetParameterValue("@VolumeId", deletedVolume.ID)
-                        .ExecuteNonQueryAsync();
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
 
                     var deleteCount = await cmd.ExecuteNonQueryAsync(@$"
                         DELETE FROM ""DuplicateBlock""
@@ -757,7 +803,8 @@ namespace Duplicati.Library.Main.Database
                                     || ""RB"".""VolumeID""
                                 FROM ""{replacementBlocks}"" RB
                             )
-                    ");
+                    ")
+                        .ConfigureAwait(false);
 
                     if (targetCount != updateCount
                         || replacementCount != deleteCount
@@ -772,18 +819,21 @@ namespace Duplicati.Library.Main.Database
                         WHERE ""VolumeID"" = @VolumeId
                     ")
                         .SetParameterValue("@VolumeId", deletedVolume.ID)
-                        .ExecuteNonQueryAsync();
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
                 }
                 finally
                 {
                     try
                     {
-                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{updatedBlocks}"" ");
+                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{updatedBlocks}"" ")
+                            .ConfigureAwait(false);
                     }
                     catch { }
                     try
                     {
-                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{replacementBlocks}"" ");
+                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{replacementBlocks}"" ")
+                            .ConfigureAwait(false);
                     }
                     catch { }
                 }
@@ -823,8 +873,8 @@ namespace Duplicati.Library.Main.Database
                         AND ""B"".""Size"" IS NOT NULL
                 ");
 
-                using (var rd = await cmd.ExecuteReaderAsync())
-                    while (await rd.ReadAsync())
+                using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                    while (await rd.ReadAsync().ConfigureAwait(false))
                     {
                         var name = rd.ConvertValueToString(0) ?? "";
                         if (!lookupBlock.TryGetValue(name, out var indexfileList))
