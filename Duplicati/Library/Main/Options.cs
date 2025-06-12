@@ -336,6 +336,7 @@ namespace Duplicati.Library.Main
             AuthOptionsHelper.GetOptions().Select(x => x.Name)
             .Concat(SslOptionsHelper.GetOptions().Select(x => x.Name))
             .Concat(TimeoutOptionsHelper.GetOptions().Select(x => x.Name))
+            .Concat(AuthIdOptionsHelper.GetOptions("").Select(x => x.Name))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>

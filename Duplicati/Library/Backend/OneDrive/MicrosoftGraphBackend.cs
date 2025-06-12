@@ -115,7 +115,7 @@ namespace Duplicati.Library.Backend
 
         private readonly Lazy<string> rootPathFromURL;
         private string RootPath => this.rootPathFromURL.Value;
-        private string TokenUrl => OAuthHelperHttpClient.OAUTH_LOGIN_URL(ProtocolKey);
+        private string TokenUrl => AuthIdOptionsHelper.GetOAuthLoginUrl(ProtocolKey, null);
 
         protected MicrosoftGraphBackend()
         {
@@ -151,7 +151,7 @@ namespace Duplicati.Library.Backend
             if (!(options.TryGetValue(UPLOAD_SESSION_FRAGMENT_RETRY_DELAY_OPTION, out var fragmentRetryDelayStr) && int.TryParse(fragmentRetryDelayStr, out this.fragmentRetryDelay)))
                 this.fragmentRetryDelay = UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY;
 
-            this.m_client = new OAuthHttpClient(authId.AuthId!, protocolKey);
+            this.m_client = new OAuthHttpClient(authId.AuthId!, protocolKey, authId.OAuthUrl);
             this.m_client.BaseAddress = new System.Uri(BASE_ADDRESS);
 
             this.m_retryAfter = RetryAfterHelper.CreateOrGetRetryAfterHelper(url);

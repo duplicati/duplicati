@@ -27,59 +27,28 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class CommonOptions : Interface.IConnectionModule, IDisposable
     {
-        private const string OPTION_OAUTH_URL = "oauth-url";
+        public string Key => "common-options";
 
-        /// <summary>
-        /// The handle to the call-context oauth settings
-        /// </summary>
-		private IDisposable m_oauthsettings;
+        public string DisplayName => Strings.CommonOptions.DisplayName;
 
-        #region IGenericModule Members
+        public string Description => Strings.CommonOptions.Description;
 
-        public string Key
-        {
-            get { return "common-options"; }
-        }
-
-        public string DisplayName
-        {
-            get { return Strings.CommonOptions.DisplayName; }
-        }
-
-        public string Description
-        {
-            get { return Strings.CommonOptions.Description; }
-        }
-
-        public bool LoadAsDefault
-        {
-            get { return true; }
-        }
+        public bool LoadAsDefault => true;
 
         public IList<Interface.ICommandLineArgument> SupportedCommands
             => [
                 .. TimeoutOptionsHelper.GetOptions(),
                 .. SslOptionsHelper.GetCertOnlyOptions(),
-                new Interface.CommandLineArgument(OPTION_OAUTH_URL, Interface.CommandLineArgument.ArgumentType.String, Strings.CommonOptions.OauthurlShort, Strings.CommonOptions.OauthurlLong, OAuthContextSettings.DUPLICATI_OAUTH_SERVICE),
+                .. AuthIdOptionsHelper.GetServerOnlyOptions(),
             ];
 
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
-            commandlineOptions.TryGetValue(OPTION_OAUTH_URL, out var url);
-            if (!string.IsNullOrWhiteSpace(url))
-                m_oauthsettings = OAuthContextSettings.StartSession(url);
         }
-
-        #endregion
-
-        #region IDisposable Members
 
         public void Dispose()
         {
-            m_oauthsettings?.Dispose();
-            m_oauthsettings = null;
         }
 
-        #endregion
     }
 }

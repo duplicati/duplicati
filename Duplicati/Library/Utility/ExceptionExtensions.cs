@@ -28,6 +28,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Utility;
 
@@ -170,6 +171,14 @@ public static class ExceptionExtensions
 
                 var errno = ioEx.HResult & 0xFFFF;
                 return PosixPermissionErrnos.Contains(errno);
+            }
+        }
+
+        if (ex is PosixFile.PosixException posixEx)
+        {
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+            {
+                return posixEx.Errno == Mono.Unix.Native.Errno.EPERM || posixEx.Errno == Mono.Unix.Native.Errno.EACCES;
             }
         }
 

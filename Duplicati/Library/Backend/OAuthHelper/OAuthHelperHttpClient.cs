@@ -27,6 +27,7 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library;
 
@@ -36,6 +37,7 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
     private string _Authid;
     private DateTime _mTokenExpires = DateTime.UtcNow;
     protected string OAuthLoginUrl { get; }
+    private readonly string _OAuthUrl;
 
     /// <summary>
     /// Timeout for authentication requests
@@ -46,33 +48,6 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
     /// Maximum number of retries for authorization
     /// </summary>
     private const int MAX_AUTHORIZATION_RETRIES = 5;
-
-    /// <summary>
-    /// Returns the URL to use for obtaining an OAuth token for the given module.
-    /// </summary>
-    /// <param name="modulename">The name of the module to use.</param>
-    /// <returns>The URL to use for obtaining an OAuth token.</returns>
-    public static string OAUTH_LOGIN_URL(string modulename)
-    {
-        var u = new Library.Utility.Uri(OAuthContextSettings.ServerURL);
-        var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
-        return string.Format(addr.ToString(), modulename);
-    }
-
-    /// <summary>
-    /// Returns the URL to use for obtaining an OAuth token for the given module, defaulting to the new server.
-    /// </summary>
-    /// <param name="modulename">The name of the module to use.</param>
-    public static string OAUTH_LOGIN_URL_NEW(string modulename)
-    {
-        var baseUrl = OAuthContextSettings.ServerURLRaw;
-        if (string.IsNullOrWhiteSpace(baseUrl))
-            baseUrl = OAuthContextSettings.DUPLICATI_OAUTH_SERVICE_NEW;
-
-        var u = new Library.Utility.Uri(baseUrl);
-        var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
-        return string.Format(addr.ToString(), modulename);
-    }
 
     /// <summary>
     /// Set to true to automatically add the Authorization header to requests
@@ -102,11 +77,12 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
         return client;
     }
     
-    public OAuthHelperHttpClient(string authid, string servicename, HttpClient httpClient = null, string useragent = null)
+    public OAuthHelperHttpClient(string authid, string servicename, string oauthurl, HttpClient httpClient = null, string useragent = null)
         : base(httpClient ?? CreateHttpClientWithInfiniteTimeout())
     {
         _Authid = authid;
-        OAuthLoginUrl = OAUTH_LOGIN_URL(servicename);
+        _OAuthUrl = oauthurl;
+        OAuthLoginUrl = AuthIdOptionsHelper.GetOAuthLoginUrl(servicename, oauthurl);
 
         if (string.IsNullOrEmpty(authid))
             throw new Interface.UserInformationException(
@@ -117,7 +93,7 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
     {
         var request = new HttpRequestMessage(method, url);
         request.Headers.Add("User-Agent", UserAgent);
-        if (!noAuthorization && AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer",
+        if (!noAuthorization && AutoAuthHeader && !string.Equals(_OAuthUrl, url)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer",
             await GetAccessTokenAsync(cancellationToken).ConfigureAwait(false));
         return request;
     }
@@ -139,7 +115,7 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
                 HttpResponseMessage response = null;
                 try
                 {
-                    using var request = await CreateRequestAsync(OAuthContextSettings.ServerURL, HttpMethod.Get, false, cancellationToken).ConfigureAwait(false);
+                    using var request = await CreateRequestAsync(_OAuthUrl, HttpMethod.Get, false, cancellationToken).ConfigureAwait(false);
 
                     return await Utility.Utility.WithTimeout(AUTHENTICATION_TIMEOUT, cancellationToken, async ct =>
                     {

@@ -33,7 +33,7 @@ namespace Duplicati.Library.Backend.Box
 {
     public class BoxBackend : IStreamingBackend
     {
-        private static readonly string TOKEN_URL = OAuthHelperHttpClient.OAUTH_LOGIN_URL("box.com");
+        private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("box.com", null);
         private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
 
@@ -53,8 +53,8 @@ namespace Duplicati.Library.Backend.Box
         private class BoxHelper : OAuthHelperHttpClient
         {
             private readonly TimeoutOptionsHelper.Timeouts _timeouts;
-            public BoxHelper(string authid, TimeoutOptionsHelper.Timeouts timeouts)
-                : base(authid, "box.com")
+            public BoxHelper(AuthIdOptionsHelper.AuthIdOptions authId, TimeoutOptionsHelper.Timeouts timeouts)
+                : base(authId.AuthId, "box.com", authId.OAuthUrl)
             {
                 AutoAuthHeader = true;
                 _timeouts = timeouts;
@@ -94,8 +94,7 @@ namespace Duplicati.Library.Backend.Box
             _path = Util.AppendDirSeparator(uri.HostAndPath, "/");
 
             var authid = AuthIdOptionsHelper.Parse(options)
-                .RequireCredentials(TOKEN_URL)
-                .AuthId!;
+                .RequireCredentials(TOKEN_URL);
 
             _deleteFromTrash = Utility.Utility.ParseBoolOption(options, REALLY_DELETE_OPTION);
             _timeouts = TimeoutOptionsHelper.Parse(options);

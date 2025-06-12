@@ -29,21 +29,21 @@ public class JottacloudAuthHelper : OAuthHelperHttpClient, IDisposable
 {
     private const string USERINFO_URL = "https://id.jottacloud.com/auth/realms/jottacloud/protocol/openid-connect/userinfo";
 
-    private JottacloudAuthHelper(HttpClient httpClient, string accessToken)
-        : base(accessToken, "jottacloud", httpClient) // This will purposefully create a new HttpClient instance per AuthHelper instance
+    private JottacloudAuthHelper(HttpClient httpClient, string accessToken, string oauthUrl)
+        : base(accessToken, "jottacloud", oauthUrl, httpClient) // This will purposefully create a new HttpClient instance per AuthHelper instance
     {
         AutoAuthHeader = true;
         AutoV2 = false; // Jottacloud is not v2 compatible because it generates a new refresh token with every access token refresh and invalidates the old.
         Username = null!; // Setting via initializer
     }
 
-    public static async Task<JottacloudAuthHelper> CreateAsync(string accessToken, CancellationToken cancellationToken = default)
+    public static async Task<JottacloudAuthHelper> CreateAsync(string accessToken, string oauthUrl, CancellationToken cancellationToken = default)
     {
         var httpClient = HttpClientHelper.CreateClient();
         httpClient.Timeout = Timeout.InfiniteTimeSpan;
         try
         {
-            var inst = new JottacloudAuthHelper(httpClient, accessToken);
+            var inst = new JottacloudAuthHelper(httpClient, accessToken, oauthUrl);
             var userinfo = await inst.GetJsonDataAsync<UserInfo>(USERINFO_URL, cancellationToken);
             if (userinfo == null || string.IsNullOrEmpty(userinfo.Username))
                 throw new UserInformationException(Strings.Jottacloud.NoUsernameError, "JottaNoUsername");
