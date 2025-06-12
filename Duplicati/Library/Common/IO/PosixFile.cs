@@ -117,12 +117,13 @@ namespace Duplicati.Library.Common.IO
         {
             public readonly int ErrorCode;
             public readonly Errno Errno;
-            private string _message;
-            public override string Message => string.Format("{0}, error: {1} ({2})", _message, Errno, ErrorCode);
+            private readonly string _message;
+            public override string Message => _message;
             protected PosixException(string message)
             {
                 Errno = Syscall.GetLastError();
                 ErrorCode = (int)Errno;
+                _message = string.Format("{0}, error: {1} ({2})", message, Errno, ErrorCode);
             }
         }
 
