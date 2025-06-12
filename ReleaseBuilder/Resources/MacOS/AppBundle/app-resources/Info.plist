@@ -30,5 +30,23 @@
     <string>NSApplication</string>
 	<key>LSUIElement</key>
 	<true />
+
+	<!-- Privacy usage descriptions -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Duplicati needs access to your Photos Library to back up your images.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Duplicati needs access to your Downloads folder to include files in your backups.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Duplicati needs access to your Documents folder to include files in your backups.</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>Duplicati needs access to your Desktop folder to include files in your backups.</string>
+	<key>NSRemovableVolumesUsageDescription</key>
+	<string>Duplicati needs access to external drives for backup and restore operations.</string>
+	<key>NSNetworkVolumesUsageDescription</key>
+	<string>Duplicati needs access to network drives for backup and restore operations.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Duplicati may run scripts that need to control other apps using AppleScript for automation purposes.</string>
+	<key>NSSystemAdministrationUsageDescription</key>
+	<string>Duplicati may require administrative privileges for system-wide backups and operations.</string>
 </dict>
 </plist>
