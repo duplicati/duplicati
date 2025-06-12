@@ -899,6 +899,9 @@ namespace Duplicati.Library.Main
                                 }
 
                         }
+
+                        if (a.Type == CommandLineArgument.ArgumentType.Boolean && a.DefaultValue == "true" && !a.Deprecated)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "DefaultBooleanOption", null, Strings.Controller.WrongDefaultBooleanOptionWarning(a.Name), null);
                     }
             }
 
