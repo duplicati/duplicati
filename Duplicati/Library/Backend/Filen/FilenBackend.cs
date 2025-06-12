@@ -107,11 +107,9 @@ public class FilenBackend : IStreamingBackend
         {
             _client?.Dispose();
             _client = null;
-            _client = await FilenClient.CreateClientAsync(((Func<HttpClient>)(() => {
-                var httpClient = HttpClientHelper.CreateClient();
-                httpClient.Timeout = Timeout.InfiniteTimeSpan;
-                return httpClient;
-            }))(), _auth.Username!, _auth.Password!, _twoFactorCode, cancellationToken).ConfigureAwait(false);
+            var httpClient = HttpClientHelper.CreateClient();
+            httpClient.Timeout = Timeout.InfiniteTimeSpan;
+            _client = await FilenClient.CreateClientAsync(httpClient, _auth.Username!, _auth.Password!, _twoFactorCode, cancellationToken).ConfigureAwait(false);
         }
 
         return _client;

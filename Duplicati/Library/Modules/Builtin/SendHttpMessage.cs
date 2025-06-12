@@ -394,6 +394,7 @@ namespace Duplicati.Library.Modules.Builtin
             HttpClientHelper.ConfigureHandlerCertificateValidator(httpHandler, m_acceptAnyCertificate, m_acceptSpecificCertificates);
 
             using var client = HttpClientHelper.CreateClient(httpHandler);
+            // Explicitly keeping the default 100s timeout
 
             Exception ex = null;
 

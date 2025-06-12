@@ -90,7 +90,7 @@ namespace Duplicati.Library.UsageReporter
                                         timeoutToken.CancelAfter(TimeSpan.FromSeconds(UPLOAD_OPERATION_TIMEOUT_SECONDS));
 
                                         using var client = HttpClientHelper.CreateClient();
-                                        client.Timeout = Timeout.InfiniteTimeSpan;
+                                        // Explicitly keeping the default 100s timeout
                                         using var response = await client.UploadStream(request, timeoutToken.Token);
                                         rc = (int)response.StatusCode;
                                     }
