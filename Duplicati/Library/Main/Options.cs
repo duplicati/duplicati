@@ -308,8 +308,6 @@ namespace Duplicati.Library.Main
 
         protected readonly Dictionary<string, string?> m_options;
 
-        protected readonly List<KeyValuePair<bool, Library.Interface.IGenericModule>> m_loadedModules = new List<KeyValuePair<bool, IGenericModule>>();
-
         /// <summary>
         /// Lookup table for compression hints
         /// </summary>
@@ -1526,10 +1524,48 @@ namespace Duplicati.Library.Main
             return h;
         }
 
+
+        protected readonly List<IGenericModule> m_loadedModules = new();
+
         /// <summary>
-        /// Gets a list of modules, the key indicates if they are loaded
+        /// Gets a list of loaded modules, in their activation order
         /// </summary>
-        public List<KeyValuePair<bool, IGenericModule>> LoadedModules => m_loadedModules;
+        public IEnumerable<IGenericModule> LoadedModules => m_loadedModules
+            .Select(module => (Priority: module is IGenericPriorityModule pm ? pm.Priority : 0, Module: module))
+            .Select(x => (x.Priority, x.Module, Group: x.Priority switch
+            {
+                > 0 => 1,
+                < 0 => -1,
+                _ => 0
+            }))
+            .GroupBy(x => x.Group)
+            .OrderByDescending(g => g.Key)
+            .SelectMany(g =>
+            {
+                // Keep the order of modules with priority 0 as is, but sort the others
+                if (g.Key == 0)
+                    return g.AsEnumerable();
+                return g.OrderByDescending(x => x.Priority);
+            }).Select(x => x.Module);
+
+        /// <summary>
+        /// Adds a loaded module to the list of loaded modules.
+        /// </summary>
+        /// <param name="module">The module to add</param>
+        public void AddLoadedModule(IGenericModule module)
+        {
+            if (module == null)
+                throw new ArgumentNullException(nameof(module));
+            m_loadedModules.Add(module);
+        }
+
+        /// <summary>
+        /// Clears the list of loaded modules.
+        /// </summary>
+        public void ClearLoadedModules()
+        {
+            m_loadedModules.Clear();
+        }
 
         /// <summary>
         /// Helper method to extract boolean values.

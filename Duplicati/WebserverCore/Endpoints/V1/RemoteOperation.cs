@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
+using Duplicati.Library.Utility;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -67,11 +68,11 @@ namespace Duplicati.WebserverCore.Endpoints.V1
 
         private static IEnumerable<IGenericModule> ConfigureModules(IDictionary<string, string?> opts)
         {
-            // TODO: This works because the generic modules are implemented
-            // with pre .NetCore logic, using static methods
-            // The modules are created to allow multipe dispose,
-            // which violates the .Net patterns
-            var modules = Library.DynamicLoader.GenericLoader.Modules.OfType<IConnectionModule>().ToArray();
+            var modules = Library.DynamicLoader.GenericLoader.Modules.OfType<IConnectionModule>()
+                .Select(x => Library.DynamicLoader.GenericLoader.GetModule(x.Key))
+                .WhereNotNull()
+                .ToArray();
+
             foreach (var n in modules)
                 n.Configure(opts);
 

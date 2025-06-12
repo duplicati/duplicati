@@ -19,8 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Modules.Builtin;
 
@@ -55,6 +58,21 @@ namespace Duplicati.Library.DynamicLoader
             /// </summary>
             protected override IEnumerable<IGenericModule> BuiltInModules
                 => GenericModules.BuiltInGenericModules;
+
+            /// <summary>
+            /// Creates a new instance of the module based on the key
+            /// </summary>
+            /// <param name="key">The key to create the instance for</param>
+            /// <returns>The instanciated module or null if the key is not supported</returns>
+            public IGenericModule? GetModule(string key)
+            {
+                LoadInterfaces();
+                var entry = Interfaces.FirstOrDefault(m => m.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+                if (entry == null)
+                    return null;
+
+                return (IGenericModule?)Activator.CreateInstance(entry.GetType());
+            }
         }
 
         #region Public static API
@@ -72,6 +90,13 @@ namespace Duplicati.Library.DynamicLoader
         /// Gets a list of keys supported
         /// </summary>
         public static string[] Keys => _loader.Value.Keys;
+
+        /// <summary>
+        /// Instanciates a specific module
+        /// </summary>
+        /// <param name="key">The key to create the instance for</param>
+        /// <returns>The instanciated backend or null if the key is not supported</returns>
+        public static IGenericModule? GetModule(string key) => _loader.Value.GetModule(key);
 
         #endregion
 
