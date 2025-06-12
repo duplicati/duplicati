@@ -28,6 +28,7 @@ using Duplicati.Library.Utility;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Volumes;
 using System.Threading;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -50,7 +51,7 @@ namespace Duplicati.Library.Main.Operation
         public async Task RunAsync(long samples, IBackendManager backendManager)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
+                throw new UserInformationException(LC.L("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             using (var db = new LocalTestDatabase(m_options.Dbpath, m_options.SqlitePageCache))
             using (var rtr = new ReusableTransaction(db))
@@ -100,7 +101,7 @@ namespace Duplicati.Library.Main.Operation
                             if (res.Value.Any(x => x.Key == TestEntryStatus.Extra))
                             {
                                 // Bad hack, but for now, the index files sometimes have extra blocklist hashes
-                                Logging.Log.WriteVerboseMessage(LOGTAG, "IndexFileExtraBlocks", null, "Index file {0} has extra blocks", vol.Name);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "IndexFileExtraBlocks", null, LC.L("Index file {0} has extra blocks", vol.Name));
                                 res = new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(
                                     res.Key, res.Value.Where(x => x.Key != TestEntryStatus.Extra).ToList()
                                 );
@@ -124,11 +125,11 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         if (m_options.Dryrun)
                                         {
-                                            Logging.Log.WriteDryrunMessage(LOGTAG, "CaptureHashAndSize", "Successfully captured hash and size for {0}, would update database", vol.Name);
+                                            Logging.Log.WriteDryrunMessage(LOGTAG, "CaptureHashAndSize", LC.L("Successfully captured hash and size for {0}, would update database", vol.Name));
                                         }
                                         else
                                         {
-                                            Logging.Log.WriteInformationMessage(LOGTAG, "CaptureHashAndSize", "Successfully captured hash and size for {0}, updating database", vol.Name);
+                                            Logging.Log.WriteInformationMessage(LOGTAG, "CaptureHashAndSize", LC.L("Successfully captured hash and size for {0}, updating database", vol.Name));
                                             db.UpdateRemoteVolume(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash, rtr.Transaction);
                                         }
                                     }
@@ -141,7 +142,7 @@ namespace Duplicati.Library.Main.Operation
                     catch (Exception ex)
                     {
                         m_results.AddResult(vol.Name, [new KeyValuePair<TestEntryStatus, string>(TestEntryStatus.Error, ex.Message)]);
-                        Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileProcessingFailed", ex, "Failed to process file {0}", vol.Name);
+                        Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileProcessingFailed", ex, LC.L("Failed to process file {0}", vol.Name));
                         if (ex.IsAbortException())
                         {
                             m_results.EndTime = DateTime.UtcNow;
@@ -154,11 +155,11 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (m_options.ReplaceFaultyIndexFiles)
                     {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, "Found {0} faulty index files, repairing now", faultyIndexFiles.Count);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, LC.L("Found {0} faulty index files, repairing now", faultyIndexFiles.Count));
                         await ReplaceFaultyIndexFilesAsync(faultyIndexFiles, backend, db, rtr, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
                     }
                     else
-                        Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, "Found {0} faulty index files, use the option {1} to repair them", faultyIndexFiles.Count, "--replace-faulty-index-files");
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, LC.L("Found {0} faulty index files, remove the option {1} to repair them", faultyIndexFiles.Count, "--dont-replace-faulty-index-files"));
 
                 }
             }
@@ -179,7 +180,7 @@ namespace Duplicati.Library.Main.Operation
 
                         if (f.Size <= 0 || string.IsNullOrWhiteSpace(f.Hash))
                         {
-                            Logging.Log.WriteInformationMessage(LOGTAG, "MissingRemoteHash", "No hash or size recorded for {0}, performing full verification", f.Name);
+                            Logging.Log.WriteInformationMessage(LOGTAG, "MissingRemoteHash", LC.L("No hash or size recorded for {0}, performing full verification", f.Name));
                             KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
 
                             (var tf, var hash, var size) = await backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -194,11 +195,11 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     if (m_options.Dryrun)
                                     {
-                                        Logging.Log.WriteDryrunMessage(LOGTAG, "CapturedHashAndSize", "Successfully captured hash and size for {0}, would update database", f.Name);
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "CapturedHashAndSize", LC.L("Successfully captured hash and size for {0}, would update database", f.Name));
                                     }
                                     else
                                     {
-                                        Logging.Log.WriteInformationMessage(LOGTAG, "CapturedHashAndSize", "Successfully captured hash and size for {0}, updating database", f.Name);
+                                        Logging.Log.WriteInformationMessage(LOGTAG, "CapturedHashAndSize", LC.L("Successfully captured hash and size for {0}, updating database", f.Name));
                                         db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Verified, size, hash, rtr.Transaction);
                                     }
                                 }
@@ -216,7 +217,7 @@ namespace Duplicati.Library.Main.Operation
                     catch (Exception ex)
                     {
                         m_results.AddResult(f.Name, [new KeyValuePair<TestEntryStatus, string>(TestEntryStatus.Error, ex.Message)]);
-                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedToProcessFile", ex, "Failed to process file {0}", f.Name);
+                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedToProcessFile", ex, LC.L("Failed to process file {0}", f.Name));
                         if (ex.IsAbortOrCancelException())
                         {
                             m_results.EndTime = DateTime.UtcNow;
@@ -232,11 +233,11 @@ namespace Duplicati.Library.Main.Operation
             var filtered = from n in m_results.Verifications where n.Value.Any(x => x.Key != TestEntryStatus.Extra) select n;
             if (!filtered.Any())
             {
-                Logging.Log.WriteInformationMessage(LOGTAG, "Test results", "Successfully verified {0} remote files", m_results.VerificationsActualLength);
+                Logging.Log.WriteInformationMessage(LOGTAG, "Test results", LC.L("Successfully verified {0} remote files", m_results.VerificationsActualLength));
             }
             else
             {
-                Logging.Log.WriteErrorMessage(LOGTAG, "Test results", null, "Verified {0} remote files with {1} problem(s)", m_results.VerificationsActualLength, filtered.Count());
+                Logging.Log.WriteErrorMessage(LOGTAG, "Test results", null, LC.L("Verified {0} remote files with {1} problem(s)", m_results.VerificationsActualLength, filtered.Count()));
             }
         }
 
@@ -344,7 +345,7 @@ namespace Duplicati.Library.Main.Operation
                     }
             }
 
-            Logging.Log.WriteWarningMessage(LOGTAG, "UnexpectedFileType", null, "Unexpected file type {0} for {1}", parsedInfo.FileType, vol.Name);
+            Logging.Log.WriteWarningMessage(LOGTAG, "UnexpectedFileType", null, LC.L("Unexpected file type {0} for {1}", parsedInfo.FileType, vol.Name));
             return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, null);
         }
 
@@ -366,7 +367,7 @@ namespace Duplicati.Library.Main.Operation
                     await RepairHandler.RunRepairDindex(backendManager, repairdb, rtr, w, vol, m_options, cancellationToken).ConfigureAwait(false);
                     if (m_options.Dryrun)
                     {
-                        Logging.Log.WriteDryrunMessage(LOGTAG, "ReplaceFaultyIndexFile", "Would replace faulty index file {0} with {1}", vol.Name, w.RemoteFilename);
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "ReplaceFaultyIndexFile", LC.L("Would replace faulty index file {0} with {1}", vol.Name, w.RemoteFilename));
                     }
                     else
                     {
@@ -378,7 +379,7 @@ namespace Duplicati.Library.Main.Operation
                 catch (Exception ex)
                 {
                     newEntry?.Dispose();
-                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedToReplaceFaultyIndexFile", ex, "Failed to replace faulty index file {0}", vol.Name);
+                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedToReplaceFaultyIndexFile", ex, LC.L("Failed to replace faulty index file {0}", vol.Name));
                     if (ex.IsAbortException())
                         throw;
                 }
