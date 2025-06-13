@@ -469,7 +469,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), DEFAULT_BACKUP_TEST_SAMPLES.ToString()),
             new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Decimal, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0.1"),
             new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), Enum.GetName(typeof(RemoteTestStrategy), RemoteTestStrategy.False), null, Enum.GetNames(typeof(RemoteTestStrategy))),
-            new CommandLineArgument("replace-faulty-index-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ReplaceFaultyIndexFilesShort, Strings.Options.ReplaceFaultyIndexFilesLong, "true"),
+            new CommandLineArgument("dont-replace-faulty-index-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ReplaceFaultyIndexFilesShort, Strings.Options.ReplaceFaultyIndexFilesLong, "false"),
 
             new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
@@ -1350,7 +1350,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets a value indicating if defective index files should be replaced
         /// </summary>
-        public bool ReplaceFaultyIndexFiles => GetBool("replace-faulty-index-files");
+        public bool ReplaceFaultyIndexFiles => !GetBool("dont-replace-faulty-index-files");
 
         /// <summary>
         /// The block hash algorithm to use

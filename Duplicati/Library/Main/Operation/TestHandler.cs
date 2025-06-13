@@ -160,7 +160,6 @@ namespace Duplicati.Library.Main.Operation
                     }
                     else
                         Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, LC.L("Found {0} faulty index files, remove the option {1} to repair them", faultyIndexFiles.Count, "--dont-replace-faulty-index-files"));
-
                 }
             }
             else
