@@ -22,9 +22,9 @@
 
 using System;
 using System.Globalization;
-using System.Threading;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest;
 

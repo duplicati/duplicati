@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {
@@ -36,7 +36,7 @@ namespace Duplicati.UnitTest
         public void Get()
         {
             // Files to create in MB.
-            int[] fileSizes = {10, 20, 30};
+            int[] fileSizes = { 10, 20, 30 };
             foreach (int size in fileSizes)
             {
                 var data = new byte[size * 1024 * 1024];
@@ -50,7 +50,7 @@ namespace Duplicati.UnitTest
             var backendURL = "file://" + this.TARGETFOLDER;
             using (Controller c = new Controller(backendURL, options, null))
             {
-                var backupResults = c.Backup(new[] {DATAFOLDER});
+                var backupResults = c.Backup(new[] { DATAFOLDER });
                 foreach (var backupResultsWarning in backupResults.Warnings)
                 {
                     TestContext.WriteLine("Backend result warning:" + backupResultsWarning);

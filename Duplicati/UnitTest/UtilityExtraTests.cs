@@ -4,6 +4,8 @@ using System.Text;
 using NUnit.Framework;
 using Duplicati.Library.Main;
 using System.IO;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework.Legacy;
 
 #nullable enable
 

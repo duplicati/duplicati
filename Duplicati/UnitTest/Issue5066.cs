@@ -86,7 +86,7 @@ namespace Duplicati.UnitTest
                 {
                     TestUtils.AssertResults(c.Restore(null));
                     var hash = CalculateFileHash(Path.Combine(DATAFOLDER, "a"));
-                    Assert.AreEqual(hashes[version], hash, "Hash mismatch for version " + version);
+                    Assert.That(hashes[version], Is.EqualTo(hash), "Hash mismatch for version " + version);
                 }
             }
         }
@@ -141,7 +141,7 @@ namespace Duplicati.UnitTest
                 {
                     TestUtils.AssertResults(c.Restore(null));
                     var hash = CalculateFileHash(Path.Combine(DATAFOLDER, "a"));
-                    Assert.AreEqual(hashes[version], hash, "Hash mismatch for version " + version);
+                    Assert.That(hashes[version], Is.EqualTo(hash), "Hash mismatch for version " + version);
                 }
             }
         }

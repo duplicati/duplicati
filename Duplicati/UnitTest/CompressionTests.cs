@@ -187,7 +187,7 @@ namespace Duplicati.UnitTest
                 {
                     // Get files list
                     var files = z0.ListFiles(null);
-                    Assert.AreEqual(1, files.Length);
+                    Assert.That(1, Is.EqualTo(files.Length), "Expected only one file in the archive, but found multiple.");
                     Assert.That(logMessages.Any(x => x.Level == LogMessageType.Warning && x.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase)));
                 }
             }

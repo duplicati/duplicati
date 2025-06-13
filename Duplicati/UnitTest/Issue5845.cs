@@ -28,6 +28,7 @@ using Duplicati.Library.DynamicLoader;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {

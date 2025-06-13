@@ -35,8 +35,8 @@ namespace Duplicati.UnitTest
             using var logger = new ControllerMultiLogTarget(dest, LogMessageType.Information, null, new HashSet<string> { "ID1" });
             var entry = new LogEntry("msg", System.Array.Empty<object>(), LogMessageType.Warning, "tag", "ID1", null);
             logger.WriteMessage(entry);
-            Assert.AreEqual(1, dest.Entries.Count);
-            Assert.AreEqual(LogMessageType.Information, dest.Entries[0].Level);
+            Assert.That(dest.Entries.Count, Is.EqualTo(1));
+            Assert.That(dest.Entries[0].Level, Is.EqualTo(LogMessageType.Information));
         }
 
         [Test]
@@ -53,8 +53,8 @@ namespace Duplicati.UnitTest
             var entry = new LogEntry("msg", System.Array.Empty<object>(), LogMessageType.Information, "tag", "id", null);
             logger.WriteMessage(entry);
 
-            Assert.AreEqual(1, dest1.Entries.Count);
-            Assert.AreEqual(0, dest2.Entries.Count);
+            Assert.That(dest1.Entries.Count, Is.EqualTo(1));
+            Assert.That(dest2.Entries.Count, Is.EqualTo(0));
         }
     }
 }

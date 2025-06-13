@@ -32,6 +32,7 @@ using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Services;
 using NUnit.Framework;
 using Backup = Duplicati.Server.Database.Backup;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {

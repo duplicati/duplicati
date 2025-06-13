@@ -46,7 +46,7 @@ namespace Duplicati.UnitTest
                 {
                     var res = c.Backup([DATAFOLDER]);
                     TestUtils.AssertResults(res);
-                    Assert.AreEqual(i + 1, c.List(null).Filesets.Count());
+                    Assert.That(c.List(null).Filesets.Count(), Is.EqualTo(i + 1), "Backup count mismatch after backup " + i);
                 }
                 Thread.Sleep(1000);
             }
@@ -58,7 +58,7 @@ namespace Duplicati.UnitTest
                 TestUtils.AssertResults(c.Delete());
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 2, retention_policy = "1s:U" }), null))
-                Assert.AreEqual(1, c.List(null).Filesets.Count());
+                Assert.That(c.List(null).Filesets.Count(), Is.EqualTo(1), "Backup count mismatch after delete");
         }
     }
 }
