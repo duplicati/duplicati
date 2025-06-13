@@ -4,18 +4,16 @@
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Interface</RootNamespace>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\PackageRef\Duplicati.PackageRef.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
 
 </Project>

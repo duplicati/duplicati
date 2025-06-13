@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,22 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json;
 
 namespace Duplicati.Server.Serialization
 {
-    public class SerializableStatusCreator : CustomCreationConverter<Interface.IServerStatus>
-    {
-        public override Interface.IServerStatus Create(Type objectType)
-        {
-            return new Implementations.ServerStatus();
-        }
-    }
-
     public class SettingsCreator : CustomCreationConverter<Interface.ISetting>
     {
         public override Interface.ISetting Create(Type objectType)
@@ -106,12 +95,12 @@ namespace Duplicati.Server.Serialization
                 throw new JsonSerializationException(string.Format("Cannot convert null value to {0}", objectType));
             else if (reader.TokenType != JsonToken.String)
                 throw new JsonSerializationException(string.Format("Cannot convert {0} value to {1}", reader.TokenType, objectType));
-            
+
             var v = (string)reader.Value;
             DayOfWeek result;
             if (Enum.TryParse(v, out result))
                 return result;
-            
+
             switch (v.ToLowerInvariant())
             {
                 case "mon":
@@ -127,9 +116,9 @@ namespace Duplicati.Server.Serialization
                 case "sat":
                     return DayOfWeek.Saturday;
                 case "sun":
-                    return DayOfWeek.Sunday;                    
+                    return DayOfWeek.Sunday;
             }
-            
+
             throw new JsonSerializationException(string.Format("Cannot convert \"{0}\" to {1}", v, objectType));
         }
 
@@ -140,5 +129,5 @@ namespace Duplicati.Server.Serialization
 
         #endregion
     }
-    
+
 }

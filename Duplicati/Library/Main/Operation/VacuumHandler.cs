@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -37,15 +37,15 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public virtual void Run()
-        {
-            using (var db = new Database.LocalDatabase(m_options.Dbpath, "Vacuum", false))
+        public virtual Task RunAsync()
+            => Task.Run(() =>
             {
-                m_result.SetDatabase(db);
-                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
-                db.Vacuum();
-                m_result.EndTime = DateTime.UtcNow;
-            }
-        }
+                using (var db = new Database.LocalDatabase(m_options.Dbpath, "Vacuum", false, m_options.SqlitePageCache))
+                {
+                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
+                    db.Vacuum();
+                    m_result.EndTime = DateTime.UtcNow;
+                }
+            });
     }
 }

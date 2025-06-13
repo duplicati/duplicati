@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,9 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.Linq;
-
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -34,10 +31,10 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
     public class Identity
     {
         [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         [JsonProperty("displayName", NullValueHandling = NullValueHandling.Ignore)]
-        public string DisplayName { get; set; }
+        public string? DisplayName { get; set; }
     }
 
     public class IdentitySet
@@ -46,37 +43,37 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         /// The optional application associated with this action
         /// </summary>
         [JsonProperty("application", NullValueHandling = NullValueHandling.Ignore)]
-        public Identity Application { get; set; }
+        public Identity? Application { get; set; }
 
         /// <summary>
         /// The optional device associated with this action
         /// </summary>
         [JsonProperty("device", NullValueHandling = NullValueHandling.Ignore)]
-        public Identity Device { get; set; }
+        public Identity? Device { get; set; }
 
         /// <summary>
         /// The optional user associated with this action
         /// </summary>
         [JsonProperty("user", NullValueHandling = NullValueHandling.Ignore)]
-        public Identity User { get; set; }
+        public Identity? User { get; set; }
     }
 
     public class BaseItem
     {
         [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         [JsonProperty("createdBy", NullValueHandling = NullValueHandling.Ignore)]
-        public IdentitySet CreatedBy { get; set; }
+        public IdentitySet? CreatedBy { get; set; }
 
         [JsonProperty("createdDateTime", NullValueHandling = NullValueHandling.Ignore)]
         public DateTimeOffset? CreatedDateTime { get; set; }
 
         [JsonProperty("description", NullValueHandling = NullValueHandling.Ignore)]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [JsonProperty("lastModifiedBy", NullValueHandling = NullValueHandling.Ignore)]
-        public IdentitySet LastModifiedBy { get; set; }
+        public IdentitySet? LastModifiedBy { get; set; }
 
         [JsonProperty("lastModifiedDateTime", NullValueHandling = NullValueHandling.Ignore)]
         public DateTimeOffset? LastModifiedDateTime { get; set; }
@@ -90,10 +87,10 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         /// https://support.microsoft.com/en-us/help/2829981/support-for-whitespace-characters-in-file-and-folder-names-for-windows
         /// </summary>
         [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonProperty("webUrl", NullValueHandling = NullValueHandling.Ignore)]
-        public string WebUrl { get; set; }
+        public string? WebUrl { get; set; }
     }
 
     public enum QuotaState
@@ -176,10 +173,10 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         public DriveType DriveType { get; set; }
 
         [JsonProperty("owner", NullValueHandling = NullValueHandling.Ignore)]
-        public IdentitySet Owner { get; set; }
+        public IdentitySet? Owner { get; set; }
 
         [JsonProperty("quota", NullValueHandling = NullValueHandling.Ignore)]
-        public Quota Quota { get; set; }
+        public Quota? Quota { get; set; }
     }
 
     public class HashesType
@@ -189,30 +186,30 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         /// Available only in OneDrive personal
         /// </summary>
         [JsonProperty("sha1Hash", NullValueHandling = NullValueHandling.Ignore)]
-        public string Sha1Hash { get; set; }
+        public string? Sha1Hash { get; set; }
 
         /// <summary>
         /// CRC32 hash
         /// Available only in OneDrive personal
         /// </summary>
         [JsonProperty("crc32Hash", NullValueHandling = NullValueHandling.Ignore)]
-        public string Crc32Hash { get; set; }
+        public string? Crc32Hash { get; set; }
 
         /// <summary>
         /// A proprietary hash of the file that can be used to determine if the file's contents have changed.
         /// Available on in OneDrive for Business and SharePoint Server 2016.
         /// </summary>
         [JsonProperty("quickXorHash", NullValueHandling = NullValueHandling.Ignore)]
-        public string QuickXorHash { get; set; }
+        public string? QuickXorHash { get; set; }
     }
 
     public class FileFacet
     {
         [JsonProperty("hashes", NullValueHandling = NullValueHandling.Ignore)]
-        public HashesType Hashes { get; set; }
+        public HashesType? Hashes { get; set; }
 
         [JsonProperty("mimeType", NullValueHandling = NullValueHandling.Ignore)]
-        public string MimeType { get; set; }
+        public string? MimeType { get; set; }
     }
 
     public enum SortBy
@@ -307,7 +304,7 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         public long? ChildCount { get; set; }
 
         [JsonProperty("view", NullValueHandling = NullValueHandling.Ignore)]
-        public FolderView View { get; set; }
+        public FolderView? View { get; set; }
     }
 
     /// <summary>
@@ -337,19 +334,19 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         /// Package type - currently only oneNote is defined, but others could be used.
         /// </summary>
         [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
-        public string Type { get; set; }
+        public string? Type { get; set; }
     }
 
     public class DeletedFacet
     {
         [JsonProperty("state", NullValueHandling = NullValueHandling.Ignore)]
-        public string State { get; set; }
+        public string? State { get; set; }
     }
 
     public class RemoteItemFacet
     {
         [JsonProperty("remoteItem", NullValueHandling = NullValueHandling.Ignore)]
-        public RemoteItemFacet RemoteItem { get; set; }
+        public RemoteItemFacet? RemoteItem { get; set; }
     }
 
     public class RootFacet
@@ -362,7 +359,7 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         /// The unique identifier which can be used under /drive/special/
         /// </summary>
         [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
-        public string Name { get; set; }
+        public string? Name { get; set; }
     }
 
     /// <summary>
@@ -372,19 +369,19 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
     public class ItemReference
     {
         [JsonProperty("driveId", NullValueHandling = NullValueHandling.Ignore)]
-        public string DriveId { get; set; }
+        public string? DriveId { get; set; }
 
         [JsonProperty("driveType", NullValueHandling = NullValueHandling.Ignore)]
         public DriveType DriveType { get; set; }
 
         [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonProperty("path", NullValueHandling = NullValueHandling.Ignore)]
-        public string Path { get; set; }
+        public string? Path { get; set; }
     }
 
     public enum ConflictBehavior
@@ -403,41 +400,41 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
     public class DriveItem : BaseItem
     {
         [JsonProperty("parentReference", NullValueHandling = NullValueHandling.Ignore)]
-        public ItemReference ParentReference { get; set; }
+        public ItemReference? ParentReference { get; set; }
 
         [JsonProperty("size", NullValueHandling = NullValueHandling.Ignore)]
         public long? Size { get; set; }
 
         [JsonProperty("file", NullValueHandling = NullValueHandling.Ignore)]
-        public FileFacet File { get; set; }
+        public FileFacet? File { get; set; }
 
         [JsonProperty("folder", NullValueHandling = NullValueHandling.Ignore)]
-        public FolderFacet Folder { get; set; }
+        public FolderFacet? Folder { get; set; }
 
         [JsonProperty("fileSystemInfo", NullValueHandling = NullValueHandling.Ignore)]
-        public FileSystemInfoFacet FileSystemInfo { get; set; }
+        public FileSystemInfoFacet? FileSystemInfo { get; set; }
 
         [JsonProperty("package", NullValueHandling = NullValueHandling.Ignore)]
-        public PackageFacet Package { get; set; }
+        public PackageFacet? Package { get; set; }
 
         [JsonProperty("deleted", NullValueHandling = NullValueHandling.Ignore)]
-        public DeletedFacet Deleted { get; set; }
+        public DeletedFacet? Deleted { get; set; }
 
         [JsonProperty("remoteItem", NullValueHandling = NullValueHandling.Ignore)]
-        public RemoteItemFacet RemoteItem { get; set; }
+        public RemoteItemFacet? RemoteItem { get; set; }
 
         [JsonProperty("root", NullValueHandling = NullValueHandling.Ignore)]
-        public RootFacet Root { get; set; }
+        public RootFacet? Root { get; set; }
 
         [JsonProperty("specialFolder", NullValueHandling = NullValueHandling.Ignore)]
-        public SpecialFolderFacet SpecialFolder { get; set; }
+        public SpecialFolderFacet? SpecialFolder { get; set; }
 
         [JsonProperty("@microsoft.graph.conflictBehavior", NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(StringEnumConverter))]
         public ConflictBehavior? ConflictBehavior { get; set; }
 
         [JsonProperty("@microsoft.graph.downloadUrl", NullValueHandling = NullValueHandling.Ignore)]
-        public string DownloadUrl { get; set; }
+        public string? DownloadUrl { get; set; }
 
         [JsonIgnore]
         public bool IsFile
@@ -515,25 +512,25 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
     public class GraphCollection<T>
     {
         [JsonProperty("value", NullValueHandling = NullValueHandling.Ignore)]
-        public T[] Value { get; set; }
+        public T[]? Value { get; set; }
 
         [JsonProperty("@odata.nextLink", NullValueHandling = NullValueHandling.Ignore)]
-        public string ODataNextLink { get; set; }
+        public string? ODataNextLink { get; set; }
     }
 
     public class UploadSession
     {
         [JsonProperty("uploadUrl", NullValueHandling = NullValueHandling.Ignore)]
-        public string UploadUrl { get; set; }
+        public string? UploadUrl { get; set; }
 
         [JsonProperty("expirationDateTime", NullValueHandling = NullValueHandling.Ignore)]
         public DateTimeOffset? ExpirationDateTime { get; set; }
 
         [JsonProperty("nextExpectedRanges", NullValueHandling = NullValueHandling.Ignore)]
-        public string[] NextExpectedRanges { get; set; }
+        public string[]? NextExpectedRanges { get; set; }
 
         [JsonProperty("item", NullValueHandling = NullValueHandling.Ignore)]
-        public DriveItem Item { get; set; }
+        public DriveItem? Item { get; set; }
     }
 
     public class SharePointSite : BaseItem
@@ -543,16 +540,16 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
     public class Group : BaseItem
     {
         [JsonProperty("mail", NullValueHandling = NullValueHandling.Ignore)]
-        public string Mail { get; set; }
+        public string? Mail { get; set; }
 
         [JsonProperty("proxyAddresses", NullValueHandling = NullValueHandling.Ignore)]
-        public string[] ProxyAddresses { get; set; }
+        public string[]? ProxyAddresses { get; set; }
 
         [JsonProperty("mailNickname", NullValueHandling = NullValueHandling.Ignore)]
-        public string MailNickname { get; set; }
+        public string? MailNickname { get; set; }
 
         [JsonProperty("groupTypes", NullValueHandling = NullValueHandling.Ignore)]
-        public string[] GroupTypes { get; set; }
+        public string[]? GroupTypes { get; set; }
 
         [JsonIgnore]
         public bool IsUnifiedGroup

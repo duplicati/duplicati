@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -20,9 +20,8 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Utility
 {
@@ -33,79 +32,83 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class OverrideableStream : Stream
     {
-        protected System.IO.Stream m_basestream;
+        /// <summary>
+        /// The base stream that is wrapped
+        /// </summary>
+        protected Stream m_basestream;
 
+        /// <summary>
+        /// The base stream that is wrapped
+        /// </summary>
+        public Stream BaseStream => m_basestream;
+
+        /// <summary>
+        /// Creates a new <see cref="OverrideableStream"/> instance
+        /// </summary>
+        /// <param name="basestream">The stream to wrap</param>
+        /// <exception cref="ArgumentNullException"></exception>
         public OverrideableStream(Stream basestream)
         {
-            if (basestream == null)
-                throw new ArgumentNullException(nameof(basestream));
-            m_basestream = basestream;
+            m_basestream = basestream ?? throw new ArgumentNullException(nameof(basestream));
         }
 
-        public override bool CanRead
-        {
-            get { return m_basestream.CanRead; }
-        }
+        /// <inheritdoc/>
+        public override bool CanRead => m_basestream.CanRead;
 
-        public override bool CanSeek
-        {
-            get { return m_basestream.CanSeek; }
-        }
+        /// <inheritdoc/>
+        public override bool CanSeek => m_basestream.CanSeek;
 
-        public override bool CanWrite
-        {
-            get { return m_basestream.CanWrite; }
-        }
+        /// <inheritdoc/>
+        public override bool CanWrite => m_basestream.CanWrite;
 
-        public override void Flush()
-        {
-            m_basestream.Flush();
-        }
+        /// <inheritdoc/>
+        public override void Flush() => m_basestream.Flush();
 
-        public override long Length
-        {
-            get { return m_basestream.Length; }
-        }
+        /// <inheritdoc/>
+        public override long Length => m_basestream.Length;
 
+        /// <inheritdoc/>
         public override long Position
         {
-            get
-            {
-                return m_basestream.Position;
-            }
-            set
-            {
-                m_basestream.Position = value;
-            }
+            get => m_basestream.Position;
+            set => m_basestream.Position = value;
         }
 
+        /// <inheritdoc/>
         public override int Read(byte[] buffer, int offset, int count)
-        {
-            return m_basestream.Read(buffer, offset, count);
-        }
+            => m_basestream.Read(buffer, offset, count);
 
+        /// <inheritdoc/>
         public override long Seek(long offset, System.IO.SeekOrigin origin)
-        {
-            return m_basestream.Seek(offset, origin);
-        }
+            => m_basestream.Seek(offset, origin);
 
+        /// <inheritdoc/>
         public override void SetLength(long value)
-        {
-            m_basestream.SetLength(value);
-        }
+            => m_basestream.SetLength(value);
 
+        /// <inheritdoc/>
         public override void Write(byte[] buffer, int offset, int count)
-        {
-            m_basestream.Write(buffer, offset, count);
-        }
+            => m_basestream.Write(buffer, offset, count);
 
+        /// <inheritdoc/>
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+            => m_basestream.ReadAsync(buffer, offset, count, cancellationToken);
+
+        /// <inheritdoc/>
+        public override Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+            => m_basestream.WriteAsync(buffer, offset, count, cancellationToken);
+
+        /// <inheritdoc/>
+        public override Task FlushAsync(System.Threading.CancellationToken cancellationToken)
+            => m_basestream.FlushAsync(cancellationToken);
+
+        /// <inheritdoc/>
         protected override void Dispose(bool disposing)
         {
-            if (m_basestream != null)
-                m_basestream.Dispose();
+            m_basestream?.Dispose();
             m_basestream = null;
             base.Dispose(disposing);
         }
-        
+
     }
 }

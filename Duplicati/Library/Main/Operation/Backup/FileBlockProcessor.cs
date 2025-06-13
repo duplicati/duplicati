@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,7 +23,6 @@ using System;
 using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
 using System.Threading.Tasks;
-using System.Threading;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -37,29 +36,27 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FileBlockProcessor)) + ".FileEntry";
 
-        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader, CancellationToken token)
+        public static Task Run(Channels channels, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
-            new 
+            new
             {
-                Input = Channels.AcceptedChangedFile.ForRead,
-                StreamBlockChannel = Channels.StreamBlock.ForWrite,
+                Input = channels.AcceptedChangedFile.AsRead(),
+                StreamBlockChannel = channels.StreamBlock.AsWrite(),
             },
 
             async self =>
             {
-                while (await taskreader.ProgressAsync)
+                while (true)
                 {
                     var e = await self.Input.ReadAsync();
 
+                    // We ignore the stop signal, but not the pause and terminate
+                    await taskreader.ProgressRendevouz().ConfigureAwait(false);
+
                     try
                     {
-                        if (token.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
-                        var hint = options.GetCompressionHintFromFilename(e.Path);
+                        var hint = options.GetCompressionHintFromFilename(e.Entry.Path);
                         var oldHash = e.OldId < 0 ? null : await database.GetFileHashAsync(e.OldId);
 
                         StreamProcessResult filestreamdata;
@@ -75,15 +72,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     if (res.Item1)
                                         return res.Item2;
 
-                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpectedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}, Path: {3}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2, e.Path);
+                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpectedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}, Path: {3}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2, e.Entry.Path);
                                     e.MetadataChanged = true;
                                 }
 
-                                return (await MetadataPreProcess.AddMetadataToOutputAsync(e.Path, e.MetaHashAndSize, database, self.StreamBlockChannel)).Item2;
+                                return (await MetadataPreProcess.AddMetadataToOutputAsync(e.Entry.Path, e.MetaHashAndSize, database, self.StreamBlockChannel)).Item2;
                             });
 
-                        using (var fs = snapshot.OpenRead(e.Path))                            
-                            filestreamdata = await StreamBlock.ProcessStream(self.StreamBlockChannel, e.Path, fs, false, hint);
+                        using (var fs = await e.Entry.OpenRead(taskreader.ProgressToken))
+                            filestreamdata = await StreamBlock.ProcessStream(self.StreamBlockChannel, e.Entry.Path, fs, false, hint);
 
                         await stats.AddOpenedFile(filestreamdata.Streamlength);
 
@@ -94,36 +91,42 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (oldHash != filekey)
                         {
                             if (oldHash == null)
-                                Logging.Log.WriteVerboseMessage(FILELOGTAG, "NewFile", "New file {0}", e.Path);
+                                Logging.Log.WriteVerboseMessage(FILELOGTAG, "NewFile", "New file {0}", e.Entry.Path);
                             else
-                                Logging.Log.WriteVerboseMessage(FILELOGTAG, "ChangedFile", "File has changed {0}", e.Path);
-                            
+                                Logging.Log.WriteVerboseMessage(FILELOGTAG, "ChangedFile", "File has changed {0}", e.Entry.Path);
+
                             if (e.OldId < 0)
                             {
                                 await stats.AddAddedFile(filesize);
 
                                 if (options.Dryrun)
-                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddNewFile", "Would add new file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
+                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddNewFile", "Would add new file {0}, size {1}", e.Entry.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
                             else
                             {
                                 await stats.AddModifiedFile(filesize);
 
                                 if (options.Dryrun)
-                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddChangedFile", "Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
+                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddChangedFile", "Would add changed file {0}, size {1}", e.Entry.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
 
                             await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else if (e.MetadataChanged)
                         {
-                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", e.Path);
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", e.Entry.Path);
                             await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                        }
+                        else if (e.TimestampChanged)
+                        {
+                            await stats.AddTimestampChangedFile();
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileTimestampChanged", "File has only timestamp changes {0}", e.Entry.Path);
+                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                         }
                         else /*if (e.OldId >= 0)*/
                         {
                             // When we write the file to output, update the last modified time
-                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "NoFileChanges", "File has not changed {0}", e.Path);
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "NoFileChanges", "File has not changed {0}", e.Entry.Path);
 
                             try
                             {
@@ -131,16 +134,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
                             catch (Exception ex)
                             {
-                                Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
+                                Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Entry.Path);
                             }
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         if (ex.IsRetiredException())
                             return;
-                        else
-                            Logging.Log.WriteWarningMessage(FILELOGTAG, "PathProcessingFailed", ex, "Failed to process path: {0}", e.Path);
+
+                        LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FileProcessingFailed", e.Entry.Path);
                     }
                 }
             });

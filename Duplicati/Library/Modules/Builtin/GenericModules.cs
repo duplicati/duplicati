@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -31,12 +31,13 @@ public static class GenericModules
     /// </summary>
     public static IReadOnlyList<IGenericModule> BuiltInGenericModules => [
         new ConsolePasswordInput(),
-        new HttpOptions(),
+        new CommonOptions(),
         new HyperVOptions(),
         new MSSQLOptions(),
         new RunScript(),
         new SendHttpMessage(),
         new SendJabberMessage(),
+        new SendTelegramMessage(),
         new SendMail(),
     ];
 }

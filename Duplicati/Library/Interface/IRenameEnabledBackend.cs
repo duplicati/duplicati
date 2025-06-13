@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,9 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Interface
 {
@@ -35,6 +34,7 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="oldname">The old filename, relative to the root</param>
         /// <param name="newname">The new filename, relative to the root</param>
-        void Rename(string oldname, string newname);
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken);
     }
 }

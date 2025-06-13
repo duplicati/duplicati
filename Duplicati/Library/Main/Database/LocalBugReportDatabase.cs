@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,8 +19,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
@@ -32,55 +33,62 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalBugReportDatabase));
 
-        public LocalBugReportDatabase(string path)
-            : base(path, "BugReportCreate", false)
+        public LocalBugReportDatabase(string path, long pagecachesize)
+            : base(path, "BugReportCreate", false, pagecachesize)
         {
             ShouldCloseConnection = true;
         }
 
         public void Fix()
         {
-            using(var tr = m_connection.BeginTransaction())
-            using(var cmd = m_connection.CreateCommand())
+            using (var tr = m_connection.BeginTransactionSafe())
+            using (var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = tr;
                 var tablename = "PathMap-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
                 // TODO: Rewrite this to use PathPrefix
                 // TODO: Needs to be much faster
-                using(var upcmd = m_connection.CreateCommand())
+                using (var upcmd = m_connection.CreateCommand())
                 {
-                
+
                     upcmd.Transaction = tr;
-                    upcmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""RealPath"" TEXT NOT NULL, ""Obfuscated"" TEXT NULL)", tablename));
-                    upcmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""RealPath"") SELECT DISTINCT ""Path"" FROM ""File"" ORDER BY ""Path"" ", tablename));
-                    upcmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Obfuscated"" = ? || length(""RealPath"") || ? || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = ? THEN ? ELSE ? END) ", tablename), !OperatingSystem.IsWindows() ? "/" : "X:\\", Util.DirectorySeparatorString, Util.DirectorySeparatorString, Util.DirectorySeparatorString, ".bin");
-                    
+                    upcmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""ID"" INTEGER PRIMARY KEY, ""RealPath"" TEXT NOT NULL, ""Obfuscated"" TEXT NULL)"));
+                    upcmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""{tablename}"" (""RealPath"") SELECT DISTINCT ""Path"" FROM ""File"" ORDER BY ""Path"" "));
+                    upcmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{tablename}"" SET ""Obfuscated"" = @StartPath || length(""RealPath"") || @DirSep || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = @DirSep THEN @DirSep ELSE @FileExt END) "))
+                        .SetParameterValue("@StartPath", !OperatingSystem.IsWindows() ? "/" : "X:\\")
+                        .SetParameterValue("@DirSep", Util.DirectorySeparatorString)
+                        .SetParameterValue("@FileExt", ".bin")
+                        .ExecuteNonQuery();
+
                     /*long id = 1;
                     using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""RealPath"", ""Obfuscated"" FROM ""{0}"" ", tablename)))
                         while(rd.Read())
                         {
-                            upcmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = replace(""Message"", ?, ?), ""Exception"" = replace(""Exception"", ?, ?)", rd.GetValue(0), rd.GetValue(1), rd.GetValue(0), rd.GetValue(1) );
+                            upcmd.SetCommandAndParameters(@"UPDATE ""LogData"" SET ""Message"" = replace(""Message"", @RealPath, @Obfuscated), ""Exception"" = replace(""Exception"", @RealPath, @Obfuscated)")
+                                .SetParameterValue("@RealPath", rd.GetValue(0))
+                                .SetParameterValue("@Obfuscated", rd.GetValue(1))
+                                .ExecuteNonQuery();
                             id++;
                         }
                         */
                 }
 
-                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = 'ERASED!' WHERE ""Message"" LIKE '%/%' OR ""Message"" LIKE '%:\%' ");                
-                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = 'ERASED!' WHERE ""Exception"" LIKE '%/%' OR ""Exception"" LIKE '%:\%' ");                
+                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = 'ERASED!' WHERE ""Message"" LIKE '%/%' OR ""Message"" LIKE '%:\%' ");
+                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = 'ERASED!' WHERE ""Exception"" LIKE '%/%' OR ""Exception"" LIKE '%:\%' ");
 
                 cmd.ExecuteNonQuery(@"UPDATE ""Configuration"" SET ""Value"" = 'ERASED!' WHERE ""Key"" = 'passphrase' ");
 
-                cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""FixedFile"" AS SELECT ""B"".""ID"" AS ""ID"", ""A"".""Obfuscated"" AS ""Path"", ""B"".""BlocksetID"" AS ""BlocksetID"", ""B"".""MetadataID"" AS ""MetadataID"" FROM ""{0}"" ""A"", ""File"" ""B"" WHERE ""A"".""RealPath"" = ""B"".""Path"" ", tablename));
+                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TABLE ""FixedFile"" AS SELECT ""B"".""ID"" AS ""ID"", ""A"".""Obfuscated"" AS ""Path"", ""B"".""BlocksetID"" AS ""BlocksetID"", ""B"".""MetadataID"" AS ""MetadataID"" FROM ""{tablename}"" ""A"", ""File"" ""B"" WHERE ""A"".""RealPath"" = ""B"".""Path"" "));
                 cmd.ExecuteNonQuery(@"DROP VIEW ""File"" ");
                 cmd.ExecuteNonQuery(@"DROP TABLE ""FileLookup"" ");
                 cmd.ExecuteNonQuery(@"DROP TABLE ""PathPrefix"" ");
 
-                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", tablename));
-                
-                using(new Logging.Timer(LOGTAG, "CommitUpdateBugReport", "CommitUpdateBugReport"))
+                cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tablename}"" "));
+
+                using (new Logging.Timer(LOGTAG, "CommitUpdateBugReport", "CommitUpdateBugReport"))
                     tr.Commit();
-                
+
                 cmd.Transaction = null;
 
                 cmd.ExecuteNonQuery("VACUUM");

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,12 +22,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Duplicati.Library.RestAPI;
+using Duplicati.Library.SQLiteHelper;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serializable;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
-using Duplicati.Server.WebServer.RESTMethods;
+using Duplicati.WebserverCore.Services;
 using NUnit.Framework;
 using Backup = Duplicati.Server.Database.Backup;
 
@@ -66,9 +68,9 @@ namespace Duplicati.UnitTest
                 ID = "1",
                 Metadata = metadata,
                 Name = name,
-                Settings = new[] {new Setting {Name = "passphrase", Value = "12345"}},
-                Sources = new[] {"Mock Backup Source"},
-                Tags = new[] {"Tags"},
+                Settings = new[] { new Setting { Name = "passphrase", Value = "12345" } },
+                Sources = new[] { "Mock Backup Source" },
+                Tags = new[] { "Tags" },
                 TargetURL = $"file:///mock_backup_target?auth-username={username}&auth-password={password}"
             };
         }
@@ -79,17 +81,17 @@ namespace Duplicati.UnitTest
         [TestCase(false)]
         public void ExportToJSONEncoding(bool removePasswords)
         {
-            Dictionary<string, string> advancedOptions = new Dictionary<string, string> {{"server-datafolder", this.serverDatafolder}};
+            Dictionary<string, string> advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };
 
             string usernameKey = "auth-username";
             string passwordKey = "auth-password";
             string username = @"user%40email.com";
             string password = @"abcde12345!@#$%/\";
 
-            IBackup backup = this.CreateBackup("backup", username, password,  new Dictionary<string, string>());
+            IBackup backup = this.CreateBackup("backup", username, password, new Dictionary<string, string>());
             if (removePasswords)
             {
-                Server.WebServer.RESTMethods.Backup.RemovePasswords(backup);
+                BackupImportExportHandler.RemovePasswords(backup);
             }
 
             Assert.That(backup.TargetURL, Does.Contain($"{usernameKey}={username}"));
@@ -105,10 +107,8 @@ namespace Duplicati.UnitTest
             }
 
             byte[] jsonByteArray;
-            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions))
-            {
-                jsonByteArray = Server.WebServer.RESTMethods.Backup.ExportToJSON(backup, null);
-            }
+            using (var con = Program.GetDatabaseConnection(new ApplicationSettings(), advancedOptions, true))
+                jsonByteArray = BackupImportExportHandler.ExportToJSON(con, backup, null);
 
             // The username should not have the '%40' converted to '@' since the import code
             // cannot handle it (see issue #3619).
@@ -125,41 +125,50 @@ namespace Duplicati.UnitTest
         [Category("ImportExport")]
         public void RoundTrip()
         {
-            Dictionary<string, string> metadata = new Dictionary<string, string> {{"SourceFilesCount", "1"}};
-            Dictionary<string, string> advancedOptions = new Dictionary<string, string> {{"server-datafolder", this.serverDatafolder}};
-            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions))
+            var metadata = new Dictionary<string, string> { { "SourceFilesCount", "1" } };
+            var advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };
+
+            var dbpath = Path.Combine(this.serverDatafolder, Library.AutoUpdater.DataFolderManager.SERVER_DATABASE_FILENAME);
+            if (File.Exists(dbpath))
+                File.Delete(dbpath);
+
+            var con = SQLiteLoader.LoadConnection();
+            SQLiteLoader.OpenDatabase(con, dbpath, null);
+            DatabaseUpgrader.UpgradeDatabase(con, dbpath, typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
+
+            using (var connection = new Connection(con, true, null, this.serverDatafolder, null))
             {
                 // Unencrypted file, don't import metadata.
                 string unencryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(unencryptedWithoutMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(this.CreateBackup("unencrypted without metadata", "user", "password", metadata), null));
-                Backups.ImportBackup(unencryptedWithoutMetadata, false, () => null, advancedOptions);
-                Assert.AreEqual(1, Program.DataConnection.Backups.Length);
-                Assert.AreEqual(0, Program.DataConnection.Backups[0].Metadata.Count);
+                File.WriteAllBytes(unencryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(connection, this.CreateBackup("unencrypted without metadata", "user", "password", metadata), null));
+                BackupImportExportHandler.ImportBackup(connection, unencryptedWithoutMetadata, false, () => null);
+                Assert.AreEqual(1, connection.Backups.Length);
+                Assert.AreEqual(0, connection.Backups[0].Metadata.Count);
 
                 // Unencrypted file, import metadata.
                 string unencryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(unencryptedWithMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(this.CreateBackup("unencrypted with metadata", "user", "password", metadata), null));
-                Backups.ImportBackup(unencryptedWithMetadata, true, () => null, advancedOptions);
-                Assert.AreEqual(2, Program.DataConnection.Backups.Length);
-                Assert.AreEqual(metadata.Count, Program.DataConnection.Backups[1].Metadata.Count);
+                File.WriteAllBytes(unencryptedWithMetadata, BackupImportExportHandler.ExportToJSON(connection, this.CreateBackup("unencrypted with metadata", "user", "password", metadata), null));
+                BackupImportExportHandler.ImportBackup(connection, unencryptedWithMetadata, true, () => null);
+                Assert.AreEqual(2, connection.Backups.Length);
+                Assert.AreEqual(metadata.Count, connection.Backups[1].Metadata.Count);
 
                 // Encrypted file, don't import metadata.
                 string encryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 string passphrase = "abcde";
-                File.WriteAllBytes(encryptedWithoutMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(this.CreateBackup("encrypted without metadata", "user", "password", metadata), passphrase));
-                Backups.ImportBackup(encryptedWithoutMetadata, false, () => passphrase, advancedOptions);
-                Assert.AreEqual(3, Program.DataConnection.Backups.Length);
-                Assert.AreEqual(0, Program.DataConnection.Backups[2].Metadata.Count);
+                File.WriteAllBytes(encryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(connection, this.CreateBackup("encrypted without metadata", "user", "password", metadata), passphrase));
+                BackupImportExportHandler.ImportBackup(connection, encryptedWithoutMetadata, false, () => passphrase);
+                Assert.AreEqual(3, connection.Backups.Length);
+                Assert.AreEqual(0, connection.Backups[2].Metadata.Count);
 
                 // Encrypted file, import metadata.
                 string encryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(encryptedWithMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(this.CreateBackup("encrypted with metadata", "user", "password", metadata), passphrase));
-                Backups.ImportBackup(encryptedWithMetadata, true, () => passphrase, advancedOptions);
-                Assert.AreEqual(4, Program.DataConnection.Backups.Length);
-                Assert.AreEqual(metadata.Count, Program.DataConnection.Backups[3].Metadata.Count);
+                File.WriteAllBytes(encryptedWithMetadata, BackupImportExportHandler.ExportToJSON(connection, this.CreateBackup("encrypted with metadata", "user", "password", metadata), passphrase));
+                BackupImportExportHandler.ImportBackup(connection, encryptedWithMetadata, true, () => passphrase);
+                Assert.AreEqual(4, connection.Backups.Length);
+                Assert.AreEqual(metadata.Count, connection.Backups[3].Metadata.Count);
 
                 // Encrypted file, incorrect passphrase.
-                Assert.Throws(Is.InstanceOf<Exception>(), () => Backups.ImportBackup(encryptedWithMetadata, true, () => passphrase + " ", advancedOptions));
+                Assert.Throws(Is.InstanceOf<Exception>(), () => BackupImportExportHandler.ImportBackup(connection, encryptedWithMetadata, true, () => passphrase + " "));
             }
         }
     }

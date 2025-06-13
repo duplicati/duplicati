@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using COSXML;
 using COSXML.Auth;
 using COSXML.Model.Bucket;
@@ -26,12 +27,10 @@ using COSXML.Model.Tag;
 using COSXML.Utils;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend.TencentCOS
 {
@@ -40,7 +39,7 @@ namespace Duplicati.Library.Backend.TencentCOS
     /// en: https://intl.cloud.tencent.com/document/product/436
     /// zh: https://cloud.tencent.com/document/product/436
     /// </summary>
-    public class COS : IBackend, IStreamingBackend, IRenameEnabledBackend
+    public class COS : IBackend, IRenameEnabledBackend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<COS>();
 
@@ -68,9 +67,14 @@ namespace Duplicati.Library.Backend.TencentCOS
         /// </summary>
         private const int KEY_DURATION_SECOND = 60 * 60;
 
+        /// <summary>
+        /// Tencent Cloud Object Storage Configuration
+        /// </summary>
         private readonly CosOptions _cosOptions;
-
-        CosXml cosXml;
+        /// <summary>
+        /// The timeout values
+        /// </summary>
+        private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
         /// <summary>
         /// Tencent Cloud Object Storage Configuration
@@ -80,131 +84,116 @@ namespace Duplicati.Library.Backend.TencentCOS
             /// <summary>
             /// Tencent Cloud Account APPID
             /// </summary>
-            public string Appid { get; set; }
+            public required string? Appid { get; set; }
             /// <summary>
-            /// Cloud API Secret Id
+            /// Cloud API Secret ID
             /// </summary>
-            public string SecretId { get; set; }
+            public required string SecretId { get; set; }
             /// <summary>
             /// Cloud API Secret Key
             /// </summary>
-            public string SecretKey { get; set; }
+            public required string SecretKey { get; set; }
             /// <summary>
             /// Bucket region ap-guangzhou ap-hongkong
             /// en: https://intl.cloud.tencent.com/document/product/436/6224
             /// zh: https://cloud.tencent.com/document/product/436/6224
             /// </summary>
-            public string Region { get; set; }
+            public required string? Region { get; set; }
             /// <summary>
             /// Bucket, format: BucketName-APPID
             /// </summary>
-            public string Bucket { get; set; }
+            public required string Bucket { get; set; }
             /// <summary>
             /// A path or subfolder in a bucket
             /// </summary>
-            public string Path { get; set; }
+            public required string? Path { get; set; }
             /// <summary>
             /// Storage class of the object
             /// en: https://intl.cloud.tencent.com/document/product/436/30925
             /// zh: https://cloud.tencent.com/document/product/436/33417
             /// </summary>
-            public string StorageClass { get; set; }
+            public required string? StorageClass { get; set; }
         }
 
-        public COS() { }
-
-        public COS(string url, Dictionary<string, string> options)
+        public COS()
         {
-            _cosOptions = new CosOptions();
+            _cosOptions = null!;
+            _timeouts = null!;
+        }
 
+        public COS(string url, Dictionary<string, string?> options)
+        {
             var uri = new Utility.Uri(url?.Trim());
             var prefix = uri.HostAndPath?.Trim()?.Trim('/')?.Trim('\\');
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, COS_SECRET_ID, COS_SECRET_KEY)
+                .RequireCredentials();
 
-            if (!string.IsNullOrEmpty(prefix))
-            {
-                _cosOptions.Path = prefix + "/";
-            }
+            var bucket = options.GetValueOrDefault(COS_BUCKET);
+            if (string.IsNullOrWhiteSpace(bucket))
+                throw new ArgumentException("COS bucket name is required");
 
-            if (options.ContainsKey(COS_APP_ID))
+            _cosOptions = new CosOptions()
             {
-                _cosOptions.Appid = options[COS_APP_ID];
-            }
+                Appid = options.GetValueOrDefault(COS_APP_ID),
+                Region = options.GetValueOrDefault(COS_REGION),
+                SecretId = auth.Username!,
+                SecretKey = auth.Password!,
+                Bucket = bucket,
+                StorageClass = options.GetValueOrDefault(COS_STORAGE_CLASS),
+                Path = string.IsNullOrEmpty(prefix) ? null : Util.AppendDirSeparator(prefix, "/")
+            };
 
-            if (options.ContainsKey(COS_REGION))
-            {
-                _cosOptions.Region = options[COS_REGION];
-            }
-
-            if (options.ContainsKey(COS_SECRET_ID))
-            {
-                _cosOptions.SecretId = options[COS_SECRET_ID];
-            }
-
-            if (options.ContainsKey(COS_SECRET_KEY))
-            {
-                _cosOptions.SecretKey = options[COS_SECRET_KEY];
-            }
-
-            if (options.ContainsKey(COS_BUCKET))
-            {
-                _cosOptions.Bucket = options[COS_BUCKET];
-            }
-
-            if (options.ContainsKey(COS_STORAGE_CLASS))
-            {
-                _cosOptions.StorageClass = options[COS_STORAGE_CLASS];
-            }
+            _timeouts = TimeoutOptionsHelper.Parse(options);
         }
 
-        CosXml GetCosXml()
+        private CosXml GetCosXml()
         {
-            string appid = _cosOptions.Appid;
-            string region = _cosOptions.Region;
-            string secretId = _cosOptions.SecretId;
-            string secretKey = _cosOptions.SecretKey;
-
-            CosXmlConfig config = new CosXmlConfig.Builder()
+            var config = new CosXmlConfig.Builder()
               .SetConnectionTimeoutMs(CONNECTION_TIMEOUT_MS)
               .SetReadWriteTimeoutMs(READ_WRITE_TIMEOUT_MS)
               .IsHttps(COS_USE_SSL)
-              .SetAppid(appid)
-              .SetRegion(region)
+              .SetAppid(_cosOptions.Appid)
+              .SetRegion(_cosOptions.Region)
               .Build();
 
             // Initialization QCloudCredentialProvider, COS SDK provides three ways: the permanent temporary keys custom
-            QCloudCredentialProvider cosCredentialProvider = new DefaultQCloudCredentialProvider(secretId, secretKey, KEY_DURATION_SECOND);
-
+            var cosCredentialProvider = new DefaultQCloudCredentialProvider(_cosOptions.SecretId, _cosOptions.SecretKey, KEY_DURATION_SECOND);
             return new CosXmlServer(config, cosCredentialProvider);
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             bool isTruncated = true;
-            string filename = null;
+            string? filename = null;
 
             while (isTruncated)
             {
-                cosXml = GetCosXml();
-                string bucket = _cosOptions.Bucket;
-                string prefix = _cosOptions.Path;
+                var cosXml = GetCosXml();
+                var bucket = _cosOptions.Bucket;
+                var prefix = _cosOptions.Path;
 
-                GetBucketRequest request = new GetBucketRequest(bucket);
-
+                var request = new GetBucketRequest(bucket);
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
 
                 if (!string.IsNullOrEmpty(filename))
-                {
                     request.SetMarker(filename);
-                }
 
                 if (!string.IsNullOrEmpty(prefix))
-                {
                     request.SetPrefix(prefix);
-                }
 
-                GetBucketResult result = cosXml.GetBucket(request);
+                var tcs = new TaskCompletionSource<GetBucketResult>();
+                var result = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, async ct =>
+                {
+                    ct.Register(() => tcs.TrySetCanceled());
+                    cosXml.GetBucket(request,
+                        (result) => tcs.SetResult((GetBucketResult)result),
+                        (clientEx, serverEx) => tcs.SetException((Exception)clientEx ?? serverEx)
+                    );
+                    return await tcs.Task.ConfigureAwait(false);
+                }).ConfigureAwait(false);
 
-                ListBucket info = result.listBucket;
+                var info = result.listBucket;
 
                 isTruncated = result.listBucket.isTruncated;
                 filename = result.listBucket.nextMarker;
@@ -212,16 +201,13 @@ namespace Duplicati.Library.Backend.TencentCOS
                 foreach (var item in info.contentsList)
                 {
                     var last = DateTime.Parse(item.lastModified);
-
                     var fileName = item.key;
                     if (!string.IsNullOrWhiteSpace(prefix))
                     {
                         fileName = fileName.Substring(prefix.Length);
 
                         if (fileName.StartsWith("/", StringComparison.Ordinal))
-                        {
                             fileName = fileName.Trim('/');
-                        }
                     }
 
                     yield return new FileEntry(fileName, item.size, last, last);
@@ -229,31 +215,21 @@ namespace Duplicati.Library.Backend.TencentCOS
             }
         }
 
-        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
-        {
-            using (FileStream fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
-        }
-
-        public void Get(string remotename, string filename)
-        {
-            using (var fs = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.None))
-                Get(remotename, fs);
-        }
-
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
-                cosXml = GetCosXml();
-                string bucket = _cosOptions.Bucket;
-                string key = GetFullKey(remotename);
+                var cosXml = GetCosXml();
+                var bucket = _cosOptions.Bucket;
+                var key = GetFullKey(remotename);
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct =>
+                {
+                    var request = new DeleteObjectRequest(bucket, key);
+                    ct.Register(() => request.Cancel());
+                    request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
 
-                DeleteObjectRequest request = new DeleteObjectRequest(bucket, key);
-
-                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
-
-                DeleteObjectResult result = cosXml.DeleteObject(request);
+                    cosXml.DeleteObject(request);
+                }).ConfigureAwait(false);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -267,16 +243,20 @@ namespace Duplicati.Library.Backend.TencentCOS
             }
         }
 
-        public void Test()
+        public async Task TestAsync(CancellationToken cancelToken)
         {
             var json = JsonConvert.SerializeObject(_cosOptions);
             try
             {
-                cosXml = GetCosXml();
+                var cosXml = GetCosXml();
                 string bucket = _cosOptions.Bucket;
-                HeadBucketRequest request = new HeadBucketRequest(bucket);
-                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
-                HeadBucketResult result = cosXml.HeadBucket(request);
+                var result = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct =>
+                {
+                    var request = new HeadBucketRequest(bucket);
+                    request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
+                    cancelToken.Register(() => request.Cancel());
+                    return cosXml.HeadBucket(request);
+                }).ConfigureAwait(false);
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "Test", "Request complete {0}: {1}, {2}", result.httpCode, json, result.GetResultInfo());
             }
@@ -290,36 +270,29 @@ namespace Duplicati.Library.Backend.TencentCOS
                 Logging.Log.WriteErrorMessage(LOGTAG, "Test", serverEx, "Request failed: {0}, {1}", json, serverEx.GetInfo());
                 throw;
             }
+
+            await this.TestReadWritePermissionsAsync(cancelToken).ConfigureAwait(false);
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             // No need to create folders
+            return Task.CompletedTask;
         }
 
         public void Dispose()
         {
-            if (cosXml != null)
-            {
-                cosXml = null;
-            }
         }
 
-        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             try
             {
-                cosXml = GetCosXml();
-                string bucket = _cosOptions.Bucket;
-                string key = GetFullKey(remotename);
+                var cosXml = GetCosXml();
+                var bucket = _cosOptions.Bucket;
+                var key = GetFullKey(remotename);
 
-                byte[] buffer = new byte[stream.Length];
-                if (Utility.Utility.ForceStreamRead(stream, buffer, buffer.Length) != stream.Length)
-                {
-                    throw new Exception("Bad file read");
-                }
-
-                PutObjectRequest request = new PutObjectRequest(bucket, key, buffer);
+                var request = new PutObjectRequest(bucket, key, filename);
 
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
                 request.SetRequestHeader("Content-Type", "application/octet-stream");
@@ -327,8 +300,9 @@ namespace Duplicati.Library.Backend.TencentCOS
                 {
                     request.SetRequestHeader("x-" + COS_STORAGE_CLASS, _cosOptions.StorageClass);
                 }
+                cancelToken.Register(() => request.Cancel());
 
-                PutObjectResult result = cosXml.PutObject(request);
+                var result = cosXml.PutObject(request);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -344,24 +318,23 @@ namespace Duplicati.Library.Backend.TencentCOS
             return Task.CompletedTask;
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             try
             {
-                cosXml = GetCosXml();
-                string bucket = _cosOptions.Bucket;
-                string key = GetFullKey(remotename);
+                var cosXml = GetCosXml();
+                var bucket = _cosOptions.Bucket;
+                var key = GetFullKey(remotename);
 
-                GetObjectBytesRequest request = new GetObjectBytesRequest(bucket, key);
+                var request = new GetObjectBytesRequest(bucket, key);
 
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
+                cancelToken.Register(() => request.Cancel());
 
-                GetObjectBytesResult result = cosXml.GetObject(request);
+                var result = cosXml.GetObject(request);
 
-                byte[] bytes = result.content;
-
-                Stream ms = new MemoryStream(bytes);
-                Utility.Utility.CopyStream(ms, stream);
+                var bytes = result.content;
+                await File.WriteAllBytesAsync(filename, bytes, cancelToken).ConfigureAwait(false);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -375,31 +348,35 @@ namespace Duplicati.Library.Backend.TencentCOS
             }
         }
 
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
         {
             try
             {
-                cosXml = GetCosXml();
-                string sourceAppid = _cosOptions.Appid;
-                string sourceBucket = _cosOptions.Bucket;
-                string sourceRegion = _cosOptions.Region;
-                string sourceKey = GetFullKey(oldname);
+                var cosXml = GetCosXml();
+                var sourceAppid = _cosOptions.Appid;
+                var sourceBucket = _cosOptions.Bucket;
+                var sourceRegion = _cosOptions.Region;
+                var sourceKey = GetFullKey(oldname);
 
-                CopySourceStruct copySource = new CopySourceStruct(sourceAppid, sourceBucket, sourceRegion, sourceKey);
+                var copySource = new CopySourceStruct(sourceAppid, sourceBucket, sourceRegion, sourceKey);
 
-                string bucket = _cosOptions.Bucket;
-                string key = GetFullKey(newname);
-                CopyObjectRequest request = new CopyObjectRequest(bucket, key);
+                var bucket = _cosOptions.Bucket;
+                var key = GetFullKey(newname);
 
-                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
-                request.SetCopySource(copySource);
-                request.SetCopyMetaDataDirective(COSXML.Common.CosMetaDataDirective.COPY);
+                var result = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct =>
+                {
+                    var request = new CopyObjectRequest(bucket, key);
+                    request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
+                    request.SetCopySource(copySource);
+                    request.SetCopyMetaDataDirective(COSXML.Common.CosMetaDataDirective.COPY);
+                    ct.Register(() => request.Cancel());
 
-                CopyObjectResult result = cosXml.CopyObject(request);
+                    return cosXml.CopyObject(request);
+                }).ConfigureAwait(false);
 
                 //Console.WriteLine(result.GetResultInfo());
 
-                Delete(oldname);
+                await DeleteAsync(oldname, cancelToken).ConfigureAwait(false);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -419,30 +396,20 @@ namespace Duplicati.Library.Backend.TencentCOS
 
         public string ProtocolKey => "cos";
 
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(COS_APP_ID, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSAccountDescriptionShort, Strings.COSBackend.COSAccountDescriptionLong),
-                    new CommandLineArgument(COS_REGION, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSLocationDescriptionShort, Strings.COSBackend.COSLocationDescriptionLong),
-                    new CommandLineArgument(COS_SECRET_ID, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSAPISecretIdDescriptionShort, Strings.COSBackend.COSAPISecretIdDescriptionLong),
-                    new CommandLineArgument(COS_SECRET_KEY, CommandLineArgument.ArgumentType.Password, Strings.COSBackend.COSAPISecretKeyDescriptionShort, Strings.COSBackend.COSAPISecretKeyDescriptionLong),
-                    new CommandLineArgument(COS_BUCKET, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSBucketDescriptionShort, Strings.COSBackend.COSBucketDescriptionLong),
-                    new CommandLineArgument(COS_STORAGE_CLASS, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSStorageClassDescriptionShort, Strings.COSBackend.COSStorageClassDescriptionLong)
-                });
-            }
-        }
+        public IList<ICommandLineArgument> SupportedCommands => [
+            new CommandLineArgument(COS_APP_ID, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSAccountDescriptionShort, Strings.COSBackend.COSAccountDescriptionLong),
+            new CommandLineArgument(COS_REGION, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSLocationDescriptionShort, Strings.COSBackend.COSLocationDescriptionLong),
+            new CommandLineArgument(COS_SECRET_ID, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSAPISecretIdDescriptionShort, Strings.COSBackend.COSAPISecretIdDescriptionLong, null, [AuthOptionsHelper.AuthUsernameOption]),
+            new CommandLineArgument(COS_SECRET_KEY, CommandLineArgument.ArgumentType.Password, Strings.COSBackend.COSAPISecretKeyDescriptionShort, Strings.COSBackend.COSAPISecretKeyDescriptionLong, null, [AuthOptionsHelper.AuthPasswordOption]),
+            new CommandLineArgument(COS_BUCKET, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSBucketDescriptionShort, Strings.COSBackend.COSBucketDescriptionLong),
+            new CommandLineArgument(COS_STORAGE_CLASS, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSStorageClassDescriptionShort, Strings.COSBackend.COSStorageClassDescriptionLong),
+            .. TimeoutOptionsHelper.GetOptions()
+                .Where(x => x.Name != TimeoutOptionsHelper.ReadWriteTimeoutOption)
+        ];
 
-        public string[] DNSName => null;
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
         private string GetFullKey(string name)
-        {
-            if (string.IsNullOrWhiteSpace(_cosOptions?.Path))
-            {
-                return name;
-            }
-            return _cosOptions.Path + name;
-        }
+            => string.IsNullOrWhiteSpace(_cosOptions?.Path) ? name : _cosOptions.Path + name;
     }
 }

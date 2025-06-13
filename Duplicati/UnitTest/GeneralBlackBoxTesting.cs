@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,9 +22,8 @@
 using NUnit.Framework;
 using System.Linq;
 using System.IO;
-using System;
 using System.Collections.Generic;
-using System.Net;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
 {
@@ -39,10 +38,10 @@ namespace Duplicati.UnitTest
             get
             {
                 var rx = new System.Text.RegularExpressions.Regex("r(?<number>\\d+)");
-                return 
+                return
                     from n in Directory.EnumerateDirectories(SOURCE_FOLDERS)
                     let m = rx.Match(n)
-                        where m.Success
+                    where m.Success
                     orderby int.Parse(m.Groups["number"].Value)
                     select n;
             }
@@ -56,7 +55,7 @@ namespace Duplicati.UnitTest
             }
         }
 
-        protected string TestTarget 
+        protected string TestTarget
         {
             get
             {
@@ -70,44 +69,7 @@ namespace Duplicati.UnitTest
         public void OneTimeSetUp()
         {
             this.OneTimeTearDown();
-            var url = $"https://testfiles.duplicati.com/{this.zipFilename}";
-            var destinationFilePath = this.zipFilepath;
-            var webRequest = (HttpWebRequest)WebRequest.Create(url);
-
-            using (var wr = (HttpWebResponse)webRequest.GetResponse())
-            using (WebClient client = new WebClient())
-            {
-                Console.WriteLine("downloading test file to: {0}, length: {1}", destinationFilePath, wr.ContentLength);
-                var maxAttempts = 5;
-                while (maxAttempts-- > 0) {
-                    try {
-                        DateTime beginTime = DateTime.Now;
-                        client.DownloadFile(url, destinationFilePath);
-                        long length = new System.IO.FileInfo(destinationFilePath).Length;
-                        Console.WriteLine("downloaded test file: {0}: length {1}, duration {2}", destinationFilePath, length, (DateTime.Now - beginTime).TotalSeconds);
-                        if (length == wr.ContentLength) {
-                            maxAttempts = -1;
-                        } else {
-                            Console.WriteLine("invalid downloaded length {0}, should be {1}...", length, wr.ContentLength);
-                            System.Threading.Thread.Sleep(120000);
-                        }
-                    }
-                    catch (WebException ex)
-                    {
-                        if (ex.Response == null){
-                            Console.WriteLine("ex.Response is null !");
-                        } else {
-                            Console.WriteLine("exception {0}", ex);
-                            throw;
-                        }
-                    }
-                }
-
-                if (maxAttempts == 0) {
-                    throw new Exception(string.Format("Unable to download test file from {0}", url));
-                }
-            }
-            
+            CommandLineOperationsTests.DownloadS3FileIfNewerAsync(this.zipFilepath, $"{CommandLineOperationsTests.S3_URL}{this.zipFilename}").Await();
             System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);
         }
 
@@ -118,16 +80,11 @@ namespace Duplicati.UnitTest
             {
                 Directory.Delete(SOURCE_FOLDERS, true);
             }
-            if (File.Exists(this.zipFilepath))
-            {
-                File.Delete(this.zipFilepath);
-            }
         }
 
         [Test]
         [Category("SVNData")]
         [TestCase("zip")]
-        [TestCase("7z")]
         public void TestWithSVNShort(string compression)
         {
             var opts = TestOptions;
@@ -138,7 +95,6 @@ namespace Duplicati.UnitTest
         [Test]
         [Category("SVNDataLong")]
         [TestCase("zip")]
-        [TestCase("7z")]
         public void TestWithSVNLong(string compression)
         {
             var opts = TestOptions;
@@ -155,7 +111,11 @@ namespace Duplicati.UnitTest
             var target = u.SetScheme(new RandomErrorBackend().ProtocolKey).ToString();
             Library.DynamicLoader.BackendLoader.AddBackend(new RandomErrorBackend());
 
-            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, target);
+            var opts = TestOptions;
+            // opts["restore-legacy"] = "true";
+            opts["retry-delay"] = "0s";
+
+            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), opts, target);
         }
 
         [Test]

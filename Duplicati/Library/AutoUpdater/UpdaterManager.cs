@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,39 +19,42 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Utility;
-using Duplicati.Library.Common;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Net.Http;
+using System.Threading;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.AutoUpdater
 {
+    /// <summary>
+    /// Handles operations related to updating the application
+    /// </summary>
     public static class UpdaterManager
     {
         /// <summary>
         /// The RSA key used to sign the manifest
         /// </summary>
-        private static readonly System.Security.Cryptography.RSA[] SIGN_KEYS = AutoUpdateSettings.SignKeys;
+        private static System.Security.Cryptography.RSA[] SIGN_KEYS => AutoUpdateSettings.SignKeys;
         /// <summary>
         /// Urls to check for updated packages
         /// </summary>
-        private static readonly string[] MANIFEST_URLS = AutoUpdateSettings.URLs;
+        private static string[] MANIFEST_URLS => AutoUpdateSettings.URLs;
         /// <summary>
         /// The app name to show
         /// </summary>
-        private static readonly string APPNAME = AutoUpdateSettings.AppName;
+        private static string APPNAME => AutoUpdateSettings.AppName;
         /// <summary>
         /// The version that the updater supports
         /// </summary>
         public const int SUPPORTED_PACKAGE_UPDATER_VERSION = 2;
-        /// <summary>
-        /// The folder where the machine id is placed
-        /// </summary>
-        public static readonly string UPDATEDIR;
         /// <summary>
         /// The directory where the program is running from
         /// </summary>
@@ -61,6 +64,10 @@ namespace Duplicati.Library.AutoUpdater
         /// </summary>
         public static readonly bool DISABLE_UPDATE_CHECK = Debugger.IsAttached || Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), false);
         /// <summary>
+        /// The operating system display name
+        /// </summary>
+        public static readonly string OperatingSystemName = OperatingSystem.IsWindows() ? "Windows" : OperatingSystem.IsLinux() ? "Linux" : OperatingSystem.IsMacOS() ? "MacOS" : "Unknown";
+        /// <summary>
         /// The update information for the running version
         /// </summary>
         public static readonly UpdateInfo SelfVersion;
@@ -68,16 +75,12 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// Event trigger for errors on update
         /// </summary>
-        public static event Action<Exception> OnError;
+        public static event Action<Exception>? OnError;
 
         /// <summary>
         /// Common formatting string for date-time values
         /// </summary>
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
-        /// <summary>
-        /// The template for the environment variable name that allows an overriden root folder
-        /// </summary>
-        private const string UPDATEINSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_UPDATE_ROOT";
         /// <summary>
         /// The template for the environment variable that toggles disabling updates
         /// </summary>
@@ -90,20 +93,21 @@ namespace Duplicati.Library.AutoUpdater
         /// The name of the file that contains the package type id, located in the <see cref="INSTALLATIONDIR"/> folder
         /// </summary>
         private const string PACKAGE_TYPE_FILE = "package_type_id.txt";
-        /// <summary>
-        /// The installation ID filename stored in <see cref="UPDATEDIR"/>
-        /// </summary>
-        private const string INSTALL_FILE = "installation.txt";
-
-        /// <summary>
-        /// The machine ID filename stored in <see cref="UPDATEDIR"/>
-        /// </summary>
-        private const string MACHINE_FILE = "machineid.txt";
 
         /// <summary>
         /// Gets the last version found from an update
         /// </summary>
-        public static UpdateInfo LastUpdateCheckVersion { get; private set; }
+        public static UpdateInfo? LastUpdateCheckVersion { get; private set; }
+
+        /// <summary>
+        /// The default timeout in seconds for download operations
+        /// </summary>
+        private const int DOWNLOAD_OPERATION_TIMEOUT_SECONDS = 3600;
+
+        /// <summary>
+        /// The default timeout in seconds for fast get version metadata operations
+        /// </summary>
+        private const int SHORT_OPERATION_TIMEOUT_SECONDS = 30;
 
         /// <summary>
         /// Performs static initialization of the update manager, populating the readonly fields of the manager
@@ -111,65 +115,10 @@ namespace Duplicati.Library.AutoUpdater
         static UpdaterManager()
         {
             // Set the installation path
-            INSTALLATIONDIR = Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
-
-            // Check for override
-            if (string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME))))
-            {
-                // OS specific folders for probing
-                var candidates = new List<string>();
-                if (OperatingSystem.IsWindows())
-                {
-                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME));
-                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME));
-                }
-                else
-                {
-                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME));
-                }
-
-                if (OperatingSystem.IsMacOS())
-                    candidates.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", APPNAME));
-
-                // Find the first writeable directory in the list
-                UPDATEDIR = candidates.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && TestDirectoryIsWriteable(p));
-
-                // Try to create a writeable folder, if none is found
-                if (string.IsNullOrWhiteSpace(UPDATEDIR))
-                    UPDATEDIR = candidates.Where(p => !string.IsNullOrWhiteSpace(p) && !System.IO.Directory.Exists(p))
-                        .Select(p =>
-                        {
-                            try { System.IO.Directory.CreateDirectory(p); }
-                            catch { }
-                            return p;
-                        })
-                        .Where(p => System.IO.Directory.Exists(p) && TestDirectoryIsWriteable(p))
-                        .FirstOrDefault();
-            }
-            else
-            {
-                // Use override, no checks
-                UPDATEDIR = Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
-            }
-
-            if (!string.IsNullOrWhiteSpace(UPDATEDIR))
-            {
-                if (!System.IO.File.Exists(System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE)))
-                {
-                    // In case there was already a machine id file, copy it to the new location
-                    if (System.IO.File.Exists(System.IO.Path.Combine(UPDATEDIR, "updates", INSTALL_FILE)))
-                        System.IO.File.Copy(System.IO.Path.Combine(UPDATEDIR, "updates", INSTALL_FILE), System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE), true);
-                    else
-                        System.IO.File.WriteAllText(System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE), AutoUpdateSettings.UpdateInstallFileText);
-                }
-
-                if (!System.IO.File.Exists(System.IO.Path.Combine(UPDATEDIR, MACHINE_FILE)))
-                    System.IO.File.WriteAllText(System.IO.Path.Combine(UPDATEDIR, MACHINE_FILE), AutoUpdateSettings.UpdateMachineFileText(InstallID));
-
-            }
+            INSTALLATIONDIR = Util.AppendDirSeparator(Path.GetDirectoryName(Utility.Utility.getEntryAssembly().Location));
 
             // Attempt to read the installed manifest file
-            UpdateInfo selfVersion = null;
+            UpdateInfo? selfVersion = null;
             try
             {
                 selfVersion = ReadInstalledManifest(INSTALLATIONDIR);
@@ -179,111 +128,67 @@ namespace Duplicati.Library.AutoUpdater
             }
 
             // In case the installed manifest is broken, try to set some sane values
-            if (selfVersion == null)
-            {
-                SelfVersion = new UpdateInfo(
-                    MinimumCompatibleVersion: 1,
-                    PackageUpdaterVersion: 1,
-                    IncompatibleUpdateUrl: string.Empty,
-                    GenericUpdatePageUrl: "https://duplicati.com/download",
-                    UpdateSeverity: null,
-                    ChangeInfo: null,
-                    Packages: null,
-                    Displayname: string.IsNullOrWhiteSpace(Duplicati.License.VersionNumbers.TAG) ? "Current" : Duplicati.License.VersionNumbers.TAG,
-                    Version: System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                    ReleaseTime: new DateTime(0),
-                    ReleaseType:
+            SelfVersion = selfVersion ?? new UpdateInfo(
+                MinimumCompatibleVersion: 1,
+                PackageUpdaterVersion: 1,
+                IncompatibleUpdateUrl: string.Empty,
+                GenericUpdatePageUrl: "https://duplicati.com/download",
+                UpdateSeverity: null,
+                ChangeInfo: null,
+                Packages: null,
+                Displayname: string.IsNullOrWhiteSpace(License.VersionNumbers.TAG) ? "Current" : License.VersionNumbers.TAG,
+                Version: System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
+                ReleaseTime: new DateTime(0),
+                ReleaseType:
 #if DEBUG
-                        "Debug"
+                    "Debug"
 #else
                         string.IsNullOrWhiteSpace(AutoUpdateSettings.BuildUpdateChannel) ? "Nightly" : AutoUpdateSettings.BuildUpdateChannel
 #endif
-                );
-            }
+            );
         }
 
-        public static Version TryParseVersion(string str)
+        public static Version TryParseVersion(string? str)
         {
-            Version v;
-            if (Version.TryParse(str, out v))
+            if (Version.TryParse(str, out var v))
                 return v;
             else
                 return new Version(0, 0);
         }
 
-        private static bool TestDirectoryIsWriteable(string path)
-        {
-            var p2 = System.IO.Path.Combine(path, "test-" + DateTime.UtcNow.ToString(DATETIME_FORMAT, System.Globalization.CultureInfo.InvariantCulture));
-            var probe = System.IO.Directory.Exists(path) ? p2 : path;
-
-            if (!System.IO.Directory.Exists(probe))
-            {
-                try
-                {
-                    System.IO.Directory.CreateDirectory(probe);
-                    if (probe != path)
-                        System.IO.Directory.Delete(probe);
-                    return true;
-                }
-                catch
-                {
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// The unique machine installation ID
-        /// </summary>
-        public static string InstallID
-        {
-            get
-            {
-                try { return System.IO.File.ReadAllLines(System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
-                catch { }
-
-                return "";
-            }
-        }
-
-        /// <summary>
-        /// The unique machine ID
-        /// </summary>
-        public static string MachineID
-        {
-            get
-            {
-                string machinedId = null;
-                try { machinedId = System.IO.File.ReadAllLines(System.IO.Path.Combine(UPDATEDIR, MACHINE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
-                catch { }
-
-                return string.IsNullOrWhiteSpace(machinedId)
-                    ? InstallID
-                    : machinedId;
-            }
-        }
 
         /// <summary>
         /// The package type ID
         /// </summary>
-        public static string PackageTypeId
+        public static string PackageTypeId => _packageTypeId.Value;
+
+        /// <summary>
+        /// The release channel to use for updates
+        /// </summary>
+        public static ReleaseType CurrentChannel { get; set; } = AutoUpdateSettings.DefaultUpdateChannel;
+
+        /// <summary>
+        /// The package type ID, lazy evaluated
+        /// </summary>
+        private static readonly Lazy<string> _packageTypeId = new(() =>
         {
-            get
-            {
-                try { return System.IO.File.ReadAllLines(System.IO.Path.Combine(INSTALLATIONDIR, PACKAGE_TYPE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
-                catch { }
+            try { return File.ReadAllLines(Path.Combine(INSTALLATIONDIR!, PACKAGE_TYPE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
+            catch { }
 
 #if DEBUG
-                return "debug";
+            return "debug";
 #else
-                return "";
+            return "";
 #endif
-            }
-        }
+        });
 
 
-        public static UpdateInfo CheckForUpdate(ReleaseType channel = ReleaseType.Unknown)
+        /// <summary>
+        /// Checks for updates and returns the update information if available
+        /// </summary>
+        /// <param name="channel">The release channel to check for updates</param>
+        /// <returns>The update information if available, or null if no updates are available</returns>
+        public static UpdateInfo? CheckForUpdate(ReleaseType channel = ReleaseType.Unknown)
         {
             if (channel == ReleaseType.Unknown)
                 channel = AutoUpdateSettings.DefaultUpdateChannel;
@@ -314,14 +219,24 @@ namespace Duplicati.Library.AutoUpdater
                     if (SIGN_KEYS.Length == 0)
                         throw new Exception("No signing keys are available, cannot check update");
 
-                    using (var tmpfile = new Library.Utility.TempFile())
+                    using (var tmpfile = new TempFile())
                     {
-                        System.Net.WebClient wc = new System.Net.WebClient();
-                        wc.Headers.Add(System.Net.HttpRequestHeader.UserAgent, string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(InstallID) ? "" : " -" + InstallID));
-                        wc.Headers.Add("X-Install-ID", InstallID);
-                        wc.DownloadFile(url, tmpfile);
 
-                        using (var fs = System.IO.File.OpenRead(tmpfile))
+                        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+                        request.Headers.Add(System.Net.HttpRequestHeader.UserAgent.ToString(), string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(DataFolderManager.InstallID) ? "" : " -" + DataFolderManager.InstallID));
+                        request.Headers.Add("X-Install-ID", DataFolderManager.InstallID);
+                        request.Headers.Add("X-Package-Type-ID", PackageTypeId);
+
+                        using var timeoutToken = new CancellationTokenSource();
+                        timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
+                        using (var client = HttpClientHelper.CreateClient())
+                        {
+                            client.Timeout = Timeout.InfiniteTimeSpan;
+                            client.DownloadFile(request, tmpfile, null, timeoutToken.Token).Await();
+                        }
+
+                        using (var fs = File.OpenRead(tmpfile))
                         {
                             var verifyOps = SIGN_KEYS.Select(k => new JSONSignature.VerifyOperation(
                                 Algorithm: JSONSignature.RSA_SHA256,
@@ -332,12 +247,14 @@ namespace Duplicati.Library.AutoUpdater
                                 throw new Exception("No valid signature found in manifest file");
 
                             var update = JsonSerializer.Deserialize<UpdateInfo>(fs);
+                            if (update == null)
+                                return null;
 
                             if (TryParseVersion(update.Version) <= TryParseVersion(SelfVersion.Version))
                                 return null;
 
                             // Don't install a debug update on a release build and vice versa
-                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.OrdinalIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
+                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.OrdinalIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.OrdinalIgnoreCase))
                                 return null;
 
                             ReleaseType rt;
@@ -372,10 +289,15 @@ namespace Duplicati.Library.AutoUpdater
             return null;
         }
 
-        private static UpdateInfo ReadInstalledManifest(string folder)
+        /// <summary>
+        /// Reads the installed manifest file
+        /// </summary>
+        /// <param name="folder">The folder to read the manifest from</param>
+        /// <returns>The manifest if found, or null if not found</returns>
+        private static UpdateInfo? ReadInstalledManifest(string folder)
         {
-            var manifest = System.IO.Path.Combine(folder, UPDATE_MANIFEST_FILENAME);
-            if (System.IO.File.Exists(manifest))
+            var manifest = Path.Combine(folder, UPDATE_MANIFEST_FILENAME);
+            if (File.Exists(manifest))
             {
                 try
                 {
@@ -384,7 +306,7 @@ namespace Duplicati.Library.AutoUpdater
                         PublicKey: k.ToXmlString(false)
                     ));
 
-                    using (var fs = System.IO.File.OpenRead(manifest))
+                    using (var fs = File.OpenRead(manifest))
                     {
                         if (!JSONSignature.VerifyAtLeastOne(fs, verifyOps))
                             throw new Exception("Installed manifest signature is invalid");
@@ -402,11 +324,16 @@ namespace Duplicati.Library.AutoUpdater
             return null;
         }
 
-        public static bool DownloadUpdate(UpdateInfo version, PackageEntry package, string targetPath, Action<double> progress = null)
+        /// <summary>
+        /// Downloads the update package
+        /// </summary>
+        /// <param name="version">The version to download</param>
+        /// <param name="package">The package to download</param>
+        /// <param name="targetPath">The path to save the downloaded package to</param>
+        /// <param name="progress">The progress callback</param>
+        /// <returns>True if the download was successful, otherwise false</returns>
+        public static bool DownloadUpdate(UpdateInfo version, PackageEntry package, string targetPath, Action<double>? progress = null)
         {
-            if (UPDATEDIR == null)
-                return false;
-
             var updates = package.RemoteUrls.ToList();
 
             // If alternate update URLs are specified,
@@ -433,21 +360,25 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     try
                     {
-                        using (var tempfile = System.IO.File.Open(tempfilename, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+                        using (var tempfile = File.Open(tempfilename, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
                         {
-                            Action<long> cb = null;
+                            Action<long>? cb = null;
                             if (progress != null)
                                 cb = (s) => { progress(Math.Min(1.0, Math.Max(0.0, (double)s / package.Length))); };
 
-                            var wreq = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
-                            wreq.UserAgent = string.Format("{0} v{1}", APPNAME, SelfVersion.Version);
-                            wreq.Headers.Add("X-Install-ID", InstallID);
+                            using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-                            var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
-                            using (var resp = areq.GetResponse())
-                            using (var rss = areq.GetResponseStream())
-                            using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, cb))
-                                Duplicati.Library.Utility.Utility.CopyStream(pgs, tempfile);
+                            request.Headers.Add(System.Net.HttpRequestHeader.UserAgent.ToString(), string.Format("{0} v{1}", APPNAME, SelfVersion.Version));
+                            request.Headers.Add("X-Install-ID", DataFolderManager.InstallID);
+
+                            using var timeoutToken = new CancellationTokenSource();
+                            timeoutToken.CancelAfter(TimeSpan.FromSeconds(DOWNLOAD_OPERATION_TIMEOUT_SECONDS));
+
+                            using (var client = HttpClientHelper.CreateClient())
+                            {
+                                client.Timeout = Timeout.InfiniteTimeSpan;
+                                client.DownloadFile(request, tempfile, cb, timeoutToken.Token).Await();
+                            }
 
                             var sha256 = System.Security.Cryptography.SHA256.Create();
                             var md5 = System.Security.Cryptography.MD5.Create();
@@ -490,10 +421,11 @@ namespace Duplicati.Library.AutoUpdater
         /// <param name="version">The version of the manifest</param>
         /// <param name="incompatibleUpdateUrl">The URL to use for incompatible updates</param>
         /// <param name="genericUpdatePageUrl">The URL to use for generic updates</param>
-        public static void CreateSignedManifest(IEnumerable<System.Security.Cryptography.RSA> keys, string sourcedata, string outputfolder, string version = null, string incompatibleUpdateUrl = null, string genericUpdatePageUrl = null, string releaseType = null, IEnumerable<PackageEntry> packages = null)
+        public static void CreateSignedManifest(IEnumerable<System.Security.Cryptography.RSA> keys, string sourcedata, string outputfolder, string? version = null, string? incompatibleUpdateUrl = null, string? genericUpdatePageUrl = null, string? releaseType = null, IEnumerable<PackageEntry>? packages = null)
         {
             // Read the existing manifest
-            var remoteManifest = JsonSerializer.Deserialize<UpdateInfo>(string.IsNullOrWhiteSpace(sourcedata) ? "{}" : sourcedata);
+            var remoteManifest = JsonSerializer.Deserialize<UpdateInfo>(string.IsNullOrWhiteSpace(sourcedata) ? "{}" : sourcedata)
+                ?? throw new Exception("Failed to deserialize the manifest from source data");
 
             if (remoteManifest.ReleaseTime.Ticks == 0)
                 remoteManifest = remoteManifest with { ReleaseTime = DateTime.UtcNow };

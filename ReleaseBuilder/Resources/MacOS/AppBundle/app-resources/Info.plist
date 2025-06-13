@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>duplicati</string>
+	<key>CFBundleIconFile</key>
+	<string>Duplicati.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.duplicati.app</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Duplicati</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>SUBL</string>
+	<key>CFBundleVersion</key>
+	<string>!LONG_VERSION!</string>
+	<key>CFBundleDisplayName</key>
+	<string>Duplicati</string>
+	<key>CFBundleShortVersionString</key>
+	<string>!LONG_VERSION!</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+	<key>LSUIElement</key>
+	<true />
+
+	<!-- Privacy usage descriptions -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Duplicati needs access to your Photos Library to back up your images.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Duplicati needs access to your Downloads folder to include files in your backups.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Duplicati needs access to your Documents folder to include files in your backups.</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>Duplicati needs access to your Desktop folder to include files in your backups.</string>
+	<key>NSRemovableVolumesUsageDescription</key>
+	<string>Duplicati needs access to external drives for backup and restore operations.</string>
+	<key>NSNetworkVolumesUsageDescription</key>
+	<string>Duplicati needs access to network drives for backup and restore operations.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Duplicati may run scripts that need to control other apps using AppleScript for automation purposes.</string>
+	<key>NSSystemAdministrationUsageDescription</key>
+	<string>Duplicati may require administrative privileges for system-wide backups and operations.</string>
+</dict>
+</plist>

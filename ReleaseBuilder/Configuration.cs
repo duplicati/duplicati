@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 namespace ReleaseBuilder;
 
 using static EnvHelper;
@@ -48,21 +68,35 @@ public record Configuration(
     /// <summary>
     /// Creates a new <see cref="Configuration"/> 
     /// </summary>
+    /// <param name="channel">The release channel</param>
     /// <returns>The new configuration</returns>
-    public static Configuration Create()
+    public static Configuration Create(ReleaseChannel channel)
         => new(
-            ConfigFiles.Create(),
+            ConfigFiles.Create(channel),
             Commands.Create(),
             ExtraSettings.Create()
         );
 
+
     /// <summary>
-    /// Checks if signing with authenticode is possible given the current configuration
+    /// Checks if signing with authenticode using jsign is possible given the current configuration
     /// </summary>
     /// <returns>A boolean indicating if signing is possible</returns>
-    public bool IsAuthenticodePossible()
+    public bool IsAuthenticodePossibleWithJsignTool()
     {
-        if (string.IsNullOrWhiteSpace(ConfigFiles.AuthenticodePasswordFile) || string.IsNullOrWhiteSpace(ConfigFiles.AuthenticodePfxFile) || string.IsNullOrWhiteSpace(Commands.OsslSignCode))
+        if (string.IsNullOrWhiteSpace(Commands.JSign))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if signing with authenticode is possible with signtool given the current configuration
+    /// </summary>
+    /// <returns>A boolean indicating if signing is possible</returns>
+    public bool IsAuthenticodePossibleWithSignTool()
+    {
+        if (string.IsNullOrWhiteSpace(ConfigFiles.AuthenticodePasswordFile) || string.IsNullOrWhiteSpace(ConfigFiles.AuthenticodePfxFile) || string.IsNullOrWhiteSpace(Commands.SignCode))
             return false;
 
         if (!File.Exists(ConfigFiles.AuthenticodePasswordFile) || !File.Exists(ConfigFiles.AuthenticodePfxFile))
@@ -263,12 +297,28 @@ public record ConfigFiles(
     /// <summary>
     /// Generates a new config files instance
     /// </summary>
+    /// <param name="channel">The release channel</param>
     /// <returns>The config files instance</returns>
 
-    public static ConfigFiles Create()
+    public static ConfigFiles Create(ReleaseChannel channel)
     {
-        ParseEnvironmentFile(ExpandEnv("BUILD_SETTINGS_FILE", "${HOME}/.config/build-settings"));
-        ParseEnvironmentFile(ExpandEnv("GATEKEEPER_SETTINGS_FILE", "${HOME}/.config/signkeys/Duplicati/macos-gatekeeper"));
+        // Grab the shared configuration
+        ParseEnvironmentFile(ExpandEnv("BUILD_SETTINGS_FILE", "${HOME}/.config/duplicati-build-settings"));
+
+        // Override the configuration for the release type, if any
+        ParseEnvironmentFile(ExpandEnv(channel switch
+        {
+            ReleaseChannel.Stable or
+            ReleaseChannel.Beta or
+            ReleaseChannel.Experimental or
+            ReleaseChannel.Canary => "${HOME}/.config/signkeys/Duplicati/release-build-settings",
+            ReleaseChannel.Nightly => "${HOME}/.config/signkeys/Duplicati/nightly-build-settings-nightly",
+            ReleaseChannel.Debug => "${HOME}/.config/signkeys/Duplicati/debug-build-settings",
+            _ => throw new ArgumentOutOfRangeException(nameof(channel))
+        }));
+
+        // Override the configuration for the release channel, if any
+        ParseEnvironmentFile(ExpandEnv($"${{HOME}}/.config/signkeys/Duplicati/${channel.ToString().ToLowerInvariant()}-build-settings"));
 
         return new(
             ExpandEnv("UPDATER_KEYFILE", "${HOME}/.config/signkeys/Duplicati/updater-release.key").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
@@ -292,19 +342,23 @@ public record ConfigFiles(
 /// <param name="Dotnet">The &quot;build&quot; command</param>
 /// <param name="Gpg">The &quot;gpg&quot; command</param>
 /// <param name="AwsCli">The &quot;aws&quot; command</param>
-/// <param name="OsslSignCode">The &quot;osslsigncode&quot; command</param>
+/// <param name="SignCode">The &quot;osslsigncode&quot; command</param>
+/// <param name="Jsign">The &quot;jsign&quot; command</param>
 /// <param name="Codesign">The &quot;codesign&quot; command</param>
 /// <param name="Productsign">The &quot;productsign&quot; command</param>
 /// <param name="Wix">The &quot;wix&quot; command</param>
 /// <param name="Docker">The &quot;docker&quot; command</param>
+/// <param name="Npm">The &quot;npm&quot; command</param>
 public record Commands(
     string Dotnet,
     string? Gpg,
-    string? OsslSignCode,
+    string? SignCode,
+    string? JSign,
     string? Codesign,
     string? Productsign,
     string? Wix,
-    string? Docker
+    string? Docker,
+    string? Npm
 )
 {
     /// <summary>
@@ -316,10 +370,12 @@ public record Commands(
             FindCommand("dotnet", "DOTNET") ?? throw new Exception("Failed to find the \"dotnet\" command"),
             FindCommand("gpg2", "GPG", FindCommand("gpg", "GPG")),
             FindCommand(OperatingSystem.IsWindows() ? "signtool.exe" : "osslsigncode", "SIGNTOOL"),
+            FindCommand("jsign", "JSIGNTOOL"),
             OperatingSystem.IsMacOS() ? FindCommand("codesign", "CODESIGN") : null,
             OperatingSystem.IsMacOS() ? FindCommand("productsign", "PRODUCTSIGN") : null,
             FindCommand(OperatingSystem.IsWindows() ? "wix" : "wixl", "WIX"),
-            FindCommand("docker", "DOCKER")
+            FindCommand("docker", "DOCKER"),
+            FindCommand("npm", "NPM")
         );
 }
 

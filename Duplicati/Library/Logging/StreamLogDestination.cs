@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -20,8 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Duplicati.Library.Logging
 {
@@ -72,7 +70,7 @@ namespace Duplicati.Library.Logging
 
             m_stream.WriteLine(entry.AsString(true));
         }
-            
+
         #endregion
 
         #region IDisposable Members
@@ -82,9 +80,9 @@ namespace Duplicati.Library.Logging
         /// </summary>
         public void Dispose()
         {
-            try { if (m_stream != null) m_stream.Flush(); }
+            try { m_stream?.Flush(); }
             catch { }
-            try { if (m_stream != null) m_stream.Close(); }
+            try { m_stream?.Dispose(); }
             catch { }
 
             m_stream = null;

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?include UpgradeData.wxi ?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <!-- Various nice-to-have shorthands for x64/x32 -->
+  <?if $(sys.BUILDARCH) = "x64" ?>
+    <?define SystemFolder = "System64Folder" ?>
+    <?define SystemFolderX86 = "SystemFolder" ?>
+    <?define SoftwareKey = "Software" ?>
+    <?define SoftwareKeyX86 = "Software\Wow6432Node" ?>
+    <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
+    <?define ProgramFilesFolderX86 = "ProgramFilesFolder" ?>
+  <?else?>
+    <?define SystemFolder = "SystemFolder" ?>
+    <?define SystemFolderX86 = "SystemFolder" ?>
+    <?define SoftwareKey = "Software" ?>
+    <?define SoftwareKeyX86 = "Software" ?>
+    <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
+  <?endif?>
+
+  <?define DisplayName = "Duplicati" ?>
+
+  <Product Id="$(var.ProductCode)" Name="$(var.DisplayName)" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+    <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" InstallScope="perMachine" />
+    <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+
+    <UIRef Id="WixUI_FeatureTree"/>
+
+    <Property Id="FORSERVICE" Value="false" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramMenuFolder" Name="Programs"/>
+      <Directory Id="DesktopFolder" Name="Desktop"/>
+    
+      <Directory Id="$(var.ProgramFilesFolder)">
+        <Directory Id="INSTALLLOCATION" Name="Duplicati 2" />
+      </Directory>
+    </Directory>
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
+
+    <Feature Id="DuplicatiCore" Title="Duplicati core files" Level="1" Description="Installs the required files for Duplicati." AllowAdvertise="no" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
+      <Feature Id="DuplicatiDesktopShortCutFeature" Title="Desktop Shortcut" Level="1" Description ="Installs a shortcut to Duplicati on the desktop" Absent="allow" AllowAdvertise="no">
+        <ComponentRef Id="DuplicatiDesktopShortcutComponent"/>
+        <Condition Level="0">FORSERVICE = "true"</Condition>
+      </Feature>
+
+      <Feature Id="DuplicatiProgramMenuShortCutFeature" Title="Program Menu Shortcut" Level="1" Description ="Installs a shortcut to Duplicati in the Program menu" Absent="allow" AllowAdvertise="no">
+        <ComponentRef Id="DuplicatiProgramMenuShortcutComponent"/>
+        <Condition Level="0">FORSERVICE = "true"</Condition>
+      </Feature>
+      <ComponentGroupRef Id="DUPLICATIBIN" />
+    </Feature>
+    
+    <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati at startup" Level="1" Description ="Automatically launches Duplicati when you log on to the computer" Absent="allow" AllowAdvertise="no">
+      <ComponentRef Id="StartupMenuItem"/>
+      <Condition Level="0">FORSERVICE = "true"</Condition>
+    </Feature>
+
+    <!-- Launch duplicati setup -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <CustomAction Id="LaunchApplication" FileKey="Duplicati.GUI.TrayIcon.exe" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
+    
+    <!-- Set the Add/Remove icon -->
+    <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
+
+    <!-- Remove old versions -->
+    <InstallExecuteSequence>
+      <!-- Note: This is suboptimal, but the ref counting is not working, so we use Early REP -->
+      <RemoveExistingProducts After="FindRelatedProducts" />
+      
+      <!-- Stop the service before install -->
+      <Custom Action="StopService" Before="RemoveExistingProducts"></Custom>
+      <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_STOPPED=1</Custom>
+    </InstallExecuteSequence>
+
+    <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
+    <Upgrade Id="$(var.UpgradeCode)">
+      <UpgradeVersion Minimum="2.0.0.0" Property="PREVIOUSVERSIONSINSTALLED"  Maximum="99.0.0.0" IncludeMinimum="yes" IncludeMaximum="no" />
+    </Upgrade>
+
+    <Icon Id="DuplicatiIcon.exe" SourceFile="$(var.HarvestPath)Duplicati.GUI.TrayIcon.exe" />
+    
+    <!-- Service restart code below -->
+    <Binary Id="StopServiceScript" SourceFile="StopService.js" />
+    <Binary Id="StartServiceScript" SourceFile="StartService.js" />
+
+    <CustomAction Id="StopService"
+              BinaryKey="StopServiceScript"
+              JScriptCall="CustomAction"
+              Execute="immediate"
+              Property="SERVICE_WAS_STOPPED" />
+
+    <CustomAction Id="StartService"
+              BinaryKey="StartServiceScript"
+              JScriptCall="CustomAction"
+              Execute="deferred"              
+              Return="check" />
+
+  </Product>
+</Wix>

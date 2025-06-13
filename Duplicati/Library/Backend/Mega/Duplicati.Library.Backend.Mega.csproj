@@ -3,25 +3,21 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="MegaApiClient" Version="1.10.4" />
     <PackageReference Include="Otp.NET" Version="1.4.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
 </Project>

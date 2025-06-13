@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    <title>Duplicati Token Login</title>
+
+    <script type="text/javascript" src="signin/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="signin/signin.js?v=2.0.0.7"></script>
+    <link rel="stylesheet" type="text/css" href="signin/signin.css?v=2.0.0.7" />
+  </head>
+
+  <body>
+    <div id="signin">
+      <h2>Duplicati</h2>
+      <form id="signin-form" method="POST">
+        <fieldset>
+          <p><label for="signin-token">JWT Signin Token</label></p>
+          <p>
+            <input
+              type="text"
+              id="signin-token"
+              placeholder="token"
+              autofocus
+            />
+          </p>
+
+          <p><input type="submit" id="login-button" value="Sign In" /></p>
+        </fieldset>
+      </form>
+      <a
+        href="https://docs.duplicati.com/detailed-descriptions/duplicati-access-password#temporary-signin-token"
+        target="_blank"
+        class="helplink"
+        >Need help locating the signin token?</a
+      >
+    </div>
+  </body>
+</html>

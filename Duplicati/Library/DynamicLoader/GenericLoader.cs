@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,7 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Modules.Builtin;
 
@@ -31,7 +35,7 @@ namespace Duplicati.Library.DynamicLoader
     public static class GenericLoader
     {
         /// <summary>
-        /// Implementation overrides specific to encryption
+        /// Implementation overrides specific to generic module use
         /// </summary>
         private class GenericLoaderSub : DynamicLoader<IGenericModule>
         {
@@ -41,35 +45,58 @@ namespace Duplicati.Library.DynamicLoader
             /// <param name="item">The item to load the key for</param>
             /// <returns>The file extension used by the module</returns>
             protected override string GetInterfaceKey(IGenericModule item)
-            {
-                return item.Key;
-            }
+                => item.Key;
 
             /// <summary>
-            /// Returns the subfolders searched for encryption modules
+            /// Returns the subfolders searched for generic modules
             /// </summary>
             protected override string[] Subfolders
-            {
-                get { return new string[] { "modules" }; }
-            }
+                => ["modules"];
 
             /// <summary>
             /// The built-in modules
             /// </summary>
-            protected override IEnumerable<IGenericModule> BuiltInModules => GenericModules.BuiltInGenericModules;
+            protected override IEnumerable<IGenericModule> BuiltInModules
+                => GenericModules.BuiltInGenericModules;
+
+            /// <summary>
+            /// Creates a new instance of the module based on the key
+            /// </summary>
+            /// <param name="key">The key to create the instance for</param>
+            /// <returns>The instanciated module or null if the key is not supported</returns>
+            public IGenericModule? GetModule(string key)
+            {
+                LoadInterfaces();
+                var entry = Interfaces.FirstOrDefault(m => m.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+                if (entry == null)
+                    return null;
+
+                return (IGenericModule?)Activator.CreateInstance(entry.GetType());
+            }
         }
 
         #region Public static API
 
         /// <summary>
+        /// The loader instance used to query the modules
+        /// </summary>
+        private static readonly Lazy<GenericLoaderSub> _loader = new(() => new GenericLoaderSub());
+        /// <summary>
         /// Gets a list of loaded settings controls, the instances can be used to extract interface information, not used to interact with the module.
         /// </summary>
-        public static IGenericModule[] Modules { get { return new GenericLoaderSub().Interfaces; } }
+        public static IGenericModule[] Modules => _loader.Value.Interfaces;
 
         /// <summary>
         /// Gets a list of keys supported
         /// </summary>
-        public static string[] Keys { get { return new GenericLoaderSub().Keys; } }
+        public static string[] Keys => _loader.Value.Keys;
+
+        /// <summary>
+        /// Instanciates a specific module
+        /// </summary>
+        /// <param name="key">The key to create the instance for</param>
+        /// <returns>The instanciated backend or null if the key is not supported</returns>
+        public static IGenericModule? GetModule(string key) => _loader.Value.GetModule(key);
 
         #endregion
 

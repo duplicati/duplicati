@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -39,13 +39,12 @@ public static class BackendModules
     /// </summary>
     private static readonly IReadOnlyList<IBackend> SupportedBackends = new IBackend[] {
         new Backend.AliyunOSS.OSS(),
-        new Backend.AlternativeFTP.AlternativeFtpBackend(),
         new Backend.AzureBlob.AzureBlobBackend(),
         new Backend.Backblaze.B2(),
         new Backend.Box.BoxBackend(),
-        new Backend.CloudFiles(),
         new Backend.Dropbox(),
         new Backend.FTP(),
+        new Backend.AlternateFTPBackend(),
         new Backend.File(),
         new Backend.GoogleCloudStorage.GoogleCloudStorage(),
         new Backend.GoogleDrive.GoogleDrive(),
@@ -53,7 +52,7 @@ public static class BackendModules
         new Backend.Jottacloud(),
         new Backend.Mega.MegaBackend(),
         new Backend.MicrosoftGroup(),
-        new Backend.OneDriveV2(),
+        new Backend.OneDrive(),
         new Backend.OpenStack.OpenStackStorage(),
         new Backend.Rclone(),
         new Backend.S3(),
@@ -61,11 +60,15 @@ public static class BackendModules
         new Backend.OneDriveForBusinessBackend(),
         new Backend.SharePointBackend(),
         new Backend.SharePointV2(),
-        new Backend.Sia.Sia(),
         IsStorjSupported? new Backend.Storj.Storj() : null,
         new Backend.TahoeBackend(),
         new Backend.TencentCOS.COS(),
-        new Backend.WEBDAV()
+        new Backend.WEBDAV(),
+        new Backend.pCloudBackend(),
+        new Backend.SMBBackend(),
+        new Backend.CIFSBackend(),
+        new Backend.Filen.FilenBackend(),
+        new Backend.Filejump()
     }
     .Where(x => x != null)
     .ToList();
@@ -76,7 +79,7 @@ public static class BackendModules
     private static bool IsStorjSupported =>
         (OperatingSystem.IsWindows() && (RuntimeInformation.ProcessArchitecture == Architecture.X64 || RuntimeInformation.ProcessArchitecture == Architecture.X86 || RuntimeInformation.ProcessArchitecture == Architecture.Arm64))
         ||
-        (OperatingSystem.IsLinux() && (RuntimeInformation.ProcessArchitecture == Architecture.X64))
+        (OperatingSystem.IsLinux() && (RuntimeInformation.ProcessArchitecture == Architecture.X64 || RuntimeInformation.ProcessArchitecture == Architecture.Arm64 || RuntimeInformation.ProcessArchitecture == Architecture.Arm))
         ||
         (OperatingSystem.IsMacOS() && (RuntimeInformation.ProcessArchitecture == Architecture.X64 || RuntimeInformation.ProcessArchitecture == Architecture.Arm64));
 }

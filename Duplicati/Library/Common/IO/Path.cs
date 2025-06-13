@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -59,8 +59,8 @@ namespace Duplicati.Library.Common.IO
         /// Returns false if the path specified is relative to the current drive or working directory.
         /// </summary>
         /// <remarks>
-        /// Handles paths that use the alternate directory separator.  It is a frequent mistake to
-        /// assume that rooted paths <see cref="Path.IsPathRooted(string)"/> are not relative.  This isn't the case.
+        /// Handles paths that use the alternate directory separator. It is a frequent mistake to
+        /// assume that rooted paths <see cref="Path.IsPathRooted(string)"/> are not relative. This isn't the case.
         /// "C:a" is drive relative- meaning that it will be resolved against the current directory
         /// for C: (rooted, but relative). "C:\a" is rooted and not relative (the current directory
         /// will not be used to modify the path).

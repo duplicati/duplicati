@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,6 +23,7 @@ using System;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -43,7 +44,8 @@ namespace Duplicati.GUI.TrayIcon
         IdleWarning,
         IdleError,
         PausedError,
-        RunningError
+        RunningError,
+        Disconnected
     }
 
     public enum WindowIcons
@@ -64,11 +66,16 @@ namespace Duplicati.GUI.TrayIcon
         void SetDefault(bool isDefault);
         void SetIcon(MenuIcons icon);
         void SetText(string text);
+        void SetEnabled(bool enabled);
+        void SetHidden(bool hidden);
     }
 
     public abstract class TrayIconBase : IDisposable
     {
+        protected IMenuItem m_reconnectMenu;
+        protected IMenuItem m_openMenu;
         protected IMenuItem m_pauseMenu;
+        protected IMenuItem m_quitMenu;
         protected bool m_stateIsPaused;
         protected Action m_onSingleClick;
         protected Action m_onDoubleClick;
@@ -89,12 +96,17 @@ namespace Duplicati.GUI.TrayIcon
 
         public void InvokeExit()
         {
-            UpdateUIState(() => { this.Exit(); });
+            UpdateUIState(() =>
+            {
+                Program.Connection?.Close();
+                this.Exit();
+            });
         }
 
-        protected virtual void UpdateUIState(Action action)
+        protected virtual Task UpdateUIState(Action action)
         {
             action();
+            return Task.CompletedTask;
         }
 
         protected abstract IMenuItem CreateMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems);
@@ -105,11 +117,11 @@ namespace Duplicati.GUI.TrayIcon
 
         protected abstract void SetMenu(IEnumerable<IMenuItem> items);
 
-        protected abstract void NotifyUser(string title, string message, NotificationType type);
+        public abstract void NotifyUser(string title, string message, NotificationType type);
 
         protected virtual void RegisterStatusUpdateCallback()
         {
-            Program.Connection.OnStatusUpdated += OnStatusUpdated;
+            Program.Connection.OnStatusUpdated = OnStatusUpdated;
         }
 
         protected virtual void RegisterNotificationCallback()
@@ -149,23 +161,49 @@ namespace Duplicati.GUI.TrayIcon
 
         protected IEnumerable<IMenuItem> BuildMenu()
         {
-            var tmp = CreateMenuItem("Open", MenuIcons.Status, OnStatusClicked, null);
-            tmp.SetDefault(true);
-            return new IMenuItem[] {
-                tmp,
+            m_reconnectMenu = CreateMenuItem("Reconnect", MenuIcons.Resume, Reconnect, null);
+            m_reconnectMenu.SetHidden(true);
+            m_openMenu = CreateMenuItem("Open", MenuIcons.Status, OnStatusClicked, null);
+            m_openMenu.SetDefault(true);
+            return [
+                m_reconnectMenu,
+                m_openMenu,
                 m_pauseMenu = CreateMenuItem("Pause", MenuIcons.Pause, OnPauseClicked, null ),
-                CreateMenuItem("Quit", MenuIcons.Quit, OnQuitClicked, null),
-            };
+                m_quitMenu = CreateMenuItem("Quit", MenuIcons.Quit, OnQuitClicked, null),
+            ];
         }
 
-        protected void ShowStatusWindow()
+        private void Reconnect()
         {
-            var window = ShowUrlInWindow(Program.Connection.StatusWindowURL);
-            if (window != null)
+            Program.Connection.UpdateStatus().ContinueWith(t =>
             {
-                window.SetIcon(WindowIcons.Regular);
-                window.SetTitle("Duplicati status");
-            }
+                if (t.IsFaulted)
+                {
+                    Console.WriteLine("Failed to reconnect: " + t.Exception.Message);
+                    NotifyUser("Failed to reconnect", t.Exception.Message, NotificationType.Error);
+                }
+
+            });
+        }
+
+        public void ShowStatusWindow()
+        {
+            Program.Connection.GetStatusWindowURLAsync().ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                {
+                    Console.WriteLine("Failed to get status window URL: " + t.Exception.Message);
+                    NotifyUser("Failed to get status window URL", t.Exception.Message, NotificationType.Error);
+                    return;
+                }
+
+                var window = ShowUrlInWindow(t.Result);
+                if (window != null)
+                {
+                    window.SetIcon(WindowIcons.Regular);
+                    window.SetTitle("Duplicati status");
+                }
+            });
         }
 
         protected void OnStatusClicked()
@@ -186,9 +224,8 @@ namespace Duplicati.GUI.TrayIcon
                 Program.Connection.Pause();
         }
 
-        protected void OnStatusUpdated(IServerStatus status)
-        {
-            this.UpdateUIState(() =>
+        protected Task OnStatusUpdated(IServerStatus status)
+            => this.UpdateUIState(() =>
             {
                 switch (status.SuggestedStatusIcon)
                 {
@@ -206,6 +243,9 @@ namespace Duplicati.GUI.TrayIcon
                         break;
                     case SuggestedStatusIcon.Paused:
                         this.SetIcon(TrayIcons.Paused);
+                        break;
+                    case SuggestedStatusIcon.Disconnected:
+                        this.SetIcon(TrayIcons.Disconnected);
                         break;
                     case SuggestedStatusIcon.Ready:
                     default:
@@ -226,8 +266,11 @@ namespace Duplicati.GUI.TrayIcon
                     m_pauseMenu.SetText("Resume");
                     m_stateIsPaused = true;
                 }
+
+                m_openMenu.SetHidden(status.SuggestedStatusIcon == SuggestedStatusIcon.Disconnected);
+                m_pauseMenu.SetHidden(status.SuggestedStatusIcon == SuggestedStatusIcon.Disconnected);
+                m_reconnectMenu.SetHidden(status.SuggestedStatusIcon != SuggestedStatusIcon.Disconnected);
             });
-        }
 
         #region IDisposable implementation
         public abstract void Dispose();

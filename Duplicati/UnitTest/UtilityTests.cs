@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -29,6 +29,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.UnitTest
 {
@@ -72,10 +73,10 @@ namespace Duplicati.UnitTest
             Action<string, string> checkStringComparison = (x, y) => Assert.IsFalse(String.Equals(x, y, Utility.ClientFilenameStringComparison));
             Action<string, string> checkStringComparer = (x, y) => Assert.IsFalse(new HashSet<string>(new[] { x }).Contains(y, Utility.ClientFilenameStringComparer));
 
-            System.Globalization.CultureInfo originalCulture = System.Globalization.CultureInfo.CurrentCulture;
+            CultureInfo originalCulture = CultureInfo.CurrentCulture;
             try
             {
-                System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo(cultureName, false);
+                CultureInfo.CurrentCulture = new CultureInfo(cultureName, false);
 
                 // These are equivalent with respect to hu-HU, but different with respect to en-US.
                 string ddzs = "ddzs";
@@ -97,7 +98,7 @@ namespace Duplicati.UnitTest
             }
             finally
             {
-                System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
+                CultureInfo.CurrentCulture = originalCulture;
             }
         }
 
@@ -349,8 +350,7 @@ namespace Duplicati.UnitTest
             string[] duplicateItems = { "A", "c" };
 
             // Test with default comparer.
-            ISet<string> actualDuplicateItems;
-            ISet<string> actualUniqueItems = Utility.GetUniqueItems(collection, out actualDuplicateItems);
+            var actualUniqueItems = Utility.GetUniqueItems(collection, out var actualDuplicateItems);
 
             CollectionAssert.AreEquivalent(uniqueItems, actualUniqueItems);
             CollectionAssert.AreEquivalent(duplicateItems, actualDuplicateItems);
@@ -386,20 +386,20 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(baseDateTimeUTC.AddSeconds(-1), Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(-1)));
             Assert.AreEqual(baseDateTimeUTC.AddSeconds(1), Utility.NormalizeDateTime(baseDateTime.AddSeconds(1.9)));
         }
-        
+
         [Test]
         [Category("Utility")]
         public void NormalizeDateTimeToEpochSeconds()
         {
             DateTime baseDateTime = new DateTime(2000, 1, 2, 3, 4, 5);
-            long epochSeconds = (long) (baseDateTime.ToUniversalTime() - Utility.EPOCH).TotalSeconds;
+            long epochSeconds = (long)(baseDateTime.ToUniversalTime() - Utility.EPOCH).TotalSeconds;
             Assert.AreEqual(epochSeconds, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddMilliseconds(1)));
             Assert.AreEqual(epochSeconds, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddMilliseconds(500)));
             Assert.AreEqual(epochSeconds, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddMilliseconds(999)));
             Assert.AreEqual(epochSeconds - 1, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddMilliseconds(-1)));
             Assert.AreEqual(epochSeconds + 1, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddSeconds(1.9)));
         }
-        
+
         [Test]
         [Category("Utility")]
         public void ParseBool()
@@ -441,21 +441,21 @@ namespace Duplicati.UnitTest
         [Category("Utility")]
         public static void ThrottledStreamRead()
         {
-            byte[] sourceBuffer = {0x10, 0x20, 0x30, 0x40, 0x50};
-            byte[] destinationBuffer = new byte[sourceBuffer.Length + 1];
+            byte[] sourceBuffer = [0x10, 0x20, 0x30, 0x40, 0x50];
+            var destinationBuffer = new byte[sourceBuffer.Length + 1];
             const int offset = 1;
             const int bytesToRead = 3;
 
-            using (MemoryStream baseStream = new MemoryStream(sourceBuffer))
+            using (var baseStream = new MemoryStream(sourceBuffer))
             {
                 const int readSpeed = 1;
                 const int writeSpeed = 1;
 
-                ThrottledStream throttledStream = new ThrottledStream(baseStream, readSpeed, writeSpeed);
-                int bytesRead = throttledStream.Read(destinationBuffer, offset, bytesToRead);
+                var throttledStream = new ThrottleEnabledStream(baseStream, readSpeed, writeSpeed);
+                var bytesRead = throttledStream.Read(destinationBuffer, offset, bytesToRead);
                 Assert.AreEqual(bytesToRead, bytesRead);
 
-                for (int k = 0; k < destinationBuffer.Length; k++)
+                for (var k = 0; k < destinationBuffer.Length; k++)
                 {
                     if (offset <= k && k < offset + bytesToRead)
                     {
@@ -473,17 +473,17 @@ namespace Duplicati.UnitTest
         [Category("Utility")]
         public static void ThrottledStreamWrite()
         {
-            byte[] initialBuffer = {0x10, 0x20, 0x30, 0x40, 0x50};
-            byte[] source = {0x60, 0x70, 0x80, 0x90};
+            byte[] initialBuffer = [0x10, 0x20, 0x30, 0x40, 0x50];
+            byte[] source = [0x60, 0x70, 0x80, 0x90];
             const int offset = 1;
             const int bytesToWrite = 3;
 
-            using (MemoryStream baseStream = new MemoryStream(initialBuffer))
+            using (var baseStream = new MemoryStream(initialBuffer))
             {
                 const int readSpeed = 1;
                 const int writeSpeed = 1;
 
-                ThrottledStream throttledStream = new ThrottledStream(baseStream, readSpeed, writeSpeed);
+                var throttledStream = new ThrottleEnabledStream(baseStream, readSpeed, writeSpeed);
                 throttledStream.Write(source, offset, bytesToWrite);
 
                 byte[] result = baseStream.ToArray();
@@ -509,7 +509,7 @@ namespace Duplicati.UnitTest
             TimeSpan baseDelay = TimeSpan.FromSeconds(1);
 
             int[] testValues = { 1, 2, 11, 12, int.MaxValue };
-            double[] expect =  { 1, 1,  1,  1,            1 };
+            double[] expect = { 1, 1, 1, 1, 1 };
 
             for (int i = 0; i < testValues.Length; i++)
                 Assert.AreEqual(TimeSpan.FromSeconds(expect[i]), Utility.GetRetryDelay(baseDelay, testValues[i], false));
@@ -522,8 +522,8 @@ namespace Duplicati.UnitTest
             // test boundary values
             TimeSpan baseDelay = TimeSpan.FromSeconds(1);
 
-            int[] testValues = { 1, 2,   11,   12, int.MaxValue };
-            double[] expect =  { 1, 2, 1024, 1024,         1024 };
+            int[] testValues = { 1, 2, 11, 12, int.MaxValue };
+            double[] expect = { 1, 2, 1024, 1024, 1024 };
 
             for (int i = 0; i < testValues.Length; i++)
                 Assert.AreEqual(TimeSpan.FromSeconds(expect[i]), Utility.GetRetryDelay(baseDelay, testValues[i], true));

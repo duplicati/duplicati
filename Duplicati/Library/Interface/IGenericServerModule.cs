@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,11 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
 
 namespace Duplicati.Library.Interface
 {
+    // TODO: This interface has no implementers and should be removed
+
     /// <summary>
     /// A module that displays a set of options in the general setup area
     /// </summary>

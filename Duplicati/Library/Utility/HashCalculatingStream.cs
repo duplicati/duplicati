@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -20,9 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Duplicati.Library.Utility
 {
@@ -61,11 +58,11 @@ namespace Duplicati.Library.Utility
                 m_hashbufferLength = 0;
             }
         }
-        
+
         public override int Read(byte[] buffer, int offset, int count)
         {
             if (m_hasWritten)
-                throw new InvalidOperationException(Strings.MD5CalculatingStream.IncorrectUsageError);
+                throw new InvalidOperationException(Strings.HashCalculatingStream.IncorrectUsageError);
             m_hasRead = true;
 
             int tmp = base.Read(buffer, offset, count);
@@ -76,7 +73,7 @@ namespace Duplicati.Library.Utility
         public override void Write(byte[] buffer, int offset, int count)
         {
             if (m_hasRead)
-                throw new InvalidOperationException(Strings.MD5CalculatingStream.IncorrectUsageError);
+                throw new InvalidOperationException(Strings.HashCalculatingStream.IncorrectUsageError);
             m_hasWritten = true;
 
             UpdateHash(buffer, offset, count);

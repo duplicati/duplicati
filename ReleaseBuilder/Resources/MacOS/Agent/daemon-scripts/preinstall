@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Identify the user installing the package
+USER=$(stat -f%Su /dev/console)
+
+if [ -f "/Library/LaunchAgents/com.duplicati.agent.launchagent.plist" ]; then
+    /bin/launchctl bootout gui/$(id -u "$USER")/com.duplicati.agent.launchagent
+    /bin/launchctl unload "/Library/LaunchAgents/com.duplicati.agent.launchagent.plist"
+fi

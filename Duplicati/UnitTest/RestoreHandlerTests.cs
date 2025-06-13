@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,7 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
@@ -32,6 +31,34 @@ namespace Duplicati.UnitTest
 {
     public class RestoreHandlerTests : BasicSetupHelper
     {
+
+        [Test]
+        [Category("RestoreHandler")]
+        public void DisablePipedStreaming()
+        {
+            string filePath = Path.Combine(this.DATAFOLDER, "file");
+            File.WriteAllBytes(filePath, new byte[] { 0 });
+
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] { this.DATAFOLDER });
+            }
+
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
+            // This is now the default behavior, so we cannot explicitly disable it
+            //restoreOptions["disable-piped-streaming"] = "true";
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                IRestoreResults restoreResults = c.Restore(new[] { filePath });
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
+            }
+
+            string restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
+            Assert.IsTrue(File.Exists(restoredFilePath));
+        }
+
         [Test]
         [Category("RestoreHandler")]
         public void RestoreEmptyFile()
@@ -44,7 +71,7 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -57,12 +84,13 @@ namespace Duplicati.UnitTest
             };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IRestoreResults restoreResults = c.Restore(new[] {filePath});
+                IRestoreResults restoreResults = c.Restore(new[] { filePath });
                 Assert.AreEqual(0, restoreResults.Errors.Count());
-                Assert.AreEqual(0, restoreResults.Warnings.Count());
+                // TODO The expected warning is expected, as the 'dont-compress-restore-paths' option results in a warning about a folder not being created before restoring a file.
+                Assert.AreEqual(1, restoreResults.Warnings.Count());
             }
 
-            // We need to strip the root part of the path.  Otherwise, Path.Combine will simply return the second argument
+            // We need to strip the root part of the path. Otherwise, Path.Combine will simply return the second argument
             // if it's determined to be an absolute path.
             string rootString = SystemIO.IO_OS.GetPathRoot(filePath);
             string newPathPart = filePath.Substring(rootString.Length);
@@ -85,37 +113,31 @@ namespace Duplicati.UnitTest
             {
                 return;
             }
-            /* TODO-DNC
-            string folderPath = Path.Combine(this.DATAFOLDER, "folder");
+
+            var folderPath = Path.Combine(this.DATAFOLDER, "folder");
             Directory.CreateDirectory(folderPath);
-            string filePath = Path.Combine(folderPath, "file");
-            File.WriteAllBytes(filePath, new byte[] {0});
+            var filePath = Path.Combine(folderPath, "file");
+            File.WriteAllBytes(filePath, new byte[] { 0 });
 
             // Protect access rules on the file.
-            FileSecurity fileSecurity = new FileInfo(filePath).GetAccessControl();
+            var fileSecurity = new FileInfo(filePath).GetAccessControl();
             fileSecurity.SetAccessRuleProtection(true, true);
             new FileInfo(filePath).SetAccessControl(fileSecurity);
 
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
-            {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
-            }
+            var options = new Dictionary<string, string>(this.TestOptions);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
             // First, restore without restoring permissions.
-            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) {["restore-path"] = this.RESTOREFOLDER};
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            var restoreOptions = new Dictionary<string, string>(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IRestoreResults restoreResults = c.Restore(new[] {filePath});
-                Assert.AreEqual(0, restoreResults.Errors.Count());
-                Assert.AreEqual(0, restoreResults.Warnings.Count());
+                TestUtils.AssertResults(c.Restore(new[] { filePath }));
 
-                string restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
+                var restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
                 Assert.IsTrue(File.Exists(restoredFilePath));
 
-                FileSecurity restoredFileSecurity = new FileInfo(restoredFilePath).GetAccessControl();
+                var restoredFileSecurity = new FileInfo(restoredFilePath).GetAccessControl();
                 Assert.IsFalse(restoredFileSecurity.AreAccessRulesProtected);
 
                 // Remove the restored file so that the later restore avoids the "Restore completed
@@ -126,19 +148,46 @@ namespace Duplicati.UnitTest
             // Restore with restoring permissions.
             restoreOptions["overwrite"] = "true";
             restoreOptions["restore-permissions"] = "true";
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IRestoreResults restoreResults = c.Restore(new[] {filePath});
-                Assert.AreEqual(0, restoreResults.Errors.Count());
-                Assert.AreEqual(0, restoreResults.Warnings.Count());
+                TestUtils.AssertResults(c.Restore(new[] { filePath }));
 
-                string restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
+                var restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
                 Assert.IsTrue(File.Exists(restoredFilePath));
 
-                FileSecurity restoredFileSecurity = new FileInfo(restoredFilePath).GetAccessControl();
+                var restoredFileSecurity = new FileInfo(restoredFilePath).GetAccessControl();
                 Assert.IsTrue(restoredFileSecurity.AreAccessRulesProtected);
             }
-            */
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public void RestoreWithoutLocalData([Values("true", "false")] string noLocalDb, [Values("true", "false")] string patchWithLocalBlocks)
+        {
+            var file1Path = Path.Combine(this.DATAFOLDER, "file1");
+            File.WriteAllBytes(file1Path, new byte[] { 1, 2, 3 });
+
+            var file2Path = Path.Combine(this.DATAFOLDER, "file2");
+            File.WriteAllBytes(file2Path, new byte[] { 3, 4, 6 });
+
+            var folderPath = Path.Combine(this.DATAFOLDER, "folder");
+            Directory.CreateDirectory(folderPath);
+            systemIO.FileCopy(file1Path, Path.Combine(folderPath, "file1 copy"), true);
+
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            var restoreOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["no-local-db"] = noLocalDb,
+                ["restore-with-local-blocks"] = patchWithLocalBlocks
+            };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+                TestUtils.AssertResults(c.Restore(new[] { "*" }));
+
+            TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restoring without local data");
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -38,26 +38,33 @@ namespace Duplicati.Library.UsageReporter
         private static string Cached_AppName;
         private static string Cached_AppVersion;
         private static string Cached_Assembly;
+        private static string Cached_PackageTypeId;
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void DoInitUID()
         {
-            Cached_UserID = Library.AutoUpdater.UpdaterManager.InstallID;
+            Cached_UserID = Library.AutoUpdater.DataFolderManager.InstallID;
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void DoInitOS()
         {
             if (OperatingSystem.IsMacOS())
-                Cached_OSType = "OSX";
+                Cached_OSType = "MacOS";
             else if (OperatingSystem.IsLinux())
                 Cached_OSType = "Linux";
             else if (OperatingSystem.IsWindows())
                 Cached_OSType = "Windows";
             else
-                Cached_OSType = Environment.OSVersion.Platform.ToString();
+                Cached_OSType = "Unknown";
 
             Cached_OSVersion = OSInfoHelper.PlatformString;
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void DoInitPackageType()
+        {
+            Cached_PackageTypeId = Library.AutoUpdater.UpdaterManager.PackageTypeId;
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
@@ -90,6 +97,9 @@ namespace Duplicati.Library.UsageReporter
             try { DoInitOS(); }
             catch { }
 
+            try { DoInitPackageType(); }
+            catch { }
+
             try { DoInitCLR(); }
             catch { }
 
@@ -109,6 +119,8 @@ namespace Duplicati.Library.UsageReporter
         public string OSVersion { get; set; }
         [JsonProperty("clrversion")]
         public string CLRVersion { get; set; }
+        [JsonProperty("pkgid")]
+        public string PackageTypeId { get; set; }
         [JsonProperty("appname")]
         public string AppName { get; set; }
         [JsonProperty("appversion")]
@@ -126,6 +138,7 @@ namespace Duplicati.Library.UsageReporter
             this.OSType = Cached_OSType;
             this.OSVersion = Cached_OSVersion;
             this.CLRVersion = Cached_CLRVersion;
+            this.PackageTypeId = Cached_PackageTypeId;
             this.AppName = Cached_AppName;
             this.AppVersion = Cached_AppVersion;
             this.Assembly = Cached_Assembly;

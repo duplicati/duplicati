@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,37 +19,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Duplicati.Server.Serialization
 {
-    public enum RunnerState
-    {
-        Started,
-        Suspended,
-        Running,
-        Stopped,
-    }
-
-    public enum RunnerResult
-    {
-        OK,
-        Partial,
-        Warning,
-        Error
-    }
-
-    public enum CloseReason
-    {
-        None,
-        ApplicationExitCall,
-        TaskManagerClosing,
-        WindowsShutDown,
-        UserClosing
-    }
-
     public enum LiveControlState
     {
         Running,
@@ -72,6 +44,10 @@ namespace Duplicati.Server.Serialization
         Delete,
         Vacuum,
         CustomRunner,
+        ListFilesets,
+        ListFolderContents,
+        ListFileVersions,
+        SearchEntries,
     }
 
     public enum SuggestedStatusIcon
@@ -81,7 +57,8 @@ namespace Duplicati.Server.Serialization
         ReadyError,
         Paused,
         Active,
-        ActivePaused
+        ActivePaused,
+        Disconnected
     }
 
 

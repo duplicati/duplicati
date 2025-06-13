@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -50,6 +50,10 @@ namespace Duplicati.Library.Interface
             /// </summary>
             Timespan,
             /// <summary>
+            /// Indicates that the argument is a date and time type
+            /// </summary>
+            DateTime,
+            /// <summary>
             /// Indicates that the argument is a size type
             /// </summary>
             Size,
@@ -75,7 +79,7 @@ namespace Duplicati.Library.Interface
             Decimal,
             /// <summary>
             /// The argument type is unknown
-            /// </summary>
+            /// </summary>            
             Unknown
         }
 
@@ -188,6 +192,8 @@ namespace Duplicati.Library.Interface
             : this(name)
         {
             m_type = type;
+            if (type == ArgumentType.Boolean)
+                m_defaultValue = "false";
         }
 
         /// <summary>
@@ -216,6 +222,8 @@ namespace Duplicati.Library.Interface
             : this(name, type, shortDescription, longDescription)
         {
             m_defaultValue = defaultValue;
+            if (type == ArgumentType.Boolean && string.IsNullOrEmpty(m_defaultValue))
+                m_defaultValue = "false";
         }
 
         /// <summary>
@@ -293,6 +301,12 @@ namespace Duplicati.Library.Interface
                         return Strings.DataTypes.String;
                     case Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan:
                         return Strings.DataTypes.Timespan;
+                    case Duplicati.Library.Interface.CommandLineArgument.ArgumentType.DateTime:
+                        return Strings.DataTypes.DateTime;
+                    case Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password:
+                        return Strings.DataTypes.Password;
+                    case Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Decimal:
+                        return Strings.DataTypes.Decimal;
                     case Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Unknown:
                         return Strings.DataTypes.Unknown;
                     default:

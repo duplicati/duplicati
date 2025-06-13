@@ -5,7 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,4 +20,3 @@
   </ItemGroup>
 
 </Project>
-

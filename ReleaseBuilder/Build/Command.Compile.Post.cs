@@ -1,7 +1,24 @@
-using System.IO.Compression;
-using System.Net;
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System.Text.RegularExpressions;
-using Duplicati.Library.Utility;
 
 namespace ReleaseBuilder.Build;
 
@@ -17,28 +34,29 @@ public static partial class Command
         /// </summary>
         /// <param name="baseDir">The source directory</param>
         /// <param name="buildDir">The output build directory to modify</param>
-        /// <param name="os">The target operating system</param>
-        /// <param name="arch">The target architecture</param>
+        /// <param name="target">The target to prepare for</param>
         /// <param name="buildTargetString">The build target string os-arch-interface</param>
         /// <param name="rtcfg">The runtime config</param>
         /// <param name="keepBuilds">A flag that allows re-using existing builds</param>
         /// <returns>An awaitable task</returns>
-        public static async Task PrepareTargetDirectory(string baseDir, string buildDir, OSType os, ArchType arch, string buildTargetString, RuntimeConfig rtcfg, bool keepBuilds)
+        public static async Task PrepareTargetDirectory(string baseDir, string buildDir, PackageTarget target, RuntimeConfig rtcfg, bool keepBuilds)
         {
-            await InstallUplinkBinaries(buildDir, os, arch);
-            await RemoveUnwantedFiles(os, buildDir);
+            await RemoveUnwantedFiles(target.OS, buildDir);
 
-            switch (os)
+            switch (target.OS)
             {
                 case OSType.Windows:
                     await SignWindowsExecutables(buildDir, rtcfg);
                     break;
 
                 case OSType.MacOS:
-                    await BundleMacOSApplication(baseDir, buildDir, buildTargetString, rtcfg, keepBuilds);
+                    if (target.Interface == InterfaceType.GUI)
+                        await BundleMacOSApplication(baseDir, buildDir, target.BuildTargetString, rtcfg, keepBuilds);
                     break;
 
                 case OSType.Linux:
+                    await ReplaceLibMonoUnix(baseDir, buildDir, target.Arch);
+                    await ReplaceSQLiteInterop(baseDir, buildDir, target.Arch);
                     break;
 
                 default:
@@ -96,8 +114,7 @@ public static partial class Command
         /// </summary>
         /// <param name="os">The operating system to get the unwanted filenames for</param>
         /// <returns>The list of unwanted filenames</returns>
-        static IEnumerable<string> UnwantedFileGlobExps(OSType os)
-            => new[] {
+        static IEnumerable<string> UnwantedFileGlobExps(OSType os) => [
             "Thumbs.db",
             "desktop.ini",
             ".DS_Store",
@@ -105,8 +122,9 @@ public static partial class Command
             "*.pdb",
             "*.mdb",
             "._*",
-            os == OSType.Windows ? "*.sh" : "*.bat"
-            };
+            os == OSType.Windows ? "*.sh" : "*.bat",
+            os == OSType.Windows ? "*.sh" : "*.ps1"
+        ];
 
         /// <summary>
         /// Returns a regular expression mapping files that are not wanted in the build folders
@@ -191,7 +209,7 @@ public static partial class Command
             EnvHelper.CopyDirectory(buildDir, binDir, recursive: true);
 
             // Patch the plist and place the icon from the resources
-            var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS");
+            var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS", "AppBundle");
 
             var plist = File.ReadAllText(Path.Combine(resourcesDir, "app-resources", "Info.plist"))
                 .Replace("!LONG_VERSION!", rtcfg.ReleaseInfo.ReleaseName)
@@ -224,39 +242,64 @@ public static partial class Command
 
             // Rename the executables, as symlinks are not supported in DMG files
             await PackageSupport.RenameExecutables(binDir);
-            await PackageSupport.SetPermissionFlags(binDir, rtcfg);
+            if (!OperatingSystem.IsWindows())
+                await PackageSupport.SetPermissionFlags(binDir, rtcfg);
 
             // Move the licenses out of the code folder as the signing tool trips on it
             var licenseTarget = Path.Combine(tmpApp, "Contents", "Licenses");
             Directory.Move(Path.Combine(binDir, "licenses"), licenseTarget);
 
-            if (rtcfg.UseCodeSignSigning)
-            {
-                Console.WriteLine("Performing MacOS code signing ...");
-
-                // Executables cannot be signed before their dependencies are signed
-                // So they are placed last in the list
-                var executables = ExecutableRenames.Values.Select(x => Path.Combine(binDir, x));
-
-                var signtargets = Directory.EnumerateFiles(binDir, "*", SearchOption.AllDirectories)
-                    .Except(executables)
-                    .Concat(executables)
-                    .Distinct()
-                    .ToList();
-
-                var entitlementFile = Path.Combine(resourcesDir, "Entitlements.plist");
-                foreach (var f in signtargets)
-                    await rtcfg.Codesign(f, entitlementFile);
-
-                await rtcfg.Codesign(Path.Combine(tmpApp), entitlementFile);
-            }
-
+            // Make files executable
             if (!OperatingSystem.IsWindows())
                 foreach (var f in Directory.EnumerateFiles(binDir, "*.launchagent.plist", SearchOption.TopDirectoryOnly))
                     File.SetUnixFileMode(f, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
 
             Directory.Move(tmpApp, appDir);
             Directory.Delete(Path.GetDirectoryName(tmpApp) ?? throw new Exception("Unexpected empty path"), true);
+        }
+
+        /// <summary>
+        /// Replaces the library libMono.Unix.so with a version that has large file support for ARM7
+        /// </summary>
+        /// <param name="baseDir">The base directory</param>
+        /// <param name="buildDir">The build directory</param>
+        /// <param name="arch">The architecture to build for</param>
+        /// <returns>An awaitable task</returns>
+        static Task ReplaceLibMonoUnix(string baseDir, string buildDir, ArchType arch)
+        {
+            if (arch != ArchType.Arm7)
+                return Task.CompletedTask;
+
+            var sourceFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "linux-arm-binary", "libMono.Unix.so");
+            var targetFile = Path.Combine(buildDir, "libMono.Unix.so");
+            if (!File.Exists(targetFile))
+                throw new Exception($"Expected file \"{targetFile}\" not found, has build changed?");
+
+            File.Copy(sourceFile, targetFile, overwrite: true);
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Replaces the library SQLiteInterop.dll with a version that is built against GLIBC_2.33 for ARM7
+        /// </summary>
+        /// <param name="baseDir">The base directory</param>
+        /// <param name="buildDir">The build directory</param>
+        /// <param name="arch">The architecture to build for</param>
+        /// <returns>An awaitable task</returns>
+        static Task ReplaceSQLiteInterop(string baseDir, string buildDir, ArchType arch)
+        {
+            if (arch != ArchType.Arm7)
+                return Task.CompletedTask;
+
+            var sourceFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "linux-arm-binary", "SQLite.Interop.dll");
+            var targetFile = Path.Combine(buildDir, "SQLite.Interop.dll");
+            if (!File.Exists(targetFile))
+                throw new Exception($"Expected file \"{targetFile}\" not found, has build changed?");
+
+            File.Copy(sourceFile, targetFile, overwrite: true);
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -267,7 +310,7 @@ public static partial class Command
         /// <returns>An awaitable task</returns>
         static async Task SignWindowsExecutables(string buildDir, RuntimeConfig rtcfg)
         {
-            var cfg = Program.Configuration;
+            var cfg = rtcfg.Configuration;
             if (!rtcfg.UseAuthenticodeSigning)
                 return;
 
@@ -280,91 +323,5 @@ public static partial class Command
             foreach (var file in filenames)
                 await rtcfg.AuthenticodeSign(file);
         }
-    }
-
-    /// <summary>
-    /// Downloads a file from a URL and saves it to a destination path
-    /// </summary>
-    /// <param name="url">The URL to download from</param>
-    /// <param name="destinationPath">The path to save the file to</param>
-    /// <returns>An awaitable task</returns>
-    static async Task DownloadFileAsync(string url, string destinationPath)
-    {
-        using var httpClient = new HttpClient(new HttpClientHandler
-        {
-            CookieContainer = new CookieContainer()
-        });
-
-        using var response = await httpClient.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        using var tf = new TempFile();
-        using var fileStream = File.Create(tf);
-        await response.Content.CopyToAsync(fileStream);
-
-        File.Move(tf, destinationPath);
-    }
-
-    /// <summary>
-    /// Due to an issue with the packages for Uplink.Net, we need to download the binaries and manully extract them
-    /// </summary>
-    /// <param name="buildDir">The build directory</param>
-    /// <param name="os">The target operating system</param>
-    /// <param name="arch">The target architecture</param>
-    /// <returns>An awaitable task</returns>
-    static async Task InstallUplinkBinaries(string buildDir, OSType os, ArchType arch)
-    {
-        var buildroot = Path.GetDirectoryName(buildDir) ?? throw new Exception("Bad build dir");
-        var pkgfolder = Path.Combine(buildroot, "nuget");
-        var pkgname = os switch
-        {
-            OSType.Windows => (Url: "https://www.nuget.org/api/v2/package/uplink.NET.Win/2.12.3363", File: "uplink.net.win.2.12.3363.nupkg"),
-            OSType.MacOS => (Url: "https://www.nuget.org/api/v2/package/uplink.NET.Mac/2.12.3365", File: "uplink.net.mac.2.12.3365.nupkg"),
-            OSType.Linux => (Url: "https://www.nuget.org/api/v2/package/uplink.NET.Linux/2.12.3365", File: "uplink.net.linux.2.12.3365.nupkg"),
-            _ => (null, null)
-        };
-
-        var zipEntryName = os switch
-        {
-            OSType.Windows => arch switch
-            {
-                ArchType.x64 => "runtimes/win-x64/native/storj_uplink.dll",
-                ArchType.x86 => "runtimes/win-x86/native/storj_uplink.dll",
-                ArchType.Arm64 => "runtimes/win-arm64/native/storj_uplink.dll",
-                _ => null
-            },
-            OSType.MacOS => arch switch
-            {
-                ArchType.x64 or ArchType.Arm64 => "runtimes/osx-x64/native/libstorj_uplink.dylib", // Dual-arch binary
-                _ => null
-            },
-            OSType.Linux => arch switch
-            {
-                ArchType.x64 => "runtimes/linux-x64/native/storj_uplink.so",
-                _ => null
-            },
-            _ => null
-        };
-
-        // Combination not supported
-        if (pkgname.Url == null || pkgname.File == null || zipEntryName == null)
-            return;
-
-        var pkgpath = Path.Combine(pkgfolder, pkgname.File);
-        if (!File.Exists(pkgpath))
-        {
-            if (!Directory.Exists(pkgfolder))
-                Directory.CreateDirectory(pkgfolder);
-
-            await DownloadFileAsync(
-                pkgname.Url,
-                pkgpath
-            );
-        }
-
-        // Extract the binary and install it in the target folder
-        using var archive = new ZipArchive(File.OpenRead(pkgpath));
-        var entry = archive.GetEntry(zipEntryName);
-        if (entry != null)
-            entry.ExtractToFile(Path.Combine(buildDir, Path.GetFileName(zipEntryName)), true);
     }
 }

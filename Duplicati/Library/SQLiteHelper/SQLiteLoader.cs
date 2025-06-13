@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,9 +22,7 @@
 #nullable enable
 
 using System;
-using System.IO;
-using System.Runtime.Versioning;
-using Duplicati.Library.Common;
+using System.Globalization;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 
@@ -32,6 +30,11 @@ namespace Duplicati.Library.SQLiteHelper
 {
     public static class SQLiteLoader
     {
+        /// <summary>
+        /// The minimum value for the SQLite page cache size
+        /// </summary>
+        public const long MINIMUM_SQLITE_PAGE_CACHE_SIZE = 2048000L;
+
         /// <summary>
         /// The tag used for logging
         /// </summary>
@@ -103,16 +106,49 @@ namespace Duplicati.Library.SQLiteHelper
         }
 
         /// <summary>
+        /// Applies user-supplied custom pragmas to the SQLite connection
+        /// </summary>
+        /// <param name="con">The connection to apply the pragmas to.</param>
+        /// <param name="pagecachesize"> The page cache size to set.</param>
+        /// <returns>The connection with the pragmas applied.</returns>
+        public static System.Data.IDbConnection ApplyCustomPragmas(System.Data.IDbConnection con, long pagecachesize)
+        {
+            var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI") ?? "";
+            if (pagecachesize > MINIMUM_SQLITE_PAGE_CACHE_SIZE)
+                opts = string.Format(CultureInfo.InvariantCulture, "cache_size=-{0};{1}", pagecachesize / 1024L, opts);
+
+            if (string.IsNullOrWhiteSpace(opts))
+                return con;
+
+            using (var cmd = con.CreateCommand())
+                foreach (var opt in opts.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
+                    try
+                    {
+                        cmd.CommandText = string.Format(CultureInfo.InvariantCulture, "PRAGMA {0}", opt);
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "CustomSQLiteOption", ex, @"Error setting custom SQLite option '{0}'.", opt);
+                    }
+                }
+            return con;
+        }
+
+        /// <summary>
         /// Loads an SQLite connection instance and opening the database
         /// </summary>
         /// <returns>The SQLite connection instance.</returns>
         /// <param name="targetpath">The optional path to the database.</param>
-        public static System.Data.IDbConnection LoadConnection(string targetpath)
+        /// <param name="pagecachesize"> The page cache size to set.</param>
+        public static System.Data.IDbConnection LoadConnection(string targetpath, long pagecachesize)
         {
             if (string.IsNullOrWhiteSpace(targetpath))
                 throw new ArgumentNullException(nameof(targetpath));
 
-            System.Data.IDbConnection con = LoadConnection();
+            var con = LoadConnection();
 
             try
             {
@@ -127,32 +163,7 @@ namespace Duplicati.Library.SQLiteHelper
             }
 
             // set custom Sqlite options
-            var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI");
-            if (opts != null)
-            {
-                var topts = opts.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                if (topts.Length > 0)
-                {
-                    using (var cmd = con.CreateCommand())
-                    {
-                        foreach (var opt in topts)
-                        {
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
-                            try
-                            {
-                                cmd.CommandText = string.Format("pragma {0}", opt);
-                                cmd.ExecuteNonQuery();
-                            }
-                            catch (Exception ex)
-                            {
-                                Logging.Log.WriteErrorMessage(LOGTAG, "CustomSQLiteOption", ex, @"Error setting custom SQLite option '{0}'.", opt);
-                            }
-                        }
-                    }
-                }
-            }
-
-            return con;
+            return ApplyCustomPragmas(con, pagecachesize);
         }
 
         /// <summary>
@@ -192,9 +203,12 @@ namespace Duplicati.Library.SQLiteHelper
         /// </summary>
         private static void SetEnvironmentVariablesForSQLiteTempDir()
         {
-            System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", Library.Utility.TempFolder.SystemTempPath);
-            System.Environment.SetEnvironmentVariable("TMP", Library.Utility.TempFolder.SystemTempPath);
-            System.Environment.SetEnvironmentVariable("TEMP", Library.Utility.TempFolder.SystemTempPath);
+            // Allow the user to override the temp folder for SQLite
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SQLITE_TMPDIR")))
+                Environment.SetEnvironmentVariable("SQLITE_TMPDIR", Utility.TempFolder.SystemTempPath);
+            Environment.SetEnvironmentVariable("TMPDIR", Utility.TempFolder.SystemTempPath);
+            Environment.SetEnvironmentVariable("TMP", Utility.TempFolder.SystemTempPath);
+            Environment.SetEnvironmentVariable("TEMP", Utility.TempFolder.SystemTempPath);
         }
 
         /// <summary>
@@ -215,12 +229,6 @@ namespace Duplicati.Library.SQLiteHelper
         /// <param name="path">Path to the file to open, which may not exist.</param>
         private static void OpenSQLiteFile(System.Data.IDbConnection con, string path)
         {
-            // Check if SQLite database exists before opening a connection to it.
-            // This information is used to 'fix' permissions on a newly created file.
-            var fileExists = false;
-            if (!OperatingSystem.IsWindows())
-                fileExists = File.Exists(path);
-
             con.ConnectionString = "Data Source=" + path;
             con.Open();
             if (con is System.Data.SQLite.SQLiteConnection sqlitecon && !OperatingSystem.IsMacOS())
@@ -230,29 +238,10 @@ namespace Duplicati.Library.SQLiteHelper
                 sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DML, false);
             }
 
-
-            // If we are non-Windows, make the file only accessible by the current user
-            if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && !fileExists)
-                SetUnixPermissionUserRWOnly(path);
-        }
-
-        /// <summary>
-        /// Sets the unix permission user read-write Only.
-        /// </summary>
-        /// <param name="path">The file to set permissions on.</param>
-        /// <remarks> Make sure we do not inline this, as we might eventually load Mono.Posix, which is not present on Windows</remarks>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        [SupportedOSPlatform("linux")]
-        [SupportedOSPlatform("macOS")]
-        private static void SetUnixPermissionUserRWOnly(string path)
-        {
-            var fi = PosixFile.GetUserGroupAndPermissions(path);
-            PosixFile.SetUserGroupAndPermissions(
-                    path,
-                    fi.UID,
-                    fi.GID,
-                    0x180 /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR*/
-                );
+            // Make the file only accessible by the current user, unless opting out
+            if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
+                try { SystemIO.IO_OS.FileSetPermissionUserRWOnly(path); }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "SQLiteFilePermissionError", ex, "Failed to set permissions on SQLite file '{0}'", path); }
         }
 
         /// <summary>

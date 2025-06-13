@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Duplicati.CommandLine.BackendTool.Implementation</AssemblyName>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,12 +13,4 @@
     <ProjectReference Include="..\..\License\Duplicati.License.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
 </Project>
-

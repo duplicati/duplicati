@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,544 +22,615 @@
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Net.Http.Headers;
+using System.Reflection;
+using Duplicati.Library.Backend.Backblaze.Model;
+using FileEntry = Duplicati.Library.Common.IO.FileEntry;
+using System.Runtime.CompilerServices;
+using Duplicati.Library.Utility.Options;
 
-namespace Duplicati.Library.Backend.Backblaze
+namespace Duplicati.Library.Backend.Backblaze;
+
+/// <summary>
+/// Backblaze B2 Backend
+/// </summary>
+public class B2 : IStreamingBackend
 {
-    public class B2 : IBackend, IStreamingBackend
+    /// <summary>
+    /// The option key for specifying the Backblaze B2 account ID
+    /// </summary>
+    private const string B2_ID_OPTION = "b2-accountid";
+
+    /// <summary>
+    /// The option key for specifying the Backblaze B2 application key
+    /// </summary>
+    private const string B2_KEY_OPTION = "b2-applicationkey";
+
+    /// <summary>
+    /// The option key for specifying the number of files to retrieve per API request
+    /// </summary>
+    private const string B2_PAGESIZE_OPTION = "b2-page-size";
+
+    /// <summary>
+    /// The option key for specifying a custom download URL for the B2 service
+    /// </summary>
+    private const string B2_DOWNLOAD_URL_OPTION = "b2-download-url";
+
+    /// <summary>
+    /// The option key for specifying the bucket type when creating new buckets
+    /// </summary>
+    private const string B2_CREATE_BUCKET_TYPE_OPTION = "b2-create-bucket-type";
+
+    /// <summary>
+    /// The default bucket type for new buckets - set to private access
+    /// </summary>
+    private const string DEFAULT_BUCKET_TYPE = "allPrivate";
+
+    /// <summary>
+    /// The default number of files to retrieve per API request
+    /// </summary>
+    private const int DEFAULT_PAGE_SIZE = 500;
+
+    /// <summary>
+    /// Recommended chunk size as per Backblaze B2 documentation (100MB)
+    /// </summary>
+    private const int B2_RECOMMENDED_CHUNK_SIZE = 100 * 1024 * 1024;
+
+    /// <summary>
+    /// Default retry-after time in seconds for B2 API requests
+    /// </summary>
+    private const int B2_RETRY_AFTER_SECONDS = 5;
+
+    /// <summary>
+    /// The name of the B2 bucket being accessed
+    /// </summary>
+    private readonly string _bucketName;
+
+    /// <summary>
+    /// The path prefix for all operations within the bucket
+    /// </summary>
+    private readonly string _prefix;
+
+    /// <summary>
+    /// URL-encoded version of the path prefix for API requests
+    /// </summary>
+    private readonly string _urlencodedPrefix;
+
+    /// <summary>
+    /// The type of bucket (e.g., allPrivate, allPublic) being accessed or created
+    /// </summary>
+    private readonly string? _bucketType;
+
+    /// <summary>
+    /// The number of files to retrieve per API request
+    /// </summary>
+    private readonly int _pageSize;
+
+    /// <summary>
+    /// Custom download URL for the B2 service, if specified
+    /// </summary>
+    private readonly string? _downloadUrl;
+
+    /// <summary>
+    /// Helper class for handling B2 authentication and API requests
+    /// </summary>
+    private readonly B2AuthHelper _b2AuthHelper;
+
+    /// <summary>
+    /// The timeout options for the backend
+    /// </summary>
+    private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+
+    /// <summary>
+    /// Cached upload URL and authorization token for file uploads
+    /// </summary>
+    private UploadUrlResponse? _uploadUrl;
+
+    /// <summary>
+    /// Cache of file listings, mapping filenames to their versions
+    /// </summary>
+    private Dictionary<string, List<FileEntity>>? _filecache;
+
+    /// <summary>
+    /// The current bucket entity containing bucket information and credentials
+    /// </summary>
+    private BucketEntity? _bucket;
+
+    /// <summary>
+    /// A scoped instance of Http client to be used with the backend, this will use a
+    /// infinite timeout as a baseline, and requests will be controlled with timeout
+    /// cancellation tokens. It will be disposed when the backend is disposed
+    /// </summary>
+    private readonly HttpClient _httpClient;
+
+    /// <summary>
+    /// Cache lock for BucketEntity
+    /// </summary>
+    private readonly SemaphoreSlim _cacheLock = new SemaphoreSlim(1, 1);
+
+    /// <summary>
+    /// Empty constructor is required for the backend to be loaded by the backend factory
+    /// </summary>
+    public B2()
     {
-        private const string B2_ID_OPTION = "b2-accountid";
-        private const string B2_KEY_OPTION = "b2-applicationkey";
-		private const string B2_PAGESIZE_OPTION = "b2-page-size";
-        private const string B2_DOWNLOAD_URL_OPTION = "b2-download-url";
+        _bucketName = null!;
+        _prefix = null!;
+        _urlencodedPrefix = null!;
+        _b2AuthHelper = null!;
+        _timeouts = null!;
+        _httpClient = null!;
+    }
 
-		private const string B2_CREATE_BUCKET_TYPE_OPTION = "b2-create-bucket-type";
-        private const string DEFAULT_BUCKET_TYPE = "allPrivate";
+    /// <summary>
+    /// Actual constructor for the backend that accepts the url and options
+    /// </summary>
+    /// <param name="url">URL in Duplicati Uri format</param>
+    /// <param name="options">options to be used in the backend</param>
+    public B2(string url, Dictionary<string, string?> options)
+    {
+        var uri = new Utility.Uri(url);
 
-        private const int DEFAULT_PAGE_SIZE = 500;
+        _bucketName = uri.Host;
+        _prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
-        private readonly string m_bucketname;
-        private readonly string m_prefix;
-        private readonly string m_urlencodedprefix;
-        private readonly string m_bucketType;
-        private readonly int m_pagesize;
-        private readonly string m_downloadUrl;
-        private readonly B2AuthHelper m_helper;
-        private UploadUrlResponse m_uploadUrl;
+        // For B2 we do not use a leading slash
+        while (_prefix.StartsWith("/", StringComparison.Ordinal))
+            _prefix = _prefix.Substring(1);
 
-        private Dictionary<string, List<FileEntity>> m_filecache;
+        _urlencodedPrefix = string.Join("/", _prefix.Split(new[] { '/' }).Select(x => Utility.Uri.UrlPathEncode(x)));
 
-        private BucketEntity m_bucket;
+        _bucketType = DEFAULT_BUCKET_TYPE;
+        if (options.TryGetValue(B2_CREATE_BUCKET_TYPE_OPTION, out var option1))
+            _bucketType = option1;
 
-        public B2()
+        var auth = AuthOptionsHelper.ParseWithAlias(options, uri, B2_ID_OPTION, B2_KEY_OPTION);
+
+        if (!auth.HasUsername)
+            throw new UserInformationException(Strings.B2.NoB2UserIDError, "B2MissingUserID");
+
+        if (!auth.HasPassword)
+            throw new UserInformationException(Strings.B2.NoB2KeyError, "B2MissingKey");
+
+        _pageSize = DEFAULT_PAGE_SIZE;
+        if (options.ContainsKey(B2_PAGESIZE_OPTION))
         {
+            int.TryParse(options[B2_PAGESIZE_OPTION], out _pageSize);
+
+            if (_pageSize <= 0)
+                throw new UserInformationException(Strings.B2.InvalidPageSizeError(B2_PAGESIZE_OPTION, options[B2_PAGESIZE_OPTION]), "B2InvalidPageSize");
         }
 
-        public B2(string url, Dictionary<string, string> options)
+        _downloadUrl = null;
+        if (options.TryGetValue(B2_DOWNLOAD_URL_OPTION, out var option)) _downloadUrl = option;
+
+        _httpClient = HttpClientHelper.CreateClient();
+        _httpClient.Timeout = Timeout.InfiniteTimeSpan;
+
+        _timeouts = TimeoutOptionsHelper.Parse(options);
+        _b2AuthHelper = new B2AuthHelper(auth.Username!, auth.Password!, _httpClient, _timeouts);
+
+    }
+
+    /// <summary>
+    /// Retrieves the bucket list from the B2 service using the account ID
+    /// and searchs for a match for the configured bucket name.
+    ///
+    /// If not found, throws a FolderMissingException.
+    ///
+    /// Caches the result in the _mBucket field.
+    /// </summary>
+    /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
+    /// <exception cref="FolderMissingException"></exception>
+    private async Task<BucketEntity> GetBucketAsync(CancellationToken cancellationToken)
+    {
+        if (_bucket != null)
+            return _bucket;
+
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+        await _cacheLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
         {
-            var uri = new Utility.Uri(url);
+            var buckets = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+                => await _b2AuthHelper.PostAndGetJsonDataAsync<ListBucketsResponse>(
+                    $"{config.APIUrl}/b2api/v1/b2_list_buckets",
+                    new ListBucketsRequest(accountId: config.AccountID),
+                    ct).ConfigureAwait(false)
+            ).ConfigureAwait(false);
 
-            m_bucketname = uri.Host;
-            m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
-
-            // For B2 we do not use a leading slash
-            while(m_prefix.StartsWith("/", StringComparison.Ordinal))
-                m_prefix = m_prefix.Substring(1);
-
-            m_urlencodedprefix = string.Join("/", m_prefix.Split(new [] { '/' }).Select(x => Library.Utility.Uri.UrlPathEncode(x)));
-
-            m_bucketType = DEFAULT_BUCKET_TYPE;
-            if (options.ContainsKey(B2_CREATE_BUCKET_TYPE_OPTION))
-                m_bucketType = options[B2_CREATE_BUCKET_TYPE_OPTION];
-
-            string accountId = null;
-            string accountKey = null;
-
-            if (options.ContainsKey("auth-username"))
-                accountId = options["auth-username"];
-            if (options.ContainsKey("auth-password"))
-                accountKey = options["auth-password"];
-
-            if (options.ContainsKey(B2_ID_OPTION))
-                accountId = options[B2_ID_OPTION];
-            if (options.ContainsKey(B2_KEY_OPTION))
-                accountKey = options[B2_KEY_OPTION];
-            if (!string.IsNullOrEmpty(uri.Username))
-                accountId = uri.Username;
-            if (!string.IsNullOrEmpty(uri.Password))
-                accountKey = uri.Password;
-
-            if (string.IsNullOrEmpty(accountId))
-                throw new UserInformationException(Strings.B2.NoB2UserIDError, "B2MissingUserID");
-            if (string.IsNullOrEmpty(accountKey))
-                throw new UserInformationException(Strings.B2.NoB2KeyError, "B2MissingKey");
-            
-            m_helper = new B2AuthHelper(accountId, accountKey);
-
-			m_pagesize = DEFAULT_PAGE_SIZE;
-            if (options.ContainsKey(B2_PAGESIZE_OPTION))
-            {
-                int.TryParse(options[B2_PAGESIZE_OPTION], out m_pagesize);
-
-                if (m_pagesize <= 0)
-                    throw new UserInformationException(Strings.B2.InvalidPageSizeError(B2_PAGESIZE_OPTION, options[B2_PAGESIZE_OPTION]), "B2InvalidPageSize");
-            }
-
-            m_downloadUrl = null;
-            if (options.ContainsKey(B2_DOWNLOAD_URL_OPTION))
-            {
-                m_downloadUrl = options[B2_DOWNLOAD_URL_OPTION];
-            }
-		}
-
-        private BucketEntity Bucket
+            return _bucket ??= buckets?.Buckets?.FirstOrDefault(x =>
+                                    string.Equals(x.BucketName, _bucketName, StringComparison.OrdinalIgnoreCase))
+                                ?? throw new FolderMissingException();
+        }
+        finally
         {
-            get
-            {
-                if (m_bucket == null)
+            _cacheLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the upload URL and authorization token for the current bucket.
+    /// </summary>
+    /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
+    private async Task<UploadUrlResponse> GetUploadUrlDataAsync(CancellationToken cancellationToken)
+    {
+        if (_uploadUrl != null)
+            return _uploadUrl;
+
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+        var bucket = await GetBucketAsync(cancellationToken).ConfigureAwait(false);
+
+        _uploadUrl = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+            => await _b2AuthHelper.PostAndGetJsonDataAsync<UploadUrlResponse>(
+                $"{config.APIUrl}/b2api/v1/b2_get_upload_url",
+                new UploadUrlRequest
                 {
-                    var buckets = m_helper.PostAndGetJSONData<ListBucketsResponse>(
-                        string.Format("{0}/b2api/v1/b2_list_buckets", m_helper.APIUrl),
-                        new ListBucketsRequest() {
-                            AccountID = m_helper.AccountID
-                        }
-                    );
+                    BucketID = bucket.BucketID
+                        ?? throw new Exception("BucketID is null")
+                },
+                ct).ConfigureAwait(false)
+        ).ConfigureAwait(false);
 
-                    if (buckets != null && buckets.Buckets != null)
-                        m_bucket = buckets.Buckets.FirstOrDefault(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase));
+        return _uploadUrl;
+    }
 
-                    if (m_bucket == null)
-                        throw new FolderMissingException();
-                }
+    /// <summary>
+    /// Retrieves the fileID searching by filename.
+    /// </summary>
+    /// <param name="filename">Filename</param>
+    /// <param name="cancelToken">Cancellation Token</param>
+    /// <returns></returns>
+    /// <exception cref="FileMissingException">Exception thrown when file is not found</exception>
+    private async Task<string> GetFileId(string filename, CancellationToken cancelToken)
+    {
+        if (_filecache != null && _filecache.TryGetValue(filename, out var value))
+            return value.OrderByDescending(x => x.UploadTimestamp).First().FileID
+                ?? throw new InvalidDataException("Missing file ID");
 
-                return m_bucket;
-            }
-        }
+        await RebuildFileCache(cancelToken).ConfigureAwait(false);
 
-        private UploadUrlResponse UploadUrlData
+        if (_filecache != null && _filecache.TryGetValue(filename, out var value1))
+            return value1.OrderByDescending(x => x.UploadTimestamp).First().FileID
+                ?? throw new InvalidDataException("Missing file ID");
+
+        throw new FileMissingException();
+    }
+
+    /// <inheritdoc/>
+    public IList<ICommandLineArgument> SupportedCommands =>
+        new List<ICommandLineArgument>([
+            new CommandLineArgument(B2_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2accountidDescriptionShort, Strings.B2.B2accountidDescriptionLong, null, [AuthOptionsHelper.AuthUsernameOption], null),
+            new CommandLineArgument(B2_KEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.B2.B2applicationkeyDescriptionShort, Strings.B2.B2applicationkeyDescriptionLong, null, [AuthOptionsHelper.AuthPasswordOption], null),
+            new CommandLineArgument(B2_CREATE_BUCKET_TYPE_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2createbuckettypeDescriptionShort, Strings.B2.B2createbuckettypeDescriptionLong, DEFAULT_BUCKET_TYPE),
+            new CommandLineArgument(B2_PAGESIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.B2.B2pagesizeDescriptionShort, Strings.B2.B2pagesizeDescriptionLong, DEFAULT_PAGE_SIZE.ToString()),
+            new CommandLineArgument(B2_DOWNLOAD_URL_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2downloadurlDescriptionShort, Strings.B2.B2downloadurlDescriptionLong),
+            ..TimeoutOptionsHelper.GetOptions()
+        ]);
+
+    public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
+    {
+        (stream, var sha1, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(stream, "SHA1", cancelToken).ConfigureAwait(false);
+        using var _ = tmp;
+
+        if (_filecache == null)
+            await RebuildFileCache(cancelToken).ConfigureAwait(false);
+
+        var uploadUrlData = await GetUploadUrlDataAsync(cancelToken).ConfigureAwait(false);
+        try
         {
-            get
-            {
-                if (m_uploadUrl == null)
-                    m_uploadUrl = m_helper.PostAndGetJSONData<UploadUrlResponse>(
-                        string.Format("{0}/b2api/v1/b2_get_upload_url", m_helper.APIUrl),
-                        new UploadUrlRequest() { BucketID = Bucket.BucketID }
-                    );
+            using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrlData.UploadUrl);
+            using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
 
-                return m_uploadUrl;
-            }
-        }
+            request.Headers.TryAddWithoutValidation("Authorization", uploadUrlData.AuthorizationToken);
+            request.Headers.Add("X-Bz-Content-Sha1", sha1);
+            request.Headers.Add("X-Bz-File-Name", _urlencodedPrefix + Utility.Uri.UrlPathEncode(remotename));
+            request.Content = new StreamContent(timeoutStream, B2_RECOMMENDED_CHUNK_SIZE);
 
-        private string GetFileID(string filename)
-        {
-            if (m_filecache != null && m_filecache.ContainsKey(filename))
-                return m_filecache[filename].OrderByDescending(x => x.UploadTimestamp).First().FileID;
+            request.Content.Headers.Add("Content-Type", "application/octet-stream");
+            request.Content.Headers.Add("Content-Length", timeoutStream.Length.ToString());
 
-            List();
-            if (m_filecache.ContainsKey(filename))
-                return m_filecache[filename].OrderByDescending(x => x.UploadTimestamp).First().FileID;
+            var response = await _httpClient.UploadStream(request, cancelToken).ConfigureAwait(false);
+            var rdata = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
 
-            throw new FileMissingException();
-        }
+            UploadFileResponse fileinfo;
+            using (var tr = new StreamReader(rdata))
+            await using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
+                fileinfo = new Newtonsoft.Json.JsonSerializer().Deserialize<UploadFileResponse>(jr)
+                    ?? throw new Exception("Failed to parse response");
 
-        private string DownloadUrl {
-            get {
-                if (string.IsNullOrEmpty(m_downloadUrl)) {
-                    return m_helper.DownloadUrl;
-                } else {
-                    return m_downloadUrl;
-                }
-            }
-        }
+            // Delete old versions
+            if (_filecache!.ContainsKey(remotename))
+                await DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
 
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(B2_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2accountidDescriptionShort, Strings.B2.B2accountidDescriptionLong, null, new string[] {"auth-password"}, null),
-                    new CommandLineArgument(B2_KEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.B2.B2applicationkeyDescriptionShort, Strings.B2.B2applicationkeyDescriptionLong, null, new string[] {"auth-username"}, null),
-                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.B2.AuthPasswordDescriptionShort, Strings.B2.AuthPasswordDescriptionLong),
-                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.B2.AuthUsernameDescriptionShort, Strings.B2.AuthUsernameDescriptionLong),
-                    new CommandLineArgument(B2_CREATE_BUCKET_TYPE_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2createbuckettypeDescriptionShort, Strings.B2.B2createbuckettypeDescriptionLong, DEFAULT_BUCKET_TYPE),
-                    new CommandLineArgument(B2_PAGESIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.B2.B2pagesizeDescriptionShort, Strings.B2.B2pagesizeDescriptionLong, DEFAULT_PAGE_SIZE.ToString()),
-                    new CommandLineArgument(B2_DOWNLOAD_URL_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2downloadurlDescriptionShort, Strings.B2.B2downloadurlDescriptionLong),
-				});
-
-            }
-        }
-
-        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
-        {
-            TempFile tmp = null;
-
-            // A bit dirty, but we need the underlying stream to compute the hash without any interference
-            var measure = stream;
-            while (measure is OverrideableStream)
-                measure = typeof(OverrideableStream).GetField("m_basestream", System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(measure) as System.IO.Stream;
-
-            if (measure == null)
-                throw new Exception(string.Format("Unable to unwrap stream from: {0}", stream.GetType()));
-
-            string sha1;
-            if (measure.CanSeek)
-            {
-                var p = measure.Position;
-
-                // Compute the hash
-                using(var hashalg = SHA1.Create())
-                    sha1 = Library.Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
-
-                measure.Position = p;
-            }
-            else
-            {
-                // No seeking possible, use a temp file
-                tmp = new TempFile();
-                using(var sr = System.IO.File.OpenWrite(tmp))
-                using(var hasher = HashFactory.CreateHasher("SHA1"))
-                using(var hc = new HashCalculatingStream(measure, hasher))
+            _filecache[remotename] =
+            [
+                new FileEntity
                 {
-                    await Utility.Utility.CopyStreamAsync(hc, sr, cancelToken).ConfigureAwait(false);
-                    sha1 = hc.GetFinalHashString();
-                }
-
-                stream = System.IO.File.OpenRead(tmp);
-            }
-
-            if (m_filecache == null)
-                List();
-
-            try
-            {
-                var fileinfo = await m_helper.GetJSONDataAsync<UploadFileResponse>(
-                    UploadUrlData.UploadUrl,
-                    cancelToken,
-                    req =>
-                    {
-                        req.Method = "POST";
-                        req.Headers["Authorization"] = UploadUrlData.AuthorizationToken;
-                        req.Headers["X-Bz-Content-Sha1"] = sha1;
-                        req.Headers["X-Bz-File-Name"] = m_urlencodedprefix + Utility.Uri.UrlPathEncode(remotename);
-                        req.ContentType = "application/octet-stream";
-                        req.ContentLength = stream.Length;
-                    },
-
-                    async (req, reqCancelToken) =>
-                    {
-                        using (var rs = req.GetRequestStream())
-                            await Utility.Utility.CopyStreamAsync(stream, rs, reqCancelToken);
-                    }
-                ).ConfigureAwait(false);
-
-                // Delete old versions
-                if (m_filecache.ContainsKey(remotename))
-                    Delete(remotename);
-
-                m_filecache[remotename] = new List<FileEntity>();                
-                m_filecache[remotename].Add(new FileEntity() {
                     FileID = fileinfo.FileID,
                     FileName = fileinfo.FileName,
                     Action = "upload",
                     Size = fileinfo.ContentLength,
                     UploadTimestamp = (long)(DateTime.UtcNow - Utility.Utility.EPOCH).TotalMilliseconds
-                });
-            }
-            catch(Exception ex)
-            {
-                m_filecache = null;
-
-                var code = (int)B2AuthHelper.GetExceptionStatusCode(ex);
-                if (code >= 500 && code <= 599)
-                    m_uploadUrl = null;
-                
-                throw;
-            }
-            finally
-            {
-                tmp?.Dispose();
-            }
+                }
+            ];
         }
-
-        public void Get(string remotename, System.IO.Stream stream)
+        catch (Exception ex)
         {
-            AsyncHttpRequest req;
-            if (m_filecache == null || !m_filecache.ContainsKey(remotename))
-                List();
+            _filecache = null;
 
-            if (m_filecache != null && m_filecache.ContainsKey(remotename))
-                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/b2api/v1/b2_download_file_by_id?fileId={1}", DownloadUrl, Library.Utility.Uri.UrlEncode(GetFileID(remotename)))));
-            else
-                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/{1}{2}", DownloadUrl, m_urlencodedprefix, Library.Utility.Uri.UrlPathEncode(remotename))));
+            var code = (int)B2AuthHelper.GetExceptionStatusCode(ex);
+            if (code is >= 500 and <= 599)
+                _uploadUrl = null;
 
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Download files from remote
+    /// </summary>
+    /// <param name="remotename">Filename at remote location</param>
+    /// <param name="stream">Destination stream to write to</param>
+    /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
+    /// <exception cref="FileMissingException">FileMissingException when file is not found</exception>
+    /// <exception cref="Exception">Exceptions arising from either code execution or FileMissingException</exception>
+    public async Task GetAsync(string remotename, Stream stream, CancellationToken cancellationToken)
+    {
+        if (_filecache == null || !_filecache.ContainsKey(remotename))
+            await RebuildFileCache(cancellationToken).ConfigureAwait(false);
+
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+
+        using var request = _filecache != null && _filecache.ContainsKey(remotename)
+            ? await _b2AuthHelper.CreateRequestAsync(
+                $"{config.DownloadUrl}/b2api/v1/b2_download_file_by_id?fileId={Utility.Uri.UrlEncode(await GetFileId(remotename, cancellationToken))}", HttpMethod.Get, cancellationToken).ConfigureAwait(false)
+            : await _b2AuthHelper.CreateRequestAsync(
+                $"{config.DownloadUrl}/{_urlencodedPrefix}{Utility.Uri.UrlPathEncode(remotename)}", HttpMethod.Get, cancellationToken).ConfigureAwait(false);
+
+        HttpResponseMessage? response = null;
+        try
+        {
+            response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct => _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct))
+                .ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var timeoutStream = responseStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            await timeoutStream.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            if (B2AuthHelper.GetExceptionStatusCode(ex) == HttpStatusCode.NotFound)
+                throw new FileMissingException();
+
+            await _b2AuthHelper.AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
+            throw;
+        }
+        finally
+        {
+            response?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Implementation of interface method for listing remote folder contents
+    /// </summary>
+    /// <returns>List of IFileEntry with directory listing result</returns>
+    private async Task<Dictionary<string, List<FileEntity>>> RebuildFileCache(CancellationToken cancellationToken)
+    {
+        _filecache = null;
+        var cache = new Dictionary<string, List<FileEntity>>();
+        string? nextFileId = null;
+        string? nextFileName = null;
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+        var listVersionUrl = $"{config.APIUrl}/b2api/v1/b2_list_file_versions";
+
+        var listRetryHelper = RetryAfterHelper.CreateOrGetRetryAfterHelper(listVersionUrl);
+
+        do
+        {
             try
             {
-                using(var resp = req.GetResponse())
-                using(var rs = req.GetResponseStream())
-                    Library.Utility.Utility.CopyStream(rs, stream);
-            }
-            catch (Exception ex)
-            {
-                if (B2AuthHelper.GetExceptionStatusCode(ex) == HttpStatusCode.NotFound)
-                    throw new FileMissingException();
+                var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+                    => await _b2AuthHelper.PostAndGetJsonDataAsync<ListFilesResponse>(
+                        $"{config.APIUrl}/b2api/v1/b2_list_file_versions",
+                        new ListFilesRequest
+                        {
+                            BucketID = (await GetBucketAsync(cancellationToken)).BucketID
+                                ?? throw new Exception("BucketID is null"),
+                            MaxFileCount = _pageSize,
+                            Prefix = _prefix,
+                            StartFileID = nextFileId,
+                            StartFileName = nextFileName
+                        },
+                        ct
+                    ).ConfigureAwait(false)
+                ).ConfigureAwait(false);
 
-                B2AuthHelper.AttemptParseAndThrowException(ex);
-
-                throw;
-            }
-        }
-
-        public IEnumerable<IFileEntry> List()
-        {
-            m_filecache = null;
-            var cache = new Dictionary<string, List<FileEntity>>();
-            string nextFileID = null;
-            string nextFileName = null;
-            do
-            {
-                var resp = m_helper.PostAndGetJSONData<ListFilesResponse>(
-                    string.Format("{0}/b2api/v1/b2_list_file_versions", m_helper.APIUrl),
-                    new ListFilesRequest() {
-                        BucketID = Bucket.BucketID,
-                        MaxFileCount = m_pagesize,
-                        Prefix = m_prefix,
-                        StartFileID = nextFileID,
-                        StartFileName = nextFileName
-                    }
-                );
-
-                nextFileID = resp.NextFileID;
+                nextFileId = resp.NextFileID;
                 nextFileName = resp.NextFileName;
 
                 if (resp.Files == null || resp.Files.Length == 0)
                     break;
 
-                foreach(var f in resp.Files)
+                foreach (var file in resp.Files)
                 {
-                    if (!f.FileName.StartsWith(m_prefix, StringComparison.Ordinal))
+                    if (string.IsNullOrWhiteSpace(file.FileName))
                         continue;
 
-                    var name = f.FileName.Substring(m_prefix.Length);
-                    if (name.Contains("/"))
+                    if (!file.FileName.StartsWith(_prefix, StringComparison.Ordinal))
                         continue;
 
+                    var name = file.FileName[_prefix.Length..];
+                    if (name.Contains('/'))
+                        continue;
 
-                    List<FileEntity> lst;
-                    cache.TryGetValue(name, out lst);
+                    cache.TryGetValue(name, out var lst);
                     if (lst == null)
-                        cache[name] = lst = new List<FileEntity>(1);
-                    lst.Add(f);
+                        cache[name] = lst = new System.Collections.Generic.List<FileEntity>(1);
+                    lst.Add(file);
                 }
-
-            } while(nextFileID != null);
-
-            m_filecache = cache;
-
-            return 
-                (from x in m_filecache
-                    let newest = x.Value.OrderByDescending(y => y.UploadTimestamp).First()
-                    let ts = Utility.Utility.EPOCH.AddMilliseconds(newest.UploadTimestamp)
-                    select (IFileEntry)new FileEntry(x.Key, newest.Size, ts, ts)
-                ).ToList();
-        }
-
-        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
-        {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken);
-        }
-
-        public void Get(string remotename, string filename)
-        {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
-        }
-
-        public void Delete(string remotename)
-        {
-            try
-            {
-                if (m_filecache == null || !m_filecache.ContainsKey(remotename))
-                    List();
-
-                if (!m_filecache.ContainsKey(remotename))
-                    throw new FileMissingException();
-                
-                foreach(var n in m_filecache[remotename].OrderBy(x => x.UploadTimestamp))
-                    m_helper.PostAndGetJSONData<DeleteResponse>(
-                        string.Format("{0}/b2api/v1/b2_delete_file_version", m_helper.APIUrl),
-                        new DeleteRequest() {
-                            FileName = m_prefix + remotename,
-                            FileID = n.FileID
-                        }
-                    );
-
-                m_filecache[remotename].Clear();
             }
-            catch
+            catch (TooManyRequestException tex)
             {
-                m_filecache = null;
-                throw;
+                // Backblaze's B2 API rate limit reached. Presently they don't add Retry-After headers, we will default to a delay, but respect it if present.
+                if (tex.RetryAfter == null || (tex.RetryAfter.Date == null && tex.RetryAfter.Delta == null))
+                    listRetryHelper.SetRetryAfter(
+                        new RetryConditionHeaderValue(TimeSpan.FromSeconds(B2_RETRY_AFTER_SECONDS)));
+                else
+                    listRetryHelper.SetRetryAfter(tex.RetryAfter);
+
+                await listRetryHelper.WaitForRetryAfterAsync(cancellationToken);
             }
-        }
+        } while (nextFileId != null);
 
-        public void Test()
+        return _filecache = cache;
+    }
+
+    /// <summary>
+    /// Implementation of interface method for listing remote folder contents
+    /// </summary>
+    /// <returns>List of IFileEntry with directory listing result</returns>
+    public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var filecache = await RebuildFileCache(cancellationToken).ConfigureAwait(false);
+        foreach (var x in filecache)
         {
-            this.TestList();
+            var newest = x.Value.OrderByDescending(y => y.UploadTimestamp).First();
+            var ts = Utility.Utility.EPOCH.AddMilliseconds(newest.UploadTimestamp);
+            yield return new FileEntry(x.Key, newest.Size, ts, ts);
         }
+    }
 
-        public void CreateFolder()
+    //<inheritdoc/>
+    public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+    {
+        await using FileStream fs = File.OpenRead(filename);
+        await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Download files from remote
+    /// </summary>
+    /// <param name="remotename">Filename at remote location</param>
+    /// <param name="filename">Destination file to write to</param>
+    /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
+    /// <exception cref="FileMissingException">FileMissingException when file is not found</exception>
+    /// <exception cref="Exception">Exceptions arising from either code execution or FileMissingException</exception>
+    public async Task GetAsync(string remotename, string filename, CancellationToken cancellationToken)
+    {
+        await using var fs = File.Create(filename);
+        await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Delete remote file if it exists, if now, throws FileMissingException
+    /// </summary>
+    /// <param name="remotename">filename to be deleted on the remote</param>
+    /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
+    /// <returns></returns>
+    /// <exception cref="FileMissingException">FileMissingException when file is not found</exception>
+    /// <exception cref="Exception">Exceptions arising from either code execution</exception>
+    public async Task DeleteAsync(string remotename, CancellationToken cancellationToken)
+    {
+        try
         {
-            m_bucket = m_helper.PostAndGetJSONData<BucketEntity>(
-                string.Format("{0}/b2api/v1/b2_create_bucket", m_helper.APIUrl),
-                new BucketEntity() {
-                    AccountID = m_helper.AccountID,
-                    BucketName = m_bucketname,
-                    BucketType = m_bucketType
-                }
-            );
-        }
+            var filecache = _filecache;
+            if (filecache == null || !filecache.ContainsKey(remotename))
+                filecache = await RebuildFileCache(cancellationToken).ConfigureAwait(false);
 
-        public string DisplayName
+            if (!filecache.TryGetValue(remotename, out var value))
+                throw new FileMissingException();
+
+            var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+
+            foreach (var n in value.OrderBy(x => x.UploadTimestamp))
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+                    => await _b2AuthHelper.PostAndGetJsonDataAsync<DeleteResponse>(
+                        $"{config.APIUrl}/b2api/v1/b2_delete_file_version",
+                        new DeleteRequest
+                        {
+                            FileName = _prefix + remotename,
+                            FileId = n.FileID
+                        },
+                        ct
+                    ).ConfigureAwait(false)
+                ).ConfigureAwait(false);
+
+            filecache[remotename].Clear();
+        }
+        catch
         {
-            get { return Strings.B2.DisplayName; }
+            _filecache = null;
+            throw;
         }
+    }
 
-        public string ProtocolKey
+    /// <summary>
+    /// Performs test with backend (internally it uses the List() command, which by definition means the backend is working)
+    /// </summary>
+    /// <param name="cancelToken">Cancellation Token</param>
+    public Task TestAsync(CancellationToken cancelToken)
+        => this.TestReadWritePermissionsAsync(cancelToken);
+
+    /// <summary>
+    /// Create remote folder
+    /// </summary>
+    /// <param name="cancellationToken">CancellationToken that will be combined with internal timeout token</param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public async Task CreateFolderAsync(CancellationToken cancellationToken)
+    {
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken);
+        _bucket = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+            => await _b2AuthHelper.PostAndGetJsonDataAsync<BucketEntity>(
+                $"{config.APIUrl}/b2api/v1/b2_create_bucket",
+                new BucketEntity
+                {
+                    AccountID = config.AccountID,
+                    BucketName = _bucketName,
+                    BucketType = _bucketType
+                },
+                ct
+            ).ConfigureAwait(false)
+        ).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public string DisplayName => Strings.B2.DisplayName;
+
+    /// <inheritdoc/>
+    public string ProtocolKey => "b2";
+
+    /// <inheritdoc/>
+    public string Description => Strings.B2.Description;
+
+    /// <inheritdoc/>
+    public async Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
+    {
+        var config = await _b2AuthHelper.GetConfigAsync(cancelToken);
+        return new string?[] {
+            B2AuthHelper.AUTH_URL,
+            config.APIUrl,
+            config.DownloadUrl
+        }.WhereNotNullOrWhiteSpace()
+        .Select(x => new System.Uri(x).Host)
+        .Distinct()
+        .ToArray();
+    }
+
+    /// <summary>
+    /// Handles disposal of the backend's resources.
+    /// </summary>
+    public void Dispose()
+    {
+        try
         {
-            get { return "b2"; }
+            _httpClient?.Dispose();
         }
-
-        public string Description
+        catch
         {
-            get { return Strings.B2.Description; }
+            // ignored
         }
-
-        public string[] DNSName
-        {
-            get { return new string[] { new System.Uri(B2AuthHelper.AUTH_URL).Host, m_helper?.APIDnsName, m_helper?.DownloadDnsName} ; }
-        }
-
-        public void Dispose()
-        {
-        }
-
-        private class DeleteRequest
-        {
-            [JsonProperty("fileName")]
-            public string FileName { get; set; }
-            [JsonProperty("fileId")]
-            public string FileID { get; set; }
-        }
-
-        private class DeleteResponse : DeleteRequest
-        {
-        }
-
-        private class UploadUrlRequest : BucketIDEntity
-        {
-        }
-
-        private class UploadUrlResponse : BucketIDEntity
-        {
-            [JsonProperty("uploadUrl")]
-            public string UploadUrl { get; set; }
-            [JsonProperty("authorizationToken")]
-            public string AuthorizationToken { get; set; }
-        }
-
-        private class AccountIDEntity
-        {
-            [JsonProperty("accountId")]
-            public string AccountID { get; set; }
-        }
-
-        private class BucketIDEntity
-        {
-            [JsonProperty("bucketId")]
-            public string BucketID { get; set; }
-        }
-
-        private class BucketEntity : AccountIDEntity
-        {
-            [JsonProperty("bucketId", NullValueHandling = NullValueHandling.Ignore)]
-            public string BucketID { get; set; }
-            [JsonProperty("bucketName")]
-            public string BucketName { get; set; }
-            [JsonProperty("bucketType")]
-            public string BucketType { get; set; }
-        }
-
-        private class ListBucketsRequest : AccountIDEntity
-        {
-        }
-
-        private class ListBucketsResponse
-        {
-            [JsonProperty("buckets")]
-            public BucketEntity[] Buckets { get; set; }
-        }
-
-        private class ListFilesRequest : BucketIDEntity
-        {
-            [JsonProperty("startFileName", NullValueHandling = NullValueHandling.Ignore)]
-            public string StartFileName { get; set; }
-            [JsonProperty("startFileId", NullValueHandling = NullValueHandling.Ignore)]
-            public string StartFileID { get; set; }
-            [JsonProperty("maxFileCount")]
-            public long MaxFileCount { get; set; }
-            [JsonProperty("prefix")]
-            public string Prefix { get; set; }
-        }
-
-        private class ListFilesResponse
-        {
-            [JsonProperty("nextFileName")]
-            public string NextFileName { get; set; }
-            [JsonProperty("nextFileId")]
-            public string NextFileID { get; set; }
-            [JsonProperty("files")]
-            public FileEntity[] Files { get; set; }
-        }
-
-        private class FileEntity
-        {
-            [JsonProperty("fileId")]
-            public string FileID { get; set; }
-            [JsonProperty("fileName")]
-            public string FileName { get; set; }
-            [JsonProperty("action")]
-            public string Action { get; set; }
-            [JsonProperty("size")]
-            public long Size { get; set; }
-            [JsonProperty("uploadTimestamp")]
-            public long UploadTimestamp { get; set; }
-
-        }
-
-        private class UploadFileResponse : AccountIDEntity
-        {
-            [JsonProperty("bucketId")]
-            public string BucketID { get; set; }
-            [JsonProperty("fileId")]
-            public string FileID { get; set; }
-            [JsonProperty("fileName")]
-            public string FileName { get; set; }
-            [JsonProperty("contentLength")]
-            public long ContentLength { get; set; }
-            [JsonProperty("contentSha1")]
-            public string ContentSha1 { get; set; }
-            [JsonProperty("contentType")]
-            public string ContentType { get; set; }
-        }
-
     }
 }
-

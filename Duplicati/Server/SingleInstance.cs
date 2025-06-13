@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,10 +21,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.Server
 {
@@ -138,7 +136,7 @@ namespace Duplicati.Server
 
             m_lockfilename = System.IO.Path.Combine(m_controldir, CONTROL_FILE);
             m_file = null;
-            
+
             System.IO.Stream temp_fs = null;
 
             try
@@ -147,7 +145,7 @@ namespace Duplicati.Server
                     temp_fs = PosixFile.OpenExclusive(m_lockfilename, System.IO.FileAccess.Write);
                 else
                     temp_fs = System.IO.File.Open(m_lockfilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None);
-                
+
                 if (temp_fs != null)
                 {
                     System.IO.StreamWriter sw = new System.IO.StreamWriter(temp_fs);
@@ -161,7 +159,7 @@ namespace Duplicati.Server
             {
                 if (temp_fs != null)
                     try { temp_fs.Dispose(); }
-                    catch {}
+                    catch { }
             }
 
             //If we have write access
@@ -174,7 +172,7 @@ namespace Duplicati.Server
                 DateTime startup = System.IO.File.GetLastWriteTime(m_lockfilename);
 
                 //Clean up any files that were created before the app launched
-                foreach(string s in SystemIO.IO_OS.GetFiles(m_controldir))
+                foreach (string s in SystemIO.IO_OS.GetFiles(m_controldir))
                     if (s != m_lockfilename && System.IO.File.GetCreationTime(s) < startup)
                         try { System.IO.File.Delete(s); }
                         catch { }
@@ -313,7 +311,7 @@ namespace Duplicati.Server
 
                 //Finally inform this instance about the call
                 if (SecondInstanceDetected != null)
-                    SecondInstanceDetected(commandline); 
+                    SecondInstanceDetected(commandline);
             }
 
         }

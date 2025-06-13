@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,11 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Azure;
+using Azure.Storage.Blobs.Models;
 using Duplicati.Library.Interface;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
@@ -31,181 +31,209 @@ namespace Duplicati.Library.Backend.AzureBlob
     // This class is instantiated dynamically in the BackendLoader.
     public class AzureBlobBackend : IStreamingBackend
     {
+        /// <summary>
+        /// The access to Azure blob storage
+        /// </summary>
         private readonly AzureBlobWrapper _azureBlob;
+
+        /// <summary>
+        /// The option to specify the Azure storage account name
+        /// </summary>
+        private const string AZURE_ACCOUNT_NAME_OPTION = "azure-account-name";
+        /// <summary>
+        /// The option to specify the Azure access key
+        /// </summary>
+        private const string AZURE_ACCESS_KEY_OPTION = "azure-access-key";
+        /// <summary>
+        /// The option to specify the Azure access SAS token
+        /// </summary>
+        private const string AZURE_ACCESS_SAS_TOKEN_OPTION = "azure-access-sas-token";
+        /// <summary>
+        /// The option to specify the archive classes
+        /// </summary>
+        private const string AZURE_ARCHIVE_CLASSES_OPTION = "azure-archive-classes";
+        /// <summary>
+        /// The option to specify the Azure access tier
+        /// </summary>
+        private const string AZURE_ACCESS_TIER_OPTION = "azure-access-tier";
+
+        /// <summary>
+        /// The default storage classes that are considered archive classes
+        /// </summary>
+        private static readonly IReadOnlySet<AccessTier> DEFAULT_ARCHIVE_CLASSES = new HashSet<AccessTier>([
+            AccessTier.Cold, AccessTier.Archive
+        ]);
+
+        /// <summary>
+        /// List of access tiers
+        /// </summary>
+        private static readonly IEnumerable<AccessTier> ACCESS_TIERS =
+            typeof(AccessTier).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                .Where(x => x.PropertyType == typeof(AccessTier))
+                .Select(x => x.GetValue(null) as AccessTier?)
+                .WhereNotNull()
+                .ToArray();
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
         public AzureBlobBackend()
         {
+            _azureBlob = null!;
         }
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
-        public AzureBlobBackend(string url, Dictionary<string, string> options)
+        public AzureBlobBackend(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
             uri.RequireHost();
 
-            string storageAccountName = null;
-            string accessKey = null;
-            string sasToken = null;
-            string containerName = uri.Host.ToLowerInvariant();
+            var containerName = uri.Host.ToLowerInvariant();
 
-            if (options.ContainsKey("auth-username"))
-                storageAccountName = options["auth-username"];
-            if (options.ContainsKey("auth-password"))
-                accessKey = options["auth-password"];
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AZURE_ACCOUNT_NAME_OPTION, AZURE_ACCESS_KEY_OPTION);
+            var timeouts = TimeoutOptionsHelper.Parse(options);
 
-            if (options.ContainsKey("azure_account_name"))
-                storageAccountName = options["azure_account_name"];
-            if (options.ContainsKey("azure-account-name"))
-                storageAccountName = options["azure-account-name"];
-
-            if (options.ContainsKey("azure_access_key"))
-                accessKey = options["azure_access_key"];
-            if (options.ContainsKey("azure-access-key"))
-                accessKey = options["azure-access-key"];
-
-            if (options.ContainsKey("azure-access-sas-token"))
-                sasToken = options["azure-access-sas-token"];
-
-            if (!string.IsNullOrEmpty(uri.Username))
-                storageAccountName = uri.Username;
-            if (!string.IsNullOrEmpty(uri.Password))
-                accessKey = uri.Password;
-
-            if (string.IsNullOrWhiteSpace(storageAccountName))
-            {
+            var sasToken = options.GetValueOrDefault(AZURE_ACCESS_SAS_TOKEN_OPTION);
+            if (!auth.HasUsername)
                 throw new UserInformationException(Strings.AzureBlobBackend.NoStorageAccountName, "AzureNoAccountName");
-            }
-            if (string.IsNullOrWhiteSpace(accessKey) && string.IsNullOrWhiteSpace(sasToken))
-            {
+
+            if (!auth.HasPassword && string.IsNullOrWhiteSpace(sasToken))
                 throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKeyOrSasToken, "AzureNoAccessKeyOrSasToken");
-            }
 
-
-            _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, sasToken, containerName);
+            var archiveClasses = ParseStorageClasses(options.GetValueOrDefault(AZURE_ARCHIVE_CLASSES_OPTION));
+            var accessTierValue = options.GetValueOrDefault(AZURE_ACCESS_TIER_OPTION);
+            var accessTier = string.IsNullOrWhiteSpace(accessTierValue)
+                ? null
+                // Warning: The cast here is required to avoid implicit casting null to AccessTier
+                : (AccessTier?)new AccessTier(accessTierValue);
+            _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, accessTier, archiveClasses, timeouts);
         }
 
-        public string DisplayName
+        /// <summary>
+        /// Parses the storage classes from the string
+        /// </summary>
+        /// <param name="storageClass">The storage class string</param>
+        /// <returns>The storage classes</returns>
+        private static IReadOnlySet<AccessTier> ParseStorageClasses(string? storageClass)
         {
-            get { return Strings.AzureBlobBackend.DisplayName; }
+            if (string.IsNullOrWhiteSpace(storageClass))
+                return DEFAULT_ARCHIVE_CLASSES;
+
+            return new HashSet<AccessTier>(storageClass.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => new AccessTier(x)));
         }
 
-        public string ProtocolKey
-        {
-            get { return "azure"; }
-        }
+        public string DisplayName => Strings.AzureBlobBackend.DisplayName;
 
-        public IEnumerable<IFileEntry> List()
-        {
-            return _azureBlob.ListContainerEntries();
-        }
+        public string ProtocolKey => "azure";
+
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
+            => _azureBlob.ListContainerEntriesAsync(cancelToken);
 
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
-            using (var fs = File.Open(localname,
-                FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                await PutAsync(remotename, fs, cancelToken);
-            }
+            await using var fs = File.Open(localname,
+                FileMode.Open, FileAccess.Read, FileShare.Read);
+            await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
-            await _azureBlob.AddFileStream(remotename, input, cancelToken);
+            return WrapWithExceptionHandler(_azureBlob.AddFileStream(remotename, input, cancelToken));
         }
 
-        public void Get(string remotename, string localname)
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
         {
-            using (var fs = File.Open(localname,
+            await using var fs = File.Open(localname,
                 FileMode.Create, FileAccess.Write,
-                FileShare.None))
-            {
-                Get(remotename, fs);
-            }
+                FileShare.None);
+            await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, Stream output)
+        public Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
         {
-            _azureBlob.GetFileStream(remotename, output);
+            return WrapWithExceptionHandler(_azureBlob.GetFileStreamAsync(remotename, output, cancellationToken));
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
-            _azureBlob.DeleteObject(remotename);
+            return WrapWithExceptionHandler(_azureBlob.DeleteObjectAsync(remotename, cancellationToken));
         }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("azure_account_name",
+                return [
+                    new CommandLineArgument(AZURE_ACCOUNT_NAME_OPTION,
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionLong,
-                        null, null, null, "This is deprecated, use azure-account-name instead"),
-                    new CommandLineArgument("azure_access_key",
+                        null,
+                        [AuthOptionsHelper.AuthUsernameOption]),
+                    new CommandLineArgument(AZURE_ACCESS_KEY_OPTION,
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.AccessKeyDescriptionShort,
                         Strings.AzureBlobBackend.AccessKeyDescriptionLong,
-                        null, null, null, "This is deprecated, use azure-access-key instead"),
-                    new CommandLineArgument("azure_blob_container_name",
-                        CommandLineArgument.ArgumentType.String,
-                        Strings.AzureBlobBackend.ContainerNameDescriptionShort,
-                        Strings.AzureBlobBackend.ContainerNameDescriptionLong,
-                        null, null, null, "This is deprecated, use azure-blob-container-name instead"),
-                    new CommandLineArgument("azure-account-name",
-                        CommandLineArgument.ArgumentType.String,
-                        Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
-                        Strings.AzureBlobBackend.StorageAccountNameDescriptionLong),
-                    new CommandLineArgument("azure-access-key",
-                        CommandLineArgument.ArgumentType.Password,
-                        Strings.AzureBlobBackend.AccessKeyDescriptionShort,
-                        Strings.AzureBlobBackend.AccessKeyDescriptionLong),
-                    new CommandLineArgument("azure-access-sas-token",
+                        null,
+                        [AuthOptionsHelper.AuthPasswordOption]),
+                    new CommandLineArgument(AZURE_ACCESS_SAS_TOKEN_OPTION,
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.SasTokenDescriptionShort,
                         Strings.AzureBlobBackend.SasTokenDescriptionLong),
-                    new CommandLineArgument("azure-blob-container-name",
+                    new CommandLineArgument(AZURE_ARCHIVE_CLASSES_OPTION,
+                        CommandLineArgument.ArgumentType.Flags,
+                        Strings.AzureBlobBackend.ArchiveClassesDescriptionShort,
+                        Strings.AzureBlobBackend.ArchiveClassesDescriptionLong,
+                        string.Join(",", DEFAULT_ARCHIVE_CLASSES.Select(x => x.ToString())),
+                        null,
+                        ACCESS_TIERS.Select(x => x.ToString()).ToArray()),
+                    new CommandLineArgument(AZURE_ACCESS_TIER_OPTION,
                         CommandLineArgument.ArgumentType.String,
-                        Strings.AzureBlobBackend.ContainerNameDescriptionShort,
-                        Strings.AzureBlobBackend.ContainerNameDescriptionLong),
-                    new CommandLineArgument("auth-password",
-                        CommandLineArgument.ArgumentType.Password,
-                        Strings.AzureBlobBackend.AuthPasswordDescriptionShort,
-                        Strings.AzureBlobBackend.AuthPasswordDescriptionLong),
-                    new CommandLineArgument("auth-username",
-                        CommandLineArgument.ArgumentType.String,
-                        Strings.AzureBlobBackend.AuthUsernameDescriptionShort,
-                        Strings.AzureBlobBackend.AuthUsernameDescriptionLong)
-                });
-
+                        Strings.AzureBlobBackend.AccessTierDescriptionShort,
+                        Strings.AzureBlobBackend.AccessTierDescriptionLong,
+                        "",
+                        null,
+                        ACCESS_TIERS.Select(x => x.ToString()).ToArray()),
+                    .. TimeoutOptionsHelper.GetOptions()
+                ];
             }
         }
 
-        public string Description
+        public string Description => Strings.AzureBlobBackend.DescriptionV2;
+
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(_azureBlob.DnsNames);
+
+        public Task TestAsync(CancellationToken cancellationToken)
+            => this.TestReadWritePermissionsAsync(cancellationToken);
+
+        public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
-            get
+            return WrapWithExceptionHandler(_azureBlob.AddContainerAsync(cancellationToken));
+        }
+
+        /// <summary>
+        /// Wraps the task with exception handling
+        /// </summary>
+        private async Task WrapWithExceptionHandler(Task task)
+        {
+            try
             {
-                return Strings.AzureBlobBackend.Description_v2;
+                await task.ConfigureAwait(false);
             }
-        }
-
-        public string[] DNSName
-        {
-            get { return _azureBlob.DnsNames; }
-        }
-
-        public void Test()
-        {
-            this.TestList();
-        }
-
-        public void CreateFolder()
-        {
-            _azureBlob.AddContainer();
+            catch (RequestFailedException e)
+                when (e.Status == 404
+                      || e.ErrorCode == BlobErrorCode.BlobNotFound
+                      || e.ErrorCode == BlobErrorCode.ResourceNotFound)
+            {
+                throw new FileMissingException(e.Message, e);
+            }
+            catch (RequestFailedException e)
+                when (e.ErrorCode == BlobErrorCode.ContainerNotFound
+                      || e.ErrorCode == BlobErrorCode.ContainerBeingDeleted
+                      || e.ErrorCode == BlobErrorCode.ContainerDisabled)
+            {
+                throw new FolderMissingException(e.Message, e);
+            }
         }
 
         public void Dispose()

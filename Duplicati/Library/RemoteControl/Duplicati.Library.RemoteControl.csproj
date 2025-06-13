@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <RootNamespace>Duplicati.Library.RemoteControl</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="jose-jwt" Version="5.0.0" />
+    <PackageReference Include="Websocket.Client" Version="5.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\Encryption\Duplicati.Library.Encryption.csproj" />
+    <ProjectReference Include="..\Main\Duplicati.Library.Main.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -5,7 +5,7 @@
 # Input is always:
 #  $1 = name of the snapshot, a random name with no spaces or non-printable chars, usually something like "duplicati-0102030011234567"
 #  $2 = name of the device to create the snapshot for, this is the output of find-volume.sh, and usually a LVM id like "vg_name/lv_name"
-#  $3 = the full path to the temporary folder used by the application, suffixed with a /, eg "/tmp/"
+#  $3 = the full path to the temporary folder used by the application, suffixed with a /, e.g. "/tmp/"
 #
 # The script MUST output a line with tmpdir="<dir>", where dir is the temporary mounted directory
 # This ensures that the script can override the settings to better fit the distro, 

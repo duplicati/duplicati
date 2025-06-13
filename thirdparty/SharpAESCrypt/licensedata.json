@@ -1,6 +1,6 @@
 {
   "name": "SharpAESCrypt",
-  "description": "A C# implementation of the AESCrypt file format ",
+  "description": "A C# implementation of the AESCrypt file format.",
   "link": "https://github.com/duplicati/sharpaescrypt",
   "license": "MIT",
   "notes": ""

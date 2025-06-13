@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,11 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using Duplicati.Library.Interface;
-using System.Collections.Generic;
-using System.Linq;
-using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend.GoogleServices
 {
@@ -32,7 +28,7 @@ namespace Duplicati.Library.Backend.GoogleServices
     public class GCSConfig : IWebModule
     {
         private const ConfigType DEFAULT_CONFIG_TYPE = ConfigType.Locations;
-        private static readonly string DEFAULT_CONFIG_TYPE_STR = Enum.GetName(typeof(ConfigType), DEFAULT_CONFIG_TYPE);
+        private static readonly string DEFAULT_CONFIG_TYPE_STR = DEFAULT_CONFIG_TYPE.ToString();
         private const string KEY_CONFIGTYPE = "gcs-config";
 
         public enum ConfigType
@@ -46,15 +42,13 @@ namespace Duplicati.Library.Backend.GoogleServices
 
         #region IWebModule implementation
 
-        public System.Collections.Generic.IDictionary<string, string> Execute(System.Collections.Generic.IDictionary<string, string> options)
+        public IDictionary<string, string?> Execute(IDictionary<string, string?> options)
         {
-            string k;
-            options.TryGetValue(KEY_CONFIGTYPE, out k);
+            options.TryGetValue(KEY_CONFIGTYPE, out var k);
             if (string.IsNullOrWhiteSpace(k))
                 k = DEFAULT_CONFIG_TYPE_STR;
 
-            ConfigType ct;
-            if (!Enum.TryParse<ConfigType>(k, true, out ct))
+            if (!Enum.TryParse<ConfigType>(k, true, out var ct))
                 ct = DEFAULT_CONFIG_TYPE;
 
             switch (ct)
@@ -66,23 +60,17 @@ namespace Duplicati.Library.Backend.GoogleServices
             }
         }
 
-        public string Key { get { return "gcs-getconfig"; } }
+        public string Key => "gcs-getconfig";
 
-        public string DisplayName { get { return LC.L("Google Cloud Storage configuration module"); } }
+        public string DisplayName => Strings.GCSConfig.DisplayName;
 
-        public string Description { get { return LC.L("Exposes Google Cloud Storage configuration as a web module"); } }
+        public string Description => Strings.GCSConfig.Description;
 
 
-        public System.Collections.Generic.IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>([
-                    new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, LC.L("The config to get"), LC.L("Provides different config values"), DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
-
-                ]);
-            }
-        }
+        public IList<ICommandLineArgument> SupportedCommands =>
+        [
+            new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.GCSConfig.ConfigTypeShort, Strings.GCSConfig.ConfigTypeLong, DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
+        ];
 
         #endregion
     }

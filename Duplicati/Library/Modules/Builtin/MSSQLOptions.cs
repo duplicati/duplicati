@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -24,8 +24,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
-using Duplicati.Library.Common;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Snapshots.Windows;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -68,7 +68,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
-            // Do nothing.  Implementation needed for IGenericModule interface.
+            // Do nothing. Implementation needed for IGenericModule interface.
         }
 
         #endregion
@@ -144,7 +144,8 @@ namespace Duplicati.Library.Modules.Builtin
             }
 
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingMsSqlQuery", "Starting to gather Microsoft SQL Server information", Logging.LogMessageType.Information);
-            mssqlUtility.QueryDBsInfo();
+            var provider = Utility.Utility.ParseEnumOption(changedOptions.AsReadOnly(), "snapshot-provider", SnapshotProvider.AlphaVSS);
+            mssqlUtility.QueryDBsInfo(provider);
             Logging.Log.WriteInformationMessage(LOGTAG, "MsSqlDatabaseCount", "Found {0} databases on Microsoft SQL Server", mssqlUtility.DBs.Count);
 
             foreach(var db in mssqlUtility.DBs)

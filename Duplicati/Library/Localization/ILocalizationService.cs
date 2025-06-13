@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,13 +19,17 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
+using System.Globalization;
 
 namespace Duplicati.Library.Localization
 {
     public interface ILocalizationService
     {
+        /// <summary>
+        /// The culture of the localization service
+        /// </summary>
+        public CultureInfo Culture { get; }
+
         /// <summary>
         /// Localizes the string similar to how string.Format works
         /// </summary>

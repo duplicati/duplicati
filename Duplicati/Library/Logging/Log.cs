@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,7 +21,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading;
 
 namespace Duplicati.Library.Logging
 {
@@ -72,17 +72,12 @@ namespace Duplicati.Library.Logging
         /// <summary>
         /// The key used to assign the current scope into the current call-context
         /// </summary>
-        private const string LOGICAL_CONTEXT_KEY = "Duplicati:LoggingEntry";
+        private static readonly AsyncLocal<LogScope> _currentScope = new AsyncLocal<LogScope>();
 
         /// <summary>
         /// The root scope
         /// </summary>
         private static readonly LogScope m_root = new LogScope(null, new LogTagFilter(LogMessageType.Error, null, null), null, true);
-
-        /// <summary>
-        /// The stored log instances
-        /// </summary>
-        private static readonly Dictionary<string, LogScope> m_log_instances = new Dictionary<string, LogScope>();
 
         /// <summary>
         /// Static lock object to provide thread safe logging
@@ -216,15 +211,15 @@ namespace Duplicati.Library.Logging
             WriteMessage(LogMessageType.Verbose, tag, id, null, message, arguments);
         }
 
-		/// <summary>
+        /// <summary>
         /// Writes a verbose message to the current log destination
         /// </summary>
         /// <param name="message">The message to write</param>
         /// <param name="tag">The tag-type for this message</param>
         /// <param name="id">The message id</param>
-		/// <param name="ex">The exception to log</param>
+        /// <param name="ex">The exception to log</param>
         /// <param name="arguments">The message format arguments</param>
-		public static void WriteVerboseMessage(string tag, string id, Exception ex, string message, params object[] arguments)
+        public static void WriteVerboseMessage(string tag, string id, Exception ex, string message, params object[] arguments)
         {
             WriteMessage(LogMessageType.Verbose, tag, id, ex, message, arguments);
         }
@@ -428,11 +423,10 @@ namespace Duplicati.Library.Logging
         /// <param name="scope">The scope to finish.</param>
         internal static void CloseScope(LogScope scope)
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (CurrentScope == scope && scope != m_root)
                     CurrentScope = scope.Parent;
-                m_log_instances.Remove(scope.InstanceID);
             }
         }
 
@@ -444,32 +438,12 @@ namespace Duplicati.Library.Logging
             get
             {
                 lock (m_lock)
-                {
-                    var cur = CallContext.GetData(LOGICAL_CONTEXT_KEY) as string;
-                    if (cur == null || cur == m_root.InstanceID)
-                        return m_root;
-                    
-                    LogScope sc;
-                    if (!m_log_instances.TryGetValue(cur, out sc))
-                        throw new Exception("Unable to find log in lookup table, this may be caused by attempting to transport call contexts between AppDomains (eg. with remoting calls)");
-
-                    return sc;
-                }
+                    return _currentScope.Value ?? m_root;
             }
             private set
             {
                 lock (m_lock)
-                {
-                    if (value != null)
-                    {
-                        m_log_instances[value.InstanceID] = value;
-                        CallContext.SetData(LOGICAL_CONTEXT_KEY, value.InstanceID);
-                    }
-                    else
-                    {
-                        CallContext.SetData(LOGICAL_CONTEXT_KEY, null);
-                    }
-                }
+                    _currentScope.Value = value;
             }
         }
     }

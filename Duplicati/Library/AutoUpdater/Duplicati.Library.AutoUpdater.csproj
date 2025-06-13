@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
@@ -15,7 +15,7 @@
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <EmbeddedResource Include="AutoUpdateAppName.txt" />
     <EmbeddedResource Include="AutoUpdateSignKeys.txt" />
@@ -23,13 +23,6 @@
     <EmbeddedResource Include="AutoUpdateInstallIDTemplate.txt" />
     <EmbeddedResource Include="AutoUpdateMachineIDTemplate.txt" />
     <EmbeddedResource Include="AutoUpdateBuildChannel.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
 </Project>

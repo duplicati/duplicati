@@ -54,6 +54,12 @@ backupApp.directive('sourceFolderPicker', function() {
                 n.iconCls = 'x-tree-icon-desktop';
             else if (cp == compareablePath('%HOME%'))
                 n.iconCls = 'x-tree-icon-home';
+            else if (cp == compareablePath('%MY_MOVIES%'))
+                n.iconCls = 'x-tree-icon-mymovies';
+            else if (cp == compareablePath('%MY_DOWNLOADS%'))
+                n.iconCls = 'x-tree-icon-mydownloads';
+            else if (cp == compareablePath('%MY_PUBLIC%'))
+                n.iconCls = 'x-tree-icon-mypublic';
             else if (n.id.substr(0, 9) == "%HYPERV%\\" && n.id.length >= 10) {
                 n.iconCls = 'x-tree-icon-hypervmachine';
                 n.tooltip = gettextCatalog.getString("ID:") + " " + n.id.substring(9, n.id.length);
@@ -294,7 +300,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     if (p.substr(0, 1) == '%' && p.substr(p.length - 1, 1) == '%')
                         p += scope.dirsep;
 
-                    AppService.post('/filesystem/validate', {path: p}).then(function(data) {
+                    AppService.postJson('/filesystem/validate', {path: p}).then(function(data) {
                         defunctmap[compareablePath(data.config.data.path)] = false;
 
                     }, function(data) {
@@ -428,7 +434,7 @@ backupApp.directive('sourceFolderPicker', function() {
             if (!node.children && !node.loading) {
                 node.loading = true;
 
-                AppService.post('/filesystem?onlyfolders=false&showhidden=true', {path: node.id}).then(function(data) {
+                AppService.postJson('/filesystem?onlyfolders=false&showhidden=true', {path: node.id}).then(function(data) {
                     node.children = data.data;
                     node.loading = false;
 
@@ -520,7 +526,7 @@ backupApp.directive('sourceFolderPicker', function() {
         // Load filter groups
         AppUtils.loadFilterGroups();
 
-        AppService.post('/filesystem?onlyfolders=false&showhidden=true', {path: '/'}).then(function(data) {
+        AppService.postJson('/filesystem?onlyfolders=false&showhidden=true', {path: '/'}).then(function(data) {
 
             var usernode = {
                 text: gettextCatalog.getString('User data'),
@@ -584,7 +590,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     var node = {
                         leaf: true,
                         id: "%HYPERV%\\" + data.data[i].id,
-                        text: data.data[i].name};
+                        text: data.data[i].text};
 
                     cp = compareablePath(node.id);
                     displayMap[cp] = gettextCatalog.getString('Hyper-V Machine:') + " " + node.text;
@@ -616,7 +622,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     var node = {
                         leaf: true,
                         id: "%MSSQL%\\" + data.data[i].id,
-                        text: data.data[i].name
+                        text: data.data[i].text
                     };
 
                     cp = compareablePath(node.id);

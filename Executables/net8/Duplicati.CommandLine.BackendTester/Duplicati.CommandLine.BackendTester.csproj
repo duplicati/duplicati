@@ -4,18 +4,12 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <Description>A backend debugging tool for Duplicati</Description>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-  
-  <ItemGroup>	
-	  <ProjectReference Include="..\..\..\Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
-  </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <ProjectReference Include="..\..\..\Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
+    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
 
 </Project>

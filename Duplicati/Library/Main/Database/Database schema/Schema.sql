@@ -33,10 +33,12 @@ CREATE TABLE "Remotevolume" (
 	"Hash" TEXT NULL,
 	"State" TEXT NOT NULL,
 	"VerificationCount" INTEGER NOT NULL,
-	"DeleteGraceTime" INTEGER NOT NULL
+	"DeleteGraceTime" INTEGER NOT NULL,
+	"ArchiveTime" INTEGER NOT NULL
 );
 
 /* Index for detecting broken states */
+CREATE UNIQUE INDEX IF NOT EXISTS "RemotevolumeNameOnly" ON "Remotevolume" ("Name");
 CREATE UNIQUE INDEX "RemotevolumeName" ON "Remotevolume" ("Name", "State");
 
 /*
@@ -112,7 +114,7 @@ CREATE TABLE "FileLookup" (
 /* Fast path based lookup, single properties are auto-indexed */
 CREATE UNIQUE INDEX "FileLookupPath" ON "FileLookup" ("PrefixID", "Path", "BlocksetID", "MetadataID");
 CREATE INDEX "nn_FileLookup_BlockMeta" ON FileLookup ("BlocksetID", "MetadataID");
-
+CREATE INDEX "FileLookupMetadataID" ON "FileLookup" ("MetadataID");
 
 
 /*
@@ -173,6 +175,7 @@ CREATE TABLE "BlocksetEntry" (
 /* As this table is a cross table we need fast lookup */
 CREATE INDEX "BlocksetEntry_IndexIdsBackwards" ON "BlocksetEntry" ("BlockID");
 CREATE INDEX "nnc_BlocksetEntry" ON "BlocksetEntry" ("Index", "BlocksetID", "BlockID");
+CREATE INDEX IF NOT EXISTS "BlocksetEntry_BlocksetID" ON "BlocksetEntry" ("BlocksetID");
 
 /*
 The individual block hashes,
@@ -208,6 +211,9 @@ CREATE TABLE "DeletedBlock" (
 	"VolumeID" INTEGER NOT NULL
 );
 
+CREATE INDEX "DeletedBlockHashSize" ON "DeletedBlock" ("Hash", "Size");
+CREATE UNIQUE INDEX "DeletedBlockHashVolumeID" ON "DeletedBlock" ("Hash", "Size", "VolumeID");
+
 /*
 If extra copies of blocks are detected, 
 they are recorded here
@@ -216,6 +222,9 @@ CREATE TABLE "DuplicateBlock" (
     "BlockID" INTEGER NOT NULL,
     "VolumeID" INTEGER NOT NULL
 );
+
+CREATE UNIQUE INDEX "UniqueBlockVolumeDuplicateBlock"
+ON "DuplicateBlock" ("BlockID", "VolumeID");
 
 /*
 A metadata set, essentially a placeholder
@@ -287,4 +296,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (12);
+INSERT INTO "Version" ("Version") VALUES (17);

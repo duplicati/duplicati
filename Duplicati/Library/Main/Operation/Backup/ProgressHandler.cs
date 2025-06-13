@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -33,13 +33,13 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class ProgressHandler
     {
-        public static Task Run(BackupResults stat)
+        public static Task Run(Channels channels, BackupResults stat)
         {
             return AutomationExtensions.RunTask(new
             {
-                Input = Channels.ProgressEvents.ForRead
+                Input = channels.ProgressEvents.AsRead()
             },
-            
+
             async self =>
             {
                 var filesStarted = new Dictionary<string, long>();
@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         case EventType.FileClosed:
                             if (fileProgress.ContainsKey(t.Filepath))
                                 fileProgress[t.Filepath] = t.Length;
-                        
+
                             if (t.Filepath == current)
                             {
                                 stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             stat.OperationProgressUpdater.StartFile(current, filesStarted[current]);
                             if (fileProgress.ContainsKey(current) && fileProgress[current] > 0)
-                                stat.OperationProgressUpdater.UpdateFileProgress(fileProgress[current]);       
+                                stat.OperationProgressUpdater.UpdateFileProgress(fileProgress[current]);
                         }
                     }
                 }

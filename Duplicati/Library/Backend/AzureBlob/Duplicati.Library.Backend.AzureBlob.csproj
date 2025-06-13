@@ -3,32 +3,21 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Duplicati.Library.Backend.AzureBlob</RootNamespace>
   </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="3.0.4" />
-    <PackageReference Include="Microsoft.Azure.KeyVault.WebKey" Version="3.0.4" />
-    <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.0.1" />
-    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="11.0.1" />
-    <PackageReference Include="Microsoft.Azure.Storage.File" Version="11.0.1" />
-    <PackageReference Include="Microsoft.Azure.Storage.Queue" Version="11.0.1" />
-    <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.24" />
-    <PackageReference Include="Microsoft.Rest.ClientRuntime.Azure" Version="3.3.19" />
-    <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
+    <PackageReference Include="Azure.Storage.Common" Version="12.22.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
 </Project>

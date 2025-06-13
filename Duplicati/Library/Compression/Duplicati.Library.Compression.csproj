@@ -4,17 +4,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Compression</RootNamespace>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="sharpcompress" Version="0.36.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="managed-lzma">
-      <HintPath>..\..\..\thirdparty\ManagedLZMA\managed-lzma.dll</HintPath>
-    </Reference>
+    <PackageReference Include="sharpcompress" Version="0.39.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,10 +18,4 @@
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,11 +21,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Duplicati.Library.AutoUpdater;
-using Duplicati.Library.Common;
+using Duplicati.Library.DynamicLoader;
 using FilterGroup = Duplicati.Library.Utility.FilterGroup;
 
 namespace Duplicati.CommandLine
@@ -88,8 +89,8 @@ namespace Duplicati.CommandLine
                 //Force translation off if this is from the commandline
                 if (Program.FROM_COMMANDLINE)
                 {
-                    System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-                    System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
+                    CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+                    CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
                 }
             }
             catch
@@ -109,14 +110,13 @@ namespace Duplicati.CommandLine
                     topic = "include";
             }
 
-
             if (_document.ContainsKey(topic))
             {
                 string tp = _document[topic];
                 Library.Main.Options opts = new Library.Main.Options(new Dictionary<string, string>());
 
                 tp = tp.Replace("%CLI_EXE%", PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.CommandLine));
-                tp = tp.Replace("%VERSION%", License.VersionNumbers.Version);
+                tp = tp.Replace("%VERSION%", License.VersionNumbers.VERSION_NAME);
                 tp = tp.Replace("%BACKENDS%", string.Join(", ", Library.DynamicLoader.BackendLoader.Keys));
                 tp = tp.Replace("%APP_PATH%", Path.Combine(UpdaterManager.INSTALLATIONDIR, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.CommandLine)));
                 tp = tp.Replace("%PATH_SEPARATOR%", System.IO.Path.PathSeparator.ToString());
@@ -260,6 +260,18 @@ namespace Duplicati.CommandLine
                     }
                 }
 
+                if (tp.Contains("%SECRETPROVIDERS%"))
+                {
+                    var lines = new List<string>();
+                    foreach (var module in SecretProviderLoader.Keys)
+                    {
+                        var metadata = SecretProviderLoader.GetProviderMetadata(module);
+                        lines.Add($"- {module}: {metadata.DisplayName}");
+                    }
+
+                    tp = tp.Replace("%SECRETPROVIDERS%", string.Join(Environment.NewLine, lines.ToArray()));
+                }
+
                 if (NAMEDOPTION_REGEX.IsMatch(tp))
                     tp = NAMEDOPTION_REGEX.Replace(tp, new Matcher().MathEvaluator);
 
@@ -297,6 +309,14 @@ namespace Duplicati.CommandLine
                         if (string.Equals(mod.Key, topic, StringComparison.OrdinalIgnoreCase))
                         {
                             PrintGenericModule(mod, lines);
+                            break;
+                        }
+
+                if (lines.Count == 0)
+                    foreach (Duplicati.Library.Interface.ISecretProvider mod in SecretProviderLoader.Modules)
+                        if (string.Equals(mod.Key, topic, StringComparison.OrdinalIgnoreCase))
+                        {
+                            PrintSecretProvider(mod, lines);
                             break;
                         }
 
@@ -395,6 +415,18 @@ namespace Duplicati.CommandLine
             lines.Add("");
         }
 
+        private static void PrintSecretProvider(Duplicati.Library.Interface.ISecretProvider mod, List<string> lines)
+        {
+            lines.Add($"{mod.Key}: {mod.Description}");
+            if (mod.SupportedCommands != null && mod.SupportedCommands.Count > 0)
+            {
+                lines.Add(" " + Strings.Program.SupportedOptionsHeader);
+                foreach (Library.Interface.ICommandLineArgument arg in mod.SupportedCommands)
+                    Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
+            }
+            lines.Add("");
+        }
+
         private static void PrintFormatted(TextWriter outwriter, IEnumerable<string> lines)
         {
             int windowWidth = 80;
@@ -432,10 +464,14 @@ namespace Duplicati.CommandLine
                     len -= leadingSpaces.Length;
                     if (len < c.Length)
                     {
-                        int ix = c.LastIndexOf(" ", len, StringComparison.Ordinal);
+                        int ix = c.LastIndexOf(' ', len);
                         if (ix > 0)
                             len = ix;
                     }
+
+                    var lfix = c.IndexOf('\n');
+                    if (lfix >= 0 && lfix < len)
+                        len = lfix + 1;
 
                     outwriter.WriteLine(leadingSpaces + c.Substring(0, len).Trim());
                     c = c.Remove(0, len);

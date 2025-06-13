@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -52,6 +52,7 @@ namespace Duplicati.Library.Common.IO
         bool FileExists(string path);
         long FileLength(string path);
         FileStream FileOpenRead(string path);
+        FileStream FileOpenReadWrite(string path);
         FileStream FileOpenWrite(string path);
         FileStream FileCreate(string path);
         FileAttributes GetFileAttributes(string path);
@@ -81,6 +82,16 @@ namespace Duplicati.Library.Common.IO
 
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);
         Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink);
+        /// <summary>
+        /// Sets the permission to read-write only for the current user.
+        /// </summary>
+        /// <param name="path">The file to set permissions on.</param>
+        void FileSetPermissionUserRWOnly(string path);
+        /// <summary>
+        /// Sets the permission to read-write only for the current user.
+        /// </summary>
+        /// <param name="path">The directory to set permissions on.</param>
+        void DirectorySetPermissionUserRWOnly(string path);
     }
 
 }

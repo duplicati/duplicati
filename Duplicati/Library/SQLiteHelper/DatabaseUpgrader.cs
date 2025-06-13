@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -27,6 +27,7 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using Duplicati.Library.SQLiteHelper.DBUpdates;
 using Duplicati.Library.SQLiteHelper.DBSchemaUpgrades;
+using System.Globalization;
 
 namespace Duplicati.Library.SQLiteHelper
 {
@@ -59,7 +60,7 @@ namespace Duplicati.Library.SQLiteHelper
     {
         //This is the "folder" where the embedded resources can be found
         private const string FOLDER_NAME = "Database_schema";
-        
+
         //This is the name of the schema sql
         private const string SCHEMA_NAME = "Schema.sql";
 
@@ -203,7 +204,6 @@ namespace Duplicati.Library.SQLiteHelper
                 {
                     //See if the version table is present,
                     cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER WHERE Name LIKE 'Version'";
-
                     int count = Convert.ToInt32(cmd.ExecuteScalar());
 
                     if (count == 0)
@@ -308,7 +308,7 @@ namespace Duplicati.Library.SQLiteHelper
                         }
 
                         //Update databaseversion, so we don't run the scripts again
-                        cmd.CommandText = "Update version SET Version = " + versions.Count.ToString();
+                        cmd.CommandText = "Update version SET Version = " + versions.Count.ToString(CultureInfo.InvariantCulture);
                         cmd.ExecuteNonQuery();
                     }
                     catch (Exception ex)

@@ -11,10 +11,13 @@ Duplicati/Localization/*.new.csv
 Duplicati/Localization/*.updated.csv
 Duplicati/Localization/report.*.xml
 Duplicati/Server/webroot/extjs-*
+Duplicati/Server/webroot/*/node_modules/
 packages
+node_modules
 changelog-news.txt
 .idea/
 .vs/
 /publish/
 ReleaseBuilder/build-temp/
-ReleaseBuilder/Resources/Windows/binfiles.wxs
+ReleaseBuilder/Resources/Windows/TrayIcon/binfiles.wxs
+ReleaseBuilder/Resources/Windows/Agent/binfiles.wxs

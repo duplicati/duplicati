@@ -4,14 +4,14 @@
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.IO</RootNamespace>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AlphaVSS" Version="2.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
-    <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" />    
+    <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,12 +19,4 @@
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
 </Project>
-

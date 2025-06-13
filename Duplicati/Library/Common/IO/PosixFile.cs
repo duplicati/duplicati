@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -29,19 +29,19 @@ namespace Duplicati.Library.Common.IO
     [SupportedOSPlatform("macOS")]
     public static class PosixFile
     {
-    
+
         private static readonly bool SUPPORTS_LLISTXATTR;
-        
-        static PosixFile ()
+
+        static PosixFile()
         {
             bool works = false;
             try
-            { 
+            {
                 string[] v;
                 Mono.Unix.Native.Syscall.llistxattr("/", out v);
                 works = true;
             }
-            catch (EntryPointNotFoundException e)
+            catch (EntryPointNotFoundException)
             {
             }
             catch
@@ -49,13 +49,13 @@ namespace Duplicati.Library.Common.IO
             }
             SUPPORTS_LLISTXATTR = works;
         }
-        
+
         /// <summary>
         /// Opens the file and honors advisory locking.
         /// </summary>
         /// <returns>A open stream that references the file</returns>
         /// <param name="path">The full path to the file</param>
-        public static System.IO.Stream OpenExclusive(string path, System.IO.FileAccess mode) 
+        public static System.IO.Stream OpenExclusive(string path, System.IO.FileAccess mode)
         {
             return OpenExclusive(path, mode, (int)Mono.Unix.Native.FilePermissions.DEFFILEMODE);
         }
@@ -66,7 +66,7 @@ namespace Duplicati.Library.Common.IO
         /// <returns>A open stream that references the file</returns>
         /// <param name="path">The full path to the file</param>
         /// <param name="filemode">The file create mode</param>
-        public static System.IO.Stream OpenExclusive(string path, System.IO.FileAccess mode, int filemode) 
+        public static System.IO.Stream OpenExclusive(string path, System.IO.FileAccess mode, int filemode)
         {
             Flock lck;
             lck.l_len = 0;
@@ -74,67 +74,86 @@ namespace Duplicati.Library.Common.IO
             lck.l_start = 0;
             lck.l_type = LockType.F_WRLCK;
             lck.l_whence = SeekFlags.SEEK_SET;
-                        
+
             OpenFlags flags = OpenFlags.O_CREAT;
-            if (mode == System.IO.FileAccess.Read) 
+            if (mode == System.IO.FileAccess.Read)
             {
                 lck.l_type = LockType.F_RDLCK;
                 flags |= OpenFlags.O_RDONLY;
-            } else if (mode == System.IO.FileAccess.Write) {
+            }
+            else if (mode == System.IO.FileAccess.Write)
+            {
                 flags |= OpenFlags.O_WRONLY;
-            } else {
+            }
+            else
+            {
                 flags |= OpenFlags.O_RDWR;
             }
-            
+
             int fd = Syscall.open(path, flags, (Mono.Unix.Native.FilePermissions)filemode);
-            if (fd > 0) 
+            if (fd > 0)
             {
                 //This does not work on OSX, it gives ENOTTY
                 //int res = Syscall.fcntl(fd, Mono.Unix.Native.FcntlCommand.F_SETLK, ref lck);
-                
+
                 //This is the same (at least for our purpose, and works on OSX)
                 int res = Syscall.lockf(fd, LockfCommand.F_TLOCK, 0);
 
                 //If we have the lock, return the stream
                 if (res == 0)
                     return new Mono.Unix.UnixStream(fd);
-                else 
+                else
                 {
                     Mono.Unix.Native.Syscall.close(fd);
                     throw new LockedFileException(path, mode);
                 }
             }
-            
+
             throw new BadFileException(path);
         }
 
         [Serializable]
-        private class BadFileException : System.IO.IOException
+        public abstract class PosixException : System.IO.IOException
+        {
+            public readonly int ErrorCode;
+            public readonly Errno Errno;
+            private readonly string _message;
+            public override string Message => _message;
+            protected PosixException(string message)
+            {
+                Errno = Syscall.GetLastError();
+                ErrorCode = (int)Errno;
+                _message = string.Format("{0}, error: {1} ({2})", message, Errno, ErrorCode);
+            }
+        }
+
+        [Serializable]
+        private class BadFileException : PosixException
         {
             public BadFileException(string filename)
-                : base(string.Format("Unable to open the file \"{0}\", error: {1} ({2})", filename, Syscall.GetLastError(), (int)Syscall.GetLastError()))
+                : base(string.Format("Unable to open the file \"{0}\"", filename))
             {
             }
         }
 
         [Serializable]
-        private class LockedFileException : System.IO.IOException
+        private class LockedFileException : PosixException
         {
             public LockedFileException(string filename, System.IO.FileAccess mode)
-                : base(string.Format("Unable to open the file \"{0}\" in mode {1}, error: {2} ({3})", filename, mode, Syscall.GetLastError(), (int)Syscall.GetLastError()))
+                : base(string.Format("Unable to open the file \"{0}\" in mode {1}", filename, mode))
             {
             }
         }
 
         [Serializable]
-        private class FileAccesException : System.IO.IOException
+        private class FileAccesException : PosixException
         {
             public FileAccesException(string filename, string method)
-                : base(string.Format("Unable to access the file \"{0}\" with method {1}, error: {2} ({3})", filename, method, Syscall.GetLastError(), (int)Syscall.GetLastError()))
+                : base(string.Format("Unable to access the file \"{0}\" with method {1}", filename, method))
             {
             }
         }
-        
+
         /// <summary>
         /// Gets the symlink target for the given path
         /// </summary>
@@ -159,7 +178,7 @@ namespace Duplicati.Library.Common.IO
             if (Mono.Unix.Native.Syscall.symlink(target, path) != 0)
                 throw new System.IO.IOException(string.Format("Unable to create symlink from \"{0}\" to \"{1}\", error: {2} ({3})", path, target, Syscall.GetLastError(), (int)Syscall.GetLastError()));
         }
-        
+
         /// <summary>
         /// Enum that describes the different filesystem entry types
         /// </summary>
@@ -174,7 +193,7 @@ namespace Duplicati.Library.Common.IO
             BlockDevice,
             Unknown
         }
-        
+
         /// <summary>
         /// Gets the type of the file.
         /// </summary>
@@ -201,8 +220,8 @@ namespace Duplicati.Library.Common.IO
             else
                 return FileType.Unknown;
         }
-        
-        
+
+
         /// <summary>
         /// Gets the extended attributes.
         /// </summary>
@@ -230,16 +249,16 @@ namespace Duplicati.Library.Common.IO
 
                 throw new FileAccesException(path, use_llistxattr ? "llistxattr" : "listxattr");
             }
-            
+
             var dict = new Dictionary<string, byte[]>();
-            foreach(var s in values)
+            foreach (var s in values)
             {
                 byte[] v;
                 var n = SUPPORTS_LLISTXATTR ? Mono.Unix.Native.Syscall.lgetxattr(path, s, out v) : Mono.Unix.Native.Syscall.getxattr(path, s, out v);
                 if (n > 0)
                     dict.Add(s, v);
             }
-            
+
             return dict;
         }
 
@@ -253,7 +272,7 @@ namespace Duplicati.Library.Common.IO
         {
             Mono.Unix.Native.Syscall.setxattr(path, key, value);
         }
-        
+
         /// <summary>
         /// Describes the basic user/group/perm tuplet for a file or folder
         /// </summary>
@@ -292,7 +311,7 @@ namespace Duplicati.Library.Common.IO
                 }
             }
         }
-        
+
         /// <summary>
         /// Gets the basic user/group/perm tuplet for a file or folder
         /// </summary>

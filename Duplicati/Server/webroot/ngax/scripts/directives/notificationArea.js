@@ -60,7 +60,14 @@ backupApp.directive('notificationArea', function() {
 
         $scope.doDownloadBugreport = function(item) {
             var id = item.Action.substr('bug-report:created:'.length);
-            item.DownloadLink = $scope.DownloadLink = AppService.get_bugreport_url(id);
+            AppService.get_bugreport_url(id).then(
+                function(url) {
+                    item.DownloadLink = $scope.DownloadLink = url;
+                },
+                function(resp) {
+                    DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to get bug report URL: {{message}}', { message: AppService.responseErrorMessage(resp) }));
+                }
+            );
         };
     }
   }

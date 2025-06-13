@@ -14,6 +14,7 @@ root = true
 # All Files
 [*]
 charset = utf-8
+end_of_line = lf
 indent_style = space
 indent_size = 4
 insert_final_newline = true
@@ -448,3 +449,10 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 ##########################################
+
+[*.aspx.designer.cs]
+trim_trailing_whitespace = false
+end_of_line = crlf
+
+[*.js]
+indent_size = 2

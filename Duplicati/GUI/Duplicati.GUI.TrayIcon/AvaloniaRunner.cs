@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,6 +18,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -40,7 +42,8 @@ namespace Duplicati.GUI.TrayIcon
     public class AvaloniaRunner : TrayIconBase
     {
         private static readonly string LOGTAG = Log.LogTagFromType<AvaloniaRunner>();
-        private AvaloniaApp application;
+        private AvaloniaApp? application;
+        private bool closed = false;
         private ProcessBasedActionDelay actionDelayer = new ProcessBasedActionDelay();
         private IEnumerable<AvaloniaMenuItem> menuItems = Enumerable.Empty<AvaloniaMenuItem>();
 
@@ -49,10 +52,10 @@ namespace Duplicati.GUI.TrayIcon
             base.Init(args);
         }
 
-        protected override void UpdateUIState(Action action)
+        protected override Task UpdateUIState(Action action)
             => RunOnUIThread(action);
 
-        internal void RunOnUIThread(Action action)
+        internal Task RunOnUIThread(Action action)
             => actionDelayer.ExecuteAction(() =>
             {
                 try
@@ -68,6 +71,9 @@ namespace Duplicati.GUI.TrayIcon
 
         private void RunOnUIThreadInternal(Action action)
         {
+            if (closed)
+                return;
+
             if (Dispatcher.UIThread.CheckAccess())
                 action();
             else
@@ -106,6 +112,8 @@ namespace Duplicati.GUI.TrayIcon
 #endif
 
             application = builder.Instance as AvaloniaApp;
+            if (application == null)
+                throw new InvalidOperationException("Failed to create Avalonia app");
             application.SetMenu(menuItems);
             application.Configure();
 
@@ -114,7 +122,7 @@ namespace Duplicati.GUI.TrayIcon
 
         private async void CheckForAppInitialized(IClassicDesktopStyleApplicationLifetime lifetime)
         {
-            Exception lastEx = null;
+            Exception? lastEx = null;
 
             // Jump out of the UI thread, ot ensure that the check is done with posting to the UI thread,
             // as opposed to just calling the method directly
@@ -164,7 +172,7 @@ namespace Duplicati.GUI.TrayIcon
             return new AvaloniaMenuItem(this, text, icon, callback, subitems);
         }
 
-        protected override void NotifyUser(string title, string message, NotificationType type)
+        public override void NotifyUser(string title, string message, NotificationType type)
         {
             //var icon = Win32NativeNotifyIcon.InfoFlags.NIIF_INFO;
 
@@ -180,13 +188,16 @@ namespace Duplicati.GUI.TrayIcon
                     //icon = Win32NativeNotifyIcon.InfoFlags.NIIF_ERROR;
                     break;
             }
-
-            //m_ntfIcon.ShowBalloonTip(title, message, icon);
         }
 
         protected override void Exit()
         {
-            UpdateUIState(() => this.application?.Shutdown());
+            UpdateUIState(() =>
+            {
+                this.closed = true;
+                this.application?.Shutdown();
+
+            });
         }
 
         protected override void SetIcon(TrayIcons icon)
@@ -209,10 +220,10 @@ namespace Duplicati.GUI.TrayIcon
 
         internal static string GetThemePath()
         {
-            // var isDark = string.Equals(Application.Current.ActualThemeVariant.ToString(), "Dark", StringComparison.OrdinalIgnoreCase);
+            var isDark = string.Equals(Application.Current?.ActualThemeVariant.ToString(), "Dark", StringComparison.OrdinalIgnoreCase);
 
             if (OperatingSystem.IsMacOS())
-                return "macos";
+                return isDark ? "macos/dark" : "macos/light";
             if (OperatingSystem.IsWindows())
                 return "windows";
 
@@ -220,15 +231,22 @@ namespace Duplicati.GUI.TrayIcon
             return "linux";
         }
 
-
+        private static Dictionary<string, Bitmap> BitmapCache = new Dictionary<string, Bitmap>();
         internal static Bitmap LoadBitmap(string iconName)
         {
-            return new Bitmap(AssetLoader.Open(new Uri($"avares://{Assembly.GetExecutingAssembly().FullName}/Assets/icons/{GetThemePath()}/" + iconName)));
+            if (BitmapCache.TryGetValue(iconName, out var bitmap))
+                return bitmap;
+
+            return BitmapCache[iconName] = new Bitmap(AssetLoader.Open(new Uri($"avares://{Assembly.GetExecutingAssembly().FullName}/Assets/icons/{GetThemePath()}/" + iconName)));
         }
 
+        private static Dictionary<string, WindowIcon> IconCache = new Dictionary<string, WindowIcon>();
         internal static WindowIcon LoadIcon(string iconName)
         {
-            return new WindowIcon(LoadBitmap(iconName));
+            if (IconCache.TryGetValue(iconName, out var icon))
+                return icon;
+
+            return IconCache[iconName] = new WindowIcon(LoadBitmap(iconName));
         }
     }
 
@@ -237,11 +255,12 @@ namespace Duplicati.GUI.TrayIcon
 
         public string Text { get; private set; }
         public Action Callback { get; private set; }
-        public IList<IMenuItem> SubItems { get; private set; }
+        public IList<IMenuItem>? SubItems { get; private set; }
         public bool Enabled { get; private set; }
         public MenuIcons Icon { get; private set; }
         public bool IsDefault { get; private set; }
-        private NativeMenuItem nativeMenuItem;
+        public bool Hidden { get; private set; }
+        private NativeMenuItem? nativeMenuItem;
         private readonly AvaloniaRunner parent;
 
         public AvaloniaMenuItem(AvaloniaRunner parent, string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
@@ -278,6 +297,9 @@ namespace Duplicati.GUI.TrayIcon
         /// </summary>
         private void UpdateIcon()
         {
+            if (nativeMenuItem == null)
+                return;
+
             nativeMenuItem.Icon = this.Icon switch
             {
                 MenuIcons.Status => AvaloniaRunner.LoadBitmap("context-menu-open.png"),
@@ -300,6 +322,14 @@ namespace Duplicati.GUI.TrayIcon
             this.IsDefault = value;
             // Not currently supported by Avalonia, 
             // used to set the menu bold on Windows to indicate the default entry
+        }
+
+        public void SetHidden(bool hidden)
+        {
+            this.Hidden = hidden;
+            if (nativeMenuItem != null)
+                parent.RunOnUIThread(() => nativeMenuItem.IsVisible = !this.Hidden);
+
         }
         #endregion
 
@@ -324,9 +354,9 @@ namespace Duplicati.GUI.TrayIcon
 
     public class AvaloniaApp : Application
     {
-        private Avalonia.Controls.TrayIcon trayIcon;
+        private Avalonia.Controls.TrayIcon? trayIcon;
 
-        private List<AvaloniaMenuItem> menuItems;
+        private List<AvaloniaMenuItem>? menuItems;
 
         public override void Initialize()
         {
@@ -343,6 +373,9 @@ namespace Duplicati.GUI.TrayIcon
                 case TrayIcons.IdleError:
                     this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-error.png");
                     break;
+                case TrayIcons.IdleWarning:
+                    this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-warning.png");
+                    break;
                 case TrayIcons.Paused:
                 case TrayIcons.PausedError:
                     this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-pause.png");
@@ -355,13 +388,17 @@ namespace Duplicati.GUI.TrayIcon
                 default:
                     this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal.png");
                     break;
+                case TrayIcons.Disconnected:
+                    this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-disconnected.png");
+                    break;
             }
         }
 
         public void Configure()
         {
             this.Name = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName;
-            this.trayIcon.ToolTipText = this.Name;
+            if (this.trayIcon != null)
+                this.trayIcon.ToolTipText = this.Name;
         }
 
         public void SetMenu(IEnumerable<AvaloniaMenuItem> menuItems)
@@ -377,6 +414,18 @@ namespace Duplicati.GUI.TrayIcon
                     menu.Add(item.GetNativeItem());
                 }
                 trayIcon.Menu = menu;
+                trayIcon.Clicked -= HandleTrayIconClick;
+                trayIcon.Clicked += HandleTrayIconClick;
+            }
+        }
+
+        private readonly ClickDebouncer _clickDebouncer = new ClickDebouncer();
+
+        private void HandleTrayIconClick(object? sender, EventArgs e)
+        {
+            if (_clickDebouncer.ShouldProcessClick())
+            {
+                this.menuItems?.FirstOrDefault(x => x.IsDefault)?.Callback();
             }
         }
 
@@ -412,10 +461,10 @@ namespace Duplicati.GUI.TrayIcon
         public bool IsEnabled(LogEventLevel level, string area)
             => level >= _minLevel;
 
-        public void Log(LogEventLevel level, string area, object source, string messageTemplate)
-            => Log(level, area, source, messageTemplate, null);
+        public void Log(LogEventLevel level, string area, object? source, string messageTemplate)
+            => Log(level, area, source, messageTemplate, []);
 
-        public void Log(LogEventLevel level, string area, object source, string messageTemplate, params object[] propertyValues)
+        public void Log(LogEventLevel level, string area, object? source, string messageTemplate, params object?[] propertyValues)
             => Console.WriteLine($"Avalonia [{level}]: {source} {messageTemplate} {string.Join(" ", propertyValues)}");
     }
 

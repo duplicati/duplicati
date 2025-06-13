@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,10 +22,11 @@
 using System;
 using CoCoL;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using System.Net;
+using System.Net.Http;
+using Duplicati.Library.Utility;
+using System.Threading;
+using Timeout = System.Threading.Timeout;
 
 namespace Duplicati.Library.UsageReporter
 {
@@ -47,13 +48,19 @@ namespace Duplicati.Library.UsageReporter
         private const string UPLOAD_URL = "https://usage-reporter.duplicati.com/api/v1/report";
 
         /// <summary>
+        /// The default timeout in seconds for report uploads
+        /// </summary>
+        private const int UPLOAD_OPERATION_TIMEOUT_SECONDS = 60;
+
+
+        /// <summary>
         /// Runs the upload process
         /// </summary>
         /// <returns>A tuple with the completion task and the channel to use</returns>
         public static Tuple<Task, IWriteChannel<string>> Run()
         {
             var channel = ChannelManager.CreateChannel<string>(
-                buffersize: MAX_PENDING_UPLOADS, 
+                buffersize: MAX_PENDING_UPLOADS,
                 pendingWritersOverflowStrategy: QueueOverflowStrategy.LIFO
             );
 
@@ -70,23 +77,22 @@ namespace Duplicati.Library.UsageReporter
                         {
                             if (File.Exists(f))
                             {
-                                var req = (HttpWebRequest)WebRequest.Create(UPLOAD_URL);
-                                req.Method = "POST";
-                                req.ContentType = "application/json; charset=utf-8";
-
                                 int rc;
                                 using (var fs = File.OpenRead(f))
                                 {
                                     if (fs.Length > 0)
                                     {
-                                        req.ContentLength = fs.Length;
-                                        var areq = new Library.Utility.AsyncHttpRequest(req);
+                                        using var request = new HttpRequestMessage(HttpMethod.Post, UPLOAD_URL);
 
-                                        using (var rs = areq.GetRequestStream())
-                                            Library.Utility.Utility.CopyStream(fs, rs);
+                                        request.Content = new StreamContent(fs);
 
-                                        using (var resp = (HttpWebResponse)areq.GetResponse())
-                                            rc = (int)resp.StatusCode;
+                                        using var timeoutToken = new CancellationTokenSource();
+                                        timeoutToken.CancelAfter(TimeSpan.FromSeconds(UPLOAD_OPERATION_TIMEOUT_SECONDS));
+
+                                        using var client = HttpClientHelper.CreateClient();
+                                        // Explicitly keeping the default 100s timeout
+                                        using var response = await client.UploadStream(request, timeoutToken.Token);
+                                        rc = (int)response.StatusCode;
                                     }
                                     else
                                         rc = 200;
