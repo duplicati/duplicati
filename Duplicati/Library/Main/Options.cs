@@ -1531,22 +1531,7 @@ namespace Duplicati.Library.Main
         /// Gets a list of loaded modules, in their activation order
         /// </summary>
         public IEnumerable<IGenericModule> LoadedModules => m_loadedModules
-            .Select(module => (Priority: module is IGenericPriorityModule pm ? pm.Priority : 0, Module: module))
-            .Select(x => (x.Priority, x.Module, Group: x.Priority switch
-            {
-                > 0 => 1,
-                < 0 => -1,
-                _ => 0
-            }))
-            .GroupBy(x => x.Group)
-            .OrderByDescending(g => g.Key)
-            .SelectMany(g =>
-            {
-                // Keep the order of modules with priority 0 as is, but sort the others
-                if (g.Key == 0)
-                    return g.AsEnumerable();
-                return g.OrderByDescending(x => x.Priority);
-            }).Select(x => x.Module);
+            .OrderByDescending(x => (x as IGenericPriorityModule)?.Priority ?? 0);
 
         /// <summary>
         /// Adds a loaded module to the list of loaded modules.
