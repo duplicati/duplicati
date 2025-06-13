@@ -88,7 +88,7 @@ public class WebsocketAuthenticator(
 
             if (connection.Value + MaxAuthTime < DateTime.UtcNow)
             {
-                Log.WriteInformationMessage(LOGTAG, "WebsocketConnectionTimeout", $"WebSocket connection timed out after {MaxAuthTime.TotalSeconds} seconds.");
+                Log.WriteVerboseMessage(LOGTAG, "WebsocketConnectionTimeout", $"WebSocket connection timed out after {MaxAuthTime.TotalSeconds} seconds.");
                 await connection.Key.CloseAsync((WebSocketCloseStatus)4401, "User is not authenticated!", CancellationToken.None);
                 _connections.TryRemove(connection.Key, out _);
                 continue;
@@ -123,7 +123,7 @@ public class WebsocketAuthenticator(
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "WebsocketDeserializationError", ex, $"Failed to deserialize websocket message: {ex.Message}");
+            Log.WriteVerboseMessage(LOGTAG, "WebsocketDeserializationError", ex, $"Failed to deserialize websocket message: {ex.Message}");
         }
 
         if (message == null)
@@ -153,12 +153,12 @@ public class WebsocketAuthenticator(
 
         if (!isValid)
         {
-            Log.WriteWarningMessage(LOGTAG, "WebsocketInvalidToken", exception, $"WebSocket connection with invalid token: {message.Token}");
+            Log.WriteVerboseMessage(LOGTAG, "WebsocketInvalidToken", exception, $"WebSocket connection with invalid token");
             await SendRequestReply(socket, "Invalid token", false);
             return;
         }
 
-        Log.WriteInformationMessage(LOGTAG, "WebsocketAuthenticated", $"WebSocket connection authenticated with token: {message.Token}");
+        Log.WriteVerboseMessage(LOGTAG, "WebsocketAuthenticated", $"WebSocket connection authenticated with token");
         await SendRequestReply(socket, "Authenticated successfully", true);
         await websocketAccessor.AddConnection(socket, false);
 
