@@ -278,6 +278,7 @@ public class SendTelegramMessage : ReportHelper
             timeoutToken.CancelAfter(REQUEST_TIMEOUT);
 
             using var client = HttpClientHelper.CreateClient();
+            client.Timeout = Timeout.InfiniteTimeSpan;
             var response = await client.GetAsync(url, timeoutToken.Token).ConfigureAwait(false);
             var responseContent = await response.Content.ReadAsStringAsync(timeoutToken.Token).ConfigureAwait(false);
 

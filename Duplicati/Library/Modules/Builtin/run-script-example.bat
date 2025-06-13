@@ -136,10 +136,10 @@ REM Example script
 REM ###############################################################################
 
 REM We read a few variables first.
-SET EVENTNAME=%DUPLICATI__EVENTNAME%
-SET OPERATIONNAME=%DUPLICATI__OPERATIONNAME%
-SET REMOTEURL=%DUPLICATI__REMOTEURL%
-SET LOCALPATH=%DUPLICATI__LOCALPATH%
+SET "EVENTNAME=%DUPLICATI__EVENTNAME%"
+SET "OPERATIONNAME=%DUPLICATI__OPERATIONNAME%"
+SET "REMOTEURL=%DUPLICATI__REMOTEURL%"
+SET "LOCALPATH=%DUPLICATI__LOCALPATH%"
 
 REM Basic setup, we use the same file for both before and after,
 REM so we need to figure out which event has happened

@@ -226,6 +226,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
+            m_isConfigured = false;
             if (!ConfigureModule(commandlineOptions))
                 return;
 

@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend;
 
 public class Jottacloud : IStreamingBackend
 {
-    private static readonly string TOKEN_URL = OAuthHelperHttpClient.OAUTH_LOGIN_URL("jottacloud");
+    private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("jottacloud", null);
     private const string JFS_ROOT = "https://jfs.jottacloud.com/jfs";
     private const string JFS_ROOT_UPLOAD = "https://up.jottacloud.com/jfs"; // Separate host for uploading files
     private const string JFS_BUILTIN_DEVICE = "Jotta"; // The built-in device used for the built-in Sync and Archive mount points.
@@ -177,7 +177,7 @@ public class Jottacloud : IStreamingBackend
     {
         if (m_oauth == null || m_urls == null)
         {
-            m_oauth = await JottacloudAuthHelper.CreateAsync(m_authIdOptions.AuthId!, cancelToken).ConfigureAwait(false);
+            m_oauth = await JottacloudAuthHelper.CreateAsync(m_authIdOptions.AuthId!, m_authIdOptions.OAuthUrl, cancelToken).ConfigureAwait(false);
 
             var url_device = JFS_ROOT + "/" + m_oauth.Username + "/" + m_device;
             var url = url_device + "/" + m_mountPoint + "/" + m_path;

@@ -26,6 +26,8 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Logging;
+using Duplicati.Library.Utility;
+using Uri = System.Uri;
 
 namespace Duplicati.Library.RemoteControl;
 
@@ -566,11 +568,11 @@ public class KeepRemoteConnection : IDisposable
     /// <returns>An awaitable task</returns>
     private async Task RefreshCertificates(CancellationToken cancelToken)
     {
-        using var client = new HttpClient();
-        var response = await client.GetAsync(_certificateUrl);
+        using var client = HttpClientHelper.CreateClient(); // We won't set infiniteTimeout and keep the default 100s timeout
+        var response = await client.GetAsync(_certificateUrl, cancelToken);
         if (response.IsSuccessStatusCode)
         {
-            using var stream = await response.Content.ReadAsStreamAsync(cancelToken);
+            await using var stream = await response.Content.ReadAsStreamAsync(cancelToken);
             var serverKeys = await JsonSerializer.DeserializeAsync<IEnumerable<MiniServerCertificate>>(stream, options: RegisterForRemote.JsonOptions, cancellationToken: cancelToken);
             if (serverKeys != null && serverKeys.Any())
             {

@@ -38,7 +38,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
         private const string TEAMDRIVE_ID = "googledrive-teamdrive-id";
         private const string FOLDER_MIMETYPE = "application/vnd.google-apps.folder";
 
-        private static readonly string TOKEN_URL = OAuthHelperHttpClient.OAUTH_LOGIN_URL("googledrive");
+        private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("googledrive", null);
 
         private readonly string m_path;
         private readonly string? m_teamDriveID;
@@ -67,7 +67,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             m_timeouts = TimeoutOptionsHelper.Parse(options);
             m_teamDriveID = options.GetValueOrDefault(TEAMDRIVE_ID);
-            m_oauth = new OAuthHelperHttpClient(auth.AuthId!, this.ProtocolKey) { AutoAuthHeader = true };
+            m_oauth = new OAuthHelperHttpClient(auth.AuthId!, this.ProtocolKey, auth.OAuthUrl) { AutoAuthHeader = true };
             m_filecache = new Dictionary<string, GoogleDriveFolderItem[]>();
         }
 

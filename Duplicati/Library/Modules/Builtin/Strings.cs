@@ -39,8 +39,6 @@ namespace Duplicati.Library.Modules.Builtin.Strings
     {
         public static string Description { get { return LC.L(@"This module exposes a number of common properties that can be used to change the way backends are configured"); } }
         public static string DisplayName { get { return LC.L(@"Configure backend options"); } }
-        public static string OauthurlLong { get { return LC.L(@"Duplicati uses an external server to support the OAuth authentication flow. If you have set up your own Duplicati OAuth server, you can supply the refresh URL."); } }
-        public static string OauthurlShort { get { return LC.L(@"Alternate OAuth URL"); } }
     }
     internal static class HyperVOptions
     {
@@ -122,6 +120,8 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
         public static string SendMailSuccess(string server) { return LC.L(@"Email sent successfully using server: {0}", server); }
         public static string SendmailextraparametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
         public static string SendmailextraparametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
+        public static string InvalidRecipient(string recipient) => LC.L(@"The recipient ""{0}"" is not a valid email address. Please use the format ""Name <user@example.com>"" or just ""user@example.com""", recipient);
+        public static string NoRecipientsSpecified(string optionname) => LC.L(@"No recipients specified. Please use the option --{0} to specify the recipients.", optionname);
     }
     internal static class SendJabberMessage
     {

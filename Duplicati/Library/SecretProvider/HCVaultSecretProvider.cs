@@ -215,7 +215,8 @@ public class HCVaultSecretProvider : ISecretProvider
         if (_client is null || _secrets is null)
             throw new InvalidOperationException("The secret provider has not been initialized");
 
-        using var client = new HttpClient();
+        using var client = HttpClientHelper.CreateClient();
+        // We will not set the timeout here, keeping the 100s default one
         var result = new Dictionary<string, string>();
         var missing = new HashSet<string>(keys);
 
