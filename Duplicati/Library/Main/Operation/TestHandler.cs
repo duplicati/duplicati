@@ -158,7 +158,7 @@ namespace Duplicati.Library.Main.Operation
                         await ReplaceFaultyIndexFilesAsync(faultyIndexFiles, backend, db, rtr, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
                     }
                     else
-                        Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, "Found {0} faulty index files, use the option {1} to repair them", faultyIndexFiles.Count, "--replace-faulty-index-files");
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FaultyIndexFiles", null, "Found {0} faulty index files, remove the option {1} to repair them", faultyIndexFiles.Count, "--dont-replace-faulty-index-files");
 
                 }
             }
