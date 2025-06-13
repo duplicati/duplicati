@@ -1,30 +1,30 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Interface;
-using System.Collections.Specialized;
-using System.Web;
 using System.Linq;
 using System.Runtime.ExceptionServices;
+using Duplicati.Library.Backends;
 
 namespace Duplicati.Library.DynamicLoader
 {
@@ -51,10 +51,12 @@ namespace Duplicati.Library.DynamicLoader
             /// <summary>
             /// Returns the subfolders searched for backends
             /// </summary>
-            protected override string[] Subfolders
-            {
-                get { return new string[] {"backends"}; }
-            }
+            protected override string[] Subfolders => ["backends"];
+
+            /// <summary>
+            /// The built-in modules
+            /// </summary>
+            protected override IEnumerable<IBackend> BuiltInModules => BackendModules.BuiltInBackendModules;
 
             /// <summary>
             /// Instanciates a specific backend, given the url and options
@@ -65,9 +67,9 @@ namespace Duplicati.Library.DynamicLoader
             public IBackend GetBackend(string url, Dictionary<string, string> options)
             {
                 var uri = new Utility.Uri(url);
-                
+
                 LoadInterfaces();
-                
+
                 var newOpts = new Dictionary<string, string>(options);
                 foreach (var key in uri.QueryParameters.AllKeys)
                     newOpts[key] = uri.QueryParameters[key];
@@ -99,14 +101,14 @@ namespace Duplicati.Library.DynamicLoader
                     {
                         if (tex.InnerException != null)
                         {
-                            // Unwrap exceptions for nicer display.  The ExceptionDispatchInfo class allows us to
+                            // Unwrap exceptions for nicer display. The ExceptionDispatchInfo class allows us to
                             // rethrow an exception without changing the stack trace.
                             ExceptionDispatchInfo.Capture(tex.InnerException).Throw();
                         }
 
                         throw;
                     }
-                    
+
                     return null;
                 }
             }
@@ -116,27 +118,28 @@ namespace Duplicati.Library.DynamicLoader
             /// </summary>
             /// <param name="url">The url to find commands for</param>
             /// <returns>The supported commands or null if the url scheme was not supported</returns>
-            public IList<ICommandLineArgument> GetSupportedCommands(string url)
+            public IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string url)
             {
                 var uri = new Utility.Uri(url);
 
                 LoadInterfaces();
 
+                // TODO: The loading logic is replicated in the "GetBackend" method, should be refactored
                 lock (m_lock)
                 {
                     IBackend b;
                     if (m_interfaces.TryGetValue(uri.Scheme, out b) && b != null)
-                        return b.SupportedCommands;
+                        return GetSupportedCommandsCached(b).ToList();
                     else if (uri.Scheme.EndsWith("s", StringComparison.Ordinal))
                     {
                         var tmpscheme = uri.Scheme.Substring(0, uri.Scheme.Length - 1);
-                        if (m_interfaces.ContainsKey(tmpscheme))
-                            return m_interfaces[tmpscheme].SupportedCommands;
+                        if (m_interfaces.TryGetValue(tmpscheme, out b) && b != null)
+                            return GetSupportedCommandsCached(b).ToList();
                     }
-                    
+
                     return null;
                 }
-            }            
+            }
         }
 
         /// <summary>
@@ -150,18 +153,18 @@ namespace Duplicati.Library.DynamicLoader
         /// Gets a list of loaded backends, the instances can be used to extract interface information, not used to interact with the backend.
         /// </summary>
         public static IBackend[] Backends { get { return _backendLoader.Interfaces; } }
-        
+
         /// <summary>
         /// Gets a list of keys supported
         /// </summary>
         public static string[] Keys { get { return _backendLoader.Keys; } }
-        
+
         /// <summary>
         /// Gets the supported commands for a given backend
         /// </summary>
         /// <param name="url">The url to find the commands for</param>
         /// <returns>The supported commands or null if the url is not supported</returns>
-        public static IList<ICommandLineArgument> GetSupportedCommands(string url)
+        public static IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string url)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
@@ -180,5 +183,14 @@ namespace Duplicati.Library.DynamicLoader
             return _backendLoader.GetBackend(url, options);
         }
         #endregion
+
+        /// <summary>
+        /// Adds a backend to the loader
+        /// </summary>
+        /// <param name="backend">The backend to add</param>
+        public static void AddBackend(IBackend backend)
+        {
+            _backendLoader.AddModule(backend);
+        }
     }
 }

@@ -1,26 +1,31 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
+#nullable enable
+
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Modules.Builtin;
 
 namespace Duplicati.Library.DynamicLoader
 {
@@ -30,7 +35,7 @@ namespace Duplicati.Library.DynamicLoader
     public static class GenericLoader
     {
         /// <summary>
-        /// Implementation overrides specific to encryption
+        /// Implementation overrides specific to generic module use
         /// </summary>
         private class GenericLoaderSub : DynamicLoader<IGenericModule>
         {
@@ -40,30 +45,58 @@ namespace Duplicati.Library.DynamicLoader
             /// <param name="item">The item to load the key for</param>
             /// <returns>The file extension used by the module</returns>
             protected override string GetInterfaceKey(IGenericModule item)
-            {
-                return item.Key;
-            }
+                => item.Key;
 
             /// <summary>
-            /// Returns the subfolders searched for encryption modules
+            /// Returns the subfolders searched for generic modules
             /// </summary>
             protected override string[] Subfolders
+                => ["modules"];
+
+            /// <summary>
+            /// The built-in modules
+            /// </summary>
+            protected override IEnumerable<IGenericModule> BuiltInModules
+                => GenericModules.BuiltInGenericModules;
+
+            /// <summary>
+            /// Creates a new instance of the module based on the key
+            /// </summary>
+            /// <param name="key">The key to create the instance for</param>
+            /// <returns>The instanciated module or null if the key is not supported</returns>
+            public IGenericModule? GetModule(string key)
             {
-                get { return new string[] { "modules" }; }
+                LoadInterfaces();
+                var entry = Interfaces.FirstOrDefault(m => m.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+                if (entry == null)
+                    return null;
+
+                return (IGenericModule?)Activator.CreateInstance(entry.GetType());
             }
         }
 
         #region Public static API
 
         /// <summary>
+        /// The loader instance used to query the modules
+        /// </summary>
+        private static readonly Lazy<GenericLoaderSub> _loader = new(() => new GenericLoaderSub());
+        /// <summary>
         /// Gets a list of loaded settings controls, the instances can be used to extract interface information, not used to interact with the module.
         /// </summary>
-        public static IGenericModule[] Modules { get { return new GenericLoaderSub().Interfaces; } }
+        public static IGenericModule[] Modules => _loader.Value.Interfaces;
 
         /// <summary>
         /// Gets a list of keys supported
         /// </summary>
-        public static string[] Keys { get { return new GenericLoaderSub().Keys; } }
+        public static string[] Keys => _loader.Value.Keys;
+
+        /// <summary>
+        /// Instanciates a specific module
+        /// </summary>
+        /// <param name="key">The key to create the instance for</param>
+        /// <returns>The instanciated backend or null if the key is not supported</returns>
+        public static IGenericModule? GetModule(string key) => _loader.Value.GetModule(key);
 
         #endregion
 

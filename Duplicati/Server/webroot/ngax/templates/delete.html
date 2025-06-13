@@ -19,7 +19,7 @@
             </div>
 
             <div class="warning" translate ng-show="DeleteLocalDatabase && DbUsedElsewhere">
-            WARNING: The remote database is found to be in use by the commandline library
+            WARNING: The remote database is found to be in use by the commandline library.
             </div>
 
             <div class="input checkbox multiple">
@@ -29,7 +29,7 @@
         </div>
 
         <h2 translate>Export configuration</h2>
-        <div translate>If you want to use the backup later, you can export the configuration before deleting it</div>
+        <div translate>If you want to use the backup later, you can export the configuration before deleting it.</div>
         <div class="buttons">
             <input class="submit" type="button" ng-click="doExport()" value="{{'Export configuration' | translate}} &gt;" />
         </div>
@@ -37,7 +37,7 @@
         <div ng-hide="NoLocalDB">
             <h2 translate>Delete remote files</h2>
 
-            <div ng-show="Backup.Backup.Metadata.TargetFilesCount == null" translate>Loading remote storage usage ...</div>
+            <div ng-show="Backup.Backup.Metadata.TargetFilesCount == null" translate>Loading remote storage usage …</div>
             <div ng-show="Backup.Backup.Metadata.TargetFilesCount != null" translate translate-params-filecount="Backup.Backup.Metadata.TargetFilesCount" translate-params-filesize="Backup.Backup.Metadata.TargetSizeString">
                 Delete {{filecount}} files ({{filesize}}) from the remote storage?
             </div>

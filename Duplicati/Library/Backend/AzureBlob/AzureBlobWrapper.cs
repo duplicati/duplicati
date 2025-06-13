@@ -1,33 +1,32 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Uri = System.Uri;
+using Duplicati.Library.Utility.Options;
 using Duplicati.Library.Utility;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
@@ -36,121 +35,161 @@ namespace Duplicati.Library.Backend.AzureBlob
     /// </summary>
     public class AzureBlobWrapper
     {
-        private readonly string _containerName;
-        private readonly CloudBlobContainer _container;
+        private readonly BlobContainerClient _container;
+        private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+        private readonly IReadOnlySet<AccessTier> _archiveClasses;
+        private readonly AccessTier? _accessTier;
 
+        /// <summary>
+        /// Gets an array of DNS names associated with the blob container.
+        /// </summary>
+        /// <returns>An array of DNS hostnames for the primary and secondary URIs of the container.</returns>
         public string[] DnsNames
         {
             get
             {
                 var lst = new List<string>();
-                if (_container != null)
-                {
-                    if (_container.Uri != null)
-                        lst.Add(_container.Uri.Host);
-
-                    if (_container.StorageUri != null)
-                    {
-                        if (_container.StorageUri.PrimaryUri != null)
-                            lst.Add(_container.StorageUri.PrimaryUri.Host);
-                        if (_container.StorageUri.SecondaryUri != null)
-                            lst.Add(_container.StorageUri.SecondaryUri.Host);
-                    }
-                }
-
+                if (_container != null && _container.Uri != null) lst.Add(_container.Uri.Host);
                 return lst.ToArray();
             }
         }
 
-        public AzureBlobWrapper(string accountName, string accessKey, string sasToken, string containerName)
+        /// <summary>
+        /// Initializes a new instance of the AzureBlobWrapper class.
+        /// </summary>
+        /// <param name="accountName">The Azure storage account name.</param>
+        /// <param name="accessKey">The access key for the storage account.</param>
+        /// <param name="sasToken">The Shared Access Signature (SAS) token for authentication.</param>
+        /// <param name="containerName">The name of the blob container.</param>
+        /// <param name="accessTier">The access tier assigned to blobs on upload.</param>
+        /// <param name="archiveClasses">The storage classes that are considered archive classes.</param>
+        /// <param name="timeouts">The timeout options.</param>
+        public AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, AccessTier? accessTier, IReadOnlySet<AccessTier> archiveClasses, TimeoutOptionsHelper.Timeouts timeouts)
         {
-            OperationContext.GlobalSendingRequest += (sender, args) =>
-            {
-                args.Request.UserAgent = string.Format(
-                    "APN/1.0 Duplicati/{0} AzureBlob/2.0 {1}",
-                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
-                    Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent
-                );
-            };
-
-            string connectionString;
+            BlobServiceClient blobServiceClient;
             if (sasToken != null)
             {
-                connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1}",
-                    accountName, sasToken);
+                var sasUri = new Uri($"https://{accountName}.blob.core.windows.net/?{sasToken}");
+                blobServiceClient = new BlobServiceClient(sasUri);
             }
             else
             {
-                connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
-                            accountName, accessKey);
+                var connectionString = $"DefaultEndpointsProtocol=https;AccountName={accountName};AccountKey={accessKey};EndpointSuffix=core.windows.net";
+                blobServiceClient = new BlobServiceClient(connectionString);
             }
 
-            var storageAccount = CloudStorageAccount.Parse(connectionString);
-            var blobClient = storageAccount.CreateCloudBlobClient();
-
-            _containerName = containerName;
-            _container = blobClient.GetContainerReference(containerName);
+            _accessTier = accessTier;
+            _archiveClasses = archiveClasses;
+            _container = blobServiceClient.GetBlobContainerClient(containerName);
+            _timeouts = timeouts;
         }
 
-        public void AddContainer()
+        /// <summary>
+        /// Creates a new blob container asynchronously and sets its access permissions to private.
+        /// </summary>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        public async Task AddContainerAsync(CancellationToken cancellationToken)
         {
-            _container.Create(BlobContainerPublicAccessType.Off);
+            await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
+                // Even though PublicAccessType.None is by default, we set it explicitly to highlight it.
+                await _container.CreateAsync(PublicAccessType.None, cancellationToken: ct).ConfigureAwait(false)
+            ).ConfigureAwait(false);
         }
 
-        public virtual void GetFileStream(string keyName, Stream target)
+        /// <summary>
+        /// Downloads a blob to a stream asynchronously.
+        /// </summary>
+        /// <param name="keyName">The name of the blob to download.</param>
+        /// <param name="target">The stream to download the blob to.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous download operation.</returns>
+        public async Task GetFileStreamAsync(string keyName, Stream target, CancellationToken cancellationToken)
         {
-            _container.GetBlockBlobReference(keyName).DownloadToStream(target);
+            var blobClient = _container.GetBlobClient(keyName);
+            using var timeoutStream = target.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false);
+            await blobClient.DownloadToAsync(target, cancellationToken).ConfigureAwait(false);
         }
 
-        public virtual async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
+        /// <summary>
+        /// Uploads a stream to a blob asynchronously.
+        /// </summary>
+        /// <param name="keyName">The name to give the uploaded blob.</param>
+        /// <param name="source">The stream containing the data to upload.</param>
+        /// <param name="cancelToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous upload operation.</returns>
+        public async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
-            await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, cancelToken);
-        }
-
-        public void DeleteObject(string keyName)
-        {
-            _container.GetBlockBlobReference(keyName).DeleteIfExists();
-        }
-
-        public virtual List<IFileEntry> ListContainerEntries()
-        {
-            var listBlobItems = _container.ListBlobs(blobListingDetails: BlobListingDetails.Metadata);
-            try
+            var blobClient = _container.GetBlobClient(keyName);
+            using var timeoutStream = source.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            var options = new BlobUploadOptions()
             {
-                return listBlobItems.Select(x =>
+                Conditions = null, // Overwrite any existing blob
+                AccessTier = _accessTier
+            };
+
+            await blobClient.UploadAsync(timeoutStream, options, cancelToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Deletes a blob if it exists asynchronously.
+        /// </summary>
+        /// <param name="keyName">The name of the blob to delete.</param>
+        /// <param name="cancelToken">A token to monitor for cancellation requests.</param>
+        public async Task DeleteObjectAsync(string keyName, CancellationToken cancelToken)
+        {
+            var blobClient = _container.GetBlobClient(keyName);
+            await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, async ct =>
+                await blobClient.DeleteIfExistsAsync(cancellationToken: ct).ConfigureAwait(false)
+            ).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// List container files.
+        /// </summary>
+        /// <param name="cancelToken">A token to monitor for cancellation requests.</param>
+        /// <returns></returns>
+        /// <exception cref="FolderMissingException">Thrown when the container is not found</exception>
+        public virtual async IAsyncEnumerable<IFileEntry> ListContainerEntriesAsync([EnumeratorCancellation] CancellationToken cancelToken)
+        {
+            await using var blobEnumerator = _container.GetBlobsAsync().GetAsyncEnumerator(cancelToken);
+
+            while (true)
+            {
+                bool hasNext;
+
+                try
                 {
-                    var absolutePath = x.StorageUri.PrimaryUri.AbsolutePath;
-                    var containerSegment = string.Concat("/", _containerName, "/");
-                    var blobName = absolutePath.Substring(absolutePath.IndexOf(
-                        containerSegment, System.StringComparison.Ordinal) + containerSegment.Length);
-
-                    try
-                    {
-                        if (x is CloudBlockBlob cb)
-                        {
-                            var lastModified = new System.DateTime();
-                            if (cb.Properties.LastModified != null)
-                                lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);
-                            return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")), cb.Properties.Length, lastModified, lastModified);
-                        }
-                    }
-                    catch
-                    {
-                        // If the metadata fails to parse, return the basic entry
-                    }
-
-                    return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
-                })
-                .Cast<IFileEntry>()
-                .ToList();
-            }
-            catch (StorageException ex)
-            {
-                if (ex.RequestInformation.HttpStatusCode == 404)
+                    hasNext = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, async ct
+                        => await blobEnumerator.MoveNextAsync().ConfigureAwait(false)
+                    ).ConfigureAwait(false);
+                }
+                catch (Azure.RequestFailedException ex) when (ex.Status == 404)
                 {
                     throw new FolderMissingException(ex);
                 }
-                throw;
+
+                if (!hasNext) break;
+
+                cancelToken.ThrowIfCancellationRequested();
+
+                if (blobEnumerator.Current is { } blob)
+                {
+                    var blobName = Uri.UnescapeDataString(blob.Name.Replace("+", "%2B"));
+                    var lastModified = blob.Properties.LastModified?.UtcDateTime ?? DateTime.UtcNow;
+                    var isArchive = blob.Properties.AccessTier.HasValue && _archiveClasses.Contains(blob.Properties.AccessTier.Value);
+
+                    yield return new FileEntry(
+                        blobName,
+                        blob.Properties.ContentLength ?? 0,
+                        lastModified,
+                        lastModified
+                    )
+                    {
+                        IsArchived = isArchive,
+                        IsFolder = false,
+                    };
+                }
             }
         }
     }

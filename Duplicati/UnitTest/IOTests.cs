@@ -1,32 +1,35 @@
-﻿//  Copyright (C) 2018, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
 using System.Text;
 using NUnit.Framework;
 
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
-using Duplicati.Library.Common;
 using System.Collections.Generic;
+using System;
 
 namespace Duplicati.UnitTest
 {
     [Category("IO")]
-    public class IOTests
+    public class IOTests : BasicSetupHelper
     {
 
         public static string LongPath(string pathRoot)
@@ -38,7 +41,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestGetPathRootWithLongPath()
         {
-            var pathRoot =  Platform.IsClientWindows ? "C:\\" : "/";
+            var pathRoot = OperatingSystem.IsWindows() ? "C:\\" : "/";
             var root = SystemIO.IO_OS.GetPathRoot(LongPath(pathRoot));
 
             Assert.AreEqual(pathRoot, root);
@@ -47,7 +50,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestUncBehaviourOfGetPathRoot()
         {
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 return;
             }
@@ -57,20 +60,20 @@ namespace Duplicati.UnitTest
             var filePath = root + filename;
             var filePathWithExtendedDevicePathPrefix = SystemIOWindows.AddExtendedDevicePathPrefix(filePath);
 
-            var filePathWithExtendedDevicePathPrefixRoot = SystemIO.IO_WIN.GetPathRoot(filePathWithExtendedDevicePathPrefix);
+            var filePathWithExtendedDevicePathPrefixRoot = SystemIO.IO_OS.GetPathRoot(filePathWithExtendedDevicePathPrefix);
 
             //Prefixed with extended device path prefix remains prefixed
             Assert.AreEqual(SystemIOWindows.AddExtendedDevicePathPrefix(root), filePathWithExtendedDevicePathPrefixRoot);
 
             //Without extended device path prefix, no prefix. 
-            var filePathRoot = SystemIO.IO_WIN.GetPathRoot(filePath);
+            var filePathRoot = SystemIO.IO_OS.GetPathRoot(filePath);
             Assert.AreEqual(root, filePathRoot);
         }
 
         [Test]
         public void TestGetFilesWhenDirectoryDoesNotExist()
         {
-            var pathRoot = Platform.IsClientWindows ? "C:\\" : "/";
+            var pathRoot = OperatingSystem.IsWindows() ? "C:\\" : "/";
 
             var longPath = LongPath(pathRoot);
             if (SystemIO.IO_OS.DirectoryExists(longPath))
@@ -85,7 +88,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestGetDirectoriesWhenDirectoryDoesNotExist()
         {
-            var pathRoot = Platform.IsClientWindows ? "C:\\" : "/";
+            var pathRoot = OperatingSystem.IsWindows() ? "C:\\" : "/";
 
             var longPath = LongPath(pathRoot);
             if (SystemIO.IO_OS.DirectoryExists(longPath))
@@ -100,7 +103,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestAddExtendedDevicePathPrefixInWindowsClient()
         {
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 return;
             }
@@ -208,7 +211,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestPathGetFullPathInWindowsClient()
         {
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 return;
             }
@@ -277,7 +280,7 @@ namespace Duplicati.UnitTest
                 };
             foreach (var path in testCasesWherePathGetFullGivesSameResultsAsDotNet)
             {
-                var actual = SystemIO.IO_WIN.PathGetFullPath(path);
+                var actual = SystemIO.IO_OS.PathGetFullPath(path);
                 var expected = System.IO.Path.GetFullPath(path);
                 Assert.AreEqual(expected, actual, $"Path: {path}");
             }
@@ -308,7 +311,7 @@ namespace Duplicati.UnitTest
             foreach (var keyValuePair in testCasesWherePathGetFullGivesDifferentResultsThanDotNet)
             {
                 var path = keyValuePair.Key;
-                var actual = SystemIO.IO_WIN.PathGetFullPath(path);
+                var actual = SystemIO.IO_OS.PathGetFullPath(path);
                 var expected = keyValuePair.Value;
                 Assert.AreEqual(expected, actual, $"Path: {path}");
             }

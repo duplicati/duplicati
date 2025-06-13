@@ -1,45 +1,61 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2019, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-#endregion
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
-using Duplicati.Library.Snapshots;
 using CoCoL;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Snapshots.USN;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class CountFilesHandler
     {
-        public static async Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, BackupResults result, Options options, IFilter sourcefilter, IFilter filter, Common.ITaskReader taskreader, System.Threading.CancellationToken token)
+        public static async Task Run(
+            ISourceProvider sources,
+            UsnJournalService journalService,
+            BackupResults result,
+            Options options,
+            IFilter filter,
+            HashSet<string> blacklistPaths,
+            Common.ITaskReader taskreader,
+            System.Threading.CancellationToken token
+        )
         {
-            // Make sure we create the enumeration process in a separate scope,
-            // but keep the log channel from the parent scope
-            using(Logging.Log.StartIsolatingScope(true))
-            using (new IsolatedChannelScope())
+            // Keep the log channel from the parent scope
+            using (Logging.Log.StartIsolatingScope(true))
             {
-                var enumeratorTask = Backup.FileEnumerationProcess.Run(sources, snapshot, journalService, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.ChangedFilelist, taskreader, token);
+                Channels channels = new();
+                var enumeratorTask = FileEnumerationProcess.Run(
+                    channels, sources, journalService, options.FileAttributeFilter, filter,
+                    options.SymlinkPolicy, options.HardlinkPolicy,
+                    options.ExcludeEmptyFolders, options.IgnoreFilenames,
+                    blacklistPaths, options.ChangedFilelist, taskreader, null, token);
+
                 var counterTask = AutomationExtensions.RunTask(new
                 {
-                    Input = Backup.Channels.SourcePaths.ForRead
+                    Input = channels.SourcePaths.AsRead()
                 },
-                    
+
                 async self =>
                 {
                     var count = 0L;
@@ -47,15 +63,17 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     try
                     {
-                        while (await taskreader.ProgressAsync && !token.IsCancellationRequested)
+                        while (await taskreader.ProgressRendevouz() && !token.IsCancellationRequested)
                         {
-                            var path = await self.Input.ReadAsync();
+                            var entry = await self.Input.ReadAsync();
+                            if (entry.IsFolder)
+                                continue;
 
                             count++;
 
                             try
                             {
-                                size += snapshot.GetFileSize(path);
+                                size += entry.Size;
                             }
                             catch
                             {

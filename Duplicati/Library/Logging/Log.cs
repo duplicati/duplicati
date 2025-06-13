@@ -1,25 +1,27 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading;
 
 namespace Duplicati.Library.Logging
 {
@@ -70,17 +72,12 @@ namespace Duplicati.Library.Logging
         /// <summary>
         /// The key used to assign the current scope into the current call-context
         /// </summary>
-        private const string LOGICAL_CONTEXT_KEY = "Duplicati:LoggingEntry";
+        private static readonly AsyncLocal<LogScope> _currentScope = new AsyncLocal<LogScope>();
 
         /// <summary>
         /// The root scope
         /// </summary>
         private static readonly LogScope m_root = new LogScope(null, new LogTagFilter(LogMessageType.Error, null, null), null, true);
-
-        /// <summary>
-        /// The stored log instances
-        /// </summary>
-        private static readonly Dictionary<string, LogScope> m_log_instances = new Dictionary<string, LogScope>();
 
         /// <summary>
         /// Static lock object to provide thread safe logging
@@ -214,15 +211,15 @@ namespace Duplicati.Library.Logging
             WriteMessage(LogMessageType.Verbose, tag, id, null, message, arguments);
         }
 
-		/// <summary>
+        /// <summary>
         /// Writes a verbose message to the current log destination
         /// </summary>
         /// <param name="message">The message to write</param>
         /// <param name="tag">The tag-type for this message</param>
         /// <param name="id">The message id</param>
-		/// <param name="ex">The exception to log</param>
+        /// <param name="ex">The exception to log</param>
         /// <param name="arguments">The message format arguments</param>
-		public static void WriteVerboseMessage(string tag, string id, Exception ex, string message, params object[] arguments)
+        public static void WriteVerboseMessage(string tag, string id, Exception ex, string message, params object[] arguments)
         {
             WriteMessage(LogMessageType.Verbose, tag, id, ex, message, arguments);
         }
@@ -426,11 +423,10 @@ namespace Duplicati.Library.Logging
         /// <param name="scope">The scope to finish.</param>
         internal static void CloseScope(LogScope scope)
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (CurrentScope == scope && scope != m_root)
                     CurrentScope = scope.Parent;
-                m_log_instances.Remove(scope.InstanceID);
             }
         }
 
@@ -442,32 +438,12 @@ namespace Duplicati.Library.Logging
             get
             {
                 lock (m_lock)
-                {
-                    var cur = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LOGICAL_CONTEXT_KEY) as string;
-                    if (cur == null || cur == m_root.InstanceID)
-                        return m_root;
-                    
-                    LogScope sc;
-                    if (!m_log_instances.TryGetValue(cur, out sc))
-                        throw new Exception("Unable to find log in lookup table, this may be caused by attempting to transport call contexts between AppDomains (eg. with remoting calls)");
-
-                    return sc;
-                }
+                    return _currentScope.Value ?? m_root;
             }
             private set
             {
                 lock (m_lock)
-                {
-                    if (value != null)
-                    {
-                        m_log_instances[value.InstanceID] = value;
-                        System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LOGICAL_CONTEXT_KEY, value.InstanceID);
-                    }
-                    else
-                    {
-                        System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LOGICAL_CONTEXT_KEY, null);
-                    }
-                }
+                    _currentScope.Value = value;
             }
         }
     }

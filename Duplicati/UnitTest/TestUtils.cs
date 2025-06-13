@@ -1,42 +1,43 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.IO;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using System.Linq;
-using Duplicati.Library.Logging;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using NUnit.Framework;
-using System.Runtime.InteropServices;
-using Duplicati.Library.Common;
+using Duplicati.Library.Interface;
+using System.Data;
+using System.Text;
+using Duplicati.Library.Main.Database;
 
 namespace Duplicati.UnitTest
 {
     public static class TestUtils
     {
-        /// <summary>
-        /// The log tag
-        /// </summary>
-        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType(typeof(TestUtils));
-
         public static Dictionary<string, string> DefaultOptions
         {
             get
@@ -46,7 +47,7 @@ namespace Duplicati.UnitTest
                 string auth_password = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "unittest_authpassword.txt");
                 if (System.IO.File.Exists(auth_password))
                     opts["auth-password"] = File.ReadAllText(auth_password).Trim();
-                
+
                 return opts;
             }
         }
@@ -84,7 +85,7 @@ namespace Duplicati.UnitTest
             else if (other != null)
                 return other;
             else
-                using(var tf = new Library.Utility.TempFolder())
+                using (var tf = new Library.Utility.TempFolder())
                 {
                     tf.Protected = true;
                     return "file://" + tf;
@@ -113,62 +114,46 @@ namespace Duplicati.UnitTest
 
                 if (!Directory.Exists(t))
                     Directory.CreateDirectory(t);
-                
+
                 try { Directory.SetCreationTimeUtc(t, Directory.GetCreationTimeUtc(c)); }
-                catch(Exception ex) 
-                { 
+                catch (Exception ex)
+                {
                     if (timestampfailures++ < 20)
-                        Console.WriteLine("Failed to set creation time on dir {0}: {1}", t, ex.Message); 
+                        Console.WriteLine("Failed to set creation time on dir {0}: {1}", t, ex.Message);
                 }
 
                 try { Directory.SetLastWriteTimeUtc(t, Directory.GetLastWriteTimeUtc(c)); }
-                catch(Exception ex) 
-                { 
+                catch (Exception ex)
+                {
                     if (timestampfailures++ < 20)
-                        Console.WriteLine("Failed to set write time on dir {0}: {1}", t, ex.Message); 
+                        Console.WriteLine("Failed to set write time on dir {0}: {1}", t, ex.Message);
                 }
 
-                
-                foreach(var n in Directory.EnumerateFiles(c))
+
+                foreach (var n in Directory.EnumerateFiles(c))
                 {
                     var tf = Path.Combine(t, Path.GetFileName(n));
                     File.Copy(n, tf, true);
                     try { File.SetCreationTimeUtc(tf, System.IO.File.GetCreationTimeUtc(n)); }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         if (timestampfailures++ < 20)
-                            Console.WriteLine("Failed to set creation time on file {0}: {1}", n, ex.Message); 
+                            Console.WriteLine("Failed to set creation time on file {0}: {1}", n, ex.Message);
                     }
                     try { File.SetLastWriteTimeUtc(tf, System.IO.File.GetLastWriteTimeUtc(n)); }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         if (timestampfailures++ < 20)
-                            Console.WriteLine("Failed to set write time on file {0}: {1}", n, ex.Message); 
+                            Console.WriteLine("Failed to set write time on file {0}: {1}", n, ex.Message);
                     }
                 }
 
-                foreach(var n in Directory.EnumerateDirectories(c))
+                foreach (var n in Directory.EnumerateDirectories(c))
                     work.Enqueue(n);
             }
 
             if (timestampfailures > 20)
                 Console.WriteLine("Encountered additional {0} timestamp errors!", timestampfailures);
-        }
-
-        /// <summary>
-        /// Returns the index of a given string, using the file system case sensitivity
-        /// </summary>
-        /// <returns>The index of the entry or -1 if no entry was found</returns>
-        /// <param name='lst'>The list to search</param>
-        /// <param name='m'>The string to find</param>
-        private static int IndexOf(List<string> lst, string m)
-        {
-            StringComparison sc = Duplicati.Library.Utility.Utility.ClientFilenameStringComparison;
-            for(int i = 0; i < lst.Count; i++)
-                if (lst[i].Equals(m, sc))
-                    return i;
-
-            return -1;
         }
 
         /// <summary>
@@ -248,7 +233,7 @@ namespace Duplicati.UnitTest
                 // macOS seem to like to actually set the time to some value different than what you set by hundreds of milliseconds.
                 // Reading the time right after it is set gives the expected value but when read later it is slightly different.
                 // Maybe a bug in .net?
-                int granularity = Platform.IsClientOSX ? 2499 : 1;
+                int granularity = OperatingSystem.IsMacOS() ? 2999 : 1;
                 Assert.That(
                     SystemIO.IO_OS.GetLastWriteTimeUtc(actualFile),
                     Is.EqualTo(SystemIO.IO_OS.GetLastWriteTimeUtc(expectedFile)).Within(granularity).Milliseconds,
@@ -263,14 +248,14 @@ namespace Duplicati.UnitTest
         public static Dictionary<string, string> Expand(this Dictionary<string, string> self, object extra)
         {
             var res = new Dictionary<string, string>(self);
-            foreach(var n in extra.GetType().GetFields())
+            foreach (var n in extra.GetType().GetFields())
             {
                 var name = n.Name.Replace('_', '-');
                 var value = n.GetValue(extra);
                 res[name] = value == null ? "" : value.ToString();
             }
 
-            foreach(var n in extra.GetType().GetProperties())
+            foreach (var n in extra.GetType().GetProperties())
             {
                 var name = n.Name.Replace('_', '-');
                 var value = n.GetValue(extra);
@@ -289,6 +274,97 @@ namespace Duplicati.UnitTest
             {
                 Utility.CopyStream(new MemoryStream(contents), fileStream);
             }
+        }
+
+        public static void WriteTestFile(string path, long size)
+        {
+            var data = new byte[size];
+            new Random(path.GetHashCode()).NextBytes(data);
+            File.WriteAllBytes(path, data);
+        }
+
+        public class TestVerificationException(string message) : Exception(message)
+        {
+        }
+
+        public static void AssertResults(IBasicResults results)
+        {
+            string operation = "Result";
+            // Use dynamic property access for MainOperation, because it is only exposed in internal classes
+            PropertyInfo operationProperty = results.GetType().GetProperty("MainOperation", typeof(Library.Main.OperationMode));
+            if (operationProperty != null)
+            {
+                operation = ((Library.Main.OperationMode)operationProperty.GetValue(results)).ToString();
+            }
+
+            if (results is ITestResults testResults)
+            {
+                if (testResults.Verifications.Any(p => p.Value.Any()))
+                {
+                    var sb = new StringBuilder();
+                    sb.AppendLine($"Verification errors - {operation}:");
+                    foreach (var p in testResults.Verifications)
+                    {
+                        sb.Append(p.Key.ToString());
+                        if (p.Value.Count() == 0)
+                        {
+                            sb.AppendLine(" (no errors)");
+                            continue;
+                        }
+
+                        sb.AppendLine(" (errors):");
+                        foreach (var v in p.Value)
+                            sb.AppendLine(v.ToString());
+                    }
+
+                    throw new TestVerificationException(sb.ToString());
+                }
+            }
+
+            if (results.Errors.Count() != 0)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"Errors - {operation}:");
+                foreach (var e in results.Errors)
+                    sb.AppendLine(e.ToString());
+                throw new TestVerificationException(sb.ToString());
+            }
+
+            if (results.Warnings.Count() != 0)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"Warnings - {operation}:");
+                foreach (var w in results.Warnings)
+                    sb.AppendLine(w.ToString());
+                throw new TestVerificationException(sb.ToString());
+            }
+        }
+
+        public static string DumpTable(IDbCommand cmd, string table, string where = null)
+        {
+            var sb = new StringBuilder();
+            cmd.CommandText = $"SELECT * FROM {table}";
+            var rowix = 0;
+
+            sb.AppendLine($"{table} table:");
+            foreach (var row in cmd.ExecuteReaderEnumerable())
+            {
+                if (rowix == 0)
+                {
+                    for (var col = 0; col < row.FieldCount; col++)
+                        sb.Append($"{row.GetName(col)}\t");
+
+                    sb.AppendLine();
+                }
+                rowix++;
+
+                for (var col = 0; col < row.FieldCount; col++)
+                    sb.Append($"{row.GetValue(col)}\t");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine();
+            return sb.ToString();
         }
     }
 }

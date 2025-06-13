@@ -1,249 +1,259 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-#endregion
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend
 {
-    public class Idrivee2Backend : IBackend, IStreamingBackend
+    public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend
     {
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType<Idrivee2Backend>();
+        // Non-standard naming managed with AuthOptionsHelper.ParseWithAlias
+        private const string AUTH_USERNAME_OPTION = "access_key_id";
+        private const string AUTH_PASSWORD_OPTION = "access_key_secret";
 
-        static Idrivee2Backend()
+        /// <summary>
+        /// Cached S3 client
+        /// </summary>
+        private IS3Client? _s3Client;
+
+        /// <summary>
+        /// The path prefix for all operations within the bucket
+        /// </summary>
+        private readonly string _prefix = null!;
+
+        /// <summary>
+        /// Bucked name
+        /// </summary>
+        private readonly string _bucket = null!;
+
+        /// <summary>
+        /// Lazy cached HttpClient
+        /// </summary>
+        private readonly Lazy<HttpClient> _httpClient = new(() =>
         {
-            
-        }
+            var client = HttpClientHelper.CreateClient();
+            client.Timeout = Timeout.InfiniteTimeSpan;
+            return client;
+        });
+        
+        /// <summary>
+        /// The timeout options
+        /// </summary>
+        private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
-        private readonly string m_prefix;
-        private readonly string m_bucket;
+        /// <summary>
+        /// The authentication options
+        /// </summary>
+        private readonly AuthOptionsHelper.AuthOptions _auth;
 
-        private IS3Client m_s3Client;
+        /// <summary>
+        /// All options passed to the backend
+        /// </summary>
+        private readonly Dictionary<string, string?> _options;
 
+        /// <inheritdoc />
         public Idrivee2Backend()
         {
+            _timeouts = null!;
+            _auth = null!;
+            _options = null!;
         }
 
-        public Idrivee2Backend(string url, Dictionary<string, string> options)
+        /// <inheritdoc />
+        public Idrivee2Backend(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
-            m_bucket = uri.Host;
-            m_prefix = uri.Path;
-            m_prefix = m_prefix.Trim();
-            if (m_prefix.Length != 0)
-            {
-                m_prefix = Util.AppendDirSeparator(m_prefix, "/");
-            }
-            string accessKeyId = null;
-            string accessKeySecret = null;
+            _bucket = uri.Host;
+            _prefix = uri.Path;
+            _prefix = _prefix.Trim();
+            if (_prefix.Length != 0)
+                _prefix = Util.AppendDirSeparator(_prefix, "/");
 
-            if (options.ContainsKey("auth-username"))
-                accessKeyId = options["auth-username"];
-            if (options.ContainsKey("auth-password"))
-                accessKeySecret = options["auth-password"];
-
-            if (options.ContainsKey("access_key_id"))
-                accessKeyId = options["access_key_id"];
-            if (options.ContainsKey("secret_access_key"))
-                accessKeySecret = options["secret_access_key"];
-
-            if (string.IsNullOrEmpty(accessKeyId))
+            _timeouts = TimeoutOptionsHelper.Parse(options);
+            _auth = AuthOptionsHelper.ParseWithAlias(options, uri, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
+            if (!_auth.HasUsername)
                 throw new UserInformationException(Strings.Idrivee2Backend.NoKeyIdError, "Idrivee2NoKeyId");
-            if (string.IsNullOrEmpty(accessKeySecret))
+            if (!_auth.HasPassword)
                 throw new UserInformationException(Strings.Idrivee2Backend.NoKeySecretError, "Idrivee2NoKeySecret");
-            string host= GetRegionEndpoint("https://api.idrivee2.com/api/service/get_region_end_point/" + accessKeyId);
 
-
-            m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, options);
-
+            _options = options;
         }
 
-        public string GetRegionEndpoint(string url)
+        /// <inheritdoc />
+        private async Task<string> GetRegionEndpointAsync(string url, CancellationToken cancellationToken)
         {
+            string result;
             try
             {
-                System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
-                req.Method = System.Net.WebRequestMethods.Http.Get;
-                
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-               
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
-                {
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                        throw new Exception("Failed to fetch region endpoint");
-                    using (var s = areq.GetResponseStream())
-                    {
-                        using (var reader = new StreamReader(s))
-                        {
-                            string endpoint = reader.ReadToEnd();
-                            return endpoint;
-                        }
-                    }
-                }
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.UserAgent.ParseAdd(
+                    $"Duplicati Idrivee2 Client {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
+
+                // Complete all operations within the using scope
+                using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken,
+                        innerCancellationToken => _httpClient.Value.SendAsync(request, innerCancellationToken))
+                    .ConfigureAwait(false);
+
+                if (resp.StatusCode != System.Net.HttpStatusCode.OK)
+                    throw new Exception("Failed to fetch region endpoint");
+
+                await using var s = await resp.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
+                using var reader = new StreamReader(t);
+                result = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch (System.Net.WebException wex)
+            catch (Exception ex)
             {
-                //Convert to better exception
-                throw new Exception("Failed to fetch region endpoint");
+                throw new Exception("Failed to fetch region endpoint", ex);
             }
+
+            return result;
         }
 
-        #region IBackend Members
+        /// <inheritdoc />
+        public string DisplayName => Strings.Idrivee2Backend.DisplayName;
 
-        public string DisplayName
-        {
-            get { return Strings.Idrivee2Backend.DisplayName; }
-        }
-
+        /// <inheritdoc />
         public string ProtocolKey => "e2";
 
-        public bool SupportsStreaming => true;
-
-
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
-            {
-                ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
-                if (file.Name.StartsWith("/", StringComparison.Ordinal) && !m_prefix.StartsWith("/", StringComparison.Ordinal))
-                    ((FileEntry)file).Name = file.Name.Substring(1);
-
+            var con = await GetConnection(cancelToken).ConfigureAwait(false);
+            await foreach (IFileEntry file in con.ListBucketAsync(_bucket, _prefix, false, cancelToken).ConfigureAwait(false))
                 yield return file;
-            }
         }
 
+        /// <inheritdoc />
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
-            using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
+            await using FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read);
+            await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
-            await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
+            var con = await GetConnection(cancelToken).ConfigureAwait(false);
+            await con.AddFileStreamAsync(_bucket, GetFullKey(remotename), input, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string localname)
+        /// <inheritdoc />
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
         {
-            using (var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None))
-                Get(remotename, fs);
+            await using var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None);
+            await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, Stream output)
+        /// <inheritdoc />
+        public async Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
         {
-            Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
+            var con = await GetConnection(cancellationToken).ConfigureAwait(false);
+            await con.GetFileStreamAsync(_bucket, GetFullKey(remotename), output, cancellationToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        /// <inheritdoc />
+        public async Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
-            Connection.DeleteObject(m_bucket, GetFullKey(remotename));
+            var con = await GetConnection(cancellationToken).ConfigureAwait(false);
+            await con.DeleteObjectAsync(_bucket, GetFullKey(remotename), cancellationToken).ConfigureAwait(false);
         }
 
-        public IList<ICommandLineArgument> SupportedCommands
+        /// <inheritdoc />
+        public IList<ICommandLineArgument> SupportedCommands =>
+        [
+            .. S3AwsClient.GetAwsExtendedOptions(),
+            new CommandLineArgument(AUTH_USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.Idrivee2Backend.KeyIDDescriptionShort, Strings.Idrivee2Backend.KeyIDDescriptionLong,null, [AuthOptionsHelper.AuthUsernameOption], null),
+            new CommandLineArgument(AUTH_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Idrivee2Backend.KeySecretDescriptionShort, Strings.Idrivee2Backend.KeySecretDescriptionLong, null, [AuthOptionsHelper.AuthPasswordOption ], null),
+            .. TimeoutOptionsHelper.GetOptions(),
+        ];
+
+        /// <inheritdoc />
+        public string Description => Strings.Idrivee2Backend.Description;
+
+        /// <inheritdoc />
+        public Task TestAsync(CancellationToken cancelToken)
+            => this.TestReadWritePermissionsAsync(cancelToken);
+
+        /// <inheritdoc />
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            get
-            {
-                
-                var defaults = new Amazon.S3.AmazonS3Config();
-
-                var exts =
-                    typeof(Amazon.S3.AmazonS3Config).GetProperties().Where(x => x.CanRead && x.CanWrite && (x.PropertyType == typeof(string) || x.PropertyType == typeof(bool) || x.PropertyType == typeof(int) || x.PropertyType == typeof(long) || x.PropertyType.IsEnum))
-                        .Select(x => (ICommandLineArgument)new CommandLineArgument(
-                            "s3-ext-" + x.Name.ToLowerInvariant(),
-                            x.PropertyType == typeof(bool) ? CommandLineArgument.ArgumentType.Boolean : x.PropertyType.IsEnum ? CommandLineArgument.ArgumentType.Enumeration : CommandLineArgument.ArgumentType.String,
-                            x.Name,
-                            string.Format("Extended option {0}", x.Name),
-                            string.Format("{0}", x.GetValue(defaults)),
-                            null,
-                            x.PropertyType.IsEnum ? Enum.GetNames(x.PropertyType) : null));
-
-
-                var normal = new ICommandLineArgument[] {
-                  
-                    new CommandLineArgument("access_key_secret", CommandLineArgument.ArgumentType.Password, Strings.Idrivee2Backend.KeySecretDescriptionShort, Strings.Idrivee2Backend.KeySecretDescriptionLong, null, new[]{"auth-password"}, null),
-                    new CommandLineArgument("access_key_id", CommandLineArgument.ArgumentType.String, Strings.Idrivee2Backend.KeyIDDescriptionShort, Strings.Idrivee2Backend.KeyIDDescriptionLong,null, new[]{"auth-username"}, null)
-                 
-                };
-
-                return normal.Union(exts).ToList();
-
-            }
-        }
-
-        public string Description
-        {
-            get
-            {
-                return Strings.Idrivee2Backend.Description;
-            }
-        }
-
-        public void Test()
-        {
-            this.TestList();
-        }
-
-        public void CreateFolder()
-        {
+            var con = await GetConnection(cancelToken).ConfigureAwait(false);
             //S3 does not complain if the bucket already exists
-            Connection.AddBucket(m_bucket);
+            await con.AddBucketAsync(_bucket, cancelToken).ConfigureAwait(false);
         }
 
-        #endregion
-
-        #region IRenameEnabledBackend Members
-
-        public void Rename(string source, string target)
-        {
-            Connection.RenameFile(m_bucket, GetFullKey(source), GetFullKey(target));
-        }
-
-        #endregion
-
-        #region IDisposable Members
-
+        /// <inheritdoc />
         public void Dispose()
         {
-            m_s3Client?.Dispose();
-            m_s3Client = null;
+            _s3Client?.Dispose();
+            _s3Client = null;
+            if (_httpClient.IsValueCreated) _httpClient.Value.Dispose();
         }
 
-        #endregion
-
-        private IS3Client Connection => m_s3Client;
-
-        public string[] DNSName
+        private async Task<IS3Client> GetConnection(CancellationToken cancellationToken)
         {
-            get { return new[] { m_s3Client.GetDnsHost() }; }
+            if (_s3Client != null) return _s3Client;
+
+            var (accessKeyId, accessKeySecret) = _auth.GetCredentials();
+
+            var host = await GetRegionEndpointAsync("https://api.idrivee2.com/api/service/get_region_end_point/" + accessKeyId, cancellationToken).ConfigureAwait(false);
+            _s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, false, _timeouts, _options);
+
+            return _s3Client;
         }
 
-        private string GetFullKey(string name)
+        /// <inheritdoc />
+        public async Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
         {
+            var con = await GetConnection(cancelToken).ConfigureAwait(false);
+            var dnsHost = con.GetDnsHost();
+            return string.IsNullOrWhiteSpace(dnsHost)
+                ? []
+                : [dnsHost];
+        }
+
+        private string GetFullKey(string? name)
             //AWS SDK encodes the filenames correctly
-            return m_prefix + name;
+            => $"{_prefix}{name}";
+
+        /// <inheritdoc/>
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var filterPath = GetFullKey(path);
+            if (!string.IsNullOrWhiteSpace(filterPath))
+                filterPath = Util.AppendDirSeparator(filterPath, "/");
+
+            var con = await GetConnection(cancellationToken).ConfigureAwait(false);
+            await foreach (var files in con.ListBucketAsync(_bucket, filterPath, true, cancellationToken).ConfigureAwait(false))
+                yield return files;
         }
+
+        /// <inheritdoc/>
+        public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry?>(null);
     }
 }

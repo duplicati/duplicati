@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Description>Server CLI implementation of Duplicati</Description>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Duplicati\CommandLine\ServerUtil\Duplicati.CommandLine.ServerUtil.csproj" />
+    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
+  </ItemGroup>
+
+</Project>

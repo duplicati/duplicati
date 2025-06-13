@@ -1,32 +1,38 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.IO;
 using System.Linq;
 
-using AlphaFS = Alphaleonis.Win32.Filesystem;
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
+using System.Runtime.Versioning;
+using System.Security.Principal;
 
 namespace Duplicati.Library.Common.IO
 {
+    [SupportedOSPlatform("windows")]
     public struct SystemIOWindows : ISystemIO
     {
         // Based on the constant names used in
@@ -37,6 +43,16 @@ namespace Duplicati.Library.Common.IO
         private const string UncExtendedPathPrefix = @"\\?\UNC\";
 
         private static readonly string DIRSEP = Util.DirectorySeparatorString;
+
+        /// <summary>
+        /// The current user name
+        /// </summary>
+        private static readonly string CURRENT_USERNAME = WindowsIdentity.GetCurrent().Name;
+
+        /// <summary>
+        /// The LocalSystem user name
+        /// </summary>
+        private static readonly string LOCAL_SYSTEM_NAME = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null).Translate(typeof(NTAccount)).Value;
 
         /// <summary>
         /// Prefix path with one of the extended device path prefixes
@@ -75,7 +91,7 @@ namespace Duplicati.Library.Common.IO
                 }
             }
         }
-        
+
         /// <summary>
         /// Returns true if prefixed with @"\\" or @"//".
         /// </summary>
@@ -152,6 +168,8 @@ namespace Duplicati.Library.Common.IO
             return path.Replace("/", Util.DirectorySeparatorString);
         }
 
+
+        [SupportedOSPlatform("windows")]
         private class FileSystemAccess
         {
             // Use JsonProperty Attribute to allow readonly fields to be set by deserializer
@@ -231,24 +249,32 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
+
+        [SupportedOSPlatform("windows")]
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
         {
-            return System.IO.Directory.GetAccessControl(AddExtendedDevicePathPrefix(path));
+            return new DirectoryInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
         }
 
+
+        [SupportedOSPlatform("windows")]
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
         {
-            return System.IO.File.GetAccessControl(AddExtendedDevicePathPrefix(path));
+            return new FileInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
         }
 
+
+        [SupportedOSPlatform("windows")]
         private void SetAccessControlFile(string path, FileSecurity rules)
         {
-            System.IO.File.SetAccessControl(AddExtendedDevicePathPrefix(path), rules);
+            new FileInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
         }
 
+
+        [SupportedOSPlatform("windows")]
         private void SetAccessControlDir(string path, DirectorySecurity rules)
         {
-            System.IO.Directory.SetAccessControl(AddExtendedDevicePathPrefix(path), rules);
+            new DirectoryInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
         }
 
         #region ISystemIO implementation
@@ -307,6 +333,13 @@ namespace Duplicati.Library.Common.IO
             return System.IO.File.Open(AddExtendedDevicePathPrefix(path), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
         }
 
+        public System.IO.FileStream FileOpenReadWrite(string path)
+        {
+            return !FileExists(path)
+                ? FileCreate(path)
+                : System.IO.File.Open(AddExtendedDevicePathPrefix(path), System.IO.FileMode.Open, System.IO.FileAccess.ReadWrite);
+        }
+
         public System.IO.FileStream FileOpenWrite(string path)
         {
             return !FileExists(path)
@@ -336,17 +369,7 @@ namespace Duplicati.Library.Common.IO
         /// <returns>The symlink target</returns>
         public string GetSymlinkTarget(string file)
         {
-            try
-            {
-                return AlphaFS.File.GetLinkTargetInfo(AddExtendedDevicePathPrefix(file)).PrintName;
-            }
-            catch (AlphaFS.NotAReparsePointException) { }
-            catch (AlphaFS.UnrecognizedReparsePointException) { }
-
-            // This path looks like it isn't actually a symlink
-            // (Note that some reparse points aren't actually symlinks -
-            // things like the OneDrive folder in the Windows 10 Fall Creator's Update for example)
-            return null;
+            return new FileInfo(AddExtendedDevicePathPrefix(file)).LinkTarget;
         }
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path)
@@ -361,7 +384,7 @@ namespace Duplicati.Library.Common.IO
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
         {
-            return System.IO.Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern,  searchOption).Select(RemoveExtendedDevicePathPrefix);
+            return System.IO.Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern, searchOption).Select(RemoveExtendedDevicePathPrefix);
         }
 
         public string PathGetFileName(string path)
@@ -474,6 +497,30 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
+        public IEnumerable<IFileEntry> EnumerateFileEntries(string path)
+        {
+            // For consistency with previous implementation, enumerate files first and directories after
+            DirectoryInfo dir;
+            if (IsPrefixedWithExtendedDevicePathPrefix(path))
+            {
+                dir = new DirectoryInfo(path);
+            }
+            else
+            {
+                dir = new DirectoryInfo(AddExtendedDevicePathPrefix(path));
+            }
+
+            foreach (FileInfo file in dir.EnumerateFiles())
+            {
+                yield return FileEntry(file);
+            }
+
+            foreach (DirectoryInfo d in dir.EnumerateDirectories())
+            {
+                yield return DirectoryEntry(d);
+            }
+        }
+
         public void FileCopy(string source, string target, bool overwrite)
         {
             File.Copy(AddExtendedDevicePathPrefix(source), AddExtendedDevicePathPrefix(target), overwrite);
@@ -498,7 +545,10 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry DirectoryEntry(string path)
         {
-            var dInfo = new DirectoryInfo(AddExtendedDevicePathPrefix(path));
+            return DirectoryEntry(new DirectoryInfo(AddExtendedDevicePathPrefix(path)));
+        }
+        public IFileEntry DirectoryEntry(DirectoryInfo dInfo)
+        {
             return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
             {
                 IsFolder = true
@@ -507,7 +557,10 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry FileEntry(string path)
         {
-            var fileInfo = new FileInfo(AddExtendedDevicePathPrefix(path));
+            return FileEntry(new FileInfo(AddExtendedDevicePathPrefix(path)));
+        }
+        public IFileEntry FileEntry(FileInfo fileInfo)
+        {
             var lastAccess = new DateTime();
             try
             {
@@ -523,6 +576,7 @@ namespace Duplicati.Library.Common.IO
             return new FileEntry(fileInfo.Name, fileInfo.Length, lastAccess, fileInfo.LastWriteTime);
         }
 
+        [SupportedOSPlatform("windows")]
         public Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink)
         {
             var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
@@ -548,13 +602,14 @@ namespace Duplicati.Library.Common.IO
             return dict;
         }
 
+        [SupportedOSPlatform("windows")]
         public void SetMetadata(string path, Dictionary<string, string> data, bool restorePermissions)
         {
-            var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
-            var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
-
             if (restorePermissions)
             {
+                var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
+                var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
+
                 FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
 
                 if (data.ContainsKey("win-ext:accessrulesprotected"))
@@ -609,13 +664,14 @@ namespace Duplicati.Library.Common.IO
             if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
                 throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
 
+
             if (asDir)
             {
-                Alphaleonis.Win32.Filesystem.Directory.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+                Directory.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target);
             }
             else
             {
-                Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+                File.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target);
             }
 
             //Sadly we do not get a notification if the creation fails :(
@@ -626,6 +682,68 @@ namespace Duplicati.Library.Common.IO
 
             if ((attr & System.IO.FileAttributes.ReparsePoint) == 0)
                 throw new System.IO.IOException(string.Format("Unable to create symlink, check account permissions: {0}", symlinkfile));
+        }
+
+        /// <summary>
+        /// Sets the unix permission user read-write Only.
+        /// </summary>
+        /// <param name="path">The file to set permissions on.</param>
+        public void FileSetPermissionUserRWOnly(string path)
+        {
+            // Create directory security settings
+            var security = new FileSecurity();
+
+            // Remove inherited permissions to ensure only the current user has access
+            security.SetAccessRuleProtection(true, false);
+
+            // Grant the current user read access
+            security.AddAccessRule(new FileSystemAccessRule(
+                CURRENT_USERNAME,
+                FileSystemRights.FullControl,
+                AccessControlType.Allow
+            ));
+
+            security.AddAccessRule(new FileSystemAccessRule(
+                LOCAL_SYSTEM_NAME,
+                FileSystemRights.FullControl,
+                AccessControlType.Allow
+            ));
+
+            // Adjust with the new security settings
+            new FileInfo(path).SetAccessControl(security);
+        }
+
+        /// <summary>
+        /// Sets the permission to read-write only for the current user.
+        /// </summary>
+        /// <param name="path">The directory to set permissions on.</param>
+        public void DirectorySetPermissionUserRWOnly(string path)
+        {
+            // Create directory security settings
+            var security = new DirectorySecurity();
+
+            // Remove inherited permissions to ensure only the current user has access
+            security.SetAccessRuleProtection(true, false);
+
+            // Grant the current user read access
+            security.AddAccessRule(new FileSystemAccessRule(
+                CURRENT_USERNAME,
+                FileSystemRights.FullControl,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, // Apply to subfolders & files
+                PropagationFlags.None, // Keeps inheritance settings intact
+                AccessControlType.Allow
+            ));
+
+            security.AddAccessRule(new FileSystemAccessRule(
+                LOCAL_SYSTEM_NAME,
+                FileSystemRights.FullControl,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, // Apply to subfolders & files
+                PropagationFlags.None, // Keeps inheritance settings intact
+                AccessControlType.Allow
+            ));
+
+            // Adjust with the new security settings
+            new DirectoryInfo(path).SetAccessControl(security);
         }
         #endregion
     }

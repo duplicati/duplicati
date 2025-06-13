@@ -1,4 +1,4 @@
-backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogService, gettextCatalog) {
+backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppService, DialogService, gettextCatalog) {
 
     var apputils = this;
 
@@ -60,6 +60,12 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             res = gettextCatalog.getString('Desktop');
         else if (cls == 'x-tree-icon-home')
             res = gettextCatalog.getString('Home');
+        else if (cls == 'x-tree-icon-mymovies')
+            res = gettextCatalog.getString('My Movies');
+        else if (cls == 'x-tree-icon-mydownloads')
+            res = gettextCatalog.getString('My Downloads');
+        else if (cls == 'x-tree-icon-mypublic')
+            res = gettextCatalog.getString('Public');
         else if (cls == 'x-tree-icon-hypervmachine')
             res = gettextCatalog.getString('Hyper-V Machine');
         else if (cls == 'x-tree-icon-hyperv')
@@ -119,7 +125,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         ];
 
 
-        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, eg. {0}');
+        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, e.g. {0}');
 
         apputils.filterClasses = [{
             name: gettextCatalog.getString('Exclude directories whose names contain'),
@@ -138,11 +144,13 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             key: '-folder',
             prefix: '-',
             suffix: '!',
+            stripSep: true,
             rx: '\\-(.*)\\!'
         }, {
             name: gettextCatalog.getString('Exclude file'),
             key: '-path',
             prefix: '-',
+            stripSep: true,
             exclude: ['*', '?', '{'],
             rx: '\\-([^\\[\\{\\*\\?]+)'
         }, {
@@ -212,6 +220,17 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         $rootScope.$broadcast('apputillookupschanged');
     };
 
+    apputils.filterGroupMap = null;
+    apputils.loadFilterGroups = function (reload) {
+        if (reload || apputils.filterGroupMap === null) {
+            AppService.get('/systeminfo/filtergroups').then(function (data) {
+                apputils.filterGroupMap = angular.copy(data.data.FilterGroups);
+
+                $rootScope.$broadcast('apputillookupschanged');
+            }, apputils.connectionError);
+        }
+    }
+
     reloadTexts();
     $rootScope.$on('gettextLanguageChanged', reloadTexts);
 
@@ -226,14 +245,27 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     };
 
 
-    this.splitSizeString = function(val) {
+    this.splitSizeString = function (val) {
         var m = (/(\d*)(\w*)/mg).exec(val);
         var mul = null;
         if (!m)
             return [parseInt(val), null];
         else
             return [parseInt(m[1]), m[2]];
-    }
+    };
+
+    this.parseSizeString = function (val) {
+        if (val == null) {
+            return null;
+        }
+        var split = this.splitSizeString(val);
+        var formatSizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        var idx = formatSizes.indexOf((split[1]||'').toUpperCase());
+        if (idx == -1) {
+            idx = 0;
+        }
+        return split[0] * Math.pow(1024, idx);
+    };
 
 
     this.toDisplayDateAndTime = function(dt) {
@@ -257,12 +289,14 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             return new Date(dt);
     };
 
-    this.parseOptionStrings = function(val, dict, validateCallback) {
+    this.parseOptionStrings = function (val, dict, validateCallback) {
+        // Parse options and return a dict with dict['--key']=value options
+        // Include and exclude filters are returned as arrays in dict['include'], dict['exclude'] if present
         dict = dict || {};
 
         var lines = null;
 
-        if (val != null && typeof(val) == typeof([]))
+        if (val != null && Array.isArray(val))
             lines = val;
         else
             lines = this.replace_all(val || '', '\r', '\n').split('\n');
@@ -280,15 +314,23 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
                 if (eqpos > 0) {
                     key = line.substr(0, eqpos).trim();
                     value = line.substr(eqpos + 1).trim();
-                    if (value == '')
-                        value = true;
                 }
 
                 if (validateCallback)
                     if (!validateCallback(dict, key, value))
                         return null;
-
-                dict['--' + key] = value;
+                // Special handing for --include and --exclude, which are the only options that can appear multiple times (compare FilterCollector.DoExtractOptions)
+                // In all other cases, the last value overrides the earlier values
+                var lower = key.toLowerCase();
+                if (lower == 'include' || lower == 'exclude') {
+                    if (!Array.isArray(dict[lower])) {
+                        dict[lower] = [value];
+                    } else {
+                        dict[lower].push(value);
+                    }
+                } else {
+                    dict['--' + key] = value;
+                }
             }
         }
 
@@ -299,6 +341,11 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         return this.parseOptionStrings(str, dict, function(d, k, v) {
             if (d['--' + k] !== undefined) {
                 DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Duplicate option {{opt}}', { opt: k }));
+                return false;
+            } else if (k == 'include' || k == 'exclude') {
+                // Cannot specify filters in extra options
+                // Not sure that this is really called.
+                DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Cannot specify filter include or excludes in extra options'));
                 return false;
             }
 
@@ -342,21 +389,17 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     this.connectionError = function(txt, msg) {
         if (typeof(txt) == typeof('')) {
             if (msg == null)
-                return function(msg) {
-                    if (msg && msg.data && msg.data.Message)
-                        DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.data.Message);
-                    else
-                        DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.statusText);
+                return function (msg) {
+                    var msgText = AppService.responseErrorMessage(msg);
+                    DialogService.dialog(gettextCatalog.getString('Error'), txt + msgText);
                 };
         } else {
             msg = txt;
             txt = '';
         }
 
-        if (msg && msg.data && msg.data.Message)
-            DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.data.Message);
-        else
-            DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.statusText);
+        var msgText = AppService.responseErrorMessage(msg);
+        DialogService.dialog(gettextCatalog.getString('Error'), txt + msgText);
     };
 
     this.generatePassphrase = function() {
@@ -422,6 +465,13 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
       return str.replace( new RegExp( "(" + this.preg_quote(pattern) + ")" , 'g' ), replacement );
     };
 
+    this.globToRegexp = function (str) {
+        // Escape special chars, except ? and *
+        str = (str + '').replace(/([\\\.\+\[\^\]\$\(\)\{\}\=\!\<\>\|\:])/g, "\\$1");
+        // Replace ? and * with .? and .*
+        return str.replace(/(\?|\*)/g, ".$1");
+    };
+
     this.format = function() {
         if (arguments == null || arguments.length < 1)
             return null;
@@ -457,21 +507,32 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
     var URL_REGEXP_FIELDS = ['source_uri', 'backend-type', '--auth-username', '--auth-password', 'server-name', 'server-port', 'server-path', 'querystring'];
     var URL_REGEXP = /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/;
+    // Same as URL_REGEXP, but also accepts :\\ as a separator between drive letter (server for legacy reasons) and path
+    var FILE_REGEXP = /(file)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:(?:\/|\:\\)([^\?]*))?(?:\?(.+))?/;
     var QUERY_REGEXP = /(?:^|&)([^&=]*)=?([^&]*)/g;
 
     this.decode_uri = function(uri, backendlist) {
 
-        var i = URL_REGEXP_FIELDS.length + 1;
+        var i = 0;
         var res = {};
 
-        var m = URL_REGEXP.exec(uri);
+        // File URLs contain backslashes on Win which breaks the other regexp
+        // This is not standard, but for compatibility it is allowed for now
+        var fileMatch = FILE_REGEXP.exec(uri);
+        if (fileMatch) {
+            for (i = 0; i < URL_REGEXP_FIELDS.length; ++i) {
+                res[URL_REGEXP_FIELDS[i]] = fileMatch[i] || "";
+            }
+        } else {
+            var m = URL_REGEXP.exec(uri);
 
-        // Invalid URI
-        if (!m)
-            return res;
+            // Invalid URI
+            if (!m)
+                return res;
 
-        while (i--) {
-            res[URL_REGEXP_FIELDS[i]] = m[i] || "";
+            for (i = 0; i < URL_REGEXP_FIELDS.length; ++i) {
+                res[URL_REGEXP_FIELDS[i]] = m[i] || "";
+            }
         }
 
         res.querystring.replace(QUERY_REGEXP, function(str, key, val) {
@@ -480,7 +541,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         });
 
         var backends = {};
-        for(var i in backendlist)
+        for(i in backendlist)
             backends[backendlist[i].Key] = true;
 
         var scheme = res['backend-type'];
@@ -548,7 +609,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             var pre = apputils.replace_all(n.prefix || '', '!', dirsep);
             var suf = apputils.replace_all(n.suffix || '', '!', dirsep);
 
-            if (txt.indexOf(pre) != 0 || txt.lastIndexOf(suf) != txt.length - suf.length)
+            if (txt.indexOf(pre) != 0 || txt.lastIndexOf(suf) != txt.length - suf.length || txt.lastIndexOf(suf) < 0)
                 return null;
 
             var type = n.key;
@@ -568,13 +629,25 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             return [type, body];
         }
 
-        for(var i in this.filterClasses) {
+        var m = [];
+        for (var i in this.filterClasses) {
             var n = matches(src, this.filterClasses[i]);
             if (n != null)
-                return n;
+                m.push(n);
         }
-
-        return null;
+        if (m.length == 0) {
+            return null;
+        }
+        // Select match with shortest body, meaning longest prefix and suffix
+        var shortestIdx = 0;
+        var shortestLen = src.length;
+        for (i = 0; i < m.length; ++i) {
+            if (m[i][1].length < shortestLen) {
+                shortestIdx = i;
+                shortestLen = m[i][1].length;
+            }
+        }
+        return m[shortestIdx];
     };
 
     this.buildFilter = function(type, body, dirsep) {
@@ -590,8 +663,39 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         if (pre.length >= 2 && pre[1] == '[') {
             //Regexp encode body ....
         }
-
+        if (f.stripSep == true && body[body.length - 1] == dirsep) {
+            // Remove trailing dirsep
+            body = body.slice(0, -1);
+        }
         return pre + body + suf;
+    };
+
+    this.filterToRegexpStr = function (filter) {
+        var firstChar = filter.substr(0, 1);
+        var lastChar = filter.substr(filter.length - 1, 1);
+        var isFilterGroup = firstChar == '{' && lastChar == '}';
+        if (isFilterGroup && this.filterGroupMap !== null) {
+            // Replace filter groups with filter strings
+            var filterGroups = filter.substr(1,filter.length - 2).split(',');
+            var filterStrings = [];
+            for (var i = 0; i < filterGroups.length; ++i) {
+                filterStrings = filterStrings.concat(this.filterGroupMap[filterGroups[i].trim()] || []);
+            }
+
+            filter = filterStrings.map(function (s) {
+                return '(?:' + apputils.filterToRegexpStr(s) + ')'
+            }).join('|');
+
+        } else {
+            var rx = firstChar == '[' && lastChar == ']';
+            if (rx)
+                filter = filter.substr(1, filter.length - 2);
+            else {
+                filter = this.globToRegexp(filter);
+            }
+        }
+
+        return filter;
     };
 
     this.filterListToRegexps = function(filters, caseSensitive) {
@@ -605,14 +709,10 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
             var flag = f.substr(0, 1);
             var filter = f.substr(1);
-            var rx = filter.substr(0, 1) == '[' && filter.substr(filter.length - 1, 1) == ']';
-            if (rx)
-                filter = filter.substr(1, filter.length - 2);
-            else
-                filter = this.replace_all(this.replace_all(this.preg_quote(filter), '*', '.*'), '?', '.');
 
             try {
-                res.push([flag == '+', new RegExp(filter, caseSensitive ? 'g' : 'gi')]);
+                var regexp = this.filterToRegexpStr(filter);
+                res.push([flag == '+', new RegExp(regexp, caseSensitive ? 'g' : 'gi')]);
             } catch (e) {
             }
         }
@@ -621,9 +721,11 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     };
 
     this.evalFilter = function(path, filters, include) {
-        for(var i = 0; i < filters.length; i++) {
+        for (var i = 0; i < filters.length; i++) {
             var m = path.match(filters[i][1]);
-            if (m && m.length == 1 && m[0].length == path.length)
+            // Regex such as '.*' might match empty string at the end which is unwanted
+            // Check that the first match covers the full string
+            if (m && m.length >= 1 && m[0].length == path.length)
                 return filters[i][0];
         }
 

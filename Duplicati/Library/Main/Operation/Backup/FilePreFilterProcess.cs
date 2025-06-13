@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using CoCoL;
 using System.Threading.Tasks;
@@ -24,7 +29,7 @@ using Duplicati.Library.Main.Operation.Common;
 namespace Duplicati.Library.Main.Operation.Backup
 {
     /// <summary>
-    /// This process takes files that are processed for metadata, 
+    /// This process takes files that are processed for metadata,
     /// and checks if anything indicates that the file has changed
     /// and submits potentially changed files for scanning
     /// </summary>
@@ -35,14 +40,14 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FilePreFilterProcess)) + ".FileEntry";
 
-        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupStatsCollector stats, BackupDatabase database)
+        public static Task Run(Channels channels, Options options, BackupStatsCollector stats, BackupDatabase database)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.ProcessedFiles.ForRead,
-                ProgressChannel = Channels.ProgressEvents.ForWrite,
-                Output = Channels.AcceptedChangedFile.ForWrite
+                Input = channels.ProcessedFiles.AsRead(),
+                ProgressChannel = channels.ProgressEvents.AsWrite(),
+                Output = channels.AcceptedChangedFile.AsWrite()
             },
 
             async self =>
@@ -68,11 +73,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                     long filestatsize = -1;
                     try
                     {
-                        filestatsize = snapshot.GetFileSize(e.Path);
+                        filestatsize = e.Entry.Size;
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
-                        Logging.Log.WriteExplicitMessage(FILELOGTAG, "FailedToReadSize", ex, "Failed to read size of file: {0}", e.Path);
+                        LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FailedToReadSize", e.Entry.Path, "Failed to read size on \"{0}\"");
                     }
 
                     await stats.AddExaminedFile(filestatsize);
@@ -81,8 +86,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                     var tooLargeFile = SKIPFILESLARGERTHAN != 0 && filestatsize >= 0 && filestatsize > SKIPFILESLARGERTHAN;
                     if (tooLargeFile)
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Path);
-                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filestatsize, Type = EventType.FileSkipped });
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Entry.Path);
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
                         continue;
                     }
 
@@ -91,13 +96,13 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     // If we disable the filetime check, we always assume that the file has changed
                     // Otherwise we check that the timestamps are different or if any of them are empty
-                    var timestampChanged = DISABLEFILETIMECHECK || e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
+                    e.TimestampChanged = DISABLEFILETIMECHECK || e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
 
                     // Avoid generating a new metadata blob if timestamp has not changed
                     // and we only check for timestamp changes
-                    if (CHECKFILETIMEONLY && !timestampChanged && !isNewFile)
+                    if (CHECKFILETIMEONLY && !e.TimestampChanged && !isNewFile)
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoTimestampChange", "Skipped checking file, because timestamp was not updated {0}", e.Path);                                                
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoTimestampChange", "Skipped checking file, because timestamp was not updated {0}", e.Entry.Path);
                         try
                         {
                             await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
@@ -106,9 +111,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             if (ex.IsRetiredException())
                                 throw;
-                            Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
+                            Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Entry.Path);
                         }
-                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filestatsize, Type = EventType.FileSkipped });
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
                         continue;
                     }
 
@@ -119,34 +124,34 @@ namespace Duplicati.Library.Main.Operation.Backup
                         var tp = await database.GetMetadataHashAndSizeForFileAsync(e.OldId);
                         if (tp != null)
                         {
-                            e.OldMetaSize = tp.Item1;
-                            e.OldMetaHash = tp.Item2;
+                            e.OldMetaSize = tp.Value.Size;
+                            e.OldMetaHash = tp.Value.MetadataHash;
                         }
                     }
 
                     // Compute current metadata
-                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(MetadataGenerator.GenerateMetadata(e.Path, e.Attributes, options, snapshot), options);
+                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(MetadataGenerator.GenerateMetadata(e.Entry, e.Attributes, options), options);
                     e.MetadataChanged = !SKIPMETADATA && (e.MetaHashAndSize.Blob.Length != e.OldMetaSize || e.MetaHashAndSize.FileHash != e.OldMetaHash);
 
                     // Check if the file is new, or something indicates a change
                     var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
-                    if (isNewFile || timestampChanged || filesizeChanged || e.MetadataChanged)
+                    if (isNewFile || e.TimestampChanged || filesizeChanged || e.MetadataChanged)
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Path, isNewFile, timestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Entry.Path, isNewFile, e.TimestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
                         await self.Output.WriteAsync(e);
                     }
                     else
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoMetadataChange", "Skipped checking file, because no metadata was updated {0}", e.Path);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoMetadataChange", "Skipped checking file, because no metadata was updated {0}", e.Entry.Path);
                         try
                         {
                             await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
+                            Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Entry.Path);
                         }
-                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filestatsize, Type = EventType.FileSkipped });
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
                     }
                 }
             });

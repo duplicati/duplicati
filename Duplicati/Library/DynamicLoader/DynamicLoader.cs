@@ -1,26 +1,31 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
-using System.Text;
+using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.DynamicLoader
 {
@@ -28,7 +33,7 @@ namespace Duplicati.Library.DynamicLoader
     /// This class supports dynamic loading of instances of a given interface
     /// </summary>
     /// <typeparam name="T">The interface that the class loads</typeparam>
-    internal abstract class DynamicLoader<T> where T : class
+    internal abstract class DynamicLoader<T> where T : class, IDynamicModule
     {
         /// <summary>
         /// The tag used for logging
@@ -46,6 +51,11 @@ namespace Duplicati.Library.DynamicLoader
         protected Dictionary<string, T> m_interfaces;
 
         /// <summary>
+        /// List of supported commands
+        /// </summary>
+        protected Dictionary<Type, IReadOnlyList<ICommandLineArgument>> m_supportedCommands = new();
+
+        /// <summary>
         /// Function to extract the key value from the interface
         /// </summary>
         /// <param name="item">The interface to extract the key from</param>
@@ -56,6 +66,11 @@ namespace Duplicati.Library.DynamicLoader
         /// Gets a list of subfolders to search for interfaces
         /// </summary>
         protected abstract string[] Subfolders { get; }
+
+        /// <summary>
+        /// The list of statically included modules
+        /// </summary>
+        protected abstract IEnumerable<T> BuiltInModules { get; }
 
         /// <summary>
         /// Construct a new instance of the dynamic loader,
@@ -74,10 +89,14 @@ namespace Duplicati.Library.DynamicLoader
                 lock (m_lock)
                     if (m_interfaces == null)
                     {
-                        Dictionary<string, T> interfaces = new Dictionary<string, T>();
-                        //When loading, the subfolder matches are places last in the
+                        var interfaces = new Dictionary<string, T>();
+                        // When loading, inject the built-ins first, so they can be replaced by subfolder matches
+                        foreach (T b in BuiltInModules)
+                            interfaces[GetInterfaceKey(b)] = b;
+
+                        // When loading, the subfolder matches are placed last in the
                         // resulting list, and thus applied last to the lookup,
-                        // meaning that they can replace the stock versions
+                        // meaning that they can replace the built-in versions
                         foreach (T b in FindInterfaceImplementors(Subfolders))
                             interfaces[GetInterfaceKey(b)] = b;
 
@@ -91,22 +110,34 @@ namespace Duplicati.Library.DynamicLoader
         /// </summary>
         /// <param name="additionalfolders">Any additional folders besides the assembly path to search in</param>
         /// <returns>A list of instanciated classes which implements the interface</returns>
-        private List<T> FindInterfaceImplementors(string[] additionalfolders) 
+        private IEnumerable<T> FindInterfaceImplementors(string[] additionalfolders)
         {
-            List<T> interfaces = new List<T>();
+            var interfaces = new List<T>();
 
-            string path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            List<string> files = new List<string>();
-            files.AddRange(System.IO.Directory.GetFiles(path, "*.dll"));
+            // Search in these folders for modules
+            var root_paths = new[] {
+                Path.Combine(UpdaterManager.INSTALLATIONDIR, "modules"),
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) ?? string.Empty,
+                    AutoUpdateSettings.AppName,
+                    "modules"
+                ),
+                Environment.GetEnvironmentVariable($"{AutoUpdateSettings.AppName}_MODULE_PATH")
+            }
+            .Where(x => !string.IsNullOrEmpty(x) && Directory.Exists(x));
 
-            //We can override with subfolders
-            if (additionalfolders != null)
-                foreach (string s in additionalfolders)
-                {
-                    string subpath = System.IO.Path.Combine(path, s);
-                    if (System.IO.Directory.Exists(subpath))
-                        files.AddRange(System.IO.Directory.GetFiles(subpath, "*.dll"));
-                }
+            // In each folder we look, search only in the subfolders containing the modules
+            var files = new List<string>();
+            foreach (var path in root_paths)
+            {
+                if (additionalfolders != null)
+                    foreach (string s in additionalfolders)
+                    {
+                        string subpath = System.IO.Path.Combine(path, s);
+                        if (System.IO.Directory.Exists(subpath))
+                            files.AddRange(System.IO.Directory.GetFiles(subpath, "*.dll"));
+                    }
+            }
 
             foreach (string s in files)
             {
@@ -117,8 +148,8 @@ namespace Duplicati.Library.DynamicLoader
                     //Since the lookup dictionary applies the modules in the order returned
                     // and the subfolders are probed last, a module in the subfolder
                     // will take the place of a stock module, if both use same key
-                    System.Reflection.Assembly asm = System.Reflection.Assembly.LoadFile(s);
-                    if (asm != System.Reflection.Assembly.GetExecutingAssembly())
+                    Assembly asm = Assembly.LoadFile(s);
+                    if (asm != Assembly.GetExecutingAssembly())
                     {
                         foreach (Type t in asm.GetExportedTypes())
                             try
@@ -141,8 +172,8 @@ namespace Duplicati.Library.DynamicLoader
                             }
                     }
                 }
-                catch(Exception ex)
-                {   
+                catch (Exception ex)
+                {
                     ex = GetActualException(ex);
                     // Since this is locating the assemblies that have the proper interface, it isn't an error to not.
                     // This was loading the log with errors about additional DLL's that are not plugins and do not have manifests.
@@ -168,7 +199,7 @@ namespace Duplicati.Library.DynamicLoader
             get
             {
                 LoadInterfaces();
-                lock(m_lock)
+                lock (m_lock)
                     return new List<T>(m_interfaces.Values).ToArray();
             }
         }
@@ -186,5 +217,32 @@ namespace Duplicati.Library.DynamicLoader
             }
         }
 
+        /// <summary>
+        /// Returns the supported commands from the item, applying caching
+        /// </summary>
+        /// <param name="item">The item to get the supported commands for</param>
+        /// <returns>The list of supported commands</returns>
+        protected IEnumerable<ICommandLineArgument> GetSupportedCommandsCached(T item)
+        {
+            var type = item.GetType();
+            lock (m_lock)
+            {
+                if (m_supportedCommands.TryGetValue(type, out var commands))
+                    return commands;
+
+                return m_supportedCommands[type] = item.SupportedCommands.ToList().AsReadOnly();
+            }
+        }
+
+        /// <summary>
+        /// Helper method to register a module
+        /// </summary>
+        /// <param name="module">The module to register</param>
+        public void AddModule(T module)
+        {
+            LoadInterfaces();
+            lock (m_lock)
+                m_interfaces[GetInterfaceKey(module)] = module;
+        }
     }
 }

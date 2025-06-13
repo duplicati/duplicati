@@ -1,28 +1,31 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
-using Duplicati.Library.Common;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Snapshots.Windows;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -34,6 +37,8 @@ namespace Duplicati.Library.Modules.Builtin
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<HyperVOptions>();
         private const string m_HyperVPathGuidRegExp = @"\%HYPERV\%\\([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})";
         private const string m_HyperVPathAllRegExp = @"%HYPERV%";
+
+        private const string IGNORE_CONSISTENCY_WARNING_OPTION = "hyperv-ignore-client-warning";
 
         #region IGenericModule Members
 
@@ -54,17 +59,18 @@ namespace Duplicati.Library.Modules.Builtin
 
         public bool LoadAsDefault
         {
-            get { return Platform.IsClientWindows; }
+            get { return OperatingSystem.IsWindows(); }
         }
 
         public IList<Interface.ICommandLineArgument> SupportedCommands
-        {
-            get { return null; }
-        }
+            => new List<Interface.ICommandLineArgument>
+            {
+                new Interface.CommandLineArgument(IGNORE_CONSISTENCY_WARNING_OPTION, Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HyperVOptions.IgnoreConsistencyWarningShort, Strings.HyperVOptions.IgnoreConsistencyWarningLong)
+            };
 
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
-            // Do nothing.  Implementation needed for IGenericModule interface.
+            // Do nothing. Implementation needed for IGenericModule interface.
         }
 
         #endregion
@@ -73,7 +79,7 @@ namespace Duplicati.Library.Modules.Builtin
         public Dictionary<string, string> ParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "HyperVWindowsOnly", null, "Hyper-V backup works only on Windows OS");
 
@@ -97,6 +103,7 @@ namespace Duplicati.Library.Modules.Builtin
         // Make sure the JIT does not attempt to inline this call and thus load
         // referenced types from System.Management here
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         private Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             var changedOptions = new Dictionary<string, string>();
@@ -120,7 +127,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             if (paths == null || !ContainFilesForBackup(paths) || !hypervUtility.IsHyperVInstalled)
                 return changedOptions;
-            
+
             if (commandlineOptions.Keys.Contains("vss-exclude-writers"))
             {
                 var excludedWriters = commandlineOptions["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
@@ -131,18 +138,19 @@ namespace Duplicati.Library.Modules.Builtin
                     changedOptions["vss-exclude-writers"] = string.Join(";", excludedWriters.Where(x => x != HyperVUtility.HyperVWriterGuid));
                 }
             }
-            
+
             if (!commandlineOptions.Keys.Contains("snapshot-policy") || !commandlineOptions["snapshot-policy"].Equals("required", StringComparison.OrdinalIgnoreCase))
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "MustSetSnapshotPolicy", null, "Snapshot policy have to be set to \"required\" when backuping Hyper-V virtual machines. Changing to \"required\" to continue", Logging.LogMessageType.Warning);
                 changedOptions["snapshot-policy"] = "required";
             }
-            
-            if (!hypervUtility.IsVSSWriterSupported)
+
+            if (!hypervUtility.IsVSSWriterSupported && !Library.Utility.Utility.ParseBoolOption(commandlineOptions, IGNORE_CONSISTENCY_WARNING_OPTION))
                 Logging.Log.WriteWarningMessage(LOGTAG, "HyperVOnServerOnly", null, "This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version");
 
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingHyperVQuery", "Starting to gather Hyper-V information");
-            hypervUtility.QueryHyperVGuestsInfo(true);          
+            var provider = Utility.Utility.ParseEnumOption(changedOptions.AsReadOnly(), "snapshot-provider", SnapshotProvider.AlphaVSS);
+            hypervUtility.QueryHyperVGuestsInfo(provider, true);
             Logging.Log.WriteInformationMessage(LOGTAG, "HyperVMachineCount", "Found {0} virtual machines on Hyper-V", hypervUtility.Guests.Count);
 
             foreach (var guest in hypervUtility.Guests)
@@ -193,7 +201,7 @@ namespace Duplicati.Library.Modules.Builtin
             var pathsForBackup = new List<string>(paths);
             var filterhandler = new Utility.FilterExpression(
                 filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-", StringComparison.Ordinal)).Select(x => x.Substring(1)).ToList());
-            
+
             foreach (var guestForBackup in guestsForBackup)
                 foreach (var pathForBackup in guestForBackup.DataPaths)
                 {
@@ -211,10 +219,10 @@ namespace Duplicati.Library.Modules.Builtin
 
             return changedOptions;
         }
-        
+
         public bool ContainFilesForBackup(string[] paths)
         {
-            if (paths == null || !Platform.IsClientWindows)
+            if (paths == null || !OperatingSystem.IsWindows())
                 return false;
 
             return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Any(x => x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));

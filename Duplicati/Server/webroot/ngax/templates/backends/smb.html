@@ -1,0 +1,44 @@
+
+<div class="input select">
+    <label for="transport" translate>Transport</label>
+    <select name="transport"
+            id="transport"
+            ng-model="$parent.Transport">
+        <option value="directtcp">
+            {{'Direct TCP' | translate}}
+        </option>
+        <option value="netbios">
+            {{'Netbios over TCP' | translate}}
+        </option>
+    </select>
+</div>
+
+<div class="input text">
+    <label for="generic_server" translate>Server</label>
+    <input type="text" name="generic_server" id="generic_server" ng-model="$parent.Server" placeholder="{{'Server hostname or IP' | translate}}" />
+</div>
+
+
+<div class="input text">
+    <label for="share_name" translate>Share Name</label>
+    <input type="text" name="share_name" id="share_name" ng-model="$parent.ShareName" placeholder="{{'Share name' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="generic_path" translate>Path on server</label>
+    <input type="text" name="generic_path" id="generic_path" ng-model="$parent.Path" placeholder="{{'Destination path' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="auth_domain" translate>Domain</label>
+    <input type="text" name="auth_domain" id="auth_domain" ng-model="$parent.Domain" placeholder="{{'Authentication Domain' | translate}}"  />
+</div>
+
+<div class="input text">
+    <label for="generic_username" translate>Username</label>
+    <input type="text" name="generic_username" id="generic_username" ng-model="$parent.Username" placeholder="{{'Authentication username' | translate}}"  />
+</div>
+<div class="input password">
+    <label for="generic_password" translate>Password</label>
+    <input autocomplete="new-password" type="password" name="generic_password" id="generic_password" ng-model="$parent.Password" placeholder="{{'Authentication password' | translate}}"  />
+</div>

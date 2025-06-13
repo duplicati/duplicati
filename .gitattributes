@@ -62,3 +62,8 @@
 #*.filters   merge=binary
 #*.vcxitems  merge=binary
 
+*.csproj text
+*.sh text eol=lf
+#The #! in rules won't work if CRLF
+/ReleaseBuilder/Resources/debian/* text eol=lf
+/ReleaseBuilder/Resources/fedora/*.sh text eol=lf

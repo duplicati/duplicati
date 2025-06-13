@@ -1,20 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 
 namespace Duplicati.Server.Serialization.Interface
@@ -27,48 +31,48 @@ namespace Duplicati.Server.Serialization.Interface
         /// <summary>
         /// The notification unique ID
         /// </summary>
-        long ID { get; set; }
+        long ID { get; }
         /// <summary>
         /// The notification type
         /// </summary>
-        NotificationType Type { get; set; }
+        NotificationType Type { get; }
         /// <summary>
         /// The notification title
         /// </summary>
-        string Title { get; set; }
+        string Title { get; }
         /// <summary>
         /// The notification message
         /// </summary>
-        string Message { get; set; }
+        string Message { get; }
         /// <summary>
         /// The serialized exception data, if any
         /// </summary>
-        string Exception { get; set; }
+        string Exception { get; }
         /// <summary>
         /// The ID of the backup that the notification belongs to
         /// </summary>
-        string BackupID { get; set; }
+        string BackupID { get; }
         /// <summary>
         /// The action for the notification
         /// </summary>
-        string Action { get; set; }
+        string Action { get; }
         /// <summary>
         /// When the notification was emitted
         /// </summary>
-        DateTime Timestamp { get; set; }
+        DateTime Timestamp { get; }
         /// <summary>
         /// The ID of the log entry that relates to this message, if any
         /// </summary>
         /// <value>The log entry identifier.</value>
-        string LogEntryID { get; set; }
+        string LogEntryID { get; }
         /// <summary>
         /// The ID of the event that triggered this notification
         /// </summary>
-        string MessageID { get; set; }
+        string MessageID { get; }
         /// <summary>
         /// The logtag of the error or event that triggered this notification
         /// </summary>
-        string MessageLogTag { get; set; }
+        string MessageLogTag { get; }
     }
 }
 

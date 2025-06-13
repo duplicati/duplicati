@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -22,22 +27,18 @@ namespace Duplicati.CommandLine.RecoveryTool
 {
     public static class Program
     {
+        private delegate int CommandRunner(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter);
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static int Main(string[] args)
-        {
-            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
-        }
-
-        private delegate int CommandRunner(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter);
-
-        public static int RealMain(string[] _args)
+        public static int Main(string[] _args)
         {
             try
             {
+                Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.RecoveryTool);
+
                 var args = new List<string>(_args);
                 var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(args);
                 var options = tmpparsed.Item1;
@@ -100,7 +101,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 return command(args, options, filter);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 if (ex is Duplicati.Library.Interface.UserInformationException)
                     Console.WriteLine(ex.Message);
@@ -128,7 +129,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 if (!newfilter.Empty)
                     filter = newfilter;
 
-                foreach(KeyValuePair<String, String> keyvalue in opt)
+                foreach (KeyValuePair<String, String> keyvalue in opt)
                     options[keyvalue.Key] = keyvalue.Value;
 
                 cargs.AddRange(
@@ -136,7 +137,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     where !string.IsNullOrWhiteSpace(c) && !c.StartsWith("#", StringComparison.Ordinal) && !c.StartsWith("!", StringComparison.Ordinal) && !c.StartsWith("REM ", StringComparison.OrdinalIgnoreCase)
                     select c
                 );
-                    
+
                 return true;
             }
             catch (Exception e)

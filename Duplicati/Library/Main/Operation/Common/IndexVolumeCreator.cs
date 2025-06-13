@@ -1,26 +1,34 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
+    // TODO: Remove this class and simply rely on the database to create the index files
+
     /// <summary>
     /// A collection class for keeping the temporary data required to build an index file
     /// </summary>
@@ -29,12 +37,17 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// The block hashes
         /// </summary>
-        private readonly Library.Utility.FileBackedStringList blockHashes = new Library.Utility.FileBackedStringList();
+        private readonly FileBackedStringList blockHashes = new();
 
         /// <summary>
         /// The blocklist hashes
         /// </summary>
-        private readonly Library.Utility.FileBackedStringList blockListHashes = new Library.Utility.FileBackedStringList();
+        private readonly FileBackedStringList blockListHashes = new();
+
+        /// <summary>
+        /// The known block list hashes
+        /// </summary>
+        private readonly HashSet<string> knownBlockListHashes = new();
 
         /// <summary>
         /// Cached copy of the blocklist hash size
@@ -47,8 +60,8 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         /// <param name="options">The options used in this run.</param>
 		public TemporaryIndexVolume(Options options)
-		{
-			m_blockhashsize = options.BlockhashSize;
+        {
+            m_blockhashsize = options.BlockhashSize;
         }
 
         /// <summary>
@@ -56,24 +69,15 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         /// <returns>The index volume.</returns>
         /// <param name="blockfilename">The name of the block file.</param>
-        /// <param name="blockHash">Hash of the volume</param>
-        /// <param name="blockSize">Size of the volume</param>
-        public async Task<IndexVolumeWriter> CreateVolume(string blockfilename, string blockHash, long blockSize, Options options, DatabaseCommon database)
+        /// <param name="options">The options used in this run.</param>
+        /// <param name="database">The database to use.</param>
+        public async Task<IndexVolumeWriter> CreateVolume(string blockfilename, Options options, DatabaseCommon database)
         {
             var w = new IndexVolumeWriter(options);
             w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
 
-            w.StartVolume(blockfilename);
-            foreach (var n in blockHashes)
-            {
-                var args = n.Split(new char[] { ':' }, 2);
-                w.AddBlock(args[1], long.Parse(args[0]));
-            }
-
-            w.FinishVolume(blockHash, blockSize);
-
             var enumerator = blockListHashes.GetEnumerator();
-            while(enumerator.MoveNext())
+            while (enumerator.MoveNext())
             {
                 var hash = enumerator.Current;
                 enumerator.MoveNext();
@@ -82,7 +86,12 @@ namespace Duplicati.Library.Main.Operation.Common
                 w.WriteBlocklist(hash, data, 0, data.Length);
             }
 
-            w.Close();
+            w.StartVolume(blockfilename);
+            foreach (var n in blockHashes)
+            {
+                var args = n.Split(new char[] { ':' }, 2);
+                w.AddBlock(args[1], long.Parse(args[0]));
+            }
 
             return w;
         }
@@ -97,9 +106,21 @@ namespace Duplicati.Library.Main.Operation.Common
             if (!onlyBlocklistHashes)
                 foreach (var n in blockHashes)
                     target.blockHashes.Add(n);
-            
-            foreach (var n in blockListHashes)
-                target.blockListHashes.Add(n);
+
+            var enumerator = blockListHashes.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                var hash = enumerator.Current;
+                enumerator.MoveNext();
+
+                // Filter duplicates
+                if (target.knownBlockListHashes.Contains(hash))
+                    continue;
+
+                target.knownBlockListHashes.Add(hash);
+                target.blockListHashes.Add(hash);
+                target.blockListHashes.Add(enumerator.Current);
+            }
         }
 
         /// <summary>
@@ -120,8 +141,13 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="data">The block contents.</param>
         public void AddBlockListHash(string hash, long size, byte[] data)
         {
-			if (size % m_blockhashsize != 0)
-				throw new ArgumentException($"The {nameof(size)} value is {size}, but it must be evenly divisible by the blockhash size ({m_blockhashsize})", nameof(size));
+            // Filter out duplicates to reduce size
+            if (knownBlockListHashes.Contains(hash))
+                return;
+            knownBlockListHashes.Add(hash);
+
+            if (size % m_blockhashsize != 0)
+                throw new ArgumentException($"The {nameof(size)} value is {size}, but it must be evenly divisible by the blockhash size ({m_blockhashsize})", nameof(size));
             blockListHashes.Add(hash);
             blockListHashes.Add(Convert.ToBase64String(data, 0, (int)size));
         }
@@ -134,7 +160,7 @@ namespace Duplicati.Library.Main.Operation.Common
     {
         public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.DatabaseCommon database)
         {
-            using(var h = Duplicati.Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm))
+            using (var h = HashFactory.CreateHasher(options.BlockHashAlgorithm))
             {
                 var w = new IndexVolumeWriter(options);
                 w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
@@ -142,13 +168,13 @@ namespace Duplicati.Library.Main.Operation.Common
                 var blockvolume = await database.GetVolumeInfoAsync(blockname);
 
                 w.StartVolume(blockname);
-                foreach(var b in await database.GetBlocksAsync(blockvolume.ID))
+                foreach (var b in await database.GetBlocksAsync(blockvolume.ID))
                     w.AddBlock(b.Hash, b.Size);
 
                 w.FinishVolume(blockvolume.Hash, blockvolume.Size);
 
                 if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                    foreach(var b in await database.GetBlocklistsAsync(blockvolume.ID, options.Blocksize, options.BlockhashSize))
+                    foreach (var b in await database.GetBlocklistsAsync(blockvolume.ID, options.Blocksize, options.BlockhashSize))
                     {
                         var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
                         if (bh != b.Item1)
@@ -164,39 +190,6 @@ namespace Duplicati.Library.Main.Operation.Common
                 return w;
             }
         }
-
-        /*public static async Task<IndexVolumeWriter> ReCreateIndexVolume(string selfname, Options options, Repair.RepairDatabase database)
-        {
-            using(var h = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm))
-            {
-                var w = new IndexVolumeWriter(options);
-                w.SetRemoteFilename(selfname);
-
-                foreach(var blockvolume in await database.GetBlockVolumesFromIndexNameAsync(selfname))
-                {                               
-                    w.StartVolume(blockvolume.Name);
-                    var volumeid = await database.GetRemoteVolumeIDAsync(blockvolume.Name);
-
-                    foreach(var b in await database.GetBlocksAsync(volumeid))
-                        w.AddBlock(b.Hash, b.Size);
-
-                    w.FinishVolume(blockvolume.Hash, blockvolume.Size);
-
-                    if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                        foreach(var b in await database.GetBlocklistsAsync(volumeid, options.Blocksize, options.BlockhashSize))
-                        {
-                            var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
-                            if (bh != b.Item1)
-                                throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
-                            w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
-                        }
-                }
-
-                w.Close();
-
-                return w;
-            }
-        }*/
     }
 }
 

@@ -1,27 +1,32 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using NUnit.Framework;
+using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.IO.Compression;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
+using System.Timers;
 
 namespace Duplicati.UnitTest
 {
@@ -30,10 +35,11 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// The base folder where all data is trashed around
         /// </summary>
-        protected static readonly string BASEFOLDER =
+        protected static readonly string BASEFOLDER = Path.GetFullPath(
             string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
-            ? Path.Combine(Library.Utility.Utility.HOME_PATH, "duplicati_testdata")
-            : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER");
+            ? "duplicati_testdata"
+            : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER")
+            );
 
         /// <summary>
         /// The folder path that serves as the backup destination
@@ -52,7 +58,7 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// The log file for manual examination
         /// </summary>
-        protected readonly string LOGFILE = Path.Combine(BASEFOLDER, "logfile.log");
+        protected readonly string LOGFILE = Path.Combine(BASEFOLDER, "logs/logfile.log");
         /// <summary>
         /// The database is fixed so it does not mess up the system where the test is performed
         /// </summary>
@@ -80,35 +86,60 @@ namespace Duplicati.UnitTest
         }
 
         [OneTimeSetUp]
-        public virtual void OneTimeSetUp()
+        public void BasicHelperOneTimeSetUp()
         {
+            TestContext.Progress.WriteLine("One Time Setup {0}", TestContext.CurrentContext.Test.Name);
             if (DEBUG_OUTPUT)
             {
                 Console.SetOut(TestContext.Progress);
             }
 
             systemIO.DirectoryCreate(BASEFOLDER);
-            this.TearDown();
-            this.OneTimeTearDown();
+            this.BasicHelperTearDown();
         }
 
-        [OneTimeTearDown]
-        public virtual void OneTimeTearDown()
+        private static int count = 1;
+
+
+        private static Timer SetupTimer()
         {
-            // No-op by default.
+            var timer = new Timer();
+
+            timer.Interval = 2000;
+            timer.Elapsed += delegate (object obj, ElapsedEventArgs e)
+            {
+                var nogc = GC.GetTotalMemory(false) / 1000 / 1000;
+                var yesgc = GC.GetTotalMemory(true) / 1000 / 1000;
+
+                var me = Process.GetCurrentProcess();
+                var process = me.WorkingSet64 / 1000 / 1000;
+                TestContext.Progress.WriteLine("Memory: {0}MB -> {1}MB ({2}MB)", nogc, yesgc, process);
+            };
+            timer.AutoReset = true;
+            return timer;
         }
+        private Timer memoryTimer = SetupTimer();
 
         [SetUp]
-        public virtual void SetUp()
+        public void BasicHelperSetUp()
         {
+            memoryTimer.Enabled = true;
+            var me = Process.GetCurrentProcess();
+            TestContext.Progress.WriteLine("Setup {0} {1}MB {2}MB", TestContext.CurrentContext.Test.Name, GC.GetTotalMemory(true) / 1000 / 1000, me.WorkingSet64 / 1000 / 1000);
             systemIO.DirectoryCreate(this.DATAFOLDER);
             systemIO.DirectoryCreate(this.TARGETFOLDER);
             systemIO.DirectoryCreate(this.RESTOREFOLDER);
         }
 
         [TearDown]
-        public virtual void TearDown()
+        public void BasicHelperTearDown()
         {
+            memoryTimer.Enabled = false;
+            if (TestContext.CurrentContext.Test.MethodName != null)
+            {
+                var me = Process.GetCurrentProcess();
+                TestContext.Progress.WriteLine("TearDown {0} {1}MB {2}MB", TestContext.CurrentContext.Test.MethodName, GC.GetTotalMemory(true) / 1000 / 1000, me.WorkingSet64 / 1000 / 1000);
+            }
             if (systemIO.DirectoryExists(this.DATAFOLDER))
             {
                 systemIO.DirectoryDelete(this.DATAFOLDER, true);
@@ -121,10 +152,6 @@ namespace Duplicati.UnitTest
             {
                 systemIO.DirectoryDelete(this.RESTOREFOLDER, true);
             }
-            if (systemIO.FileExists(this.LOGFILE))
-            {
-                systemIO.FileDelete(this.LOGFILE);
-            }
             if (systemIO.FileExists(this.DBFILE))
             {
                 systemIO.FileDelete(this.DBFILE);
@@ -132,6 +159,18 @@ namespace Duplicati.UnitTest
             if (systemIO.FileExists($"{this.DBFILE}-journal"))
             {
                 systemIO.FileDelete($"{this.DBFILE}-journal");
+            }
+            if (systemIO.FileExists(this.LOGFILE))
+            {
+                var source = new System.IO.FileStream(this.LOGFILE, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                var dest = new System.IO.FileStream($"{this.LOGFILE}.{count++}.gz", System.IO.FileMode.Create, System.IO.FileAccess.Write);
+                var gzip = new System.IO.Compression.GZipStream(dest, System.IO.Compression.CompressionMode.Compress);
+                source.CopyTo(gzip);
+                gzip.Flush();
+                source.Close();
+                gzip.Close();
+                dest.Close();
+                systemIO.FileDelete(this.LOGFILE);
             }
         }
 
@@ -165,7 +204,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         protected static void ZipFileExtractToDirectory(string sourceArchiveFileName, string destinationDirectoryName)
         {
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 // Handle long paths under Windows by extracting to a
                 // temporary file and moving the resulting file to the

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Duplicati Agent</title>
+    <organization>com.duplicati</organization>
+
+    <license file="LICENSE.html"/>
+
+    <pkg-ref id="com.duplicati.agent"/>
+    <pkg-ref id="com.duplicati.agent.daemon"/>
+
+    <options require-scripts="false" hostArchitectures="$HOSTARCH"/>
+    <choices-outline>
+        <line choice="com.duplicati.agent"/>
+        <line choice="com.duplicati.agent.daemon"/>
+    </choices-outline>
+
+    <choice id="com.duplicati.agent" title="Duplicati Agent" description="The main Duplicati Agent" start_selected="true" enabled="false" visible="false">
+        <pkg-ref id="com.duplicati.agent"/>
+    </choice>
+
+    <choice id="com.duplicati.agent.daemon" title="Launch at login" description="Starts the Duplicati Agent automatically when you log in" start_selected="true">
+        <pkg-ref id="com.duplicati.agent.daemon"/>
+    </choice>
+    
+    <pkg-ref id="com.duplicati.agent" version="0" onConclusion="none">DuplicatiAgent.pkg</pkg-ref>
+    <pkg-ref id="com.duplicati.agent.daemon" version="0" onConclusion="none">DuplicatiAgentDaemon.pkg</pkg-ref>
+</installer-gui-script>

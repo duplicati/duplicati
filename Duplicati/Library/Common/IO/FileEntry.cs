@@ -1,22 +1,24 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using Duplicati.Library.Interface;
 
@@ -27,91 +29,45 @@ namespace Duplicati.Library.Common.IO
     /// </summary>
     public class FileEntry : IFileEntry
     {
-        private string m_name;
-        private DateTime m_lastAccess;
-        private DateTime m_lastModification;
-        private long m_size;
-        private bool m_isFolder;
-
         /// <summary>
         /// Gets or sets the file or folder name
         /// </summary>
-        public string Name
-        {
-            get { return m_name; }
-            set { m_name = value; }
-        }
+        public string Name { get; set; } = null;
 
         /// <summary>
         /// Gets or sets the time the file or folder was last accessed
         /// </summary>
-        public DateTime LastAccess
-        {
-            get { return m_lastAccess; }
-            set { m_lastAccess = value; }
-        }
+        public DateTime LastAccess { get; set; } = new DateTime();
 
         /// <summary>
         /// Gets or sets the time the file or folder was last modified
         /// </summary>
-        public DateTime LastModification
-        {
-            get { return m_lastModification; }
-            set { m_lastModification = value; }
-        }
+        public DateTime LastModification { get; set; } = new DateTime();
+
+        /// <summary>
+        /// Gets or sets the time the file or folder was created
+        /// </summary>
+        public DateTime Created { get; set; } = new DateTime();
 
         /// <summary>
         /// Gets or sets the size of the file or folder
         /// </summary>
-        public long Size
-        {
-            get { return m_size; }
-            set { m_size = value; }
-        }
+        public long Size { get; set; } = -1;
 
         /// <summary>
         /// Gets or sets a value indicating if the entry is a folder
         /// </summary>
-        public bool IsFolder
-        {
-            get { return m_isFolder; }
-            set { m_isFolder = value; }
-        }
+        public bool IsFolder { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating if the entry is archived (not readable)
+        /// </summary>
+        public bool IsArchived { get; set; } = false;
 
         /// <summary>
         /// Helper function to initialize the instance to default values
         /// </summary>
-        private FileEntry()
-        {
-            m_name = null;
-            m_lastAccess = new DateTime();
-            m_lastModification = new DateTime();
-            m_size = -1;
-            m_isFolder = false;
-        }
-
-        /// <summary>
-        /// Constructs an entry using only the name.
-        /// The entry is assumed to be a file.
-        /// </summary>
-        /// <param name="filename">The name of the file</param>
-        public FileEntry(string filename)
-            : this()
-        {
-            m_name = filename;
-        }
-
-        /// <summary>
-        /// Constructs an entry using only the name and size.
-        /// The entry is assumed to be a file.
-        /// </summary>
-        /// <param name="filename">The name of the file</param>
-        /// <param name="size">The size of the file</param>
-        public FileEntry(string filename, long size)
-            : this(filename)
-        {
-            m_size = size;
-        }
+        private FileEntry() { }
 
         /// <summary>
         /// Constructs an entry supplying all information
@@ -120,11 +76,16 @@ namespace Duplicati.Library.Common.IO
         /// <param name="size">The size of the file or folder</param>
         /// <param name="lastAccess">The time the file or folder was last accessed</param>
         /// <param name="lastModified">The time the file or folder was last modified</param>
-        public FileEntry(string filename, long size, DateTime lastAccess, DateTime lastModified)
-            : this(filename, size)
+        /// <param name="isFolder">A value indicating if the entry is a folder</param>
+        /// <param name="isArchived">A value indicating if the entry is archived</param>
+        public FileEntry(string filename, long size = -1, DateTime lastAccess = default, DateTime lastModified = default, bool isFolder = false, bool isArchived = false)
         {
-            m_lastModification = lastModified;
-            m_lastAccess = lastAccess;
+            Name = filename;
+            Size = size;
+            LastAccess = lastAccess;
+            LastModification = lastModified;
+            IsFolder = isFolder;
+            IsArchived = isArchived;
         }
     }
 }

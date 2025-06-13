@@ -1,20 +1,27 @@
-﻿//  Copyright (C) 2016, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+﻿// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
+using System.Threading;
+
 namespace Duplicati.Library.Localization
 {
     /// <summary>
@@ -23,9 +30,13 @@ namespace Duplicati.Library.Localization
     internal class LocalizationContext : IDisposable
     {
         /// <summary>
+        /// The current culture, using an async local to keep the call context
+        /// </summary>
+        private static readonly AsyncLocal<string> _currentCulture = new();
+        /// <summary>
         /// The previous context
         /// </summary>
-        private readonly object m_prev;
+        private readonly string m_prev;
 
         /// <summary>
         /// Flag to prevent double dispose
@@ -38,10 +49,16 @@ namespace Duplicati.Library.Localization
         /// <param name="ci">The localization to use.</param>
         public LocalizationContext(System.Globalization.CultureInfo ci)
         {
-            m_prev = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LocalizationService.LOGICAL_CONTEXT_KEY);
-            System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LocalizationService.LOGICAL_CONTEXT_KEY, ci.Name);
+            m_prev = _currentCulture.Value;
+            _currentCulture.Value = ci.Name;
+
             m_isDisposed = false;
         }
+
+        /// <summary>
+        /// Returns the current culture value for the call context
+        /// </summary>
+        public static string Current => _currentCulture.Value;
 
         /// <summary>
         /// Releases all resource used by the <see cref="T:Duplicati.Library.Localization.LocalizationContext"/> object.
@@ -56,7 +73,7 @@ namespace Duplicati.Library.Localization
         {
             if (!m_isDisposed)
             {
-                System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LocalizationService.LOGICAL_CONTEXT_KEY, m_prev);
+                _currentCulture.Value = m_prev;
                 m_isDisposed = true;
             }
         }

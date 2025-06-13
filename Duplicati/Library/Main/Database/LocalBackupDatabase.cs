@@ -1,6 +1,29 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 
 namespace Duplicati.Library.Main.Database
@@ -13,39 +36,55 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalBackupDatabase>();
 
-        private readonly System.Data.IDbCommand m_findblockCommand;
-        private readonly System.Data.IDbCommand m_findblocksetCommand;
-        private readonly System.Data.IDbCommand m_findfilesetCommand;
-        private readonly System.Data.IDbCommand m_findmetadatasetCommand;
+        private readonly IDbCommand m_findblockCommand;
+        private readonly IDbCommand m_findblocksetCommand;
+        private readonly IDbCommand m_findfilesetCommand;
+        private readonly IDbCommand m_findmetadatasetCommand;
 
-        private readonly System.Data.IDbCommand m_insertblockCommand;
+        private readonly IDbCommand m_insertblockCommand;
 
-        private readonly System.Data.IDbCommand m_insertfileCommand;
+        private readonly IDbCommand m_insertfileCommand;
 
-        private readonly System.Data.IDbCommand m_insertblocksetCommand;
-        private readonly System.Data.IDbCommand m_insertblocksetentryFastCommand;
-        private readonly System.Data.IDbCommand m_insertblocksetentryCommand;
-        private readonly System.Data.IDbCommand m_insertblocklistHashesCommand;
+        private readonly IDbCommand m_insertblocksetCommand;
+        private readonly IDbCommand m_insertblocksetentryCommand;
+        private readonly IDbCommand m_insertblocklistHashesCommand;
 
-        private readonly System.Data.IDbCommand m_insertmetadatasetCommand;
+        private readonly IDbCommand m_insertmetadatasetCommand;
 
-        private readonly System.Data.IDbCommand m_findfileCommand;
-        private readonly System.Data.IDbCommand m_selectfilelastmodifiedCommand;
-        private readonly System.Data.IDbCommand m_selectfilelastmodifiedWithSizeCommand;
-        private readonly System.Data.IDbCommand m_selectfileHashCommand;
-        private readonly System.Data.IDbCommand m_selectblocklistHashesCommand;
+        private readonly IDbCommand m_findfileCommand;
+        private readonly IDbCommand m_selectfilelastmodifiedCommand;
+        private readonly IDbCommand m_selectfilelastmodifiedWithSizeCommand;
+        private readonly IDbCommand m_selectfileHashCommand;
 
-        private readonly System.Data.IDbCommand m_insertfileOperationCommand;
-        private readonly System.Data.IDbCommand m_selectfilemetadatahashandsizeCommand;
+        private readonly IDbCommand m_insertfileOperationCommand;
+        private readonly IDbCommand m_selectfilemetadatahashandsizeCommand;
+        private readonly IDbCommand m_getfirstfilesetwithblockinblockset;
 
-        private Dictionary<string, long> m_blockCache;
+        private HashSet<string> m_blocklistHashes;
+
+        /// <summary>
+        /// The temporary table with deleted blocks that can be re-used; null if not table is used
+        /// </summary>
+        private string? m_tempDeletedBlockTable;
+        /// <summary>
+        /// The in-mmeory lookup for deleted blocks; null if in-memory lookup is not used
+        /// </summary>
+        private Dictionary<string, Dictionary<long, long>>? m_deletedBlockLookup;
+        /// <summary>
+        /// The command used to move deleted blocks to the main block table; null if not used
+        /// </summary>
+        private readonly IDbCommand? m_moveblockfromdeletedCommand;
+        /// <summary>
+        /// The command used to find blocks in the deleted blocks table; null if not used
+        /// </summary>
+        private readonly IDbCommand? m_findindeletedCommand;
 
         private long m_filesetId;
 
         private readonly bool m_logQueries;
 
         public LocalBackupDatabase(string path, Options options)
-            : this(new LocalDatabase(path, "Backup", false), options)
+            : this(new LocalDatabase(path, "Backup", false, options.SqlitePageCache), options)
         {
             this.ShouldCloseConnection = true;
         }
@@ -55,69 +94,92 @@ namespace Duplicati.Library.Main.Database
         {
             m_logQueries = options.ProfileAllDatabaseQueries;
 
-            m_findblockCommand = m_connection.CreateCommand();
-            m_insertblockCommand = m_connection.CreateCommand();
-            m_insertfileCommand = m_connection.CreateCommand();
-            m_insertblocksetCommand = m_connection.CreateCommand();
-            m_insertmetadatasetCommand = m_connection.CreateCommand();
-            m_findblocksetCommand = m_connection.CreateCommand();
-            m_findmetadatasetCommand = m_connection.CreateCommand();
-            m_findfilesetCommand = m_connection.CreateCommand();
-            m_insertblocksetentryCommand = m_connection.CreateCommand();
-            m_insertblocklistHashesCommand = m_connection.CreateCommand();
-            m_selectblocklistHashesCommand = m_connection.CreateCommand();
-            m_insertfileOperationCommand = m_connection.CreateCommand();
-            m_findfileCommand = m_connection.CreateCommand();
-            m_selectfilelastmodifiedCommand = m_connection.CreateCommand();
-            m_selectfilelastmodifiedWithSizeCommand = m_connection.CreateCommand();
-            m_selectfileHashCommand = m_connection.CreateCommand();
-            m_insertblocksetentryFastCommand = m_connection.CreateCommand();
-            m_selectfilemetadatahashandsizeCommand = m_connection.CreateCommand();
+            m_findblockCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = @hash AND ""Size"" = @Size");
+            m_findblocksetCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = @Fullhash AND ""Length"" = @Length");
+            m_findmetadatasetCommand = m_connection.CreateCommand(@"SELECT ""A"".""ID"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlockID"" = ""C"".""ID"" AND ""C"".""Hash"" = @Hash AND ""C"".""Size"" = @Size");
+            m_findfilesetCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" = @BlocksetId AND ""MetadataID"" = @MetadataId AND ""Path"" = @Path AND ""PrefixID"" = @PrefixId");
+            m_insertblockCommand = m_connection.CreateCommand(@"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (@Hash, @VolumeId, @Size); SELECT last_insert_rowid();");
+            m_insertfileOperationCommand = m_connection.CreateCommand(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (@FilesetId, @FileId, @LastModified)");
+            m_insertfileCommand = m_connection.CreateCommand(@"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"",""BlocksetID"", ""MetadataID"") VALUES (@PrefixId, @Path, @BlocksetId, @MetadataId); SELECT last_insert_rowid();");
+            m_insertblocksetCommand = m_connection.CreateCommand(@"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (@Length, @Fullhash); SELECT last_insert_rowid();");
+            m_insertblocksetentryCommand = m_connection.CreateCommand(@"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT @BlocksetId AS A, @Index AS B, ""ID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
+            m_insertblocklistHashesCommand = m_connection.CreateCommand(@"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (@BlocksetId, @Index, @Hash)");
+            m_insertmetadatasetCommand = m_connection.CreateCommand(@"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (@BlocksetId); SELECT last_insert_rowid();");
+            m_selectfilelastmodifiedCommand = m_connection.CreateCommand(@"SELECT ""A"".""ID"", ""B"".""LastModified"" FROM (SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = @FilesetId");
+            m_selectfilelastmodifiedWithSizeCommand = m_connection.CreateCommand(@"SELECT ""C"".""ID"", ""C"".""LastModified"", ""D"".""Length"" FROM (SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"" FROM (SELECT ""ID"", ""BlocksetID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = @FilesetId) AS ""C"", ""Blockset"" AS ""D"" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" ");
+            m_selectfilemetadatahashandsizeCommand = m_connection.CreateCommand(@"SELECT ""Blockset"".""Length"", ""Blockset"".""FullHash"" FROM ""Blockset"", ""Metadataset"", ""File"" WHERE ""File"".""ID"" = @FileId AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" ");
 
-            m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
-            m_findblockCommand.AddParameters(2);
+            // Experimental toggling of the deleted block cache
+            // If the value is less than zero, the lookup is disabled
+            // meaning that deleted blocks are never reused (same as 2.1.0.5 and earlier)
+            // A value of zero disables the in-memory cache, always using a temporary table
+            // Any other value is the size of the in-memory cache
+            // If the number of deleted blocks exceed the cache size, a temporary table is used
+            var deletedBlockCacheSize = Environment.GetEnvironmentVariable("DUPLICATI_DELETEDBLOCKCACHESIZE");
+            if (!long.TryParse(deletedBlockCacheSize, out var deletedBlockCacheSizeLong))
+                deletedBlockCacheSizeLong = 10000;
 
-            m_findblocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = ? AND ""Length"" = ?";
-            m_findblocksetCommand.AddParameters(2);
+            if (deletedBlockCacheSizeLong >= 0)
+            {
+                using (var cmd = m_connection.CreateCommand())
+                {
+                    m_tempDeletedBlockTable = "DeletedBlock-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                    cmd.SetCommandAndParameters(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tempDeletedBlockTable}"" AS ")
+                        + @$"SELECT MAX(""ID"") AS ""ID"", ""Hash"", ""Size"" FROM ""DeletedBlock"" WHERE ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" NOT IN (@States)) GROUP BY ""Hash"", ""Size""")
+                        .ExpandInClauseParameter("@States", [RemoteVolumeState.Deleted, RemoteVolumeState.Deleting])
+                        .ExecuteNonQuery();
 
-            m_findmetadatasetCommand.CommandText = @"SELECT ""A"".""ID"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlockID"" = ""C"".""ID"" AND ""C"".""Hash"" = ? AND ""C"".""Size"" = ?";
-            m_findmetadatasetCommand.AddParameters(2);
+                    var deletedBlocks = cmd.ExecuteScalarInt64(FormatInvariant(@$"SELECT COUNT(*) FROM ""{m_tempDeletedBlockTable}"""), 0);
 
-            m_findfilesetCommand.CommandText = @"SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" = ? AND ""MetadataID"" = ? AND ""Path"" = ? AND ""PrefixID"" = ?";
-            m_findfilesetCommand.AddParameters(4);
+                    // There are no deleted blocks, so we can drop the table
+                    if (deletedBlocks == 0)
+                    {
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE ""{m_tempDeletedBlockTable}"""));
+                        m_tempDeletedBlockTable = null;
 
-            m_insertblockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (?, ?, ?); SELECT last_insert_rowid();";
-            m_insertblockCommand.AddParameters(3);
+                    }
+                    // The deleted blocks are small enough to fit in memory
+                    else if (deletedBlocks <= deletedBlockCacheSizeLong)
+                    {
+                        m_deletedBlockLookup = new Dictionary<string, Dictionary<long, long>>();
+                        using (var reader = cmd.ExecuteReader(FormatInvariant(@$"SELECT ""ID"", ""Hash"", ""Size"" FROM ""{m_tempDeletedBlockTable}""")))
+                            while (reader.Read())
+                            {
+                                var id = reader.ConvertValueToInt64(0);
+                                var hash = reader.ConvertValueToString(1) ?? throw new Exception("Hash is null");
+                                var size = reader.ConvertValueToInt64(2);
 
-            m_insertfileOperationCommand.CommandText = @"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (?, ?, ?)";
-            m_insertfileOperationCommand.AddParameters(3);
+                                if (!m_deletedBlockLookup.TryGetValue(hash, out var sizes))
+                                    m_deletedBlockLookup[hash] = sizes = new Dictionary<long, long>();
+                                sizes[size] = id;
+                            }
 
-            m_insertfileCommand.CommandText = @"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"",""BlocksetID"", ""MetadataID"") VALUES (?, ?, ? ,?); SELECT last_insert_rowid();";
-            m_insertfileCommand.AddParameters(4);
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE ""{m_tempDeletedBlockTable}"""));
+                        m_tempDeletedBlockTable = null;
+                    }
+                    // The deleted blocks are too large to fit in memory, so we use a temporary table
+                    else
+                    {
+                        cmd.ExecuteNonQuery(FormatInvariant($@"CREATE UNIQUE INDEX ""unique_{m_tempDeletedBlockTable}"" ON ""{m_tempDeletedBlockTable}"" (""Hash"", ""Size"")"));
+                        m_findindeletedCommand = m_connection.CreateCommand(FormatInvariant($@"SELECT ""ID"" FROM ""{m_tempDeletedBlockTable}"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size"));
+                        m_moveblockfromdeletedCommand = m_connection.CreateCommand(string.Join(";",
+                            @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId LIMIT 1",
+                            @"DELETE FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId",
+                            FormatInvariant(@$"DELETE FROM {m_tempDeletedBlockTable} WHERE ""ID"" = @DeletedBlockId"),
+                            "SELECT last_insert_rowid()"));
 
-            m_insertblocksetCommand.CommandText = @"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (?, ?); SELECT last_insert_rowid();";
-            m_insertblocksetCommand.AddParameters(2);
+                    }
 
-            m_insertblocksetentryFastCommand.CommandText = @"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") VALUES (?,?,?)";
-            m_insertblocksetentryFastCommand.AddParameters(3);
+                    if (deletedBlocks > 0)
+                    {
+                        m_moveblockfromdeletedCommand = m_connection.CreateCommand(string.Join(";",
+                            @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId LIMIT 1",
+                            @"DELETE FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId",
+                            "SELECT last_insert_rowid()"));
+                    }
 
-            m_insertblocksetentryCommand.CommandText = @"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT ? AS A, ? AS B, ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
-            m_insertblocksetentryCommand.AddParameters(4);
-
-            m_insertblocklistHashesCommand.CommandText = @"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (?, ?, ?)";
-            m_insertblocklistHashesCommand.AddParameters(3);
-
-            m_insertmetadatasetCommand.CommandText = @"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (?); SELECT last_insert_rowid();";
-            m_insertmetadatasetCommand.AddParameter();
-
-            m_selectfilelastmodifiedCommand.CommandText = @"SELECT ""A"".""ID"", ""B"".""LastModified"" FROM (SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = ? AND ""Path"" = ?) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = ?";
-            m_selectfilelastmodifiedCommand.AddParameters(3);
-
-            m_selectfilelastmodifiedWithSizeCommand.CommandText = @"SELECT ""C"".""ID"", ""C"".""LastModified"", ""D"".""Length"" FROM (SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"" FROM (SELECT ""ID"", ""BlocksetID"" FROM ""FileLookup"" WHERE ""PrefixID"" = ? AND ""Path"" = ?) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = ?) AS ""C"", ""Blockset"" AS ""D"" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" ";
-            m_selectfilelastmodifiedWithSizeCommand.AddParameters(3);
-
-            m_selectfilemetadatahashandsizeCommand.CommandText = @"SELECT ""Blockset"".""Length"", ""Blockset"".""FullHash"" FROM ""Blockset"", ""Metadataset"", ""File"" WHERE ""File"".""ID"" = ? AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" ";
-            m_selectfilemetadatahashandsizeCommand.AddParameters(1);
+                }
+            }
 
             // Allow users to test on real-world data
             // to get feedback on potential performance
@@ -136,18 +198,19 @@ namespace Duplicati.Library.Main.Database
             // but allow users to switch back via an environment variable
             // such that we can get performance feedback
 
+            string findQuery;
             switch (testqueryversion)
             {
                 // The query used in Duplicati until 2.0.3.9
                 case 1:
-                    m_findfileCommand.CommandText =
+                    findQuery =
                         @" SELECT ""FileLookup"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
                         @"   FROM ""FileLookup"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
-                        @"  WHERE ""FileLookup"".""PrefixID"" = ? AND ""FileLookup"".""Path"" = ? " +
+                        @"  WHERE ""FileLookup"".""PrefixID"" = @PrefixId AND ""FileLookup"".""Path"" = @Path " +
                         @"    AND ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
                         @"    AND ""FileBlockset"".""ID"" = ""FileLookup"".""BlocksetID"" " +
                         @"    AND ""Metadataset"".""ID"" = ""FileLookup"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
-                        @"    AND ? IS NOT NULL" +
+                        @"    AND @FilesetId IS NOT NULL" +
                         @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
                         @"  LIMIT 1 ";
                     break;
@@ -157,24 +220,20 @@ namespace Duplicati.Library.Main.Database
                 case 2:
                     var getLastFileEntryForPath =
                         @"SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"", ""A"".""MetadataID"" " +
-                        @"  FROM (SELECT ""ID"", ""BlocksetID"", ""MetadataID"" FROM ""FileLookup"" WHERE ""PrefixID"" = ? AND ""Path"" = ?) ""A"" " +
+                        @"  FROM (SELECT ""ID"", ""BlocksetID"", ""MetadataID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" " +
                         @"  CROSS JOIN ""FilesetEntry"" ""B"" " +
                         @"  WHERE ""A"".""ID"" = ""B"".""FileID"" " +
-                        @"    AND ""B"".""FilesetID"" = ? ";
+                        @"    AND ""B"".""FilesetID"" = @FilesetId ";
 
-                    m_findfileCommand.CommandText = string.Format(
-                        @"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize"" " +
-                        @"  FROM " +
-                        @"  ({0}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F"" " +
-                        @" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID"" " +
-                        @" LIMIT 1",
-                        getLastFileEntryForPath
-                    );
+                    findQuery = FormatInvariant($@"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize""
+FROM ({getLastFileEntryForPath}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F"" 
+WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID"" 
+LIMIT 1");
                     break;
 
                 // Potentially faster query: https://forum.duplicati.com/t/release-2-0-3-10-canary-2018-08-30/4497/25
                 case 3:
-                    m_findfileCommand.CommandText =
+                    findQuery =
                         @"    SELECT FileLookup.ID as FileID, FilesetEntry.Lastmodified, FileBlockset.Length,  " +
                         @"           MetaBlockset.FullHash AS Metahash, MetaBlockset.Length as Metasize " +
                         @"      FROM FilesetEntry " +
@@ -183,17 +242,17 @@ namespace Duplicati.Library.Main.Database
                         @"INNER JOIN Metadataset ON (Metadataset.ID = FileLookup.MetadataID) " +
                         @"INNER JOIN Blockset AS MetaBlockset ON (MetaBlockset.ID = Metadataset.BlocksetID) " +
                         @" LEFT JOIN Blockset AS FileBlockset ON (FileBlockset.ID = FileLookup.BlocksetID) " +
-                        @"     WHERE FileLookup.PrefixID = ? AND FileLookup.Path = ? AND FilesetID = ? " +
+                        @"     WHERE FileLookup.PrefixID = @PrefixId AND FileLookup.Path = @Path AND FilesetID = @FilesetId " +
                         @"     LIMIT 1 ";
                     break;
 
                 // The slow query used in Duplicati 2.0.3.10, but with "LIMIT 1" added
                 case 4:
-                    m_findfileCommand.CommandText =
+                    findQuery =
                         @" SELECT ""FileLookup"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
                         @"   FROM ""FileLookup"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
-                        @"  WHERE ""FileLookup"".""PrefixID"" = ? AND ""FileLookup"".""Path"" = ? " +
-                        @"    AND ""Fileset"".""ID"" = ? " +
+                        @"  WHERE ""FileLookup"".""PrefixID"" = @PrefixId AND ""FileLookup"".""Path"" = @Path " +
+                        @"    AND ""Fileset"".""ID"" = @FilesetId " +
                         @"    AND ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
                         @"    AND ""FileBlockset"".""ID"" = ""FileLookup"".""BlocksetID"" " +
                         @"    AND ""Metadataset"".""ID"" = ""FileLookup"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
@@ -202,13 +261,14 @@ namespace Duplicati.Library.Main.Database
 
             }
 
-            m_findfileCommand.AddParameters(3);
+            m_findfileCommand = m_connection.CreateCommand(findQuery);
 
-            m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""FileLookup"" WHERE ""Blockset"".""ID"" = ""FileLookup"".""BlocksetID"" AND ""FileLookup"".""ID"" = ?  ";
-            m_selectfileHashCommand.AddParameters(1);
+            m_selectfileHashCommand = m_connection.CreateCommand(@"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""FileLookup"" WHERE ""Blockset"".""ID"" = ""FileLookup"".""BlocksetID"" AND ""FileLookup"".""ID"" = @FileId  ");
+            m_getfirstfilesetwithblockinblockset = m_connection.CreateCommand(@"SELECT MIN(""FilesetEntry"".""FilesetID"") FROM ""FilesetEntry"" WHERE  ""FilesetEntry"".""FileID"" IN (
+SELECT ""File"".""ID"" FROM ""File"" WHERE ""File"".""BlocksetID"" IN(
+SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""BlocklistHash"".""Hash"" = @Hash))");
 
-            m_selectblocklistHashesCommand.CommandText = @"SELECT ""Hash"" FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? ORDER BY ""Index"" ASC ";
-            m_selectblocklistHashesCommand.AddParameters(1);
+            m_blocklistHashes = new HashSet<string>();
         }
 
         /// <summary>
@@ -217,12 +277,12 @@ namespace Duplicati.Library.Main.Database
         /// <param name="key">The block key</param>
         /// <param name="size">The size of the block</param>
         /// <returns>True if the block should be added to the current output</returns>
-        public long FindBlockID(string key, long size, System.Data.IDbTransaction transaction = null)
+        public long FindBlockID(string key, long size, IDbTransaction? transaction = null)
         {
-            m_findblockCommand.Transaction = transaction;
-            m_findblockCommand.SetParameterValue(0, key);
-            m_findblockCommand.SetParameterValue(1, size);
-            return m_findblockCommand.ExecuteScalarInt64(m_logQueries, -1);
+            return m_findblockCommand.SetTransaction(transaction)
+                .SetParameterValue("@Hash", key)
+                .SetParameterValue("@Size", size)
+                .ExecuteScalarInt64(m_logQueries, -1);
         }
 
         /// <summary>
@@ -231,33 +291,59 @@ namespace Duplicati.Library.Main.Database
         /// <param name="key">The block key</param>
         /// <param name="size">The size of the block</param>
         /// <returns>True if the block should be added to the current output</returns>
-        public bool AddBlock(string key, long size, long volumeid, System.Data.IDbTransaction transaction = null)
+        public bool AddBlock(string key, long size, long volumeid, IDbTransaction? transaction = null)
         {
-            long exsize;
-
-            if (m_blockCache != null && m_blockCache.TryGetValue(key, out exsize))
-            {
-                if (exsize == size)
-                    return false;
-
-                Logging.Log.WriteWarningMessage(LOGTAG, "HashCollisionsFound", null, "Found hash collision on {0}, sizes {1} vs {2}. Disabling cache from now on.", key, size, exsize);
-                m_blockCache = null;
-            }
-
-            m_findblockCommand.Transaction = transaction;
-            m_findblockCommand.SetParameterValue(0, key);
-            m_findblockCommand.SetParameterValue(1, size);
-            var r = m_findblockCommand.ExecuteScalarInt64(m_logQueries, -1);
-
+            var r = FindBlockID(key, size, transaction);
             if (r == -1L)
             {
-                m_insertblockCommand.Transaction = transaction;
-                m_insertblockCommand.SetParameterValue(0, key);
-                m_insertblockCommand.SetParameterValue(1, volumeid);
-                m_insertblockCommand.SetParameterValue(2, size);
-                m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
-                if (m_blockCache != null)
-                    m_blockCache.Add(key, size);
+                if (m_moveblockfromdeletedCommand != null)
+                {
+                    if (m_deletedBlockLookup != null)
+                    {
+                        if (m_deletedBlockLookup.TryGetValue(key, out var sizes))
+                            if (sizes.TryGetValue(size, out var id))
+                            {
+                                m_moveblockfromdeletedCommand.SetTransaction(transaction)
+                                    .SetParameterValue("@DeletedBlockId", id)
+                                    .ExecuteNonQuery(m_logQueries);
+
+                                sizes.Remove(size);
+                                if (sizes.Count == 0)
+                                    m_deletedBlockLookup.Remove(key);
+                                return false;
+                            }
+                    }
+                    else if (m_findindeletedCommand != null)
+                    {
+                        // No transaction on the temporary table
+                        var id = m_findindeletedCommand
+                            .SetParameterValue("@Hash", key)
+                            .SetParameterValue("@Size", size)
+                            .ExecuteScalarInt64(m_logQueries, -1);
+
+                        if (id != -1)
+                        {
+                            var c = m_moveblockfromdeletedCommand.SetTransaction(transaction)
+                                .SetParameterValue("@DeletedBlockId", id)
+                                .ExecuteNonQuery(m_logQueries);
+
+                            if (c != 2)
+                                throw new Exception($"Failed to move block {key} with size {size}, result count: {c}");
+
+                            // We do not clean up the temporary table, as the regular block lookup should now find it
+                            return false;
+                        }
+                    }
+                }
+
+                var ins = m_insertblockCommand.SetTransaction(transaction)
+                    .SetParameterValue("@Hash", key)
+                    .SetParameterValue("@VolumeId", volumeid)
+                    .SetParameterValue("@Size", size)
+                    .ExecuteNonQuery(m_logQueries);
+                if (ins != 1)
+                    throw new Exception($"Failed to insert block {key} with size {size}, result count: {ins}");
+
                 return true;
             }
             else
@@ -276,62 +362,68 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hashes">The list of hashes</param>
         /// <param name="blocksetid">The id of the blockset, new or old</param>
         /// <returns>True if the blockset was created, false otherwise</returns>
-        public bool AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes, out long blocksetid, System.Data.IDbTransaction transaction = null)
+        public bool AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes, out long blocksetid, IDbTransaction? transaction = null)
         {
-            m_findblocksetCommand.Transaction = transaction;
-            blocksetid = m_findblocksetCommand.ExecuteScalarInt64(m_logQueries, null, -1, filehash, size);
+            blocksetid = m_findblocksetCommand.SetTransaction(transaction)
+                .SetParameterValue("@Fullhash", filehash)
+                .SetParameterValue("@Length", size)
+                .ExecuteScalarInt64(m_logQueries, null, -1);
             if (blocksetid != -1)
                 return false; //Found it
 
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
-                m_insertblocksetCommand.Transaction = tr.Parent;
-                m_insertblocksetCommand.SetParameterValue(0, size);
-                m_insertblocksetCommand.SetParameterValue(1, filehash);
-                blocksetid = m_insertblocksetCommand.ExecuteScalarInt64(m_logQueries);
+                blocksetid = m_insertblocksetCommand.SetTransaction(tr.Parent)
+                    .SetParameterValue("@Length", size)
+                    .SetParameterValue("@Fullhash", filehash)
+                    .ExecuteScalarInt64(m_logQueries);
 
                 long ix = 0;
                 if (blocklistHashes != null)
                 {
-                    m_insertblocklistHashesCommand.SetParameterValue(0, blocksetid);
-                    m_insertblocklistHashesCommand.Transaction = tr.Parent;
+                    m_insertblocklistHashesCommand.SetTransaction(tr.Parent)
+                        .SetParameterValue("@BlocksetId", blocksetid);
+
                     foreach (var bh in blocklistHashes)
                     {
-                        m_insertblocklistHashesCommand.SetParameterValue(1, ix);
-                        m_insertblocklistHashesCommand.SetParameterValue(2, bh);
-                        m_insertblocklistHashesCommand.ExecuteNonQuery(m_logQueries);
+                        var c = m_insertblocklistHashesCommand.SetParameterValue("@Index", ix)
+                            .SetParameterValue("@Hash", bh)
+                            .ExecuteNonQuery(m_logQueries);
+                        if (c != 1)
+                            throw new Exception($"Failed to insert blocklist hash {bh} for blockset {blocksetid}, result count: {c}");
                         ix++;
                     }
                 }
 
-                m_insertblocksetentryCommand.SetParameterValue(0, blocksetid);
-                m_insertblocksetentryCommand.Transaction = tr.Parent;
-
-                m_insertblocksetentryFastCommand.SetParameterValue(0, blocksetid);
-                m_insertblocksetentryFastCommand.Transaction = tr.Parent;
+                m_insertblocksetentryCommand.SetTransaction(tr.Parent)
+                    .SetParameterValue("@BlocksetId", blocksetid);
 
                 ix = 0;
                 long remainsize = size;
                 foreach (var h in hashes)
                 {
                     var exsize = remainsize < blocksize ? remainsize : blocksize;
-                    m_insertblocksetentryCommand.SetParameterValue(1, ix);
-                    m_insertblocksetentryCommand.SetParameterValue(2, h);
-                    m_insertblocksetentryCommand.SetParameterValue(3, exsize);
-                    var c = m_insertblocksetentryCommand.ExecuteNonQuery(m_logQueries);
+                    var c = m_insertblocksetentryCommand.SetParameterValue("@Index", ix)
+                        .SetParameterValue("@Hash", h)
+                        .SetParameterValue("@Size", exsize)
+                        .ExecuteNonQuery(m_logQueries);
                     if (c != 1)
                     {
                         Logging.Log.WriteErrorMessage(LOGTAG, "CheckingErrorsForIssue1400", null, "Checking errors, related to #1400. Unexpected result count: {0}, expected {1}, hash: {2}, size: {3}, blocksetid: {4}, ix: {5}, fullhash: {6}, fullsize: {7}", c, 1, h, exsize, blocksetid, ix, filehash, size);
                         using (var cmd = m_connection.CreateCommand(tr.Parent))
                         {
-                            var bid = cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ?", -1, h);
+                            var bid = cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = @Hash")
+                                .SetParameterValue("@Hash", h)
+                                .ExecuteScalarInt64(-1);
                             if (bid == -1)
-                                throw new Exception(string.Format("Could not find any blocks with the given hash: {0}", h));
-                            foreach (var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""Size"" FROM ""Block"" WHERE ""Hash"" = ?", h))
+                                throw new Exception($"Could not find any blocks with the given hash: {h}");
+                            cmd.SetCommandAndParameters(@"SELECT ""Size"" FROM ""Block"" WHERE ""Hash"" = @Hash")
+                                .SetParameterValue("@Hash", h);
+                            foreach (var rd in cmd.ExecuteReaderEnumerable())
                                 Logging.Log.WriteErrorMessage(LOGTAG, "FoundIssue1400Error", null, "Found block with ID {0} and hash {1} and size {2}", bid, h, rd.ConvertValueToInt64(0, -1));
                         }
 
-                        throw new Exception(string.Format("Unexpected result count: {0}, expected {1}, check log for more messages", c, 1));
+                        throw new Exception($"Unexpected result count: {c}, expected {1}, check log for more messages");
                     }
 
                     ix++;
@@ -352,12 +444,14 @@ namespace Duplicati.Library.Main.Database
         /// <param name="size">The size of the metadata.</param>
         /// <param name="metadataid">The ID of the metadataset.</param>
         /// <param name="transaction">An optional transaction.</param>
-        public bool GetMetadatasetID(string filehash, long size, out long metadataid, System.Data.IDbTransaction transaction = null)
+        public bool GetMetadatasetID(string filehash, long size, out long metadataid, IDbTransaction? transaction = null)
         {
             if (size > 0)
             {
-                m_findmetadatasetCommand.Transaction = transaction;
-                metadataid = m_findmetadatasetCommand.ExecuteScalarInt64(m_logQueries, null, -1, filehash, size);
+                metadataid = m_findmetadatasetCommand.SetTransaction(transaction)
+                    .SetParameterValue("@Hash", filehash)
+                    .SetParameterValue("@Size", size)
+                    .ExecuteScalarInt64(m_logQueries, null, -1);
                 return metadataid != -1;
             }
 
@@ -374,16 +468,16 @@ namespace Duplicati.Library.Main.Database
         /// <param name="blocksetid">The id of the blockset to add</param>
         /// <param name="metadataid">The id of the metadata set</param>
         /// <returns>True if the set was added to the database, false otherwise</returns>
-        public bool AddMetadataset(string filehash, long size, long blocksetid, out long metadataid, System.Data.IDbTransaction transaction = null)
+        public bool AddMetadataset(string filehash, long size, long blocksetid, out long metadataid, IDbTransaction? transaction = null)
         {
             if (GetMetadatasetID(filehash, size, out metadataid, transaction))
                 return false;
 
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
-                m_insertmetadatasetCommand.Transaction = tr.Parent;
-                m_insertmetadatasetCommand.SetParameterValue(0, blocksetid);
-                metadataid = m_insertmetadatasetCommand.ExecuteScalarInt64(m_logQueries);
+                metadataid = m_insertmetadatasetCommand.SetTransaction(tr.Parent)
+                    .SetParameterValue("@BlocksetId", blocksetid)
+                    .ExecuteScalarInt64(m_logQueries);
                 tr.Commit();
                 return true;
             }
@@ -398,35 +492,30 @@ namespace Duplicati.Library.Main.Database
         /// <param name="blocksetID">The ID of the hashkey for the file</param>
         /// <param name="metadataID">The ID for the metadata</param>
         /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
-        public void AddFile(long pathprefixid, string filename, DateTime lastmodified, long blocksetID, long metadataID, System.Data.IDbTransaction transaction)
+        public void AddFile(long pathprefixid, string filename, DateTime lastmodified, long blocksetID, long metadataID, IDbTransaction? transaction)
         {
-            var fileidobj = -1L;
-            m_findfilesetCommand.Transaction = transaction;
-            m_findfilesetCommand.SetParameterValue(0, blocksetID);
-            m_findfilesetCommand.SetParameterValue(1, metadataID);
-            m_findfilesetCommand.SetParameterValue(2, filename);
-            m_findfilesetCommand.SetParameterValue(3, pathprefixid);
-            fileidobj = m_findfilesetCommand.ExecuteScalarInt64(m_logQueries);
+            var fileidobj = m_findfilesetCommand.SetTransaction(transaction)
+                .SetParameterValue("@BlocksetId", blocksetID)
+                .SetParameterValue("@MetadataId", metadataID)
+                .SetParameterValue("@Path", filename)
+                .SetParameterValue("@PrefixId", pathprefixid)
+                .ExecuteScalarInt64(m_logQueries);
 
             if (fileidobj == -1)
             {
                 using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
                 {
-                    m_insertfileCommand.Transaction = tr.Parent;
-                    m_insertfileCommand.SetParameterValue(0, pathprefixid);
-                    m_insertfileCommand.SetParameterValue(1, filename);
-                    m_insertfileCommand.SetParameterValue(2, blocksetID);
-                    m_insertfileCommand.SetParameterValue(3, metadataID);
-                    fileidobj = m_insertfileCommand.ExecuteScalarInt64(m_logQueries);
+                    fileidobj = m_insertfileCommand.SetTransaction(tr.Parent)
+                        .SetParameterValue("@PrefixId", pathprefixid)
+                        .SetParameterValue("@Path", filename)
+                        .SetParameterValue("@BlocksetId", blocksetID)
+                        .SetParameterValue("@MetadataId", metadataID)
+                        .ExecuteScalarInt64(m_logQueries);
                     tr.Commit();
                 }
             }
 
-            m_insertfileOperationCommand.Transaction = transaction;
-            m_insertfileOperationCommand.SetParameterValue(0, m_filesetId);
-            m_insertfileOperationCommand.SetParameterValue(1, fileidobj);
-            m_insertfileOperationCommand.SetParameterValue(2, lastmodified.ToUniversalTime().Ticks);
-            m_insertfileOperationCommand.ExecuteNonQuery(m_logQueries);
+            AddKnownFile(fileidobj, lastmodified, transaction);
         }
 
         /// <summary>
@@ -437,39 +526,45 @@ namespace Duplicati.Library.Main.Database
         /// <param name="blocksetID">The ID of the hashkey for the file</param>
         /// <param name="metadataID">The ID for the metadata</param>
         /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
-        public void AddFile(string filename, DateTime lastmodified, long blocksetID, long metadataID, System.Data.IDbTransaction transaction)
+        public void AddFile(string filename, DateTime lastmodified, long blocksetID, long metadataID, IDbTransaction? transaction)
         {
             var split = SplitIntoPrefixAndName(filename);
             AddFile(GetOrCreatePathPrefix(split.Key, transaction), split.Value, lastmodified, blocksetID, metadataID, transaction);
         }
 
-        public void AddUnmodifiedFile(long fileid, DateTime lastmodified, System.Data.IDbTransaction transaction = null)
+        /// <summary>
+        /// Adds a known file to the fileset
+        /// </summary>
+        /// <param name="fileid">Id of the file</param>
+        /// <param name="lastmodified">The time the file was modified</param>
+        /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
+        public void AddKnownFile(long fileid, DateTime lastmodified, IDbTransaction? transaction = null)
         {
-            m_insertfileOperationCommand.Transaction = transaction;
-            m_insertfileOperationCommand.SetParameterValue(0, m_filesetId);
-            m_insertfileOperationCommand.SetParameterValue(1, fileid);
-            m_insertfileOperationCommand.SetParameterValue(2, lastmodified.ToUniversalTime().Ticks);
-            m_insertfileOperationCommand.ExecuteNonQuery(m_logQueries);
+            m_insertfileOperationCommand.SetTransaction(transaction)
+                .SetParameterValue("@FilesetId", m_filesetId)
+                .SetParameterValue("@FileId", fileid)
+                .SetParameterValue("@LastModified", lastmodified.ToUniversalTime().Ticks)
+                .ExecuteNonQuery(m_logQueries);
         }
 
-        public void AddDirectoryEntry(string path, long metadataID, DateTime lastmodified, System.Data.IDbTransaction transaction = null)
+        public void AddDirectoryEntry(string path, long metadataID, DateTime lastmodified, IDbTransaction? transaction = null)
         {
             AddFile(path, lastmodified, FOLDER_BLOCKSET_ID, metadataID, transaction);
         }
 
-        public void AddSymlinkEntry(string path, long metadataID, DateTime lastmodified, System.Data.IDbTransaction transaction = null)
+        public void AddSymlinkEntry(string path, long metadataID, DateTime lastmodified, IDbTransaction? transaction = null)
         {
             AddFile(path, lastmodified, SYMLINK_BLOCKSET_ID, metadataID, transaction);
         }
 
-        public long GetFileLastModified(long prefixid, string path, long filesetid, bool includeLength, out DateTime oldModified, out long length, System.Data.IDbTransaction transaction = null)
+        public long GetFileLastModified(long prefixid, string path, long filesetid, bool includeLength, out DateTime oldModified, out long length, IDbTransaction? transaction = null)
         {
             if (includeLength)
             {
-                m_selectfilelastmodifiedWithSizeCommand.Transaction = transaction;
-                m_selectfilelastmodifiedWithSizeCommand.SetParameterValue(0, prefixid);
-                m_selectfilelastmodifiedWithSizeCommand.SetParameterValue(1, path);
-                m_selectfilelastmodifiedWithSizeCommand.SetParameterValue(2, filesetid);
+                m_selectfilelastmodifiedWithSizeCommand.SetTransaction(transaction)
+                    .SetParameterValue("@PrefixId", prefixid)
+                    .SetParameterValue("@Path", path)
+                    .SetParameterValue("@FilesetId", filesetid);
                 using (var rd = m_selectfilelastmodifiedWithSizeCommand.ExecuteReader(m_logQueries, null))
                     if (rd.Read())
                     {
@@ -480,10 +575,10 @@ namespace Duplicati.Library.Main.Database
             }
             else
             {
-                m_selectfilelastmodifiedCommand.Transaction = transaction;
-                m_selectfilelastmodifiedCommand.SetParameterValue(0, prefixid);
-                m_selectfilelastmodifiedCommand.SetParameterValue(1, path);
-                m_selectfilelastmodifiedCommand.SetParameterValue(2, filesetid);
+                m_selectfilelastmodifiedCommand.SetTransaction(transaction)
+                    .SetParameterValue("@PrefixId", prefixid)
+                    .SetParameterValue("@Path", path)
+                    .SetParameterValue("@FilesetId", filesetid);
                 using (var rd = m_selectfilelastmodifiedCommand.ExecuteReader(m_logQueries, null))
                     if (rd.Read())
                     {
@@ -499,20 +594,20 @@ namespace Duplicati.Library.Main.Database
         }
 
 
-        public long GetFileEntry(long prefixid, string path, long filesetid, out DateTime oldModified, out long lastFileSize, out string oldMetahash, out long oldMetasize, System.Data.IDbTransaction transaction)
+        public long GetFileEntry(long prefixid, string path, long filesetid, out DateTime oldModified, out long lastFileSize, out string? oldMetahash, out long oldMetasize, IDbTransaction transaction)
         {
-            m_findfileCommand.SetParameterValue(0, prefixid);
-            m_findfileCommand.SetParameterValue(1, path);
-            m_findfileCommand.SetParameterValue(2, filesetid);
-            m_findfileCommand.Transaction = transaction;
+            m_findfileCommand.SetTransaction(transaction)
+                .SetParameterValue("@PrefixId", prefixid)
+                .SetParameterValue("@Path", path)
+                .SetParameterValue("@FilesetId", filesetid);
 
             using (var rd = m_findfileCommand.ExecuteReader())
                 if (rd.Read())
                 {
                     oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
-                    lastFileSize = rd.GetInt64(2);
-                    oldMetahash = rd.GetString(3);
-                    oldMetasize = rd.GetInt64(4);
+                    lastFileSize = rd.ConvertValueToInt64(2);
+                    oldMetahash = rd.ConvertValueToString(3);
+                    oldMetasize = rd.ConvertValueToInt64(4);
                     return rd.ConvertValueToInt64(0);
                 }
                 else
@@ -525,24 +620,24 @@ namespace Duplicati.Library.Main.Database
                 }
         }
 
-        public Tuple<long, string> GetMetadataHashAndSizeForFile(long fileid, System.Data.IDbTransaction transaction)
+        public (long Size, string MetadataHash)? GetMetadataHashAndSizeForFile(long fileid, IDbTransaction transaction)
         {
-            m_selectfilemetadatahashandsizeCommand.SetParameterValue(0, fileid);
-            m_selectfilemetadatahashandsizeCommand.Transaction = transaction;
+            m_selectfilemetadatahashandsizeCommand.SetTransaction(transaction)
+                .SetParameterValue("@FileId", fileid);
 
-            using (var rd = m_findfileCommand.ExecuteReader())
+            using (var rd = m_selectfilemetadatahashandsizeCommand.ExecuteReader())
                 if (rd.Read())
-                    return new Tuple<long, string>(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1));
+                    return (rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? throw new InvalidOperationException("Metadata hash is null"));
 
             return null;
         }
 
 
-        public string GetFileHash(long fileid, System.Data.IDbTransaction transaction)
+        public string? GetFileHash(long fileid, IDbTransaction transaction)
         {
-            m_selectfileHashCommand.SetParameterValue(0, fileid);
-            m_selectfileHashCommand.Transaction = transaction;
-            var r = m_selectfileHashCommand.ExecuteScalar(m_logQueries, null);
+            var r = m_selectfileHashCommand.SetTransaction(transaction)
+                .SetParameterValue("@FileId", fileid)
+                .ExecuteScalar(m_logQueries, null);
             if (r == null || r == DBNull.Value)
                 return null;
 
@@ -551,18 +646,41 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose()
         {
+            if (!string.IsNullOrWhiteSpace(m_tempDeletedBlockTable))
+                try
+                {
+                    using (var cmd = m_connection.CreateCommand())
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE ""{m_tempDeletedBlockTable}"""));
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "DropTempTableFailed", ex, "Failed to drop temporary table {0}: {1}", m_tempDeletedBlockTable, ex.Message);
+                }
+
             base.Dispose();
         }
 
-        private long GetPreviousFilesetID(System.Data.IDbCommand cmd)
+        public long GetLastWrittenDBlockVolumeSize(IDbTransaction? transaction)
         {
-            return GetPreviousFilesetID(cmd, OperationTimestamp, m_filesetId);
+            using (var cmd = m_connection.CreateCommand(transaction))
+                return cmd.SetCommandAndParameters(@"SELECT ""Size"" FROM ""RemoteVolume"" WHERE ""State"" = @State AND ""Type"" = @Type ORDER BY ""ID"" DESC LIMIT 1")
+                    .SetParameterValue("@State", RemoteVolumeState.Uploaded.ToString())
+                    .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
+                    .ExecuteScalarInt64(-1);
         }
 
-        private long GetPreviousFilesetID(System.Data.IDbCommand cmd, DateTime timestamp, long filesetid)
+        private long GetPreviousFilesetID(IDbCommand cmd)
         {
-            var lastFilesetId = cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" < ? AND ""ID"" != ? ORDER BY ""Timestamp"" DESC ", -1, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(timestamp), filesetid);
-            return lastFilesetId;
+            return GetPreviousFilesetID(cmd, OperationTimestamp, m_filesetId, cmd.Transaction);
+        }
+
+        private long GetPreviousFilesetID(IDbCommand cmd, DateTime timestamp, long filesetid, IDbTransaction? transaction)
+        {
+            return cmd.SetTransaction(transaction)
+                .SetCommandAndParameters(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" < @Timestamp AND ""ID"" != @FilesetId ORDER BY ""Timestamp"" DESC ")
+                .SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(timestamp))
+                .SetParameterValue("@FilesetId", filesetid)
+                .ExecuteScalarInt64(-1);
         }
 
         internal Tuple<long, long> GetLastBackupFileCountAndSize()
@@ -570,53 +688,28 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 var lastFilesetId = cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC LIMIT 1");
-                var count = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FileLookup"" INNER JOIN ""FilesetEntry"" ON ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""FileLookup"".""BlocksetID"" NOT IN (?, ?)", -1, lastFilesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
-                var size = cmd.ExecuteScalarInt64(@"SELECT SUM(""Blockset"".""Length"") FROM ""FileLookup"", ""FilesetEntry"", ""Blockset"" WHERE ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FileLookup"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""FileLookup"".""BlocksetID"" NOT IN (?, ?)", -1, lastFilesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
+                var count = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""FileLookup"" INNER JOIN ""FilesetEntry"" ON ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @FilesetId AND ""FileLookup"".""BlocksetID"" NOT IN (@FolderBlocksetId, @SymlinkBlocksetId)")
+                    .SetParameterValue("@FilesetId", lastFilesetId)
+                    .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
+                    .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
+                    .ExecuteScalarInt64(-1);
+
+                var size = cmd.SetCommandAndParameters(@"SELECT SUM(""Blockset"".""Length"") FROM ""FileLookup"", ""FilesetEntry"", ""Blockset"" WHERE ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FileLookup"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FilesetID"" = @FilesetId AND ""FileLookup"".""BlocksetID"" NOT IN (@FolderBlocksetId, @SymlinkBlocksetId)")
+                    .SetParameterValue("@FilesetId", lastFilesetId)
+                    .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
+                    .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
+                    .ExecuteScalarInt64(-1);
 
                 return new Tuple<long, long>(count, size);
             }
         }
 
-        internal void UpdateChangeStatistics(BackupResults results, System.Data.IDbTransaction transaction)
+        internal void UpdateChangeStatistics(BackupResults results, IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
-                // TODO: Optimize these queries to not use the "File" view
-                var lastFilesetId = GetPreviousFilesetID(cmd);
-                results.AddedFolders = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" = ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ?)", 0, m_filesetId, FOLDER_BLOCKSET_ID, lastFilesetId);
-                results.AddedSymlinks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" = ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ?)", 0, m_filesetId, SYMLINK_BLOCKSET_ID, lastFilesetId);
-
-                results.DeletedFolders = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" = ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ?)", 0, lastFilesetId, FOLDER_BLOCKSET_ID, m_filesetId);
-                results.DeletedSymlinks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" = ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ?)", 0, lastFilesetId, SYMLINK_BLOCKSET_ID, m_filesetId);
-
-                var subqueryNonFiles = @"SELECT ""File"".""Path"", ""Blockset"".""Fullhash"" FROM ""File"", ""FilesetEntry"", ""Metadataset"", ""Blockset"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""File"".""BlocksetID"" = ? AND ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FilesetID"" = ? ";
-                results.ModifiedFolders = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM (" + subqueryNonFiles + @") A, (" + subqueryNonFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ", 0, lastFilesetId, FOLDER_BLOCKSET_ID, m_filesetId, FOLDER_BLOCKSET_ID);
-                results.ModifiedSymlinks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM (" + subqueryNonFiles + @") A, (" + subqueryNonFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ", 0, lastFilesetId, SYMLINK_BLOCKSET_ID, m_filesetId, SYMLINK_BLOCKSET_ID);
-
-                var tmpName1 = "TmpFileList-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                var tmpName2 = "TmpFileList-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                try
-                {
-                    var subqueryFiles = @"SELECT ""File"".""Path"" AS ""Path"", ""A"".""Fullhash"" AS ""Filehash"", ""B"".""Fullhash"" AS ""Metahash"" FROM ""File"", ""FilesetEntry"", ""Blockset"" A, ""Blockset"" B, ""Metadataset""  WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""A"".""ID"" = ""File"".""BlocksetID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""B"".""ID"" ";
-
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles, tmpName1), lastFilesetId);
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles, tmpName2), m_filesetId);
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName1"" ON ""{0}"" (""Path"")",tmpName1));
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName2"" ON ""{0}"" (""Path"")",tmpName2));
-
-
-                    results.AddedFiles = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""{0}"")", tmpName1), 0, m_filesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
-                    results.DeletedFiles = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""{0}"" WHERE ""{0}"".""Path"" NOT IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ?)", tmpName1), 0, m_filesetId);
-                    results.ModifiedFiles = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""{0}"" A, ""{1}"" B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")", tmpName1, tmpName2), 0);
-
-                }
-                finally
-                {
-                    try { cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"";", tmpName1)); }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Dispose temp table error"); }
-                    try { cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"";", tmpName2)); }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Dispose temp table error"); }
-                }
+                var prevFileSetId = GetPreviousFilesetID(cmd);
+                ChangeStatistics.UpdateChangeStatistics(cmd, results, m_filesetId, prevFileSetId);
             }
         }
 
@@ -626,7 +719,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="transaction">Transaction</param>
         /// <param name="deleted">List of deleted paths, or null</param>
-        public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted = null)
+        public void AppendFilesFromPreviousSet(IDbTransaction transaction, IEnumerable<string>? deleted = null)
         {
             AppendFilesFromPreviousSet(transaction, deleted, m_filesetId, -1, OperationTimestamp);
         }
@@ -640,29 +733,28 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filesetid">Current file-set ID</param>
         /// <param name="prevId">Source file-set ID</param>
         /// <param name="timestamp">If <c>filesetid</c> == -1, used to locate previous file-set</param>
-        public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted, long filesetid, long prevId, DateTime timestamp)
+        public void AppendFilesFromPreviousSet(IDbTransaction transaction, IEnumerable<string>? deleted, long filesetid, long prevId, DateTime timestamp)
         {
             using (var cmd = m_connection.CreateCommand())
             using (var cmdDelete = m_connection.CreateCommand())
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
-                long lastFilesetId = prevId < 0 ? GetPreviousFilesetID(cmd, timestamp, filesetid) : prevId;
+                long lastFilesetId = prevId < 0 ? GetPreviousFilesetID(cmd, timestamp, filesetid, tr.Parent) : prevId;
 
-                cmd.Transaction = tr.Parent;
-                cmd.ExecuteNonQuery(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT ? AS ""FilesetID"", ""FileID"", ""Lastmodified"" FROM (SELECT DISTINCT ""FilesetID"", ""FileID"", ""Lastmodified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?)) ", filesetid, lastFilesetId, filesetid);
+                cmd.SetTransaction(tr.Parent)
+                    .SetCommandAndParameters(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT @CurrentFilesetId AS ""FilesetID"", ""FileID"", ""Lastmodified"" FROM (SELECT DISTINCT ""FilesetID"", ""FileID"", ""Lastmodified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @PreviousFilesetId AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @CurrentFilesetId)) ")
+                    .SetParameterValue("@CurrentFilesetId", filesetid)
+                    .SetParameterValue("@PreviousFilesetId", lastFilesetId)
+                    .ExecuteNonQuery(m_logQueries);
 
                 if (deleted != null)
                 {
-                    cmdDelete.Transaction = tr.Parent;
-                    cmdDelete.CommandText = @"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" IN (SELECT ""ID"" FROM ""File"" WHERE ""Path"" = ?) ";
-                    cmdDelete.AddParameters(2);
-                    cmdDelete.SetParameterValue(0, filesetid);
-
-                    foreach (string s in deleted)
-                    {
-                        cmdDelete.SetParameterValue(1, s);
-                        cmdDelete.ExecuteNonQuery();
-                    }
+                    using var tmplist = new TemporaryDbValueList(m_connection, tr.Parent, deleted);
+                    cmdDelete.SetTransaction(tr.Parent)
+                        .SetCommandAndParameters(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId AND ""FileID"" IN (SELECT ""ID"" FROM ""File"" WHERE ""Path"" IN (@Paths)) ")
+                        .SetParameterValue("@FilesetId", filesetid)
+                        .ExpandInClauseParameter("@Paths", tmplist)
+                        .ExecuteNonQuery(m_logQueries);
                 }
 
                 tr.Commit();
@@ -676,7 +768,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="transaction">Transaction</param>
         /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
-        public void AppendFilesFromPreviousSetWithPredicate(System.Data.IDbTransaction transaction, Func<string, long, bool> exclusionPredicate)
+        public void AppendFilesFromPreviousSetWithPredicate(IDbTransaction transaction, Func<string, long, bool> exclusionPredicate)
         {
             AppendFilesFromPreviousSetWithPredicate(transaction, exclusionPredicate, m_filesetId, -1, OperationTimestamp);
         }
@@ -691,7 +783,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="fileSetId">Current fileset ID</param>
         /// <param name="prevFileSetId">Source fileset ID</param>
         /// <param name="timestamp">If <c>prevFileSetId</c> == -1, used to locate previous fileset</param>
-        public void AppendFilesFromPreviousSetWithPredicate(System.Data.IDbTransaction transaction,
+        public void AppendFilesFromPreviousSetWithPredicate(IDbTransaction transaction,
             Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
         {
             if (exclusionPredicate == null)
@@ -704,40 +796,42 @@ namespace Duplicati.Library.Main.Database
             using (var cmdDelete = m_connection.CreateCommand())
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
-                long lastFilesetId = prevFileSetId < 0 ? GetPreviousFilesetID(cmd, timestamp, fileSetId) : prevFileSetId;
+                long lastFilesetId = prevFileSetId < 0 ? GetPreviousFilesetID(cmd, timestamp, fileSetId, tr.Parent) : prevFileSetId;
 
                 // copy entries from previous file set into a temporary table, except those file IDs already added by the current backup
                 var tempFileSetTable = "FilesetEntry-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 cmd.Transaction = tr.Parent;
-                cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{tempFileSetTable}"" AS SELECT ""FileID"", ""Lastmodified"" FROM (SELECT DISTINCT ""FilesetID"", ""FileID"", ""Lastmodified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?))", lastFilesetId, fileSetId);
+                cmd.SetCommandAndParameters(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tempFileSetTable}"" AS SELECT ""FileID"", ""Lastmodified"" FROM (SELECT DISTINCT ""FilesetID"", ""FileID"", ""Lastmodified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @PreviousFilesetId AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @CurrentFilesetId))"))
+                    .SetParameterValue("@PreviousFilesetId", lastFilesetId)
+                    .SetParameterValue("@CurrentFilesetId", fileSetId)
+                    .ExecuteNonQuery();
 
                 // now we need to remove, from the above, any entries that were enumerated by the 
                 // UNC-driven backup
-                cmdDelete.Transaction = tr.Parent;
-                cmdDelete.CommandText = $@"DELETE FROM ""{tempFileSetTable}"" WHERE ""FileID"" = ?";
-                cmdDelete.AddParameters(1);
+                cmdDelete.SetTransaction(tr.Parent)
+                    .SetCommandAndParameters(FormatInvariant($@"DELETE FROM ""{tempFileSetTable}"" WHERE ""FileID"" = @FileId"));
 
                 // enumerate files from new temporary file set, and remove any entries handled by UNC
                 cmd.Transaction = tr.Parent;
-                foreach (var row in cmd.ExecuteReaderEnumerable(
+                foreach (var row in cmd.ExecuteReaderEnumerable(FormatInvariant(
                     $@"SELECT f.""Path"", fs.""FileID"", fs.""Lastmodified"", COALESCE(bs.""Length"", -1)
                       FROM (SELECT DISTINCT ""FileID"", ""Lastmodified"" FROM ""{tempFileSetTable}"") AS fs
                       LEFT JOIN ""File"" AS f ON fs.""FileID"" = f.""ID""
-                      LEFT JOIN ""Blockset"" AS bs ON f.""BlocksetID"" = bs.""ID"";"))
+                      LEFT JOIN ""Blockset"" AS bs ON f.""BlocksetID"" = bs.""ID"";")))
                 {
-                    var path = row.GetString(0);
-                    var size = row.GetInt64(3);
+                    var path = row.ConvertValueToString(0) ?? throw new Exception("Unexpected null value for path");
+                    var size = row.ConvertValueToInt64(3);
 
                     if (exclusionPredicate(path, size))
-                    {
-                        cmdDelete.SetParameterValue(0, row.GetInt64(1));
-                        cmdDelete.ExecuteNonQuery();
-                    }
+                        cmdDelete.SetParameterValue("@FileId", row.ConvertValueToInt64(1))
+                            .ExecuteNonQuery();
                 }
 
                 // now copy the temporary table into the FileSetEntry table
-                cmd.ExecuteNonQuery($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") 
-                                      SELECT ?, ""FileID"", ""Lastmodified"" FROM ""{tempFileSetTable}""", fileSetId);
+                cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") 
+                                      SELECT @FilesetId, ""FileID"", ""Lastmodified"" FROM ""{tempFileSetTable}"""))
+                    .SetParameterValue("@FilesetId", fileSetId)
+                    .ExecuteNonQuery();
 
                 tr.Commit();
             }
@@ -749,45 +843,12 @@ namespace Duplicati.Library.Main.Database
         /// <param name="volumeid">The ID of the fileset volume to update</param>
         /// <param name="timestamp">The timestamp of the operation to create</param>
         /// <param name="transaction">An optional external transaction</param>
-        public override long CreateFileset(long volumeid, DateTime timestamp, System.Data.IDbTransaction transaction = null)
+        public override long CreateFileset(long volumeid, DateTime timestamp, IDbTransaction? transaction = null)
         {
             return m_filesetId = base.CreateFileset(volumeid, timestamp, transaction);
         }
 
-        public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(System.Data.IDbTransaction transaction)
-        {
-            using (var cmd = m_connection.CreateCommand(transaction))
-            {
-                using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = ""Uploading"" OR ""RemoteVolume"".""State"" = ""Temporary"")"))
-                    while (rd.Read())
-                    {
-                        yield return new KeyValuePair<long, DateTime>(
-                            rd.GetInt64(0),
-                            ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime()
-                        );
-                    }
-            }
-        }
-
-        public RemoteVolumeEntry GetRemoteVolumeFromFilesetID(long filesetID, IDbTransaction transaction = null)
-        {
-            using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
-                if (rd.Read())
-                    return new RemoteVolumeEntry(
-                        rd.ConvertValueToInt64(0, -1),
-                        rd.GetValue(1).ToString(),
-                        (rd.GetValue(4) == null || rd.GetValue(4) == DBNull.Value) ? null : rd.GetValue(4).ToString(),
-                        rd.ConvertValueToInt64(3, -1),
-                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
-                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
-                    );
-                else
-                    return default(RemoteVolumeEntry);
-        }
-
-        public IEnumerable<string> GetTemporaryFilelistVolumeNames(bool latestOnly, IDbTransaction transaction = null)
+        public IEnumerable<string> GetTemporaryFilelistVolumeNames(bool latestOnly, IDbTransaction? transaction = null)
         {
             var incompleteFilesetIDs = GetIncompleteFilesets(transaction).OrderBy(x => x.Value).Select(x => x.Key).ToArray();
 
@@ -804,68 +865,68 @@ namespace Duplicati.Library.Main.Database
             return volumeNames;
         }
 
-        public IEnumerable<string> GetMissingIndexFiles(System.Data.IDbTransaction transaction)
+        public IEnumerable<string> GetMissingIndexFiles(IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT ""Name"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND NOT ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"") AND ""State"" IN (?,?)", RemoteVolumeType.Blocks.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()))
+            using var cmd = m_connection.CreateCommand(transaction)
+                .SetCommandAndParameters(@"SELECT ""Name"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND NOT ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"") AND ""State"" IN (@States)")
+                .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
+                .ExpandInClauseParameter("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
+
+            using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
-                    yield return rd.GetValue(0).ToString();
+                    yield return rd.ConvertValueToString(0) ?? throw new Exception("Unexpected null value for volume name");
         }
 
-        public void LinkFilesetToVolume(long filesetid, long volumeid, System.Data.IDbTransaction transaction)
+        public void MoveBlockToVolume(string blockkey, long size, long sourcevolumeid, long targetvolumeid, IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = transaction;
-                var c = cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""VolumeID"" = ? WHERE ""ID"" = ?", volumeid, filesetid);
+                var c = cmd.SetCommandAndParameters(@"UPDATE ""Block"" SET ""VolumeID"" = @NewVolumeId WHERE ""Hash"" = @Hash AND ""Size"" = @Size AND ""VolumeID"" = @PreviousVolumeId ")
+                    .SetParameterValue("@NewVolumeId", targetvolumeid)
+                    .SetParameterValue("@Hash", blockkey)
+                    .SetParameterValue("@Size", size)
+                    .SetParameterValue("@PreviousVolumeId", sourcevolumeid)
+                    .ExecuteNonQuery();
                 if (c != 1)
-                    throw new Exception(string.Format("Failed to link filesetid {0} to volumeid {1}", filesetid, volumeid));
+                    throw new Exception($"Failed to move block {blockkey}:{size} from volume {sourcevolumeid}, count: {c}");
             }
         }
 
-        public void MoveBlockToVolume(string blockkey, long size, long sourcevolumeid, long targetvolumeid, System.Data.IDbTransaction transaction)
-        {
-            using (var cmd = m_connection.CreateCommand())
-            {
-                cmd.Transaction = transaction;
-                var c = cmd.ExecuteNonQuery(@"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? AND ""VolumeID"" = ? ", targetvolumeid, blockkey, size, sourcevolumeid);
-                if (c != 1)
-                    throw new Exception(string.Format("Failed to move block {0}:{1} from volume {2}, count: {3}", blockkey, size, sourcevolumeid, c));
-            }
-        }
-
-        public void SafeDeleteRemoteVolume(string name, System.Data.IDbTransaction transaction)
+        public void SafeDeleteRemoteVolume(string name, IDbTransaction transaction)
         {
             var volumeid = GetRemoteVolumeID(name, transaction);
 
             using (var cmd = m_connection.CreateCommand(transaction))
             {
-                var c = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Block"" WHERE ""VolumeID"" = ? ", -1, volumeid);
+                var c = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""Block"" WHERE ""VolumeID"" = @VolumeId ")
+                    .SetParameterValue("@VolumeId", volumeid)
+                    .ExecuteScalarInt64(-1);
                 if (c != 0)
-                    throw new Exception(string.Format("Failed to safe-delete volume {0}, blocks: {1}", name, c));
+                    throw new Exception($"Failed to safe-delete volume {name}, blocks: {c}");
 
                 RemoveRemoteVolume(name, transaction);
             }
         }
 
-        public string[] GetBlocklistHashes(string name, System.Data.IDbTransaction transaction)
+        public string[] GetBlocklistHashes(string name, IDbTransaction transaction)
         {
             var volumeid = GetRemoteVolumeID(name, transaction);
             using (var cmd = m_connection.CreateCommand(transaction))
             {
                 // Grab the strings and return as array to avoid concurrent access to the IEnumerable
-                return cmd.ExecuteReaderEnumerable(
-                    @"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"" WHERE ""Block"".""VolumeID"" = ? AND ""Block"".""Hash"" IN (SELECT ""Hash"" FROM ""BlocklistHash"")", volumeid)
-                    .Select(x => x.ConvertValueToString(0))
+                cmd.SetCommandAndParameters(@"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"" WHERE ""Block"".""VolumeID"" = @VolumeId AND ""Block"".""Hash"" IN (SELECT ""Hash"" FROM ""BlocklistHash"")")
+                    .SetParameterValue("@VolumeId", volumeid);
+                return cmd.ExecuteReaderEnumerable()
+                    .Select(x => x.ConvertValueToString(0) ?? throw new Exception("Unexpected null value for blocklist hash"))
                     .ToArray();
             }
         }
 
-        public string GetFirstPath()
+        public string? GetFirstPath()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(@"SELECT ""Path"" FROM ""File"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"))
             {
-                cmd.CommandText = @"SELECT ""Path"" FROM ""File"" ORDER BY LENGTH(""Path"") DESC LIMIT 1";
                 var v0 = cmd.ExecuteScalar();
                 if (v0 == null || v0 == DBNull.Value)
                     return null;
@@ -882,11 +943,9 @@ namespace Duplicati.Library.Main.Database
         {
             var data = new List<Interface.USNJournalDataEntry>();
 
-            using (var cmd = m_connection.CreateCommand())
-            using (var rd =
-                cmd.ExecuteReader(
-                    @"SELECT ""VolumeName"", ""JournalID"", ""NextUSN"", ""ConfigHash"" FROM ""ChangeJournalData"" WHERE ""FilesetID"" = ?",
-                    fileSetId))
+            using var cmd = m_connection.CreateCommand(@"SELECT ""VolumeName"", ""JournalID"", ""NextUSN"", ""ConfigHash"" FROM ""ChangeJournalData"" WHERE ""FilesetID"" = @FilesetId")
+                .SetParameterValue("@FilesetId", fileSetId);
+            using (var rd = cmd.ExecuteReader())
             {
                 while (rd.Read())
                 {
@@ -909,7 +968,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="data">Data to add</param>
         /// <param name="transaction">An optional external transaction</param>
-        public void CreateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data, System.Data.IDbTransaction transaction = null)
+        public void CreateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data, IDbTransaction? transaction = null)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
@@ -918,9 +977,14 @@ namespace Duplicati.Library.Main.Database
                     using (var cmd = m_connection.CreateCommand())
                     {
                         cmd.Transaction = tr.Parent;
-                        var c = cmd.ExecuteNonQuery(
-                            @"INSERT INTO ""ChangeJournalData"" (""FilesetID"", ""VolumeName"", ""JournalID"", ""NextUSN"", ""ConfigHash"") VALUES (?, ?, ?, ?, ?);",
-                            m_filesetId, entry.Volume, entry.JournalId, entry.NextUsn, entry.ConfigHash);
+                        var c = cmd.SetCommandAndParameters(
+                            @"INSERT INTO ""ChangeJournalData"" (""FilesetID"", ""VolumeName"", ""JournalID"", ""NextUSN"", ""ConfigHash"") VALUES (@FilesetId, @VolumeName, @JournalId, @NextUsn, @ConfigHash);")
+                                .SetParameterValue("@FilesetId", m_filesetId)
+                                .SetParameterValue("@VolumeName", entry.Volume)
+                                .SetParameterValue("@JournalId", entry.JournalId)
+                                .SetParameterValue("@NextUsn", entry.NextUsn)
+                                .SetParameterValue("@ConfigHash", entry.ConfigHash)
+                                .ExecuteNonQuery();
 
                         if (c != 1)
                             throw new Exception("Unable to add change journal entry");
@@ -937,7 +1001,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="data">Data to add</param>
         /// <param name="fileSetId">Existing file set to update</param>
         /// <param name="transaction">An optional external transaction</param>
-        public void UpdateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data, long fileSetId, System.Data.IDbTransaction transaction = null)
+        public void UpdateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data, long fileSetId, IDbTransaction? transaction = null)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
@@ -945,16 +1009,36 @@ namespace Duplicati.Library.Main.Database
                 {
                     using (var cmd = m_connection.CreateCommand())
                     {
-                        cmd.Transaction = tr.Parent;
-                        cmd.ExecuteNonQuery(
-                            @"UPDATE ""ChangeJournalData"" SET ""NextUSN"" = ? WHERE ""FilesetID"" = ? AND ""VolumeName"" = ? AND ""JournalID"" = ?;",
-                            entry.NextUsn, fileSetId, entry.Volume, entry.JournalId);
+                        cmd.SetTransaction(tr.Parent)
+                            .SetCommandAndParameters(
+                                @"UPDATE ""ChangeJournalData"" SET ""NextUSN"" = @NextUsn WHERE ""FilesetID"" = @FilesetId AND ""VolumeName"" = @VolumeName AND ""JournalID"" = @JournalId;")
+                            .SetParameterValue("@NextUsn", entry.NextUsn)
+                            .SetParameterValue("@FilesetId", fileSetId)
+                            .SetParameterValue("@VolumeName", entry.Volume)
+                            .SetParameterValue("@JournalId", entry.JournalId)
+                            .ExecuteNonQuery();
                     }
                 }
 
                 tr.Commit();
             }
         }
-        
+
+        /// <summary>
+        /// Checks if a blocklist hash is known
+        /// </summary>
+        /// <param name="hash">The hash to check</param>
+        /// <param name="transaction">An optional external transaction</param>
+        /// <returns>True if the hash is known, false otherwise</returns>
+        public bool IsBlocklistHashKnown(string hash, IDbTransaction transaction)
+        {
+            var res = m_getfirstfilesetwithblockinblockset.SetTransaction(transaction)
+                .SetParameterValue("@Hash", hash)
+                .ExecuteScalarInt64();
+            if (res != -1 && res != m_filesetId)
+                return true;
+            else
+                return !m_blocklistHashes.Add(hash);
+        }
     }
 }

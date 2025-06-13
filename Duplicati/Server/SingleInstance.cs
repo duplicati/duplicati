@@ -1,28 +1,28 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.Server
 {
@@ -136,16 +136,16 @@ namespace Duplicati.Server
 
             m_lockfilename = System.IO.Path.Combine(m_controldir, CONTROL_FILE);
             m_file = null;
-            
+
             System.IO.Stream temp_fs = null;
 
             try
             {
-                if (Platform.IsClientPosix)
-                    temp_fs = UnixSupport.File.OpenExclusive(m_lockfilename, System.IO.FileAccess.Write);
+                if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+                    temp_fs = PosixFile.OpenExclusive(m_lockfilename, System.IO.FileAccess.Write);
                 else
                     temp_fs = System.IO.File.Open(m_lockfilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None);
-                
+
                 if (temp_fs != null)
                 {
                     System.IO.StreamWriter sw = new System.IO.StreamWriter(temp_fs);
@@ -159,7 +159,7 @@ namespace Duplicati.Server
             {
                 if (temp_fs != null)
                     try { temp_fs.Dispose(); }
-                    catch {}
+                    catch { }
             }
 
             //If we have write access
@@ -172,7 +172,7 @@ namespace Duplicati.Server
                 DateTime startup = System.IO.File.GetLastWriteTime(m_lockfilename);
 
                 //Clean up any files that were created before the app launched
-                foreach(string s in SystemIO.IO_OS.GetFiles(m_controldir))
+                foreach (string s in SystemIO.IO_OS.GetFiles(m_controldir))
                     if (s != m_lockfilename && System.IO.File.GetCreationTime(s) < startup)
                         try { System.IO.File.Delete(s); }
                         catch { }
@@ -189,7 +189,7 @@ namespace Duplicati.Server
 
                 //HACK: the unix file lock does not allow us to read the file length when the file is locked
                 if (new System.IO.FileInfo(m_lockfilename).Length == 0)
-                    if (!Platform.IsClientPosix)
+                    if (!(OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()))
                         throw new Exception("The file was locked, but had no data");
 
                 //Notify the other process that we have started
@@ -197,7 +197,8 @@ namespace Duplicati.Server
 
                 //Write out the commandline arguments
                 string[] cmdargs = System.Environment.GetCommandLineArgs();
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(Platform.IsClientPosix ? UnixSupport.File.OpenExclusive(filename, System.IO.FileAccess.Write) : new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None)))
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) ? PosixFile.OpenExclusive(filename, System.IO.FileAccess.Write)
+                    : new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None)))
                     for (int i = 1; i < cmdargs.Length; i++) //Skip the first, as that is the filename
                         sw.WriteLine(cmdargs[i]);
 
@@ -238,7 +239,7 @@ namespace Duplicati.Server
             // needs a little time to create+lock the file. This is not really a fix, but an
             // ugly workaround. This functionality is only used to allow a new instance to signal
             // the running instance, so errors here would only affect that functionality
-            if (Platform.IsClientPosix)
+            if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()))
                 System.Threading.Thread.Sleep(1000);
 
             do
@@ -250,7 +251,8 @@ namespace Duplicati.Server
                         return;
 
                     List<string> args = new List<string>();
-                    using (System.IO.StreamReader sr = new System.IO.StreamReader(Platform.IsClientPosix ? UnixSupport.File.OpenExclusive(e.FullPath, System.IO.FileAccess.ReadWrite) : new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)))
+                    using (System.IO.StreamReader sr = new System.IO.StreamReader((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) ? PosixFile.OpenExclusive(e.FullPath, System.IO.FileAccess.ReadWrite)
+                        : new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)))
                     {
                         while (!sr.EndOfStream)
                         {
@@ -309,7 +311,7 @@ namespace Duplicati.Server
 
                 //Finally inform this instance about the call
                 if (SecondInstanceDetected != null)
-                    SecondInstanceDetected(commandline); 
+                    SecondInstanceDetected(commandline);
             }
 
         }

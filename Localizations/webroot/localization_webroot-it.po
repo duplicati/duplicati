@@ -1,54 +1,133 @@
 # 
 # Translators:
-# Nicola Pappagallo <npappagallo@developing.it>, 2016
 # Claudio Marchesini <markeclaudio@gmail.com>, 2017
 # Devis Cerri <cerride@gmail.com>, 2017
+# Francesco Infantini <infantini.francesco@gmail.com>, 2018
 # Andrea De Lunardi <a.delunardi@arca.com>, 2018
-# Francesco Infantini <infantini.francesco@gmail.com>, 2019
-# albanobattistella <albano_battistella@hotmail.com>, 2019
-# Folgore101 <andrea.gramegna@gmail.com>, 2020
+# albanobattistella <albanobattistella@gmail.com>, 2019
+# Antonio Galiero, 2024
+# Folgore101 <andrea.gramegna@gmail.com>, 2025
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2020\n"
-"Language-Team: Italian (https://www.transifex.com/duplicati/teams/67655/it/)\n"
+"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2025\n"
+"Language-Team: Italian (https://app.transifex.com/duplicati/teams/67655/it/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: it\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
 
-#: templates/advancedoptionseditor.html:48
+#: templates/backup-result/entryline.html:5
+msgid "(1 error{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgid_plural ""
+"({{$count}} errors{{item.Result.Interrupted? (', interrupted'|translate) : "
+"''}})"
+msgstr[0] ""
+"(1 errore{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgstr[1] ""
+"({{$count}} errori{{item.Result.Interrupted? (', interrupted'|translate) : "
+"''}})"
+msgstr[2] ""
+"({{$count}} errori{{item.Result.Interrupted? (', interrupted'|translate) : "
+"''}})"
+
+#: templates/backup-result/entryline.html:10
+msgid ""
+"(1 warning{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgid_plural ""
+"({{$count}} warnings{{item.Result.Interrupted? (', interrupted'|translate) :"
+" ''}})"
+msgstr[0] ""
+"(1 avviso{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgstr[1] ""
+"({{$count}} avvisi{{item.Result.Interrupted? (', interrupted'|translate) : "
+"''}})"
+msgstr[2] ""
+"({{$count}} avvisi{{item.Result.Interrupted? (', interrupted'|translate) : "
+"''}})"
+
+#: templates/backup-result/entryline.html:15
+msgid "(interrupted)"
+msgstr "(interrotto)"
+
+#: templates/advancedoptionseditor.html:50
 msgid "- pick an option -"
 msgstr "- seleziona un'opzione -"
 
-#: templates/delete.html:7
+#: scripts/controllers/SystemSettingsController.js:217 templates/delete.html:7
 msgid "...loading..."
-msgstr "...  caricamento in corso ..."
+msgstr "...caricamento..."
 
-#: templates/backends/openstack.html:44
-msgid "API Key"
-msgstr "Chiave API"
+#: templates/backends/sia.html:19
+msgid ""
+"<b>Note:</b> Sia will still boost redundancy later as long as you're "
+"connected to your hosts."
+msgstr ""
+"<b>Nota:</b> Sia aumenterà comunque la ridondanza in seguito, finché sarai "
+"connesso ai tuoi host."
 
-#: templates/backends/tardigrade.html:21
+#: templates/commandline.html:25
+msgid "<i class=\"fa fa-check\"></i> Edit as text"
+msgstr "<i class=\"fa fa-check\"></i> Modifica come testo"
+
+#: templates/commandline.html:32
+msgid "<i class=\"fa\"></i> Edit as text"
+msgstr "<i class=\"fa\"></i> Modifica come testo"
+
+#: templates/addoredit.html:312
+msgid ""
+"<p ng-show=\"(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)\" class=\"warning\" translate>\n"
+"                            The chosen size is outside the recommended range. This may cause performance issues, excessively large temporary files or other problems.\n"
+"                        </p>\n"
+"                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link=\"'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'\">See this page for more information.</external-link>"
+msgstr ""
+"<p ng-show=\"(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)\" class=\"warning\" translate>\n"
+"                            La dimensione scelta non rientra nell'intervallo consigliato. Ciò può causare problemi di prestazioni, file temporanei troppo grandi o altri problemi.\n"
+"                        </p>\n"
+"                        I backup saranno suddivisi in più file chiamati volumi. Qui puoi impostare la dimensione massima dei singoli file del volume. <external-link link=\"'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'\">Per ulteriori informazioni, consulta questa pagina.</external-link>"
+
+#: index.html:298
+msgid ""
+"<p>Connection to server was rejected due to invalid authentication.</p>\n"
+"                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
+msgstr ""
+"<p>La connessione al server è stata rifiutata a causa di un'autenticazione non valida.</p>\n"
+"                <p>Accedi nuovamente o riapri la pagina dalla barra delle applicazioni (se applicabile).</p>"
+
+#: templates/backends/filejump.html:30
+msgid ""
+"<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>Use username and password authentication</span>\n"
+"        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>Use API token authentication (recommended)</span>"
+msgstr ""
+"<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>Usa l'autenticazione con nome utente e password</span>\n"
+"        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>Usa l'autenticazione con token API (consigliato)</span>"
+
+#: scripts/services/EditUriBuiltins.js:1097
+msgid "API Token"
+msgstr "Token API"
+
+#: scripts/services/EditUriBuiltins.js:1367
+#: templates/backends/openstack.html:44 templates/backends/storj.html:21
+#: templates/backends/storj.html:22
 msgid "API key"
 msgstr "Chiave API"
 
-#: scripts/services/EditUriBuiltins.js:945 templates/backends/s3.html:67
-#: templates/backends/s3.html:69
+#: scripts/services/EditUriBuiltins.js:1241 templates/backends/s3.html:66
+#: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "ID di accesso AWS"
 
-#: scripts/services/EditUriBuiltins.js:946 templates/backends/s3.html:72
-#: templates/backends/s3.html:74
+#: scripts/services/EditUriBuiltins.js:1242 templates/backends/s3.html:71
+#: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "Chiave di accesso AWS"
 
-#: scripts/services/EditUriBuiltins.js:150
+#: scripts/services/EditUriBuiltins.js:158
 msgid "AWS IAM Policy"
-msgstr "Norme AWS IAM"
+msgstr "Politica AWS IAM"
 
-#: index.html:234 index.html:250
+#: index.html:223 index.html:239
 msgid "About"
 msgstr "Informazioni"
 
@@ -56,34 +135,38 @@ msgstr "Informazioni"
 msgid "About {{appname}}"
 msgstr "Informazioni {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:894 templates/backends/azure.html:11
+#: scripts/services/EditUriBuiltins.js:1190
 msgid "Access Key"
 msgstr "Chiave di accesso"
 
-#: scripts/services/AppUtils.js:70
+#: templates/backends/e2.html:2
+msgid "Access Key ID"
+msgstr "ID chiave di accesso"
+
+#: templates/backends/e2.html:6
+msgid "Access Key Secret"
+msgstr "Chiave di accesso segreta"
+
+#: scripts/services/AppUtils.js:76
 msgid "Access denied"
 msgstr "Accesso negato"
 
-#: templates/backends/tardigrade.html:29
+#: templates/backends/storj.html:33 templates/backends/storj.html:34
 msgid "Access grant"
-msgstr "Concessione accesso"
+msgstr "Accesso consentito"
+
+#: templates/backends/azure.html:11 templates/backends/azure.html:12
+msgid "Access key"
+msgstr "Chiave di accesso"
 
 #: templates/settings.html:5
 msgid "Access to user interface"
 msgstr "Accesso all'interfaccia utente"
 
-#: scripts/services/EditUriBuiltins.js:893 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1189 templates/backends/azure.html:7
+#: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Nome account"
-
-#: templates/notificationarea.html:29 templates/updatechangelog.html:11
-msgid "Activate"
-msgstr "Attiva"
-
-#: scripts/controllers/AboutController.js:54
-#: scripts/controllers/UpdateChangelogController.js:18
-msgid "Activate failed:"
-msgstr "Attivazione fallita:"
 
 #: templates/addwizard.html:3
 msgid "Add a new backup"
@@ -93,11 +176,11 @@ msgstr "Aggiungi un nuovo backup"
 msgid "Add a path directly"
 msgstr "Aggiungi direttamente un percorso"
 
-#: templates/advancedoptionseditor.html:46
+#: templates/advancedoptionseditor.html:48
 msgid "Add advanced option"
-msgstr "Aggiungi opzione"
+msgstr "Aggiungi opzione avanzata"
 
-#: index.html:222
+#: index.html:211
 msgid "Add backup"
 msgstr "Aggiungi backup"
 
@@ -109,40 +192,45 @@ msgstr "Aggiungi filtro"
 msgid "Add path"
 msgstr "Aggiungi percorso"
 
-#: templates/backup-result/top-right-box.html:11
+#: templates/backup-result/top-right-box.html:18
 msgid "Added"
 msgstr "Aggiunto"
 
-#: scripts/services/EditUriBuiltins.js:956
-#: scripts/services/EditUriBuiltins.js:972
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
 msgid "Adjust bucket name?"
 msgstr "Sistemare il nome bucket?"
 
-#: scripts/services/EditUriBuiltins.js:871
-msgid "Adjust path name?"
-msgstr "Sistemare il nome del percorso?"
-
 #: templates/restoredirect.html:66 templates/restoredirect.html:74
 msgid "Advanced Options"
-msgstr "Opzioni Avanzate"
+msgstr "Opzioni avanzate"
 
-#: templates/addoredit.html:376 templates/edituri.html:28
+#: templates/addoredit.html:378 templates/commandline.html:23
+#: templates/commandline.html:31 templates/edituri.html:28
 msgid "Advanced options"
 msgstr "Opzioni avanzate"
 
-#: templates/home.html:37
+#: templates/home.html:64
 msgid "Advanced:"
 msgstr "Avanzate:"
 
-#: scripts/directives/sourceFolderPicker.js:423
-msgid "All Hyper-V Machines"
-msgstr "Tutte le Macchine Hyper-V"
+#: templates/backends/aliyunoss.html:4
+msgid "Aliyun OSS Endpoint"
+msgstr "Endpoint Aliyun OSS"
 
-#: scripts/directives/sourceFolderPicker.js:455
+#: templates/backends/aliyunoss.html:35
+msgid "Aliyun OSS documents and resources"
+msgstr "Documenti e risorse di Aliyun OSS"
+
+#: scripts/directives/sourceFolderPicker.js:581
+msgid "All Hyper-V Machines"
+msgstr "Tutti i computer Hyper-V"
+
+#: scripts/directives/sourceFolderPicker.js:613
 msgid "All Microsoft SQL Databases"
 msgstr "Tutti i database Microsoft SQL"
 
-#: templates/settings.html:134
+#: templates/settings.html:175
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
 "information. They contain information about hardware and operating system, "
@@ -150,13 +238,13 @@ msgid ""
 "similar data. They do not contain paths, filenames, usernames, passwords or "
 "similar sensitive information."
 msgstr ""
-"Tutti i rapporti sono inviati in modo anonimo e non contengono informazioni "
-"personali. Contengono informazioni sull'hardware, sul sistema operativo, il "
-"tipo di backend, la durata del backup, la dimensione complessiva dei dati "
-"sorgente ed dati simili. Non contengono i percorsi, nomi dei file, nomi "
-"utente, password o altre informazioni sensibili."
+"Tutti i rapporti di utilizzo sono inviati in forma anonima e non contengono "
+"informazioni personali. Contengono informazioni sull'hardware e sul sistema "
+"operativo, sul tipo di backend, sulla durata del backup, sulla dimensione "
+"complessiva dei dati sorgente e su dati simili. Non contengono percorsi, "
+"nomi di file, nomi utente, password o informazioni sensibili simili."
 
-#: templates/settings.html:17
+#: templates/settings.html:20
 msgid "Allow remote access (requires restart)"
 msgstr "Consenti accesso remoto (richiede il riavvio)"
 
@@ -164,103 +252,126 @@ msgstr "Consenti accesso remoto (richiede il riavvio)"
 msgid "Allowed days"
 msgstr "Giorni consentiti"
 
+#: templates/pause.html:52
+msgid "Also pause transfers"
+msgstr "Metti in pausa anche i trasferimenti"
+
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
-msgstr "Un file esistente è stato trovato nella nuova posizione"
+msgstr "È stato trovato un file esistente nella nuova posizione"
 
 #: scripts/controllers/LocalDatabaseController.js:72
 msgid ""
 "An existing file was found at the new location\n"
 "Are you sure you want the database to point to an existing file?"
 msgstr ""
-"Un file esistente è stato trovato nella nuova posizione.\n"
-"Sei sicuro di volere che il database punti ad un file esistente?"
+"È stato trovato un file esistente nella nuova posizione\n"
+"Si è sicuri di voler far puntare il database a un file esistente?"
 
-#: scripts/controllers/EditBackupController.js:450
+#: scripts/controllers/EditBackupController.js:454
 msgid ""
 "An existing local database for the storage has been found.\n"
 "Re-using the database will allow the command-line and server instances to work on the same remote storage.\n"
 "\n"
 " Do you wish to use the existing database?"
 msgstr ""
-"Un database locale esistente per l'archiviazione è stato trovato.\n"
-"Il riutilizzo del database consentirà alle istanze da riga di comando e dal server di lavorare sullo stesso archivio remoto.\n"
+"È stato trovato un database locale esistente per l'archivio.\n"
+"Il riutilizzo del database consentirà alle istanze della riga di comando e del server di lavorare sullo stesso archivio remoto.\n"
 "\n"
-"Vuoi usare il database esistente?"
+"Vuoi utilizzare il database esistente?"
 
-#: templates/settings.html:122
+#: templates/settings.html:163
 msgid "Anonymous usage reports"
-msgstr "Rapporti d'uso anonimi"
+msgstr "Rapporti di utilizzo anonimi"
 
-#: scripts/services/AppUtils.js:204
+#: scripts/services/AppUtils.js:212
 msgid "Applications"
 msgstr "Applicazioni"
+
+#: scripts/controllers/SystemSettingsController.js:194
+msgid "Are you sure you want to delete the remote control registration?"
+msgstr "Sei sicuro di voler eliminare la registrazione del controllo remoto?"
 
 #: templates/export.html:8
 msgid "As Command-line"
 msgstr "Come riga di comando"
 
-#: scripts/services/EditUriBuiltins.js:825 templates/backends/gcs.html:8
-#: templates/backends/gcs.html:9 templates/backends/msgroup.html:13
+#: scripts/services/EditUriBuiltins.js:1147
+#: scripts/services/EditUriBuiltins.js:1157 templates/backends/gcs.html:8
+#: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
+#: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
-#: templates/backends/oauth.html:9 templates/backends/sharepoint.html:8
+#: templates/backends/oauth.html:9 templates/backends/pcloud.html:21
+#: templates/backends/pcloud.html:22 templates/backends/sharepoint.html:8
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
 msgstr "AuthID"
 
-#: templates/backends/tardigrade.html:2
+#: templates/backends/smb.html:34
+msgid "Authentication Domain"
+msgstr "Dominio di autenticazione"
+
+#: scripts/services/EditUriBuiltins.js:1358 templates/backends/storj.html:2
 msgid "Authentication method"
 msgstr "Metodo di autenticazione"
 
-#: templates/backends/tardigrade.html:5
+#: templates/backends/storj.html:5
 msgid "Authentication method ({{auth_method}})"
 msgstr "Metodo di autenticazione ({{auth_method}})"
 
+#: templates/backends/filejump.html:26 templates/backends/filen.html:12
 #: templates/backends/generic.html:23 templates/backends/openstack.html:35
+#: templates/backends/smb.html:43
 msgid "Authentication password"
 msgstr "Password di autenticazione"
 
+#: templates/backends/filejump.html:22 templates/backends/filen.html:8
 #: templates/backends/generic.html:19 templates/backends/openstack.html:31
+#: templates/backends/smb.html:39
 msgid "Authentication username"
 msgstr "Nome utente di autenticazione"
 
-#: scripts/controllers/EditBackupController.js:359
+#: scripts/controllers/EditBackupController.js:363
 msgid "Autogenerated passphrase"
-msgstr "Genera automaticamente passphrase"
+msgstr "Passphrase generata automaticamente"
 
 #: templates/addoredit.html:258
-msgid "Automatically run backups."
+msgid "Automatically run backups"
 msgstr "Esegui automaticamente i backup."
 
 #: templates/backends/b2.html:12
 msgid "B2 Application ID"
-msgstr "ID applicazione B2"
+msgstr "B2 Application ID"
 
 #: templates/backends/b2.html:16
 msgid "B2 Application Key"
-msgstr "Chiave Applicazione B2"
+msgstr "Chiave applicazione B2"
 
-#: scripts/services/EditUriBuiltins.js:991
+#: scripts/services/EditUriBuiltins.js:1287
 msgid "B2 Cloud Storage Account ID"
-msgstr "ID Account Cloud B2 Storage"
+msgstr "B2 Cloud Storage Account ID"
 
 #: templates/backends/b2.html:13
 msgid "B2 Cloud Storage Application ID"
-msgstr "ID applicazione di archiviazione cloud B2"
+msgstr "B2 Cloud Storage Application ID"
 
-#: scripts/services/EditUriBuiltins.js:992 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1288 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
-msgstr "Chiave applicazione Archiviazione Cloud B2"
+msgstr "Chiave applicazione B2 Cloud Storage"
 
-#: templates/restore.html:143 templates/restore.html:70
+#: templates/restore.html:138 templates/restore.html:70
 msgid "Back"
 msgstr "Indietro"
 
-#: templates/about.html:67
-msgid "Backend modules:"
-msgstr "Moduli backend:"
+#: templates/about.html:66
+msgid ""
+"Backend modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.BackendModules\">{{item.Key}} </p>"
+msgstr ""
+"Moduli backend: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.BackendModules\">{{item.Key}}</p>"
 
-#: scripts/services/ServerStatus.js:44
+#: scripts/services/ServerStatus.js:47
 msgid "Backup complete!"
 msgstr "Backup completo!"
 
@@ -270,97 +381,111 @@ msgstr "Destinazione backup"
 
 #: templates/restore.html:131
 msgid ""
-"Backup is encrypted but no passphrase is available.\n"
-"                    Type a passphrase below to use for restoring your files,\n"
-"                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by\n"
-"                    invoking your system's keychain."
+"Backup is encrypted but no passphrase is available. Type a passphrase below "
+"to use for restoring your files, or, in case of GPG encryption, leave blank "
+"to let gpg retrieve the passphrase by invoking your system's keychain."
 msgstr ""
-"Il backup è crittografato ma non è disponibile la passphrase.\n"
-"                    Digita una passphrase qui sotto da utilizzare per ripristinare i tuoi file,\n"
-"                    o, in caso di crittografia GPG, lascia vuoto per consentire a gpg di recuperare la passphrase\n"
-"                    richiamando il portachiavi del sistema."
+"Il backup è crittografato ma non è disponibile la passphrase. Digita di "
+"seguito una passphrase da utilizzare per il ripristino dei file o, in caso "
+"di crittografia GPG, lascia vuoto per consentire a gpg di recuperare la "
+"passphrase richiamando il portachiavi del sistema."
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
 msgid "Backup location"
-msgstr "Posizione Backup"
+msgstr "Posizione backup"
 
-#: templates/addoredit.html:319
+#: templates/addoredit.html:321
 msgid "Backup retention"
 msgstr "Conservazione backup"
 
-#: templates/home.html:73
+#: templates/home.html:100
 msgid "Backup:"
-msgstr "Dimensione backup:"
+msgstr "Backup:"
 
-#: templates/settings.html:99
+#: templates/settings.html:140
 msgid "Beta"
 msgstr "Beta"
 
-#: scripts/services/AppUtils.js:68
+#: scripts/services/AppUtils.js:74
 msgid "Broken access"
-msgstr "Accesso non riuscito"
+msgstr "Accesso interrotto"
 
 #: templates/backends/file.html:8 templates/restore.html:91
 msgid "Browse"
-msgstr "Browse"
+msgstr "Sfoglia"
 
-#: scripts/controllers/SystemSettingsController.js:33
+#: scripts/controllers/SystemSettingsController.js:39
 msgid "Browser default"
 msgstr "Browser predefinito"
-
-#: templates/backends/tardigrade.html:33
-msgid "Bucket"
-msgstr "Bucket"
-
-#: scripts/services/EditUriBuiltins.js:1004
-#: scripts/services/EditUriBuiltins.js:904
-#: scripts/services/EditUriBuiltins.js:944
-#: scripts/services/EditUriBuiltins.js:990
-msgid "Bucket Name"
-msgstr "Nome Bucket"
 
 #: templates/backends/gcs.html:15
 msgid "Bucket create location"
 msgstr "Crea posizione bucket"
 
-#: templates/backends/s3.html:29
-msgid "Bucket create region"
-msgstr "Crea area bucket"
-
-#: templates/backends/b2.html:2 templates/backends/b2.html:3
+#: scripts/services/EditUriBuiltins.js:1200
+#: scripts/services/EditUriBuiltins.js:1240
+#: scripts/services/EditUriBuiltins.js:1286
+#: scripts/services/EditUriBuiltins.js:1300
+#: scripts/services/EditUriBuiltins.js:1363
+#: scripts/services/EditUriBuiltins.js:1369
+#: scripts/services/EditUriBuiltins.js:1425
+#: scripts/services/EditUriBuiltins.js:1437 templates/backends/b2.html:2
+#: templates/backends/b2.html:3 templates/backends/cos.html:25
+#: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
 #: templates/backends/s3.html:22 templates/backends/s3.html:23
+#: templates/backends/storj.html:37 templates/backends/storj.html:38
 msgid "Bucket name"
 msgstr "Nome bucket"
 
+#: scripts/services/EditUriBuiltins.js:1381
+msgid ""
+"Bucket name can only be between 3 and 63 characters long and contain only "
+"lower-case characters, numbers, periods and dashes"
+msgstr ""
+"Il nome del bucket può avere una lunghezza compresa tra 3 e 63 caratteri e "
+"contenere solo caratteri minuscoli, numeri, punti e trattini"
+
+#: templates/backends/s3.html:29
+msgid "Bucket region"
+msgstr "Regione bucket"
+
+#: templates/backends/cos.html:21
+msgid "Bucket region ap-guangzhou"
+msgstr "Regione bucket ap-guangzhou"
+
 #: templates/backends/gcs.html:26
 msgid "Bucket storage class"
-msgstr "Classe bucket"
+msgstr "Classe archiviazione del bucket"
 
-#: scripts/services/ServerStatus.js:48
+#: templates/backends/cos.html:26
+msgid "Bucket, format: BucketName-APPID"
+msgstr "Bucket, formato: BucketName-APPID"
+
+#: scripts/services/ServerStatus.js:51
 msgid "Building list of files to restore …"
 msgstr "Creazione di un elenco di file da ripristinare ..."
 
-#: scripts/controllers/RestoreController.js:366
+#: scripts/controllers/RestoreController.js:373
 msgid "Building partial temporary database …"
 msgstr "Creazione di un database temporaneo parziale ..."
 
 #: templates/restore.html:59
-msgid "Busy ..."
+msgid "Busy …"
 msgstr "Occupato..."
 
-#: templates/settings.html:18
+#: templates/settings.html:21
 msgid ""
 "By allowing remote access, the server listens to requests from any machine "
 "on your network. If you enable this option, make sure you are always using "
 "the computer on a secure firewall protected network."
 msgstr ""
-"Consentendo l'accesso remoto, il server ascolta le richieste da qualsiasi "
-"computer sulla rete. Se abiliti questa opzione, assicurati di utilizzare "
-"sempre il computer su una rete sicura protetta da un firewall."
+"Consentendo l'accesso remoto, il server ascolta le richieste provenienti da "
+"qualsiasi computer della rete. Se abiliti questa opzione, assicurati di "
+"utilizzare sempre il computer su una rete protetta da firewall."
 
-#: templates/settings.html:29
+#: templates/settings.html:31
 msgid ""
 "By default, the tray icon will open the user interface with a token that "
 "unlocks the user interface. This ensures that you can access the user "
@@ -368,129 +493,191 @@ msgid ""
 " you prefer having to type in the password, even when accessing the user "
 "interface from the tray icon, enable this option."
 msgstr ""
-"Per impostazione predefinita, l'icona nella barra delle applicazioni aprirà "
-"l'interfaccia utente con un token che sblocca l'interfaccia utente. Ciò "
-"garantisce che sia possibile accedere all'interfaccia utente dall'icona "
-"nella barra delle applicazioni, mentre si richiede agli altri di inserire "
-"una password. Se si preferisce digitare la password, anche quando si accede "
-"all'interfaccia utente dall'icona nella barra delle applicazioni, abilitare "
-"questa opzione."
+"Per impostazione predefinita, l'icona della barra delle applicazioni apre "
+"l'interfaccia utente con un token che la sblocca. In questo modo si può "
+"accedere all'interfaccia utente dall'icona della barra delle applicazioni, "
+"ma si richiede agli altri di inserire una password. Se preferisci dover "
+"digitare la password anche quando accedi all'interfaccia utente dall'icona "
+"della barra delle applicazioni, attiva questa opzione."
 
-#: scripts/services/AppUtils.js:198
+#: templates/backends/cos.html:2
+msgid "COS App ID"
+msgstr "ID app COS"
+
+#: templates/backends/cos.html:32
+msgid "COS Path or subfolder in the bucket"
+msgstr "Percorso COS o sottocartella nel bucket"
+
+#: templates/backends/cos.html:8
+msgid "COS Secret ID"
+msgstr "ID segreto COS"
+
+#: templates/backends/cos.html:14
+msgid "COS Secret Key"
+msgstr "Chiave segreta COS"
+
+#: scripts/services/AppUtils.js:206
 msgid "Cache Files"
-msgstr "File Cache"
+msgstr "File cache"
 
-#: templates/settings.html:109
+#: templates/settings.html:150
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:44
-#: scripts/controllers/AppController.js:59
-#: scripts/controllers/EditBackupController.js:344
-#: scripts/controllers/EditBackupController.js:359
-#: scripts/controllers/EditBackupController.js:393
-#: scripts/controllers/EditBackupController.js:402
-#: scripts/controllers/EditBackupController.js:429
-#: scripts/controllers/EditBackupController.js:450
-#: scripts/controllers/EditBackupController.js:95
+#: scripts/controllers/AppController.js:200
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:70
+#: scripts/controllers/DeleteController.js:67
+#: scripts/controllers/EditBackupController.js:348
+#: scripts/controllers/EditBackupController.js:363
+#: scripts/controllers/EditBackupController.js:397
+#: scripts/controllers/EditBackupController.js:406
+#: scripts/controllers/EditBackupController.js:433
+#: scripts/controllers/EditBackupController.js:454
+#: scripts/controllers/EditBackupController.js:99
 #: scripts/controllers/ExportController.js:13
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:106
-#: scripts/controllers/StateController.js:115
-#: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:54
-#: scripts/services/EditUriBuiltins.js:874
-#: scripts/services/EditUriBuiltins.js:956
-#: scripts/services/EditUriBuiltins.js:972 templates/delete.html:54
-#: templates/export.html:34 templates/settings.html:164
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:117
+#: scripts/services/DialogService.js:50
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
+#: scripts/services/EditUriBuiltins.js:62 templates/delete.html:54
+#: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Annulla"
 
+#: templates/settings.html:56
+msgid "Cancel registration"
+msgstr "Cancella registrazione"
+
+#: scripts/directives/sourceFolderPicker.js:415
+msgid "Cannot include \"{{text}}\""
+msgstr "Impossibile includere \"{{text}}\""
+
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "Cannot move to existing file"
-msgstr "Non puoi spostare in un file esistente"
+msgstr "Impossibile spostare in un file esistente"
+
+#: scripts/services/AppUtils.js:348
+msgid "Cannot specify filter include or excludes in extra options"
+msgstr ""
+"Impossibile specificare i filtri include o esclude nelle opzioni extra"
+
+#: templates/settings.html:8
+msgid "Change server passphrase"
+msgstr "Cambia la passphrase del server"
+
+#: scripts/controllers/AppController.js:198
+msgid "Change server password"
+msgstr "Cambia la password del server"
 
 #: templates/about.html:5
 msgid "Changelog"
-msgstr "Changelog"
+msgstr "Registro delle modifiche"
 
 #: templates/updatechangelog.html:2
 msgid "Changelog for {{appname}} {{version}}"
-msgstr "Changelog di {{appname}} {{version}}"
+msgstr "Registro delle modifiche per {{appname}} {{version}}"
 
-#: scripts/controllers/UpdateChangelogController.js:24
+#: scripts/controllers/UpdateChangelogController.js:16
 msgid "Check failed:"
-msgstr "Controllo fallito:"
+msgstr "Controllo non riuscito:"
 
-#: templates/about.html:36
+#: templates/about.html:34
 msgid "Check for updates now"
-msgstr "Controlla aggiornamenti ora"
+msgstr "Controlla ora gli aggiornamenti"
 
-#: templates/captcha.html:10
-msgid "Checking ..."
-msgstr "Controllo..."
-
-#: templates/about.html:37
+#: templates/about.html:35
 msgid "Checking for updates …"
-msgstr "Verifica aggiornamenti …"
+msgstr "Controllo degli aggiornamenti ..."
+
+#: templates/backends/sia.html:18
+msgid ""
+"Choose 1.0 for fast backup, 1.5 for decent reliability, 2.0 for safer upload"
+" but slow backup."
+msgstr ""
+"Scegli 1.0 per un backup veloce, 1.5 per una discreta affidabilità, 2.0 per "
+"un caricamento più sicuro ma un backup lento."
 
 #: templates/edituri.html:16
 msgid "Chose a storage type to get started"
-msgstr "Scegliere un tipo di archiviazione per iniziare"
+msgstr "Scegli un tipo di archiviazione per iniziare"
 
-#: templates/backends/gcs.html:11 templates/backends/msgroup.html:16
-#: templates/backends/oauth.html:11 templates/backends/sharepoint.html:11
+#: templates/backends/gcs.html:11 templates/backends/jottacloud.html:11
+#: templates/backends/msgroup.html:16 templates/backends/oauth.html:11
+#: templates/backends/pcloud.html:24 templates/backends/sharepoint.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr "Clicca sul link AuthID per creare un nuovo AuthID"
 
-#: index.html:159 index.html:210
+#: templates/backends/filejump.html:10
+msgid "Click the Filejump API token link to set up an API token"
+msgstr "Clicca sul link Filejump token API per impostare un token API."
+
+#: index.html:148 index.html:199
 msgid "Click to set throttle options"
-msgstr "Clicca per impostare le opzioni di limitazione"
+msgstr "Clicca per impostare le opzioni di larghezza di banda"
 
-#: templates/backends/s3.html:79
+#: templates/backends/s3.html:78
 msgid "Client library to use"
-msgstr "Libreria client da utilizzare"
+msgstr "Libreria client da usare"
 
-#: templates/home.html:42
+#: templates/backends/cos.html:10
+msgid "Cloud API Secret ID"
+msgstr "ID segreto API Cloud"
+
+#: templates/backends/cos.html:16
+msgid "Cloud API Secret Key"
+msgstr "Chiave API Cloud segreta"
+
+#: templates/commandline.html:8
+msgid "Command"
+msgstr "Comando"
+
+#: templates/commandline.html:18
+msgid "Commandline arguments"
+msgstr "Argomenti della riga di comando"
+
+#: templates/home.html:69
 msgid "Commandline …"
 msgstr "Riga di comando …"
 
 #: templates/backup-result/phases/compact.html:3
 msgid "Compact Phase"
-msgstr "Fase Compattazione"
+msgstr "Fase compattazione"
 
-#: templates/home.html:41
+#: templates/home.html:68
 msgid "Compact now"
-msgstr "Comprimi"
+msgstr "Comprimi adesso"
 
-#: scripts/services/ServerStatus.js:41
-msgid "Compacting remote data ..."
-msgstr "Comprimendo dati remoti..."
-
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
 msgid "Compacting remote data …"
-msgstr "Compattazione dei dati remoti ..."
+msgstr "Compressione dei dati remoti ..."
 
-#: templates/backup-result/box.html:34
+#: templates/backup-result/box.html:35
 msgid "Complete log"
 msgstr "Registro completo"
 
-#: scripts/services/ServerStatus.js:38
+#: scripts/services/ServerStatus.js:41
 msgid "Completing backup …"
-msgstr "Completamento del backup ..."
+msgstr "Completamento del backup..."
 
-#: scripts/services/ServerStatus.js:36
+#: scripts/services/ServerStatus.js:39
 msgid "Completing previous backup …"
 msgstr "Completamento del backup precedente ..."
 
-#: templates/about.html:68
-msgid "Compression modules:"
-msgstr "Moduli di compressione:"
+#: templates/about.html:67
+msgid ""
+"Compression modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.CompressionModules\">{{item.Key}} </p>"
+msgstr ""
+"Moduli di compressione: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.CompressionModules\">{{item.Key}} </p>"
 
-#: scripts/directives/sourceFolderPicker.js:381
+#: scripts/directives/sourceFolderPicker.js:539
 msgid "Computer"
 msgstr "Computer"
 
@@ -498,7 +685,7 @@ msgstr "Computer"
 msgid "Configuration file:"
 msgstr "File di configurazione:"
 
-#: templates/home.html:29
+#: templates/home.html:56
 msgid "Configuration:"
 msgstr "Configurazione: "
 
@@ -507,24 +694,24 @@ msgid "Configure a new backup"
 msgstr "Configura un nuovo backup"
 
 #: scripts/controllers/DeleteController.js:65
-#: scripts/controllers/DeleteController.js:77
+#: scripts/controllers/DeleteController.js:99
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Confirm delete"
-msgstr "Conferma cancellazione"
+msgstr "Conferma eliminazione"
 
 #: templates/export.html:30
 msgid "Confirm encryption passphrase"
-msgstr "Conferma passphrase crittografia"
+msgstr "Conferma passphrase di crittografia"
+
+#: templates/changepassword.html:14 templates/settings.html:15
+msgid "Confirm new password"
+msgstr "Conferma nuova password"
 
 #: templates/export.html:29
 msgid "Confirm passphrase"
 msgstr "Conferma passphrase"
 
-#: templates/settings.html:12
-msgid "Confirm password"
-msgstr "Conferma password"
-
-#: scripts/services/EditUriBackendConfig.js:66
+#: scripts/services/EditUriBackendConfig.js:73
 msgid "Confirmation required"
 msgstr "Conferma richiesta"
 
@@ -532,44 +719,45 @@ msgstr "Conferma richiesta"
 msgid "Connect"
 msgstr "Connetti"
 
-#: index.html:319
+#: index.html:312
 msgid "Connect now"
 msgstr "Connetti ora"
 
-#: index.html:315
+#: index.html:305
 msgid "Connecting to server …"
 msgstr "Connessione al server …"
 
-#: templates/commandline.html:51
-msgid "Connecting to task ...."
+#: templates/commandline.html:48
+msgid "Connecting to task …"
 msgstr "Connessione all'attività..."
 
-#: index.html:320
-msgid "Connecting..."
+#: index.html:313
+msgid "Connecting …"
 msgstr "Connessione..."
 
-#: index.html:311
+#: index.html:297
 msgid "Connection lost"
 msgstr "Connessione persa"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:50
+#: scripts/directives/backupEditUri.js:53
 msgid "Connection worked!"
-msgstr "Connessione funzionante!"
+msgstr "La connessione funziona!"
 
-#: scripts/services/EditUriBuiltins.js:895 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1191 templates/backends/azure.html:2
+#: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "Nome contenitore"
 
 #: templates/backends/openstack.html:49
 msgid "Container region"
-msgstr "Area contenitore"
+msgstr "Regione contenitore"
 
 #: templates/restore.html:69
 msgid "Continue"
 msgstr "Continua"
 
-#: scripts/controllers/EditBackupController.js:429
+#: scripts/controllers/EditBackupController.js:433
 msgid "Continue without encryption"
 msgstr "Continua senza crittografia"
 
@@ -583,13 +771,22 @@ msgstr "Copia"
 
 #: templates/addoredit.html:103 templates/restoredirect.html:42
 msgid "Copy Destination URL to Clipboard"
-msgstr "Copia URL Destinazione negli Appunti"
+msgstr "Copia l'URL di destinazione negli appunti"
+
+#: scripts/controllers/EditBackupController.js:107
+#: scripts/controllers/RestoreDirectController.js:33
+msgid "Copy URL"
+msgstr "Copia l'URL"
 
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
 msgstr "Copia non riuscita. Per favore copia manualmente l'URL"
 
-#: scripts/services/AppUtils.js:639
+#: templates/backup-result/box.html:41
+msgid "Copy log"
+msgstr "Copia registro"
+
+#: scripts/services/AppUtils.js:741
 msgid "Core options"
 msgstr "Opzioni base"
 
@@ -597,47 +794,55 @@ msgstr "Opzioni base"
 msgid "Counting ({{files}} files found, {{size}})"
 msgstr "Conteggio ({{files}} file trovati, {{size}})"
 
-#: templates/settings.html:129
+#: templates/settings.html:170
 msgid "Crashes only"
 msgstr "Solo arresti anomali"
 
-#: templates/home.html:48
+#: templates/home.html:11
+msgid "Create Order"
+msgstr "Crea ordine"
+
+#: templates/home.html:21
+msgid "Create Order (descending)"
+msgstr "Crea ordine (decrescente)"
+
+#: templates/home.html:75
 msgid "Create bug report …"
 msgstr "Crea segnalazione bug ..."
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:130
 msgid "Create folder?"
 msgstr "Creare cartella?"
 
-#: scripts/services/EditUriBuiltins.js:133
+#: scripts/services/EditUriBuiltins.js:141
 msgid "Created new limited user"
 msgstr "Creato nuovo utente limitato"
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:63
 msgid "Creating bug report …"
 msgstr "Creazione segnalazione bug ..."
 
-#: scripts/services/EditUriBuiltins.js:119
+#: scripts/services/EditUriBuiltins.js:127
 msgid "Creating new user with limited access …"
 msgstr "Creazione di un nuovo utente con accesso limitato ..."
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:52
 msgid "Creating target folders …"
-msgstr "Creazione di cartelle di destinazione ..."
+msgstr "Creazione delle cartelle di destinazione ..."
 
-#: scripts/controllers/RestoreController.js:361
+#: scripts/controllers/RestoreController.js:368
 msgid "Creating temporary backup …"
 msgstr "Creazione backup temporaneo ..."
 
-#: scripts/services/EditUriBuiltins.js:119
-msgid "Creating user..."
+#: scripts/services/EditUriBuiltins.js:127
+msgid "Creating user …"
 msgstr "Creazione utente..."
 
-#: templates/home.html:78
+#: templates/home.html:105
 msgid "Current action:"
 msgstr "Azione corrente:"
 
-#: templates/home.html:88
+#: templates/home.html:115
 msgid "Current file:"
 msgstr "File corrente:"
 
@@ -647,13 +852,13 @@ msgstr "La versione attuale è {{versionname}} ({{versionnumber}})"
 
 #: templates/backends/s3.html:17
 msgid "Custom S3 endpoint"
-msgstr "End point S3 personalizzato"
+msgstr "Endpoint S3 personalizzato"
 
-#: templates/backends/tardigrade.html:18
+#: scripts/services/EditUriBuiltins.js:1373 templates/backends/storj.html:18
 msgid "Custom Satellite"
 msgstr "Satellite personalizzato"
 
-#: templates/backends/tardigrade.html:13
+#: templates/backends/storj.html:13
 msgid "Custom Satellite ({{satellite}})"
 msgstr "Satellite personalizzato ({{satellite}})"
 
@@ -661,9 +866,13 @@ msgstr "Satellite personalizzato ({{satellite}})"
 msgid "Custom authentication url"
 msgstr "URL di autenticazione personalizzato"
 
-#: templates/addoredit.html:325
+#: templates/addoredit.html:327
 msgid "Custom backup retention"
 msgstr "Conservazione backup personalizzato"
+
+#: templates/backends/s3.html:55
+msgid "Custom bucket storage class"
+msgstr "Classe di archiviazione personalizzata del bucket"
 
 #: templates/backends/gcs.html:18
 msgid "Custom location ({{server}})"
@@ -671,53 +880,53 @@ msgstr "Posizione personalizzata ({{server}})"
 
 #: templates/backends/s3.html:39
 msgid "Custom region for creating buckets"
-msgstr "Area personalizzata per la creazione bucket"
+msgstr "Regione personalizzata per la creazione del bucket"
 
 #: templates/backends/s3.html:34
 msgid "Custom region value ({{region}})"
-msgstr "Valore area personalizzata ({{region}})"
+msgstr "Valore personalizzato della regione ({{region}})"
 
 #: templates/backends/openstack.html:10 templates/backends/s3.html:12
 msgid "Custom server url ({{server}})"
 msgstr "URL del server personalizzato ({{server}})"
 
-#: templates/backends/s3.html:50
-msgid ""
-"Custom storage class\n"
-"            ({{class}})"
-msgstr ""
-"Classe di archiviazione personalizzata\n"
-"            ({{class}})"
-
-#: templates/backends/gcs.html:29
+#: templates/backends/gcs.html:29 templates/backends/s3.html:50
 msgid "Custom storage class ({{class}})"
 msgstr "Classe di archiviazione personalizzata ({{class}})"
 
-#: templates/home.html:39
+#: templates/advancedoptionseditor.html:43
+msgid "DEPRECATED: {{getDeprecationMessage(item)}}"
+msgstr "DEPRECATO: {{getDeprecationMessage(item)}}"
+
+#: templates/home.html:66
 msgid "Database …"
 msgstr "Banca dati …"
 
-#: scripts/services/AppUtils.js:91 templates/addoredit.html:351
+#: scripts/services/AppUtils.js:97 templates/addoredit.html:353
 msgid "Days"
 msgstr "Giorni"
 
-#: scripts/controllers/SystemSettingsController.js:34
+#: scripts/controllers/SystemSettingsController.js:40
 msgid "Default"
 msgstr "Predefinito"
 
-#: templates/settings.html:86
+#: templates/settings.html:129
 msgid "Default ({{channelname}})"
 msgstr "Predefinito ({{channelname}})"
 
-#: scripts/services/AppUtils.js:185
+#: scripts/services/AppUtils.js:193
 msgid "Default excludes"
 msgstr "Esclusioni predefinite"
 
-#: templates/settings.html:149
+#: templates/settings.html:190
 msgid "Default options"
 msgstr "Opzioni predefinite"
 
-#: templates/localdatabase.html:19
+#: templates/advancedoptionseditor.html:44
+msgid "Default value: \"{{getDefaultValue(item)}}\""
+msgstr "Valore predefinito: \"{{getDefaultValue(item)}}\""
+
+#: scripts/controllers/DeleteController.js:67 templates/localdatabase.html:16
 msgid "Delete"
 msgstr "Cancella"
 
@@ -727,15 +936,19 @@ msgstr "Fase Cancellazione (Vecchie versioni di backup)"
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
-msgstr "Cancella backup"
+msgstr "Elimina backup"
 
-#: templates/addoredit.html:322
+#: templates/addoredit.html:324
 msgid "Delete backups that are older than"
 msgstr "Elimina i backup più vecchi di"
 
 #: templates/delete.html:13
 msgid "Delete local database"
 msgstr "Cancella database locale"
+
+#: templates/settings.html:68
+msgid "Delete remote control setup"
+msgstr "Elimina configurazione di controllo remoto"
 
 #: templates/delete.html:38 templates/delete.html:47
 msgid "Delete remote files"
@@ -749,11 +962,11 @@ msgstr "Cancella il database locale"
 msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
 msgstr "Cancella {{filecount}} file ({{filesize}}) dall'archivio remoto?"
 
-#: templates/home.html:33
+#: templates/home.html:60
 msgid "Delete …"
 msgstr "Elimina …"
 
-#: templates/backup-result/top-right-box.html:19
+#: templates/backup-result/top-right-box.html:26
 msgid "Deleted"
 msgstr "Cancellato"
 
@@ -765,19 +978,19 @@ msgstr "Versioni Cancellate"
 msgid "Deleted files"
 msgstr "File cancellati"
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:65
 msgid "Deleting remote files …"
-msgstr "Eliminazione di file remoti ..."
+msgstr "Eliminazione dei file remoti ..."
 
-#: scripts/services/ServerStatus.js:40
+#: scripts/services/ServerStatus.js:43
 msgid "Deleting unwanted files …"
-msgstr "Eliminazione di file indesiderati ..."
+msgstr "Eliminazione dei file indesiderati ..."
 
 #: templates/addoredit.html:43
 msgid "Description (optional)"
 msgstr "Descrizione (facoltativa)"
 
-#: templates/home.html:17
+#: templates/home.html:46
 msgid "Description:"
 msgstr "Descrizione:"
 
@@ -789,41 +1002,64 @@ msgstr "Desktop"
 msgid "Destination"
 msgstr "Destinazione"
 
-#: templates/backends/sharepoint.html:2
+#: templates/home.html:12
+msgid "Destination Type"
+msgstr "Tipo destinazione"
+
+#: templates/home.html:22
+msgid "Destination Type (descending)"
+msgstr "Tipo destinazione (decrescente)"
+
+#: templates/backends/file.html:7 templates/backends/filejump.html:3
+#: templates/backends/filen.html:3 templates/backends/generic.html:14
+#: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
+#: templates/backends/oauth.html:3 templates/backends/pcloud.html:16
+#: templates/backends/sharepoint.html:2 templates/backends/smb.html:29
 msgid "Destination path"
 msgstr "Percorso destinazione"
 
-#: templates/restore.html:151
-msgid ""
-"Did we help save your files? If so, please consider supporting Duplicati "
-"with a donation. We suggest {{smallamount}} for private use and "
-"{{largeamount}} for commercial use."
-msgstr ""
-"Ti abbiamo aiutato a salvare i tuoi file? Se è così, per favore considera di"
-" supportare Duplicati con una donazione. Suggeriamo {{smallamount}} per uso "
-"privato e {{largeamount}} per uso commerciale."
+#: templates/home.html:18
+msgid "Destination size"
+msgstr "Dimensione destinazione"
+
+#: templates/home.html:28
+msgid "Destination size (descending)"
+msgstr "Dimensione destinazione (decrescente)"
+
+#: templates/backends/smb.html:8
+msgid "Direct TCP"
+msgstr "Direct TCP"
 
 #: templates/restorewizard.html:9
-msgid "Direct restore from backup files ..."
+msgid "Direct restore from backup files …"
 msgstr "Ripristino diretto da file di backup..."
+
+#: templates/backends/idrive.html:3
+msgid "Directory path"
+msgstr "Percorso cartella"
+
+#: templates/settings.html:60
+msgid "Disable remote control"
+msgstr "Disabilita controllo remoto"
 
 #: templates/log.html:32
 msgid "Disabled"
 msgstr "Disattivato"
 
-#: templates/notificationarea.html:10 templates/notificationarea.html:27
+#: templates/notificationarea.html:10 templates/notificationarea.html:29
+#: templates/notificationarea.html:40
 msgid "Dismiss"
-msgstr "Annulla"
+msgstr "Rifiuta"
 
-#: templates/notificationarea.html:41
+#: templates/notificationarea.html:50
 msgid "Dismiss all"
-msgstr "Ignora tutto"
+msgstr "Rifiuta tutto"
 
-#: templates/settings.html:68
+#: templates/settings.html:108
 msgid "Display and color theme"
 msgstr "Tema interfaccia"
 
-#: scripts/controllers/DeleteController.js:77
+#: scripts/controllers/DeleteController.js:99
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
 msgstr "Vuoi veramente cancellare il backup: \"{{name}}\" ?"
 
@@ -831,31 +1067,20 @@ msgstr "Vuoi veramente cancellare il backup: \"{{name}}\" ?"
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Vuoi veramente cancellare il database locale per: {{name}} ?"
 
+#: templates/backends/smb.html:33
+msgid "Domain"
+msgstr "Dominio"
+
 #: templates/backends/openstack.html:26
-msgid "Domain Name"
-msgstr "Nome Dominio"
-
-#: index.html:151 index.html:258
-msgid "Donate"
-msgstr "Donazione"
-
-#: templates/settings.html:76 templates/settings.html:78
-msgid "Donation messages"
-msgstr "Messaggi donazione"
-
-#: templates/settings.html:80
-msgid "Donation messages are hidden, click to show"
-msgstr "I messaggi di donazione sono nascosti, clicca per mostrarli"
-
-#: templates/settings.html:79
-msgid "Donation messages are visible, click to hide"
-msgstr "I messaggi di donazione sono visibili, clicca per nasconderli"
+msgid "Domain name"
+msgstr "Nome dominio"
 
 #: templates/export.html:53
 msgid "Done"
 msgstr "Fatto"
 
-#: templates/notificationarea.html:16
+#: templates/notificationarea.html:16 templates/notificationarea.html:30
+#: templates/updatechangelog.html:10
 msgid "Download"
 msgstr "Scarica"
 
@@ -863,37 +1088,43 @@ msgstr "Scarica"
 msgid "Downloaded files"
 msgstr "File scaricati"
 
-#: scripts/services/ServerStatus.js:53
+#: scripts/services/ServerStatus.js:56
 msgid "Downloading files …"
-msgstr "Download di file ..."
+msgstr "Sto scaricando i file …"
 
-#: templates/notificationarea.html:24
+#: templates/notificationarea.html:26
 msgid "Downloading update…"
-msgstr "Download aggiornamento in corso ..."
+msgstr "Sto scaricando l'aggiornamento..."
 
-#: templates/notificationarea.html:30
-msgid "Downloading …"
-msgstr "Download in corso ..."
-
-#: scripts/services/AppUtils.js:301
+#: scripts/services/AppUtils.js:343
 msgid "Duplicate option {{opt}}"
 msgstr "Opzione duplicata {{opt}}"
 
-#: index.html:275
+#: index.html:254
 msgid "Duplicati Website"
 msgstr "Sito web di Duplicati"
 
-#: index.html:266
+#: index.html:248
 msgid "Duplicati forum"
 msgstr "Forum Duplicati"
 
-#: templates/settings.html:53
+#: scripts/controllers/AppController.js:188
+msgid ""
+"Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
+"If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
+"Do you want to set a passphrase now?"
+msgstr ""
+"Duplicati deve essere protetto con una passphrase e una passphrase casuale è stata generata per te.\n"
+"Se apri Duplicati dall'icona della barra delle applicazioni, non è necessaria una passphrase, ma se vuoi aprirlo da un'altra posizione è necessario impostare una passphrase nota.\n"
+"Vuoi impostare una passphrase ora?"
+
+#: templates/settings.html:93
 msgid ""
 "Duplicati will run when started, but will remain in a paused state for the "
 "duration. Duplicati will occupy minimal system resources and no backups will"
 " be run."
 msgstr ""
-"Duplicati sarà eseguito all'avvio, ma rimarrà in pausa per la durata. "
+"Duplicati sarà eseguito all'avvio, ma rimarrà in pausa per tutta la durata. "
 "Duplicati occuperà risorse di sistema minime e non saranno eseguiti backup."
 
 #: templates/backup-result/phases/compact.html:16
@@ -902,9 +1133,13 @@ msgstr ""
 #: templates/backup-result/phases/recreate-database.html:16
 #: templates/backup-result/phases/repair.html:16
 #: templates/backup-result/phases/test.html:16
-#: templates/backup-result/top-left-box.html:11
+#: templates/backup-result/top-left-box.html:11 templates/home.html:19
 msgid "Duration"
 msgstr "Durata"
+
+#: templates/home.html:29
+msgid "Duration (descending)"
+msgstr "Durata (decrescente)"
 
 #: templates/delete.html:15
 msgid ""
@@ -916,29 +1151,39 @@ msgstr ""
 "Quando si cancella un backup, è anche possibile cancellare il database locale senza influire sulla possibilità di ripristinare i file remoti.\n"
 "Se si utilizza il database locale per i backup dalla riga di comando, è necessario mantenere il database."
 
-#: templates/localdatabase.html:8
+#: templates/localdatabase.html:5
 msgid ""
 "Each backup has a local database associated with it, which stores "
-"information about the remote backup on the local machine.\\nThis makes it "
+"information about the remote backup on the local machine. This makes it "
 "faster to perform many operations, and reduces the amount of data that needs"
 " to be downloaded for each operation."
 msgstr ""
-"Ogni backup dispone di un database locale associato, che archivia le informazioni del backup remoto sul computer locale.\n"
-"In questo modo è più veloce eseguire molte operazioni e riduce la quantità di dati che devono essere scaricati per ogni operazione."
+"Ogni backup ha un database locale associato, che salva le informazioni "
+"riguardo il backup remoto sulla macchina locale. Questo rende possibile "
+"eseguire molte operazioni velocemente, e riduce la quantità di dati da "
+"scaricare per ogni operazione."
 
-#: templates/addoredit.html:174 templates/addoredit.html:387
-#: templates/edituri.html:39 templates/settings.html:153
+#: templates/addoredit.html:174 templates/addoredit.html:389
+#: templates/edituri.html:39 templates/settings.html:194
 msgid "Edit as list"
 msgstr "Modifica come elenco"
 
-#: templates/addoredit.html:177 templates/addoredit.html:390
-#: templates/edituri.html:42 templates/settings.html:159
+#: templates/addoredit.html:177 templates/addoredit.html:392
+#: templates/edituri.html:42 templates/settings.html:200
 msgid "Edit as text"
 msgstr "Modifica come testo"
 
-#: templates/home.html:31
+#: templates/home.html:58
 msgid "Edit …"
 msgstr "Modifica …"
+
+#: templates/backends/msgroup.html:3
+msgid "Email address of the Office 365 group"
+msgstr "Indirizzo email del gruppo Office 365"
+
+#: templates/settings.html:64
+msgid "Enable remote control"
+msgstr "Abilita controllo remoto"
 
 #: templates/export.html:22
 msgid "Encrypt file"
@@ -949,17 +1194,26 @@ msgstr "Cripta file"
 msgid "Encryption"
 msgstr "Crittografia"
 
-#: scripts/controllers/EditBackupController.js:402
+#: scripts/controllers/EditBackupController.js:406
 msgid "Encryption changed"
 msgstr "Crittografia cambiata"
 
-#: templates/about.html:69
-msgid "Encryption modules:"
-msgstr "Moduli crittografia:"
+#: templates/about.html:68
+msgid ""
+"Encryption modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
+msgstr ""
+"Moduli di crittografia: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
 
-#: templates/backends/tardigrade.html:25
+#: scripts/services/EditUriBuiltins.js:1368 templates/backends/storj.html:25
+#: templates/backends/storj.html:26
 msgid "Encryption passphrase"
 msgstr "Passphrase di crittografia"
+
+#: templates/backends/storj.html:30
+msgid "Encryption passphrase (for verification)"
+msgstr "Passphrase di crittografia (per la verifica)"
 
 #: templates/backup-result/phases/compact.html:12
 #: templates/backup-result/phases/delete.html:12
@@ -971,12 +1225,17 @@ msgstr "Passphrase di crittografia"
 msgid "End"
 msgstr "Fine"
 
-#: scripts/controllers/EditBackupController.js:95
+#: scripts/controllers/EditBackupController.js:99
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
 msgstr "Inserisci URL"
 
-#: templates/addoredit.html:339
+#: scripts/controllers/EditBackupController.js:99
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter a backup destination URL:"
+msgstr "Inserisci un URL di destinazione del backup:"
+
+#: templates/addoredit.html:341
 msgid ""
 "Enter a retention strategy manually. Placeholders are D/W/Y for "
 "days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. "
@@ -985,19 +1244,14 @@ msgid ""
 "written as 1W:1D,1M:1W,3Y:1M."
 msgstr ""
 "Inserisci una strategia di conservazione manualmente. I segnaposto sono "
-"D/W/Y per giorni/settimane/anni e U per illimitato. La sintassi è: "
-"7D:1D,4W:1W,36M:1M. Questo esempio mantiene un backup per ciascuno dei "
-"prossimi 7 giorni, uno per ciascuna delle prossime 4 settimane e uno per "
-"ciascuno dei 36 mesi successivi. Questo può anche essere scritto come "
-"1W:1D,1M:1W,3Y:1M."
+"D/W/Y per giorni/settimane/anni e U per illimitato. La sintassi è: 7D:1D, "
+"4W:1W, 36M:1M. Questo esempio conserva un backup per i 7 giorni successivi, "
+"uno per le 4 settimane successive e uno per i 36 mesi successivi. Questo può"
+" anche essere scritto come 1W:1D,1M:1W,3Y:1M."
 
-#: templates/backends/azure.html:12
-msgid "Enter access key"
-msgstr "Inserisci chiave di accesso"
-
-#: templates/backends/azure.html:8
-msgid "Enter account name"
-msgstr "Inserisci nome account"
+#: templates/commandline.html:14
+msgid "Enter a url, or click the &quot;Target URL &gt;&quot; link"
+msgstr "Inserisci un URL o fai clic sul &quot;Target URL &gt;&quot; link"
 
 #: templates/restoredirect.html:61
 msgid "Enter backup passphrase, if any"
@@ -1007,11 +1261,7 @@ msgstr "Inserisci la passphrase del backup, se presente"
 msgid "Enter configuration details"
 msgstr "Inserisci dettagli configurazione"
 
-#: templates/backends/azure.html:3
-msgid "Enter container name"
-msgstr "Inserire nome contenitore"
-
-#: templates/export.html:26 templates/import.html:15
+#: templates/export.html:26
 msgid "Enter encryption passphrase"
 msgstr "Inserisci passphrase crittografia"
 
@@ -1019,66 +1269,65 @@ msgstr "Inserisci passphrase crittografia"
 msgid "Enter expression here"
 msgstr "Inserisci qui espressione"
 
-#: templates/backends/jottacloud.html:3 templates/backends/mega.html:3
-msgid "Enter folder path name"
-msgstr "Inserire il nome del percorso della cartella"
+#: templates/commandline.html:19
+msgid "Enter one argument per line without quotes, e.g. *.txt"
+msgstr "Inserisci un argomento per riga senza virgolette, ad es. *.txt"
 
-#: scripts/services/AppUtils.js:122
-msgid "Enter one option per line in command-line format, eg. {0}"
-msgstr "Inserire un'opzione per riga in formato riga di comando, ad es. {0}"
+#: templates/commandline.html:26
+msgid ""
+"Enter one option per line in command-line format, e.g. --dblock-size=100MB"
+msgstr ""
+"Inserisci un'opzione per riga nel formato della riga di comando, ad es. "
+"--dblock-size=100MB"
 
-#: templates/backends/file.html:7 templates/backends/generic.html:14
-#: templates/backends/msgroup.html:8 templates/backends/oauth.html:3
+#: scripts/services/AppUtils.js:128
+msgid "Enter one option per line in command-line format, e.g. {0}"
+msgstr ""
+"Inserisci un'opzione per riga nel formato della riga di comando, ad es. {0}"
+
 #: templates/restore.html:90
 msgid "Enter the destination path"
 msgstr "Inserisci percorso destinazione"
 
-#: templates/backends/msgroup.html:3
-msgid "Enter the email address of the Office 365 group"
-msgstr "Inserisci l'indirizzo email del gruppo di Office 365"
-
-#: templates/backends/sharepoint.html:3
-msgid ""
-"Enter the full destination path, including the server name, but without "
-"https"
-msgstr ""
-"Inserisci il percorso di destinazione completo, incluso il nome del server, "
-"ma senza https"
-
-#: scripts/controllers/CommandlineController.js:170
-#: scripts/controllers/CommandlineController.js:74
-#: scripts/controllers/ExportController.js:43
-#: scripts/controllers/ExportController.js:60
-#: scripts/controllers/RestoreController.js:118
-#: scripts/controllers/RestoreController.js:148
-#: scripts/controllers/RestoreController.js:295
-#: scripts/controllers/RestoreController.js:335
-#: scripts/controllers/RestoreController.js:383
-#: scripts/controllers/RestoreController.js:416
-#: scripts/controllers/RestoreController.js:426
-#: scripts/controllers/RestoreController.js:92
-#: scripts/controllers/RestoreDirectController.js:110
-#: scripts/controllers/RestoreDirectController.js:74
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:170
-#: scripts/directives/backupEditUri.js:205
-#: scripts/directives/backupEditUri.js:239
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/ImportController.js:17
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+#: scripts/controllers/ImportController.js:49
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:106
+#: scripts/controllers/RestoreDirectController.js:72
+#: scripts/directives/backupEditUri.js:142
+#: scripts/directives/backupEditUri.js:163
+#: scripts/directives/backupEditUri.js:197
 #: scripts/directives/notificationArea.js:41
-#: scripts/directives/notificationArea.js:43 scripts/services/AppUtils.js:301
-#: scripts/services/AppUtils.js:347 scripts/services/AppUtils.js:349
-#: scripts/services/AppUtils.js:357 scripts/services/AppUtils.js:359
+#: scripts/directives/notificationArea.js:43
+#: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
+#: scripts/services/AppUtils.js:348 scripts/services/AppUtils.js:394
+#: scripts/services/AppUtils.js:402
 msgid "Error"
 msgstr "Errore"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:70
 msgid "Error!"
 msgstr "Errore!"
 
-#: templates/settings.html:128
+#: templates/settings.html:169
 msgid "Errors and crashes"
 msgstr "Errori e arresti anomali"
 
-#: templates/backup-result/top-right-box.html:3
+#: templates/backup-result/top-right-box.html:10
 msgid "Examined"
 msgstr "Esaminato"
 
@@ -1086,35 +1335,35 @@ msgstr "Esaminato"
 msgid "Exclude"
 msgstr "Escludi"
 
-#: scripts/services/AppUtils.js:125
+#: scripts/services/AppUtils.js:131
 msgid "Exclude directories whose names contain"
 msgstr "Escludi cartelle il cui nome contiene"
 
-#: scripts/services/AppUtils.js:179
+#: scripts/services/AppUtils.js:187
 msgid "Exclude expression"
 msgstr "Escludi espressione"
 
-#: scripts/services/AppUtils.js:143
+#: scripts/services/AppUtils.js:150
 msgid "Exclude file"
 msgstr "Escludi file"
 
-#: scripts/services/AppUtils.js:149
+#: scripts/services/AppUtils.js:157
 msgid "Exclude file extension"
 msgstr "Escludi estensione del file"
 
-#: scripts/services/AppUtils.js:131
+#: scripts/services/AppUtils.js:137
 msgid "Exclude files whose names contain"
 msgstr "Escludi file il cui nome contiene"
 
-#: scripts/services/AppUtils.js:164
+#: scripts/services/AppUtils.js:172
 msgid "Exclude filter group"
 msgstr "Escludi gruppo filtri"
 
-#: scripts/services/AppUtils.js:137
+#: scripts/services/AppUtils.js:143
 msgid "Exclude folder"
 msgstr "Escludi cartella"
 
-#: scripts/services/AppUtils.js:154
+#: scripts/services/AppUtils.js:162
 msgid "Exclude regular expression"
 msgstr "Escludi espressione regolare"
 
@@ -1122,7 +1371,7 @@ msgstr "Escludi espressione regolare"
 msgid "Existing file found"
 msgstr "Trovato file esistente"
 
-#: templates/settings.html:104
+#: templates/settings.html:145
 msgid "Experimental"
 msgstr "Sperimentale"
 
@@ -1142,7 +1391,7 @@ msgstr "Esporta configurazione"
 msgid "Export passwords"
 msgstr "Esporta le password"
 
-#: templates/home.html:32
+#: templates/home.html:59
 msgid "Export …"
 msgstr "Esporta …"
 
@@ -1158,66 +1407,84 @@ msgstr "Link esterno"
 msgid "FTP (Alternative)"
 msgstr "FTP (Alternativo)"
 
-#: scripts/controllers/RestoreController.js:383
+#: scripts/controllers/RestoreController.js:390
 msgid "Failed to build temporary database: {{message}}"
-msgstr "Fallita creazione del database temporaneo: {{message}}"
+msgstr "Impossibile creare un database temporaneo: {{message}}"
 
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:205
-#: scripts/directives/backupEditUri.js:239
+#: scripts/directives/backupEditUri.js:142
+#: scripts/directives/backupEditUri.js:163
+#: scripts/directives/backupEditUri.js:197
 msgid "Failed to connect:"
-msgstr "Connessione fallita:"
+msgstr "Impossibile connettersi:"
 
-#: scripts/controllers/CommandlineController.js:170
-#: scripts/controllers/CommandlineController.js:74
-#: scripts/controllers/ExportController.js:43
-#: scripts/controllers/RestoreController.js:295
-#: scripts/controllers/RestoreController.js:335
-#: scripts/controllers/RestoreController.js:426
-#: scripts/controllers/RestoreController.js:92
-#: scripts/controllers/RestoreDirectController.js:110
-#: scripts/controllers/RestoreDirectController.js:74
-#: scripts/services/LogService.js:31
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:106
+#: scripts/controllers/RestoreDirectController.js:72
+#: scripts/services/LogService.js:29
 msgid "Failed to connect: {{message}}"
-msgstr "Connessione fallita: {{message}}"
+msgstr "Impossibile connettersi: {{message}}"
 
 #: scripts/controllers/LocalDatabaseController.js:38
 msgid "Failed to delete:"
-msgstr "Cancellazione fallita: "
+msgstr "Impossibile eliminare: "
 
-#: scripts/controllers/RestoreController.js:118
-#: scripts/controllers/RestoreController.js:148
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
 msgid "Failed to fetch path information: {{message}}"
-msgstr "Recupero informazioni sul percorso fallito: {{message}}"
+msgstr "Impossibile recuperare le informazioni sul percorso: {{message}}"
 
 #: scripts/directives/notificationArea.js:45
 msgid "Failed to find backup:"
 msgstr "Impossibile trovare il backup:"
 
-#: scripts/directives/backupEditUri.js:170
-msgid "Failed to import:"
-msgstr "Importazione fallita:"
+#: scripts/directives/notificationArea.js:68
+msgid "Failed to get bug report URL: {{message}}"
+msgstr "Impossibile ottenere l'URL di segnalazione del bug: {{message}}"
 
-#: scripts/controllers/EditBackupController.js:697
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+msgid "Failed to import: {{message}}"
+msgstr "Impossibile importare: {{message}}"
+
+#: scripts/controllers/EditBackupController.js:710
 msgid "Failed to read backup defaults:"
-msgstr "Lettura impostazioni predefinite backup fallita:"
+msgstr "Impossibile leggere le impostazioni predefinite del backup:"
 
-#: scripts/controllers/RestoreController.js:416
+#: scripts/controllers/ImportController.js:49
+msgid "Failed to read file: {{message}}"
+msgstr "Impossibile leggere il file: {{message}}"
+
+#: scripts/controllers/RestoreController.js:423
 msgid "Failed to restore files: {{message}}"
-msgstr "Ripristino dei file fallito: {{message}}"
+msgstr "Impossibile ripristinare i file: {{message}}"
 
-#: scripts/controllers/SystemSettingsController.js:116
+#: scripts/controllers/SystemSettingsController.js:263
 msgid "Failed to save:"
-msgstr "Salvataggio fallito:"
+msgstr "Impossibile salvare:"
 
-#: scripts/controllers/RestoreController.js:124
-#: scripts/controllers/RestoreController.js:163
+#: templates/backup-result/top-right-box.html:6
+msgid "Fatal error, no statistics collected"
+msgstr "Errore fatale, nessuna statistica raccolta"
+
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
 msgid "Fetching path information …"
 msgstr "Recupero delle informazioni sul percorso ..."
 
-#: scripts/services/AppUtils.js:74
+#: scripts/services/AppUtils.js:80
 msgid "File"
 msgstr "File"
+
+#: templates/backends/filejump.html:8
+msgid "Filejump API token"
+msgstr "Filejump token API"
 
 #: templates/addoredit.html:237
 msgid "Files larger than:"
@@ -1227,11 +1494,11 @@ msgstr "File più grandi di:"
 msgid "Filters"
 msgstr "Filtri"
 
-#: templates/commandline.html:60
+#: templates/commandline.html:57
 msgid "Finished!"
 msgstr "Finito!"
 
-#: scripts/controllers/AppController.js:172
+#: scripts/controllers/AppController.js:187
 msgid "First run setup"
 msgstr "Impostazione prima esecuzione"
 
@@ -1239,23 +1506,39 @@ msgstr "Impostazione prima esecuzione"
 msgid "Folder"
 msgstr "Cartella"
 
-#: templates/backends/b2.html:7 templates/backends/file.html:22
-#: templates/backends/file.html:6 templates/backends/jottacloud.html:2
-#: templates/backends/mega.html:2 templates/backends/s3.html:61
-#: templates/backends/sia.html:6 templates/backends/tardigrade.html:37
-#: templates/restore.html:105 templates/restore.html:89
+#: templates/backends/storj.html:42
+msgid "Folder in the bucket"
+msgstr "Cartella del bucket"
+
+#: templates/backends/aliyunoss.html:30 templates/backends/b2.html:7
+#: templates/backends/cos.html:30 templates/backends/e2.html:16
+#: templates/backends/file.html:22 templates/backends/file.html:6
+#: templates/backends/jottacloud.html:2 templates/backends/mega.html:2
+#: templates/backends/s3.html:60 templates/backends/sia.html:6
+#: templates/backends/storj.html:41 templates/restore.html:105
+#: templates/restore.html:89
 msgid "Folder path"
 msgstr "Percorso cartella"
 
-#: scripts/services/AppUtils.js:108
+#: templates/backends/mega.html:3
+msgid "Folder path name"
+msgstr "Nome percorso cartella"
+
+#: scripts/services/AppUtils.js:114
 msgid "Fri"
 msgstr "Ven"
 
-#: scripts/services/AppUtils.js:84
+#: templates/backends/sharepoint.html:3
+msgid "Full destination path, including the server name, but without https"
+msgstr ""
+"Percorso di destinazione completo, compreso il nome del server, ma senza "
+"https"
+
+#: scripts/services/AppUtils.js:90
 msgid "GByte"
 msgstr "GByte"
 
-#: scripts/services/AppUtils.js:117
+#: scripts/services/AppUtils.js:123
 msgid "GByte/s"
 msgstr "GByte/s"
 
@@ -1280,24 +1563,31 @@ msgstr "Opzioni generali"
 msgid "Generate"
 msgstr "Genera"
 
-#: templates/backends/s3.html:89
-msgid ""
-"Generate IAM\n"
-"        access policy"
-msgstr ""
-"Genera IAM\n"
-"        criteri di accesso"
+#: templates/backends/s3.html:88
+msgid "Generate IAM access policy"
+msgstr "Genera criteri di accesso IAM"
 
 #: scripts/controllers/RestoreController.js:70
 msgid "Getting file versions …"
 msgstr "Ottenere versioni di file ..."
 
-#: scripts/services/EditUriBuiltins.js:843
-#: scripts/services/EditUriBuiltins.js:854 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1180 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "Email gruppo"
 
-#: scripts/controllers/EditBackupController.js:19
+#: templates/home.html:16
+msgid "Has Scheduled"
+msgstr "È pianificato"
+
+#: templates/home.html:26
+msgid "Has Scheduled (descending)"
+msgstr "È pianificato (decrescente)"
+
+#: index.html:311
+msgid "Help"
+msgstr "Aiuto"
+
+#: scripts/controllers/EditBackupController.js:20
 msgid "Hidden files"
 msgstr "File nascosti"
 
@@ -1306,19 +1596,19 @@ msgid "Hide"
 msgstr "Nascondi"
 
 #: templates/backends/file.html:15 templates/restore.html:98
-msgid "Hide hidden folders"
-msgstr "Nascondi cartelle nascoste"
+msgid "Hide hidden items"
+msgstr "Nascondi elementi nascosti"
 
-#: index.html:219 scripts/services/AppUtils.js:62
+#: index.html:208 scripts/services/AppUtils.js:62
 msgid "Home"
 msgstr "Home"
 
-#: templates/settings.html:21
+#: templates/settings.html:24
 msgid "Hostnames"
 msgstr "Nomi host"
 
-#: scripts/services/AppUtils.js:100 scripts/services/AppUtils.js:90
-#: templates/settings.html:51
+#: scripts/services/AppUtils.js:106 scripts/services/AppUtils.js:96
+#: templates/settings.html:91
 msgid "Hours"
 msgstr "Ore"
 
@@ -1326,31 +1616,43 @@ msgstr "Ore"
 msgid "How do you want to handle existing files?"
 msgstr "Come vuoi gestire i file esistenti?"
 
-#: scripts/services/AppUtils.js:64
+#: scripts/services/AppUtils.js:70
 msgid "Hyper-V Machine"
 msgstr "Sitema Hyper-V"
 
-#: scripts/directives/sourceFolderPicker.js:438
+#: scripts/directives/sourceFolderPicker.js:596
 msgid "Hyper-V Machine:"
 msgstr "Sistema Hyper-V:"
 
-#: scripts/directives/sourceFolderPicker.js:417
-#: scripts/services/AppUtils.js:66
+#: scripts/directives/sourceFolderPicker.js:575
+#: scripts/services/AppUtils.js:72
 msgid "Hyper-V Machines"
 msgstr "Sistemi Hyper-V"
 
-#: scripts/directives/sourceFolderPicker.js:56
-#: scripts/directives/sourceFolderPicker.js:62
+#: scripts/directives/sourceFolderPicker.js:65
+#: scripts/directives/sourceFolderPicker.js:71
 msgid "ID:"
 msgstr "ID:"
+
+#: templates/backends/idrive.html:2
+msgid "IDrive Sync directory path"
+msgstr "Percorso cartella di sincronizzazione di IDrive"
+
+#: scripts/services/EditUriBuiltins.js:1423 templates/backends/e2.html:3
+msgid "IDrive e2 Access Key ID"
+msgstr "ID chiave di accesso IDrive e2"
+
+#: scripts/services/EditUriBuiltins.js:1424 templates/backends/e2.html:7
+msgid "IDrive e2 Access Key Secret"
+msgstr "Chiave di accesso IDrive e2 segreta"
 
 #: templates/addoredit.html:261
 msgid "If a date was missed, the job will run as soon as possible."
 msgstr ""
-"Se una pianificazione non è eseguita, il backup sarà effettuato il prima "
+"Se non è stata rispettata una data, il lavoro sarà eseguito il prima "
 "possibile."
 
-#: templates/addoredit.html:359
+#: templates/addoredit.html:361
 msgid ""
 "If at least one newer backup is found, all backups older than this date are "
 "deleted."
@@ -1358,36 +1660,38 @@ msgstr ""
 "Se si trova almeno un backup più recente, tutti i backup precedenti a questa"
 " data sono eliminati."
 
-#: templates/localdatabase.html:13
+#: templates/localdatabase.html:10
 msgid ""
 "If the backup and the remote storage is out of sync, Duplicati will require "
-"that you perform a repair operation to synchronize the database.\\nIf the "
-"repair is unsuccesful, you can delete the local database and re-generate."
+"that you perform a repair operation to synchronize the database. If the "
+"repair is unsuccessful, you can delete the local database and re-generate."
 msgstr ""
-"Se il backup e l'archivio remoto non sono sincronizzati, Duplicati sarà necessario eseguire un'operazione di ripristino per sincronizzare il database.\n"
-"Se la riparazione non è riuscita, è possibile cancellare il database locale e rigenerarlo."
+"Se il backup e l'archivio remoto non sono sincronizzati, Duplicati richiede "
+"un'operazione di riparazione per sincronizzare il database. Se la "
+"riparazione non ha successo, è possibile eliminare il database locale e "
+"rigenerarlo."
 
 #: templates/export.html:49
 msgid ""
 "If the backup file was not downloaded automatically, <a "
 "href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
-" as …&quot;</a>"
+" as …&quot;</a>."
 msgstr ""
 "Se il file di backup non è stato scaricato automaticamente, <a "
-"href=\"{{DownloadURL}}\" target=\"_blank\">tasto destro e sciegli "
-"&quota;Salva come …&quota;</a>"
+"href=\"{{DownloadURL}}\" target=\"_blank\">clicca con il tasto destro e "
+"scegli &quot;Salva come …&quot;</a>."
 
 #: templates/notificationarea.html:7
 msgid ""
 "If the backup file was not downloaded automatically, <a "
 "href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
-"&quot;Save as …&quot;</a>"
+"&quot;Save as …&quot;</a>."
 msgstr ""
 "Se il file di backup non è stato scaricato automaticamente, <a "
-"href=\"{{item.DownloadLink}}\" target=\"_blank\">tasto destro e sciegli "
-"&quota;Salva come …&quota;</a>"
+"href=\"{{item.DownloadLink}}\" target=\"_blank\">clicca con il tasto destro "
+"e scegli &quot;Salva come …&quot;</a>."
 
-#: scripts/services/EditUriBackendConfig.js:106
+#: scripts/services/EditUriBackendConfig.js:113
 msgid ""
 "If you do not enter a path, all files will be stored in the login folder.\n"
 "Are you sure this is what you want?"
@@ -1397,25 +1701,24 @@ msgstr ""
 
 #: templates/backends/openstack.html:40
 msgid "If you do not enter an API Key, the tenant name is required"
-msgstr "Se non inserisci una Chiave API, è richiesto il nome dell'inquilino"
+msgstr "Se non inserisci una chiave API, è richiesto il nome del detentore"
+
+#: templates/pause.html:53
+msgid ""
+"If you pause transfers they could time out and cause retries or failures."
+msgstr ""
+"Se si mettono in pausa i trasferimenti, questi potrebbero andare in timeout "
+"e causare tentativi o fallimenti."
 
 #: templates/delete.html:32
 msgid ""
 "If you want to use the backup later, you can export the configuration before"
-" deleting it"
+" deleting it."
 msgstr ""
-"Se desideri utilizzare il backup in un secondo momento, è possibile "
-"esportare la configurazione prima di cancellarla"
+"Se vuoi usare il backup successivamente, puoi esportare la configurazione "
+"prima di cancellarla."
 
-#: scripts/controllers/AppController.js:173
-msgid ""
-"If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
-"Do you want to set a password now?"
-msgstr ""
-"Se la tua macchina è in un ambiente multi-utente (cioè la macchina ha più di un account), è necessario impostare una password per impedire ad altri utenti di accedere ai dati del tuo account. \n"
-"Vuoi impostare una password ora?"
-
-#: templates/import.html:31
+#: templates/import.html:29
 msgid "Import"
 msgstr "Importa"
 
@@ -1423,19 +1726,14 @@ msgstr "Importa"
 msgid "Import Destination URL"
 msgstr "Importa URL Destinazione"
 
+#: scripts/controllers/EditBackupController.js:99
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Import URL"
+msgstr "Importa l'URL"
+
 #: templates/import.html:3
 msgid "Import backup configuration"
 msgstr "Importa configurazione backup"
-
-#: scripts/directives/backupEditUri.js:159
-msgid "Import completed, but no certificates were found after the import"
-msgstr ""
-"Importazione completata, ma non sono stati trovati certificati dopo "
-"l'importazione"
-
-#: scripts/directives/backupEditUri.js:159
-msgid "Import failed"
-msgstr "Importazione fallita"
 
 #: templates/addwizard.html:15
 msgid "Import from a file"
@@ -1445,55 +1743,48 @@ msgstr "Importa da un file"
 msgid "Import metadata"
 msgstr "Importa metadati"
 
-#: templates/import.html:35
+#: templates/import.html:33
 msgid "Importing …"
 msgstr "Importazione ..."
 
-#: scripts/controllers/EditBackupController.js:163
+#: scripts/controllers/EditBackupController.js:167
 msgid "Include a file?"
 msgstr "Includi un file?"
 
-#: scripts/services/AppUtils.js:175
+#: scripts/services/AppUtils.js:183
 msgid "Include expression"
 msgstr "Includi espressione"
 
-#: scripts/services/AppUtils.js:159
+#: scripts/services/AppUtils.js:167
 msgid "Include regular expression"
 msgstr "Includi espressione regolare"
 
-#: templates/captcha.html:11
-msgid "Incorrect answer, try again"
-msgstr "Risposta errata, riprova"
-
-#: templates/settings.html:110
+#: templates/settings.html:151
 msgid ""
 "Individual builds for developers only. Not for use with important data."
 msgstr ""
-"Build individuali per soli sviluppatori. Non utilizzare con dati importanti."
+"Versioni individuali per soli sviluppatori. Non utilizzare con dati "
+"importanti."
 
 #: scripts/services/DialogService.js:27
 msgid "Information"
 msgstr "Informazioni"
 
-#: templates/notificationarea.html:28 templates/updatechangelog.html:10
-msgid "Install"
-msgstr "Installa"
+#: templates/backup-result/top-right-box.html:3
+msgid "Interrupted, no statistics collected"
+msgstr "Interrotto, nessuna statistica raccolta"
 
-#: scripts/controllers/UpdateChangelogController.js:14
-msgid "Install failed:"
-msgstr "Installazione fallita:"
-
-#: scripts/services/EditUriBuiltins.js:1058
+#: scripts/services/EditUriBuiltins.js:1344
 msgid "Invalid characters in path"
 msgstr "Caratteri non validi nel percorso"
 
-#: scripts/controllers/EditBackupController.js:288
-#: scripts/controllers/EditBackupController.js:295
-#: scripts/controllers/EditBackupController.js:305
+#: scripts/controllers/EditBackupController.js:292
+#: scripts/controllers/EditBackupController.js:299
+#: scripts/controllers/EditBackupController.js:309
 msgid "Invalid retention time"
 msgstr "Tempo ritenzione non valido"
 
-#: scripts/services/EditUriBuiltins.js:801
+#: scripts/services/EditUriBuiltins.js:1115
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1501,42 +1792,50 @@ msgstr ""
 "È possibile connettersi ad alcuni FTP senza una password.\n"
 "Sei sicuro che il tuo server FTP supporta gli accessi senza password?"
 
-#: scripts/services/AppUtils.js:82
+#: scripts/services/AppUtils.js:88
 msgid "KByte"
 msgstr "KByte"
 
-#: scripts/services/AppUtils.js:115
+#: scripts/services/AppUtils.js:121
 msgid "KByte/s"
 msgstr "KByte/s"
 
-#: templates/addoredit.html:323
+#: templates/addoredit.html:325
 msgid "Keep a specific number of backups"
 msgstr "Mantieni un numero specifico di backup"
 
-#: templates/addoredit.html:321
+#: templates/addoredit.html:323
 msgid "Keep all backups"
 msgstr "Mantieni tutti i backup"
 
 #: templates/backends/openstack.html:18
 msgid "Keystone API version"
-msgstr "Versione API Keystone"
+msgstr "Versione Keystone API"
 
-#: templates/settings.html:58
+#: templates/settings.html:98
 msgid "Language in user interface"
 msgstr "Lingua interfaccia utente"
+
+#: templates/home.html:13
+msgid "Last Run"
+msgstr "Ultima esecuzione"
+
+#: templates/home.html:23
+msgid "Last Run (descending)"
+msgstr "Ultima esecuzione (decrescente)"
 
 #: scripts/controllers/RestoreController.js:38
 msgid "Last month"
 msgstr "Lo scorso mese"
 
-#: templates/home.html:53
+#: templates/home.html:80
 msgid "Last successful backup:"
 msgstr "Ultimo backup riuscito:"
 
 #: templates/restorewizard.html:27
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr ""
-"Ultimo ripristino riuscito: {{time}} (took {{duration || '0 seconds'}})"
+"Ultimo ripristino riuscito: {{time}} (durata {{duration || '0 secondi'}})"
 
 #: scripts/controllers/RestoreController.js:60
 msgid "Latest"
@@ -1550,11 +1849,11 @@ msgstr "Librerie"
 msgid "Listing backup dates …"
 msgstr "Elenco date di backup ..."
 
-#: scripts/services/ServerStatus.js:63
+#: scripts/services/ServerStatus.js:66
 msgid "Listing remote files for purge …"
 msgstr "Elenco dei file remoti per l'eliminazione ..."
 
-#: scripts/services/ServerStatus.js:61
+#: scripts/services/ServerStatus.js:64
 msgid "Listing remote files …"
 msgstr "Elenco dei file remoti ..."
 
@@ -1574,36 +1873,34 @@ msgstr ""
 "Carica una destinazione da un lavoro esportato o da un provider di "
 "archiviazione"
 
-#: templates/backuplog.html:26 templates/backuplog.html:44
+#: templates/backuplog.html:23 templates/backuplog.html:41
 #: templates/log.html:24
 msgid "Load older data"
 msgstr "Carica dati precedenti"
 
-#: templates/captcha.html:14
-msgid "Loading ..."
-msgstr "Caricamento..."
-
 #: templates/delete.html:40
-msgid "Loading remote storage usage ..."
-msgstr "Caricamento dell'archivio remoto utilizzato ..."
+msgid "Loading remote storage usage …"
+msgstr "Utilizzo del caricamento dell'archivio esterno ..."
 
-#: templates/about.html:45 templates/about.html:50 templates/about.html:56
-#: templates/backuplog.html:12 templates/backuplog.html:25
-#: templates/backuplog.html:32 templates/backuplog.html:43
+#: templates/about.html:43 templates/about.html:49 templates/about.html:55
+#: templates/backuplog.html:12 templates/backuplog.html:22
+#: templates/backuplog.html:29 templates/backuplog.html:40
 #: templates/log.html:12 templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
 msgstr "Caricamento in corso …"
 
-#: scripts/services/EditUriBuiltins.js:1075
-msgid "Local Repository"
-msgstr "Repository locale"
-
 #: templates/localdatabase.html:2
-msgid "Local database for"
-msgstr "Database locale per "
+msgid ""
+"Local database for <b ng-"
+"show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
+"hide=\"Backup.Backup.Name\">…loading…</b>"
+msgstr ""
+"Database locale per <b ng-"
+"show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
+"hide=\"Backup.Backup.Name\">...caricamento...</b>"
 
-#: templates/localdatabase.html:26
+#: templates/localdatabase.html:23
 msgid "Local database path:"
 msgstr "Percorso database locale:"
 
@@ -1611,11 +1908,11 @@ msgstr "Percorso database locale:"
 msgid "Local repository"
 msgstr "Repository locale"
 
-#: scripts/services/SystemInfo.js:81
+#: scripts/services/SystemInfo.js:87
 msgid "Local storage"
 msgstr "Archivio locale"
 
-#: templates/localdatabase.html:23
+#: templates/localdatabase.html:20
 msgid "Location"
 msgstr "Posizione"
 
@@ -1631,21 +1928,47 @@ msgstr "Dati di log per <b>{{Backup.Backup.Name}}</b>"
 msgid "Log data from the server"
 msgstr "Dati di log dal server"
 
-#: index.html:237
+#: index.html:310
+msgid "Log in"
+msgstr "Log in"
+
+#: index.html:226
 msgid "Log out"
 msgstr "Log out"
 
-#: scripts/services/AppUtils.js:83
+#: scripts/services/AppUtils.js:89
 msgid "MByte"
 msgstr "MByte"
 
-#: scripts/services/AppUtils.js:116
+#: scripts/services/AppUtils.js:122
 msgid "MByte/s"
 msgstr "MByte/s"
 
-#: templates/localdatabase.html:11
+#: templates/settings.html:51
+msgid "Machine is now registered, open this link to add it to your account:"
+msgstr ""
+"La macchina è ora registrata, apri questo link per aggiungerlo al tuo "
+"account"
+
+#: templates/localdatabase.html:8
 msgid "Maintenance"
 msgstr "Manutenzione"
+
+#: templates/backends/rclone.html:13
+msgid ""
+"Make sure that rclone is in your path, or add the location to rclone via the"
+" advanced options."
+msgstr ""
+"Assicurati che rclone è nel tuo percorso, oppure aggiungi la posizione di "
+"rclone attraverso le opzioni avanzate"
+
+#: index.html:259
+msgid "Manual"
+msgstr "Manuale"
+
+#: templates/notificationarea.html:37
+msgid "Manual update found:"
+msgstr "Aggiornamento manuale trovato:"
 
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
@@ -1653,23 +1976,23 @@ msgstr "Digita manualmente il percorso"
 
 #: templates/throttle.html:15
 msgid "Max download speed"
-msgstr "Velocità massima per scaricare"
+msgstr "Velocità massima mentre scarichi"
 
 #: templates/throttle.html:5
 msgid "Max upload speed"
 msgstr "Velocità massima per caricare"
 
-#: index.html:155 templates/addoredit.html:127 templates/addoredit.html:169
-#: templates/addoredit.html:382 templates/addoredit.html:95
+#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: templates/addoredit.html:384 templates/addoredit.html:95
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "Menu"
 
-#: scripts/directives/sourceFolderPicker.js:471
+#: scripts/directives/sourceFolderPicker.js:629
 msgid "Microsoft SQL Database:"
 msgstr "Microsoft SQL Database:"
 
-#: scripts/directives/sourceFolderPicker.js:449
+#: scripts/directives/sourceFolderPicker.js:607
 msgid "Microsoft SQL Databases"
 msgstr "Microsoft SQL Database"
 
@@ -1677,50 +2000,66 @@ msgstr "Microsoft SQL Database"
 msgid "Minimum redundancy"
 msgstr "Ridondanza minima"
 
-#: scripts/services/EditUriBuiltins.js:1062
+#: scripts/services/EditUriBuiltins.js:1348
 msgid "Minimum redundancy is 1.0"
 msgstr "Ridondanza minima è 1.0"
 
-#: scripts/services/AppUtils.js:89 scripts/services/AppUtils.js:99
-#: templates/settings.html:50
+#: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
+#: templates/settings.html:90
 msgid "Minutes"
 msgstr "Minuti"
 
-#: scripts/controllers/EditBackupController.js:239
+#: scripts/controllers/EditBackupController.js:243
 msgid "Missing name"
 msgstr "Nome mancante"
 
-#: scripts/controllers/EditBackupController.js:246
+#: scripts/controllers/EditBackupController.js:250
 msgid "Missing passphrase"
 msgstr "Passphrase mancante"
 
-#: scripts/controllers/EditBackupController.js:259
+#: scripts/controllers/EditBackupController.js:263
 msgid "Missing sources"
 msgstr "Sorgente mancante"
 
-#: templates/backup-result/top-right-box.html:15
+#: templates/backup-result/top-right-box.html:22
 msgid "Modified"
 msgstr "Modificato"
 
-#: scripts/services/AppUtils.js:104
+#: scripts/services/AppUtils.js:110
 msgid "Mon"
 msgstr "Lun"
 
-#: scripts/services/AppUtils.js:93 templates/addoredit.html:353
+#: scripts/services/AppUtils.js:99 templates/addoredit.html:355
 msgid "Months"
 msgstr "Mesi"
 
-#: templates/localdatabase.html:34
+#: scripts/services/EditUriBackendConfig.js:136
+msgid ""
+"Most servers require a username, so you will likely need to enter one.\n"
+"Are you sure want to continue without a username?"
+msgstr ""
+"La maggior parte dei server richiede un nome utente, quindi probabilmente dovrai inserirne uno.\n"
+"Sei sicuro di voler continuare senza un nome utente?"
+
+#: templates/localdatabase.html:31
 msgid "Move existing database"
 msgstr "Sposta database esistente"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Move failed:"
-msgstr "Spostamento fallito:"
+msgstr "Impossibile spostare:"
 
 #: scripts/services/AppUtils.js:54
 msgid "My Documents"
 msgstr "Documenti"
+
+#: scripts/services/AppUtils.js:66
+msgid "My Downloads"
+msgstr "I miei file scaricati"
+
+#: scripts/services/AppUtils.js:64
+msgid "My Movies"
+msgstr "I miei film"
 
 #: scripts/services/AppUtils.js:56
 msgid "My Music"
@@ -1734,19 +2073,33 @@ msgstr "Foto"
 msgid "My Pictures"
 msgstr "Immagini"
 
-#: templates/addoredit.html:39
+#: templates/addoredit.html:39 templates/home.html:15
 msgid "Name"
 msgstr "Nome"
 
-#: templates/home.html:60
+#: templates/home.html:25
+msgid "Name (descending)"
+msgstr "Nome (decrescente)"
+
+#: templates/backends/smb.html:11
+msgid "Netbios over TCP"
+msgstr "Netbios su TCP"
+
+#: templates/home.html:87
 msgid "Never"
 msgstr "Mai"
 
-#: templates/notificationarea.html:22
-msgid "New update found: {{message}}"
-msgstr "Nuovo aggiornamento trovato: {{message}}"
+#: templates/changepassword.html:5 templates/settings.html:11
+msgid "New Password"
+msgstr "Nuova password"
 
-#: scripts/services/EditUriBuiltins.js:133
+#: templates/notificationarea.html:24
+msgid "New update found: <a href=\"{{state.updateDownloadLink}}\">{{message}}</a>"
+msgstr ""
+"Nuovo aggiornamento trovato: <a "
+"href=\"{{state.updateDownloadLink}}\">{{message}}</a>"
+
+#: scripts/services/EditUriBuiltins.js:141
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
@@ -1761,15 +2114,23 @@ msgstr ""
 msgid "Next"
 msgstr "Avanti"
 
-#: templates/home.html:64
+#: templates/home.html:14
+msgid "Next Scheduled Run"
+msgstr "Prossimo esecuzione pianificata"
+
+#: templates/home.html:24
+msgid "Next Scheduled Run (descending)"
+msgstr "Prossimo esecuzione pianificata (decrescente)"
+
+#: templates/home.html:91
 msgid "Next scheduled run:"
 msgstr "Prossima esecuzione: "
 
-#: index.html:194
+#: index.html:183
 msgid "Next scheduled task:"
 msgstr "Prossima attività pianificata:"
 
-#: index.html:191
+#: index.html:180
 msgid "Next task:"
 msgstr "Prossima attività:"
 
@@ -1777,26 +2138,26 @@ msgstr "Prossima attività:"
 msgid "Next time"
 msgstr "Prossima volta"
 
-#: scripts/controllers/DeleteController.js:77
-#: scripts/controllers/EditBackupController.js:153
-#: scripts/controllers/EditBackupController.js:163
-#: scripts/controllers/EditBackupController.js:450
-#: scripts/controllers/HomeController.js:7
+#: scripts/controllers/AppController.js:189
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/EditBackupController.js:157
+#: scripts/controllers/EditBackupController.js:167
+#: scripts/controllers/EditBackupController.js:454
+#: scripts/controllers/HomeController.js:22
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:214
-#: scripts/directives/backupEditUri.js:87
-#: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:54
-#: scripts/services/EditUriBuiltins.js:874
-#: scripts/services/EditUriBuiltins.js:956
-#: scripts/services/EditUriBuiltins.js:972
+#: scripts/directives/backupEditUri.js:130
+#: scripts/directives/backupEditUri.js:172
+#: scripts/directives/backupEditUri.js:86
+#: scripts/services/EditUriBackendConfig.js:73
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
+#: scripts/services/EditUriBuiltins.js:62
 msgid "No"
 msgstr "No"
 
-#: scripts/directives/backupEditUri.js:210
+#: scripts/directives/backupEditUri.js:168
 msgid ""
 "No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n"
 "\n"
@@ -1808,37 +2169,33 @@ msgstr ""
 
 #: templates/edituri.html:12
 msgid "No editor found for the &quot;{{backend}}&quot; storage type"
-msgstr "Nessun editor trovato per il &quot;{{backend}}&quot; tipo archivio"
+msgstr "Nessun editor trovato per il &quot;{{backend}}&quot; tipo di archivio"
 
-#: scripts/controllers/EditBackupController.js:429 templates/addoredit.html:49
+#: scripts/controllers/EditBackupController.js:433 templates/addoredit.html:49
 msgid "No encryption"
 msgstr "Nessuna crittografia"
 
-#: scripts/controllers/RestoreController.js:196
+#: scripts/controllers/RestoreController.js:192
 msgid "No items selected"
 msgstr "Nessun elemento selezionato"
 
-#: scripts/controllers/RestoreController.js:196
+#: scripts/controllers/RestoreController.js:192
 msgid "No items to restore, please select one or more items"
 msgstr "Nessun elemento da ripristinare, seleziona uno o più elementi"
 
-#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/ExportController.js:67
 msgid "No passphrase entered"
 msgstr "Nessuna passphrase inserita"
 
-#: index.html:196
+#: index.html:185
 msgid "No scheduled tasks"
 msgstr "Nessuna attività pianificata"
 
-#: scripts/controllers/AppController.js:174
-msgid "No, my machine has only a single account"
-msgstr "No, la mia macchina ha solo un singolo account"
-
-#: scripts/controllers/EditBackupController.js:252
+#: scripts/controllers/EditBackupController.js:256
 msgid "Non-matching passphrase"
 msgstr "Passphrase non corrispondente"
 
-#: templates/settings.html:130
+#: templates/settings.html:171
 msgid "None / disabled"
 msgstr "Nessuno / disattivato"
 
@@ -1846,26 +2203,69 @@ msgstr "Nessuno / disattivato"
 msgid "Not using encryption"
 msgstr "Non usare la crittografia"
 
-#: templates/addoredit.html:328
+#: templates/throttle.html:22
+msgid ""
+"Note that speeds are entered in bytes, and line speeds are typically "
+"reported in bits. Use a factor of 8 to convert, such that an 8 mbit/s line "
+"is equivalent to 1 MByte/s."
+msgstr ""
+"Nota che le velocità sono inserite in byte, mentre le velocità delle linee "
+"sono tipicamente riportate in bit. Per la conversione utilizzare un fattore "
+"8, in modo che una linea da 8 mbit/s equivalga a 1 MByte/s."
+
+#: templates/addoredit.html:330
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr ""
 "Niente sarà eliminato. La dimensione del backup crescerà con ogni "
 "cambiamento."
 
-#: scripts/controllers/AppController.js:44
-#: scripts/controllers/AppController.js:59
-#: scripts/controllers/EditBackupController.js:103
-#: scripts/controllers/EditBackupController.js:95
+#: scripts/controllers/AppController.js:200
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:70
+#: scripts/controllers/EditBackupController.js:107
+#: scripts/controllers/EditBackupController.js:99
 #: scripts/controllers/RestoreDirectController.js:24
 #: scripts/controllers/RestoreDirectController.js:33
-#: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
-#: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:133 templates/restore.html:156
-#: templates/settings.html:165
+#: scripts/services/DialogService.js:28 scripts/services/DialogService.js:50
+#: scripts/services/DialogService.js:58
+#: scripts/services/EditUriBuiltins.js:141 templates/restore.html:147
+#: templates/settings.html:206
 msgid "OK"
 msgstr "OK"
 
-#: templates/addoredit.html:346
+#: templates/backends/aliyunoss.html:10 templates/backends/aliyunoss.html:8
+msgid "OSS Access Key ID"
+msgstr "ID chiave d'accesso OSS"
+
+#: templates/backends/aliyunoss.html:14 templates/backends/aliyunoss.html:16
+msgid "OSS Access Key Secret"
+msgstr "Chiave di accesso segreta OSS"
+
+#: templates/backends/aliyunoss.html:21
+msgid "OSS Bucket Region"
+msgstr "Regione del bucket OSS"
+
+#: templates/backends/aliyunoss.html:25 templates/backends/aliyunoss.html:26
+msgid "OSS Bucket name"
+msgstr "Nome del Bucket OSS"
+
+#: templates/backends/aliyunoss.html:2
+msgid "OSS Endpoint"
+msgstr "Endpoint OSS"
+
+#: templates/backends/aliyunoss.html:32
+msgid "OSS Path or subfolder in the bucket"
+msgstr "Percorso OSS o sottocartella del bucket"
+
+#: templates/backends/aliyunoss.html:20
+msgid "OSS Region"
+msgstr "Regione dell'OSS"
+
+#: templates/settings.html:136
+msgid "Official releases"
+msgstr "Rilasci ufficiali"
+
+#: templates/addoredit.html:348
 msgid ""
 "Once there are more backups than the specified number, the oldest backups "
 "are deleted."
@@ -1881,30 +2281,29 @@ msgstr "OpenStack AuthURI"
 msgid "OpenStack Object Storage / Swift"
 msgstr "OpenStack Object Storage / Swift"
 
-#: templates/backup-result/top-right-box.html:7
+#: templates/backup-result/top-right-box.html:14
 msgid "Opened"
 msgstr "Aperto"
 
-#: scripts/services/EditUriBuiltins.js:920
-msgid "Openstack API Key are not supported in v3 keystone API."
-msgstr "La chiave API Openstack non è supportata nell'API keystone v3."
+#: scripts/services/EditUriBuiltins.js:1216
+msgid "Openstack API key are not supported in v3 keystone API"
+msgstr "La chiave API Openstack non è supportata nella keystone API v3"
 
-#: scripts/services/AppUtils.js:195
+#: scripts/services/AppUtils.js:203
 msgid "Operating System"
 msgstr "Sistema Operativo"
 
-#: templates/backuplog.html:16
+#: templates/backup-result/entryline.html:2
 msgid "Operation"
 msgstr "Operazione"
 
-#: scripts/controllers/SystemSettingsController.js:127
-#: scripts/controllers/SystemSettingsController.js:138
-msgid "Operation failed:"
-msgstr "Operazione fallita:"
-
-#: templates/home.html:23
+#: templates/home.html:50
 msgid "Operations:"
 msgstr "Operazioni:"
+
+#: templates/backends/openstack.html:45
+msgid "Optional API key"
+msgstr "Chiave API opzionale"
 
 #: templates/backends/file.html:34
 msgid "Optional authentication password"
@@ -1914,36 +2313,49 @@ msgstr "Password opzionale per l'autenticazione"
 msgid "Optional authentication username"
 msgstr "Nome utente opzionale per l'autenticazione"
 
+#: templates/backends/openstack.html:50
+msgid "Optional region"
+msgstr "Regione opzionale"
+
+#: templates/backends/openstack.html:40
+msgid "Optional tenant name"
+msgstr "Nome detentore facoltativo"
+
 #: templates/addoredit.html:28 templates/edituri.html:51
-#: templates/settings.html:152 templates/settings.html:158
+#: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "Opzioni"
 
-#: templates/settings.html:150
+#: templates/settings.html:191
 msgid ""
 "Options added here are applied to all backups, but can be overridden in each"
-" individual backup"
+" individual backup."
 msgstr ""
 "Le opzioni aggiunte qui sono applicate a tutti i backup, ma possono essere "
-"sovrascritte per ogni backup"
+"sovrascritte in ogni singolo backup."
+
+#: templates/home.html:7
+msgid "Order by"
+msgstr "Ordina per"
 
 #: templates/restore.html:81
 msgid "Original location"
 msgstr "Percorso originale"
 
-#: scripts/services/SystemInfo.js:84
+#: scripts/services/SystemInfo.js:90
 msgid "Others"
 msgstr "Altri"
 
-#: templates/addoredit.html:332
+#: templates/addoredit.html:334
 msgid ""
 "Over time backups will be deleted automatically. There will remain one "
 "backup for each of the last 7 days, each of the last 4 weeks, each of the "
 "last 12 months. There will always be at least one remaining backup."
 msgstr ""
-"Nel corso del tempo i backup saranno eliminati automaticamente. Rimarrà un "
-"backup per ciascuno degli ultimi 7 giorni, ognuna delle ultime 4 settimane, "
-"ciascuno degli ultimi 12 mesi. Ci sarà sempre almeno un backup rimanente."
+"Con il passare del tempo i backup saranno eliminati automaticamente. Rimarrà"
+" un backup per ciascuno degli ultimi 7 giorni, per ciascuna delle ultime 4 "
+"settimane e per ciascuno degli ultimi 12 mesi. Rimarrà sempre almeno un "
+"backup."
 
 #: templates/restore.html:114
 msgid "Overwrite"
@@ -1958,57 +2370,61 @@ msgstr "Passphrase"
 msgid "Passphrase (if encrypted)"
 msgstr "Passphrase (se criptato)"
 
-#: scripts/controllers/EditBackupController.js:393
+#: scripts/controllers/EditBackupController.js:397
 msgid "Passphrase changed"
 msgstr "Passphrase modificata"
 
-#: scripts/controllers/EditBackupController.js:252
+#: scripts/controllers/EditBackupController.js:256
 msgid "Passphrases are not matching"
 msgstr "Passphrase non corrispondenti"
 
-#: scripts/controllers/EditBackupController.js:29
+#: scripts/controllers/EditBackupController.js:30
 msgid "Passphrases do not match"
 msgstr "Le passphrase non corrispondono"
 
-#: scripts/services/EditUriBuiltins.js:1036
-#: scripts/services/EditUriBuiltins.js:1046 templates/backends/file.html:33
-#: templates/backends/generic.html:22 templates/backends/jottacloud.html:11
-#: templates/backends/jottacloud.html:12 templates/backends/mega.html:11
+#: scripts/services/EditUriBuiltins.js:1332 templates/backends/file.html:33
+#: templates/backends/filejump.html:25 templates/backends/filen.html:11
+#: templates/backends/generic.html:22 templates/backends/idrive.html:11
+#: templates/backends/idrive.html:12 templates/backends/mega.html:11
 #: templates/backends/mega.html:12 templates/backends/openstack.html:34
-#: templates/settings.html:8
+#: templates/backends/smb.html:42
 msgid "Password"
 msgstr "Password"
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:55
 msgid "Patching files with local blocks …"
-msgstr "Patch di file con blocchi locali ..."
+msgstr "Aggiornamento dei file con blocchi locali ..."
 
-#: scripts/services/EditUriBuiltins.js:1020
+#: scripts/services/EditUriBuiltins.js:1316
+#: scripts/services/EditUriBuiltins.js:1453
 msgid "Path"
 msgstr "Percorso"
 
-#: scripts/controllers/EditBackupController.js:153
+#: scripts/controllers/EditBackupController.js:157
 msgid "Path not found"
 msgstr "Percorso non trovato"
 
+#: templates/backends/filejump.html:2 templates/backends/filen.html:2
 #: templates/backends/generic.html:13 templates/backends/msgroup.html:7
-#: templates/backends/oauth.html:2
+#: templates/backends/oauth.html:2 templates/backends/pcloud.html:15
+#: templates/backends/smb.html:28
 msgid "Path on server"
 msgstr "Percorso sul server"
 
-#: templates/backends/b2.html:8 templates/backends/s3.html:63
+#: templates/backends/b2.html:8 templates/backends/e2.html:17
+#: templates/backends/s3.html:62
 msgid "Path or subfolder in the bucket"
 msgstr "Percorso o sottocartella bucket"
 
-#: templates/settings.html:35
+#: templates/settings.html:75
 msgid "Pause"
 msgstr "Pausa"
 
-#: templates/settings.html:33
+#: templates/settings.html:73
 msgid "Pause after startup or hibernation"
 msgstr "Pausa dopo avvio o ibernazione"
 
-#: scripts/controllers/AppController.js:42
+#: scripts/controllers/AppController.js:52
 msgid "Pause options"
 msgstr "Opzioni pausa"
 
@@ -2020,6 +2436,10 @@ msgstr "Autorizzazioni"
 msgid "Pick location"
 msgstr "Scegli posizione"
 
+#: scripts/controllers/ImportController.js:17
+msgid "Please select a file to import"
+msgstr "Seleziona un file da importare"
+
 #: templates/restorewizard.html:10
 msgid "Point to your backup files and restore from there"
 msgstr "Puntare ai file di backup e ripristinare da lì"
@@ -2028,18 +2448,22 @@ msgstr "Puntare ai file di backup e ripristinare da lì"
 msgid "Port"
 msgstr "Porta"
 
-#: templates/settings.html:28
+#: templates/settings.html:30
 msgid "Prevent tray icon automatic log-in"
 msgstr ""
-"Previeni il log-in automatico dell'icona nella barra delle applicazioni"
+"Previeni l'accesso automatico dell'icona nella barra delle applicazioni"
 
 #: templates/addoredit.html:114 templates/addoredit.html:247
-#: templates/addoredit.html:297 templates/addoredit.html:409
+#: templates/addoredit.html:297 templates/addoredit.html:411
 #: templates/restoredirect.html:81
 msgid "Previous"
 msgstr "Precedente"
 
-#: templates/home.html:80
+#: scripts/services/ServerStatus.js:40
+msgid "Processing files to backup …"
+msgstr "Elaborazione dei file per il backup ..."
+
+#: templates/home.html:107
 msgid "Progress:"
 msgstr "Avanzamento:"
 
@@ -2047,27 +2471,31 @@ msgstr "Avanzamento:"
 msgid "ProjectID is optional if the bucket exist"
 msgstr "ID Progetto è opzionale se esiste un bucket"
 
-#: scripts/services/SystemInfo.js:83
+#: scripts/services/SystemInfo.js:89
 msgid "Proprietary"
 msgstr "Proprietario"
+
+#: scripts/services/AppUtils.js:68
+msgid "Public"
+msgstr "Pubblico"
 
 #: templates/backup-result/phases/purge.html:3
 msgid "Purge Phase"
 msgstr "Fase eliminazione"
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:69
 msgid "Purging files complete!"
 msgstr "Eliminazione dei file completata!"
 
-#: scripts/services/ServerStatus.js:64
+#: scripts/services/ServerStatus.js:67
 msgid "Purging files …"
 msgstr "Eliminazione dei file ..."
 
-#: scripts/services/ServerStatus.js:46
+#: scripts/services/ServerStatus.js:49
 msgid "Rebuilding local database …"
 msgstr "Ricostruzione del database locale ..."
 
-#: templates/localdatabase.html:20
+#: templates/localdatabase.html:17
 msgid "Recreate (delete and repair)"
 msgstr "Ricrea (cancella e ripara)"
 
@@ -2075,19 +2503,43 @@ msgstr "Ricrea (cancella e ripara)"
 msgid "Recreate Database Phase"
 msgstr "Fase ricreazione database"
 
-#: scripts/services/ServerStatus.js:56
+#: scripts/services/ServerStatus.js:59
 msgid "Recreating database …"
 msgstr "Ricreazione del database ..."
+
+#: templates/backends/cos.html:20
+msgid "Region"
+msgstr "Regione"
+
+#: templates/settings.html:47
+msgid "Register for remote control"
+msgstr "Registrazione per il controllo remoto"
+
+#: scripts/controllers/SystemSettingsController.js:213
+msgid "Registered, waiting for accept"
+msgstr "Registrato, in attesa di accettazione"
+
+#: scripts/controllers/SystemSettingsController.js:209
+msgid "Registering machine..."
+msgstr "Registro macchina..."
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup …"
 msgstr "Registrazione backup temporaneo ..."
 
-#: scripts/controllers/EditBackupController.js:138
+#: templates/settings.html:42
+msgid "Registration URL"
+msgstr "URL di registrazione"
+
+#: scripts/controllers/SystemSettingsController.js:211
+msgid "Registration failed"
+msgstr "Registrazione non riuscita"
+
+#: scripts/controllers/EditBackupController.js:142
 msgid "Relative paths not allowed"
 msgstr "Percorsi relativi non consentiti"
 
-#: templates/captcha.html:7
+#: index.html:309
 msgid "Reload"
 msgstr "Ricarica"
 
@@ -2095,13 +2547,33 @@ msgstr "Ricarica"
 msgid "Remote"
 msgstr "Remoto"
 
-#: scripts/services/EditUriBuiltins.js:1076
+#: scripts/services/EditUriBuiltins.js:1391
 msgid "Remote Path"
 msgstr "Percorso remoto"
 
-#: scripts/services/EditUriBuiltins.js:1074
+#: scripts/services/EditUriBuiltins.js:1390
 msgid "Remote Repository"
 msgstr "Repository remoto"
+
+#: templates/settings.html:34
+msgid "Remote access control"
+msgstr "Controllo dell'accesso remoto"
+
+#: scripts/controllers/SystemSettingsController.js:215
+msgid "Remote control is configured but not enabled"
+msgstr "Controllo remoto è configurato ma non è abilitato"
+
+#: scripts/controllers/SystemSettingsController.js:207
+msgid "Remote control is connected"
+msgstr "Controllo remoto è connesso"
+
+#: scripts/controllers/SystemSettingsController.js:205
+msgid "Remote control is enabled but not connected"
+msgstr "Controllo remoto è abilitato ma non connesso"
+
+#: scripts/controllers/SystemSettingsController.js:219
+msgid "Remote control is not set up"
+msgstr "Controllo remoto non è configurato"
 
 #: templates/backends/rclone.html:10
 msgid "Remote path"
@@ -2119,7 +2591,7 @@ msgstr "Dimensione volume remoto"
 msgid "Remove"
 msgstr "Rimuovi"
 
-#: templates/advancedoptionseditor.html:40
+#: templates/advancedoptionseditor.html:41
 msgid "Remove option"
 msgstr "Rimuovi opzione"
 
@@ -2127,7 +2599,7 @@ msgstr "Rimuovi opzione"
 msgid "Removed files"
 msgstr "File rimossi"
 
-#: templates/localdatabase.html:18 templates/notificationarea.html:14
+#: templates/localdatabase.html:15 templates/notificationarea.html:14
 msgid "Repair"
 msgstr "Ripara"
 
@@ -2135,27 +2607,27 @@ msgstr "Ripara"
 msgid "Repair Phase"
 msgstr "Fase riparazione"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:61
 msgid "Repairing database …"
-msgstr "Ripristino del database ..."
+msgstr "Riparazione del database ..."
 
 #: templates/addoredit.html:62
 msgid "Repeat Passphrase"
 msgstr "Ripeti Passphrase"
 
-#: templates/home.html:45
+#: templates/home.html:72
 msgid "Reporting:"
 msgstr "Segnalazione:"
 
-#: templates/localdatabase.html:31
+#: templates/localdatabase.html:28
 msgid "Reset"
 msgstr "Reset"
 
-#: index.html:225 templates/restore.html:142
+#: index.html:214 templates/restore.html:137
 msgid "Restore"
 msgstr "Ripristina"
 
-#: scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:58
 msgid "Restore complete!"
 msgstr "Ripristino completato!"
 
@@ -2164,10 +2636,10 @@ msgid "Restore files"
 msgstr "Ripristina file"
 
 #: templates/restore.html:46
-msgid "Restore files from {{backupname}}"
-msgstr "Ripristina file da {{backupname}}"
+msgid "Restore files from:"
+msgstr "Ripristina file da:"
 
-#: templates/home.html:26
+#: templates/home.html:53
 msgid "Restore files …"
 msgstr "Ripristina file ..."
 
@@ -2180,8 +2652,8 @@ msgid "Restore from backup configuration"
 msgstr "Ripristino dalla configurazione backup"
 
 #: templates/restorewizard.html:15
-msgid "Restore from configuration ..."
-msgstr "Ripristino da file di configurazione..."
+msgid "Restore from configuration …"
+msgstr "Ripristina dalla configurazione…"
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
@@ -2204,12 +2676,12 @@ msgstr "Cartelle ripristinate"
 msgid "Restored Symlinks"
 msgstr "Symlink ripristinati"
 
-#: scripts/controllers/RestoreController.js:376
-#: scripts/controllers/RestoreController.js:398
+#: scripts/controllers/RestoreController.js:383
+#: scripts/controllers/RestoreController.js:405
 msgid "Restoring files …"
 msgstr "Ripristino di file ..."
 
-#: index.html:228
+#: index.html:217
 msgid "Resume"
 msgstr "Riprendi"
 
@@ -2219,21 +2691,17 @@ msgstr "Elenchi file riscritti"
 
 #: templates/addoredit.html:269
 msgid "Run again every"
-msgstr "Esegui ogni"
+msgstr "Esegui nuovamente ogni"
 
-#: templates/home.html:25 templates/home.html:60
+#: templates/home.html:52 templates/home.html:87
 msgid "Run now"
 msgstr "Esegui ora"
 
-#: templates/commandline.html:58
-msgid "Running ...."
-msgstr "Esecuzione..."
-
-#: templates/commandline.html:47
+#: templates/commandline.html:44
 msgid "Running commandline entry"
-msgstr "Riga di comando in esecuzione"
+msgstr "Esecuzione voce della riga di comando"
 
-#: index.html:183
+#: index.html:172
 msgid "Running task:"
 msgstr "Attività in esecuzione:"
 
@@ -2241,43 +2709,53 @@ msgstr "Attività in esecuzione:"
 msgid "Running …"
 msgstr "In esecuzione …"
 
+#: templates/commandline.html:54
+msgid "Running … <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">stop now</a>"
+msgstr ""
+"<a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">In "
+"esecuzione...</a>ferma ora"
+
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
 msgstr "Compatibile S3"
 
-#: templates/settings.html:87
+#: scripts/services/SystemInfo.js:53
+msgid "SMB / CIFS"
+msgstr "SMB / CIFS"
+
+#: templates/settings.html:130
 msgid "Same as the base install version: {{channelname}}"
 msgstr "Come la versione di base installata: {{channelname}}"
 
-#: scripts/services/AppUtils.js:109
+#: scripts/services/AppUtils.js:115
 msgid "Sat"
 msgstr "Sab"
 
-#: templates/backends/tardigrade.html:10
+#: templates/backends/storj.html:10
 msgid "Satellite"
 msgstr "Satellitare"
 
-#: templates/addoredit.html:408 templates/localdatabase.html:32
+#: templates/addoredit.html:410 templates/localdatabase.html:29
 msgid "Save"
 msgstr "Salva"
 
-#: templates/localdatabase.html:33
+#: templates/localdatabase.html:30
 msgid "Save and repair"
 msgstr "Salva e ripara"
 
 #: templates/restore.html:118
 msgid "Save different versions with timestamp in file name"
-msgstr "Salva versioni diverse con timestamp nel nome del file"
+msgstr "Salva versioni diverse con marca temporale nel nome del file"
 
 #: templates/import.html:24
 msgid "Save immediately"
 msgstr "Salva immediatamente"
 
-#: scripts/services/ServerStatus.js:50
+#: scripts/services/ServerStatus.js:53
 msgid "Scanning existing files …"
 msgstr "Scansione di file esistenti ..."
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:54
 msgid "Scanning for local blocks …"
 msgstr "Scansione per blocchi locali ..."
 
@@ -2293,7 +2771,7 @@ msgstr "Cerca"
 msgid "Search for files"
 msgstr "Cerca per file"
 
-#: scripts/services/AppUtils.js:98 templates/settings.html:49
+#: scripts/services/AppUtils.js:104 templates/settings.html:89
 msgid "Seconds"
 msgstr "Secondi"
 
@@ -2304,10 +2782,11 @@ msgstr "Selezionare un livello di log e visiona i messaggi che avvengono:"
 #: templates/restore.html:23 templates/restore.html:38
 #: templates/restoredirect.html:23
 msgid "Select files"
-msgstr "Seleziona file"
+msgstr "Seleziona i file"
 
-#: scripts/services/EditUriBuiltins.js:1054 templates/backends/s3.html:8
-#: templates/backends/sia.html:2
+#: scripts/services/EditUriBuiltins.js:1340 templates/backends/pcloud.html:2
+#: templates/backends/s3.html:8 templates/backends/sia.html:2
+#: templates/backends/smb.html:17
 msgid "Server"
 msgstr "Server"
 
@@ -2315,16 +2794,23 @@ msgstr "Server"
 msgid "Server and port"
 msgstr "Server e porta"
 
-#: templates/backends/generic.html:8
+#: templates/backends/generic.html:8 templates/backends/smb.html:18
 msgid "Server hostname or IP"
 msgstr "Nome host o IP del server"
 
-#: templates/commandline.html:49 templates/restoredirect.html:95
-#: templates/waitarea.html:15
+#: templates/restoredirect.html:95 templates/waitarea.html:15
 msgid "Server is currently paused,"
 msgstr "Server è attualmente in pausa,"
 
-#: scripts/controllers/HomeController.js:7
+#: templates/commandline.html:45
+msgid ""
+"Server is currently paused, <a style=\"cursor: pointer\" ng-"
+"click=\"ServerStatus.resume()\">resume now</a>"
+msgstr ""
+"Il server è attualmente in pausa, <a style=\"cursor: pointer\" ng-"
+"click=\"ServerStatus.resume()\">riprendi adesso</a>"
+
+#: scripts/controllers/HomeController.js:22
 msgid "Server is currently paused, do you want to resume now?"
 msgstr "Server attualmente in pausa, vuoi riprendere ora?"
 
@@ -2332,20 +2818,32 @@ msgstr "Server attualmente in pausa, vuoi riprendere ora?"
 msgid "Server password"
 msgstr "Password del server"
 
-#: scripts/controllers/HomeController.js:7
+#: scripts/controllers/HomeController.js:22
 msgid "Server paused"
 msgstr "Server in pausa"
 
-#: templates/about.html:72
+#: templates/about.html:71
 msgid "Server state properties"
 msgstr "Proprietà stato del server"
 
-#: index.html:231 templates/settings.html:2
+#: templates/settings.html:121
+msgid "Set timezone to default"
+msgstr "Imposta il fuso orario predefinito"
+
+#: index.html:220 templates/settings.html:2
 msgid "Settings"
 msgstr "Impostazioni"
 
+#: templates/backends/smb.html:23
+msgid "Share Name"
+msgstr "Nome condiviso"
+
+#: scripts/services/EditUriBuiltins.js:1078 templates/backends/smb.html:24
+msgid "Share name"
+msgstr "Nome condiviso"
+
 #: templates/addoredit.html:69 templates/notificationarea.html:12
-#: templates/notificationarea.html:32
+#: templates/notificationarea.html:31 templates/notificationarea.html:41
 msgid "Show"
 msgstr "Mostra"
 
@@ -2353,16 +2851,20 @@ msgstr "Mostra"
 msgid "Show advanced editor"
 msgstr "Mostra editor avanzato"
 
+#: templates/notificationarea.html:18 templates/notificationarea.html:19
+msgid "Show help"
+msgstr "Mostra aiuto"
+
 #: templates/addoredit.html:143 templates/backends/file.html:16
 #: templates/restore.html:99
-msgid "Show hidden folders"
-msgstr "Mostra cartelle nascoste"
+msgid "Show hidden items"
+msgstr "Mostra elementi nascosti"
 
 #: templates/about.html:8
 msgid "Show log"
 msgstr "Mostra log"
 
-#: templates/home.html:47
+#: templates/home.html:74
 msgid "Show log …"
 msgstr "Mostra registro …"
 
@@ -2374,7 +2876,7 @@ msgstr "Visualizza ad albero"
 msgid "Sia server password"
 msgstr "Password del server Sia"
 
-#: templates/addoredit.html:324
+#: templates/addoredit.html:326
 msgid "Smart backup retention"
 msgstr "Conservazione intelligente backup"
 
@@ -2384,9 +2886,9 @@ msgid ""
 "name"
 msgstr ""
 "Alcuni provider OpenStack consentono una chiave API anziché una password e "
-"un nome inquilino"
+"un nome detentore"
 
-#: templates/backends/s3.html:83
+#: templates/backends/s3.html:82
 msgid ""
 "Some S3 providers might only be compatible with a certain client library"
 msgstr ""
@@ -2395,13 +2897,13 @@ msgstr ""
 
 #: templates/addoredit.html:26
 msgid "Source Data"
-msgstr "Dati Sorgente"
+msgstr "Dati sorgente"
 
 #: templates/backup-result/top-right-box.html:1
 msgid "Source Files"
 msgstr "Sorgente File"
 
-#: scripts/directives/sourceFolderPicker.js:387 templates/addoredit.html:124
+#: scripts/directives/sourceFolderPicker.js:545 templates/addoredit.html:124
 msgid "Source data"
 msgstr "Dati sorgente"
 
@@ -2409,16 +2911,29 @@ msgstr "Dati sorgente"
 msgid "Source folders"
 msgstr "Cartella sorgente"
 
-#: templates/home.html:69
-msgid "Source:"
-msgstr "Dimensione sorgente:"
+#: templates/home.html:17
+msgid "Source size"
+msgstr "Dimensione sorgente"
 
-#: templates/settings.html:105
+#: templates/home.html:27
+msgid "Source size (descending)"
+msgstr "Dimensione sorgente (decrescente)"
+
+#: templates/home.html:96
+msgid "Source:"
+msgstr "Sorgente:"
+
+#: templates/settings.html:146
 msgid "Specific builds for developers only. Not for use with important data."
 msgstr ""
-"Build specifiche per soli sviluppatori. Non utilizzare con dati importanti."
+"Versioni specifiche per soli sviluppatori. Non utilizzare con dati "
+"importanti."
 
-#: scripts/services/SystemInfo.js:82
+#: templates/settings.html:135
+msgid "Stable"
+msgstr "Stabile"
+
+#: scripts/services/SystemInfo.js:88
 msgid "Standard protocols"
 msgstr "Protocolli standard"
 
@@ -2432,45 +2947,41 @@ msgstr "Protocolli standard"
 msgid "Start"
 msgstr "Avvio"
 
-#: scripts/services/ServerStatus.js:33
+#: scripts/services/ServerStatus.js:36
 msgid "Starting backup …"
-msgstr "Avvio backup ..."
+msgstr "Avvio backup..."
 
-#: scripts/services/ServerStatus.js:45
+#: scripts/services/ServerStatus.js:48
 msgid "Starting restore …"
-msgstr "Avvio ripristino ..."
+msgstr "Avvio ripristino..."
 
-#: scripts/controllers/RestoreController.js:372
-#: scripts/controllers/RestoreController.js:396
+#: scripts/controllers/RestoreController.js:379
+#: scripts/controllers/RestoreController.js:403
 msgid "Starting the restore process …"
 msgstr "Avvio del processo di ripristino ..."
 
-#: scripts/controllers/StateController.js:106
-msgid "Stop after current file"
-msgstr "Stop dopo il file corrente"
+#: templates/settings.html:36
+msgid "Status: {{getRemoteControlStatusText()}}"
+msgstr "Stato: {{getRemoteControlStatusText()}}"
 
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:117
 msgid "Stop after the current file"
 msgstr "Ferma dopo il file corrente"
 
 #: scripts/controllers/StateController.js:106
-#: scripts/controllers/StateController.js:115
-msgid "Stop now"
-msgstr "Ferma adesso"
-
-#: scripts/controllers/StateController.js:104
 msgid "Stop running backup"
 msgstr "Ferma esecuzione backup"
 
-#: scripts/controllers/StateController.js:113
+#: scripts/controllers/StateController.js:115
 msgid "Stop running task"
 msgstr "Ferma esecuzione attività"
 
-#: index.html:179
+#: index.html:168
 msgid "Stopping after the current file:"
 msgstr "Arresto dopo il file corrente:"
 
-#: index.html:184
+#: index.html:173
 msgid "Stopping task:"
 msgstr "Ferma attività:"
 
@@ -2484,38 +2995,38 @@ msgstr "Classe archivio"
 
 #: templates/backends/gcs.html:32
 msgid "Storage class for creating a bucket"
-msgstr "Classe di archiviazione per la creazione di un bucket"
+msgstr "Classe archivio per la creazione di un bucket"
 
 #: templates/log.html:6
 msgid "Stored"
 msgstr "Archiviati"
 
-#: scripts/controllers/EditBackupController.js:33
+#: scripts/controllers/EditBackupController.js:34
 msgid "Strong"
 msgstr "Forte"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:50
+#: scripts/directives/backupEditUri.js:53
 msgid "Success"
 msgstr "Successo"
 
-#: scripts/services/AppUtils.js:110
+#: scripts/services/AppUtils.js:116
 msgid "Sun"
 msgstr "Dom"
 
-#: scripts/services/AppUtils.js:72
+#: scripts/services/AppUtils.js:78
 msgid "Symbolic link"
 msgstr "Link simbolico"
 
-#: scripts/services/AppUtils.js:192
+#: scripts/services/AppUtils.js:200
 msgid "System Files"
 msgstr "File di Sistema"
 
-#: templates/settings.html:125
+#: templates/settings.html:166
 msgid "System default ({{levelname}})"
 msgstr "Sistema predefinito ({{levelname}})"
 
-#: scripts/controllers/EditBackupController.js:20
+#: scripts/controllers/EditBackupController.js:21
 msgid "System files"
 msgstr "File di sistema"
 
@@ -2523,37 +3034,54 @@ msgstr "File di sistema"
 msgid "System info"
 msgstr "Informazioni di sistema"
 
-#: templates/about.html:64
+#: templates/about.html:63
 msgid "System properties"
 msgstr "Proprietà di sistema"
 
-#: scripts/services/AppUtils.js:85
+#: scripts/services/AppUtils.js:91
 msgid "TByte"
 msgstr "TByte"
 
-#: scripts/services/AppUtils.js:118
+#: scripts/services/AppUtils.js:124
 msgid "TByte/s"
 msgstr "TByte/s"
 
+#: templates/commandline.html:13
+msgid "Target URL &gt;"
+msgstr "URL di destinazione &gt;"
+
 #: templates/backends/sia.html:7
-msgid "Target path, ie /backup"
-msgstr "Percorso di destinazione, cioè /backup"
+msgid "Target path. Example: /backup"
+msgstr "Percorso di destinazione. Esempio: /backup"
 
 #: templates/waitarea.html:5
 msgid "Task is running"
 msgstr "Attività in esecuzione"
 
-#: scripts/services/AppUtils.js:201
+#: scripts/services/AppUtils.js:209
 msgid "Temporary Files"
 msgstr "File Temporanei"
 
-#: scripts/controllers/EditBackupController.js:21
+#: scripts/controllers/EditBackupController.js:22
 msgid "Temporary files"
 msgstr "File temporanei"
 
 #: templates/backends/openstack.html:39
-msgid "Tenant Name"
-msgstr "Nome Inquilino"
+msgid "Tenant name"
+msgstr "Nome detentore"
+
+#: templates/backends/cos.html:4
+msgid "Tencent Cloud Account APPID"
+msgstr "APPID dell'account Tencent Cloud"
+
+#: templates/backends/cos.html:35
+msgid "Tencent Cloud COS documents and resources"
+msgstr "Documentazione e risorse di Tencent Cloud COS"
+
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:117
+msgid "Terminate"
+msgstr "Termina"
 
 #: templates/backup-result/phases/test.html:3
 msgid "Test Phase"
@@ -2561,40 +3089,30 @@ msgstr "Fase test"
 
 #: templates/edituri.html:21
 msgid "Test connection"
-msgstr "Prova connessione"
+msgstr "Test connessione"
 
-#: scripts/directives/backupEditUri.js:44
-msgid "Testing ..."
-msgstr "Test in corso..."
+#: scripts/directives/backupEditUri.js:43
+msgid "Testing connection …"
+msgstr "Test della connessione ..."
 
-#: scripts/directives/backupEditUri.js:44
-msgid "Testing connection ..."
-msgstr "Prova connessione..."
-
-#: scripts/services/EditUriBuiltins.js:45
+#: scripts/services/EditUriBuiltins.js:53
 msgid "Testing permissions …"
 msgstr "Test delle autorizzazioni ..."
 
-#: scripts/services/EditUriBuiltins.js:45
-msgid "Testing permissions..."
-msgstr "Prova autorizzazioni..."
-
-#: templates/edituri.html:22
+#: scripts/directives/backupEditUri.js:43 templates/edituri.html:22
 msgid "Testing …"
 msgstr "Test in corso..."
 
-#: scripts/services/EditUriBuiltins.js:1000
-#: scripts/services/EditUriBuiltins.js:1016
+#: scripts/services/EditUriBuiltins.js:1296
+#: scripts/services/EditUriBuiltins.js:1312
+#: scripts/services/EditUriBuiltins.js:1433
+#: scripts/services/EditUriBuiltins.js:1449
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
 msgstr ""
 "Il campo '{{fieldname}}' contiene un carattere non valido: {{character}} "
 "(value: {{value}}, index: {{pos}})"
-
-#: templates/backends/tardigrade.html:22
-msgid "The API key"
-msgstr "La chiave API"
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
@@ -2607,18 +3125,20 @@ msgstr ""
 "Il backup era temporaneo e non esiste più, quindi i dati del registro sono "
 "persi"
 
-#: scripts/services/EditUriBuiltins.js:972
+#: scripts/services/EditUriBuiltins.js:1268
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 "Il nome del bucket dovrebbe essere tutto minuscolo, convertirlo "
 "automaticamente?"
 
-#: scripts/services/EditUriBuiltins.js:956
+#: templates/addoredit.html:313
 msgid ""
-"The bucket name should start with your username, prepend automatically?"
+"The chosen size is outside the recommended range. This may cause performance"
+" issues, excessively large temporary files or other problems."
 msgstr ""
-"Il nome del bucket dovrebbe iniziare con il tuo nome utente, anteporlo "
-"automaticamente?"
+"La dimensione scelta non rientra nell'intervallo consigliato. Ciò può "
+"causare problemi di prestazioni, file temporanei troppo grandi o altri "
+"problemi."
 
 #: scripts/controllers/ExportController.js:13
 msgid ""
@@ -2628,23 +3148,33 @@ msgstr ""
 "La configurazione dovrebbe essere mantenuta al sicuro. Sei sicuro di voler "
 "salvare un file non criptato contenente le tue password?"
 
-#: index.html:312
-msgid "The connection to the server is lost, attempting again in {{time}} ..."
-msgstr "Connessione al server persa, nuovo tentativo tra {{time}}..."
+#: index.html:302
+msgid "The connection to the server is lost, attempting again in {{time}} …"
+msgstr ""
+"La connessione al server è stata persa, nuovo tentativo tra {{time}} …"
 
-#: templates/settings.html:72
+#: templates/settings.html:112
 msgid "The dark theme (by Michal)"
 msgstr "Tema scuro (da Michal)"
 
-#: templates/settings.html:71
+#: templates/settings.html:111
 msgid "The default blue on white theme (by Alex)"
 msgstr "Predefinito - Tema blu su bianco (da Alex)"
 
-#: templates/backends/tardigrade.html:26
-msgid "The encryption passphrase"
-msgstr "La passphrase di crittografia"
+#: scripts/services/EditUriBuiltins.js:1377
+msgid "The encryption passphrases do not match"
+msgstr "Le passphrase di crittografia non corrispondono"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/sourceFolderPicker.js:416
+msgid ""
+"The file size is {{size}}, larger than the maximum specified size. If the "
+"file size decreases, it will be included in future backups."
+msgstr ""
+"La dimensione del file è {{size}}, superiore alla dimensione massima "
+"specificata. Se la dimensione del file diminuisce, sarà inclusa nei backup "
+"futuri."
+
+#: scripts/directives/backupEditUri.js:130
 msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
@@ -2652,7 +3182,7 @@ msgstr ""
 "La cartella {{folder}} non esiste. \n"
 "Creala adesso?"
 
-#: scripts/directives/backupEditUri.js:212
+#: scripts/directives/backupEditUri.js:170
 msgid ""
 "The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n"
 "\n"
@@ -2662,16 +3192,16 @@ msgstr ""
 "\n"
 "Vuoi SOSTITUIRE la chiave host CORRENTE \"{{prev}}\" con la chiave host SEGNALATA: {{key}}?"
 
-#: scripts/controllers/ExportController.js:60
-#: scripts/controllers/SystemSettingsController.js:90
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/SystemSettingsController.js:242
 msgid "The passwords do not match"
 msgstr "Le password non corrispondono"
 
-#: scripts/controllers/EditBackupController.js:153
+#: scripts/controllers/EditBackupController.js:157
 msgid "The path does not appear to exist, do you want to add it anyway?"
 msgstr "Il percorso sembra non esistere, vuoi aggiungerlo comunque?"
 
-#: scripts/controllers/EditBackupController.js:163
+#: scripts/controllers/EditBackupController.js:167
 msgid ""
 "The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n"
 "\n"
@@ -2681,7 +3211,7 @@ msgstr ""
 "\n"
 "Vuoi includere il file specificato?"
 
-#: scripts/controllers/EditBackupController.js:138
+#: scripts/controllers/EditBackupController.js:142
 msgid ""
 "The path must be an absolute path, i.e. it must start with a forward slash "
 "'/'"
@@ -2689,25 +3219,15 @@ msgstr ""
 "Il percorso deve essere un percorso assoluto, cioè deve iniziare con una "
 "barra '/'"
 
-#: scripts/services/EditUriBuiltins.js:871
-msgid ""
-"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
-"\n"
-"Do you want to add the prefix to the path automatically?"
-msgstr ""
-"Il percorso deve iniziare con \"{{prefix1}}\" o \"{{prefix2}}\", altrimenti non sarà possibile visualizzare i file nell'interfaccia Web di HubiC.\n"
-"\n"
-"Vuoi aggiungere automaticamente il prefisso al percorso?"
-
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
-msgstr "Il parametro area è applicato solo quando si crea un nuovo bucket"
+msgstr "Il parametro regione è applicato solo quando si crea un nuovo bucket"
 
 #: templates/backends/openstack.html:50
 msgid "The region parameter is only used when creating a bucket"
-msgstr "Il parametro area è utilizzato solo quando si crea un bucket"
+msgstr "Il parametro regione è utilizzato solo quando si crea un bucket"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:86
 msgid ""
 "The server certificate could not be validated.\n"
 "Do you want to approve the SSL certificate with the hash: {{hash}}?"
@@ -2719,17 +3239,17 @@ msgstr ""
 #: templates/backends/s3.html:49
 msgid "The storage class affects the availability and price for a stored file"
 msgstr ""
-"La classe di archiviazione influisce sulla disponibilità e sul prezzo per un"
-" file archiviato"
+"La classe dell'archivio influisce sulla disponibilità e sul prezzo per un "
+"file archiviato"
 
-#: scripts/controllers/RestoreDirectController.js:106
+#: scripts/controllers/RestoreDirectController.js:102
 msgid ""
 "The target folder contains encrypted files, please supply the passphrase"
 msgstr ""
 "La cartella di destinazione contiene file criptati, per favore fornisci la "
 "passphrase"
 
-#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:62
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
@@ -2737,7 +3257,7 @@ msgstr ""
 "L'utente dispone di troppe autorizzazioni. Vuoi creare un nuovo utente "
 "limitato, con solo autorizzazioni per il percorso selezionato?"
 
-#: scripts/controllers/RestoreController.js:309
+#: scripts/controllers/RestoreController.js:308
 msgid ""
 "This backup was created on another operating system. Restoring files without"
 " specifying a destination folder can cause files to be restored in "
@@ -2753,29 +3273,15 @@ msgstr ""
 msgid "This month"
 msgstr "Questo mese"
 
-#: templates/addoredit.html:312
-msgid ""
-"This option does not relate to your maximum backup or file size, nor does it"
-" affect deduplication rates. <external-link "
-"link=\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-"
-"size'\">See this page before you change the remote volume size.</external-"
-"link>"
-msgstr ""
-"Questa opzione non è riferita al numero massimo dei tuoi backup o alle "
-"dimensioni del file, né influisce sulla valutazione della deduplicazione. "
-"<external-link link=\"'https://www.duplicati.com/articles/Choosing-Sizes"
-"/#remote-volume-size'\">Guarda questa pagina prima di modificare le "
-"dimensioni del volume remoto.</external-link>"
-
 #: scripts/controllers/RestoreController.js:36
 msgid "This week"
 msgstr "Questa settimana"
 
-#: scripts/controllers/AppController.js:57
+#: scripts/controllers/AppController.js:68
 msgid "Throttle settings"
-msgstr "Impostazioni limitazione"
+msgstr "Impostazioni larghezza di banda"
 
-#: scripts/services/AppUtils.js:107
+#: scripts/services/AppUtils.js:113
 msgid "Thu"
 msgstr "Mar"
 
@@ -2784,24 +3290,38 @@ msgstr "Mar"
 msgid "Time"
 msgstr "Tempo"
 
+#: templates/settings.html:117
+msgid "Time zone"
+msgstr "Fuso orario"
+
 #: templates/export.html:14
 msgid "To File"
 msgstr "Al File"
 
-#: scripts/controllers/DeleteController.js:66
+#: templates/confirmdelete.html:3
 msgid ""
-"To confirm you want to delete all remote files for \"{{name}}\", please "
-"enter the word you see below"
+"To confirm you want to delete all remote files for\n"
+"      <span class=\"backupname\">\"{{selection.backupname}}\"</span>, please enter\n"
+"      this phrase:"
 msgstr ""
-"Per confermare che vuoi cancellare tutti i file remoti che contengono "
-"\"{{name}}\", digita la parla che vedi di seguito"
+"Per confermare che vuoi eliminare tutti i file remoti per\n"
+"      <span class=\"backupname\">\"{{selection.backupname}}\"</span>, inserisci\n"
+"      questa frase:"
 
-#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/ExportController.js:67
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr ""
 "Per esportare senza una passphrase, deselezionare la casella \"Cripta file\""
 
-#: templates/settings.html:23
+#: scripts/services/EditUriBuiltins.js:1252
+msgid ""
+"To prevent bucket naming conflicts, it is recommended to prepend your "
+"account ID to the bucket name. Prepend automatically?"
+msgstr ""
+"Per evitare conflitti di denominazione dei bucket, è consigliabile anteporre"
+" l'ID dell'account al nome del bucket. Anteporlo automaticamente?"
+
+#: templates/settings.html:26
 msgid ""
 "To prevent various DNS based attacks, Duplicati limits the allowed hostnames"
 " to the ones listed here. Direct IP access and localhost is always allowed. "
@@ -2822,29 +3342,31 @@ msgstr ""
 msgid "Today"
 msgstr "Oggi"
 
-#: scripts/directives/backupEditUri.js:214
+#: templates/backends/smb.html:3
+msgid "Transport"
+msgstr "Trasporto"
+
+#: scripts/directives/backupEditUri.js:172
 msgid "Trust host certificate?"
 msgstr "Certificato host affidabile?"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:86
 msgid "Trust server certificate?"
 msgstr "Certificato server affidabile?"
 
-#: templates/settings.html:100
+#: templates/settings.html:141
 msgid ""
-"Try out the new features that we are working on. Currently the most stable "
-"version available. Test Restore data before using this in production "
-"environments."
+"Try out the new features that we are working on. Test Backup &amp; Restore "
+"before using this in production environments."
 msgstr ""
-"Prova le nuove funzionalità su cui stiamo lavorando. Attualmente la versione"
-" più stabile disponibile. Prova il Ripristino dati prima di utilizzarla "
-"negli ambienti di produzione."
+"Prova le nuove funzionalità su cui stiamo lavorando. Testa il Backup &amp; "
+"il Ripristino prima di usarlo in ambienti di produzione."
 
-#: scripts/services/AppUtils.js:105
+#: scripts/services/AppUtils.js:111
 msgid "Tue"
 msgstr "Gio"
 
-#: templates/restore.html:138
+#: templates/restore.html:133
 msgid "Type passphrase here."
 msgstr "Scrivi la passphrase qui."
 
@@ -2858,9 +3380,19 @@ msgstr "Dimensione e versione backup sconosciute"
 
 #: templates/pause.html:46
 msgid "Until resumed"
-msgstr "Finché non riprende"
+msgstr "Fino alla ripresa"
 
-#: templates/settings.html:83
+#: templates/about.html:30
+msgid ""
+"Update <a href ng-"
+"click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a> is available."
+" <a href=\"{{state.updateDownloadLink}}\">Download now</a>"
+msgstr ""
+"L'aggiornamento <a href ng-"
+"click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a> è "
+"disponibile. <a href=\"{{state.updateDownloadLink}}\">Scaricalo ora</a>"
+
+#: templates/settings.html:126
 msgid "Update channel"
 msgstr "Canale di aggiornamento"
 
@@ -2876,48 +3408,58 @@ msgstr "Aggiornamento con database esistente"
 msgid "Uploaded files"
 msgstr "File caricati"
 
-#: scripts/services/ServerStatus.js:42
+#: scripts/services/ServerStatus.js:45
 msgid "Uploading verification file …"
-msgstr "Caricamento file di verifica ..."
+msgstr "Caricamento dei file di verifica ..."
 
-#: templates/settings.html:132
+#: templates/settings.html:173
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{'public usage statistics' | translate"
-"}}</external-link>"
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
 msgstr ""
-"I report sull'utilizzo ci aiutano a migliorare l'esperienza dell'utente e a "
-"valutare l'impatto delle nuove funzionalità. Li usiamo per generare "
-"<external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{\"statistiche sull'uso pubblico\" | tradurre"
-"}}</external-link>"
+"I rapporti di utilizzo ci aiutano a migliorare l'esperienza dell'utente e a "
+"valutare l'impatto di nuove funzionalità. Li utilizziamo per generare "
+"<external-link link=\"'https://usage-reporter.duplicati.com/'\">statistiche "
+"di utilizzo pubblico</external-link>."
 
-#: templates/settings.html:120
+#: templates/settings.html:161
 msgid "Usage statistics"
 msgstr "Statistiche di utilizzo"
 
-#: templates/settings.html:126
+#: templates/settings.html:167
 msgid "Usage statistics, warnings, errors, and crashes"
 msgstr "Statistiche di utilizzo, avvisi, errori e arresti anomali"
+
+#: templates/backends/filejump.html:32
+msgid "Use API token authentication (recommended)"
+msgstr "Usa autenticazione con token API (consigliato)"
 
 #: templates/backends/generic.html:2 templates/backends/s3.html:2
 msgid "Use SSL"
 msgstr "Usa SSL"
 
-#: scripts/controllers/EditBackupController.js:450
+#: scripts/controllers/EditBackupController.js:454
 msgid "Use existing database?"
 msgstr "Usare database esistente?"
 
-#: scripts/controllers/EditBackupController.js:344
+#: index.html:263
+msgid "Use new UI"
+msgstr "Usa la nuova interfaccia utente"
+
+#: templates/backends/filejump.html:31
+msgid "Use username and password authentication"
+msgstr "Usa l'autenticazione nome utente e password"
+
+#: scripts/controllers/EditBackupController.js:348
 msgid "Use weak passphrase"
 msgstr "Usa passphrase debole"
 
-#: scripts/controllers/EditBackupController.js:30
+#: scripts/controllers/EditBackupController.js:31
 msgid "Useless"
 msgstr "Inutile"
 
-#: scripts/directives/sourceFolderPicker.js:374
+#: scripts/directives/sourceFolderPicker.js:532
 msgid "User data"
 msgstr "Dati utente"
 
@@ -2925,27 +3467,36 @@ msgstr "Dati utente"
 msgid "User domain name"
 msgstr "Nome dominio utente"
 
-#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:62
 msgid "User has too many permissions"
 msgstr "L'utente ha troppe autorizzazioni"
 
-#: templates/settings.html:56
+#: templates/settings.html:96
 msgid "User interface settings"
 msgstr "Impostazioni interfaccia utente"
 
-#: scripts/services/EditUriBuiltins.js:1035
-#: scripts/services/EditUriBuiltins.js:1045
-#: scripts/services/EditUriBuiltins.js:796
-#: scripts/services/EditUriBuiltins.js:903 templates/backends/file.html:29
-#: templates/backends/generic.html:18 templates/backends/jottacloud.html:7
-#: templates/backends/jottacloud.html:8 templates/backends/mega.html:7
+#: scripts/services/EditUriBuiltins.js:1110
+#: scripts/services/EditUriBuiltins.js:1199
+#: scripts/services/EditUriBuiltins.js:1331 templates/backends/file.html:29
+#: templates/backends/filejump.html:21 templates/backends/filen.html:7
+#: templates/backends/generic.html:18 templates/backends/idrive.html:7
+#: templates/backends/idrive.html:8 templates/backends/mega.html:7
 #: templates/backends/mega.html:8 templates/backends/openstack.html:30
+#: templates/backends/smb.html:38
 msgid "Username"
 msgstr "Nome utente"
 
-#: scripts/services/ServerStatus.js:57
+#: templates/backends/filejump.html:14
+msgid ""
+"Username and password authentication is not recommended and does not work with MFA/2FA enabled accounts.\n"
+"        Use the API token if possible."
+msgstr ""
+"L'autenticazione con nome utente e password non è consigliata e non funziona con gli account abilitati MFA/2FA.\n"
+"        Se possibile, usa il token API."
+
+#: scripts/services/ServerStatus.js:60
 msgid "Vacuuming database …"
-msgstr "Prelevamento database ..."
+msgstr "Pulizia del database ..."
 
 #: templates/addoredit.html:155
 msgid "Validating …"
@@ -2956,61 +3507,53 @@ msgstr "Convalida in corso ..."
 msgid "Verifications"
 msgstr "Verifiche"
 
-#: templates/home.html:40
+#: templates/backends/storj.html:29
+msgid "Verify encryption passphrase"
+msgstr "Verifica la passphrase di crittografia"
+
+#: templates/home.html:67
 msgid "Verify files"
 msgstr "Verifica file"
 
-#: scripts/services/CaptchaService.js:32
-msgid "Verifying ..."
-msgstr "Verifica..."
-
-#: scripts/services/CaptchaService.js:32
-msgid "Verifying answer"
-msgstr "Verifica risposta"
-
-#: scripts/services/ServerStatus.js:34 scripts/services/ServerStatus.js:43
+#: scripts/services/ServerStatus.js:37 scripts/services/ServerStatus.js:46
 msgid "Verifying backend data …"
 msgstr "Verifica dei dati di backend ..."
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:62
 msgid "Verifying files …"
 msgstr "Verifica dei file ..."
 
-#: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:50
 msgid "Verifying remote data …"
 msgstr "Verifica dei dati remoti ..."
 
-#: scripts/services/ServerStatus.js:54
+#: scripts/services/ServerStatus.js:57
 msgid "Verifying restored files …"
 msgstr "Verifica dei file ripristinati ..."
-
-#: templates/notificationarea.html:31
-msgid "Verifying …"
-msgstr "Verifica in corso ..."
 
 #: templates/backup-result/phases/delete.html:33
 msgid "Version ID"
 msgstr "Versione ID"
 
-#: scripts/controllers/EditBackupController.js:34
+#: scripts/controllers/EditBackupController.js:35
 msgid "Very strong"
 msgstr "Molto forte"
 
-#: scripts/controllers/EditBackupController.js:31
+#: scripts/controllers/EditBackupController.js:32
 msgid "Very weak"
 msgstr "Molto debole"
 
-#: index.html:263
+#: index.html:245
 msgid "Visit us on"
 msgstr "Seguici su"
 
 #: templates/delete.html:21
 msgid ""
 "WARNING: The remote database is found to be in use by the commandline "
-"library"
+"library."
 msgstr ""
-"ATTENZIONE: Il database remoto si trova in uso dalla libreria riga di "
-"comando"
+"WARNING: The remote database is found to be in use by the commandline "
+"library."
 
 #: templates/delete.html:44
 msgid "WARNING: This will prevent you from restoring the data in the future."
@@ -3020,25 +3563,17 @@ msgstr "ATTENZIONE: Questo ti impedirà di ripristinare i dati in futuro."
 msgid "Waiting for task to begin"
 msgstr "In attesa dell'attività per iniziare"
 
-#: templates/commandline.html:54
-msgid "Waiting for task to start ...."
-msgstr "In attesa dell'attività per iniziare..."
+#: templates/commandline.html:51
+msgid "Waiting for task to start …"
+msgstr "In attesa dell'avvio dell'attività..."
 
-#: scripts/services/ServerStatus.js:39
+#: scripts/services/ServerStatus.js:42
 msgid "Waiting for upload to finish …"
-msgstr "In attesa del completamento del caricamento ..."
+msgstr "In attesa che il caricamento finisca ..."
 
-#: templates/settings.html:127
+#: templates/settings.html:168
 msgid "Warnings, errors and crashes"
 msgstr "Avvisi, errori e arresti anomali"
-
-#: templates/restore.html:152
-msgid ""
-"We accept donations via different services, such as OpenCollective, PayPal, "
-"BountySource and various crypto currencies."
-msgstr ""
-"Accettiamo donazioni tramite diversi servizi, come OpenCollective, PayPal, "
-"BountySource e varie criptovalute."
 
 #: templates/addoredit.html:54
 msgid "We recommend that you encrypt all backups stored outside your system"
@@ -3046,19 +3581,19 @@ msgstr ""
 "Ti consigliamo di criptare tutti i backup archiviati al di fuori del tuo "
 "sistema"
 
-#: scripts/controllers/EditBackupController.js:32
+#: scripts/controllers/EditBackupController.js:33
 msgid "Weak"
 msgstr "Debole"
 
-#: scripts/controllers/EditBackupController.js:344
+#: scripts/controllers/EditBackupController.js:348
 msgid "Weak passphrase"
 msgstr "Passphrase debole"
 
-#: scripts/services/AppUtils.js:106
+#: scripts/services/AppUtils.js:112
 msgid "Wed"
 msgstr "Mer"
 
-#: scripts/services/AppUtils.js:92 templates/addoredit.html:352
+#: scripts/services/AppUtils.js:98 templates/addoredit.html:354
 msgid "Weeks"
 msgstr "Settimane"
 
@@ -3070,31 +3605,30 @@ msgstr "Da dove vuoi ripristinare?"
 msgid "Where do you want to restore the files to?"
 msgstr "Dove vuoi ripristinare i files?"
 
-#: scripts/services/AppUtils.js:94 templates/addoredit.html:354
+#: scripts/services/AppUtils.js:100 templates/addoredit.html:356
 msgid "Years"
 msgstr "Anni"
 
-#: scripts/controllers/AppController.js:174
-#: scripts/controllers/DeleteController.js:77
-#: scripts/controllers/EditBackupController.js:153
-#: scripts/controllers/EditBackupController.js:163
-#: scripts/controllers/EditBackupController.js:450
-#: scripts/controllers/HomeController.js:7
+#: scripts/controllers/AppController.js:189
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/EditBackupController.js:157
+#: scripts/controllers/EditBackupController.js:167
+#: scripts/controllers/EditBackupController.js:454
+#: scripts/controllers/HomeController.js:22
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:214
-#: scripts/directives/backupEditUri.js:87
-#: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:54
-#: scripts/services/EditUriBuiltins.js:874
-#: scripts/services/EditUriBuiltins.js:956
-#: scripts/services/EditUriBuiltins.js:972
+#: scripts/directives/backupEditUri.js:130
+#: scripts/directives/backupEditUri.js:172
+#: scripts/directives/backupEditUri.js:86
+#: scripts/services/EditUriBackendConfig.js:73
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1268
+#: scripts/services/EditUriBuiltins.js:62
 msgid "Yes"
 msgstr "Si"
 
-#: scripts/controllers/EditBackupController.js:359
+#: scripts/controllers/EditBackupController.js:363
 msgid "Yes, I have stored the passphrase safely"
 msgstr "Si, ho archiviato la passphrase in modo sicuro"
 
@@ -3102,25 +3636,17 @@ msgstr "Si, ho archiviato la passphrase in modo sicuro"
 msgid "Yes, I understand the risk"
 msgstr "Sì, capisco il rischio"
 
-#: scripts/controllers/EditBackupController.js:402
+#: scripts/controllers/EditBackupController.js:406
 msgid "Yes, I'm brave!"
 msgstr "Sì, sono coraggioso!"
 
-#: scripts/controllers/EditBackupController.js:393
+#: scripts/controllers/EditBackupController.js:397
 msgid "Yes, please break my backup!"
 msgstr "Sì, per favore rompi il mio backup!"
 
 #: scripts/controllers/RestoreController.js:35
 msgid "Yesterday"
 msgstr "Ieri"
-
-#: scripts/directives/backupEditUri.js:153
-msgid ""
-"You appear to be running Mono with no SSL certificates loaded.\n"
-"Do you want to import the list of trusted certificates from Mozilla?"
-msgstr ""
-"Sembra che tu sia in esecuzione Mono senza certificati SSL caricati.\n"
-"Vuoi importare l'elenco dei certificati attendibili da Mozilla?"
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid ""
@@ -3130,27 +3656,31 @@ msgstr ""
 "Stai cambiando il percorso di un database esistente.\n"
 "Sei sicuro che questo è ciò che vuoi?"
 
-#: templates/about.html:27
+#: templates/about.html:28
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "Attualmente stai eseguendo {{appname}} {{version}}"
 
-#: scripts/controllers/StateController.js:105
+#: scripts/controllers/StateController.js:107
 msgid ""
 "You can stop the backup after any file uploads currently in progress have "
-"finished."
+"finished. If you terminate the backup, the next run will need to recover "
+"from a failed backup."
 msgstr ""
-"È possibile interrompere il backup al termine di eventuali caricamenti di "
-"file attualmente in corso."
+"È possibile interrompere il backup al termine del caricamento dei file in "
+"corso. Se interrompi il backup, l'esecuzione successiva dovrà ripristinare "
+"un backup non riuscito."
 
-#: scripts/controllers/StateController.js:114
+#: scripts/controllers/StateController.js:116
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
-"current file and then stop."
+"current file and then stop. If you terminate the task, the backup could be "
+"left in an inconsistent state."
 msgstr ""
-"È possibile interrompere l'operazione immediatamente, o consentire il "
-"processo di continuare il suo file corrente e poi fermarsi."
+"È possibile interrompere immediatamente l'attività o consentire al processo "
+"di continuare il suo file corrente e quindi interromperlo. Se si termina "
+"l'attività, il backup potrebbe rimanere in uno stato inconsistente."
 
-#: scripts/controllers/EditBackupController.js:402
+#: scripts/controllers/EditBackupController.js:406
 msgid ""
 "You have changed the encryption mode. This may break stuff. You are "
 "encouraged to create a new backup instead"
@@ -3158,7 +3688,7 @@ msgstr ""
 "Hai modificato l'algoritmo di crittografia. Questa azione potrebbe "
 "corrompere i dati. Ti consigliamo di creare un nuovo backup."
 
-#: scripts/controllers/EditBackupController.js:393
+#: scripts/controllers/EditBackupController.js:397
 msgid ""
 "You have changed the passphrase, which is not supported. You are encouraged "
 "to create a new backup instead."
@@ -3166,7 +3696,7 @@ msgstr ""
 "Hai modificato la passphrase ma questo non è supportato. Ti consigliamo di "
 "creare un nuovo backup."
 
-#: scripts/controllers/EditBackupController.js:429
+#: scripts/controllers/EditBackupController.js:433
 msgid ""
 "You have chosen not to encrypt the backup. Encryption is recommended for all"
 " data stored on a remote server."
@@ -3174,13 +3704,13 @@ msgstr ""
 "Hai scelto di non criptare il backup. È consigliabile criptare tutti i dati "
 "custoditi su server remoti."
 
-#: scripts/controllers/RestoreController.js:303
+#: scripts/controllers/RestoreController.js:302
 msgid "You have chosen to restore to a new location, but not entered one"
 msgstr ""
 "Si è scelto di ripristinare in una nuova posizione, ma non ne è stata "
 "inserita una"
 
-#: scripts/controllers/EditBackupController.js:359
+#: scripts/controllers/EditBackupController.js:363
 msgid ""
 "You have generated a strong passphrase. Make sure you have made a safe copy "
 "of the passphrase, as the data cannot be recovered if you lose the "
@@ -3190,92 +3720,94 @@ msgstr ""
 " della passphrase, poiché i dati non possono essere recuperati se perdi la "
 "passphrase."
 
-#: scripts/controllers/EditBackupController.js:259
+#: scripts/controllers/EditBackupController.js:263
 msgid "You must choose at least one source folder"
 msgstr "Devi scegliere almeno una cartella sorgente"
 
-#: scripts/services/EditUriBuiltins.js:914
+#: scripts/services/EditUriBuiltins.js:1210
 msgid "You must enter a domain name to use v3 API"
 msgstr "Devi inserire un nome di dominio per utilizzare l'API v3"
 
-#: scripts/controllers/EditBackupController.js:239
+#: scripts/controllers/EditBackupController.js:243
 msgid "You must enter a name for the backup"
-msgstr "Devi inserire un nome un nome per il backup"
+msgstr "Devi inserire un nome per il backup"
 
-#: scripts/controllers/EditBackupController.js:246
+#: scripts/controllers/EditBackupController.js:250
 msgid "You must enter a passphrase or disable encryption"
 msgstr "Devi inserire una passphrase o disattivare la crittografia"
 
-#: scripts/services/EditUriBuiltins.js:911
+#: scripts/services/EditUriBuiltins.js:1207
 msgid "You must enter a password to use v3 API"
 msgstr "Devi inserire una password per utilizzare l'API v3"
 
-#: scripts/controllers/EditBackupController.js:295
+#: scripts/controllers/EditBackupController.js:299
 msgid "You must enter a positive number of backups to keep"
 msgstr "Devi inserire un numero positivo di backup da mantenere"
 
-#: scripts/services/EditUriBuiltins.js:917
+#: scripts/services/EditUriBuiltins.js:1213
 msgid "You must enter a tenant (aka project) name to use v3 API"
-msgstr "Devi inserire un nome tenant (aka progetto) per utilizzare l'API v3"
+msgstr ""
+"Devi inserire un nome detentore (noto anche come progetto) per utilizzare "
+"l'API v3"
 
-#: scripts/services/EditUriBuiltins.js:931
-msgid "You must enter a tenant name if you do not provide an API Key"
-msgstr "Devi inserire il nome di un inquilino se non fornisci una Chiave API"
+#: scripts/services/EditUriBuiltins.js:1227
+msgid "You must enter a tenant name if you do not provide an API key"
+msgstr "Devi inserire un nome detentore se non fornisci una chiave API"
 
-#: scripts/controllers/EditBackupController.js:288
+#: scripts/controllers/EditBackupController.js:292
 msgid "You must enter a valid duration for the time to keep backups"
 msgstr "Devi inserire un periodo di tempo valido in cui mantenere i backup"
 
-#: scripts/controllers/EditBackupController.js:305
+#: scripts/controllers/EditBackupController.js:309
 msgid "You must enter a valid retention policy string"
 msgstr "Devi inserire una stringa di criteri di conservazione valida"
 
-#: scripts/services/EditUriBuiltins.js:928
-msgid "You must enter either a password or an API Key"
-msgstr "Devi inserire una password o una Chiave API"
+#: scripts/services/EditUriBuiltins.js:1224
+msgid "You must enter either a password or an API key"
+msgstr "Devi inserire una password o una chiave API"
 
-#: scripts/services/EditUriBuiltins.js:935
-msgid "You must enter either a password or an API Key, not both"
-msgstr "Devi inserire una password o una Chiave API, non entrambe"
+#: scripts/services/EditUriBuiltins.js:1231
+msgid "You must enter either a password or an API key, not both"
+msgstr "Devi inserire una password o una chiave API, non entrambe"
 
-#: scripts/services/EditUriBackendConfig.js:115
+#: scripts/services/EditUriBackendConfig.js:122
 msgid "You must fill in the password"
 msgstr "Devi compilare in password"
 
-#: scripts/services/EditUriBackendConfig.js:92
+#: scripts/services/EditUriBackendConfig.js:99
 msgid "You must fill in the server name or address"
 msgstr "Devi compilare in nome del server o indirizzo"
 
-#: scripts/services/EditUriBackendConfig.js:113
-#: scripts/services/EditUriBackendConfig.js:122
+#: scripts/services/EditUriBackendConfig.js:120
+#: scripts/services/EditUriBackendConfig.js:129
 msgid "You must fill in the username"
 msgstr "Devi compilare in nome utente"
 
-#: scripts/services/EditUriBackendConfig.js:78
+#: scripts/services/EditUriBackendConfig.js:85
 msgid "You must fill in {{field}}"
 msgstr "Devi compilare in {{field}}"
 
-#: scripts/services/EditUriBuiltins.js:907
+#: scripts/services/EditUriBuiltins.js:1203
 msgid "You must select or fill in the AuthURI"
 msgstr "Devi selezionare o compilare in AuthURI"
 
-#: scripts/services/EditUriBuiltins.js:949
+#: scripts/services/EditUriBuiltins.js:1245
 msgid "You must select or fill in the server"
 msgstr "Devi selezionare o compilare in server"
 
-#: scripts/services/EditUriBackendConfig.js:99
+#: scripts/services/EditUriBackendConfig.js:106
 msgid "You must specify a path"
 msgstr "Devi specificare un percorso"
 
-#: scripts/services/EditUriBackendConfig.js:85
-msgid "You should fill in {{field}}{{reason}}"
-msgstr "Devi compilare {{field}}{{reason}}"
+#: scripts/services/EditUriBackendConfig.js:92
+msgid "You should fill in {{field}} {{reason}}"
+msgstr "Dovresti compilare {{field}} {{reason}}"
 
-#: templates/restore.html:149
+#: templates/restore.html:144
 msgid "Your files and folders have been restored successfully."
 msgstr "I tuoi file e cartelle sono stati ripristinati correttamente."
 
-#: scripts/controllers/EditBackupController.js:344
+#: scripts/controllers/EditBackupController.js:348
 msgid "Your passphrase is easy to guess. Consider changing passphrase."
 msgstr ""
 "La tua passphrase è facile da indovinare. Considera l'idea di cambiarla."
@@ -3284,31 +3816,93 @@ msgstr ""
 msgid "bucket/folder/subfolder"
 msgstr "bucket/cartella/sottocartella"
 
-#: scripts/services/AppUtils.js:81
+#: scripts/services/AppUtils.js:87
 msgid "byte"
 msgstr "byte"
 
-#: scripts/services/AppUtils.js:114
+#: scripts/services/AppUtils.js:120
 msgid "byte/s"
 msgstr "byte/s"
 
-#: templates/addoredit.html:272 templates/addoredit.html:355
-#: templates/advancedoptionseditor.html:28
-#: templates/advancedoptionseditor.html:35
+#: scripts/services/EditUriBuiltins.js:1399
+msgid "cos_app_id"
+msgstr "cos_app_id"
+
+#: scripts/services/EditUriBuiltins.js:1403
+msgid "cos_bucket"
+msgstr "cos_bucket"
+
+#: scripts/services/EditUriBuiltins.js:1402
+msgid "cos_region"
+msgstr "cos_region"
+
+#: scripts/services/EditUriBuiltins.js:1400
+msgid "cos_secret_id"
+msgstr "cos_secret_id"
+
+#: scripts/services/EditUriBuiltins.js:1401
+msgid "cos_secret_key"
+msgstr "cos_secret_key"
+
+#: templates/addoredit.html:272 templates/addoredit.html:357
+#: templates/advancedoptionseditor.html:29
+#: templates/advancedoptionseditor.html:36
 msgid "custom"
 msgstr "Personalizzato"
 
-#: templates/settings.html:132
-msgid "public usage statistics"
-msgstr "statistiche sull'uso pubblico"
+#: templates/backup-result/entryline.html:4
+msgid "failed"
+msgstr "non riuscito"
 
-#: templates/commandline.html:49 templates/restoredirect.html:95
-#: templates/waitarea.html:15
+#: templates/backends/rclone.html:3
+msgid "local repository, leave empty for local"
+msgstr "repository locale, lascia vuoto per il locale"
+
+#: scripts/services/EditUriBuiltins.js:1412
+msgid "oss_access_key_id"
+msgstr "oss_access_key_id"
+
+#: scripts/services/EditUriBuiltins.js:1413
+msgid "oss_access_key_secret"
+msgstr "oss_access_key_secret"
+
+#: scripts/services/EditUriBuiltins.js:1415
+msgid "oss_bucket_name"
+msgstr "oss_bucket_name"
+
+#: scripts/services/EditUriBuiltins.js:1411
+msgid "oss_endpoint"
+msgstr "oss_endpoint"
+
+#: scripts/services/EditUriBuiltins.js:1414
+msgid "oss_region"
+msgstr "oss_region"
+
+#: templates/backends/pcloud.html:10
+msgid "pCloud EU (eapi.pcloud.com)"
+msgstr "pCloud EU (eapi.pcloud.com)"
+
+#: templates/backends/pcloud.html:7
+msgid "pCloud Global (api.pcloud.com)"
+msgstr "pCloud Global (api.pcloud.com)"
+
+#: templates/backends/rclone.html:11
+msgid "remote path, e.g. backup"
+msgstr "percorso remoto, ad es. backup"
+
+#: templates/backends/rclone.html:7
+msgid "remote repository, e.g. remote"
+msgstr "repository remoto, ad es. remoto"
+
+#: templates/restoredirect.html:95 templates/waitarea.html:15
 msgid "resume now"
 msgstr "riprendi ora"
 
-#: scripts/services/EditUriBuiltins.js:843
-#: scripts/services/EditUriBuiltins.js:854
+#: scripts/services/EditUriBuiltins.js:1362
+msgid "storj_shared_access"
+msgstr "storj_shared_access"
+
+#: scripts/services/EditUriBuiltins.js:1180
 msgid "unless you are explicitly specifying --group-id"
 msgstr "a meno che tu non stia specificando esplicitamente --group-id"
 
@@ -3325,15 +3919,22 @@ msgstr ""
 "href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} è sotto la licenza"
 " <a href=\"{{licenselink}}\">{{licensename}}</a>."
 
-#: scripts/controllers/StateController.js:51
+#: templates/about.html:53
+msgid ""
+"{{brandingService.appName}} is using the following third party libraries:"
+msgstr ""
+"{{brandingService.appName}} utilizza le seguenti librerie di terze parti:"
+
+#: scripts/controllers/StateController.js:53
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
 msgstr "Caricamento di {{files}} file ({{size}}) {{speed_txt}}"
 
-#: templates/home.html:74 templates/restorewizard.html:23
+#: templates/home.html:101 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versione"
 msgstr[1] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versioni"
+msgstr[2] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versioni"
 
 #: templates/pause.html:26
 msgid "{{number}} Hour"
@@ -3348,10 +3949,6 @@ msgstr "{{number}} Ore"
 msgid "{{number}} Minutes"
 msgstr "{{number}} Minuti"
 
-#: templates/home.html:54
+#: templates/home.html:81
 msgid "{{time}} (took {{duration}})"
 msgstr "{{time}} (durata {{duration}})"
-
-#: templates/localdatabase.html:4
-msgid "…loading…"
-msgstr "…Caricamento in corso…"

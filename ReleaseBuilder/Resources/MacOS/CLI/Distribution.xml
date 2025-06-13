@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Duplicati Server</title>
+    <organization>com.duplicati</organization>
+
+    <license file="LICENSE.html"/>
+
+    <pkg-ref id="com.duplicati.cli"/>
+    <pkg-ref id="com.duplicati.server.daemon"/>
+
+    <options require-scripts="false" hostArchitectures="$HOSTARCH"/>
+    <choices-outline>
+        <line choice="com.duplicati.cli"/>
+        <line choice="com.duplicati.server.daemon"/>
+    </choices-outline>
+
+    <choice id="com.duplicati.cli" title="Duplicati CLI" description="The main Duplicati CLI and Server" start_selected="true" enabled="false" visible="false">
+        <pkg-ref id="com.duplicati.cli"/>
+    </choice>
+
+    <choice id="com.duplicati.server.daemon" title="Launch at login" description="Starts the Duplicati Server automatically when you log in" start_selected="true">
+        <pkg-ref id="com.duplicati.server.daemon"/>
+    </choice>
+    
+    <pkg-ref id="com.duplicati.cli" version="0" onConclusion="none">DuplicatiCLI.pkg</pkg-ref>
+    <pkg-ref id="com.duplicati.server.daemon" version="0" onConclusion="none">DuplicatiServerDaemon.pkg</pkg-ref>
+</installer-gui-script>
