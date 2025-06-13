@@ -23,6 +23,7 @@ using System.IO;
 using System.Threading;
 using Duplicati.Library.Main;
 using NUnit.Framework;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {

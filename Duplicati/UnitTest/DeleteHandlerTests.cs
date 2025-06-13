@@ -26,6 +26,7 @@ using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace Duplicati.UnitTest
 {
@@ -78,10 +79,10 @@ namespace Duplicati.UnitTest
             // Although version 1 is older than the specified TimeSpan, we do not delete
             // it because it is the most recent full backup.
             TimeSpan timeSpan = new TimeSpan(1, 0, 0, 0);
-            IListResultFileset[] expectedFilesetsToRemove = {filesets[0]};
+            IListResultFileset[] expectedFilesetsToRemove = { filesets[0] };
 
             Random random = new Random();
-            Options options = new Options(new Dictionary<string, string> {{"keep-time", $"{(int) timeSpan.TotalSeconds}s"}});
+            Options options = new Options(new Dictionary<string, string> { { "keep-time", $"{(int)timeSpan.TotalSeconds}s" } });
             KeepTimeRemover remover = new KeepTimeRemover(options);
             IListResultFileset[] filesetsToRemove = remover.GetFilesetsToDelete(filesets.OrderBy(x => random.Next())).ToArray();
             CollectionAssert.AreEquivalent(expectedFilesetsToRemove, filesetsToRemove);
@@ -110,7 +111,7 @@ namespace Duplicati.UnitTest
                 new Fileset(5, BackupType.PARTIAL_BACKUP, new DateTime(2000, 1, 6)),
             };
 
-            Options options = new Options(new Dictionary<string, string> {{"keep-versions", "2"}});
+            Options options = new Options(new Dictionary<string, string> { { "keep-versions", "2" } });
             IListResultFileset[] expectedFilesetsToRemove =
             {
                 filesets[0], // Delete; third oldest full backup.
@@ -129,7 +130,7 @@ namespace Duplicati.UnitTest
         [Category("DeleteHandler")]
         public void RetentionPolicyRemover()
         {
-            Options options = new Options(new Dictionary<string, string> {{"retention-policy", "1W:U,3M:1D,1Y:1W,U:1M"}});
+            Options options = new Options(new Dictionary<string, string> { { "retention-policy", "1W:U,3M:1D,1Y:1W,U:1M" } });
 
             DateTime now = DateTime.Now;
             IListResultFileset[] filesets =
@@ -207,7 +208,7 @@ namespace Duplicati.UnitTest
                 new Fileset(4, BackupType.FULL_BACKUP, new DateTime(2000, 1, 5))
             };
 
-            Options options = new Options(new Dictionary<string, string> {{"version", "0,3,4"}});
+            Options options = new Options(new Dictionary<string, string> { { "version", "0,3,4" } });
             IListResultFileset[] expectedFilesetsToRemove =
             {
                 filesets[0],

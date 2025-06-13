@@ -33,6 +33,7 @@ using Duplicati.Library.Main.Volumes;
 using NUnit.Framework;
 using IFileEntry = Duplicati.Library.Interface.IFileEntry;
 using Utility = Duplicati.Library.Utility.Utility;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {

@@ -24,6 +24,7 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {
@@ -34,12 +35,12 @@ namespace Duplicati.UnitTest
         public void DeleteAllRemoteFiles()
         {
             string filePath = Path.Combine(this.DATAFOLDER, "file");
-            File.WriteAllBytes(filePath, new byte[] {0, 1, 2});
+            File.WriteAllBytes(filePath, new byte[] { 0, 1, 2 });
 
             Dictionary<string, string> firstOptions = new Dictionary<string, string>(this.TestOptions);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, firstOptions, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -58,7 +59,7 @@ namespace Duplicati.UnitTest
             {
                 // An exception should be thrown due to unrecognized files in the target folder.
                 // ReSharper disable once AccessToDisposedClosure
-                Assert.That(() => c.Backup(new[] {this.DATAFOLDER}), Throws.Exception);
+                Assert.That(() => c.Backup(new[] { this.DATAFOLDER }), Throws.Exception);
             }
 
             // We should be able to safely remove backend files from the second backup by referring
@@ -81,7 +82,7 @@ namespace Duplicati.UnitTest
             secondOptions["prefix"] = new Options(firstOptions).Prefix + "2";
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, secondOptions, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -106,7 +107,7 @@ namespace Duplicati.UnitTest
             // The first backup configuration should still run normally.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, firstOptions, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }

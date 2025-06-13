@@ -30,6 +30,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.StreamUtil;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework.Legacy;
 
 namespace Duplicati.UnitTest
 {
