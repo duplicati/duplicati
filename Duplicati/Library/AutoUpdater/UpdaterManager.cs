@@ -231,7 +231,10 @@ namespace Duplicati.Library.AutoUpdater
                         using var timeoutToken = new CancellationTokenSource();
                         timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
                         using (var client = HttpClientHelper.CreateClient())
+                        {
+                            client.Timeout = Timeout.InfiniteTimeSpan;
                             client.DownloadFile(request, tmpfile, null, timeoutToken.Token).Await();
+                        }
 
                         using (var fs = File.OpenRead(tmpfile))
                         {
@@ -372,7 +375,10 @@ namespace Duplicati.Library.AutoUpdater
                             timeoutToken.CancelAfter(TimeSpan.FromSeconds(DOWNLOAD_OPERATION_TIMEOUT_SECONDS));
 
                             using (var client = HttpClientHelper.CreateClient())
+                            {
+                                client.Timeout = Timeout.InfiniteTimeSpan;
                                 client.DownloadFile(request, tempfile, cb, timeoutToken.Token).Await();
+                            }
 
                             var sha256 = System.Security.Cryptography.SHA256.Create();
                             var md5 = System.Security.Cryptography.MD5.Create();

@@ -85,7 +85,7 @@ namespace Duplicati.UnitTest
             {
                 try
                 {
-                    using var httpClient = new HttpClient();
+                    using var httpClient = new HttpClient(); // Because it's a test unit, will use a new instance created via default constructor.
                     using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
                     if (systemIO.FileExists(destinationFilePath))

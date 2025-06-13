@@ -70,8 +70,15 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
     /// </summary>
     public bool AutoV2 { get; set; } = true;
 
+    private static HttpClient CreateHttpClientWithInfiniteTimeout()
+    {
+        var client = HttpClientHelper.CreateClient();
+        client.Timeout = Timeout.InfiniteTimeSpan;
+        return client;
+    }
+    
     public OAuthHelperHttpClient(string authid, string servicename, string oauthurl, HttpClient httpClient = null, string useragent = null)
-        : base(httpClient ?? HttpClientHelper.CreateClient())
+        : base(httpClient ?? CreateHttpClientWithInfiniteTimeout())
     {
         _Authid = authid;
         _OAuthUrl = oauthurl;

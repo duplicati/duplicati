@@ -148,7 +148,8 @@ namespace Duplicati.Library.Backend
             m_pageSize = Utility.Utility.ParseIntOption(options, PAGE_SIZE_OPTION, DEFAULT_PAGE_SIZE);
             m_softDelete = Utility.Utility.ParseBoolOption(options, SOFT_DELETE_OPTION);
 
-            m_client = new HttpClient();
+            m_client = HttpClientHelper.CreateClient();
+            m_client.Timeout = Timeout.InfiniteTimeSpan;
             m_client.BaseAddress = new System.Uri(DEFAULT_API_URL);
         }
 
