@@ -11,7 +11,7 @@ var backupApp = angular.module(
 );
 
 backupApp.constant('appConfig', {
-    login_url: '/login.html?v=2.0.0.7'
+    login_url: '../login.html?v=2.0.0.7'
 });
 
 backupApp.config(['$routeProvider',

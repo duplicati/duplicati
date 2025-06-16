@@ -22,7 +22,7 @@ backupApp.controller('AppController', function($rootScope, $scope, $cookies, $lo
     };
 
     $scope.login = function() {
-        location.href = '/login.html';
+        location.href = '../login.html';
     };
 
     $scope.resume = function() {
@@ -40,7 +40,7 @@ backupApp.controller('AppController', function($rootScope, $scope, $cookies, $lo
         // Calling `/auth/logout` also works, but does not revoke the token in the database
         AppService.post('/auth/refresh/logout').then(function() {
             AppService.clearAccessToken();
-            location.href = '/login.html';            
+            location.href = '../login.html';            
         }, AppUtils.connectionError);
     };
 
