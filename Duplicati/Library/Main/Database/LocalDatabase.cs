@@ -1733,6 +1733,40 @@ ORDER BY ""A"".""BlocksetID"", ""B"".""Index""
             }
         }
 
+        /// <summary>
+        /// Returns the ID of an empty metadata blockset. If no empty blockset is found, it returns the ID of the smallest blockset that is not in the given block volume IDs.
+        /// If no such blockset is found, it returns -1.
+        /// </summary>
+        /// <param name="blockVolumeIds">The volume ids to ignore when searching for a suitable metadata block</param>
+        /// <param name="emptyHash">The hash of the empty blockset</param>
+        /// <param name="emptyHashSize">The size of the empty blockset</param>
+        /// <param name="transaction">The transaction to use for the query</param>
+        /// <returns>The ID of the empty metadata blockset, or -1 if no suitable blockset is found</returns>
+        public long GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, IDbTransaction? transaction)
+        {
+            using var cmd = Connection.CreateCommand(transaction, @"SELECT ""ID"" FROM ""Blockset"" WHERE ""FullHash"" = @EmptyHash AND ""Length"" == @EmptyHashSize AND ""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds))")
+              .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds)
+              .SetParameterValue("@EmptyHash", emptyHash)
+              .SetParameterValue("@EmptyHashSize", emptyHashSize);
+
+            var res = cmd.ExecuteScalarInt64(-1);
+
+            // No empty block found, try to find a zero-length block instead
+            if (res < 0 && emptyHashSize != 0)
+                res = cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" == @EmptyHashSize AND ""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds))")
+                  .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds)
+                  .SetParameterValue("@EmptyHashSize", 0)
+                  .ExecuteScalarInt64(-1);
+
+            // No empty block found, pick the smallest one
+            if (res < 0)
+                res = cmd.SetCommandAndParameters(@"SELECT ""Blockset"".""ID"" FROM ""BlocksetEntry"", ""Blockset"", ""Metadataset"", ""Block"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds) AND ""Blockset"".""Length"" > 0 ORDER BY ""Blockset"".""Length"" ASC LIMIT 1")
+                  .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds)
+                  .ExecuteScalarInt64(-1);
+
+            return res;
+        }
+
         public virtual void Dispose()
         {
             if (IsDisposed)
