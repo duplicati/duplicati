@@ -29,11 +29,22 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
 using Microsoft.Data.Sqlite;
+using Google.Protobuf.WellKnownTypes;
 
 namespace Duplicati.Library.Main.Database
 {
+    /// <summary>
+    /// A local database that stores file lists and filesets.
+    /// </summary>
     internal class LocalListDatabase : LocalDatabase
     {
+        /// <summary>
+        /// Creates a new instance of the LocalListDatabase.
+        /// </summary>
+        /// <param name="path">The path to the database file.</param>
+        /// <param name="pagecachesize">The size of the page cache.</param>
+        /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
+        /// <returns>A task that when awaited contains a new instance of LocalListDatabase.</returns>
         public static async Task<LocalListDatabase> CreateAsync(string path, long pagecachesize, LocalListDatabase? dbnew = null)
         {
             dbnew ??= new LocalListDatabase();
@@ -46,45 +57,115 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Interface for file versions.
+        /// </summary>
         public interface IFileversion
         {
+            /// <summary>
+            /// Gets the path of the file, or null if not available.
+            /// </summary>
             string? Path { get; }
+            /// <summary>
+            /// Asynchronously retrieves the sizes of the file versions.
+            /// </summary>
             IAsyncEnumerable<long> Sizes();
         }
 
+        /// <summary>
+        /// Interface for filesets.
+        /// </summary>
         public interface IFileset
         {
+            /// <summary>
+            /// Gets the version of the fileset.
+            /// </summary>
             long Version { get; }
+            /// <summary>
+            /// Gets or sets a value indicating whether the fileset is a full backup.
+            /// </summary>
             int IsFullBackup { get; set; }
+            /// <summary>
+            /// Gets the timestamp of the fileset.
+            /// </summary>
             DateTime Time { get; }
+            /// <summary>
+            /// Gets the count of files in the fileset.
+            /// </summary>
             long FileCount { get; }
+            /// <summary>
+            /// Gets the total sizes of files in the fileset.
+            /// </summary>
             long FileSizes { get; }
         }
 
+        /// <summary>
+        /// Interface for managing file sets in the local database.
+        /// </summary>
         public interface IFileSets : IDisposable, IAsyncDisposable
         {
+            /// <summary>
+            /// Gets all of the filesets in the database as an asynchronous enumerable, including file count and total size.
+            /// </summary>
             IAsyncEnumerable<IFileset> Sets();
+            /// <summary>
+            /// Gets all of the filesets in the database as an asynchronous enumerable, omitting file count and total size.
+            /// </summary>
             IAsyncEnumerable<IFileset> QuickSets();
+            /// <summary>
+            /// Gets the files in the filesets that match the provided filter as an asynchronous enumerable.
+            /// </summary>
             IAsyncEnumerable<IFileversion> SelectFiles(IFilter filter);
+            /// <summary>
+            /// Gets the largest prefix of files in the filesets that match the provided filter as an asynchronous enumerable.
+            /// </summary>
             IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter);
+            /// <summary>
+            /// Selects the contents of a folder in the filesets that match the provided filter as an asynchronous enumerable.
+            /// </summary>
             IAsyncEnumerable<IFileversion> SelectFolderContents(IFilter filter);
             Task TakeFirst();
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="FileSets"/> class implementing the <see cref="IFileSets"> interface.
+        /// </summary>
         private class FileSets : IFileSets
         {
+            /// <summary>
+            /// The database instance to execute commands against.
+            /// </summary>
             private LocalDatabase m_db = null!;
+            /// <summary>
+            /// The name of the temporary table used to store filesets.
+            /// </summary>
             private string m_tablename = null!;
+            /// <summary>
+            /// An array of key-value pairs representing filesets, where the key is the fileset ID and the value is the timestamp.
+            /// </summary>
             private KeyValuePair<long, DateTime>[] m_filesets = [];
 
+            /// <summary>
+            /// Private constructor to prevent instantiation without using CreateAsync.
+            /// </summary>
             [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
             public FileSets(LocalListDatabase owner, DateTime time, long[] versions)
             {
                 throw new NotSupportedException("Use CreateAsync instead.");
             }
 
+            /// <summary>
+            /// Private constructor to prevent instantiation without using CreateAsync.
+            /// </summary>
             private FileSets() { }
 
+            /// <summary>
+            /// Asynchronously creates a new instance of the <see cref="FileSets"/> class.
+            /// </summary>
+            /// <param name="owner">The owner database instance.</param>
+            /// <param name="time">The time to filter filesets by.</param>
+            /// <param name="versions">An array of versions to filter filesets by.</param>
+            /// <returns>A task that when awaited contains a new instance of <see cref="FileSets"/>.</returns>
             public static async Task<FileSets> CreateAsync(LocalListDatabase owner, DateTime time, long[] versions)
             {
                 var fs = new FileSets
@@ -126,14 +207,40 @@ namespace Duplicati.Library.Main.Database
                 return fs;
             }
 
+            /// <summary>
+            /// Internal class representing a fileset.
+            /// </summary>
             private class Fileset : IFileset
             {
+                /// <summary>
+                /// The backup version this fileset is part of.
+                /// </summary>
                 public long Version { get; private set; }
+                /// <summary>
+                /// Indicates whether this fileset is a full backup (1) or a partial backup (0).
+                /// </summary>
                 public int IsFullBackup { get; set; }
+                /// <summary>
+                /// The timestamp of the fileset, indicating when it was created.
+                /// </summary>
                 public DateTime Time { get; private set; }
+                /// <summary>
+                /// The count of files in this fileset.
+                /// </summary>
                 public long FileCount { get; private set; }
+                /// <summary>
+                /// The total sizes of files in this fileset.
+                /// </summary>
                 public long FileSizes { get; private set; }
 
+                /// <summary>
+                /// Initializes a new instance of the <see cref="Fileset"/> class.
+                /// </summary>
+                /// <param name="version">The backup version of the fileset.</param>
+                /// <param name="isFullBackup">Indicates whether this fileset is a full backup (1) or a partial backup (0).</param>
+                /// <param name="time">The timestamp of the fileset, indicating when it was created.</param>
+                /// <param name="filecount">The count of files in this fileset.</param>
+                /// <param name="filesizes">The total sizes of files in this fileset.</param>
                 public Fileset(long version, int isFullBackup, DateTime time, long filecount, long filesizes)
                 {
                     Version = version;
@@ -144,12 +251,28 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Implementation of the <see cref="IFileversion"/>  interface.
+            /// </summary>
             private class Fileversion : IFileversion
             {
+                /// <summary>
+                /// The SqliteDataReader used to read file version data.
+                /// </summary>
                 private readonly SqliteDataReader m_reader;
+                /// <summary>
+                /// The path of the file, or null if not available.
+                /// </summary>
                 public string? Path { get; private set; }
+                /// <summary>
+                /// Indicates whether there are more file versions to read.
+                /// </summary>
                 public bool More { get; private set; }
 
+                /// <summary>
+                /// Initializes a new instance of the <see cref="Fileversion"/> class.
+                /// </summary>
+                /// <param name="reader">The SqliteDataReader used to read file version data.</param>
                 public Fileversion(SqliteDataReader reader)
                 {
                     m_reader = reader;
@@ -167,6 +290,9 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Internal class representing a fixed file version with no sizes.
+            /// </summary>
             private class FileversionFixed : IFileversion
             {
                 public string? Path { get; internal set; }
@@ -178,6 +304,12 @@ namespace Duplicati.Library.Main.Database
                 return GetLargestPrefix(filter, null);
             }
 
+            /// <summary>
+            /// Recursively finds the largest prefix of files in the filesets that match the provided filter.
+            /// </summary>
+            /// <param name="filter"> The filter to apply to the files.</param>
+            /// <param name="prefixrule">The prefix rule to apply, or null if no prefix rule is specified.</param>
+            /// <returns>An asynchronous enumerable of file versions representing the largest prefix.</returns>
             private async IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string? prefixrule)
             {
                 using (var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, filter).ConfigureAwait(false))
@@ -302,6 +434,13 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Asynchronously retrieves all folder entries from the specified table that match the given prefix.
+            /// </summary>
+            /// <param name="cmd">The SqliteCommand to execute.</param>
+            /// <param name="prefix">The prefix to filter folder entries by.</param>
+            /// <param name="table">The name of the table to query.</param>
+            /// <returns>An asynchronous enumerable of folder entries.</returns>
             private async IAsyncEnumerable<string> SelectFolderEntries(SqliteCommand cmd, string prefix, string table)
             {
                 if (!string.IsNullOrEmpty(prefix))
@@ -584,6 +723,9 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Deletes all filesets except the most recent one.
+            /// </summary>
             public async Task TakeFirst()
             {
                 using var cmd = m_db.Connection.CreateCommand();
@@ -706,6 +848,12 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="FileSets"/> with the specified time and versions.
+        /// </summary>
+        /// <param name="time">The time to filter filesets by.</param>
+        /// <param name="versions">An array of versions to filter filesets by.</param>
+        /// <returns>A task that when awaited returns a new instance of <see cref="FileSets"/>.</returns>
         public async Task<IFileSets> SelectFileSets(DateTime time, long[] versions)
         {
             return await FileSets.CreateAsync(this, time, versions)
@@ -715,17 +863,17 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Represents a fileset entry in the list fileset results.
         /// </summary>
-        /// <param name="Version">The fileset version
-        /// <param name="IsFullBackup">Flag indicating if the backup is a full backup or synthetic backup</param>
-        /// <param name="Time">The timestamp of the fileset</param>
-        /// <param name="FileCount">The number of files in the fileset</param>
-        /// <param name="FileSizes">>The total size of files in the fileset</param>
+        /// <param name="Version">The fileset version.</param>
+        /// <param name="IsFullBackup">Flag indicating if the backup is a full backup or synthetic backup.</param>
+        /// <param name="Time">The timestamp of the fileset.</param>
+        /// <param name="FileCount">The number of files in the fileset.</param>
+        /// <param name="FileSizes">>The total size of files in the fileset.</param>
         private sealed record FilesetEntry(long Version, bool? IsFullBackup, DateTime Time, long? FileCount, long? FileSizes) : IListFilesetResultFileset;
 
         /// <summary>
-        /// Lists all filesets with summary data
+        /// Lists all filesets with summary data.
         /// </summary>
-        /// <returns>A collection of fileset entries</returns>
+        /// <returns>An asynchronous enumerable of fileset entries.</returns>
         public async IAsyncEnumerable<IListFilesetResultFileset> ListFilesetsExtended()
         {
             const string query = @"
@@ -782,7 +930,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filesetid">The fileset ID to filter the folder entries.</param>
         /// <param name="offset">The offset for pagination.</param>
         /// <param name="limit">>The limit for pagination.</param>
-        /// <returns>A paginated result set of folder entries.</returns>
+        /// <returns>A task that when awaited returns a paginated result set of folder entries.</returns>
         public async Task<IPaginatedResults<IListFolderEntry>> ListFolder(IEnumerable<long> prefixIds, long filesetid, long offset, long limit)
         {
             if (offset != 0 && limit <= 0)
@@ -890,9 +1038,10 @@ namespace Duplicati.Library.Main.Database
         /// Lists the folder entries for a given fileset and prefix IDs.
         /// </summary>
         /// <param name="prefixIds">The prefix IDs to return entries for.</param>
+        /// <param name="filesetid">The fileset ID to filter the folder entries.</param>
         /// <param name="offset">The offset for pagination.</param>
-        /// <param name="limit">>The limit for pagination.</param>
-        /// <returns>A paginated result set of folder entries.</returns>
+        /// <param name="limit">The limit for pagination.</param>
+        /// <returns>A task that when awaited returns a paginated result set of folder entries.</returns>
         public async Task<IPaginatedResults<IListFolderEntry>> ListFilesetEntries(IEnumerable<long> prefixIds, long filesetid, long offset, long limit)
         {
             if (offset != 0 && limit <= 0)
@@ -992,7 +1141,7 @@ namespace Duplicati.Library.Main.Database
         /// Gets the prefix IDs for a given set of folder-prefixes.
         /// </summary>
         /// <param name="prefixes">The prefixes to get the IDs for.</param>
-        /// <returns>>A list of prefix IDs.</returns>
+        /// <returns>An asynchronous enumerable of prefix IDs.</returns>
         public IAsyncEnumerable<long> GetPrefixIds(IEnumerable<string> prefixes)
         {
             using var cmd = m_connection.CreateCommand();
@@ -1012,8 +1161,8 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Gathers root prefixes from the fileset entries.
         /// </summary>
-        /// <param name="filesetid">The filesetId to get the prefixes for</param>
-        /// <returns>A list of root prefixes</returns>
+        /// <param name="filesetid">The filesetId to get the prefixes for.</param>
+        /// <returns>An asynchronous enumerable of root prefixes.</returns>
         public IAsyncEnumerable<long> GetRootPrefixes(long filesetid)
         {
             using var cmd = m_connection.CreateCommand();
@@ -1053,7 +1202,7 @@ namespace Duplicati.Library.Main.Database
         /// Gathers all prefixes and their parent prefix IDs from the fileset entries.
         /// </summary>
         /// <param name="filesetid">The filesetId to get the prefixes for</param>
-        /// <returns>A list of (PrefixID, ParentPrefixID) pairs</returns>
+        /// <returns>A task that when awaited returns an asynchronous enumerable of (PrefixID, ParentPrefixID) pairs.</returns>
         public async Task<IAsyncEnumerable<(long PrefixId, long ParentPrefixId)>> GetRootPrefixesWithParents(long filesetid)
         {
             using var cmd = m_connection.CreateCommand();
@@ -1120,7 +1269,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filesetIds">Optional fileset IDs to restrict the search to.</param>
         /// <param name="offset">Pagination offset.</param>
         /// <param name="limit">Pagination limit.</param>
-        /// <returns>All matching file versions ordered by path and then version time.</returns>
+        /// <returns>A task that when awaited returns all matching file versions ordered by path and then version time.</returns>
         public async Task<IPaginatedResults<IListFileVersion>> ListFileVersions(IEnumerable<string> paths, long[]? filesetIds, long offset, long limit)
         {
             if (paths == null || !paths.Any())
@@ -1265,7 +1414,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filesetIds">Optional fileset IDs to restrict the search to.</param>
         /// <param name="offset">The offset for pagination.</param>
         /// <param name="limit">The limit for pagination.</param>
-        /// <returns>All matching file versions ordered by path and then version time.</returns>
+        /// <returns>A task that when awaited returns all matching file versions ordered by path and then version time.</returns>
         public async Task<IPaginatedResults<ISearchFileVersion>> SearchEntries(IEnumerable<string>? pathprefixes, IFilter filter, long[]? filesetIds, long offset, long limit)
         {
             if (offset != 0 && limit <= 0)

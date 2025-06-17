@@ -29,15 +29,25 @@ using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
+    /// <summary>
+    /// This class is used to recreate a local database from a backup.
+    /// </summary>
     internal class LocalRecreateDatabase : LocalRestoreDatabase
     {
         /// <summary>
-        /// The tag used for logging
+        /// The tag used for logging.
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRecreateDatabase));
 
+        /// <summary>
+        /// Keeps track of the path entries in a sorted manner.
+        /// This is used to ensure that the entries are unique and sorted by their keys.
+        /// </summary>
         private class PathEntryKeeper
         {
+            /// <summary>
+            /// Comparer for KeyValuePair<long, long> to sort by key and value.
+            /// </summary>
             private struct KeyValueComparer : IComparer<KeyValuePair<long, long>>
             {
                 public readonly int Compare(KeyValuePair<long, long> x, KeyValuePair<long, long> y)
@@ -51,36 +61,89 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Inserts a new file entry into the FileLookup table and returns the new row ID.
+        /// </summary>
         private SqliteCommand m_insertFileCommand = null!;
+        /// <summary>
+        /// Inserts a new entry into the FilesetEntry table linking a fileset to a file with a last-modified timestamp.
+        /// </summary>
         private SqliteCommand m_insertFilesetEntryCommand = null!;
+        /// <summary>
+        /// Inserts a new row into the Metadataset table for a given blockset and returns the new row ID.
+        /// </summary>
         private SqliteCommand m_insertMetadatasetCommand = null!;
+        /// <summary>
+        /// Inserts a new blockset with its length and full hash into the Blockset table and returns the new row ID.
+        /// </summary>
         private SqliteCommand m_insertBlocksetCommand = null!;
+        /// <summary>
+        /// Inserts a new blocklist hash entry into the BlocklistHash table for a given blockset and index.
+        /// </summary>
         private SqliteCommand m_insertBlocklistHashCommand = null!;
+        /// <summary>
+        /// Updates the VolumeID of a block in the Block table matching a specific hash and size.
+        /// </summary>
         private SqliteCommand m_updateBlockVolumeCommand = null!;
+        /// <summary>
+        /// Inserts a blocklist hash, block hash, and index into the temporary blocklist table.
+        /// </summary>
         private SqliteCommand m_insertTempBlockListHash = null!;
+        /// <summary>
+        /// Inserts or ignores a file hash, block hash, and block size into the temporary small blockset table.
+        /// </summary>
         private SqliteCommand m_insertSmallBlockset = null!;
+        /// <summary>
+        /// Selects the ID of a blockset from the Blockset table matching a given length and full hash.
+        /// </summary>
         private SqliteCommand m_findBlocksetCommand = null!;
+        /// <summary>
+        /// Selects the ID of a Metadataset whose blockset matches a given full hash and length.
+        /// </summary>
         private SqliteCommand m_findMetadatasetCommand = null!;
+        /// <summary>
+        /// Selects the ID of a file from the FileLookup table matching a given prefix, path, blockset, and metadata.
+        /// </summary>
         private SqliteCommand m_findFilesetCommand = null!;
+        /// <summary>
+        /// Selects distinct blocklist hashes from the temporary blocklist table matching a given hash.
+        /// </summary>
         private SqliteCommand m_findTempBlockListHashCommand = null!;
+        /// <summary>
+        /// Selects the VolumeID of a block in the Block table matching a specific hash and size.
+        /// </summary>
         private SqliteCommand m_findHashBlockCommand = null!;
+        /// <summary>
+        /// Inserts a new block with hash, size, and volume ID into the Block table.
+        /// </summary>
         private SqliteCommand m_insertBlockCommand = null!;
+        /// <summary>
+        /// Inserts or ignores a duplicate block entry linking a block and a volume into the DuplicateBlock table.
+        /// </summary>
         private SqliteCommand m_insertDuplicateBlockCommand = null!;
 
+        /// <summary>
+        /// Temporary table name for blocklist hashes and their indices.
+        /// </summary>
         private string m_tempblocklist = null!;
+        /// <summary>
+        /// Temporary table name for small blocksets, containing file hashes, block hashes, and block sizes.
+        /// </summary>
         private string m_tempsmalllist = null!;
 
         /// <summary>
-        /// A lookup table that prevents multiple downloads of the same volume
+        /// A lookup table that prevents multiple downloads of the same volume.
         /// </summary>
         private readonly Dictionary<long, long> m_proccessedVolumes = new Dictionary<long, long>();
 
-        // SQL that finds index and block size for all blocklist hashes, based on the temporary hash list
-        // with vars Used:
-        // {0} --> Blocksize
-        // {1} --> BlockHash-Size
-        // {2} --> Temp-Table
-        // {3} --> FullBlocklist-BlockCount [equals ({0} / {1}), if SQLite pays respect to ints]
+        /// <summary>
+        /// SQL that finds index and block size for all blocklist hashes, based on the temporary hash list.
+        /// </summary>
+        /// <param name="blocksize">The size of the blocks in the blocklist.</param>
+        /// <param name="blockhashsize">The size of the block hashes.</param>
+        /// <param name="temptable">The name of the temporary table containing blocklist hashes and indices.</param>
+        /// <param name="fullBlockListBlockCount">The number of blocks in the full block list, used to calculate the full index.</param>
+        /// <returns>A SQL query string that selects blocklist entries with their full index and block size.</returns>
         private static string SELECT_BLOCKLIST_ENTRIES(long blocksize, long blockhashsize, string temptable, long fullBlockListBlockCount) => $@"
             SELECT
                 ""E"".""BlocksetID"",
@@ -120,6 +183,13 @@ namespace Duplicati.Library.Main.Database
                 ""FullIndex""
         ";
 
+        /// <summary>
+        /// Asynchronously creates a new instance of the <see cref="LocalRecreateDatabase"/> class.
+        /// </summary>
+        /// <param name="parentdb">The parent database from which to restore.</param>
+        /// <param name="options">The options to use for the database creation.</param>
+        /// <param name="dbnew">An optional existing instance of <see cref="LocalRecreateDatabase"/> to use; if null, a new instance will be created.</param>
+        /// <returns>A task that represents the asynchronous operation, containing the newly created <see cref="LocalRecreateDatabase"/> instance.</returns>
         public static async Task<LocalRecreateDatabase> CreateAsync(LocalDatabase parentdb, Options options, LocalRecreateDatabase? dbnew = null)
         {
             dbnew ??= new LocalRecreateDatabase();
@@ -362,6 +432,12 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Identifies and inserts any missing blocks and blockset entries into the database by comparing temporary tables of blocklist and small blockset data with the main tables, ensuring that all required block and blockset relationships are present for database consistency.
+        /// </summary>
+        /// <param name="hashsize">The size of the hashes in the blocklist.</param>
+        /// <param name="blocksize">The size of the blocks in the blocklist.</param>
+        /// <returns>A task that completes when the operation is finished.</returns>
         public async Task FindMissingBlocklistHashes(long hashsize, long blocksize)
         {
             using var cmd = m_connection.CreateCommand(m_rtr);
@@ -557,6 +633,10 @@ namespace Duplicati.Library.Main.Database
         /// temp small list structure: filehash, blockhash, blocksize: as the small files are defined
         /// by the fact that they are contained in a single block, blockhash is the same as the filehash,
         /// and blocksize can vary from 0 to the configured block size for the backup
+        /// <param name="hashsize">The size of the hashes in the blocklist.</param>
+        /// <param name="blocksize"> The size of the blocks in the blocklist.</param>
+        /// <param name="hashOnly">If true, only hash entries are processed, ignoring small blocks.</param>
+        /// <returns>A task that completes when the operation is finished.</returns>
         public async Task AddBlockAndBlockSetEntryFromTemp(long hashsize, long blocksize, bool hashOnly = false)
         {
             using var cmd = m_connection.CreateCommand(m_rtr);
@@ -688,24 +768,64 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Adds a directory entry to the FilesetEntry table, linking it to a fileset and a path prefix.
+        /// </summary>
+        /// <param name="filesetid">The ID of the fileset to which the entry belongs.</param>
+        /// <param name="pathprefixid">The ID of the path prefix for the entry.</param>
+        /// <param name="path">The path of the directory entry.</param>
+        /// <param name="time">The last modified time of the directory entry.</param>
+        /// <param name="metadataid">The ID of the metadata associated with the directory entry.</param>
+        /// <returns>A task that when completed, indicates that the directory entry has been added.</returns>
         public async Task AddDirectoryEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid)
         {
             await AddEntry(filesetid, pathprefixid, path, time, FOLDER_BLOCKSET_ID, metadataid)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Adds a symlink entry to the FilesetEntry table, linking it to a fileset and a path prefix.
+        /// </summary>
+        /// <param name="filesetid">The ID of the fileset to which the entry belongs.</param>
+        /// <param name="pathprefixid">The ID of the path prefix for the entry.</param>
+        /// <param name="path">The path of the symlink entry.</param>
+        /// <param name="time">The last modified time of the symlink entry.</param>
+        /// <param name="metadataid">The ID of the metadata associated with the symlink entry.</param>
+        /// <returns>A task that when completed, indicates that the symlink entry has been added.</returns>
         public async Task AddSymlinkEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid)
         {
             await AddEntry(filesetid, pathprefixid, path, time, SYMLINK_BLOCKSET_ID, metadataid)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Adds a file entry to the FilesetEntry table, linking it to a fileset and a path prefix.
+        /// </summary>
+        /// <param name="filesetid">The ID of the fileset to which the entry belongs.</param>
+        /// <param name="pathprefixid">The ID of the path prefix for the entry.</param>
+        /// <param name="path">The path of the file entry.</param>
+        /// <param name="time">The last modified time of the file entry.</param>
+        /// <param name="blocksetid">The ID of the blockset associated with the file entry.</param>
+        /// <param name="metadataid">The ID of the metadata associated with the file entry.</param>
+        /// <returns>A task that when completed, indicates that the file entry has been added.</returns>
         public async Task AddFileEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid)
         {
             await AddEntry(filesetid, pathprefixid, path, time, blocksetid, metadataid)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Adds a file and fileset entry to the FilesetEntry table, linking it to a fileset and a path prefix.
+        /// If the file already exists, it retrieves its ID; otherwise, it inserts a new file entry.
+        /// Then, it inserts the fileset entry linking the file to the fileset.
+        /// </summary>
+        /// <param name="filesetid">The ID of the fileset to which the entry belongs.</param>
+        /// <param name="pathprefixid">The ID of the path prefix for the entry.</param>
+        /// <param name="path">The path of the file entry.</param>
+        /// <param name="time">The last modified time of the file entry.</param>
+        /// <param name="blocksetid">The ID of the blockset associated with the file entry.</param>
+        /// <param name="metadataid">The ID of the metadata associated with the file entry.</param>
+        /// <returns>A task that when completed, indicates that the file and fileset entry has been added.</returns>
         private async Task AddEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid)
         {
             var fileid = await m_findFilesetCommand
@@ -738,6 +858,15 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Adds a new metadataset to the database, creating a blockset if it does not already exist.
+        /// If the metadataset already exists, it returns its ID.
+        /// </summary>
+        /// <param name="metahash">The full hash of the metadataset.</param>
+        /// <param name="metahashsize">The size of the metadataset in bytes.</param>
+        /// <param name="metablocklisthashes">A collection of blocklist hashes associated with the metadataset.</param>
+        /// <param name="expectedmetablocklisthashes">The expected number of blocklist hashes for the metadataset.</param>
+        /// <returns>A task that returns the ID of the added or existing metadataset.</returns>
         public async Task<long> AddMetadataset(string metahash, long metahashsize, IEnumerable<string> metablocklisthashes, long expectedmetablocklisthashes)
         {
             var metadataid = -1L;
@@ -767,6 +896,15 @@ namespace Duplicati.Library.Main.Database
             return metadataid;
         }
 
+        /// <summary>
+        /// Adds a new blockset to the database, creating it if it does not already exist.
+        /// If the blockset already exists, it returns its ID.
+        /// </summary>
+        /// <param name="fullhash">The full hash of the blockset.</param>
+        /// <param name="size">The size of the blockset in bytes.</param>
+        /// <param name="blocklisthashes">A collection of blocklist hashes associated with the blockset.</param>
+        /// <param name="expectedblocklisthashes">The expected number of blocklist hashes for the blockset.</param>
+        /// <returns>A task that returns the ID of the added or existing blockset.</returns>
         public async Task<long> AddBlockset(string fullhash, long size, IEnumerable<string> blocklisthashes, long expectedblocklisthashes)
         {
             var blocksetid = await m_findBlocksetCommand
@@ -817,6 +955,14 @@ namespace Duplicati.Library.Main.Database
             return blocksetid;
         }
 
+        /// <summary>
+        /// Updates the block information in the database, inserting a new block if it does not exist,
+        /// updating the volume ID if it does, or inserting a duplicate block entry if the block already exists with a different volume ID.
+        /// </summary>
+        /// <param name="hash">The hash of the block to update.</param>
+        /// <param name="size">The size of the block in bytes.</param>
+        /// <param name="volumeID">The ID of the volume to which the block belongs.</param>
+        /// <returns>A task that returns a tuple indicating whether any changes were made and whether the block was newly inserted.</returns>
         public async Task<(bool, bool)> UpdateBlock(string hash, long size, long volumeID)
         {
             var anyChange = false;
@@ -875,6 +1021,14 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Adds a link between a small blockset and a block in the database.
+        /// This method is used to track small blocks that are part of a larger blockset, allowing for efficient storage and retrieval of small files.
+        /// </summary>
+        /// <param name="filehash">The hash of the file that contains the small block.</param>
+        /// <param name="blockhash">The hash of the small block.</param>
+        /// <param name="blocksize">The size of the small block in bytes.</param>
+        /// <returns>A task that completes when the small blockset link has been added.</returns>
         public async Task AddSmallBlocksetLink(string filehash, string blockhash, long blocksize)
         {
             await m_insertSmallBlockset
@@ -886,6 +1040,13 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Adds a temporary blocklist hash to the database, along with its associated block hashes.
+        /// This method is used to track temporary blocklists that are being processed, allowing for efficient management of blocklist data.
+        /// </summary>
+        /// <param name="hash">The hash of the temporary blocklist.</param>
+        /// <param name="blocklisthashes">A collection of block hashes associated with the temporary blocklist.</param>
+        /// <returns>A task that returns a boolean indicating whether the temporary blocklist hash was successfully added.</returns>
         public async Task<bool> AddTempBlockListHash(string hash, IEnumerable<string> blocklisthashes)
         {
             var r = await m_findTempBlockListHashCommand
@@ -915,7 +1076,12 @@ namespace Duplicati.Library.Main.Database
             return true;
         }
 
-
+        /// <summary>
+        /// Retrieves a list of block hashes associated with a specific volume ID from the database.
+        /// This method is used to obtain the block hashes for a given volume, allowing for efficient retrieval of block data.
+        /// </summary>
+        /// <param name="volumeid">The ID of the volume for which to retrieve block hashes.</param>
+        /// <returns>An asynchronous enumerable collection of block hashes associated with the specified volume ID.</returns>
         public async IAsyncEnumerable<string> GetBlockLists(long volumeid)
         {
             using var cmd = m_connection.CreateCommand(@"
@@ -935,6 +1101,15 @@ namespace Duplicati.Library.Main.Database
                 yield return rd.ConvertValueToString(0) ?? "";
         }
 
+        /// <summary>
+        /// Retrieves a list of remote volumes that are missing blocks based on the specified parameters.
+        /// This method is used to identify volumes that need to be processed for missing blocks, allowing for efficient management of remote storage.
+        /// </summary>
+        /// <param name="passNo">The current pass number, used to determine the state of processing.</param>
+        /// <param name="blocksize">The size of the blocks in the blocklist.</param>
+        /// <param name="hashsize">The size of the hashes in the blocklist.</param>
+        /// <param name="forceBlockUse">A boolean indicating whether to force the use of blocks, even if they are not missing.</param>
+        /// <returns>An asynchronous enumerable collection of remote volumes that are missing blocks.</returns>
         public async IAsyncEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo, long blocksize, long hashsize, bool forceBlockUse)
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
@@ -1061,6 +1236,11 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Cleans up missing volumes by replacing blocks for non-present remote files with existing ones,
+        /// removing references to non-present remote files, and marking index files for later removal.
+        /// </summary>
+        /// <returns>A task that completes when the cleanup operation is finished.</returns>
         public async Task CleanupMissingVolumes()
         {
             var tablename = "SwapBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -1213,8 +1393,9 @@ namespace Duplicati.Library.Main.Database
 
         /// <summary>
         /// Move blocks that are not referenced by any files to DeletedBlock table.
-        /// </summary>
         /// Needs to be called after the last FindMissingBlocklistHashes, otherwise the tables are not up to date.
+        /// </summary>
+        /// <returns>A task that completes when the cleanup operation is finished.</returns>
         public async Task CleanupDeletedBlocks()
         {
             // Find out which blocks are deleted and move them into DeletedBlock, so that compact notices these blocks are empty
