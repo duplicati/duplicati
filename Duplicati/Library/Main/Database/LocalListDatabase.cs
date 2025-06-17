@@ -61,7 +61,7 @@ namespace Duplicati.Library.Main.Database
             long FileSizes { get; }
         }
 
-        public interface IFileSets : IDisposable
+        public interface IFileSets : IDisposable, IAsyncDisposable
         {
             IAsyncEnumerable<IFileset> Sets();
             IAsyncEnumerable<IFileset> QuickSets();
@@ -687,10 +687,10 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
-                DisposeAsync().Await();
+                DisposeAsync().AsTask().Await();
             }
 
-            public async Task DisposeAsync()
+            public async ValueTask DisposeAsync()
             {
                 if (m_tablename != null)
                 {
