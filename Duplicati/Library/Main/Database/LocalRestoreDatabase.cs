@@ -1290,7 +1290,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public interface IFilesAndMetadata : IDisposable
+        public interface IFilesAndMetadata : IDisposable, IAsyncDisposable
         {
             IAsyncEnumerable<IVolumePatch> FilesWithMissingBlocks();
             IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks();
@@ -1360,10 +1360,10 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
-                DisposeAsync().Await();
+                DisposeAsync().AsTask().Await();
             }
 
-            public async Task DisposeAsync()
+            public async ValueTask DisposeAsync()
             {
                 if (m_tmptable != null)
                 {
