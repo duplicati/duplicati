@@ -29,9 +29,19 @@ using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
+    /// <summary>
+    /// A local database for tracking changes in file lists, such as added, deleted, or modified files.
+    /// </summary>
     internal class LocalListChangesDatabase : LocalDatabase
     {
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="LocalListChangesDatabase"/> class.
+        /// </summary>
+        /// <param name="path">The path to the database file.</param>
+        /// <param name="pagecachesize">The size of the page cache.</param>
+        /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
+        /// <returns>A task that when awaited contains a new instance of <see cref="LocalListChangesDatabase"/>.</returns>
         public static async Task<LocalListChangesDatabase> CreateAsync(string path, long pagecachesize, LocalListChangesDatabase? dbnew = null)
         {
             dbnew ??= new LocalListChangesDatabase();
@@ -44,41 +54,123 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Interface for storage helper that manages temporary storage of file changes.
+        /// </summary>
         public interface IStorageHelper : IDisposable, IAsyncDisposable
         {
+            /// <summary>
+            /// Adds an element to the temporary storage.
+            /// </summary>
+            /// <param name="path">The path of the file or folder.</param>
+            /// <param name="filehash">The file hash, if applicable.</param>
+            /// <param name="metahash">The metadata hash.</param>
+            /// <param name="size">The size of the file or folder.</param>
+            /// <param name="type">The type of the element (file, folder, symlink).</param>
+            /// <param name="asNew">If true, adds to the current table; otherwise, adds to the previous table.</param>
+            /// <returns>A task that completes when the element is added.</returns>
             Task AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew);
 
+            /// <summary>
+            /// Adds elements from the database to the temporary storage.
+            /// </summary>
+            /// <param name="filesetId">The ID of the fileset to add.</param>
+            /// <param name="asNew">If true, adds to the current table; otherwise, adds to the previous table.</param>
+            /// <param name="filter">An optional filter to apply when adding elements.</param>
+            /// <returns>A task that completes when the elements are added.</returns>
             Task AddFromDb(long filesetId, bool asNew, IFilter filter);
 
+            /// <summary>
+            /// Creates a report containing the count of added, deleted, and modified elements.
+            /// </summary>
+            /// <returns>A task that, when awaited, returns an <see cref="IChangeCountReport"/> with the change counts.</returns>
             Task<IChangeCountReport> CreateChangeCountReport();
+
+            /// <summary>
+            /// Creates a report containing the size information for added, deleted, previous, and current elements.
+            /// </summary>
+            /// <returns>A task that, when awaited, returns an <see cref="IChangeSizeReport"/> with the size details.</returns>
             Task<IChangeSizeReport> CreateChangeSizeReport();
+
+            /// <summary>
+            /// Asynchronously generates a report of changed files, yielding tuples that describe the change type, element type, and file path.
+            /// </summary>
+            /// <returns>An asynchronous enumerable of tuples containing the change type, element type, and file path.</returns>
             IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport();
         }
 
+        /// <summary>
+        /// Interface for reporting changes in file counts and sizes.
+        /// </summary>
         public interface IChangeCountReport
         {
+            /// <summary>
+            /// Gets the count of added folders.
+            /// </summary>
             long AddedFolders { get; }
+            /// <summary>
+            /// Gets the count of added symlinks.
+            /// </summary>
             long AddedSymlinks { get; }
+            /// <summary>
+            /// Gets the count of added files.
+            /// </summary>
             long AddedFiles { get; }
 
+            /// <summary>
+            /// Gets the count of deleted folders.
+            /// </summary>
             long DeletedFolders { get; }
+            /// <summary>
+            /// Gets the count of deleted symlinks.
+            /// </summary>
             long DeletedSymlinks { get; }
+            /// <summary>
+            /// Gets the count of deleted files.
+            /// </summary>
             long DeletedFiles { get; }
 
+            /// <summary>
+            /// Gets the count of modified folders.
+            /// </summary>
             long ModifiedFolders { get; }
+            /// <summary>
+            /// Gets the count of modified symlinks.
+            /// </summary>
             long ModifiedSymlinks { get; }
+            /// <summary>
+            /// Gets the count of modified files.
+            /// </summary>
             long ModifiedFiles { get; }
         }
 
+        /// <summary>
+        /// Interface for a report describing changes in file sizes.
+        /// </summary>
         public interface IChangeSizeReport
         {
+            /// <summary>
+            /// Gets the total size of added files.
+            /// </summary>
             long AddedSize { get; }
+            /// <summary>
+            /// Gets the total size of deleted files.
+            /// </summary>
             long DeletedSize { get; }
 
+            /// <summary>
+            /// Gets the size of files in the previous state.
+            /// </summary>
             long PreviousSize { get; }
+            /// <summary>
+            /// Gets the size of files in the current state.
+            /// </summary>
             long CurrentSize { get; }
         }
 
+        /// <summary>
+        /// Internal class that implements the <see cref="IChangeCountReport"/> interface to report changes in file counts.
+        /// </summary>
         internal class ChangeCountReport : IChangeCountReport
         {
             public long AddedFolders { get; internal set; }
@@ -94,6 +186,9 @@ namespace Duplicati.Library.Main.Database
             public long ModifiedFiles { get; internal set; }
         }
 
+        /// <summary>
+        /// Internal class that implements the <see cref="IChangeSizeReport"/> interface to report changes in file sizes.
+        /// </summary>
         internal class ChangeSizeReport : IChangeSizeReport
         {
             public long AddedSize { get; internal set; }
@@ -103,23 +198,54 @@ namespace Duplicati.Library.Main.Database
             public long CurrentSize { get; internal set; }
         }
 
+        /// <summary>
+        /// Helper class for managing temporary storage of file changes.
+        /// Implements the <see cref="IStorageHelper"/> interface.
+        /// </summary>
         private class StorageHelper : IStorageHelper
         {
+            /// <summary>
+            /// The database instance used for storage operations.
+            /// </summary>
             private LocalDatabase m_db = null!;
 
+            /// <summary>
+            /// Command for inserting elements into the previous table.
+            /// </summary>
             private SqliteCommand m_insertPreviousElementCommand = null!;
+            /// <summary>
+            /// Command for inserting elements into the current table.
+            /// </summary>
             private SqliteCommand m_insertCurrentElementCommand = null!;
 
+            /// <summary>
+            /// The name of the temporary table for previous elements.
+            /// </summary>
             private string m_previousTable = null!;
+            /// <summary>
+            /// The name of the temporary table for current elements.
+            /// </summary>
             private string m_currentTable = null!;
 
+            /// <summary>
+            /// Private constructor to prevent direct instantiation.
+            /// This constructor is obsolete and will throw an exception if called.
+            /// Use the <see cref="CreateAsync(LocalDatabase)"/> method to create an instance instead.
+            /// </summary>
             [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
-            public StorageHelper(SqliteConnection con)
-            {
-            }
+            public StorageHelper(SqliteConnection con) { }
 
+            /// <summary>
+            /// Private constructor to prevent direct instantiation.
+            /// This class should be created using the CreateAsync method.
+            /// </summary>
             private StorageHelper() { }
 
+            /// <summary>
+            /// Asynchronously creates a new instance of the <see cref="StorageHelper"/> class.
+            /// </summary>
+            /// <param name="db">The local database instance to use.</param>
+            /// <returns>A task that, when awaited, returns a new instance of <see cref="StorageHelper"/>.</returns>
             public static async Task<StorageHelper> CreateAsync(LocalDatabase db)
             {
                 var sh = new StorageHelper
@@ -437,6 +563,11 @@ namespace Duplicati.Library.Main.Database
                     .ConfigureAwait(false);
             }
 
+            /// <summary>
+            /// Converts a SqliteDataReader to an asynchronous enumerable of strings.
+            /// </summary>
+            /// <param name="rd">The SqliteDataReader to read from.</param>
+            /// <returns>An asynchronous enumerable of strings, where each string is a value from the first column of the reader.</returns>
             private static async IAsyncEnumerable<string?> ReaderToStringList(SqliteDataReader rd)
             {
                 using (rd)
@@ -450,6 +581,11 @@ namespace Duplicati.Library.Main.Database
                     }
             }
 
+            /// <summary>
+            /// Retrieves SQL queries for added, deleted, and modified files based on the current and previous tables.
+            /// </summary>
+            /// <param name="allTypes">If true, retrieves all types of changes; otherwise, filters by type.</param>
+            /// <returns>A tuple containing SQL queries for added, deleted, and modified files.</returns>
             private (string Added, string Deleted, string Modified) GetSqls(bool allTypes)
             {
                 return (
@@ -490,6 +626,10 @@ namespace Duplicati.Library.Main.Database
                 );
             }
 
+            /// <summary>
+            /// Creates a report of changes in file sizes, including added, deleted, previous, and current sizes.
+            /// </summary>
+            /// <returns>A task that, when awaited, returns an <see cref="IChangeSizeReport"/> with the size details.</returns>
             public async Task<IChangeSizeReport> CreateChangeSizeReport()
             {
                 var (Added, Deleted, Modified) = GetSqls(true);
@@ -529,6 +669,10 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Creates a report containing the count of added, deleted, and modified elements.
+            /// </summary>
+            /// <returns>A task that, when awaited, returns an <see cref="IChangeCountReport"/> with the change counts.</returns>
             public async Task<IChangeCountReport> CreateChangeCountReport()
             {
                 var (Added, Deleted, Modified) = GetSqls(false);
@@ -602,6 +746,10 @@ namespace Duplicati.Library.Main.Database
                 return result;
             }
 
+            /// <summary>
+            /// Asynchronously creates a report of changed files, yielding tuples that describe the change type, element type, and file path.
+            /// </summary>
+            /// <returns>An asynchronous enumerable of tuples containing the change type, element type, and file path.</returns>
             public async IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport()
             {
                 var (Added, Deleted, Modified) = GetSqls(false);
@@ -688,6 +836,10 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="IStorageHelper"/> for managing temporary storage of file changes.
+        /// </summary>
+        /// <returns>A task that, when awaited, returns an instance of <see cref="IStorageHelper"/>.</returns>
         public async Task<IStorageHelper> CreateStorageHelper()
         {
             return await StorageHelper.CreateAsync(this).ConfigureAwait(false);

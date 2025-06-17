@@ -28,8 +28,19 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Database
 {
+    /// <summary>
+    /// LocalListAffectedDatabase is a specialized database class for listing
+    /// affected filesets, files, remote logs, and remote volumes.
+    /// </summary>
     internal class LocalListAffectedDatabase : LocalDatabase
     {
+        /// <summary>
+        /// Creates a new instance of <see cref="LocalListAffectedDatabase"/>.
+        /// </summary>
+        /// <param name="path">The path to the database file.</param>
+        /// <param name="pagecachesize">The size of the page cache in bytes.</param>
+        /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
+        /// <returns>A task that when awaited returns a new instance of <see cref="LocalListAffectedDatabase"/>.</returns>
         public static async Task<LocalListAffectedDatabase> CreateAsync(string path, long pagecachesize, LocalListAffectedDatabase? dbnew = null)
         {
             dbnew ??= new LocalListAffectedDatabase();
@@ -42,32 +53,80 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Represents a fileset result for listing affected filesets.
+        /// </summary>
         private class ListResultFileset : Interface.IListResultFileset
         {
+            /// <summary>
+            /// Gets or sets the version of the fileset.
+            /// </summary>
             public long Version { get; set; }
+            /// <summary>
+            /// Gets or sets whether the backup related to this fileset is a full backup.
+            /// </summary>
             public int IsFullBackup { get; set; }
+            /// <summary>
+            /// Gets or sets the time when the fileset was created.
+            /// </summary>
             public DateTime Time { get; set; }
+            /// <summary>
+            /// Gets or sets the number of files in the fileset.
+            /// </summary>
             public long FileCount { get; set; }
+            /// <summary>
+            /// Gets or sets the total size of files in the fileset.
+            /// </summary>
             public long FileSizes { get; set; }
         }
 
+        /// <summary>
+        /// Represents a file result for listing affected files.
+        /// </summary>
         private class ListResultFile : Interface.IListResultFile
         {
+            /// <summary>
+            /// Gets or sets the path of the file reperesented by this result entry.
+            /// </summary>
             public required string Path { get; set; }
+            /// <summary>
+            /// Gets or sets the sizes of the file blocks, if available.
+            /// This can be null if the sizes are not available or not applicable.
+            /// </summary>
             public required IEnumerable<long>? Sizes { get; set; }
         }
 
+        /// <summary>
+        /// Represents a remote log entry for listing affected remote logs.
+        /// </summary>
         private class ListResultRemoteLog : Interface.IListResultRemoteLog
         {
+            /// <summary>
+            /// Gets or sets the timestamp of the log entry.
+            /// </summary>
             public required DateTime Timestamp { get; set; }
+            /// <summary>
+            /// Gets or sets the message of the log entry.
+            /// </summary>
             public required string Message { get; set; }
         }
 
+        /// <summary>
+        /// Represents a remote volume entry for listing affected remote volumes.
+        /// </summary>
         private class ListResultRemoteVolume : Interface.IListResultRemoteVolume
         {
+            /// <summary>
+            /// Gets or sets the name of the remote volume.
+            /// </summary>
             public required string Name { get; set; }
         }
 
+        /// <summary>
+        /// Retrieves the fileset times from the database.
+        /// </summary>
+        /// <param name="items">The items to filter the filesets by.</param>
+        /// <returns>An asynchronous enumerable of fileset times.</returns>
         public async IAsyncEnumerable<Interface.IListResultFileset> GetFilesets(IEnumerable<string> items)
         {
             var filesets = await FilesetTimes()
@@ -125,6 +184,11 @@ namespace Duplicati.Library.Main.Database
                 }
         }
 
+        /// <summary>
+        /// Retrieves the list of files from the database.
+        /// </summary>
+        /// <param name="items">The items to filter the files by.</param>
+        /// <returns>An asynchronous enumerable of file results.</returns>
         public async IAsyncEnumerable<Interface.IListResultFile> GetFiles(IEnumerable<string> items)
         {
             var sql = $@"
@@ -196,6 +260,12 @@ namespace Duplicati.Library.Main.Database
                     };
         }
 
+        /// <summary>
+        /// Retrieves the log lines from the database that match the specified items.
+        /// The log lines are retrieved from both the LogData and RemoteOperation tables.
+        /// </summary>
+        /// <param name="items">The items to filter the log lines by.</param>
+        /// <returns>An asynchronous enumerable of log line results.</returns>
         public async IAsyncEnumerable<Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items)
         {
             using var cmd = m_connection.CreateCommand();
@@ -239,6 +309,12 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Retrieves the remote volumes that match the specified items.
+        /// This method queries the database for remote volumes associated with filesets and metadata datasets.
+        /// </summary>
+        /// <param name="items">The names of the remote volumes to filter by.</param>
+        /// <returns>An asynchronous enumerable of remote volume results.</returns>
         public async IAsyncEnumerable<Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items)
         {
             var sql = $@"

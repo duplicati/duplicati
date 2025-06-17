@@ -30,22 +30,39 @@ using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
+    /// <summary>
+    /// A local database for deleting filesets and blocks.
+    /// </summary>
     internal class LocalDeleteDatabase : LocalDatabase
     {
         /// <summary>
-        /// The tag used for logging
+        /// The tag used for logging.
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalDeleteDatabase>();
 
         /// <summary>
-        /// Flag for toggling temporary tables; set to empty string if debugging
+        /// Flag for toggling temporary tables; set to empty string if debugging.
         /// </summary>
         private const string TEMPORARY = "TEMPORARY";
 
+        /// <summary>
+        /// SQL command to register a duplicate block.
+        /// </summary>
         private const string REGISTER_COMMAND = @"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") SELECT ""ID"", @VolumeId FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size ";
 
+        /// <summary>
+        /// The command to register a duplicate block.
+        /// </summary>
         private SqliteCommand m_registerDuplicateBlockCommand = null!;
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="LocalDeleteDatabase"/> class.
+        /// </summary>
+        /// <param name="path">The path to the database file.</param>
+        /// <param name="operation">The operation name.</param>
+        /// <param name="pagecachesize">The size of the page cache.</param>
+        /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
+        /// <returns>A task that when awaited contains a new instance of <see cref="LocalDeleteDatabase"/>.</returns>
         public static async Task<LocalDeleteDatabase> CreateAsync(string path, string operation, long pagecachesize, LocalDeleteDatabase? dbnew = null)
         {
             dbnew ??= new LocalDeleteDatabase();
@@ -61,6 +78,12 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="LocalDeleteDatabase"/> class with a parent database.
+        /// </summary>
+        /// <param name="dbparent">The parent database to use.</param>
+        /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
+        /// <returns>A task that when awaited contains a new instance of <see cref="LocalDeleteDatabase"/>.</returns>
         public static async Task<LocalDeleteDatabase> CreateAsync(LocalDatabase dbparent, LocalDeleteDatabase? dbnew = null)
         {
             dbnew ??= new LocalDeleteDatabase();
@@ -79,9 +102,8 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Drops all entries related to operations listed in the table.
         /// </summary>
-        /// <param name="toDelete">The fileset entries to delete</param>
-        /// <param name="transaction">The transaction to execute the commands in</param>
-        /// <returns>A list of filesets to delete</returns>
+        /// <param name="toDelete">The fileset entries to delete.</param>
+        /// <returns>An async enumerable of key-value pairs, where the key is the fileset name and the value is the size of the fileset.</returns>
         public async IAsyncEnumerable<KeyValuePair<string, long>> DropFilesetsFromTable(DateTime[] toDelete)
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
@@ -94,8 +116,8 @@ namespace Duplicati.Library.Main.Database
                             DELETE FROM ""Fileset""
                             WHERE ""Timestamp"" IN (@Timestamps)
                         ")
-                        .ExpandInClauseParameterMssqliteAsync("@Timestamps", tempTable)
-                        .ConfigureAwait(false)
+                            .ExpandInClauseParameterMssqliteAsync("@Timestamps", tempTable)
+                            .ConfigureAwait(false)
                     )
                         .ExecuteNonQueryAsync()
                         .ConfigureAwait(false);
@@ -262,6 +284,7 @@ namespace Duplicati.Library.Main.Database
         /// exposed to the user. This is in contrast to other cases where the Version is the ID in the
         /// Fileset table.
         /// </summary>
+        /// <returns>An async enumerable of IListResultFileset.</returns>
         internal async IAsyncEnumerable<IListResultFileset> FilesetsWithBackupVersion()
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
@@ -295,13 +318,35 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Represents the usage of a volume in the database.
+        /// </summary>
         private struct VolumeUsage
         {
+            /// <summary>
+            /// The name of the volume.
+            /// </summary>
             public readonly string Name;
+            /// <summary>
+            /// The size of the data stored in the volume.
+            /// </summary>
             public readonly long DataSize;
+            /// <summary>
+            /// The size of the data that is no longer needed in the volume.
+            /// </summary>
             public readonly long WastedSize;
+            /// <summary>
+            /// The size of the data that is compressed in the volume.
+            /// </summary>
             public readonly long CompressedSize;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="VolumeUsage"/> struct.
+            /// </summary>
+            /// <param name="name">The name of the volume.</param>
+            /// <param name="datasize">The size of the data stored in the volume.</param>
+            /// <param name="wastedsize">The size of the data that is no longer needed in the volume.</param>
+            /// <param name="compressedsize">The size of the data that is compressed in the volume.</param>
             public VolumeUsage(string name, long datasize, long wastedsize, long compressedsize)
             {
                 Name = name;
@@ -316,7 +361,11 @@ namespace Duplicati.Library.Main.Database
         /// and the number of bytes no longer needed in each volume.
         /// The sizes are the uncompressed values.
         /// </summary>
-        /// <returns>A list of tuples with name, datasize, wastedbytes.</returns>
+        /// <returns>
+        /// An asynchronous enumerable of <see cref="VolumeUsage"/>, holding the name of the volume,
+        /// the size of the data stored in the volume, the size of the data that is no longer needed in the volume,
+        /// and the size of the data that is compressed in the volume.
+        /// </returns>
         private async IAsyncEnumerable<VolumeUsage> GetWastedSpaceReport()
         {
             var tmptablename = "UsageReport-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -491,32 +540,97 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Generates a report on the volumes that can be reclaimed or compacted.
+        /// </summary>
         public interface ICompactReport
         {
+            /// <summary>
+            /// Gets the volumes that can be deleted.
+            /// </summary>
             IEnumerable<string> DeleteableVolumes { get; }
+            /// <summary>
+            /// Gets the volumes that can be compacted.
+            /// </summary>
             IEnumerable<string> CompactableVolumes { get; }
+            /// <summary>
+            /// Gets the report on whether reclamation or compaction should be performed.
+            /// </summary>
             bool ShouldReclaim { get; }
+            /// <summary>
+            /// Gets the report on whether compaction should be performed.
+            /// </summary>
             bool ShouldCompact { get; }
+            /// <summary>
+            /// Emits the report data to the log.
+            /// </summary>
             void ReportCompactData();
         }
 
+        /// <summary>
+        /// A report on the volumes that can be reclaimed or compacted.
+        /// </summary>
         private class CompactReport : ICompactReport
         {
+            /// <summary>
+            /// The report to emit to the log.
+            /// </summary>
             private readonly IEnumerable<VolumeUsage> m_report;
+            /// <summary>
+            /// The volumes that can be fully deleted.
+            /// </summary>
             private readonly IEnumerable<VolumeUsage> m_cleandelete;
+            /// <summary>
+            /// The volumes that have wasted space.
+            /// </summary>
             private readonly IEnumerable<VolumeUsage> m_wastevolumes;
+            /// <summary>
+            /// The volumes that are smaller than the specified size.
+            /// </summary>
             private readonly IEnumerable<VolumeUsage> m_smallvolumes;
 
+            /// <summary>
+            /// The count of volumes that can be fully deleted.
+            /// </summary>
             private readonly long m_deletablevolumes;
+            /// <summary>
+            /// The total size of wasted space across all volumes.
+            /// </summary>
             private readonly long m_wastedspace;
+            /// <summary>
+            /// The total size of small volumes.
+            /// </summary>
             private readonly long m_smallspace;
+            /// <summary>
+            /// The total size of all data across all volumes.
+            /// </summary>
             private readonly long m_fullsize;
+            /// <summary>
+            /// The count of small volumes.
+            /// </summary>
             private readonly long m_smallvolumecount;
 
+            /// <summary>
+            /// The threshold for wasted space percentage to trigger compaction.
+            /// </summary>
             private readonly long m_wastethreshold;
+            /// <summary>
+            /// The size of the volume to trigger compaction.
+            /// </summary>
             private readonly long m_volsize;
+            /// <summary>
+            /// The maximum number of small files to trigger compaction.
+            /// </summary>
             private readonly long m_maxsmallfilecount;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="CompactReport"/> class.
+            /// </summary>
+            /// <param name="volsize">The size of the volume to trigger compaction.</param>
+            /// <param name="wastethreshold">The threshold for wasted space percentage to trigger compaction.</param>
+            /// <param name="smallfilesize">The size of small files to trigger compaction.</param>
+            /// <param name="maxsmallfilecount">The maximum number of small files to trigger compaction.</param>
+            /// <param name="report">The report data containing volume usage information.</param>
             public CompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, IEnumerable<VolumeUsage> report)
             {
                 m_report = report;
@@ -537,6 +651,9 @@ namespace Duplicati.Library.Main.Database
                 m_smallvolumecount = m_smallvolumes.Count();
             }
 
+            /// <summary>
+            /// Emits the report data to the log.
+            /// </summary>
             public void ReportCompactData()
             {
                 var wastepercentage = ((m_wastedspace / (float)m_fullsize) * 100);
@@ -556,6 +673,9 @@ namespace Duplicati.Library.Main.Database
                     Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting not required");
             }
 
+            /// <summary>
+            /// Gets a value indicating whether reclamation should be performed.
+            /// </summary>
             public bool ShouldReclaim
             {
                 get
@@ -564,6 +684,9 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Gets a value indicating whether compaction should be performed.
+            /// </summary>
             public bool ShouldCompact
             {
                 get
@@ -572,11 +695,17 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Gets the volumes that can be deleted.
+            /// </summary>
             public IEnumerable<string> DeleteableVolumes
             {
                 get { return from n in m_cleandelete select n.Name; }
             }
 
+            /// <summary>
+            /// Gets the volumes that can be compacted.
+            /// </summary>
             public IEnumerable<string> CompactableVolumes
             {
                 get
@@ -589,6 +718,14 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Gets a compact report on the volumes that can be reclaimed or compacted.
+        /// </summary>
+        /// <param name="volsize">The size of the volume to trigger compaction.</param>
+        /// <param name="wastethreshold">The threshold for wasted space percentage to trigger compaction.</param>
+        /// <param name="smallfilesize">The size of small files to trigger compaction.</param>
+        /// <param name="maxsmallfilecount">The maximum number of small files to trigger compaction.</param>
+        /// <returns>A task that when awaited contains an instance of <see cref="ICompactReport"/>.</returns>
         public async Task<ICompactReport> GetCompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount)
         {
             return new CompactReport(
@@ -602,24 +739,36 @@ namespace Duplicati.Library.Main.Database
             );
         }
 
-
+        /// <summary>
+        /// Registers a block as duplicated to a new volume.
+        /// This is used when a block is moved to a new volume, and we want to keep track of it.
+        /// </summary>
         public interface IBlockQuery : IDisposable
         {
             /// <summary>
-            /// Checks if a block is in use. If volumeId is not -1, check specific volume
+            /// Checks if a block is in use. If volumeId is not -1, check specific volume.
             /// </summary>
-            /// <param name="hash">The hash of the block</param>
-            /// <param name="size">The size of the block</param>
-            /// <param name="volumeId">The volume ID to check, or -1 to check all volumes</param>
-            /// <param name="transaction">The transaction to execute the command in</param>
-            /// <returns>True if the block is in use</returns>
+            /// <param name="hash">The hash of the block.</param>
+            /// <param name="size">The size of the block.</param>
+            /// <param name="volumeId">The volume ID to check, or -1 to check all volumes.</param>
+            /// <param name="transaction">The transaction to execute the command in.</param>
+            /// <returns>A task that when awaited returns true if the block is in use, false otherwise.</returns>
             Task<bool> UseBlock(string hash, long size, long volumeId);
         }
 
+        /// <summary>
+        /// A helper class to query blocks in the database.
+        /// </summary>
         private class BlockQuery : IBlockQuery
         {
+            /// <summary>
+            /// The database instance to use for the queries.
+            /// </summary>
             private LocalDatabase m_db = null!;
 
+            /// <summary>
+            /// The command used to query blocks in the database.
+            /// </summary>
             private SqliteCommand m_command = null!;
 
             [Obsolete("Calling this constructor will throw an exception. Use CreateAsync() instead.")]
@@ -628,11 +777,17 @@ namespace Duplicati.Library.Main.Database
                 throw new NotImplementedException("Use CreateAsync() instead");
             }
 
-            private BlockQuery()
-            {
-                // Private constructor to prevent instantiation without CreateAsync
-            }
+            /// <summary>
+            /// Constructs a new instance of the <see cref="BlockQuery"/> class.
+            /// It is private to prevent instantiation without CreateAsync.
+            /// </summary>
+            private BlockQuery() { }
 
+            /// <summary>
+            /// Creates a new instance of the <see cref="BlockQuery"/> class.
+            /// </summary>
+            /// <param name="db">The local database to use for the queries.</param>
+            /// <returns>A task that when awaited returns a new instance of <see cref="BlockQuery"/>.</returns>
             public static async Task<BlockQuery> CreateAsync(LocalDatabase db)
             {
                 return new BlockQuery
@@ -683,7 +838,7 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Builds a lookup table to enable faster response to block queries
+        /// Builds a lookup table to enable faster response to block queries.
         /// </summary>
         public async Task<IBlockQuery> CreateBlockQueryHelper()
         {
@@ -691,11 +846,12 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Registers a block as moved to a new volume
+        /// Registers a block as moved to a new volume.
         /// </summary>
-        /// <param name="hash">The hash of the block</param>
-        /// <param name="size">The size of the block</param>
-        /// <param name="volumeID">The new volume ID</param>
+        /// <param name="hash">The hash of the block.</param>
+        /// <param name="size">The size of the block.</param>
+        /// <param name="volumeID">The new volume ID.</param>
+        /// <returns>A task that when completed indicates the block has been registered.</returns>
         public async Task RegisterDuplicatedBlock(string hash, long size, long volumeID)
         {
             // Using INSERT OR IGNORE to avoid duplicate entries, result may be 1 or 0
@@ -709,11 +865,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// After new volumes are uploaded, this method will update the blocks from the old volumes to point to the new volumes
+        /// After new volumes are uploaded, this method will update the blocks from the old volumes to point to the new volumes.
         /// </summary>
-        /// <param name="filename">The file to remove</param>
-        /// <param name="volumeIdsToBeRemoved">The volume IDs that will be removed</param>
-        /// <param name="transaction">The transaction to execute the command in</param>
+        /// <param name="filename">The file to remove.</param>
+        /// <param name="volumeIdsToBeRemoved">The volume IDs that will be removed.</param>
+        /// <returns>A task that when completed indicates the operation has finished.</returns>
         public async Task PrepareForDelete(string filename, IEnumerable<long> volumeIdsToBeRemoved)
         {
             var deletedVolume = await GetRemoteVolume(filename)
@@ -844,8 +1000,7 @@ namespace Duplicati.Library.Main.Database
         /// Calculates the sequence in which files should be deleted based on their relations.
         /// </summary>
         /// <param name="deleteableVolumes">Block volumes slated for deletion.</param>
-        /// <param name="transaction">The transaction to execute the command in</param>
-        /// <returns>The deletable volumes.</returns>
+        /// <returns>An asynchronous enumerable of <see cref="IRemoteVolume"/> that represents the order in which volumes should be deleted.</returns>
         public async IAsyncEnumerable<IRemoteVolume> ReOrderDeleteableVolumes(IEnumerable<IRemoteVolume> deleteableVolumes)
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
