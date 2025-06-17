@@ -20,13 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
-using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
-using Duplicati.WebserverCore.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.WebserverCore.Endpoints.V2.Backup;

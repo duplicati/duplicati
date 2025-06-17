@@ -21,7 +21,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Duplicati.Library.Interface;
-using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
