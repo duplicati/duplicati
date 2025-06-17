@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
-        public Task<(long Size, string MetadataHash)?> GetMetadataHashAndSizeForFileAsync(long fileid)
+        public Task<(string MetadataHash, long Size)?> GetMetadataHashAndSizeForFileAsync(long fileid)
         {
             return RunOnMain(async () =>
                 await m_database

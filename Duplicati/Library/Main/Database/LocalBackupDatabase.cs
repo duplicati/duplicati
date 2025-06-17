@@ -1155,7 +1155,7 @@ namespace Duplicati.Library.Main.Database
                 }
         }
 
-        public async Task<(long Size, string MetadataHash)?> GetMetadataHashAndSizeForFile(long fileid)
+        public async Task<(string MetadataHash, long Size)?> GetMetadataHashAndSizeForFile(long fileid)
         {
             m_selectfilemetadatahashandsizeCommand
                 .SetTransaction(m_rtr)
@@ -1164,8 +1164,8 @@ namespace Duplicati.Library.Main.Database
             using (var rd = await m_selectfilemetadatahashandsizeCommand.ExecuteReaderAsync().ConfigureAwait(false))
                 if (await rd.ReadAsync().ConfigureAwait(false))
                     return (
-                        rd.ConvertValueToInt64(0),
-                        rd.ConvertValueToString(1) ?? throw new InvalidOperationException("Metadata hash is null")
+                        rd.ConvertValueToString(1) ?? throw new InvalidOperationException("Metadata hash is null"),
+                        rd.ConvertValueToInt64(0)
                     );
 
             return null;
