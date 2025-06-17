@@ -100,7 +100,7 @@ namespace Duplicati.Library.Main.Database
                 return 0;
         }
 
-        public interface ITemporaryFileset : IDisposable
+        public interface ITemporaryFileset : IDisposable, IAsyncDisposable
         {
             long ParentID { get; }
             long RemovedFileCount { get; }
@@ -360,10 +360,10 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
-                DisposeAsync().Await();
+                DisposeAsync().AsTask().Await();
             }
 
-            public async Task DisposeAsync()
+            public async ValueTask DisposeAsync()
             {
                 try
                 {
