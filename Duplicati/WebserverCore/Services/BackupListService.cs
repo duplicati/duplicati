@@ -298,6 +298,7 @@ public class BackupListService(Connection connection) : IBackupListService
                 }),
                 TargetURL = x.Backup.TargetURL,
                 DBPath = x.Backup.DBPath,
+                DBPathExists = File.Exists(x.Backup.DBPath),
                 Tags = x.Backup.Tags
             },
             Schedule = x.Schedule == null ? null : new Dto.ScheduleDto()

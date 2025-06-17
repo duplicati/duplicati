@@ -21,7 +21,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Duplicati.Library.Interface;
-using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
@@ -136,6 +135,7 @@ public class BackupGet : IEndpointV1
                 Tags = bk.Tags,
                 TargetURL = bk.TargetURL,
                 DBPath = bk.DBPath,
+                DBPathExists = File.Exists(bk.DBPath),
                 IsTemporary = bk.IsTemporary,
                 IsUnencryptedOrPassphraseStored = false,
             },
