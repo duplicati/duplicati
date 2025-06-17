@@ -29,5 +29,9 @@ public sealed record ListFilesetsRequestDto
     /// The backup ID
     /// </summary>
     public required string BackupId { get; init; }
+    /// <summary>
+    /// Flag toggling whether to force a remote listing of filesets, even if a local database is available
+    /// </summary>
+    public bool? ForceRemoteListing { get; init; } = null;
 
 }

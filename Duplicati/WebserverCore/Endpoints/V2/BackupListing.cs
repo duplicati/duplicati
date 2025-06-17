@@ -20,13 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
-using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
-using Duplicati.WebserverCore.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.WebserverCore.Endpoints.V2.Backup;
@@ -36,7 +34,7 @@ public class BackupListing : IEndpointV2
     public static void Map(RouteGroupBuilder group)
     {
         group.MapPost("/backup/list-filesets", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromBody] Dto.V2.ListFilesetsRequestDto input)
-            => ExecuteGetFilesets(queueRunnerService, GetBackup(connection, input.BackupId)))
+            => ExecuteGetFilesets(queueRunnerService, GetBackup(connection, input.BackupId), input))
             .RequireAuthorization();
 
         group.MapPost("/backup/list-folder", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromBody] Dto.V2.ListFolderContentRequestDto input)
@@ -80,12 +78,15 @@ public class BackupListing : IEndpointV2
                 r.Entries.TotalCount);
     }
 
-    private static Dto.V2.ListFilesetsResponseDto ExecuteGetFilesets(IQueueRunnerService queueRunnerService, IBackup bk)
+    private static Dto.V2.ListFilesetsResponseDto ExecuteGetFilesets(IQueueRunnerService queueRunnerService, IBackup bk, Dto.V2.ListFilesetsRequestDto input)
     {
         var extra = new Dictionary<string, string?>();
 
         // Retries will hang the http request
         extra["number-of-retries"] = "0";
+        var forceRemote = input.ForceRemoteListing ?? bk.IsTemporary;
+        if (forceRemote)
+            extra["no-local-db"] = "true";
 
         try
         {
