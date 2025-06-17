@@ -748,6 +748,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="key">The block key.</param>
         /// <param name="size">The size of the block.</param>
+        /// <param name="volumeid">The ID of the volume to which the block belongs.</param>
         /// <returns>A taskt that when awaited contains true if the block should be added to the current output.</returns>
         public async Task<bool> AddBlock(string key, long size, long volumeid)
         {
@@ -828,7 +829,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="size">The size of the blockset.</param>
         /// <param name="blocksize">The size of the blocks in the blockset.</param>
         /// <param name="hashes">The list of hashes.</param>
-        /// <param name="blocksetid">The id of the blockset, new or old.</param>
+        /// <param name="blocklistHashes">The list of hashes for the blocklist, or null if no blocklist is used.</param>
         /// <returns>A task that when awaited contains a tuple with the first value indicating whether the blockset was created, and the second value being the blockset ID.</returns>
         public async Task<(bool, long)> AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes)
         {
@@ -954,14 +955,12 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Adds a metadata set to the database, and returns a value indicating if the record was new
+        /// Adds a metadata set to the database, and returns a tuple indicating if the record was new and the ID of the metadata set.
         /// </summary>
-        /// <param name="filehash">The metadata hash</param>
-        /// <param name="size">The size of the metadata</param>
-        /// <param name="transaction">The transaction to execute under</param>
-        /// <param name="blocksetid">The id of the blockset to add</param>
-        /// <param name="metadataid">The id of the metadata set</param>
-        /// <returns>True if the set was added to the database, false otherwise</returns>
+        /// <param name="filehash">The metadata hash.</param>
+        /// <param name="size">The size of the metadata.</param>
+        /// <param name="blocksetid">The id of the blockset to add.</param>
+        /// <returns>A task that when awaited contains a tuple with the first value indicating if the metadata set was added, and the second value being the metadata ID.</returns>
         public async Task<(bool, long)> AddMetadataset(string filehash, long size, long blocksetid)
         {
             var (metadatafound, metadataid) = await GetMetadatasetID(filehash, size)
@@ -981,14 +980,14 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Adds a file record to the database
+        /// Adds a file record to the database.
         /// </summary>
-        /// <param name="pathprefixid">The path prefix ID</param>
-        /// <param name="filename">The path to the file</param>
-        /// <param name="lastmodified">The time the file was modified</param>
-        /// <param name="blocksetID">The ID of the hashkey for the file</param>
-        /// <param name="metadataID">The ID for the metadata</param>
-        /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
+        /// <param name="pathprefixid">The path prefix ID.</param>
+        /// <param name="filename">The path to the file.</param>
+        /// <param name="lastmodified">The time the file was modified.</param>
+        /// <param name="blocksetID">The ID of the hashkey for the file.</param>
+        /// <param name="metadataID">The ID for the metadata.</param>
+        /// <returns>A task that completes when the file is added.</returns>
         public async Task AddFile(long pathprefixid, string filename, DateTime lastmodified, long blocksetID, long metadataID)
         {
             var fileidobj = await m_findfilesetCommand
@@ -1017,13 +1016,13 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Adds a file record to the database
+        /// Adds a file record to the database.
         /// </summary>
-        /// <param name="filename">The path to the file</param>
-        /// <param name="lastmodified">The time the file was modified</param>
-        /// <param name="blocksetID">The ID of the hashkey for the file</param>
-        /// <param name="metadataID">The ID for the metadata</param>
-        /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
+        /// <param name="filename">The path to the file.</param>
+        /// <param name="lastmodified">The time the file was modified.</param>
+        /// <param name="blocksetID">The ID of the hashkey for the file.</param>
+        /// <param name="metadataID">The ID for the metadata.</param>
+        /// <returns>A task that completes when the file is added.</returns>
         public async Task AddFile(string filename, DateTime lastmodified, long blocksetID, long metadataID)
         {
             var split = SplitIntoPrefixAndName(filename);
@@ -1039,11 +1038,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Adds a known file to the fileset
+        /// Adds a known file to the fileset.
         /// </summary>
-        /// <param name="fileid">Id of the file</param>
-        /// <param name="lastmodified">The time the file was modified</param>
-        /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
+        /// <param name="fileid">Id of the file.</param>
+        /// <param name="lastmodified">The time the file was modified.</param>
+        /// <returns>A task that completes when the file is added.</returns>
         public async Task AddKnownFile(long fileid, DateTime lastmodified)
         {
             await m_insertfileOperationCommand
@@ -1055,18 +1054,40 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Adds a directory entry to the fileset.
+        /// </summary>
+        /// <param name="path">The path to the directory.</param>
+        /// <param name="metadataID">The ID for the metadata.</param>
+        /// <param name="lastmodified">The time the directory was modified.</param>
+        /// <returns>A task that completes when the directory entry is added.</returns>
         public async Task AddDirectoryEntry(string path, long metadataID, DateTime lastmodified)
         {
             await AddFile(path, lastmodified, FOLDER_BLOCKSET_ID, metadataID)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Adds a symlink entry to the fileset.
+        /// </summary>
+        /// <param name="path">The path to the symlink.</param>
+        /// <param name="metadataID">The ID for the metadata.</param>
+        /// <param name="lastmodified">The time the symlink was modified.</param>
+        /// <returns>A task that completes when the symlink entry is added.</returns>
         public async Task AddSymlinkEntry(string path, long metadataID, DateTime lastmodified)
         {
             await AddFile(path, lastmodified, SYMLINK_BLOCKSET_ID, metadataID)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Gets the ID, last modified time and size of a file in the fileset.
+        /// </summary>
+        /// <param name="prefixid">The ID of the path prefix.</param>
+        /// <param name="path">The path to the file.</param>
+        /// <param name="filesetid">The ID of the fileset.</param>
+        /// <param name="includeLength">Whether to include the file length in the result.</param>
+        /// <returns>A task that when awaited contains a tuple with the file ID, last modified time, and file length.</returns>
         public async Task<(long, DateTime, long)> GetFileLastModified(long prefixid, string path, long filesetid, bool includeLength)
         {
             DateTime oldModified;
@@ -1155,6 +1176,11 @@ namespace Duplicati.Library.Main.Database
                 }
         }
 
+        /// <summary>
+        /// Gets the metadata hash and size for a file.
+        /// </summary>
+        /// <param name="fileid">The ID of the file.</param>
+        /// <returns>A task that when awaited contains a tuple with the metadata hash and size, or null if the file does not exist.</returns>
         public async Task<(string MetadataHash, long Size)?> GetMetadataHashAndSizeForFile(long fileid)
         {
             m_selectfilemetadatahashandsizeCommand
@@ -1171,7 +1197,11 @@ namespace Duplicati.Library.Main.Database
             return null;
         }
 
-
+        /// <summary>
+        /// Gets the hash of a file.
+        /// </summary>
+        /// <param name="fileid">The ID of the file.</param>
+        /// <returns>A task that when awaited contains the hash of the file, or null if the file does not exist.</returns>
         public async Task<string?> GetFileHash(long fileid)
         {
             var r = await m_selectfileHashCommand
@@ -1209,6 +1239,10 @@ namespace Duplicati.Library.Main.Database
             await base.DisposeAsync().ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Gets the size of the last written DBlock volume.
+        /// </summary>
+        /// <returns>A task that when awaited contains the size of the last written DBlock volume, or -1 if no such volume exists.</returns>
         public async Task<long> GetLastWrittenDBlockVolumeSize()
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
@@ -1227,12 +1261,24 @@ namespace Duplicati.Library.Main.Database
                     .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Gets the ID of the previous fileset based on the operation timestamp and current fileset ID.
+        /// </summary>
+        /// <param name="cmd">The command to use for the query.</param>
+        /// <returns>A task that when awaited contains the ID of the previous fileset, or -1 if no such fileset exists.</returns>
         private async Task<long> GetPreviousFilesetID(SqliteCommand cmd)
         {
             return await GetPreviousFilesetID(cmd, OperationTimestamp, m_filesetId)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Gets the ID of the previous fileset based on the operation timestamp and current fileset ID.
+        /// </summary>
+        /// <param name="cmd">The command to use for the query.</param>
+        /// <param name="timestamp">The timestamp to use for the query.</param>
+        /// <param name="filesetid">The current fileset ID.</param>
+        /// <returns>A task that when awaited contains the ID of the previous fileset, or -1 if no such fileset exists.</returns>
         private async Task<long> GetPreviousFilesetID(SqliteCommand cmd, DateTime timestamp, long filesetid)
         {
             return await cmd
@@ -1251,6 +1297,10 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Gets the count and size of files in the last backup fileset.
+        /// </summary>
+        /// <returns>A task that when awaited contains a tuple with the count of files and the total size of files in the last backup fileset.</returns>
         internal async Task<Tuple<long, long>> GetLastBackupFileCountAndSize()
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
@@ -1306,6 +1356,11 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Updates the change statistics for the current fileset based on the results of a backup operation.
+        /// </summary>
+        /// <param name="results">The results of the backup operation.</param>
+        /// <returns>A task that completes when the change statistics are updated.</returns>
         internal async Task UpdateChangeStatistics(BackupResults results)
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
@@ -1321,8 +1376,8 @@ namespace Duplicati.Library.Main.Database
         /// Populates FilesetEntry table with files from previous fileset, which aren't
         /// yet part of the new fileset, and which aren't on the (optional) list of <c>deleted</c> paths.
         /// </summary>
-        /// <param name="transaction">Transaction</param>
-        /// <param name="deleted">List of deleted paths, or null</param>
+        /// <param name="deleted">List of deleted paths, or null.</param>
+        /// <returns>A task that completes when the files are appended.</returns>
         public async Task AppendFilesFromPreviousSet(IEnumerable<string>? deleted = null)
         {
             await AppendFilesFromPreviousSet(deleted, m_filesetId, -1, OperationTimestamp)
@@ -1333,11 +1388,11 @@ namespace Duplicati.Library.Main.Database
         /// Populates FilesetEntry table with files from previous fileset, which aren't
         /// yet part of the new fileset, and which aren't on the (optional) list of <c>deleted</c> paths.
         /// </summary>
-        /// <param name="transaction">Transaction</param>
-        /// <param name="deleted">List of deleted paths, or null</param>
-        /// <param name="filesetid">Current file-set ID</param>
-        /// <param name="prevId">Source file-set ID</param>
-        /// <param name="timestamp">If <c>filesetid</c> == -1, used to locate previous file-set</param>
+        /// <param name="deleted">List of deleted paths, or null.</param>
+        /// <param name="filesetid">Current file-set ID.</param>
+        /// <param name="prevId">Source file-set ID.</param>
+        /// <param name="timestamp">If <c>filesetid</c> == -1, used to locate previous file-set.</param>
+        /// <returns>A task that completes when the files are appended.</returns>
         public async Task AppendFilesFromPreviousSet(IEnumerable<string>? deleted, long filesetid, long prevId, DateTime timestamp)
         {
             using (var cmd = m_connection.CreateCommand())
@@ -1415,8 +1470,8 @@ namespace Duplicati.Library.Main.Database
         /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion
         /// predicate.
         /// </summary>
-        /// <param name="transaction">Transaction</param>
-        /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
+        /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file).</param>
+        /// <returns>A task that completes when the files are appended.</returns>
         public async Task AppendFilesFromPreviousSetWithPredicate(Func<string, long, bool> exclusionPredicate)
         {
             await AppendFilesFromPreviousSetWithPredicate(exclusionPredicate, m_filesetId, -1, OperationTimestamp)
@@ -1428,11 +1483,11 @@ namespace Duplicati.Library.Main.Database
         /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion
         /// predicate.
         /// </summary>
-        /// <param name="transaction">Transaction</param>
         /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
         /// <param name="fileSetId">Current fileset ID</param>
         /// <param name="prevFileSetId">Source fileset ID</param>
         /// <param name="timestamp">If <c>prevFileSetId</c> == -1, used to locate previous fileset</param>
+        /// <returns>A task that completes when the files are appended.</returns>
         public async Task AppendFilesFromPreviousSetWithPredicate(Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
         {
             if (exclusionPredicate == null)
@@ -1542,15 +1597,20 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
         /// </summary>
-        /// <param name="volumeid">The ID of the fileset volume to update</param>
-        /// <param name="timestamp">The timestamp of the operation to create</param>
-        /// <param name="transaction">An optional external transaction</param>
+        /// <param name="volumeid">The ID of the fileset volume to update.</param>
+        /// <param name="timestamp">The timestamp of the operation to create.</param>
+        /// <returns>A task that when awaited contains the ID of the created fileset.</returns>
         public override async Task<long> CreateFileset(long volumeid, DateTime timestamp)
         {
             return m_filesetId = await base.CreateFileset(volumeid, timestamp)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Retrieves the names of temporary fileset volumes that are incomplete.
+        /// </summary>
+        /// <param name="latestOnly">If true, only the latest incomplete fileset volume will be returned.</param>
+        /// <returns>A task that when awaited contains a list of volume names.</returns>
         public async Task<IEnumerable<string>> GetTemporaryFilelistVolumeNames(bool latestOnly)
         {
             var incompleteFilesetIDs = GetIncompleteFilesets().OrderBy(x => x.Value).Select(x => x.Key);
@@ -1574,6 +1634,10 @@ namespace Duplicati.Library.Main.Database
             return volumeNames;
         }
 
+        /// <summary>
+        /// Retrieves the names of remote volumes that are missing index files.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of volume names that are missing index files.</returns>
         public async IAsyncEnumerable<string> GetMissingIndexFiles()
         {
             using var cmd = m_connection.CreateCommand(m_rtr)
@@ -1599,6 +1663,14 @@ namespace Duplicati.Library.Main.Database
                     yield return rd.ConvertValueToString(0) ?? throw new Exception("Unexpected null value for volume name");
         }
 
+        /// <summary>
+        /// Moves a block from one volume to another.
+        /// </summary>
+        /// <param name="blockkey">The hash of the block to move.</param>
+        /// <param name="size">The size of the block to move.</param>
+        /// <param name="sourcevolumeid">The ID of the source volume.</param>
+        /// <param name="targetvolumeid">The ID of the target volume.</param>
+        /// <returns>A task that completes when the block is moved.</returns>
         public async Task MoveBlockToVolume(string blockkey, long size, long sourcevolumeid, long targetvolumeid)
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
@@ -1623,6 +1695,13 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Safely deletes a remote volume by checking if it has any associated blocks.
+        /// If it does, an exception is thrown; otherwise, the volume is removed.
+        /// </summary>
+        /// <param name="name">The name of the remote volume to delete.</param>
+        /// <returns>A task that completes when the remote volume is safely deleted.</returns>
+        /// <exception cref="Exception">Thrown if the volume has associated blocks.</exception>
         public async Task SafeDeleteRemoteVolume(string name)
         {
             var volumeid = await GetRemoteVolumeID(name).ConfigureAwait(false);
@@ -1645,6 +1724,11 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Retrieves the hashes of blocks that are on the blocklist for a given volume.
+        /// </summary>
+        /// <param name="name">The name of the volume to check.</param>
+        /// <returns>A task that when awaited contains an array of blocklist hashes.</returns>
         public async Task<string[]> GetBlocklistHashes(string name)
         {
             var volumeid = GetRemoteVolumeID(name);
@@ -1670,6 +1754,10 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Retrieves the first path in the database, ordered by length in descending order.
+        /// </summary>
+        /// <returns>A task that when awaited contains the first path, or null if no paths exist.</returns>
         public async Task<string?> GetFirstPath()
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
@@ -1690,9 +1778,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Retrieves change journal data for file set
+        /// Retrieves the change journal data for file set.
         /// </summary>
-        /// <param name="fileSetId">Fileset-ID</param>
+        /// <param name="fileSetId">The Fileset-ID.</param>
+        /// <returns>An asynchronous enumerable of USN journal data entries.</returns>
         public async IAsyncEnumerable<Interface.USNJournalDataEntry> GetChangeJournalData(long fileSetId)
         {
             var data = new List<Interface.USNJournalDataEntry>();
@@ -1725,10 +1814,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Adds NTFS change journal data for file set and volume
+        /// Adds NTFS change journal data for file set and volume.
         /// </summary>
-        /// <param name="data">Data to add</param>
-        /// <param name="transaction">An optional external transaction</param>
+        /// <param name="data">Data to add.</param>
+        /// <returns>A task that completes when the data is added.</returns>
+        /// <exception cref="Exception">Thrown if unable to add change journal entry.</exception>
         public async Task CreateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data)
         {
             foreach (var entry in data)
@@ -1768,11 +1858,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Adds NTFS change journal data for file set and volume
+        /// Adds NTFS change journal data for file set and volume.
         /// </summary>
-        /// <param name="data">Data to add</param>
-        /// <param name="fileSetId">Existing file set to update</param>
-        /// <param name="transaction">An optional external transaction</param>
+        /// <param name="data">Data to add.</param>
+        /// <param name="fileSetId">Existing file set to update.</param>
+        /// <returns>A task that completes when the data is added.</returns>
         public async Task UpdateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data, long fileSetId)
         {
             foreach (var entry in data)
@@ -1801,11 +1891,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Checks if a blocklist hash is known
+        /// Checks if a blocklist hash is known.
         /// </summary>
-        /// <param name="hash">The hash to check</param>
-        /// <param name="transaction">An optional external transaction</param>
-        /// <returns>True if the hash is known, false otherwise</returns>
+        /// <param name="hash">The hash to check.</param>
+        /// <returns>A task that when awaited returns true if the hash is known, false otherwise.</returns>
         public async Task<bool> IsBlocklistHashKnown(string hash)
         {
             var res = await m_getfirstfilesetwithblockinblockset

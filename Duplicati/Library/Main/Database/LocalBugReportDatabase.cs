@@ -27,6 +27,10 @@ using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
 {
+
+    /// <summary>
+    /// A local database for bug reports, which obfuscates sensitive data before generating a bug report.
+    /// </summary>
     internal class LocalBugReportDatabase : LocalDatabase
     {
         /// <summary>
@@ -34,6 +38,13 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalBugReportDatabase));
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="LocalBugReportDatabase"/> class.
+        /// </summary>
+        /// <param name="path">The path to the database file.</param>
+        /// <param name="pagecachesize">The size of the page cache.</param>
+        /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
+        /// <returns>A task that when awaited contains a new instance of <see cref="LocalBugReportDatabase"/>.</returns>
         public static async Task<LocalBugReportDatabase> CreateAsync(string path, long pagecachesize, LocalBugReportDatabase? dbnew = null)
         {
             dbnew ??= new LocalBugReportDatabase();
@@ -46,6 +57,10 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Obfuscates sensitive data in the database, readying it for a bug report.
+        /// </summary>
+        /// <returns>A task that completes when the obfuscation is finished.</returns>
         public async Task Fix()
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))

@@ -40,7 +40,12 @@ using System.Threading;
 
 namespace Duplicati.Library.Main.Database
 {
-    internal class LocalDatabase : IDisposable
+    /// <summary>
+    /// Represents a local database for Duplicati operations.
+    /// This class provides methods to interact with the local SQLite database, including
+    /// managing remote volumes, logging operations, and handling transactions.
+    /// </summary>
+    internal class LocalDatabase : IDisposable, IAsyncDisposable
     {
         /// <summary>
         /// The tag used for logging
@@ -53,39 +58,114 @@ namespace Duplicati.Library.Main.Database
         /// <remarks>SQLite has a limit of 999 parameters in a single statement</remarks>
         public const int CHUNK_SIZE = 128;
 
-        // All of the required fields have been set to null! to ignore the compiler warning, as they will be initialized in the Create* factory functions.
+        // All of the required fields have been set to null! to ignore the compiler warning, as they will be initialized in the Create* factory methods.
+        /// <summary>
+        /// The SQLite connection to the local database.
+        /// </summary>
         protected SqliteConnection m_connection = null!;
+        /// <summary>
+        /// The operation ID for the current operation.
+        /// </summary>
         protected long m_operationid = -1;
+        /// <summary>
+        /// The size of the SQLite page cache.
+        /// </summary>
         protected long m_pagecachesize;
+        /// <summary>
+        /// Indicates whether the database has executed a vacuum operation.
+        /// </summary>
         private bool m_hasExecutedVacuum;
+        /// <summary>
+        /// The reusable transaction for the current operation.
+        /// </summary>
         protected ReusableTransaction m_rtr = null!;
+        /// <summary>
+        /// A read-only property that provides access to the current transaction.
+        /// </summary>
         public ReusableTransaction Transaction { get { return m_rtr; } }
 
+        /// <summary>
+        /// The command used to update a remote volume in the database.
+        /// </summary>
         private SqliteCommand m_updateremotevolumeCommand = null!;
+        /// <summary>
+        /// The command used to select remote volumes from the database.
+        /// </summary>
         private SqliteCommand m_selectremotevolumesCommand = null!;
+        /// <summary>
+        /// The command used to select a specific remote volume by name.
+        /// </summary>
         private SqliteCommand m_selectremotevolumeCommand = null!;
+        /// <summary>
+        /// The command used to remove a remote volume from the database.
+        /// </summary>
         private SqliteCommand m_removeremotevolumeCommand = null!;
+        /// <summary>
+        /// The command used to remove deleted remote volumes from the database.
+        /// </summary>
         private SqliteCommand m_removedeletedremotevolumeCommand = null!;
+        /// <summary>
+        /// The command used to select the ID of a remote volume by name.
+        /// </summary>
         private SqliteCommand m_selectremotevolumeIdCommand = null!;
+        /// <summary>
+        /// The command used to create a new remote volume in the database.
+        /// </summary>
         private SqliteCommand m_createremotevolumeCommand = null!;
+        /// <summary>
+        /// The command used to select duplicate remote volumes from the database.
+        /// </summary>
         private SqliteCommand m_selectduplicateRemoteVolumesCommand = null!;
 
+        /// <summary>
+        /// The command used to insert log data into the database.
+        /// </summary>
         private SqliteCommand m_insertlogCommand = null!;
+        /// <summary>
+        /// The command used to insert remote operation logs into the database.
+        /// </summary>
         private SqliteCommand m_insertremotelogCommand = null!;
+        /// <summary>
+        /// The command used to insert index block links into the database.
+        /// </summary>
         private SqliteCommand m_insertIndexBlockLink = null!;
 
+        /// <summary>
+        /// The command used to find a path prefix in the database.
+        /// </summary>
         private SqliteCommand m_findpathprefixCommand = null!;
+        /// <summary>
+        /// The command used to insert a new path prefix into the database.
+        /// </summary>
         private SqliteCommand m_insertpathprefixCommand = null!;
 
+        /// <summary>
+        /// A constant representing the blockset ID for a folder.
+        /// </summary>
         public const long FOLDER_BLOCKSET_ID = -100;
+        /// <summary>
+        /// A constant representing the blockset ID for a symlink.
+        /// </summary>
         public const long SYMLINK_BLOCKSET_ID = -200;
 
+        /// <summary>
+        /// The timestamp of the operation being performed.
+        /// </summary>
         public DateTime OperationTimestamp { get; private set; }
 
+        /// <summary>
+        /// A read-only property that provides access to the internal SQLite connection.
+        /// </summary>
         internal SqliteConnection Connection { get { return m_connection; } }
 
+        /// <summary>
+        /// Indicates whether the database has been disposed.
+        /// </summary>
         public bool IsDisposed { get; private set; }
 
+        /// <summary>
+        /// Indicates whether the connection should be closed when the database is disposed.
+        /// </summary>
         public bool ShouldCloseConnection { get; set; }
 
         // Constructor is private to force use of CreateLocalDatabaseAsync
@@ -98,6 +178,13 @@ namespace Duplicati.Library.Main.Database
             throw new NotImplementedException("Use the CreateLocalDatabaseAsync or CreateLocalDatabase functions instead");
         }
 
+        /// <summary>
+        /// Creates a new SQLite connection to the specified database path with the given page cache size.
+        /// This method ensures that the directory for the database exists and upgrades the database schema if necessary.
+        /// </summary>
+        /// <param name="path">The path to the SQLite database file.</param>
+        /// <param name="pagecachesize">The size of the SQLite page cache in bytes.</param>
+        /// <returns>A task that, when awaited, returns a new <see cref="SqliteConnection"/> to the specified database.</returns>
         protected static async Task<SqliteConnection> CreateConnectionAsync(string path, long pagecachesize)
         {
             path = Path.GetFullPath(path);
@@ -121,6 +208,16 @@ namespace Duplicati.Library.Main.Database
             return c;
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="LocalDatabase"/> with the specified parameters.
+        /// This method initializes the database connection, sets the operation timestamp, and prepares the necessary commands for database operations.
+        /// </summary>
+        /// <param name="path">The path to the SQLite database file.</param>
+        /// <param name="operation">The description of the operation being performed.</param>
+        /// <param name="shouldclose">Indicates whether the connection should be closed when the database is disposed.</param>
+        /// <param name="pagecachesize">The size of the SQLite page cache in bytes.</param>
+        /// <param name="db">An optional existing <see cref="LocalDatabase"/> instance to use. If not provided, a new instance will be created.</param>
+        /// <returns>A task that, when awaited, returns a new instance of <see cref="LocalDatabase"/>.</returns>
         public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string operation, bool shouldclose, long pagecachesize, LocalDatabase? db = null)
         {
             db ??= new LocalDatabase();
@@ -136,6 +233,12 @@ namespace Duplicati.Library.Main.Database
             return db;
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="LocalDatabase"/> based on an existing database instance.
+        /// This method copies the connection and transaction from the parent database and initializes the new database with the same operation timestamp and ID.
+        /// </summary>
+        /// <param name="dbparent">The parent <see cref="LocalDatabase"/> instance to copy from.</param>
+        /// <param name="dbnew">An optional existing <see cref="LocalDatabase"/> instance to use. If not provided, a new instance will be created.</param>
         public static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase dbparent, LocalDatabase? dbnew = null)
         {
             dbnew ??= new LocalDatabase();
@@ -152,6 +255,14 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="LocalDatabase"/> with the specified SQLite connection and operation description.
+        /// This method initializes the database connection, sets the operation timestamp, and prepares the necessary commands for database operations.
+        /// </summary>
+        /// <param name="connection">The SQLite connection to use for the database operations.</param>
+        /// <param name="operation">The description of the operation being performed.</param>
+        /// <param name="dbnew">An optional existing <see cref="LocalDatabase"/> instance to use. If not provided, a new instance will be created.</param>
+        /// <returns>A task that, when awaited, returns a new instance of <see cref="LocalDatabase"/>.</returns>
         public static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection, string operation, LocalDatabase? dbnew = null)
         {
             dbnew ??= new LocalDatabase();
@@ -206,6 +317,13 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="LocalDatabase"/> with the specified SQLite connection.
+        /// This method initializes the database connection, sets up the reusable transaction, and prepares the necessary commands for database operations.
+        /// </summary>
+        /// <param name="connection">The SQLite connection to use for the database operations.</param>
+        /// <param name="dbnew">An optional existing <see cref="LocalDatabase"/> instance to use. If not provided, a new instance will be created.</param>
+        /// <returns>A task that, when awaited, returns a new instance of <see cref="LocalDatabase"/>.</returns>
         private static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection, LocalDatabase? dbnew = null)
         {
             dbnew ??= new LocalDatabase();
@@ -382,25 +500,55 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Creates a DateTime instance by adding the specified number of seconds to the EPOCH value
+        /// Creates a DateTime instance by adding the specified number of seconds to the EPOCH value.
         /// </summary>
+        /// <param name="seconds">The number of seconds since the EPOCH (January 1, 1970).</param>
+        /// <returns>A DateTime instance representing the specified number of seconds since the EPOCH.</returns>
         public static DateTime ParseFromEpochSeconds(long seconds)
         {
             return Library.Utility.Utility.EPOCH.AddSeconds(seconds);
         }
 
+        /// <summary>
+        /// Updates the state of a remote volume in the database.
+        /// </summary>
+        /// <param name="name">The name of the remote volume to update.</param>
+        /// <param name="state">The new state of the remote volume.</param>
+        /// <param name="size">The size of the remote volume in bytes.</param>
+        /// <param name="hash">The hash of the remote volume, or null if not applicable.</param>
+        /// <returns>A task that completes when the remote volume has been updated.</returns>
         public async Task UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash)
         {
             await UpdateRemoteVolume(name, state, size, hash, false)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Updates the state of a remote volume in the database.
+        /// </summary>
+        /// <param name="name">The name of the remote volume to update.</param>
+        /// <param name="state">The new state of the remote volume.</param>
+        /// <param name="size">The size of the remote volume in bytes.</param>
+        /// <param name="hash">The hash of the remote volume, or null if not applicable.</param>
+        /// <param name="suppressCleanup">If true, suppresses cleanup of the remote volume after updating.</param>
+        /// <returns>A task that completes when the remote volume has been updated.</returns>
         public async Task UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash, bool suppressCleanup)
         {
             await UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), null)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Updates the state of a remote volume in the database.
+        /// </summary>
+        /// <param name="name">The name of the remote volume to update.</param>
+        /// <param name="state">The new state of the remote volume.</param>
+        /// <param name="size">The size of the remote volume in bytes.</param>
+        /// <param name="hash">The hash of the remote volume, or null if not applicable.</param>
+        /// <param name="suppressCleanup">If true, suppresses cleanup of the remote volume after updating.</param>
+        /// <param name="deleteGraceTime">The time after which the remote volume can be deleted.</param>
+        /// <param name="setArchived">If true, sets the remote volume as archived.</param>
+        /// <returns>A task that completes when the remote volume has been updated.</returns>
         public async Task UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash, bool suppressCleanup, TimeSpan deleteGraceTime, bool? setArchived)
         {
             var c = await m_updateremotevolumeCommand.SetTransaction(m_rtr)
@@ -461,6 +609,10 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Gets the ID and timestamp of all filesets in the database, ordered by timestamp in descending order.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of key-value pairs, where each pair contains the fileset ID and its timestamp.</returns>
         public async IAsyncEnumerable<KeyValuePair<long, DateTime>> FilesetTimes()
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -480,6 +632,15 @@ namespace Duplicati.Library.Main.Database
                 );
         }
 
+        /// <summary>
+        /// Generates a SQL WHERE clause for filtering file lists based on a specified time and versions.
+        /// </summary>
+        /// <param name="time">The time to filter files by. If Ticks is 0, it will not be used in the query.</param>
+        /// <param name="versions">An array of versions to filter files by. If null or empty, it will not be used in the query.</param>
+        /// <param name="filesetslist">An optional list of filesets to use for filtering. If null, it will fetch all filesets from the database.</param>
+        /// <param name="singleTimeMatch">If true, matches files with the exact timestamp; otherwise, matches files with timestamps less than or equal to the specified time.</param>
+        /// <returns>A task that, when awaited, returns a tuple containing the SQL WHERE clause and a dictionary of parameter values.</returns>
+        /// <exception cref="Exception">Thrown if the provided time is unspecified.</exception>
         public async Task<(string Query, Dictionary<string, object?> Values)> GetFilelistWhereClause(DateTime time, long[]? versions, IEnumerable<KeyValuePair<long, DateTime>>? filesetslist = null, bool singleTimeMatch = false)
         {
             KeyValuePair<long, DateTime>[] filesets;
@@ -540,6 +701,11 @@ namespace Duplicati.Library.Main.Database
             return (query.ToString(), args);
         }
 
+        /// <summary>
+        /// Gets the ID of a remote volume by its name.
+        /// </summary>
+        /// <param name="file">The name of the remote volume.</param>
+        /// <returns>A task that, when awaited, returns the ID of the remote volume. If the volume does not exist, it returns -1.</returns>
         public async Task<long> GetRemoteVolumeID(string file)
         {
             return await m_selectremotevolumeIdCommand
@@ -549,6 +715,11 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Gets the IDs of remote volumes for a list of files.
+        /// </summary>
+        /// <param name="files">An enumerable collection of file names.</param>
+        /// <returns>An asynchronous enumerable of key-value pairs, where each pair contains the file name and its corresponding remote volume ID.</returns>
         public async IAsyncEnumerable<KeyValuePair<string, long>> GetRemoteVolumeIDs(IEnumerable<string> files)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -571,6 +742,11 @@ namespace Duplicati.Library.Main.Database
                 yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
         }
 
+        /// <summary>
+        /// Gets a remote volume entry by its file name.
+        /// </summary>
+        /// <param name="file">The name of the remote volume file.</param>
+        /// <returns>A task that, when awaited, returns a <see cref="RemoteVolumeEntry"/> representing the remote volume. If the volume does not exist, it returns an empty entry.</returns>
         public async Task<RemoteVolumeEntry> GetRemoteVolume(string file)
         {
             m_selectremotevolumeCommand
@@ -593,6 +769,10 @@ namespace Duplicati.Library.Main.Database
             return RemoteVolumeEntry.Empty;
         }
 
+        /// <summary>
+        /// Gets remote volumes that are duplicates, meaning they have the same name but different states.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of key-value pairs, where each pair contains the name of the remote volume and its state.</returns>
         public async IAsyncEnumerable<KeyValuePair<string, RemoteVolumeState>> DuplicateRemoteVolumes()
         {
             m_selectduplicateRemoteVolumesCommand.SetTransaction(m_rtr);
@@ -608,6 +788,10 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Gets all remote volumes from the database.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of <see cref="RemoteVolumeEntry"/> representing all remote volumes.</returns>
         public async IAsyncEnumerable<RemoteVolumeEntry> GetRemoteVolumes()
         {
             m_selectremotevolumesCommand.SetTransaction(m_rtr);
@@ -631,11 +815,12 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Log an operation performed on the remote backend
+        /// Log an operation performed on the remote backend.
         /// </summary>
-        /// <param name="operation">The operation performed</param>
-        /// <param name="path">The path involved</param>
-        /// <param name="data">Any data relating to the operation</param>
+        /// <param name="operation">The operation performed.</param>
+        /// <param name="path">The path involved.</param>
+        /// <param name="data">Any data relating to the operation.</param>
+        /// <returns>A task that completes when the operation log has been recorded.</returns>
         public async Task LogRemoteOperation(string operation, string path, string? data)
         {
             await m_insertremotelogCommand
@@ -650,11 +835,12 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Log a debug message
+        /// Log a debug message.
         /// </summary>
-        /// <param name="type">The message type</param>
-        /// <param name="message">The message</param>
-        /// <param name="exception">An optional exception</param>
+        /// <param name="type">The message type.</param>
+        /// <param name="message">The message.</param>
+        /// <param name="exception">An optional exception.</param>
+        /// <returns>A task that completes when the log message has been recorded.</returns>
         public async Task LogMessage(string type, string message, Exception? exception)
         {
             await m_insertlogCommand
@@ -668,6 +854,14 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Unlinks a remote volume from the database.
+        /// This operation removes the remote volume entry from the database without deleting the actual volume.
+        /// </summary>
+        /// <param name="name">The name of the remote volume to unlink.</param>
+        /// <param name="state">The state of the remote volume to unlink.</param>
+        /// <returns>A task that completes when the remote volume has been unlinked.</returns>
+        /// <exception cref="Exception">Thrown if the number of unlinked remote volumes is not equal to 1.</exception>
         public async Task UnlinkRemoteVolume(string name, RemoteVolumeState state)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -688,11 +882,21 @@ namespace Duplicati.Library.Main.Database
                 throw new Exception($"Unexpected number of remote volumes deleted: {c}, expected {1}");
         }
 
+        /// <summary>
+        /// Removes a remote volume from the database.
+        /// </summary>
+        /// <param name="name">The name of the remote volume to remove.</param>
+        /// <returns>A task that completes when the remote volume has been removed.</returns>
         public async Task RemoveRemoteVolume(string name)
         {
             await RemoveRemoteVolumes([name]).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Removes multiple remote volumes from the database.
+        /// </summary>
+        /// <param name="names">An enumerable collection of names of remote volumes to remove.</param>
+        /// <returns>A task that completes when the remote volumes have been removed.</returns>
         public async Task RemoveRemoteVolumes(IEnumerable<string> names)
         {
             if (names == null || !names.Any()) return;
@@ -1031,6 +1235,12 @@ namespace Duplicati.Library.Main.Database
                 throw new ConstraintException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry");
         }
 
+        /// <summary>
+        /// Performs a VACUUM operation on the database to reclaim unused space.
+        /// This operation can help optimize the database performance by defragmenting it.
+        /// Note: This operation can take a significant amount of time depending on the size of the database.
+        /// </summary>
+        /// <returns>A task that completes when the VACUUM operation has finished.</returns>
         public async Task Vacuum()
         {
             m_hasExecutedVacuum = true;
@@ -1039,24 +1249,56 @@ namespace Duplicati.Library.Main.Database
             await cmd.ExecuteNonQueryAsync("VACUUM").ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Registers a new remote volume in the database.
+        /// </summary>
+        /// <param name="name">The name of the remote volume.</param>
+        /// <param name="type">The type of the remote volume.</param>
+        /// <param name="size">The size of the remote volume in bytes. Use -1 for unknown size.</param>
+        /// <param name="state">The state of the remote volume.</param>
+        /// <returns>A task that, when awaited, returns the ID of the newly registered remote volume.</returns>
         public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, long size, RemoteVolumeState state)
         {
             return await RegisterRemoteVolume(name, type, state, size, new TimeSpan(0))
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Registers a new remote volume in the database.
+        /// </summary>
+        /// <param name="name">The name of the remote volume.</param>
+        /// <param name="type">The type of the remote volume.</param>
+        /// <param name="state">The state of the remote volume.</param>
+        /// <returns>A task that, when awaited, returns the ID of the newly registered remote volume.</returns>
         public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state)
         {
             return await RegisterRemoteVolume(name, type, state, new TimeSpan(0))
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Registers a new remote volume in the database.
+        /// </summary>
+        /// <param name="name">The name of the remote volume.</param>
+        /// <param name="type">The type of the remote volume.</param>
+        /// <param name="state">The state of the remote volume.</param>
+        /// <param name="deleteGraceTime">The time after which the remote volume can be deleted.</param>
+        /// <returns>A task that, when awaited, returns the ID of the newly registered remote volume.</returns>
         public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, TimeSpan deleteGraceTime)
         {
             return await RegisterRemoteVolume(name, type, state, -1, deleteGraceTime)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Registers a new remote volume in the database.
+        /// </summary>
+        /// <param name="name">The name of the remote volume.</param>
+        /// <param name="type">The type of the remote volume.</param>
+        /// <param name="state">The state of the remote volume.</param>
+        /// <param name="size">The size of the remote volume in bytes. Use -1 for unknown size.</param>
+        /// <param name="deleteGraceTime">The time after which the remote volume can be deleted.</param>
+        /// <returns>A task that, when awaited, returns the ID of the newly registered remote volume.</returns>
         public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, long size, TimeSpan deleteGraceTime)
         {
             var r = await m_createremotevolumeCommand
@@ -1075,6 +1317,16 @@ namespace Duplicati.Library.Main.Database
             return r;
         }
 
+        /// <summary>
+        /// Retrieves the IDs of filesets that match a specific restore time and optional versions.
+        /// If no filesets match the criteria, it returns the newest fileset ID.
+        /// </summary>
+        /// <param name="restoretime">The time to restore from.</param>
+        /// <param name="versions">Optional array of versions to match against the filesets.</param>
+        /// <param name="singleTimeMatch">If true, only match filesets that exactly match the restore time.</param>
+        /// <returns>An asynchronous enumerable of fileset IDs that match the criteria.</returns>
+        /// <exception cref="Exception">Thrown if the provided DateTime is unspecified.</exception>
+        /// <exception cref="UserInformationException">Thrown if no backups are found at the specified date.</exception>
         public async IAsyncEnumerable<long> GetFilesetIDs(DateTime restoretime, long[]? versions, bool singleTimeMatch = false)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
@@ -1118,6 +1370,12 @@ namespace Duplicati.Library.Main.Database
                 yield return el;
         }
 
+        /// <summary>
+        /// Finds filesets that match a specific restore time and optional versions.
+        /// </summary>
+        /// <param name="restoretime">The time to restore from.</param>
+        /// <param name="versions">Optional array of versions to match against the filesets.</param>
+        /// <returns>An asynchronous task that returns a collection of fileset IDs that match the criteria.</returns>
         public async Task<IEnumerable<long>> FindMatchingFilesets(DateTime restoretime, long[]? versions)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
@@ -1143,6 +1401,12 @@ namespace Duplicati.Library.Main.Database
             return res;
         }
 
+        /// <summary>
+        /// Checks if a fileset is a full backup.
+        /// A fileset is considered a full backup if its "IsFullBackup" field is set to FULL_BACKUP.
+        /// </summary>
+        /// <param name="filesetTime">The timestamp of the fileset to check.</param>
+        /// <returns>A task that, when awaited, returns true if the fileset is a full backup, otherwise false.</returns>
         public async Task<bool> IsFilesetFullBackup(DateTime filesetTime)
         {
             using var cmd = m_connection.CreateCommand();
@@ -1161,6 +1425,10 @@ namespace Duplicati.Library.Main.Database
             return isFullBackup == BackupType.FULL_BACKUP;
         }
 
+        /// <summary>
+        /// Retrieves a list of database options from the "Configuration" table.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of key-value pairs representing the database options.</returns>
         private async IAsyncEnumerable<KeyValuePair<string, string>> GetDbOptionList()
         {
             using var cmd = m_connection.CreateCommand(@"
@@ -1179,6 +1447,10 @@ namespace Duplicati.Library.Main.Database
                 );
         }
 
+        /// <summary>
+        /// Retrieves all database options as a dictionary.
+        /// </summary>
+        /// <returns>A task that, when awaited, returns a dictionary containing all database options.</returns>
         public async Task<IDictionary<string, string>> GetDbOptions()
         {
             var res = await GetDbOptionList()
@@ -1189,10 +1461,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Updates a database option
+        /// Updates a database option.
         /// </summary>
-        /// <param name="key">The key to update</param>
-        /// <param name="value">The value to set</param>
+        /// <param name="key">The key to update.</param>
+        /// <param name="value">The value to set.</param>
         private async Task UpdateDbOption(string key, bool value)
         {
             var opts = await GetDbOptions().ConfigureAwait(false);
@@ -1207,8 +1479,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Flag indicating if a repair is in progress
+        /// Flag indicating if a repair is in progress.
         /// </summary>
+        /// <param name="value">Optional value to set the flag to. If null, the current value in the database is returned.</param>
+        /// <returns>A task that, when awaited, returns true if a repair is in progress, otherwise false.</returns>
         public async Task<bool> RepairInProgress(bool? value = null)
         {
             if (value is bool v)
@@ -1224,8 +1498,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Flag indicating if a repair is in progress
+        /// Flag indicating if the database has been partially recreated.
         /// </summary>
+        /// <param name="value">Optional value to set the flag to. If null, the current value in the database is returned.</param>
+        /// <returns>A task that, when awaited, returns true if the database has been partially recreated, otherwise false.</returns>
         public async Task<bool> PartiallyRecreated(bool? value = null)
         {
             if (value is bool v)
@@ -1241,8 +1517,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Flag indicating if the database can contain partial uploads
+        /// Flag indicating if the database has been terminated with active uploads.
         /// </summary>
+        /// <param name="value">Optional value to set the flag to. If null, the current value in the database is returned.</param>
+        /// <returns>A task that, when awaited, returns true if the database has been terminated with active uploads, otherwise false.</returns>
         public async Task<bool> TerminatedWithActiveUploads(bool? value = null)
         {
             if (value is bool v)
@@ -1258,10 +1536,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Sets the database options
+        /// Sets the database options.
         /// </summary>
-        /// <param name="options">The options to set</param>
-        /// <param name="transaction">An optional transaction</param>
+        /// <param name="options">The options to set.</param>
+        /// <returns>A task that completes when the options have been set.</returns>
         public async Task SetDbOptions(IDictionary<string, string> options)
         {
             using var cmd = m_connection.CreateCommand();
@@ -1289,6 +1567,11 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Counts the number of blocks larger than a specified size.
+        /// </summary>
+        /// <param name="fhblocksize">The size in bytes to compare against.</param>
+        /// <returns>A task that, when awaited, returns the count of blocks larger than the specified size.</returns>
         public async Task<long> GetBlocksLargerThan(long fhblocksize)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -1305,35 +1588,35 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Verifies the consistency of the database
+        /// Verifies the consistency of the database.
         /// </summary>
-        /// <param name="blocksize">The block size in bytes</param>
-        /// <param name="hashsize">The hash size in byts</param>
-        /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
-        /// <param name="transaction">The transaction to run in</param>
+        /// <param name="blocksize">The block size in bytes.</param>
+        /// <param name="hashsize">The hash size in bytes.</param>
+        /// <param name="verifyfilelists">Also verify filelists (can be slow).</param>
+        /// <returns>A task that completes when the consistency check is finished.</returns>
         public async Task VerifyConsistency(long blocksize, long hashsize, bool verifyfilelists)
             => await VerifyConsistencyInner(blocksize, hashsize, verifyfilelists, false)
                     .ConfigureAwait(false);
 
         /// <summary>
-        /// Verifies the consistency of the database prior to repair
+        /// Verifies the consistency of the database prior to repair.
         /// </summary>
-        /// <param name="blocksize">The block size in bytes</param>
-        /// <param name="hashsize">The hash size in byts</param>
-        /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
-        /// <param name="transaction">The transaction to run in</param>
+        /// <param name="blocksize">The block size in bytes.</param>
+        /// <param name="hashsize">The hash size in bytes.</param>
+        /// <param name="verifyfilelists">Also verify filelists (can be slow).</param>
+        /// <returns>A task that completes when the consistency check is finished.</returns>
         public async Task VerifyConsistencyForRepair(long blocksize, long hashsize, bool verifyfilelists)
             => await VerifyConsistencyInner(blocksize, hashsize, verifyfilelists, true)
                     .ConfigureAwait(false);
 
         /// <summary>
-        /// Verifies the consistency of the database
+        /// Verifies the consistency of the database.
         /// </summary>
-        /// <param name="blocksize">The block size in bytes</param>
-        /// <param name="hashsize">The hash size in byts</param>
-        /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
-        /// <param name="laxVerifyForRepair">Disable verify for errors that will be fixed by repair</param>
-        /// <param name="transaction">The transaction to run in</param>
+        /// <param name="blocksize">The block size in bytes.</param>
+        /// <param name="hashsize">The hash size in bytes.</param>
+        /// <param name="verifyfilelists">Also verify filelists (can be slow).</param>
+        /// <param name="laxVerifyForRepair">Disable verify for errors that will be fixed by repair.</param>
+        /// <returns>A task that completes when the consistency check is finished.</returns>
         private async Task VerifyConsistencyInner(long blocksize, long hashsize, bool verifyfilelists, bool laxVerifyForRepair)
         {
             using var cmd = m_connection.CreateCommand()
@@ -1692,18 +1975,37 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Represents a block in the database.
+        /// </summary>
         public interface IBlock
         {
+            /// <summary>
+            /// Gets the hash of the block.
+            /// </summary>
             string Hash { get; }
+            /// <summary>
+            /// Gets the size of the block in bytes.
+            /// </summary>
             long Size { get; }
         }
 
+        /// <summary>
+        /// Represents a block in the database with its hash and size.
+        /// </summary>
+        /// <param name="hash">The hash of the block.</param>
+        /// <param name="size">The size of the block in bytes.</param>
         internal class Block(string hash, long size) : IBlock
         {
             public string Hash { get; private set; } = hash;
             public long Size { get; private set; } = size;
         }
 
+        /// <summary>
+        /// Retrieves all blocks associated with a specific volume ID.
+        /// </summary>
+        /// <param name="volumeid">The ID of the volume to retrieve blocks for.</param>
+        /// <returns>An asynchronous enumerable of blocks associated with the specified volume ID.</returns>
         public async IAsyncEnumerable<IBlock> GetBlocks(long volumeid)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -1726,25 +2028,55 @@ namespace Duplicati.Library.Main.Database
                 );
         }
 
+        /// <summary>
+        /// An asynchronous enumerable that retrieves blocklist hashes for files in a specific fileset.
+        /// </summary>
         private class BlocklistHashEnumerable : IAsyncEnumerable<string>
         {
+            /// <summary>
+            /// An asynchronous enumerator for the blocklist hashes.
+            /// </summary>
             private class BlocklistHashEnumerator : IDisposable, IAsyncEnumerator<string>
             {
+                /// <summary>
+                /// The data reader used to read blocklist hashes.
+                /// </summary>
                 private readonly SqliteDataReader m_reader;
+                /// <summary>
+                /// The parent enumerable that this enumerator belongs to.
+                /// </summary>
                 private readonly BlocklistHashEnumerable m_parent;
+                /// <summary>
+                /// The path of the current file being processed.
+                /// </summary>
                 private string? m_path = null;
+                /// <summary>
+                /// Indicates if this is the first entry being processed.
+                /// </summary>
                 private bool m_first = true;
+                /// <summary>
+                /// The current blocklist hash being processed.
+                /// </summary>
                 private string? m_current = null;
 
+                /// <summary>
+                /// Initializes a new instance of the <see cref="BlocklistHashEnumerator"/> class.
+                /// </summary>
+                /// <param name="parent">The parent enumerable that this enumerator belongs to.</param>
+                /// <param name="reader">The data reader used to read blocklist hashes.</param>
                 public BlocklistHashEnumerator(BlocklistHashEnumerable parent, SqliteDataReader reader)
                 {
                     m_reader = reader;
                     m_parent = parent;
                 }
 
+                /// <summary>
+                /// Gets the current blocklist hash.
+                /// </summary>
                 public string Current { get { return m_current!; } }
 
                 public void Dispose() { }
+                // The warning is suppressed because the interface requires the method, but there's nothing to dispose.
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
                 public async ValueTask DisposeAsync() { }
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
@@ -1783,6 +2115,9 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
 
+                /// <summary>
+                /// Resets the enumerator to its initial state.
+                /// </summary>
                 public void Reset()
                 {
                     if (!m_first)
@@ -1792,16 +2127,28 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// The data reader used to read blocklist hashes.
+            /// </summary>
             private readonly SqliteDataReader m_reader;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="BlocklistHashEnumerable"/> class.
+            /// </summary>
             public BlocklistHashEnumerable(SqliteDataReader reader)
             {
                 m_reader = reader;
                 MoreData = true;
             }
 
+            /// <summary>
+            /// Indicates if there is more data to read.
+            /// </summary>
             public bool MoreData { get; protected set; }
 
+            /// <summary>
+            /// Gets an enumerator that iterates through the blocklist hashes.
+            /// </summary>
             public IAsyncEnumerator<string> GetEnumerator()
             {
                 return new BlocklistHashEnumerator(this, m_reader);
@@ -1813,6 +2160,9 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// SQL query for listing all filesets in the database, including their metadata and blocklist hashes.
+        /// </summary>
         public const string LIST_FILESETS = @"
             SELECT
                 ""L"".""Path"",
@@ -1894,6 +2244,9 @@ namespace Duplicati.Library.Main.Database
                 ON ""M"".""BlocksetID"" = ""L"".""MetablocksetID""
         ";
 
+        /// <summary>
+        /// SQL query for listing folders and symlinks in a specific fileset, including their metadata and blocklist hashes.
+        /// </summary>
         public const string LIST_FOLDERS_AND_SYMLINKS = @"
             SELECT
                 ""G"".""BlocksetID"",
@@ -1941,6 +2294,12 @@ namespace Duplicati.Library.Main.Database
                 ""H"".""Index""
             ";
 
+        /// <summary>
+        /// Writes the contents of a fileset to a specified volume writer.
+        /// </summary>
+        /// <param name="filesetvolume">The volume writer to which the fileset will be written.</param>
+        /// <param name="filesetId">The ID of the fileset to write.</param>
+        /// <returns>A task that completes when the fileset has been written.</returns>
         public async Task WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, long filesetId)
         {
             using var cmd = m_connection.CreateCommand()
@@ -2027,6 +2386,12 @@ namespace Duplicati.Library.Main.Database
                 }
         }
 
+        /// <summary>
+        /// Links a fileset to a specific volume by updating the VolumeID in the Fileset table.
+        /// </summary>
+        /// <param name="filesetid">The ID of the fileset to link.</param>
+        /// <param name="volumeid">The ID of the volume to link the fileset to.</param>
+        /// <returns>A task that completes when the link operation is finished.</returns>
         public async Task LinkFilesetToVolume(long filesetid, long volumeid)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -2046,6 +2411,11 @@ namespace Duplicati.Library.Main.Database
                 throw new Exception($"Failed to link filesetid {filesetid} to volumeid {volumeid}");
         }
 
+        /// <summary>
+        /// Pushes timestamp changes from the latest version of a fileset to the previous version.
+        /// </summary>
+        /// <param name="filesetId">The ID of the fileset whose timestamp changes will be pushed.</param>
+        /// <returns>A task that completes when the timestamp changes have been pushed.</returns>
         public async Task PushTimestampChangesToPreviousVersion(long filesetId)
         {
             var query = @"
@@ -2073,13 +2443,23 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Keeps a list of filenames in a temporary table with a single column Path
+        /// Keeps a list of filenames in a temporary table with a single column Path.
         /// </summary>
         public class FilteredFilenameTable : IDisposable, IAsyncDisposable
         {
+            /// <summary>
+            /// The name of the temporary table that holds the filtered filenames.
+            /// </summary>
             public string Tablename { get; private set; }
+            /// <summary>
+            /// The database used to create and manage the temporary table.
+            /// </summary>
             private readonly LocalDatabase m_db;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="FilteredFilenameTable"/> class.
+            /// </summary>
+            /// <param name="db">The database to use for creating the temporary table.</param>
             private FilteredFilenameTable(LocalDatabase db)
             {
                 Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -2092,6 +2472,12 @@ namespace Duplicati.Library.Main.Database
                 throw new NotImplementedException("Use the Create method instead.");
             }
 
+            /// <summary>
+            /// Creates a new instance of the <see cref="FilteredFilenameTable"/> class asynchronously.
+            /// </summary>
+            /// <param name="db">The database to use for creating the temporary table.</param>
+            /// <param name="filter">The filter to apply to the filenames.</param>
+            /// <returns>A task that represents the asynchronous operation, with a <see cref="FilteredFilenameTable"/> as the result.</returns>
             public static async Task<FilteredFilenameTable> CreateFilteredFilenameTableAsync(LocalDatabase db, IFilter filter)
             {
                 var ftt = new FilteredFilenameTable(db);
@@ -2228,6 +2614,13 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Renames a remote file in the database, preserving its ID links.
+        /// </summary>
+        /// <param name="oldname">The current name of the remote file.</param>
+        /// <param name="newname">The new name for the remote file.</param>
+        /// <returns>A task that completes when the renaming operation is finished.</returns>
+        /// <exception cref="Exception">Thrown if the renaming operation does not affect exactly one row.</exception>
         public async Task RenameRemoteFile(string oldname, string newname)
         {
             //Rename the old entry, to preserve ID links
@@ -2280,9 +2673,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
         /// </summary>
-        /// <param name="volumeid">The ID of the fileset volume to update</param>
-        /// <param name="timestamp">The timestamp of the operation to create</param>
-        /// <param name="transaction">An optional external transaction</param>
+        /// <param name="volumeid">The ID of the fileset volume to update.</param>
+        /// <param name="timestamp">The timestamp of the operation to create.</param>
+        /// <returns>A task that when awaited contains the ID of the newly created fileset.</returns>
         public virtual async Task<long> CreateFileset(long volumeid, DateTime timestamp)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -2319,7 +2712,8 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="indexVolumeID">The ID of the index volume.</param>
         /// <param name="blockVolumeID">The ID of the block volume.</param>
-        /// <param name="transaction">An optional transaction.</param>
+        /// <returns>A task that completes when the link has been added.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if either volume ID is less than or equal to 0.</exception>
         public async Task AddIndexBlockLink(long indexVolumeID, long blockVolumeID)
         {
             if (indexVolumeID <= 0)
@@ -2336,12 +2730,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Returns all unique blocklists for a given volume
+        /// Returns all unique blocklists for a given volume.
         /// </summary>
-        /// <param name="volumeid">The volume ID to get blocklists for</param>
-        /// <param name="blocksize">The blocksize</param>
-        /// <param name="hashsize">The size of the hash</param>
-        /// <param name="transaction">An optional external transaction</param>
+        /// <param name="volumeid">The volume ID to get blocklists for.</param>
+        /// <param name="blocksize">The blocksize.</param>
+        /// <param name="hashsize">The size of the hash.</param>
         /// <returns>An enumerable of tuples containing the blocklist hash, the blocklist data and the length of the data</returns>
         public async IAsyncEnumerable<(string Hash, byte[] Buffer, int Size)> GetBlocklists(long volumeid, long blocksize, int hashsize)
         {
@@ -2435,11 +2828,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Update fileset with full backup state
+        /// Update fileset with full backup state.
         /// </summary>
-        /// <param name="fileSetId">Existing file set to update</param>
-        /// <param name="isFullBackup">Full backup state</param>
-        /// <param name="transaction">An optional external transaction</param>
+        /// <param name="fileSetId">Existing file set to update.</param>
+        /// <param name="isFullBackup">Full backup state.</param>
+        /// <returns>A task that completes when the update is finished.</returns>
         public async Task UpdateFullBackupStateInFileset(long fileSetId, bool isFullBackup)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -2457,10 +2850,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Removes all entries in the fileset entry table for a given fileset ID
+        /// Removes all entries in the fileset entry table for a given fileset ID.
         /// </summary>
-        /// <param name="filesetId">The fileset ID to clear</param>
-        /// <param name="transaction">The transaction to use</param>
+        /// <param name="filesetId">The fileset ID to clear.</param>
+        /// <returns>A task that completes when the entries have been cleared.</returns>
         public async Task ClearFilesetEntries(long filesetId)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -2476,10 +2869,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Gets the last previous fileset that was incomplete
+        /// Gets the last previous fileset that was incomplete.
         /// </summary>
-        /// <param name="transaction">The transaction to use</param>
-        /// <returns>The last incomplete fileset or default</returns>
+        /// <param name="transaction">The transaction to use.</param>
+        /// <returns>A task that when awaited returns the last incomplete fileset or default</returns>
         public async Task<RemoteVolumeEntry> GetLastIncompleteFilesetVolume()
         {
             var candidates = GetIncompleteFilesets()
@@ -2497,10 +2890,9 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Gets a list of incomplete filesets
+        /// Gets a list of incomplete filesets.
         /// </summary>
-        /// <param name="transaction">An optional transaction</param>
-        /// <returns>A list of fileset IDs and timestamps</returns>
+        /// <returns>An asynchronous enumerable of key-value pairs where the key is the fileset ID and the value is the timestamp of the fileset.</returns>
         public async IAsyncEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets()
         {
             using var cmd = await m_connection.CreateCommandAsync(@$"
@@ -2538,11 +2930,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Gets the remote volume entry from the fileset ID
+        /// Gets the remote volume entry from the fileset ID.
         /// </summary>
-        /// <param name="filesetID">The fileset ID</param>
-        /// <param name="transaction">An optional transaction</param>
-        /// <returns>The remote volume entry or default</returns>
+        /// <param name="filesetID">The fileset ID.</param>
+        /// <returns>A task that when awaited returns the remote volume entry associated with the fileset ID, or default if not found.</returns>
         public async Task<RemoteVolumeEntry> GetRemoteVolumeFromFilesetID(long filesetID)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -2584,6 +2975,11 @@ namespace Duplicati.Library.Main.Database
                 return default(RemoteVolumeEntry);
         }
 
+        /// <summary>
+        /// Purges log data and remote operations older than the specified threshold.
+        /// </summary>
+        /// <param name="threshold">The threshold date and time; all log data and remote operations older than this will be purged.</param>
+        /// <returns>A task that completes when the purge operation is finished.</returns>
         public async Task PurgeLogData(DateTime threshold)
         {
             using var cmd = m_connection.CreateCommand(m_rtr);
@@ -2608,6 +3004,11 @@ namespace Duplicati.Library.Main.Database
             await m_rtr.CommitAsync().ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Purges deleted remote volumes that have not been modified since the specified threshold.
+        /// </summary>
+        /// <param name="threshold">The threshold date and time; all deleted remote volumes older than this will be purged.</param>
+        /// <returns>A task that completes when the purge operation is finished.</returns>
         public async Task PurgeDeletedVolumes(DateTime threshold)
         {
             await m_removedeletedremotevolumeCommand
@@ -2665,11 +3066,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Disposes all fields of a certain type, in the instance and its bases
+        /// Disposes all fields of a certain type, in the instance and its bases.
         /// </summary>
-        /// <typeparam name="T">The type of fields to find</typeparam>
-        /// <param name="item">The item to dispose</param>
-        /// <param name="throwExceptions"><c>True</c> if an aggregate exception should be thrown, or <c>false</c> if exceptions are silently captured</param>
+        /// <typeparam name="T">The type of fields to find.</typeparam>
+        /// <param name="item">The item to dispose.</param>
+        /// <param name="throwExceptions"><c>True</c> if an aggregate exception should be thrown, or <c>false</c> if exceptions are silently captured.</param>
         public static void DisposeAllFields<T>(object item, bool throwExceptions)
             where T : IDisposable
         {
@@ -2711,6 +3112,11 @@ namespace Duplicati.Library.Main.Database
                 throw new AggregateException(exceptions);
         }
 
+        /// <summary>
+        /// Writes the results of a basic operation to the log.
+        /// </summary>
+        /// <param name="result">The results to write.</param>
+        /// <returns>A task that completes when the results have been written.</returns>
         public async Task WriteResults(IBasicResults result)
         {
             if (IsDisposed)
@@ -2735,20 +3141,19 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// The current index into the path prefix buffer
+        /// The current index into the path prefix buffer.
         /// </summary>
         private int m_pathPrefixIndex = 0;
         /// <summary>
-        /// The path prefix lookup list
+        /// The path prefix lookup list.
         /// </summary>
         private readonly KeyValuePair<string, long>[] m_pathPrefixLookup = new KeyValuePair<string, long>[5];
 
         /// <summary>
-        /// Gets the path prefix ID, optionally creating it in the process.
+        /// Gets the path prefix ID, optionally creating it in the process..
         /// </summary>
-        /// <returns>The path prefix ID.</returns>
         /// <param name="prefix">The path to get the prefix for.</param>
-        /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
+        /// <returns>A task that when awaited returns the path prefix ID.</returns>
         public async Task<long> GetOrCreatePathPrefix(string prefix)
         {
             // Ring-buffer style lookup
@@ -2781,7 +3186,7 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// The path separators on this system
+        /// The path separators on this system.
         /// </summary>
         private static readonly char[] _pathseparators = [
             Path.DirectorySeparatorChar,
@@ -2789,10 +3194,10 @@ namespace Duplicati.Library.Main.Database
         ];
 
         /// <summary>
-        /// Helper method that splits a path on the last path separator
+        /// Helper method that splits a path on the last path separator.
         /// </summary>
-        /// <returns>The prefix and name.</returns>
         /// <param name="path">The path to split.</param>
+        /// <returns>The prefix and name.</returns>
         public static KeyValuePair<string, string> SplitIntoPrefixAndName(string path)
         {
             if (string.IsNullOrEmpty(path))
@@ -2807,11 +3212,18 @@ namespace Duplicati.Library.Main.Database
     }
 
     /// <summary>
-    /// Defines the backups types
+    /// Defines the backups types.
     /// </summary>
     public static class BackupType
     {
+        /// <summary>
+        /// Indicates a partial backup.
+        /// </summary>
         public const int PARTIAL_BACKUP = 0;
+        /// <summary>
+        /// Indicates a full backup.
+        /// </summary>
         public const int FULL_BACKUP = 1;
     }
+
 }
