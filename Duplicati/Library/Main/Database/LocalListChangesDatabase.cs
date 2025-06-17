@@ -44,7 +44,7 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
-        public interface IStorageHelper : IDisposable
+        public interface IStorageHelper : IDisposable, IAsyncDisposable
         {
             Task AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew);
 
@@ -644,10 +644,10 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
-                DisposeAsync().Await();
+                DisposeAsync().AsTask().Await();
             }
 
-            public async Task DisposeAsync()
+            public async ValueTask DisposeAsync()
             {
                 if (m_insertPreviousElementCommand != null)
                 {
