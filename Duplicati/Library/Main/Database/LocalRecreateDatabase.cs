@@ -1278,11 +1278,11 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose()
         {
-            DisposeAsync().Await();
+            DisposeAsync().AsTask().Await();
 
         }
 
-        public async override Task DisposeAsync()
+        public async override ValueTask DisposeAsync()
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
             {
