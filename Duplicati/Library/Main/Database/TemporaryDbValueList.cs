@@ -33,7 +33,7 @@ namespace Duplicati.Library.Main.Database;
 /// <summary>
 /// A list of values that can be used in a query
 /// </summary>
-internal class TemporaryDbValueList : IDisposable
+internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
 {
     /// <summary>
     /// The tag used for logging
@@ -185,10 +185,10 @@ internal class TemporaryDbValueList : IDisposable
     /// <inheritdoc/>
     public void Dispose()
     {
-        DisposeAsync().Await();
+        DisposeAsync().AsTask().Await();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_disposed)
             return;

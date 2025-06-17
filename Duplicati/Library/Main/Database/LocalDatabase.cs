@@ -1728,7 +1728,7 @@ namespace Duplicati.Library.Main.Database
 
         private class BlocklistHashEnumerable : IAsyncEnumerable<string>
         {
-            private class BlocklistHashEnumerator : IAsyncEnumerator<string>
+            private class BlocklistHashEnumerator : IDisposable, IAsyncEnumerator<string>
             {
                 private readonly SqliteDataReader m_reader;
                 private readonly BlocklistHashEnumerable m_parent;
@@ -2075,7 +2075,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Keeps a list of filenames in a temporary table with a single column Path
         /// </summary>
-        public class FilteredFilenameTable : IDisposable
+        public class FilteredFilenameTable : IDisposable, IAsyncDisposable
         {
             public string Tablename { get; private set; }
             private readonly LocalDatabase m_db;
@@ -2209,10 +2209,10 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
-                DisposeAsync().Await();
+                DisposeAsync().AsTask().Await();
             }
 
-            public async Task DisposeAsync()
+            public async ValueTask DisposeAsync()
             {
                 if (Tablename != null)
                     try
@@ -2621,10 +2621,10 @@ namespace Duplicati.Library.Main.Database
 
         public virtual void Dispose()
         {
-            this.DisposeAsync().Await();
+            this.DisposeAsync().AsTask().Await();
         }
 
-        public virtual async Task DisposeAsync()
+        public virtual async ValueTask DisposeAsync()
         {
             if (IsDisposed)
                 return;

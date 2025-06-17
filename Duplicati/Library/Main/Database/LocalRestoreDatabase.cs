@@ -2093,10 +2093,10 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose()
         {
-            DisposeAsync().Await();
+            DisposeAsync().AsTask().Await();
         }
 
-        public override async Task DisposeAsync()
+        public override async ValueTask DisposeAsync()
         {
             await DisposePoolAsync().ConfigureAwait(false);
             await DropRestoreTable().ConfigureAwait(false);

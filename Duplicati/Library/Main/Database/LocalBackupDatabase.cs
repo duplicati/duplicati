@@ -1188,10 +1188,10 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose()
         {
-            this.DisposeAsync().Await();
+            this.DisposeAsync().AsTask().Await();
         }
 
-        public override async Task DisposeAsync()
+        public override async ValueTask DisposeAsync()
         {
             if (!string.IsNullOrWhiteSpace(m_tempDeletedBlockTable))
                 try

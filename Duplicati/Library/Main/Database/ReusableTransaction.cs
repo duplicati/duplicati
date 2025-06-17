@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Database;
 /// </remarks>
 /// <param name="db">The database to use.</param>
 /// <param name="transaction">The transaction to use. If null, a new transaction is created.</param>
-internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? transaction = null) : IDisposable
+internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? transaction = null) : IDisposable, IAsyncDisposable
 {
     /// <summary>
     /// The tag used for logging.
@@ -92,14 +92,14 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     /// </remarks>
     public void Dispose()
     {
-        DisposeAsync().Await();
+        DisposeAsync().AsTask().Await();
     }
 
     /// <summary>
     /// Async version of Dispose: <inheritdoc cref="Dispose()"/>
     /// </summary>
     /// <returns>An awaitable task.</returns>
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (!m_disposed)
         {
