@@ -292,22 +292,21 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
-    /// Flushes the database messages to the database
+    /// Flushes the database messages to the database.
     /// </summary>
-    /// <param name="database">The database to write to</param>
-    /// <param name="transaction">The transaction to use</param>
-    /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns></returns>
+    /// <param name="database">The database to write to.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task that completes when the messages are flushed.</returns>
     public async Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken)
     {
         await context.Database.FlushPendingMessages(database).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Waits for the backend queue to be empty
+    /// Waits for the backend queue to be empty.
     /// </summary>
-    /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>An awaitable task</returns>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>An awaitable task.</returns>
     public async Task WaitForEmptyAsync(CancellationToken cancellationToken)
     {
         var op = new WaitForEmptyOperation(context, cancellationToken);
@@ -330,10 +329,10 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
-    /// Stops the backend manager and flushes any pending messages to the database
+    /// Stops the backend manager and flushes any pending messages to the database.
     /// </summary>
-    /// <param name="database">The database to write pending messages to</param>
-    /// <param name="transaction">The transaction to use, if any</param>
+    /// <param name="database">The database to write pending messages to.</param>
+    /// <returns>A task that completes when the runner is stopped and messages are flushed.</returns>
     public async Task StopRunnerAndFlushMessages(LocalDatabase database)
     {
         await requestChannel.RetireAsync().ConfigureAwait(false);

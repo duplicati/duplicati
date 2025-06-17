@@ -147,6 +147,7 @@ public static class Upgrade
     /// <param name="targetversion">The target database version</param>
     /// <param name="scripts">The upgrade scripts</param>
     /// <param name="nobackups">Flag to disable backups</param>
+    /// <returns>A task that completes when the upgrade is done.</returns>
     private static async Task ApplyUpgrade(string db, int dbversion, int targetversion, IEnumerable<UpgradeScript> scripts, bool nobackups)
     {
         if (targetversion > dbversion)

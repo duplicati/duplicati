@@ -36,6 +36,14 @@ namespace Duplicati.Library.Main.Database;
 /// </summary>
 public static partial class ExtensionMethods
 {
+
+    /// <summary>
+    /// Converts the value at the given index in the reader to an Int64.
+    /// </summary>
+    /// <param name="reader">The <see cref="SqliteDataReader"/> to read from.</param>
+    /// <param name="index">The index of the value to convert.</param>
+    /// <param name="defaultvalue">The default value to return if the value is null or cannot be converted.</param>
+    /// <returns>The converted Int64 value, or the default value if the conversion fails.</returns>
     public static long ConvertValueToInt64(this SqliteDataReader reader, int index, long defaultvalue = -1)
     {
         try
@@ -43,13 +51,17 @@ public static partial class ExtensionMethods
             if (!reader.IsDBNull(index))
                 return reader.GetInt64(index);
         }
-        catch
-        {
-        }
+        catch { }
 
         return defaultvalue;
     }
 
+    /// <summary>
+    /// Converts the value at the given index in the reader to a string.
+    /// </summary>
+    /// <param name="reader">The <see cref="SqliteDataReader"/> to read from.</param>
+    /// <param name="index">The index of the value to convert.</param>
+    /// <returns>The converted string value, or null if the value is null or cannot be converted.</returns>
     public static string? ConvertValueToString(this SqliteDataReader reader, int index)
     {
         var v = reader.GetValue(index);
@@ -59,11 +71,23 @@ public static partial class ExtensionMethods
         return v.ToString();
     }
 
+    /// <summary>
+    /// Creates a new <see cref="SqliteCommand"/> with the given command text.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteConnection"/> to create the command for.</param>
+    /// <param name="cmdtext">The command text to set for the command.</param>
+    /// <returns>A new <see cref="SqliteCommand"/> with the command text set.</returns>
     public static SqliteCommand CreateCommand(this SqliteConnection self, string cmdtext)
     {
         return CreateCommandAsync(self, cmdtext).Await();
     }
 
+    /// <summary>
+    /// Creates a new <see cref="SqliteCommand"/> with the given command text and prepares it asynchronously.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteConnection"/> to create the command for.</param>
+    /// <param name="cmdtext">The command text to set for the command.</param>
+    /// <returns>A new <see cref="SqliteCommand"/> with the command text set and prepared asynchronously.</returns>
     public static async Task<SqliteCommand> CreateCommandAsync(this SqliteConnection self, string cmdtext)
     {
         var cmd = self.CreateCommand()
@@ -73,6 +97,12 @@ public static partial class ExtensionMethods
         return cmd;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="SqliteCommand"/> with the given transaction.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteConnection"/> to create the command for.</param>
+    /// <param name="transaction">The <see cref="SqliteTransaction"/> to set for the command.</param>
+    /// <returns>A new <see cref="SqliteCommand"/> with the transaction set.</returns>
     public static SqliteCommand CreateCommand(this SqliteConnection self, SqliteTransaction transaction)
     {
         var cmd = self.CreateCommand();
@@ -81,23 +111,50 @@ public static partial class ExtensionMethods
         return cmd;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="SqliteCommand"/> with the given reusable transaction.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteConnection"/> to create the command for.</param>
+    /// <param name="rtr">The <see cref="ReusableTransaction"/> to set for the command.</param>
+    /// <returns>A new <see cref="SqliteCommand"/> with the transaction set.</returns>
     internal static SqliteCommand CreateCommand(this SqliteConnection self, ReusableTransaction rtr)
     {
         return self.CreateCommand(rtr.Transaction);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the number of rows affected.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmdtext">The command text to execute.</param>
+    /// <returns>A task that when awaited contains the number of rows affected.</returns>
     public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string? cmdtext)
     {
         return await ExecuteNonQueryAsync(self, true, cmdtext, null)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the number of rows affected.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmd">The command text to execute.</param>
+    /// <param name="values">The values to use as parameters.</param>
+    /// <returns>A task that when awaited contains the number of rows affected.</returns>
     public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string cmd, Dictionary<string, object?> values)
     {
         return await ExecuteNonQueryAsync(self, true, cmd, values)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the number of rows affected.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="cmd">The command text to execute.</param>
+    /// <param name="values">The values to set as parameters.</param>
+    /// <returns>A task that when awaited contains the number of rows affected.</returns>
     public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, string? cmd = null, Dictionary<string, object?>? values = null)
     {
         if (cmd != null)
@@ -110,18 +167,39 @@ public static partial class ExtensionMethods
             return await self.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns a <see cref="SqliteDataReader"/>.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmdtext">The command text to execute.</param>
+    /// <returns>A task that when awaited contains the <see cref="SqliteDataReader"/>.</returns>
     public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext)
     {
         return await ExecuteReaderAsync(self, true, cmdtext, null)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns a <see cref="SqliteDataReader"/>.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmdtext">The command text to execute.</param>
+    /// <param name="values">The values to use as parameters.</param>
+    /// <returns>A task that when awaited contains the <see cref="SqliteDataReader"/>.</returns>
     public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
     {
         return await ExecuteReaderAsync(self, true, cmdtext, values)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns a <see cref="SqliteDataReader"/>.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="cmdtext">The command text to execute.</param>
+    /// <param name="values">The values to set as parameters.</param>
+    /// <returns>A task that when awaited contains the <see cref="SqliteDataReader"/>.</returns>
     public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmdtext = null, Dictionary<string, object?>? values = null)
     {
         if (cmdtext != null)
@@ -134,21 +212,47 @@ public static partial class ExtensionMethods
             return await self.ExecuteReaderAsync().ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns an enumerable of <see cref="SqliteDataReader"/>.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <returns>An asynchronous enumerable of <see cref="SqliteDataReader"/>.</returns>
     public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self)
     {
         return ExecuteReaderEnumerableAsync(self, true, null, null);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns an enumerable of <see cref="SqliteDataReader"/>.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmdtext">The command text to execute.</param>
+    /// <returns>An asynchronous enumerable of <see cref="SqliteDataReader"/>.</returns>
     public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmdtext)
     {
         return ExecuteReaderEnumerableAsync(self, true, cmdtext, null);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns an enumerable of <see cref="SqliteDataReader"/>.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmdtext">The command text to execute.</param>
+    /// <param name="values">The values to use as parameters.</param>
+    /// <returns>An asynchronous enumerable of <see cref="SqliteDataReader"/>.</returns>
     public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
     {
         return ExecuteReaderEnumerableAsync(self, true, cmdtext, values);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns an enumerable of <see cref="SqliteDataReader"/>.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="cmdtext">The command text to execute.</param>
+    /// <param name="values">The values to set as parameters.</param>
+    /// <returns>An asynchronous enumerable of <see cref="SqliteDataReader"/>.</returns>
     public static async IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, bool writeLog, string? cmdtext = null, Dictionary<string, object?>? values = null)
     {
         if (cmdtext != null)
@@ -163,24 +267,50 @@ public static partial class ExtensionMethods
                 yield return rd;
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
     public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self)
     {
         return await self.ExecuteScalarAsync(true, null, null)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmdtext">The command text to execute.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
     public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext)
     {
         return await self.ExecuteScalarAsync(true, cmdtext, null)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmdtext">The command text to execute.</param>
+    /// <param name="values">The values to use as parameters.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
     public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
     {
         return await self.ExecuteScalarAsync(true, cmdtext, values)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="cmd">The command text to execute.</param>
+    /// <param name="values">The values to set as parameters.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
     public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, bool writeLog, string? cmd = null, Dictionary<string, object?>? values = null)
     {
         if (cmd != null)
@@ -193,30 +323,65 @@ public static partial class ExtensionMethods
             return await self.ExecuteScalarAsync().ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, long defaultvalue = -1)
     {
         return await ExecuteScalarInt64Async(self, true, null, null, defaultvalue)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, long defaultvalue)
     {
         return await ExecuteScalarInt64Async(self, writeLog, null, null, defaultvalue)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmd">The command text to execute.</param>
+    /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, long defaultvalue = -1)
     {
         return await ExecuteScalarInt64Async(self, true, cmd, null, defaultvalue)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmd">The command text to execute.</param>
+    /// <param name="values">The values to use as parameters.</param>
+    /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, Dictionary<string, object?>? values, long defaultvalue = -1)
     {
         return await ExecuteScalarInt64Async(self, true, cmd, values, defaultvalue)
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="cmd">The command text to execute.</param>
+    /// <param name="values">The values to set as parameters.</param>
+    /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, string? cmd = null, Dictionary<string, object?>? values = null, long defaultvalue = -1)
     {
         if (cmd != null)
@@ -233,6 +398,14 @@ public static partial class ExtensionMethods
         return defaultvalue;
     }
 
+    /// <summary>
+    /// Expands an IN clause parameter in a SqliteCommand by replacing the parameter with multiple parameters for each value in the collection.
+    /// </summary>
+    /// <param name="cmd">The <see cref="SqliteCommand"/> to expand the IN clause parameter for.</param>
+    /// <param name="originalParamName">The name of the original parameter to replace, must start with '@'.</param>
+    /// <param name="values">The collection of values to expand the IN clause with.</param>
+    /// <typeparam name="T">The type of the values in the collection.</typeparam>
+    /// <returns>The modified <see cref="SqliteCommand"/> with the IN clause expanded.</returns>
     public static SqliteCommand ExpandInClauseParameterMssqlite<T>(this SqliteCommand cmd, string originalParamName, IEnumerable<T> values)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
@@ -261,6 +434,14 @@ public static partial class ExtensionMethods
         return cmd;
     }
 
+    /// <summary>
+    /// Expands an IN clause parameter in a SqliteCommand by replacing the parameter with multiple parameters for each value in the collection.
+    /// If a temporary table is used, it replaces the parameter with the table name.
+    /// </summary>
+    /// <param name="cmd">The <see cref="SqliteCommand"/> to expand the IN clause parameter for.</param>
+    /// <param name="originalParamName">The name of the original parameter to replace, must start with '@'.</param>
+    /// <param name="values">The collection of values to expand the IN clause with.</param>
+    /// <returns>A task that when awaited contains the modified <see cref="SqliteCommand"/> with the IN clause expanded.</returns>
     internal static async Task<SqliteCommand> ExpandInClauseParameterMssqliteAsync(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
@@ -279,6 +460,13 @@ public static partial class ExtensionMethods
         return cmd;
     }
 
+    /// <summary>
+    /// Sets the command text and parameters for the given <see cref="SqliteCommand"/>.
+    /// </summary>
+    /// <param name="cmd">The <see cref="SqliteCommand"/> to set the command text and parameters for.</param>
+    /// <param name="cmdtext">The command text to set for the command, must not contain '?' as a parameter placeholder.</param>
+    /// <returns>The modified <see cref="SqliteCommand"/> with the command text and parameters set.</returns>
+    /// <exception cref="ArgumentException">If the command text contains '?' as a parameter placeholder.</exception>
     public static SqliteCommand SetCommandAndParameters(this SqliteCommand cmd, string cmdtext)
     {
         cmd.CommandText = Library.Utility.Utility.FormatInvariant(cmdtext);
@@ -303,12 +491,12 @@ public static partial class ExtensionMethods
     }
 
     /// <summary>
-    /// New edition
+    /// Sets the value of a parameter in the command.
     /// </summary>
-    /// <param name="self"></param>
-    /// <param name="name"></param>
-    /// <param name="value"></param>
-    /// <exception cref="ArgumentException"></exception>
+    /// <param name="self">The <see cref="SqliteCommand"/> to set the parameter value for.</param>
+    /// <param name="name">The name of the parameter to set the value for.</param>
+    /// <param name="value">The value to set for the parameter, or null to set it to DBNull.Value.</param>
+    /// <returns>The <see cref="SqliteCommand"/> with the parameter value set.</returns>
     public static SqliteCommand SetParameterValue(this SqliteCommand self, string name, object? value)
     {
 #if DEBUG
@@ -321,6 +509,13 @@ public static partial class ExtensionMethods
     }
 
     // Special case for DateTime, as we need to convert it to a long
+    /// <summary>
+    /// Sets the value of a DateTime parameter in the command.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> to set the parameter value for.</param>
+    /// <param name="name">The name of the parameter to set the value for.</param>
+    /// <param name="value">The DateTime value to set for the parameter.</param>
+    /// <returns>The <see cref="SqliteCommand"/> with the parameter value set.</returns>
     public static SqliteCommand SetParameterValue(this SqliteCommand self, string name, DateTime value)
     {
         self.Parameters[name].Value = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(value);
@@ -328,6 +523,12 @@ public static partial class ExtensionMethods
         return self;
     }
 
+    /// <summary>
+    /// Sets the parameter values for the command, the parameters must already be added.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> to set the parameter values for.</param>
+    /// <param name="values">The values to set the parameters to, where the key is the parameter name.</param>
+    /// <returns>The <see cref="SqliteCommand"/> with the parameter values set.</returns>
     public static SqliteCommand SetParameterValues(this SqliteCommand self, Dictionary<string, object?> values)
     {
         foreach (var kvp in values)
@@ -336,6 +537,12 @@ public static partial class ExtensionMethods
         return self;
     }
 
+    /// <summary>
+    /// Sets the transaction for the command.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> to set the transaction for.</param>
+    /// <param name="transaction">The <see cref="SqliteTransaction"/> to set for the command.</param>
+    /// <returns>The <see cref="SqliteCommand"/> with the transaction set.</returns>
     public static SqliteCommand SetTransaction(this SqliteCommand self, SqliteTransaction transaction)
     {
         self.Transaction = transaction;
@@ -343,6 +550,12 @@ public static partial class ExtensionMethods
         return self;
     }
 
+    /// <summary>
+    /// Sets the transaction for the command using a <see cref="ReusableTransaction"/>.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> to set the transaction for.</param>
+    /// <param name="rtr">The <see cref="ReusableTransaction"/> to set for the command.</param>
+    /// <returns>The <see cref="SqliteCommand"/> with the transaction set.</returns>
     internal static SqliteCommand SetTransaction(this SqliteCommand self, ReusableTransaction rtr)
     {
         self.Transaction = rtr.Transaction;
@@ -355,6 +568,7 @@ public static partial class ExtensionMethods
     /// </summary>
     private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ExtensionMethods));
 
+    // This regex matches named parameters in the form of @paramName
     [GeneratedRegex(@"@\w+")]
     private static partial Regex MyRegex();
 
@@ -380,6 +594,13 @@ public static partial class ExtensionMethods
     // Microsoft.Data.Sqlite, the extension methods using IDb* should be
     // removed. Currently, they're kept for compatibility.
 
+    /// <summary>
+    /// Adds a named parameter to the command with the given value.
+    /// </summary>
+    /// <param name="self">The command to add the parameter to</param>
+    /// <param name="name">The name of the parameter</param>
+    /// <param name="value">The optional value of the parameter</param>
+    /// <returns>The command with the parameter added</returns>
     public static IDbCommand AddNamedParameter(this IDbCommand self, string name, object? value = null)
     {
         var p = self.CreateParameter();
@@ -430,7 +651,7 @@ public static partial class ExtensionMethods
     /// <typeparam name="T">The type of the command</typeparam>
     /// <param name="self">The command to set the transaction for</param>
     /// <param name="transaction">The transaction to set for the command</param>
-    /// <returns>>The command with the transaction set</returns>
+    /// <returns>The command with the transaction set</returns>
     public static T SetTransaction<T>(this T self, IDbTransaction? transaction)
         where T : IDbCommand
     {

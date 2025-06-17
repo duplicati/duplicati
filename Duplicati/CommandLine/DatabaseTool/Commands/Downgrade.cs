@@ -134,6 +134,7 @@ public static class Downgrade
     /// <param name="targetversion">The target database version</param>
     /// <param name="scripts">The downgrade scripts</param>
     /// <param name="nobackups">Flag to disable backups</param>
+    /// <returns>A task that completes when the downgrade is done.</returns>
     private static async Task ApplyDowngrade(string db, int dbversion, int targetversion, IEnumerable<DowngradeScript> scripts, bool nobackups)
     {
         if (dbversion > targetversion)

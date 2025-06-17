@@ -31,37 +31,97 @@ using Microsoft.Data.Sqlite;
 namespace Duplicati.Library.Main.Database
 {
 
+    /// <summary>
+    /// A local backup database that stores blocks, files, and metadata for backup operations.
+    /// This database is used to track the state of backups and to allow for efficient retrieval of blocks and files.
+    /// It supports operations such as finding blocks by hash and size, inserting new blocks, files, and blocksets,
+    /// and managing metadata datasets.
+    /// </summary>
     internal class LocalBackupDatabase : LocalDatabase
     {
         /// <summary>
-        /// The tag used for logging
+        /// The tag used for logging.
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalBackupDatabase>();
 
+        /// <summary>
+        /// The command used to find a block by its hash and size.
+        /// </summary>
         private SqliteCommand m_findblockCommand = null!;
+        /// <summary>
+        /// The command used to find a blockset by its full hash and length.
+        /// </summary>
         private SqliteCommand m_findblocksetCommand = null!;
+        /// <summary>
+        /// The command used to find a metadataset by its block hash and size.
+        /// </summary>
         private SqliteCommand m_findfilesetCommand = null!;
+        /// <summary>
+        /// The command used to find a metadataset by its block hash and size.
+        /// </summary>
         private SqliteCommand m_findmetadatasetCommand = null!;
 
+        /// <summary>
+        /// The command used to insert a block into the database.
+        /// </summary>
         private SqliteCommand m_insertblockCommand = null!;
 
+        /// <summary>
+        /// The command used to insert a file into the database.
+        /// </summary>
         private SqliteCommand m_insertfileCommand = null!;
 
+        /// <summary>
+        /// The command used to insert a blockset into the database.
+        /// </summary>
         private SqliteCommand m_insertblocksetCommand = null!;
+        /// <summary>
+        /// The command used to insert a blockset entry into the database.
+        /// </summary>
         private SqliteCommand m_insertblocksetentryCommand = null!;
+        /// <summary>
+        /// The command used to insert a blocklist hash into the database.
+        /// </summary>
         private SqliteCommand m_insertblocklistHashesCommand = null!;
 
+        /// <summary>
+        /// The command used to insert a metadataset into the database.
+        /// </summary>
         private SqliteCommand m_insertmetadatasetCommand = null!;
 
+        /// <summary>
+        /// The command used to find a file in the database.
+        /// </summary>
         private SqliteCommand m_findfileCommand = null!;
+        /// <summary>
+        /// The command used to select the last modified time of a file.
+        /// </summary>
         private SqliteCommand m_selectfilelastmodifiedCommand = null!;
+        /// <summary>
+        /// The command used to select the last modified time and size of a file.
+        /// </summary>
         private SqliteCommand m_selectfilelastmodifiedWithSizeCommand = null!;
+        /// <summary>
+        /// The command used to select the hash and size of a file's metadata.
+        /// </summary>
         private SqliteCommand m_selectfileHashCommand = null!;
 
+        /// <summary>
+        /// The command used to insert a file operation into the database.
+        /// </summary>
         private SqliteCommand m_insertfileOperationCommand = null!;
+        /// <summary>
+        /// The command used to select the metadata hash and size of a file.
+        /// </summary>
         private SqliteCommand m_selectfilemetadatahashandsizeCommand = null!;
+        /// <summary>
+        /// The command used to find the first fileset with a block in a blockset.
+        /// </summary>
         private SqliteCommand m_getfirstfilesetwithblockinblockset = null!;
 
+        /// <summary>
+        /// HashSet of blocklist hashes to track whether a blocklist hash has been seen before.
+        /// </summary>
         private HashSet<string> m_blocklistHashes = [];
 
         /// <summary>
@@ -81,10 +141,24 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private SqliteCommand? m_findindeletedCommand;
 
+        /// <summary>
+        /// The ID of the fileset currently being processed.
+        /// </summary>
         private long m_filesetId;
 
+        /// <summary>
+        /// Indicates whether the database should log queries for profiling purposes.
+        /// </summary>
         private bool m_logQueries;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LocalBackupDatabase"/> class.
+        /// This constructor is private to enforce the use of the static and asynchronous CreateAsync methods for instantiation.
+        /// </summary>
+        /// <param name="path">The path to the database file.</param>
+        /// <param name="options">The Duplicati options used by the current operation.</param>
+        /// <param name="dbnew">An optional existing instance of <see cref="LocalBackupDatabase"/> to reuse. Used when derived classes need to call the base constructor.</param>
+        /// <returns>A task that when awaited contains a new instance of <see cref="LocalBackupDatabase"/>.</returns>
         public static async Task<LocalBackupDatabase> CreateAsync(string path, Options options, LocalBackupDatabase? dbnew = null)
         {
             dbnew ??= new LocalBackupDatabase();
@@ -98,6 +172,14 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="LocalBackupDatabase"/> using an existing parent database.
+        /// This method is used to create a new backup database based on an existing local database.
+        /// </summary>
+        /// <param name="dbparent">The parent local database from which to create the new backup database.</param>
+        /// <param name="options">The Duplicati options used by the current operation.</param>
+        /// <param name="dbnew">An optional existing instance of <see cref="LocalBackupDatabase"/> to reuse. Used when derived classes need to call the base constructor.</param>
+        /// <returns>A task that when awaited contains a new instance of <see cref="LocalBackupDatabase"/>.</returns>
         public static async Task<LocalBackupDatabase> CreateAsync(LocalDatabase dbparent, Options options, LocalBackupDatabase? dbnew = null)
         {
             dbnew ??= new LocalBackupDatabase();
@@ -646,11 +728,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Probes to see if a block already exists
+        /// Probes to see if a block already exists.
         /// </summary>
-        /// <param name="key">The block key</param>
-        /// <param name="size">The size of the block</param>
-        /// <returns>True if the block should be added to the current output</returns>
+        /// <param name="key">The block key.</param>
+        /// <param name="size">The size of the block.</param>
+        /// <returns>A task that when awaited contains true if the block should be added to the current output.</returns>
         public async Task<long> FindBlockID(string key, long size)
         {
             return await m_findblockCommand
@@ -662,11 +744,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Adds a block to the local database, returning a value indicating if the value presents a new block
+        /// Adds a block to the local database, returning a value indicating if the value presents a new block.
         /// </summary>
-        /// <param name="key">The block key</param>
-        /// <param name="size">The size of the block</param>
-        /// <returns>True if the block should be added to the current output</returns>
+        /// <param name="key">The block key.</param>
+        /// <param name="size">The size of the block.</param>
+        /// <returns>A taskt that when awaited contains true if the block should be added to the current output.</returns>
         public async Task<bool> AddBlock(string key, long size, long volumeid)
         {
             var r = await FindBlockID(key, size).ConfigureAwait(false);
@@ -740,13 +822,14 @@ namespace Duplicati.Library.Main.Database
 
 
         /// <summary>
-        /// Adds a blockset to the database, returns a value indicating if the blockset is new
+        /// Adds a blockset to the database, returns a value indicating if the blockset is new.
         /// </summary>
-        /// <param name="filehash">The hash of the blockset</param>
-        /// <param name="size">The size of the blockset</param>
-        /// <param name="hashes">The list of hashes</param>
-        /// <param name="blocksetid">The id of the blockset, new or old</param>
-        /// <returns>True if the blockset was created, false otherwise</returns>
+        /// <param name="filehash">The hash of the blockset.</param>
+        /// <param name="size">The size of the blockset.</param>
+        /// <param name="blocksize">The size of the blocks in the blockset.</param>
+        /// <param name="hashes">The list of hashes.</param>
+        /// <param name="blocksetid">The id of the blockset, new or old.</param>
+        /// <returns>A task that when awaited contains a tuple with the first value indicating whether the blockset was created, and the second value being the blockset ID.</returns>
         public async Task<(bool, long)> AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes)
         {
             long blocksetid = await m_findblocksetCommand
@@ -845,13 +928,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Gets the metadataset ID from the filehash
+        /// Gets the metadataset ID from the filehash.
         /// </summary>
-        /// <returns><c>true</c>, if metadataset found, false if does not exist.</returns>
         /// <param name="filehash">The metadata hash.</param>
         /// <param name="size">The size of the metadata.</param>
-        /// <param name="metadataid">The ID of the metadataset.</param>
-        /// <param name="transaction">An optional transaction.</param>
+        /// <returns>A task that when awaited contains a tuple with the first value indicating if the metadataset was found, and the second value being the metadataset ID.</returns>
         public async Task<(bool, long)> GetMetadatasetID(string filehash, long size)
         {
             long metadataid;

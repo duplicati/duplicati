@@ -37,12 +37,13 @@ public static class ChangeStatistics
     private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ChangeStatistics));
 
     /// <summary>
-    /// Calculates the change statistics for the current and previous fileset
+    /// Calculates the change statistics for the current and previous fileset.
     /// </summary>
-    /// <param name="cmd">The database command to use</param>
-    /// <param name="results">The results object to update with the statistics</param>
-    /// <param name="currentFilesetId">The ID of the current fileset</param>
-    /// <param name="previousFilesetId">The ID of the previous fileset</param>
+    /// <param name="cmd">The database command to use.</param>
+    /// <param name="results">The results object to update with the statistics.</param>
+    /// <param name="currentFilesetId">The ID of the current fileset.</param>
+    /// <param name="previousFilesetId">The ID of the previous fileset.</param>
+    /// <returns>A task that completes when the statistics are updated.</returns>
     internal static async Task UpdateChangeStatistics(SqliteCommand cmd, BackupResults results, long currentFilesetId, long previousFilesetId)
     {
         var tmpName = $"TmpFileState_{Guid.NewGuid():N}";
@@ -138,13 +139,13 @@ public static class ChangeStatistics
     }
 
     /// <summary>
-    /// Counts the number of added files or folders
+    /// Counts the number of added files or folders.
     /// </summary>
-    /// <param name="cmd">The database command to use</param>
-    /// <param name="tmpName">The name of the temporary table</param>
-    /// <param name="blocksetId">The ID of the blockset to count, or null for all</param>
-    /// <param name="excludeBlocksets">The blocksets to exclude from the count</param>
-    /// <returns>The number of added files or folders</returns>
+    /// <param name="cmd">The database command to use.</param>
+    /// <param name="tmpName">The name of the temporary table.</param>
+    /// <param name="blocksetId">The ID of the blockset to count, or null for all.</param>
+    /// <param name="excludeBlocksets">The blocksets to exclude from the count.</param>
+    /// <returns>A task that when awaited contains the number of added files or folders.</returns>
     private static async Task<long> CountAdded(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets = null)
     {
         var conditions = $@"
@@ -164,13 +165,13 @@ public static class ChangeStatistics
     }
 
     /// <summary>
-    /// Counts the number of deleted files or folders
+    /// Counts the number of deleted files or folders.
     /// </summary>
-    /// <param name="cmd">The database command to use</param>
-    /// <param name="tmpName">The name of the temporary table</param>
-    /// <param name="blocksetId">The ID of the blockset to count, or null for all</param>
-    /// <param name="excludeBlocksets">The blocksets to exclude from the count</param>
-    /// <returns>The number of deleted files or folders</returns>
+    /// <param name="cmd">The database command to use.</param>
+    /// <param name="tmpName">The name of the temporary table.</param>
+    /// <param name="blocksetId">The ID of the blockset to count, or null for all.</param>
+    /// <param name="excludeBlocksets">The blocksets to exclude from the count.</param>
+    /// <returns>A task that when awaited contains the number of deleted files or folders.</returns>
     private static async Task<long> CountDeleted(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets = null)
     {
         var conditions = @$"
@@ -190,14 +191,13 @@ public static class ChangeStatistics
     }
 
     /// <summary>
-    /// Counts the number of modified files or folders
+    /// Counts the number of modified files or folders.
     /// </summary>
-    /// <param name="cmd">The database command to use</param>
-    /// <param name="tmpName">The name of the temporary table</param>
-    /// <param name="blocksetId">The ID of the blockset to count, or null for all</param>
-    /// <param name="hash1">The hash column to compare</param>
-    /// <param name="excludeBlocksets">The blocksets to exclude from the count</param>
-    /// <returns>The number of modified files or folders</returns>
+    /// <param name="cmd">The database command to use.</param>
+    /// <param name="tmpName">The name of the temporary table.</param>
+    /// <param name="blocksetId">The ID of the blockset to count, or null for all.</param>
+    /// <param name="excludeBlocksets">The blocksets to exclude from the count.</param>
+    /// <returns>A task that when awaited contains the number of modified files or folders.</returns>
     private static async Task<long> CountModified(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets = null)
     {
         string conditions;
@@ -246,15 +246,15 @@ public static class ChangeStatistics
     }
 
     /// <summary>
-    /// Counts the number of files or folders with a specific condition
+    /// Counts the number of files or folders with a specific condition.
     /// </summary>
-    /// <param name="cmd">The database command to use</param>
-    /// <param name="tmpName">The name of the temporary table</param>
-    /// <param name="alias">The alias for the temporary table</param>
-    /// <param name="baseCondition">The base condition for the count</param>
-    /// <param name="blocksetId">The ID of the blockset to count, or null for all</param>
-    /// <param name="excludeBlocksets">The blocksets to exclude from the count</param>
-    /// <returns>The number of files or folders that match the condition</returns>
+    /// <param name="cmd">The database command to use.</param>
+    /// <param name="tmpName">The name of the temporary table.</param>
+    /// <param name="alias">The alias for the temporary table.</param>
+    /// <param name="baseCondition">The base condition for the count.</param>
+    /// <param name="blocksetId">The ID of the blockset to count, or null for all.</param>
+    /// <param name="excludeBlocksets">The blocksets to exclude from the count.</param>
+    /// <returns>A task that when awaited contains the number of files or folders that match the condition.</returns>
     private static async Task<long> CountWithCondition(SqliteCommand cmd, string tmpName, string alias, string baseCondition, long? blocksetId, long[]? excludeBlocksets)
     {
         var fullCondition = baseCondition;

@@ -112,11 +112,10 @@ partial class BackendManager
         }
 
         /// <summary>
-        /// Flushes all messages to the database
+        /// Flushes all messages to the database.
         /// </summary>
-        /// <param name="db">The database to write pending messages to</param>
-        /// <param name="transaction">The transaction to use, if any</param>
-        /// <returns>Whether any messages were flushed</returns>
+        /// <param name="db">The database to write pending messages to.</param>
+        /// <returns>A task that when awaited contains whether any messages were flushed.</returns>
         public async Task<bool> FlushPendingMessages(LocalDatabase db)
         {
             List<IRemoteOperationEntry> entries;
