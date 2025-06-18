@@ -31,49 +31,56 @@ using Microsoft.Data.Sqlite;
 namespace Duplicati.Library.Main.Database;
 
 /// <summary>
-/// A list of values that can be used in a query
+/// A list of values that can be used in a query.
 /// </summary>
 internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
 {
     /// <summary>
-    /// The tag used for logging
+    /// The tag used for logging.
     /// </summary>
     private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(TemporaryDbValueList));
 
     /// <summary>
-    /// The command to use
+    /// The command to use.
     /// </summary>
     private SqliteCommand? _cmd;
+    /// <summary>
+    /// The connection to use.
+    /// </summary>
     private SqliteConnection _con;
+    /// <summary>
+    /// The reusable transaction to use.
+    /// </summary>
     private ReusableTransaction _rtr;
     /// <summary>
-    /// The table to use
+    /// The table to use.
     /// </summary>
     private readonly string _tableName = $"TemporaryList-{Guid.NewGuid():N}";
 
     /// <summary>
-    /// Flag indicating if the object has been disposed
+    /// Flag indicating if the object has been disposed.
     /// </summary>
     private bool _disposed = false;
     /// <summary>
-    /// Flag indicating if the values are in a table
+    /// Flag indicating if the values are in a table.
     /// </summary>
     private bool _isTable = false;
     /// <summary>
-    /// The values to use
+    /// The values to use.
     /// </summary>
     private readonly IEnumerable<object> _values;
     /// <summary>
-    /// The type of the values
+    /// The type of the values.
     /// </summary>
     private readonly string _valuesType;
 
     /// <summary>
-    /// Creates a new reusable transaction
+    /// Creates a new TemporaryDbValueList with the given values.
     /// </summary>
-    /// <param name="cmd">The command to use</param>
-    /// <param name="con">The connection to use</param>
-    /// <param name="values">The values to use</param>
+    /// <param name="con">The connection to use.</param>
+    /// <param name="rtr">The reusable transaction to use.</param>
+    /// <param name="values">The values to use.</param>
+    /// <param name="valuesType">The type of the values (e.g., "INTEGER", "TEXT").</param>
     private TemporaryDbValueList(SqliteConnection con, ReusableTransaction rtr, IEnumerable<object> values, string valuesType)
     {
         _con = con;
@@ -84,30 +91,62 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
         ArgumentNullException.ThrowIfNull(values);
     }
 
+    /// <summary>
+    /// Asynchronously creates a new TemporaryDbValueList with the given values.
+    /// </summary>
+    /// <param name="db">The database to use.</param>
+    /// <param name="values">The values to use.</param>
+    /// <returns>A task that when awaited contains the created TemporaryDbValueList.</returns>
     internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<long> values)
     {
         return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "INTEGER"))
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Asynchronously creates a new TemporaryDbValueList with the given values.
+    /// </summary>
+    /// <param name="db">The database to use.</param>
+    /// <param name="values">The values to use.</param>
+    /// <returns>A task that when awaited contains the created TemporaryDbValueList.</returns>
     internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<string> values)
     {
         return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "TEXT"))
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Asynchronously creates a new TemporaryDbValueList with the given values.
+    /// </summary>
+    /// <param name="con">The connection to use.</param>
+    /// <param name="rtr">The reusable transaction to use.</param>
+    /// <param name="values">The values to use.</param>
+    /// <returns>A task that when awaited contains the created TemporaryDbValueList.</returns>
     internal static async Task<TemporaryDbValueList> CreateAsync(SqliteConnection con, ReusableTransaction rtr, IEnumerable<long> values)
     {
         return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "INTEGER"))
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Asynchronously creates a new TemporaryDbValueList with the given values.
+    /// </summary>
+    /// <param name="con">The connection to use.</param>
+    /// <param name="rtr">The reusable transaction to use.</param>
+    /// <param name="values">The values to use.</param>
+    /// <returns>A task that when awaited contains the created TemporaryDbValueList.</returns>
     internal static async Task<TemporaryDbValueList> CreateAsync(SqliteConnection con, ReusableTransaction rtr, IEnumerable<string> values)
     {
         return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "TEXT"))
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Performs the actual creation of the TemporaryDbValueList, ensuring that if the number of values exceeds the chunk size,
+    /// the values are forced into a table.
+    /// </summary>
+    /// <param name="valueList">The TemporaryDbValueList to create.</param>
+    /// <returns>A task that when awaited contains the created TemporaryDbValueList.</returns>
     private static async Task<TemporaryDbValueList> DoCreateAsync(TemporaryDbValueList valueList)
     {
         if (valueList._values.Count() > LocalDatabase.CHUNK_SIZE)
@@ -117,19 +156,19 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// The values in the list
+    /// The values in the list.
     /// </summary>
     public IEnumerable<object> Values => _values;
 
     /// <summary>
-    /// Flag indicating if the table has been created
+    /// Flag indicating if the table has been created.
     /// </summary>
     public bool IsTableCreated => _isTable;
 
     /// <summary>
-    /// Get the in clause for the values, creating the table if needed
+    /// Get the in clause for the values, creating the table if needed.
     /// </summary>
-    /// <returns>The in clause for the values</returns>
+    /// <returns>A task that when awaited contains the SQL in clause string.</returns>
     public async Task<string> GetInClause()
     {
         if (_disposed)
@@ -144,8 +183,9 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Force the values to be written to a table, if not already done
+    /// Force the values to be written to a table, if not already done.
     /// </summary>
+    /// <returns>A task that completes when the table has been created and the values inserted.</returns>
     public async Task ForceToTable()
     {
         if (_disposed)
@@ -178,7 +218,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// The table name to use
+    /// The table name to use.
     /// </summary>
     public string TableName => _tableName;
 
@@ -188,6 +228,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
         DisposeAsync().AsTask().Await();
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         if (_disposed)

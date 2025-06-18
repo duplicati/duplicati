@@ -29,18 +29,30 @@ using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
+    /// <summary>
+    /// Represents a specialized local database used for repair operations in Duplicati.
+    /// Provides methods for creating and managing repair databases, handling missing or duplicate blocks,
+    /// repairing metadata and file entries, and verifying consistency of backup data.
+    /// </summary>
+    /// <remarks>
+    /// This class extends <see cref="LocalDatabase"/> and provides additional functionality
+    /// for repairing and maintaining the integrity of backup databases, including block and fileset management,
+    /// duplicate detection and correction, and blocklist hash repairs.
+    /// </remarks>
     internal class LocalRepairDatabase : LocalDatabase
     {
         /// <summary>
-        /// The tag used for logging
+        /// The tag used for logging.
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRepairDatabase));
 
         /// <summary>
-        /// Creates a new local repair database
+        /// Creates a new local repair database.
         /// </summary>
-        /// <param name="path">The path to the database</param>
-        /// <param name="pagecachesize">The page cache size</param>
+        /// <param name="path">The path to the database.</param>
+        /// <param name="pagecachesize">The page cache size.</param>
+        /// <param name="dbnew">An optional existing database instance to use.</param>
+        /// <returns> A task that when awaited returns a new instance of <see cref="LocalRepairDatabase"/>.</returns>
         public static async Task<LocalRepairDatabase> CreateRepairDatabase(string path, long pagecachesize, LocalRepairDatabase? dbnew = null)
         {
             dbnew ??= new LocalRepairDatabase();
@@ -53,9 +65,11 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Creates a new local repair database from an existing local database
+        /// Creates a new local repair database from an existing local database.
         /// </summary>
-        /// <param name="db">The existing local database</param>
+        /// <param name="dbparent">The parent local database to use.</param>
+        /// <param name="dbnew">An optional existing database instance to use.</param>
+        /// <returns>A task that when awaited returns a new instance of <see cref="LocalRepairDatabase"/>.</returns>
         public static async Task<LocalRepairDatabase> CreateAsync(LocalDatabase dbparent, LocalRepairDatabase? dbnew = null)
         {
             dbnew ??= new LocalRepairDatabase();
@@ -63,15 +77,14 @@ namespace Duplicati.Library.Main.Database
             return (LocalRepairDatabase)
                 await CreateLocalDatabaseAsync(dbparent, dbnew)
                     .ConfigureAwait(false);
-
         }
 
         /// <summary>
-        /// Gets the fileset ID from the remote name
+        /// Gets the fileset ID from the remote name.
         /// </summary>
-        /// <param name="filelist">The remote name of the fileset</param>
-        /// <param name="transaction">An optional transaction</param>
-        /// <returns>>The fileset ID</returns>
+        /// <param name="filelist">The remote name of the fileset.</param>
+        /// <returns>A task that when awaited returns a tuple containing the fileset ID, timestamp, and whether it is a full backup.</returns>
+        /// <exception cref="Exception">Thrown if the remote file does not exist.</exception>
         public async Task<(long FilesetId, DateTime Time, bool IsFullBackup)> GetFilesetFromRemotename(string filelist)
         {
             using var cmd = m_connection.CreateCommand(@"
@@ -102,11 +115,12 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Moves entries in the FilesetEntry table from previous fileset to current fileset
+        /// Moves entries in the FilesetEntry table from previous fileset to current fileset.
         /// </summary>
-        /// <param name="filesetid">Current fileset ID</param>
-        /// <param name="prevFilesetId">Source fileset ID</param>
-        /// <param name="transaction">The transaction</param>
+        /// <param name="filesetid">Current fileset ID.</param>
+        /// <param name="prevFilesetId">Source fileset ID.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown if either fileset ID is less than or equal to zero.</exception>
         public async Task MoveFilesFromFileset(long filesetid, long prevFilesetId)
         {
             if (filesetid <= 0)
@@ -128,10 +142,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Gets the list of index files that reference a given block file
+        /// Gets the list of index files that reference a given block file.
         /// </summary>
-        /// <param name="blockfileid">The block file ID</param>
-        /// <returns>>A list of index file IDs</returns>
+        /// <param name="blockfileid">The block file ID.</param>
+        /// <returns>An asynchronous enumerable of index file names that reference the specified block file.</returns>
         public async IAsyncEnumerable<string> GetIndexFilesReferencingBlockFile(long blockfileid)
         {
             using var cmd = m_connection.CreateCommand(@"
@@ -153,10 +167,9 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Gets a list of filesets that are missing files
+        /// Gets a list of filesets that are missing files.
         /// </summary>
-        /// <param name="transaction">An optional transaction</param>
-        /// <returns>A list of fileset IDs and timestamps</returns>
+        /// <returns>An asynchronous enumerable of key-value pairs where the key is the fileset ID and the value is the timestamp of the fileset.</returns>
         public async IAsyncEnumerable<KeyValuePair<long, DateTime>> GetFilesetsWithMissingFiles()
         {
             using var cmd = m_connection.CreateCommand(@"
@@ -186,11 +199,10 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Deletes all fileset entries for a given fileset
+        /// Deletes all fileset entries for a given fileset.
         /// </summary>
-        /// <param name="filesetid">The fileset ID</param>
-        /// <param name="transaction">An optional transaction</param>
-        /// <returns>The number of deleted entries</returns>
+        /// <param name="filesetid">The fileset ID.</param>
+        /// <returns>A task that when awaited returns the number of deleted entries.</returns>
         public async Task<int> DeleteFilesetEntries(long filesetid)
         {
             using var cmd = m_connection.CreateCommand(@"
@@ -203,12 +215,30 @@ namespace Duplicati.Library.Main.Database
             return await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Represents a remote volume with its name, hash, and size.
+        /// </summary>
         private class RemoteVolume : IRemoteVolume
         {
+            /// <summary>
+            /// The name of the remote volume.
+            /// </summary>
             public string Name { get; private set; }
+            /// <summary>
+            /// The hash of the remote volume.
+            /// </summary>
             public string Hash { get; private set; }
+            /// <summary>
+            /// The size of the remote volume in bytes.
+            /// </summary>
             public long Size { get; private set; }
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="RemoteVolume"/> class.
+            /// </summary>
+            /// <param name="name">The name of the remote volume.</param>
+            /// <param name="hash">The hash of the remote volume.</param>
+            /// <param name="size">The size of the remote volume in bytes.</param>
             public RemoteVolume(string name, string hash, long size)
             {
                 this.Name = name;
@@ -217,6 +247,11 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Gets a list of block volumes that are associated with a given index name.
+        /// </summary>
+        /// <param name="indexName">The name of the index volume.</param>
+        /// <returns>An asynchronous enumerable of <see cref="IRemoteVolume"/> representing the block volumes.</returns>
         public async IAsyncEnumerable<IRemoteVolume> GetBlockVolumesFromIndexName(string indexName)
         {
             using var cmd = m_connection.CreateCommand(@"
@@ -247,31 +282,31 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// A single block with source data for repair
+        /// A single block with source data for repair.
         /// </summary>
-        /// <param name="Hash">The block hash</param>
-        /// <param name="Size">The block size</param>
-        /// <param name="File">The file that contains the block</param>
-        /// <param name="Offset">The offset of the block in the file</param>
+        /// <param name="Hash">The block hash.</param>
+        /// <param name="Size">The block size.</param>
+        /// <param name="File">The file that contains the block.</param>
+        /// <param name="Offset">The offset of the block in the file.</param>
         public sealed record BlockWithSourceData(string Hash, long Size, string File, long Offset);
 
         /// <summary>
-        /// A single block with metadata source data for repair
+        /// A single block with metadata source data for repair.
         /// </summary>
-        /// <param name="Hash">The block hash</param>
-        /// <param name="Size">The block size</param>
-        /// <param name="Path">The path of the file or directory that contains the block</param>
+        /// <param name="Hash">The block hash.</param>
+        /// <param name="Size">The block size.</param>
+        /// <param name="Path">The path of the file or directory that contains the block.</param>
         public sealed record BlockWithMetadataSourceData(string Hash, long Size, string Path);
 
         /// <summary>
-        /// A single blocklist hash entry
+        /// A single blocklist hash entry.
         /// </summary>
-        /// <param name="BlocksetId">The blockset id</param>
-        /// <param name="BlocklistHash">The hash of the blocklist entry (when done)</param>
-        /// <param name="BlocklistHashLength">The total length of the blockset</param>
-        /// <param name="BlocklistHashIndex">The index of the blocklist hash</param>
-        /// <param name="Index">The index of the block in the blockset</param>
-        /// <param name="Hash">The hash of the entry</param>
+        /// <param name="BlocksetId">The blockset id.</param>
+        /// <param name="BlocklistHash">The hash of the blocklist entry (when done).</param>
+        /// <param name="BlocklistHashLength">The total length of the blockset.</param>
+        /// <param name="BlocklistHashIndex">The index of the blocklist hash.</param>
+        /// <param name="Index">The index of the block in the blockset.</param>
+        /// <param name="Hash">The hash of the entry.</param>
         public sealed record BlocklistHashesEntry(
             long BlocksetId,
             string BlocklistHash,
@@ -281,54 +316,54 @@ namespace Duplicati.Library.Main.Database
             string Hash);
 
         /// <summary>
-        /// Helper interface for the missing block list
+        /// Helper interface for the missing block list.
         /// </summary>
-        public interface IMissingBlockList : IDisposable
+        public interface IMissingBlockList : IDisposable, IAsyncDisposable
         {
             /// <summary>
-            /// Registers a block as restored
+            /// Registers a block as restored.
             /// </summary>
-            /// <param name="hash">The block hash</param>
-            /// <param name="size">The block size</param>
-            /// <param name="volumeId">The volume ID of the new target volume</param>
-            /// <returns>The restored blocks</returns>
+            /// <param name="hash">The block hash.</param>
+            /// <param name="size">The block size.</param>
+            /// <param name="volumeId">The volume ID of the new target volume.</param>
+            /// <returns>A task that when awaited returns true if the block was successfully marked as restored, false otherwise.</returns>
             Task<bool> SetBlockRestored(string hash, long size, long volumeId);
             /// <summary>
-            /// Gets the list of files that contains missing blocks
+            /// Gets the list of files that contains missing blocks.
             /// </summary>
-            /// <param name="blocksize">The blocksize setting</param>
-            /// <returns>A list of files with missing blocks</returns>
+            /// <param name="blocksize">The blocksize setting.</param>
+            /// <returns>An asynchronous enumerable of <see cref="BlockWithSourceData"/> representing the files with missing blocks.</returns>
             IAsyncEnumerable<BlockWithSourceData> GetSourceFilesWithBlocks(long blocksize);
             /// <summary>
-            /// Gets a list for filesystem entries that contain missing blocks in metadata
+            /// Gets a list for filesystem entries that contain missing blocks in metadata.
             /// </summary>
-            /// <returns>A list of filesystem entries with missing blocks</returns>
+            /// <returns>An asynchronous enumerable of <see cref="BlockWithMetadataSourceData"/> representing the metadata blocks.</returns>
             IAsyncEnumerable<BlockWithMetadataSourceData> GetSourceItemsWithMetadataBlocks();
             /// <summary>
-            /// Gets missing blocklist hashes
+            /// Gets missing blocklist hashes.
             /// </summary>
-            /// <param name="hashesPerBlock">The number of hashes for each block</param>
-            /// <returns>>A list of blocklist hashes</returns>
+            /// <param name="hashesPerBlock">The number of hashes for each block.</param>
+            /// <returns>An asynchronous enumerable of <see cref="BlocklistHashesEntry"/> representing the blocklist hashes.</returns>
             IAsyncEnumerable<BlocklistHashesEntry> GetBlocklistHashes(long hashesPerBlock);
             /// <summary>
-            /// Gets the number of missing blocks
+            /// Gets the number of missing blocks.
             /// </summary>
-            /// <returns>>The number of missing blocks</returns>
+            /// <returns>A task that when awaited returns the count of missing blocks.</returns>
             Task<long> GetMissingBlockCount();
             /// <summary>
-            /// Gets all the filesets that are affected by missing blocks
+            /// Gets all the filesets that are affected by missing blocks.
             /// </summary>
-            /// <returns>>A list of filesets</returns>
+            /// <returns>An asynchronous enumerable of <see cref="IRemoteVolume"/> representing the filesets that contain missing blocks.</returns>
             IAsyncEnumerable<IRemoteVolume> GetFilesetsUsingMissingBlocks();
             /// <summary>
-            /// Gets a list of remote files that may contain missing blocks
+            /// Gets a list of remote files that may contain missing blocks.
             /// </summary>
-            /// <returns>>A list of remote files</returns>
+            /// <returns>An asynchronous enumerable of <see cref="IRemoteVolume"/> representing the remote volumes that may contain missing blocks.</returns>
             IAsyncEnumerable<IRemoteVolume> GetMissingBlockSources();
         }
 
         /// <summary>
-        /// Implementation of the missing block list
+        /// Implementation of the missing block list.
         /// </summary>
         private class MissingBlockList : IMissingBlockList
         {
@@ -341,39 +376,46 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             private readonly ReusableTransaction m_rtr;
             /// <summary>
-            /// The insert command to use for restoring blocks
+            /// Updates the "Restored" status of a block in the temporary missing blocks table for a given hash and size.
             /// </summary>
             private SqliteCommand m_insertCommand = null!;
             /// <summary>
-            /// The command to copy blocks into the duplicate block table
+            /// Inserts or ignores a block and its volume assignment into the "DuplicateBlock" table for a given hash and size.
             /// </summary>
             private SqliteCommand m_copyIntoDuplicatedBlocks = null!;
             /// <summary>
-            /// The command to assign blocks to a new volume
+            /// Updates the "VolumeID" of a block in the "Block" table to assign it to a new volume for a given hash and size.
             /// </summary>
             private SqliteCommand m_assignBlocksToNewVolume = null!;
-            private SqliteCommand m_missingBlocksCommand = null!;
-            private SqliteCommand m_missingBlocksCountCommand = null!;
             /// <summary>
-            /// The name of the temporary table
+            /// Selects the hash and size of all missing blocks (where "Restored" is 0) from the temporary missing blocks table.
+            /// </summary>
+            private SqliteCommand m_missingBlocksCommand = null!;
+            /// <summary>
+            /// Counts the number of missing blocks (where "Restored" is 0) in the temporary missing blocks table.
+            /// </summary>
+            private SqliteCommand m_missingBlocksCountCommand = null!;
+
+            /// <summary>
+            /// The name of the temporary table.
             /// </summary>
             private readonly string m_tablename;
             /// <summary>
-            /// The name of the volume where blocks are missing
+            /// The name of the volume where blocks are missing.
             /// </summary>
             private readonly string m_volumename;
 
             /// <summary>
-            /// Whether the object has been disposed
+            /// Whether the object has been disposed.
             /// </summary>
             private bool m_isDisposed = false;
 
             /// <summary>
-            /// Creates a new missing block list
+            /// Creates a new missing block list.
             /// </summary>
-            /// <param name="volumename">The name of the volume with missing blocks</param>
-            /// <param name="connection">The connection to the database</param>
-            /// <param name="rtr">The transaction to use</param>
+            /// <param name="volumename">The name of the volume with missing blocks.</param>
+            /// <param name="connection">The connection to the database.</param>
+            /// <param name="rtr">The transaction to use.</param>
             private MissingBlockList(string volumename, SqliteConnection connection, ReusableTransaction rtr)
             {
                 m_connection = connection;
@@ -383,6 +425,13 @@ namespace Duplicati.Library.Main.Database
                 m_tablename = tablename;
             }
 
+            /// <summary>
+            /// Creates a new instance of the missing block list.
+            /// </summary>
+            /// <param name="volumename">The name of the volume with missing blocks.</param>
+            /// <param name="connection">The connection to the database.</param>
+            /// <param name="transaction">The transaction to use.</param>
+            /// <returns>A task that when awaited returns a new instance of <see cref="IMissingBlockList"/>.</returns>
             public static async Task<IMissingBlockList> CreateMissingBlockList(string volumename, SqliteConnection connection, ReusableTransaction transaction)
             {
                 var blocklist = new MissingBlockList(volumename, connection, transaction);
@@ -703,9 +752,9 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <summary>
-            /// Gets the list of missing blocks
+            /// Gets the list of missing blocks.
             /// </summary>
-            /// <returns>>A list of missing blocks</returns>
+            /// <returns>An asynchronous enumerable of tuples containing the block hash and size.</returns>
             public async IAsyncEnumerable<(string Hash, long Size)> GetMissingBlocks()
             {
                 m_missingBlocksCommand
@@ -777,6 +826,7 @@ namespace Duplicati.Library.Main.Database
                 return updated;
             }
 
+            /// <inheritdoc/>
             public async IAsyncEnumerable<IRemoteVolume> GetFilesetsUsingMissingBlocks()
             {
                 var blocks = $@"
@@ -842,6 +892,7 @@ namespace Duplicati.Library.Main.Database
                     );
             }
 
+            /// <inheritdoc/>
             public async IAsyncEnumerable<IRemoteVolume> GetMissingBlockSources()
             {
                 using var cmd = m_connection.CreateCommand($@"
@@ -877,10 +928,10 @@ namespace Duplicati.Library.Main.Database
                 if (m_isDisposed)
                     return;
 
-                DisposeAsync().Await();
+                DisposeAsync().AsTask().Await();
             }
 
-            public async Task DisposeAsync()
+            public async ValueTask DisposeAsync()
             {
                 if (m_isDisposed)
                     return;
@@ -906,12 +957,21 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Creates a new missing block list for the specified volume.
+        /// </summary>
+        /// <param name="volumename">The name of the volume with missing blocks.</param>
+        /// <returns>A task that when awaited returns an instance of <see cref="IMissingBlockList"/>.</returns>
         public async Task<IMissingBlockList> CreateBlockList(string volumename)
         {
             return await MissingBlockList.CreateMissingBlockList(volumename, m_connection, m_rtr)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Fixes duplicate metadata hashes in the database.
+        /// </summary>
+        /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
         public async Task FixDuplicateMetahash()
         {
             using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
@@ -1093,6 +1153,10 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Fixes duplicate file entries in the database.
+        /// </summary>
+        /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
         public async Task FixDuplicateFileentries()
         {
             using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
@@ -1201,6 +1265,12 @@ namespace Duplicati.Library.Main.Database
 
         }
 
+        /// <summary>
+        /// Fixes missing blocklist hashes in the database.
+        /// </summary>
+        /// <param name="blockhashalgorithm">The hash algorithm used for the blocklist hashes.</param>
+        /// <param name="blocksize">The size of each block in bytes.</param>
+        /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
         public async Task FixMissingBlocklistHashes(string blockhashalgorithm, long blocksize)
         {
             var blocklistbuffer = new byte[blocksize];
@@ -1458,6 +1528,12 @@ namespace Duplicati.Library.Main.Database
 
         }
 
+        /// <summary>
+        /// Fixes duplicate blocklist hashes in the database.
+        /// </summary>
+        /// <param name="blocksize">The size of each block in bytes.</param>
+        /// <param name="hashsize">The size of each hash in bytes.</param>
+        /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
         public async Task FixDuplicateBlocklistHashes(long blocksize, long hashsize)
         {
             using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
@@ -1560,6 +1636,13 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Checks if all blocks in the specified volume are present in the database.
+        /// </summary>
+        /// <param name="filename">The name of the volume to check.</param>
+        /// <param name="blocks">A collection of blocks to check, represented as key-value pairs where the key is the block hash and the value is the block size.</param>
+        /// <exception cref="Exception">Thrown if not all blocks are found in the specified volume.</exception>
+        /// <returns>A task that when awaited indicates the completion of the check.</returns>
         public async Task CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks)
         {
             using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
@@ -1629,6 +1712,16 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Checks if the provided blocklist matches the expected entries in the database for a given block hash and size.
+        /// </summary>
+        /// <param name="hash">The hash of the blocklist to check.</param>
+        /// <param name="length">The size of the blocklist in bytes.</param>
+        /// <param name="blocklist">The expected blocklist entries to compare against.</param>
+        /// <param name="blocksize">The size of each block in bytes.</param>
+        /// <param name="blockhashlength">The length of each block hash in bytes.</param>
+        /// <returns>A task that when awaited indicates the completion of the check.</returns>
+        /// <exception cref="Exception">Thrown if the blocklist does not match the expected entries.</exception>
         public async Task CheckBlocklistCorrect(string hash, long length, IEnumerable<string> blocklist, long blocksize, long blockhashlength)
         {
             using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
@@ -1682,6 +1775,10 @@ namespace Duplicati.Library.Main.Database
                 throw new Exception($"Too many source blocklist entries in {hash}");
         }
 
+        /// <summary>
+        /// Checks if there are any missing local filesets in the database.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of missing local fileset names.</returns>
         public async IAsyncEnumerable<string> MissingLocalFilesets()
         {
             using var cmd = m_connection.CreateCommand(@"
@@ -1706,6 +1803,10 @@ namespace Duplicati.Library.Main.Database
                 yield return rd.ConvertValueToString(0) ?? "";
         }
 
+        /// <summary>
+        /// Checks if there are any missing remote filesets in the database.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of tuples containing the fileset ID, timestamp, and whether it is a full backup.</returns>
         public async IAsyncEnumerable<(long FilesetID, DateTime Timestamp, bool IsFull)> MissingRemoteFilesets()
         {
             using var cmd = m_connection.CreateCommand(@"
@@ -1737,6 +1838,10 @@ namespace Duplicati.Library.Main.Database
                 );
         }
 
+        /// <summary>
+        /// Checks if there are any empty index files in the database.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of remote volumes that are empty index files.</returns>
         public async IAsyncEnumerable<IRemoteVolume> EmptyIndexFiles()
         {
             using var cmd = m_connection.CreateCommand(@"

@@ -56,6 +56,11 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     /// </summary>
     private bool m_disposed = false;
 
+    /// <summary>
+    /// Creates a new reusable transaction.
+    /// </summary>
+    /// <param name="db">The database this transaction relates to.</param>
+    /// <param name="transaction">An optional existing transaction to use. If null, a new transaction is created.</param>
     public ReusableTransaction(LocalDatabase db, SqliteTransaction? transaction = null) : this(db.Connection, transaction) { }
 
     /// <summary>
@@ -68,7 +73,7 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     /// </summary>
     /// <param name="message">The log message to use.</param>
     /// <param name="restart">True if the transaction should be restarted.</param>
-    /// <returns>An awaitable task.</returns>
+    /// <returns>A task that completes when the commit is done and (potentially) a new transaction has been started.</returns>
     /// <exception cref="InvalidOperationException">If the transaction is already Disposed.</exception>
     public async Task CommitAsync(string? message = null, bool restart = true)
     {
@@ -87,18 +92,12 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     }
 
     /// <inheritdoc/>
-    /// <remarks>
-    /// Calls the Async version of this method and awaits it.
-    /// </remarks>
     public void Dispose()
     {
         DisposeAsync().AsTask().Await();
     }
 
-    /// <summary>
-    /// Async version of Dispose: <inheritdoc cref="Dispose()"/>
-    /// </summary>
-    /// <returns>An awaitable task.</returns>
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         if (!m_disposed)
@@ -121,6 +120,13 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
         }
     }
 
+    /// <summary>
+    /// Rolls back the transaction and optionally restarts it.
+    /// </summary>
+    /// <param name="message">Message to log.</param>
+    /// <param name="restart">Whether to restart the transaction after rolling back.</param>
+    /// <returns>A task that completes when the rollback is done and (potentially) a new transaction has been started.</returns>
+    /// <exception cref="InvalidOperationException">If the transaction has already been disposed.</exception>
     public async Task RollBackAsync(string? message = null, bool restart = true)
     {
         if (m_disposed)

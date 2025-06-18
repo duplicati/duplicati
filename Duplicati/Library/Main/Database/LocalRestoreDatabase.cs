@@ -36,29 +36,70 @@ using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
+    /// <summary>
+    /// Represents a local database used during restore.
+    /// Provides methods for preparing and tracking restore file lists, managing temporary tables for files and blocks,
+    /// tracking restore progress, and efficiently querying and updating restore-related metadata.
+    /// This class supports advanced restore scenarios, including filtering, progress tracking via triggers,
+    /// cross-platform path mapping, and efficient block and file restoration workflows.
+    /// </summary>
     internal class LocalRestoreDatabase : LocalDatabase
     {
         /// <summary>
-        /// The tag used for logging
+        /// The tag used for logging.
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRestoreDatabase));
 
+        /// <summary>
+        /// A unique identifier for the temporary table set, used to ensure that temporary tables do not conflict with others.
+        /// </summary>
         protected readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
         /// <summary>
         /// The name of the temporary table in the database, which is used to store the list of files to restore.
         /// </summary>
         protected string? m_tempfiletable;
+        /// <summary>
+        /// The name of the temporary table in the database, which is used to store the blocks associated with the files to restore.
+        /// </summary>
         protected string? m_tempblocktable;
+        /// <summary>
+        /// A pool of connections and transactions that are used for concurrent access to the database.
+        /// </summary>
         protected ConcurrentBag<(SqliteConnection, ReusableTransaction)> m_connection_pool = [];
+        /// <summary>
+        /// The latest block table used to track the most recent blocks processed during a restore operation.
+        /// </summary>
         protected string? m_latestblocktable;
+        /// <summary>
+        /// The name of the temporary table used to track progress of file restoration.
+        /// </summary>
         protected string? m_fileprogtable;
+        /// <summary>
+        /// The name of the temporary table used to track overall restoration progress across all files.
+        /// </summary>
         protected string? m_totalprogtable;
+        /// <summary>
+        /// The name of the temporary table used to track files that have been fully restored (all blocks restored).
+        /// </summary>
         protected string? m_filesnewlydonetable;
 
+        /// <summary>
+        /// The time at which the restore operation begins.
+        /// </summary>
         protected DateTime m_restoreTime;
 
+        /// <summary>
+        /// Gets the time that the restore operation was initiated.
+        /// </summary>
         public DateTime RestoreTime { get { return m_restoreTime; } }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LocalRestoreDatabase"/> class.
+        /// </summary>
+        /// <param name="path">The path to the database file.</param>
+        /// <param name="pagecachesize">The size of the page cache for the database.</param>
+        /// <param name="dbnew">An optional existing instance of <see cref="LocalRestoreDatabase"/> to use, or null to create a new one. Used to mimic constructor chaining.</param>
+        /// <returns>A task that when awaited on, returns a new instance of <see cref="LocalRestoreDatabase"/>.</returns>
         public static async Task<LocalRestoreDatabase> CreateAsync(string path, long pagecachesize, LocalRestoreDatabase? dbnew = null)
         {
             dbnew ??= new LocalRestoreDatabase();
@@ -71,6 +112,12 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LocalRestoreDatabase"/> class using an existing parent database.
+        /// </summary>
+        /// <param name="dbparent">The parent database from which to create the restore database.</param>
+        /// <param name="dbnew">An optional existing instance of <see cref="LocalRestoreDatabase"/> to use, or null to create a new one. Used to mimic constructor chaining.</param>
+        /// <returns>A task that when awaited on, returns a new instance of <see cref="LocalRestoreDatabase"/>.</returns>
         public static async Task<LocalRestoreDatabase> CreateAsync(LocalDatabase dbparent, LocalRestoreDatabase? dbnew = null)
         {
             dbnew ??= new LocalRestoreDatabase();
@@ -85,8 +132,8 @@ namespace Duplicati.Library.Main.Database
         /// This replaces continuous requerying of block progress by iterating over blocks table.
         /// SQLite is much faster keeping information up to date with internal triggers.
         /// </summary>
-        /// <param name="createFilesNewlyDoneTracker"> This allows to create another table that keeps track
-        /// of all files that are done (all data blocks restored). </param>
+        /// <param name="createFilesNewlyDoneTracker">This allows to create another table that keeps track
+        /// of all files that are done (all data blocks restored).</param>
         /// <remarks>
         /// The method is prepared to create a table that keeps track of all files being done completely.
         /// That means, it fires for files where the number of restored blocks equals the number of all blocks.
@@ -95,6 +142,7 @@ namespace Duplicati.Library.Main.Database
         /// Note: If a file is done once and then set back to a none restored state, the file is not automatically removed.
         ///       But if it reaches a restored state later, it will be re-added (trigger will fire)
         /// </remarks>
+        /// <returns>A task that completes when the progress tracker is created.</returns>
         public async Task CreateProgressTracker(bool createFilesNewlyDoneTracker)
         {
             m_fileprogtable = "FileProgress-" + m_temptabsetguid;
@@ -344,6 +392,13 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Prepares the restore file list by querying the database for filesets and their associated files.
+        /// </summary>
+        /// <param name="restoretime">The time at which the restore operation is being performed.</param>
+        /// <param name="versions">An array of version identifiers to filter the filesets.</param>
+        /// <param name="filter">An optional filter to apply to the files being restored.</param>
+        /// <returns>A task that, when awaited, returns a tuple containing the count of files to restore and the total size of those files.</returns>
         public async Task<Tuple<long, long>> PrepareRestoreFilelist(DateTime restoretime, long[] versions, IFilter filter)
         {
             m_tempfiletable = "Fileset-" + m_temptabsetguid;
@@ -651,6 +706,10 @@ namespace Duplicati.Library.Main.Database
             return new Tuple<long, long>(0, 0);
         }
 
+        /// <summary>
+        /// Retrieves the first path from the temporary file table.
+        /// </summary>
+        /// <returns>A task that, when awaited, returns the first path found in the temporary file table, or null if no paths are found.</returns>
         public async Task<string?> GetFirstPath()
         {
             using var cmd = m_connection.CreateCommand($@"
@@ -668,6 +727,10 @@ namespace Duplicati.Library.Main.Database
             return v0.ToString();
         }
 
+        /// <summary>
+        /// Retrieves the largest prefix path from the temporary file table.
+        /// </summary>
+        /// <returns>A task that, when awaited, returns the largest prefix path found in the temporary file table.</returns>
         public async Task<string> GetLargestPrefix()
         {
             using var cmd = m_connection.CreateCommand($@"
@@ -723,6 +786,13 @@ namespace Duplicati.Library.Main.Database
             return maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep);
         }
 
+        /// <summary>
+        /// Sets the target paths for files in the temporary file table.
+        /// This method adjusts the target paths based on the largest prefix and destination provided.
+        /// </summary>
+        /// <param name="largest_prefix">The largest prefix path to use for adjusting target paths.</param>
+        /// <param name="destination">The destination path to prepend to the target paths.</param>
+        /// <returns>A task that completes when the target paths have been set.</returns>
         public async Task SetTargetPaths(string largest_prefix, string destination)
         {
             var dirsep = Util.GuessDirSeparator(string.IsNullOrWhiteSpace(largest_prefix) ?
@@ -865,6 +935,11 @@ namespace Duplicati.Library.Main.Database
             await m_rtr.CommitAsync().ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Finds missing blocks in the temporary block table.
+        /// </summary>
+        /// <param name="skipMetadata">If true, skips metadata blocks when searching for missing blocks.</param>
+        /// <returns>A task that completes when the missing blocks have been found and inserted into the temporary block table.</returns>
         public async Task FindMissingBlocks(bool skipMetadata)
         {
             using var cmd = m_connection.CreateCommand()
@@ -958,6 +1033,12 @@ namespace Duplicati.Library.Main.Database
             await m_rtr.CommitAsync().ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Updates the target path of a file in the temporary file table.
+        /// </summary>
+        /// <param name="ID">The ID of the file in the temporary file table.</param>
+        /// <param name="newname">The new target path to set for the file.</param>
+        /// <returns>A task that completes when the target path has been updated.</returns>
         public async Task UpdateTargetPath(long ID, string newname)
         {
             using var cmd = m_connection.CreateCommand($@"
@@ -975,43 +1056,118 @@ namespace Duplicati.Library.Main.Database
             await m_rtr.CommitAsync().ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Interface for an object describing a block in an existing file.
+        /// </summary>
         public interface IExistingFileBlock
         {
+            /// <summary>
+            /// Gets the hash of the block.
+            /// </summary>
             string Hash { get; }
+            /// <summary>
+            /// Gets the index of the block within the file.
+            /// </summary>
             long Index { get; }
+            /// <summary>
+            /// Gets the size of the block in bytes.
+            /// </summary>
             long Size { get; }
         }
 
+        /// <summary>
+        /// Interface for an existing file with its blocks.
+        /// </summary>
         public interface IExistingFile
         {
+            /// <summary>
+            /// Gets the target path of the file.
+            /// </summary>
             string TargetPath { get; }
+            /// <summary>
+            /// Gets the hash of the file.
+            /// </summary>
             string TargetHash { get; }
+            /// <summary>
+            /// Gets the ID of the file in the database.
+            /// </summary>
             long TargetFileID { get; }
+            /// <summary>
+            /// Gets the length of the file in bytes.
+            /// </summary>
             long Length { get; }
+            /// <summary>
+            /// An asynchronous enumerable of the blocks in the file.
+            /// </summary>
             IAsyncEnumerable<IExistingFileBlock> Blocks();
         }
 
+        /// <summary>
+        /// Interface for a block source, which can be a file or a metadata source.
+        /// </summary>
         public interface IBlockSource
         {
+            /// <summary>
+            /// Gets the path of the block source.
+            /// </summary>
             string Path { get; }
+            /// <summary>
+            /// Gets the offset of the block within the source.
+            /// </summary>
             long Offset { get; }
+            /// <summary>
+            /// Indicates whether the block source is metadata.
+            /// </summary>
             bool IsMetadata { get; }
         }
 
+        /// <summary>
+        /// Interface for a block descriptor, which describes a block in a file.
+        /// </summary>
         public interface IBlockDescriptor
         {
+            /// <summary>
+            /// Gets the hash of the block.
+            /// </summary>
             string Hash { get; }
+            /// <summary>
+            /// Gets the size of the block in bytes.
+            /// </summary>
             long Size { get; }
+            /// <summary>
+            /// Gets the offset of the block within the file.
+            /// </summary>
             long Offset { get; }
+            /// <summary>
+            /// Gets the index of the block within the file.
+            /// </summary>
             long Index { get; }
+            /// <summary>
+            /// Indicates whether the block is metadata.
+            /// </summary>
             bool IsMetadata { get; }
+            /// <summary>
+            /// An asynchronous enumerable of block sources for this block descriptor.
+            /// </summary>
             IAsyncEnumerable<IBlockSource> BlockSources();
         }
 
+        /// <summary>
+        /// Interface for a local block source, which provides information about a file and its blocks.
+        /// </summary>
         public interface ILocalBlockSource
         {
+            /// <summary>
+            /// Gets the target path of the file.
+            /// </summary>
             string TargetPath { get; }
+            /// <summary>
+            /// Gets the ID of the target file in the database.
+            /// </summary>
             long TargetFileID { get; }
+            /// <summary>
+            /// An asynchronous enumerable of block descriptors for the file.
+            /// </summary>
             IAsyncEnumerable<IBlockDescriptor> Blocks();
         }
 
@@ -1020,49 +1176,115 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         public interface IFileToRestore
         {
+            /// <summary>
+            /// Gets the target path of the file.
+            /// </summary>
             string Path { get; }
+            /// <summary>
+            /// Gets the hash of the file.
+            /// </summary>
             string Hash { get; }
+            /// <summary>
+            /// Gets the ID of the file in the database.
+            /// </summary>
             long Length { get; }
         }
 
+        /// <summary>
+        /// Interface for a remote volume, which contains blocks to be restored.
+        /// </summary>
         public interface IPatchBlock
         {
+            /// <summary>
+            /// Gets the hash of the block.
+            /// </summary>
             long Offset { get; }
+            /// <summary>
+            /// Gets the size of the block in bytes.
+            /// </summary>
             long Size { get; }
+            /// <summary>
+            /// Gets the path of the block source.
+            /// </summary>
             string Key { get; }
         }
 
+        /// <summary>
+        /// Interface for a remote volume that contains blocks to be restored.
+        /// </summary>
         public interface IVolumePatch
         {
+            /// <summary>
+            /// Gets the name of the remote volume.
+            /// </summary>
             string Path { get; }
+            /// <summary>
+            /// Gets the hash of the remote volume.
+            /// </summary>
             long FileID { get; }
+            /// <summary>
+            /// Gets the size of the remote volume in bytes.
+            /// </summary>
             IAsyncEnumerable<IPatchBlock> Blocks();
         }
 
+        /// <summary>
+        /// Implementation of the IExistingFile interface that retrieves existing files and their blocks from the database.
+        /// </summary>
         private class ExistingFile : IExistingFile
         {
+            /// <summary>
+            /// The data reader used to read existing files from the database.
+            /// </summary>
             private readonly SqliteDataReader m_reader;
 
-            public ExistingFile(SqliteDataReader rd) { m_reader = rd; HasMore = true; }
+            /// <summary>
+            /// Initializes a new instance of the ExistingFile class.
+            /// </summary>
+            /// <param name="rd">The SqliteDataReader used to read existing files.</param>
+            public ExistingFile(SqliteDataReader rd)
+            {
+                m_reader = rd;
+                HasMore = true;
+            }
 
             public string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
             public string TargetHash { get { return m_reader.ConvertValueToString(1) ?? ""; } }
             public long TargetFileID { get { return m_reader.ConvertValueToInt64(2); } }
             public long Length { get { return m_reader.ConvertValueToInt64(3); } }
 
+            /// <summary>
+            /// Indicates whether there are more blocks to read for the current file.
+            /// </summary>
             public bool HasMore { get; private set; }
 
+            /// <summary>
+            /// Represents a block in an existing file.
+            /// </summary>
             private class ExistingFileBlock : IExistingFileBlock
             {
+                /// <summary>
+                /// The data reader used to read block information for existing files.
+                /// </summary>
                 private readonly SqliteDataReader m_reader;
 
-                public ExistingFileBlock(SqliteDataReader rd) { m_reader = rd; }
+                /// <summary>
+                /// Initializes a new instance of the ExistingFileBlock class.
+                /// </summary>
+                public ExistingFileBlock(SqliteDataReader rd)
+                {
+                    m_reader = rd;
+                }
 
                 public string Hash { get { return m_reader.ConvertValueToString(4) ?? ""; } }
                 public long Index { get { return m_reader.ConvertValueToInt64(5); } }
                 public long Size { get { return m_reader.ConvertValueToInt64(6); } }
             }
 
+            /// <summary>
+            /// Gets the blocks in the existing file.
+            /// </summary>
+            /// <returns>An asynchronous enumerable of IExistingFileBlock objects representing the blocks in the file.</returns>
             public async IAsyncEnumerable<IExistingFileBlock> Blocks()
             {
                 string p = TargetPath;
@@ -1073,6 +1295,12 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Retrieves existing files with their blocks from the database.
+            /// </summary>
+            /// <param name="db">The LocalDatabase instance to query.</param>
+            /// <param name="tablename">The name of the table containing existing files.</param>
+            /// <returns>An asynchronous enumerable of IExistingFile objects representing the existing files with their blocks.</returns>
             public static async IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks(LocalDatabase db, string tablename)
             {
                 using var cmd = db.Connection.CreateCommand($@"
@@ -1116,6 +1344,10 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Retrieves existing files with their blocks from the temporary file table.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of IExistingFile objects representing the existing files with their blocks.</returns>
         public IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks()
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
@@ -1123,23 +1355,58 @@ namespace Duplicati.Library.Main.Database
             return ExistingFile.GetExistingFilesWithBlocks(this, m_tempfiletable);
         }
 
+        /// <summary>
+        /// Implements the ILocalBlockSource interface to provide access to local block sources.
+        /// </summary>
         private class LocalBlockSource : ILocalBlockSource
         {
+            /// <summary>
+            /// Implements the IBlockDescriptor interface to provide access to block descriptors.
+            /// </summary>
             private class BlockDescriptor : IBlockDescriptor
             {
+                /// <summary>
+                /// Implements the IBlockSource interface to provide access to block sources.
+                /// </summary>
                 private class BlockSource : IBlockSource
                 {
+                    /// <summary>
+                    /// The data reader used to read block source information.
+                    /// </summary>
                     private readonly SqliteDataReader m_reader;
-                    public BlockSource(SqliteDataReader rd) { m_reader = rd; }
+
+                    /// <summary>
+                    /// Initializes a new instance of the <see cref="BlockSource"/> class.
+                    /// </summary>
+                    /// <param name="rd">The SqliteDataReader used to read block source information.</param>
+                    public BlockSource(SqliteDataReader rd)
+                    {
+                        m_reader = rd;
+                    }
 
                     public string Path { get { return m_reader.ConvertValueToString(6) ?? ""; } }
                     public long Offset { get { return m_reader.ConvertValueToInt64(7); } }
                     public bool IsMetadata { get { return false; } }
                 }
 
+                /// <summary>
+                /// The data reader used to read block descriptor information.
+                /// </summary>
                 private readonly SqliteDataReader m_reader;
-                public BlockDescriptor(SqliteDataReader rd) { m_reader = rd; HasMore = true; }
 
+                /// <summary>
+                /// Initializes a new instance of the <see cref="BlockDescriptor"/> class.
+                /// </summary>
+                /// <param name="rd">The SqliteDataReader used to read block descriptor information.</param>
+                public BlockDescriptor(SqliteDataReader rd)
+                {
+                    m_reader = rd;
+                    HasMore = true;
+                }
+
+                /// <summary>
+                /// Gets the target path of the block source.
+                /// </summary>
                 private string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
 
                 public string Hash { get { return m_reader.ConvertValueToString(2) ?? ""; } }
@@ -1148,6 +1415,9 @@ namespace Duplicati.Library.Main.Database
                 public long Size { get { return m_reader.ConvertValueToInt64(5); } }
                 public bool IsMetadata { get { return !(m_reader.ConvertValueToInt64(9) == 0); } }
 
+                /// <summary>
+                /// Indicates whether there are more block sources to read for the current block descriptor.
+                /// </summary>
                 public bool HasMore { get; private set; }
 
                 public async IAsyncEnumerable<IBlockSource> BlockSources()
@@ -1165,12 +1435,27 @@ namespace Duplicati.Library.Main.Database
 
             }
 
+            /// <summary>
+            /// The data reader used to read local block source information.
+            /// </summary>
             private readonly SqliteDataReader m_reader;
-            public LocalBlockSource(SqliteDataReader rd) { m_reader = rd; HasMore = true; }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="LocalBlockSource"/> class.
+            /// </summary>
+            /// <param name="rd">The SqliteDataReader used to read local block source information.</param>
+            public LocalBlockSource(SqliteDataReader rd)
+            {
+                m_reader = rd;
+                HasMore = true;
+            }
 
             public string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
             public long TargetFileID { get { return m_reader.ConvertValueToInt64(1); } }
 
+            /// <summary>
+            /// Indicates whether there are more blocks to read for the current file.
+            /// </summary>
             public bool HasMore { get; private set; }
 
             public async IAsyncEnumerable<IBlockDescriptor> Blocks()
@@ -1190,6 +1475,15 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Retrieves files and their source blocks from the database.
+            /// </summary>
+            /// <param name="db">The LocalDatabase instance to query.</param>
+            /// <param name="filetablename">The name of the file table to query.</param>
+            /// <param name="blocktablename">The name of the block table to query.</param>
+            /// <param name="blocksize">The size of each block in bytes.</param>
+            /// <param name="skipMetadata">If true, skips metadata blocks when retrieving files and source blocks.</param>
+            /// <returns>An asynchronous enumerable of ILocalBlockSource objects representing the files and their source blocks.</returns>
             public static async IAsyncEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(LocalDatabase db, string filetablename, string blocktablename, long blocksize, bool skipMetadata)
             {
                 // TODO: Skip metadata as required
@@ -1240,6 +1534,12 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Retrieves files and their source blocks from the temporary file and block tables.
+        /// </summary>
+        /// <param name="skipMetadata">If true, skips metadata blocks when retrieving files and source blocks.</param>
+        /// <param name="blocksize">The size of each block in bytes.</param>
+        /// <returns>An asynchronous enumerable of ILocalBlockSource objects representing the files and their source blocks.</returns>
         public IAsyncEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata, long blocksize)
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
@@ -1247,6 +1547,10 @@ namespace Duplicati.Library.Main.Database
             return LocalBlockSource.GetFilesAndSourceBlocks(this, m_tempfiletable, m_tempblocktable, blocksize, skipMetadata);
         }
 
+        /// <summary>
+        /// Retrieves the missing remote volumes that need to be restored.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of IRemoteVolume objects representing the missing remote volumes.</returns>
         public async IAsyncEnumerable<IRemoteVolume> GetMissingVolumes()
         {
             using var cmd = m_connection.CreateCommand($@"
@@ -1290,8 +1594,13 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Interface for retrieving files and metadata with missing blocks.
+        /// </summary>
         public interface IFilesAndMetadata : IDisposable, IAsyncDisposable
         {
+            /// <summary>
+            /// Retrieves files with missing blocks.
             IAsyncEnumerable<IVolumePatch> FilesWithMissingBlocks();
             IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks();
         }
@@ -1374,20 +1683,45 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Implements the IVolumePatch interface to provide access to files with missing blocks.
+            /// </summary>
             private class VolumePatch : IVolumePatch
             {
+                /// <summary>
+                /// Implements the IPatchBlock interface to provide access to blocks in a volume.
+                /// </summary>
                 private class PatchBlock : IPatchBlock
                 {
+                    /// <summary>
+                    /// The data reader used to read patch block information.
+                    /// </summary>
                     private readonly SqliteDataReader m_reader;
-                    public PatchBlock(SqliteDataReader rd) { m_reader = rd; }
+                    /// <summary>
+                    /// Initializes a new instance of the <see cref="PatchBlock"/> class.
+                    /// </summary>
+                    public PatchBlock(SqliteDataReader rd)
+                    {
+                        m_reader = rd;
+                    }
 
                     public long Offset { get { return m_reader.ConvertValueToInt64(2); } }
                     public long Size { get { return m_reader.ConvertValueToInt64(3); } }
                     public string Key { get { return m_reader.ConvertValueToString(4) ?? ""; } }
                 }
 
+                /// <summary>
+                /// The data reader used to read volume patch information.
+                /// </summary>
                 private readonly SqliteDataReader m_reader;
-                public VolumePatch(SqliteDataReader rd) { m_reader = rd; HasMore = true; }
+                /// <summary>
+                /// Initializes a new instance of the <see cref="VolumePatch"/> class.
+                /// </summary>
+                public VolumePatch(SqliteDataReader rd)
+                {
+                    m_reader = rd;
+                    HasMore = true;
+                }
 
                 public string Path { get { return m_reader.ConvertValueToString(0) ?? ""; } }
                 public long FileID { get { return m_reader.ConvertValueToInt64(1); } }
@@ -1404,6 +1738,10 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Retrieves the files with missing blocks.
+            /// </summary>
+            /// <returns>An asynchronous enumerable of IVolumePatch objects representing the files with missing blocks.</returns>
             public async IAsyncEnumerable<IVolumePatch> FilesWithMissingBlocks()
             {
                 // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
@@ -1453,6 +1791,10 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Retrieves the metadata with missing blocks.
+            /// </summary>
+            /// <returns>An asynchronous enumerable of IVolumePatch objects representing the metadata with missing blocks.</returns>
             public async IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks()
             {
                 // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
@@ -1503,6 +1845,12 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Retrieves files and metadata with missing blocks for the given volume.
+        /// </summary>
+        /// <param name="blocksize"> The size of each block in bytes.</param>
+        /// <param name="curvolume">The current volume reader containing the blocks to restore.</param>
+        /// <returns>A task that when awaited returns an IFilesAndMetadata instance containing the files and metadata with missing blocks.</returns>
         public async Task<IFilesAndMetadata> GetMissingBlockData(BlockVolumeReader curvolume, long blocksize)
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
@@ -1512,9 +1860,9 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Returns a connection from the connection pool.
+        /// Returns a connection and transaction from the connection pool.
         /// </summary>
-        /// <returns>A connection from the connection pool.</returns>
+        /// <returns>A task that when awaited returns a tuple containing the SqliteConnection and ReusableTransaction.</returns>
         public async Task<(SqliteConnection, ReusableTransaction)> GetConnectionFromPool()
         {
             if (!m_connection_pool.TryTake(out var entry))
@@ -1535,12 +1883,22 @@ namespace Duplicati.Library.Main.Database
             return entry;
         }
 
+        /// <summary>
+        /// Represents a file to restore, containing its path, hash, and length.
+        /// </summary>
         private class FileToRestore : IFileToRestore
         {
             public string Path { get; private set; }
             public string Hash { get; private set; }
             public long Length { get; private set; }
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="FileToRestore"/> class.
+            /// </summary>
+            /// <param name="id">The ID of the file to restore.</param>
+            /// <param name="path">The path of the file to restore.</param>
+            /// <param name="hash">The hash of the file to restore.</param>
+            /// <param name="length">The length of the file to restore in bytes.</param>
             public FileToRestore(long id, string path, string hash, long length)
             {
                 Path = path;
@@ -1549,6 +1907,11 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Returns a list of files to restore, including their target paths, hashes, and lengths.
+        /// </summary>
+        /// <param name="onlyNonVerified">If true, only returns files that have not been verified.</param>
+        /// <returns>An asynchronous enumerable of IFileToRestore objects representing the files to restore.</returns>
         public async IAsyncEnumerable<IFileToRestore> GetFilesToRestore(bool onlyNonVerified)
         {
             using var cmd = m_connection.CreateCommand($@"
@@ -1576,7 +1939,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Returns a list of files and symlinks to restore.
         /// </summary>
-        /// <returns>A list of files and symlinks to restore.</returns>
+        /// <returns>An asynchronous enumerable of FileRequest objects representing the files and symlinks to restore.</returns>
         public async IAsyncEnumerable<FileRequest> GetFilesAndSymlinksToRestore()
         {
             // Order by length descending, so that larger files are restored first.
@@ -1610,7 +1973,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Returns a list of folders to restore. Used to restore folder metadata.
         /// </summary>
-        /// <returns>A list of folders to restore.</returns>
+        /// <returns>An asynchronous enumerable of FileRequest objects representing the folders to restore.</returns>
         public async IAsyncEnumerable<FileRequest> GetFolderMetadataToRestore()
         {
             using var cmd = m_connection.CreateCommand();
@@ -1646,7 +2009,7 @@ namespace Duplicati.Library.Main.Database
         /// Returns a list of blocks and their volume IDs. Used by the <see cref="BlockManager"/> to keep track of blocks and volumes to automatically evict them from the respective caches.
         /// </summary>
         /// <param name="skipMetadata">Flag indicating whether the returned blocks should exclude the metadata blocks.</param>
-        /// <returns>A list of tuples containing the block ID and the volume ID of the block.</returns>
+        /// <returns>An asynchronous enumerable of tuples containing the block ID and volume ID.</returns>
         public async IAsyncEnumerable<(long, long)> GetBlocksAndVolumeIDs(bool skipMetadata)
         {
             var metadata_query = skipMetadata ? "" : $@"
@@ -1688,7 +2051,7 @@ namespace Duplicati.Library.Main.Database
         /// Returns a list of <see cref="BlockRequest"/> for the given blockset ID. It is used by the <see cref="FileProcessor"/> to restore the blocks of a file.
         /// </summary>
         /// <param name="blocksetID">The BlocksetID of the file.</param>
-        /// <returns>A list of <see cref="BlockRequest"/> needed to restore the given file.</returns>
+        /// <returns>An asynchronous enumerable of <see cref="BlockRequest"/> representing the blocks of the file.</returns>
         public async IAsyncEnumerable<BlockRequest> GetBlocksFromFile(long blocksetID)
         {
             var (connection, transaction) = await GetConnectionFromPool()
@@ -1735,7 +2098,7 @@ namespace Duplicati.Library.Main.Database
         /// Returns a list of <see cref="BlockRequest"/> for the metadata blocks of the given file. It is used by the <see cref="FileProcessor"/> to restore the metadata of a file.
         /// </summary>
         /// <param name="fileID">The ID of the file.</param>
-        /// <returns>A list of <see cref="BlockRequest"/> needed to restore the metadata of the given file.</returns>
+        /// <returns>An asynchronous enumerable of <see cref="BlockRequest"/> representing the metadata blocks of the file.</returns>
         public async IAsyncEnumerable<BlockRequest> GetMetadataBlocksFromFile(long fileID)
         {
             var (connection, transaction) = await GetConnectionFromPool()
@@ -1785,7 +2148,7 @@ namespace Duplicati.Library.Main.Database
         /// Returns the volume information for the given volume ID. It is used by the <see cref="VolumeManager"/> to get the volume information for the given volume ID.
         /// </summary>
         /// <param name="VolumeID">The ID of the volume.</param>
-        /// <returns>A tuple containing the name, size, and hash of the volume.</returns>
+        /// <returns>An asynchronous enumerable of tuples containing the volume name, size, and hash.</returns>
         public async IAsyncEnumerable<(string, long, string)> GetVolumeInfo(long VolumeID)
         {
             using var cmd = m_connection.CreateCommand(@"
@@ -1809,6 +2172,10 @@ namespace Duplicati.Library.Main.Database
                 );
         }
 
+        /// <summary>
+        /// Drops all temporary tables used for the restore process and commits the transaction.
+        /// </summary>
+        /// <returns>A task that completes when the temporary tables are dropped and the transaction is committed.</returns>
         public async Task DropRestoreTable()
         {
             using var cmd = m_connection.CreateCommand()
@@ -1871,13 +2238,55 @@ namespace Duplicati.Library.Main.Database
             await m_rtr.CommitAsync().ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Interface for marking blocks as restored, missing, or verified.
+        /// </summary>
         public interface IBlockMarker : IDisposable, IAsyncDisposable
         {
+            /// <summary>
+            /// Marks a specific block as restored.
+            /// </summary>
+            /// <param name="targetfileid">The ID of the target file.</param>
+            /// <param name="index">The index of the block.</param>
+            /// <param name="hash">The hash of the block.</param>
+            /// <param name="blocksize">The size of the block.</param>
+            /// <param name="metadata">Indicates whether the block is metadata.</param>
+            /// <returns>A task that completes when the block is marked as restored.</returns>
             Task SetBlockRestored(long targetfileid, long index, string hash, long blocksize, bool metadata);
+
+            /// <summary>
+            /// Marks all blocks of a specific file as missing.
+            /// </summary>
+            /// <param name="targetfileid">The ID of the target file.</param>
+            /// <returns>A task that completes when all blocks of the file are marked as missing.</returns>
             Task SetAllBlocksMissing(long targetfileid);
+
+            /// <summary>
+            /// Marks all blocks of a specific file as restored.
+            /// </summary>
+            /// <param name="targetfileid">The ID of the target file.</param>
+            /// <param name="includeMetadata">Indicates whether to include metadata blocks.</param>
+            /// <returns>A task that completes when all blocks of the file are marked as restored.</returns>
             Task SetAllBlocksRestored(long targetfileid, bool includeMetadata);
+
+            /// <summary>
+            /// Marks the data of a specific file as verified.
+            /// </summary>
+            /// <param name="targetfileid">The ID of the target file.</param>
+            /// <returns>A task that completes when the file data is marked as verified.</returns>
             Task SetFileDataVerified(long targetfileid);
+
+            /// <summary>
+            /// Commits the changes made by the block marker.
+            /// </summary>
+            /// <returns>A task that completes when the changes are committed.</returns>
             Task CommitAsync();
+
+            /// <summary>
+            /// Updates the processed statistics for the blocks and files.
+            /// </summary>
+            /// <param name="writer">An operation progress updater to report the processed statistics.</param>
+            /// <returns>A task that completes when the processed statistics are updated.</returns>
             Task UpdateProcessed(IOperationProgressUpdater writer);
         }
 
@@ -1888,25 +2297,72 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private class DirectBlockMarker : IBlockMarker
         {
+            /// <summary>
+            /// Updates the "Restored" status to 1 for a specific block in the block table, matching by file ID, index, hash, size, and metadata, but only if it is currently not restored.
+            /// </summary>
             private SqliteCommand m_insertblockCommand = null!;
+
+            /// <summary>
+            /// Resets the "Restored" status to 0 for all blocks belonging to a specific file in the block table.
+            /// </summary>
             private SqliteCommand m_resetfileCommand = null!;
+
+            /// <summary>
+            /// Updates the "Restored" status to 1 for all blocks of a file in the block table, optionally including metadata blocks depending on the parameter.
+            /// </summary>
             private SqliteCommand m_updateAsRestoredCommand = null!;
+
+            /// <summary>
+            /// Marks a file as data verified by setting the "DataVerified" field to 1 in the file table for a specific file ID.
+            /// </summary>
             private SqliteCommand m_updateFileAsDataVerifiedCommand = null!;
+
+            /// <summary>
+            /// Retrieves the number of fully restored files and the total restored size from the progress/statistics table, or, if unavailable, counts restored blocks and their size directly from the block table.
+            /// </summary>
             private SqliteCommand m_statUpdateCommand = null!;
+
+            /// <summary>
+            /// The database instance used for executing commands.
+            /// </summary>
             private LocalDatabase m_db = null!;
+
+            /// <summary>
+            /// Indicates whether there are updates to be processed.
+            /// </summary>
             private bool m_hasUpdates = false;
 
+            /// <summary>
+            /// The name of the temporary block table used for marking blocks as restored.
+            /// </summary>
             private string m_blocktablename = null!;
+            /// <summary>
+            /// The name of the temporary file table used for marking files as data verified.
+            /// </summary>
             private string m_filetablename = null!;
 
+            /// <summary>
+            /// Calling this constructor will throw an exception. Use CreateAsync instead.
+            /// </summary>
             [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
             public DirectBlockMarker(SqliteConnection connection, string blocktablename, string filetablename, string statstablename)
             {
                 throw new NotImplementedException("Use CreateAsync instead of the constructor");
             }
 
+            /// <summary>
+            /// Private constructor to prevent direct instantiation. Use CreateAsync to create an instance.
+            /// </summary>
             private DirectBlockMarker() { }
 
+            /// <summary>
+            /// Creates a new instance of the <see cref="DirectBlockMarker"/> class asynchronously.
+            /// </summary>
+            /// <param name="db">The local database instance to use for executing commands.</param>
+            /// <param name="blocktablename">The name of the temporary block table.</param>
+            /// <param name="filetablename">The name of the temporary file table.</param>
+            /// <param name="statstablename">The name of the statistics table, or null if not available.</param>
+            /// <returns>A task that when awaited returns a new instance of the <see cref="DirectBlockMarker"/> class.</returns>
             public static async Task<DirectBlockMarker> CreateAsync(LocalDatabase db, string blocktablename, string filetablename, string statstablename)
             {
                 var dbm = new DirectBlockMarker()
@@ -2080,12 +2536,10 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        [Obsolete("Calling this constructor will throw an exception. Use CreateBlockMarkerAsync instead.")]
-        public IBlockMarker CreateBlockMarker()
-        {
-            throw new NotImplementedException("Use CreateBlockMarkerAsync instead of the constructor");
-        }
-
+        /// <summary>
+        /// Creates a new block marker for marking blocks as restored, missing, or verified.
+        /// </summary>
+        /// <returns>A task that when awaited returns an instance of <see cref="IBlockMarker"/>.</returns>
         public async Task<IBlockMarker> CreateBlockMarkerAsync()
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
@@ -2108,6 +2562,10 @@ namespace Duplicati.Library.Main.Database
             await base.DisposeAsync().ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Disposes all connections and their transactions in the connection pool.
+        /// </summary>
+        /// <returns>A task that completes when all connections and transactions are disposed.</returns>
         public async Task DisposePoolAsync()
         {
             foreach (var (connection, transaction) in m_connection_pool)
@@ -2119,6 +2577,10 @@ namespace Duplicati.Library.Main.Database
             m_connection_pool.Clear();
         }
 
+        /// <summary>
+        /// Returns a list of target folders for the folder blockset.
+        /// </summary>
+        /// <returns>An asynchronous enumerable of strings representing the target folders.</returns>
         public async IAsyncEnumerable<string> GetTargetFolders()
         {
             using var cmd = m_connection.CreateCommand($@"
@@ -2134,39 +2596,114 @@ namespace Duplicati.Library.Main.Database
                 yield return rd.ConvertValueToString(0) ?? "";
         }
 
+        /// <summary>
+        /// Returns a list of files and their source blocks for fast restoration.
+        /// </summary>
         public interface IFastSource
         {
+            /// <summary>
+            /// The target path of the file to restore.
+            /// </summary>
             string TargetPath { get; }
+            /// <summary>
+            /// The ID of the target file.
+            /// </summary>
             long TargetFileID { get; }
+            /// <summary>
+            /// The source path of the file to restore.
+            /// </summary>
             string SourcePath { get; }
+            /// <summary>
+            /// Gets an asynchronous enumerable of block entries for the file.
+            /// </summary>
             IAsyncEnumerable<IBlockEntry> Blocks();
         }
 
+        /// <summary>
+        /// Interface representing a block entry in the fast source.
+        /// </summary>
         public interface IBlockEntry
         {
+            /// <summary>
+            /// The offset of the block in the source file.
+            /// </summary>
             long Offset { get; }
+            /// <summary>
+            /// The size of the block.
+            /// </summary>
             long Size { get; }
+            /// <summary>
+            /// The index of the block in the source file.
+            /// </summary>
             long Index { get; }
+            /// <summary>
+            /// The hash of the block.
+            /// </summary>
             string Hash { get; }
         }
 
+        /// <summary>
+        /// Implementation of <see cref="IFastSource"/> that provides access to file and block information for fast restoration.
+        /// </summary>
         private class FastSource : IFastSource
         {
+            /// <summary>
+            /// Implementation of <see cref="IBlockEntry"/> that provides access to block information.
+            /// </summary>
             private class BlockEntry : IBlockEntry
             {
+                /// <summary>
+                /// The SqliteDataReader used to read block data.
+                /// </summary>
                 private readonly SqliteDataReader m_rd;
+                /// <summary>
+                /// The block size used to calculate the offset.
+                /// </summary>
                 private readonly long m_blocksize;
-                public BlockEntry(SqliteDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; }
+
+                /// <summary>
+                /// Initializes a new instance of the <see cref="BlockEntry"/> class with the specified SqliteDataReader and block size.
+                /// </summary>
+                /// <param name="rd">The SqliteDataReader used to read block data.</param>
+                /// <param name="blocksize">The block size used to calculate the offset.</param>
+                public BlockEntry(SqliteDataReader rd, long blocksize)
+                {
+                    m_rd = rd;
+                    m_blocksize = blocksize;
+                }
+
                 public long Offset { get { return m_rd.ConvertValueToInt64(3) * m_blocksize; } }
                 public long Index { get { return m_rd.ConvertValueToInt64(3); } }
                 public long Size { get { return m_rd.ConvertValueToInt64(5); } }
                 public string Hash { get { return m_rd.ConvertValueToString(4) ?? ""; } }
             }
 
+            /// <summary>
+            /// The SqliteDataReader used to read file and block data.
+            /// </summary>
             private readonly SqliteDataReader m_rd;
+            /// <summary>
+            /// The block size used to calculate the offset of blocks.
+            /// </summary>
             private readonly long m_blocksize;
-            public FastSource(SqliteDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="FastSource"/> class with the specified SqliteDataReader and block size.
+            /// </summary>
+            /// <param name="rd">The SqliteDataReader used to read file and block data.</param>
+            /// <param name="blocksize">The block size used to calculate the offset of blocks.</param>
+            public FastSource(SqliteDataReader rd, long blocksize)
+            {
+                m_rd = rd;
+                m_blocksize = blocksize;
+                MoreData = true;
+            }
+
+            /// <summary>
+            /// Indicates whether there is more data to read from the SqliteDataReader.
+            /// </summary>
             public bool MoreData { get; private set; }
+
             public string TargetPath { get { return m_rd.ConvertValueToString(0) ?? ""; } }
             public long TargetFileID { get { return m_rd.ConvertValueToInt64(2); } }
             public string SourcePath { get { return m_rd.ConvertValueToString(1) ?? ""; } }
@@ -2182,6 +2719,11 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Returns a list of files and their source blocks for fast restoration.
+        /// </summary>
+        /// <param name="blocksize">The size of the blocks to be used for restoration.</param>
+        /// <returns>An asynchronous enumerable of <see cref="IFastSource"/> representing the files and their source blocks.</returns>
         public async IAsyncEnumerable<IFastSource> GetFilesAndSourceBlocksFast(long blocksize)
         {
             using (var cmdReader = m_connection.CreateCommand())

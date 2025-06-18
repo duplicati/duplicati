@@ -30,8 +30,20 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
 {
+    /// <summary>
+    /// Represents a  local database used for testing and verification.
+    /// Provides methods for creating test databases, updating verification counts, and comparing file, index, and block lists
+    /// to support integrity checks and remote volume verification during backup testing.
+    /// </summary>
     internal class LocalTestDatabase : LocalDatabase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LocalTestDatabase"/> class.
+        /// </summary>
+        /// <param name="path">The path to the database file.</param>
+        /// <param name="pagecachesize">The size of the page cache in bytes.</param>
+        /// <param name="dbnew">An optional existing <see cref="LocalTestDatabase"/> instance to use. Used to mimic constructor chaining.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the created <see cref="LocalTestDatabase"/> instance.</returns>
         public static async Task<LocalTestDatabase> CreateAsync(string path, long pagecachesize, LocalTestDatabase? dbnew = null)
         {
             dbnew ??= new LocalTestDatabase();
@@ -45,6 +57,12 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="LocalTestDatabase"/> class using an existing parent database.
+        /// </summary>
+        /// <param name="dbparent">The parent database to use for creating the new test database.</param>
+        /// <param name="dbnew">An optional existing <see cref="LocalTestDatabase"/> instance to use. Used to mimic constructor chaining.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the created <see cref="LocalTestDatabase"/> instance.</returns>
         public static async Task<LocalTestDatabase> CreateAsync(LocalDatabase dbparent, LocalTestDatabase? dbnew = null)
         {
             dbnew ??= new LocalTestDatabase();
@@ -54,6 +72,12 @@ namespace Duplicati.Library.Main.Database
                     .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Updates the verification count for a remote volume with the specified name.
+        /// Increments the count by 1, or sets it to the maximum of 1 if it was previously 0 or negative.
+        /// </summary>
+        /// <param name="name">The name of the remote volume to update.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public async Task UpdateVerificationCount(string name)
         {
             using (var cmd = m_connection.CreateCommand(m_rtr))
@@ -76,14 +100,27 @@ namespace Duplicati.Library.Main.Database
                     .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// A record representing a remote volume, which implements the <see cref="IRemoteVolume"/> interface.
+        /// </summary>
         private record RemoteVolume : IRemoteVolume
         {
+            /// <summary>
+            /// Gets the ID of the remote volume.
+            /// </summary>
             public long ID { get; init; }
             public string Name { get; init; }
             public long Size { get; init; }
             public string Hash { get; init; }
+            /// <summary>
+            /// Gets the verification count of the remote volume, indicating how many times it has been verified.
+            /// </summary>
             public long VerificationCount { get; init; }
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="RemoteVolume"/> record from a SqliteDataReader.
+            /// </summary>
+            /// <param name="rd">The SqliteDataReader containing the data for the remote volume.</param>
             public RemoteVolume(SqliteDataReader rd)
             {
                 ID = rd.ConvertValueToInt64(0);
@@ -94,6 +131,14 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Filters a list of remote volumes based on their verification count.
+        /// The method selects volumes that have not been verified, those with a low verification count, and finally those with a high verification count, ensuring a balanced selection.
+        /// </summary>
+        /// <param name="volumes">The collection of remote volumes to filter.</param>
+        /// <param name="samples">The number of samples to select.</param>
+        /// <param name="maxverification">The maximum verification count to consider for filtering.</param>
+        /// <returns>A list of remote volumes filtered by verification count.</returns>
         private static List<RemoteVolume> FilterByVerificationCount(IEnumerable<RemoteVolume> volumes, long samples, long maxverification)
         {
             var rnd = new Random();
@@ -146,6 +191,13 @@ namespace Duplicati.Library.Main.Database
             return res;
         }
 
+        /// <summary>
+        /// Asynchronously selects a set of remote volumes to be tested for integrity, based on the specified sample count and selection options.
+        /// This method retrieves candidate remote volumes from the database, prioritizes them according to verification count and state, and yields the selected targets for verification.
+        /// </summary>
+        /// <param name="samples">The number of remote volumes to select for testing.</param>
+        /// <param name="options">The options that define selection criteria, such as time, version, and verification strategy.</param>
+        /// <returns>An asynchronous enumerable of <see cref="IRemoteVolume"/> representing the selected test targets.</returns>
         public async IAsyncEnumerable<IRemoteVolume> SelectTestTargets(long samples, Options options)
         {
             var tp = await GetFilelistWhereClause(options.Time, options.Version)
@@ -294,21 +346,53 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Base class for basic lists used in the local test database.
+        /// Provides methods for creating temporary tables, inserting data, and disposing of resources.
+        /// </summary>
         private abstract class Basiclist : IDisposable, IAsyncDisposable
         {
+            /// <summary>
+            /// The database connection used for executing commands.
+            /// </summary>
             protected LocalDatabase m_db = null!;
+            /// <summary>
+            /// The name of the volume associated with this list.
+            /// </summary>
             protected string m_volumename = null!;
+            /// <summary>
+            /// The name of the temporary table used for this list.
+            /// </summary>
             protected string m_tablename = null!;
+            /// <summary>
+            /// Command used for inserting data into the temporary table.
+            /// </summary>
             protected SqliteCommand m_insertCommand = null!;
 
+            /// <summary>
+            /// Calling this constructor will throw an exception. Use the CreateAsync method instead.
+            /// </summary>
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             protected Basiclist(SqliteConnection connection, ReusableTransaction rtr, string volumename, string tablePrefix, string tableFormat, string insertCommand)
             {
                 throw new NotSupportedException("Use CreateAsync method instead.");
             }
 
+            /// <summary>
+            /// Protected constructor to allow derived classes to initialize without parameters.
+            /// </summary>
             protected Basiclist() { }
 
+            /// <summary>
+            /// Creates a new instance of the <see cref="Basiclist"/> class asynchronously.
+            /// </summary>
+            /// <param name="bl">The instance of the <see cref="Basiclist"/> to initialize.</param>
+            /// <param name="db">The local database to use for the list.</param>
+            /// <param name="volumename">The name of the volume associated with this list.</param>
+            /// <param name="tablePrefix">The prefix for the temporary table name.</param>
+            /// <param name="tableFormat">The SQL format for creating the temporary table.</param>
+            /// <param name="insertCommand">The SQL command for inserting data into the temporary table.</param>
+            /// <returns>A task that represents the asynchronous operation. The task result contains the initialized <see cref="Basiclist"/> instance.</returns>
             protected static async Task<Basiclist> CreateAsync(Basiclist bl, LocalDatabase db, string volumename, string tablePrefix, string tableFormat, string insertCommand)
             {
                 bl.m_db = db;
@@ -356,15 +440,46 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Interface for a file list used in the local test database.
+        /// Provides methods for adding entries, comparing the list with remote volumes, and disposing of resources.
+        /// </summary>
         public interface IFilelist : IDisposable, IAsyncDisposable
         {
+            /// <summary>
+            /// Asynchronously adds a file entry to the file list.
+            /// </summary>
+            /// <param name="path">The path of the file.</param>
+            /// <param name="size">The size of the file in bytes.</param>
+            /// <param name="hash">The hash of the file, or null if not applicable.</param>
+            /// <param name="metasize">The size of the metadata associated with the file.</param>
+            /// <param name="metahash">The hash of the metadata associated with the file.</param>
+            /// <param name="blocklistHashes">A collection of blocklist hashes associated with the file.</param>
+            /// <param name="type">The type of the file entry.</param>
+            /// <param name="time">The timestamp of the file entry.</param>
+            /// <returns>A task that completes when the file entry has been added.</returns>
             Task Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time);
+
+            /// <summary>
+            /// Asynchronously compares the file list with remote volumes and yields differences.
+            /// </summary>
+            /// <returns>An asynchronous enumerable of key-value pairs representing the comparison results, where the key is the test entry status and the value is the file path.</returns>
             IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare();
         }
 
+        /// <summary>
+        /// Implementation of the <see cref="IFilelist"/> interface that manages a list of files in a local test database.
+        /// </summary>
         private class Filelist : Basiclist, IFilelist
         {
+            /// <summary>
+            /// The prefix for the temporary table name used for the file list.
+            /// </summary>
             private const string TABLE_PREFIX = "Filelist";
+
+            /// <summary>
+            /// The SQL format for creating the temporary table used for the file list.
+            /// </summary>
             private const string TABLE_FORMAT = @"
                 (
                     ""Path"" TEXT NOT NULL,
@@ -374,6 +489,10 @@ namespace Duplicati.Library.Main.Database
                     ""Metahash"" TEXT NOT NULL
                 )
             ";
+
+            /// <summary>
+            /// The SQL command for inserting data into the temporary table used for the file list.
+            /// </summary>
             private const string INSERT_COMMAND = @"
                 (
                     ""Path"",
@@ -391,6 +510,9 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
+            /// <summary>
+            /// Calling this constructor will throw an exception. Use the CreateAsync method instead.
+            /// </summary>
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             public Filelist(SqliteConnection connection, string volumename, ReusableTransaction rtr)
                 : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
@@ -398,8 +520,17 @@ namespace Duplicati.Library.Main.Database
                 throw new NotSupportedException("Use CreateAsync method instead.");
             }
 
+            /// <summary>
+            /// Private constructor to allow derived classes to initialize without parameters and to prevent instantiation from outside, which should only be done through the CreateAsync method.
+            /// </summary>
             private Filelist() { }
 
+            /// <summary>
+            /// Asynchronously creates a new instance of the <see cref="Filelist"/> class.
+            /// </summary>
+            /// <param name="db">The local database to use for the file list.</param>
+            /// <param name="volumename">The name of the volume associated with this file list.</param>
+            /// <returns>A task that when awaited returns a new instance of the <see cref="Filelist"/> class.</returns>
             public static async Task<Filelist> CreateAsync(LocalDatabase db, string volumename)
             {
                 var bl = new Filelist();
@@ -538,15 +669,41 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Interface for an index list used in the local test database.
+        /// Provides methods for adding block links, comparing the index list with remote volumes, and disposing of resources.
+        /// </summary>
         public interface IIndexlist : IDisposable, IAsyncDisposable
         {
+            /// <summary>
+            /// Asynchronously adds a block link to the index list.
+            /// </summary>
+            /// <param name="filename">The name of the file associated with the block link.</param>
+            /// <param name="hash">The hash of the block link.</param>
+            /// <param name="length">The length of the block link in bytes.</param>
+            /// <returns>A task that completes when the block link has been added.</returns>
             Task AddBlockLink(string filename, string hash, long length);
+
+            /// <summary>
+            /// Asynchronously compares the index list with remote volumes and yields differences.
+            /// </summary>
+            /// <returns>An asynchronous enumerable of key-value pairs representing the comparison results, where the key is the test entry status and the value is the file path.</returns>
             IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
         }
 
+        /// <summary>
+        /// Implementation of the <see cref="IIndexlist"/> interface that manages a list of index entries in a local test database.
+        /// </summary>
         private class Indexlist : Basiclist, IIndexlist
         {
+            /// <summary>
+            /// The prefix for the temporary table name used for the index list.
+            /// </summary>
             private const string TABLE_PREFIX = "Indexlist";
+
+            /// <summary>
+            /// The SQL format for creating the temporary table used for the index list.
+            /// </summary>
             private const string TABLE_FORMAT = @"
                 (
                     ""Name"" TEXT NOT NULL,
@@ -555,6 +712,9 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
+            /// <summary>
+            /// The SQL command for inserting data into the temporary table used for the index list.
+            /// </summary>
             private const string INSERT_COMMAND = @"
                 (
                     ""Name"",
@@ -568,6 +728,9 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
+            /// <summary>
+            /// Calling this constructor will throw an exception. Use the CreateAsync method instead.
+            /// </summary>
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             public Indexlist(SqliteConnection connection, string volumename, ReusableTransaction rtr)
                 : base(connection, rtr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
@@ -575,8 +738,17 @@ namespace Duplicati.Library.Main.Database
                 throw new NotSupportedException("Use CreateAsync method instead.");
             }
 
+            /// <summary>
+            /// Private constructor to allow derived classes to initialize without parameters and to prevent instantiation from outside, which should only be done through the CreateAsync method.
+            /// </summary>
             private Indexlist() { }
 
+            /// <summary>
+            /// Asynchronously creates a new instance of the <see cref="Indexlist"/> class.
+            /// </summary>
+            /// <param name="db">The local database to use for the index list.</param>
+            /// <param name="volumename">The name of the volume associated with this index list.</param>
+            /// <returns>A task that when awaited returns a new instance of the <see cref="Indexlist"/> class.</returns>
             public static async Task<Indexlist> CreateAsync(LocalDatabase db, string volumename)
             {
                 var bl = new Indexlist();
@@ -689,25 +861,67 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Interface for a blocklist used in the local test database.
+        /// Provides methods for adding blocks, comparing the blocklist with remote volumes, and disposing of resources.
+        /// </summary>
         public interface IBlocklist : IDisposable, IAsyncDisposable
         {
+            /// <summary>
+            /// Asynchronously adds a block to the blocklist.
+            /// </summary>
+            /// <param name="key">The key (hash) of the block.</param>
+            /// <param name="value">The size of the block in bytes.</param>
+            /// <returns>A task that completes when the block has been added.</returns>
             Task AddBlock(string key, long value);
+
+            /// <summary>
+            /// Asynchronously compares the blocklist with remote volumes and yields differences.
+            /// </summary>
+            /// <returns>An asynchronous enumerable of key-value pairs representing the comparison results, where the key is the test entry status and the value is the block hash.</returns>
             IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
         }
 
         public interface IBlocklistHashList : IDisposable, IAsyncDisposable
         {
+            /// <summary>
+            /// Asynchronously adds a block hash to the blocklist hash list.
+            /// </summary>
+            /// <param name="hash">The hash of the block.</param>
+            /// <param name="size">The size of the block in bytes.</param>
+            /// <returns>A task that completes when the block hash has been added.</returns>
             Task AddBlockHash(string hash, long size);
+
+            /// <summary>
+            /// Asynchronously compares the blocklist hash list with remote volumes and yields differences.
+            /// </summary>
+            /// <param name="hashesPerBlock">The number of hashes per block.</param>
+            /// <param name="hashSize">The size of each hash in bytes.</param>
+            /// <param name="blockSize">The size of each block in bytes.</param>
+            /// <returns>An asynchronous enumerable of key-value pairs representing the comparison results, where the key is the test entry status and the value is the block hash.</returns>
             IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize);
         }
 
+        /// <summary>
+        /// Implementation of the <see cref="IBlocklist"/> interface that manages a list of blocks in a local test database.
+        /// Provides methods for adding blocks, comparing the blocklist with remote volumes, and disposing of resources.
+        /// </summary>
         private class Blocklist : Basiclist, IBlocklist
         {
+            /// <summary>
+            /// The prefix for the temporary table name used for the blocklist.
+            /// </summary>
             private const string TABLE_PREFIX = "Blocklist";
+            /// <summary>
+            /// The SQL format for creating the temporary table used for the blocklist.
+            /// </summary>
             private const string TABLE_FORMAT = @"(
                 ""Hash"" TEXT NOT NULL,
                 ""Size"" INTEGER NOT NULL
             )";
+            /// <summary>
+            /// The SQL command for inserting data into the temporary table used for the blocklist.
+            /// </summary>
             private const string INSERT_COMMAND = @"(
                 ""Hash"",
                 ""Size""
@@ -716,14 +930,26 @@ namespace Duplicati.Library.Main.Database
                 @Hash,
                 @Size
             )";
+
+            /// <summary>
+            /// Calling this constructor will throw an exception. Use the CreateAsync method instead.
+            /// </summary>
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             public Blocklist(SqliteConnection connection, string volumename, ReusableTransaction rtr)
             {
                 throw new NotSupportedException("Use CreateAsync method instead.");
             }
 
+            /// <summary>
+            /// Private constructor to allow derived classes to initialize without parameters and to prevent instantiation from outside, which should only be done through the CreateAsync method.
+            /// </summary>
             private Blocklist() { }
 
+            /// <summary>
+            /// Asynchronously creates a new instance of the <see cref="Blocklist"/> class.
+            /// </summary>
+            /// <param name="db">The local database to use for the blocklist.</param>
+            /// <param name="volumename">The name of the volume associated with this blocklist.</param>
             public static async Task<Blocklist> CreateAsync(LocalDatabase db, string volumename)
             {
                 var bl = new Blocklist();
@@ -873,14 +1099,28 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Implementation of the <see cref="IBlocklistHashList"/> interface that manages a list of block hashes in a local test database.
+        /// Provides methods for adding block hashes, comparing the blocklist hash list with remote volumes, and disposing of resources.
+        /// </summary>
         private class BlocklistHashList : Basiclist, IBlocklistHashList
         {
+            /// <summary>
+            /// The prefix for the temporary table name used for the blocklist hash list.
+            /// </summary>
             private const string TABLE_PREFIX = "BlocklistHashList";
+
+            /// <summary>
+            /// The SQL format for creating the temporary table used for the blocklist hash list.
+            /// </summary>
             private const string TABLE_FORMAT = @"(
                 ""Hash"" TEXT NOT NULL,
                 ""Size"" INTEGER NOT NULL
             )";
 
+            /// <summary>
+            /// The SQL command for inserting data into the temporary table used for the blocklist hash list.
+            /// </summary>
             private const string INSERT_COMMAND = @"(
                 ""Hash"",
                 ""Size""
@@ -889,14 +1129,27 @@ namespace Duplicati.Library.Main.Database
                 @Hash,
                 @Size
             )";
+
+            /// <summary>
+            /// Calling this constructor will throw an exception. Use the CreateAsync method instead.
+            /// </summary>
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             public BlocklistHashList(SqliteConnection connection, string volumename, ReusableTransaction rtr)
             {
                 throw new NotSupportedException("Use CreateAsync method instead.");
             }
 
+            /// <summary>
+            /// Private constructor to allow derived classes to initialize without parameters and to prevent instantiation from outside, which should only be done through the CreateAsync method.
+            /// </summary>
             private BlocklistHashList() { }
 
+            /// <summary>
+            /// Asynchronously creates a new instance of the <see cref="BlocklistHashList"/> class.
+            /// </summary>
+            /// <param name="db">The local database to use for the blocklist hash list.</param>
+            /// <param name="volumename">The name of the volume associated with this blocklist hash list.</param>
+            /// <returns>A task that when awaited returns a new instance of the <see cref="BlocklistHashList"/> class.</returns>
             public static async Task<BlocklistHashList> CreateAsync(LocalDatabase db, string volumename)
             {
                 var bl = new BlocklistHashList();
@@ -1053,21 +1306,41 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Creates a new filelist in the local test database.
+        /// </summary>
+        /// <param name="name">The name of the filelist to create.</param>
+        /// <returns>A task that when awaited returns a new instance of the <see cref="IFilelist"/> interface.</returns>
         public async Task<IFilelist> CreateFilelist(string name)
         {
             return await Filelist.CreateAsync(this, name).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Creates a new indexlist in the local test database.
+        /// </summary>
+        /// <param name="name">The name of the indexlist to create.</param>
+        /// <returns>A task that when awaited returns a new instance of the <see cref="IIndexlist"/> interface.</returns>
         public async Task<IIndexlist> CreateIndexlist(string name)
         {
             return await Indexlist.CreateAsync(this, name).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Creates a new blocklist in the local test database.
+        /// </summary>
+        /// <param name="name">The name of the blocklist to create.</param>
+        /// <returns>A task that when awaited returns a new instance of the <see cref="IBlocklist"/> interface.</returns>
         public async Task<IBlocklist> CreateBlocklist(string name)
         {
             return await Blocklist.CreateAsync(this, name).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Creates a new blocklist hash list in the local test database.
+        /// </summary>
+        /// <param name="name">The name of the blocklist hash list to create.</param>
+        /// <returns>A task that when awaited returns a new instance of the <see cref="IBlocklistHashList"/> interface.</returns>
         public async Task<IBlocklistHashList> CreateBlocklistHashList(string name)
         {
             return await BlocklistHashList.CreateAsync(this, name)
