@@ -1114,9 +1114,8 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable collection of remote volumes that are missing blocks.</returns>
         public async IAsyncEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo, long blocksize, long hashsize, bool forceBlockUse)
         {
-            using (var cmd = m_connection.CreateCommand(m_rtr))
-            {
-                var selectCommand = @"
+            using var cmd = m_connection.CreateCommand(m_rtr);
+            var selectCommand = @"
                     SELECT DISTINCT
                         ""RemoteVolume"".""Name"",
                         ""RemoteVolume"".""Hash"",
@@ -1125,7 +1124,7 @@ namespace Duplicati.Library.Main.Database
                     FROM ""RemoteVolume""
                 ";
 
-                var missingBlocklistEntries = $@"
+            var missingBlocklistEntries = $@"
                     SELECT ""BlocklistHash"".""Hash""
                     FROM ""BlocklistHash""
                     LEFT OUTER JOIN ""BlocksetEntry""
@@ -1134,7 +1133,7 @@ namespace Duplicati.Library.Main.Database
                     WHERE ""BlocksetEntry"".""BlocksetID"" IS NULL
                 ";
 
-                var missingBlockInfo = @"
+            var missingBlockInfo = @"
                     SELECT ""VolumeID""
                     FROM ""Block""
                     WHERE
@@ -1142,7 +1141,7 @@ namespace Duplicati.Library.Main.Database
                         AND ""Size"" > 0
                 ";
 
-                var missingBlocklistVolumes = $@"
+            var missingBlocklistVolumes = $@"
                     SELECT ""VolumeID""
                     FROM
                         ""Block"",
@@ -1150,7 +1149,7 @@ namespace Duplicati.Library.Main.Database
                     WHERE ""A"".""Hash"" = ""Block"".""Hash""
                 ";
 
-                var countMissingInformation = $@"
+            var countMissingInformation = $@"
                     SELECT COUNT(*)
                     FROM (
                         SELECT DISTINCT ""VolumeID""
@@ -1161,79 +1160,78 @@ namespace Duplicati.Library.Main.Database
                     )
                 ";
 
-                if (passNo == 0)
-                {
-                    // On the first pass, we select all the volumes we know we need,
-                    // which may be an empty list
-                    cmd.SetCommandAndParameters($@"
+            if (passNo == 0)
+            {
+                // On the first pass, we select all the volumes we know we need,
+                // which may be an empty list
+                cmd.SetCommandAndParameters($@"
                         {selectCommand}
                         WHERE ""ID"" IN ({missingBlocklistVolumes})
                     ");
 
-                    // Reset the list
-                    m_proccessedVolumes.Clear();
-                }
-                else
+                // Reset the list
+                m_proccessedVolumes.Clear();
+            }
+            else
+            {
+                //On anything but the first pass, we check if we are done
+                var r = await cmd
+                    .SetCommandAndParameters(countMissingInformation)
+                    .ExecuteScalarInt64Async(0)
+                    .ConfigureAwait(false);
+
+                if (r == 0 && !forceBlockUse)
+                    yield break;
+
+                if (passNo == 1)
                 {
-                    //On anything but the first pass, we check if we are done
-                    var r = await cmd
-                        .SetCommandAndParameters(countMissingInformation)
-                        .ExecuteScalarInt64Async(0)
-                        .ConfigureAwait(false);
+                    // On the second pass, we select all volumes that are not mentioned in the db
 
-                    if (r == 0 && !forceBlockUse)
-                        yield break;
-
-                    if (passNo == 1)
-                    {
-                        // On the second pass, we select all volumes that are not mentioned in the db
-
-                        var mentionedVolumes = @"
+                    var mentionedVolumes = @"
                             SELECT DISTINCT ""VolumeID""
                             FROM ""Block""
                         ";
 
-                        cmd
-                            .SetCommandAndParameters($@"
+                    cmd
+                        .SetCommandAndParameters($@"
                                 {selectCommand}
                                 WHERE
                                     ""ID"" NOT IN ({mentionedVolumes})
                                     AND ""Type"" = @Type
                             ")
-                            .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString());
+                        .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString());
 
 
-                    }
-                    else
-                    {
-                        // On the final pass, we select all volumes
-                        // the filter will ensure that we do not download anything twice
-                        cmd
-                            .SetCommandAndParameters($@"
+                }
+                else
+                {
+                    // On the final pass, we select all volumes
+                    // the filter will ensure that we do not download anything twice
+                    cmd
+                        .SetCommandAndParameters($@"
                                 {selectCommand}
                                 WHERE ""Type"" = @Type
                             ")
-                            .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString());
-                    }
+                        .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString());
                 }
+            }
 
-                using var rd = await cmd
-                    .ExecuteReaderAsync()
-                    .ConfigureAwait(false);
+            using var rd = await cmd
+                .ExecuteReaderAsync()
+                .ConfigureAwait(false);
 
-                while (await rd.ReadAsync().ConfigureAwait(false))
+            while (await rd.ReadAsync().ConfigureAwait(false))
+            {
+                var volumeID = rd.ConvertValueToInt64(3);
+
+                // Guard against multiple downloads of the same file
+                if (m_proccessedVolumes.TryAdd(volumeID, volumeID))
                 {
-                    var volumeID = rd.ConvertValueToInt64(3);
-
-                    // Guard against multiple downloads of the same file
-                    if (m_proccessedVolumes.TryAdd(volumeID, volumeID))
-                    {
-                        yield return new RemoteVolume(
-                            rd.ConvertValueToString(0),
-                            rd.ConvertValueToString(1),
-                            rd.ConvertValueToInt64(2, -1)
-                        );
-                    }
+                    yield return new RemoteVolume(
+                        rd.ConvertValueToString(0),
+                        rd.ConvertValueToString(1),
+                        rd.ConvertValueToInt64(2, -1)
+                    );
                 }
             }
         }
@@ -1367,28 +1365,26 @@ namespace Duplicati.Library.Main.Database
                     AND ""Type"" = '{RemoteVolumeType.Blocks}'
             ";
 
-            using (var cmd = m_connection.CreateCommand(m_rtr))
+            using var cmd = m_connection.CreateCommand(m_rtr);
+            var cnt = await cmd.ExecuteScalarInt64Async(countsql)
+                .ConfigureAwait(false);
+
+            if (cnt > 0)
             {
-                var cnt = await cmd.ExecuteScalarInt64Async(countsql)
-                    .ConfigureAwait(false);
-
-                if (cnt > 0)
+                try
                 {
-                    try
-                    {
-                        await cmd.ExecuteNonQueryAsync(sql)
-                            .ConfigureAwait(false);
+                    await cmd.ExecuteNonQueryAsync(sql)
+                        .ConfigureAwait(false);
 
-                        var cnt2 = await cmd.ExecuteScalarInt64Async(countsql)
-                            .ConfigureAwait(false);
+                    var cnt2 = await cmd.ExecuteScalarInt64Async(countsql)
+                        .ConfigureAwait(false);
 
-                        Logging.Log.WriteWarningMessage(LOGTAG, "MissingVolumesDetected", null, "Replaced blocks for {0} missing volumes; there are now {1} missing volumes", cnt, cnt2);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "MissingVolumesDetected", ex, "Found {0} missing volumes; failed while attempting to replace blocks from existing volumes", cnt);
-                        throw;
-                    }
+                    Logging.Log.WriteWarningMessage(LOGTAG, "MissingVolumesDetected", null, "Replaced blocks for {0} missing volumes; there are now {1} missing volumes", cnt, cnt2);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "MissingVolumesDetected", ex, "Found {0} missing volumes; failed while attempting to replace blocks from existing volumes", cnt);
+                    throw;
                 }
             }
         }

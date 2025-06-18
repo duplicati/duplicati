@@ -170,18 +170,18 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
-            using (var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false))
-            using (var cmd = await m_connection.CreateCommand(sql).SetTransaction(m_rtr).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false))
-            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
-                while (await rd.ReadAsync().ConfigureAwait(false))
+            using var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false);
+            using var cmd = await m_connection.CreateCommand(sql).SetTransaction(m_rtr).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false);
+            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            while (await rd.ReadAsync().ConfigureAwait(false))
+            {
+                var v = dict[rd.ConvertValueToInt64(0)];
+                yield return new ListResultFileset()
                 {
-                    var v = dict[rd.ConvertValueToInt64(0)];
-                    yield return new ListResultFileset()
-                    {
-                        Version = v,
-                        Time = filesets[v].Value
-                    };
-                }
+                    Version = v,
+                    Time = filesets[v].Value
+                };
+            }
         }
 
         /// <summary>
@@ -249,15 +249,15 @@ namespace Duplicati.Library.Main.Database
                 ORDER BY ""Path""
             ";
 
-            using (var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false))
-            using (var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false))
-            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
-                while (await rd.ReadAsync().ConfigureAwait(false))
-                    yield return new ListResultFile()
-                    {
-                        Path = rd.ConvertValueToString(0) ?? throw new InvalidOperationException("Path is null"),
-                        Sizes = null
-                    };
+            using var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false);
+            using var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false);
+            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            while (await rd.ReadAsync().ConfigureAwait(false))
+                yield return new ListResultFile()
+                {
+                    Path = rd.ConvertValueToString(0) ?? throw new InvalidOperationException("Path is null"),
+                    Sizes = null
+                };
         }
 
         /// <summary>
@@ -299,13 +299,13 @@ namespace Duplicati.Library.Main.Database
                 foreach ((var x, var i) in items.Select((x, i) => (x, i)))
                     cmd.SetParameterValue($"@Message{i}", "%" + x + "%");
 
-                using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
-                    while (await rd.ReadAsync().ConfigureAwait(false))
-                        yield return new ListResultRemoteLog()
-                        {
-                            Timestamp = ParseFromEpochSeconds(rd.ConvertValueToInt64(0)),
-                            Message = rd.ConvertValueToString(1) ?? ""
-                        };
+                using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                while (await rd.ReadAsync().ConfigureAwait(false))
+                    yield return new ListResultRemoteLog()
+                    {
+                        Timestamp = ParseFromEpochSeconds(rd.ConvertValueToInt64(0)),
+                        Message = rd.ConvertValueToString(1) ?? ""
+                    };
             }
         }
 
@@ -382,13 +382,13 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
-            using (var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameterMssqlite("@Names", items.ToArray()))
-            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
-                while (await rd.ReadAsync().ConfigureAwait(false))
-                    yield return new ListResultRemoteVolume()
-                    {
-                        Name = rd.ConvertValueToString(0) ?? ""
-                    };
+            using var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameterMssqlite("@Names", items.ToArray());
+            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            while (await rd.ReadAsync().ConfigureAwait(false))
+                yield return new ListResultRemoteVolume()
+                {
+                    Name = rd.ConvertValueToString(0) ?? ""
+                };
         }
     }
 }

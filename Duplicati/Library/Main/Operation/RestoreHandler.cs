@@ -158,121 +158,119 @@ namespace Duplicati.Library.Main.Operation
             var updateCounter = 0L;
             var fullblockverification = options.FullBlockVerification;
 
-            using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
-            using (var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false))
-            using (var volumekeeper = await database.GetMissingBlockData(blocks, options.Blocksize).ConfigureAwait(false))
+            using var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm);
+            using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
+            using var volumekeeper = await database.GetMissingBlockData(blocks, options.Blocksize).ConfigureAwait(false);
+            await foreach (var restorelist in volumekeeper.FilesWithMissingBlocks().ConfigureAwait(false))
             {
-                await foreach (var restorelist in volumekeeper.FilesWithMissingBlocks().ConfigureAwait(false))
+                var targetpath = restorelist.Path;
+
+                if (options.Dryrun)
                 {
-                    var targetpath = restorelist.Path;
-
-                    if (options.Dryrun)
-                    {
-                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldPatchFile", "Would patch file with remote data: {0}", targetpath);
-                    }
-                    else
-                    {
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "PatchingFile", "Patching file with remote data: {0}", targetpath);
-
-                        try
-                        {
-                            var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
-                            if (!options.Dryrun && !SystemIO.IO_OS.DirectoryExists(folderpath))
-                            {
-                                Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
-                                SystemIO.IO_OS.DirectoryCreate(folderpath);
-                            }
-
-                            // TODO: Much faster if we iterate the volume and checks what blocks are used,
-                            // because the compressors usually like sequential reading
-                            using (var file = SystemIO.IO_OS.FileOpenWrite(targetpath))
-                                await foreach (var targetblock in restorelist.Blocks().ConfigureAwait(false))
-                                {
-                                    file.Position = targetblock.Offset;
-                                    var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
-                                    if (targetblock.Size == size)
-                                    {
-                                        var valid = !fullblockverification;
-                                        if (!valid)
-                                        {
-                                            var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
-                                            if (targetblock.Key == key)
-                                                valid = true;
-                                            else
-                                                Logging.Log.WriteWarningMessage(LOGTAG, "InvalidBlock", null, "Invalid block detected for {0}, expected hash: {1}, actual hash: {2}", targetpath, targetblock.Key, key);
-                                        }
-
-                                        if (valid)
-                                        {
-                                            file.Write(blockbuffer, 0, size);
-                                            await blockmarker
-                                                .SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, size, false)
-                                                .ConfigureAwait(false);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Logging.Log.WriteWarningMessage(LOGTAG, "WrongBlockSize", null, "Block with hash {0} should have size {1} but has size {2}", targetblock.Key, targetblock.Size, size);
-                                    }
-                                }
-
-                            if ((++updateCounter) % 20 == 0)
-                                await blockmarker
-                                    .UpdateProcessed(result.OperationProgressUpdater)
-                                    .ConfigureAwait(false);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "PatchFailed", ex, "Failed to patch file: \"{0}\", message: {1}, message: {1}", targetpath, ex.Message);
-                            if (options.UnittestMode)
-                                throw;
-                        }
-                    }
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldPatchFile", "Would patch file with remote data: {0}", targetpath);
                 }
-
-                if (!options.SkipMetadata)
+                else
                 {
-                    await foreach (var restoremetadata in volumekeeper.MetadataWithMissingBlocks().ConfigureAwait(false))
-                    {
-                        var targetpath = restoremetadata.Path;
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "RecordingMetadata", "Recording metadata from remote data: {0}", targetpath);
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "PatchingFile", "Patching file with remote data: {0}", targetpath);
 
-                        try
+                    try
+                    {
+                        var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
+                        if (!options.Dryrun && !SystemIO.IO_OS.DirectoryExists(folderpath))
                         {
-                            // TODO: When we support multi-block metadata this needs to deal with it
-                            using (var ms = new System.IO.MemoryStream())
+                            Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
+                            SystemIO.IO_OS.DirectoryCreate(folderpath);
+                        }
+
+                        // TODO: Much faster if we iterate the volume and checks what blocks are used,
+                        // because the compressors usually like sequential reading
+                        using (var file = SystemIO.IO_OS.FileOpenWrite(targetpath))
+                            await foreach (var targetblock in restorelist.Blocks().ConfigureAwait(false))
                             {
-                                await foreach (var targetblock in restoremetadata.Blocks().ConfigureAwait(false))
+                                file.Position = targetblock.Offset;
+                                var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
+                                if (targetblock.Size == size)
                                 {
-                                    ms.Position = targetblock.Offset;
-                                    var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
-                                    if (targetblock.Size == size)
+                                    var valid = !fullblockverification;
+                                    if (!valid)
                                     {
-                                        ms.Write(blockbuffer, 0, size);
+                                        var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
+                                        if (targetblock.Key == key)
+                                            valid = true;
+                                        else
+                                            Logging.Log.WriteWarningMessage(LOGTAG, "InvalidBlock", null, "Invalid block detected for {0}, expected hash: {1}, actual hash: {2}", targetpath, targetblock.Key, key);
+                                    }
+
+                                    if (valid)
+                                    {
+                                        file.Write(blockbuffer, 0, size);
                                         await blockmarker
-                                            .SetBlockRestored(restoremetadata.FileID, targetblock.Offset / blocksize, targetblock.Key, size, true)
+                                            .SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, size, false)
                                             .ConfigureAwait(false);
                                     }
                                 }
-
-                                ms.Position = 0;
-                                metadatastorage.Add(targetpath, ms);
-                                //blockmarker.RecordMetadata(restoremetadata.FileID, ms);
+                                else
+                                {
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "WrongBlockSize", null, "Block with hash {0} should have size {1} but has size {2}", targetblock.Key, targetblock.Size, size);
+                                }
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "MetatdataRecordFailed", ex, "Failed to record metadata for file: \"{0}\", message: {1}", targetpath, ex.Message);
-                            if (options.UnittestMode)
-                                throw;
-                        }
+
+                        if ((++updateCounter) % 20 == 0)
+                            await blockmarker
+                                .UpdateProcessed(result.OperationProgressUpdater)
+                                .ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "PatchFailed", ex, "Failed to patch file: \"{0}\", message: {1}, message: {1}", targetpath, ex.Message);
+                        if (options.UnittestMode)
+                            throw;
                     }
                 }
-                await blockmarker
-                    .UpdateProcessed(result.OperationProgressUpdater)
-                    .ConfigureAwait(false);
-                await blockmarker.CommitAsync().ConfigureAwait(false);
             }
+
+            if (!options.SkipMetadata)
+            {
+                await foreach (var restoremetadata in volumekeeper.MetadataWithMissingBlocks().ConfigureAwait(false))
+                {
+                    var targetpath = restoremetadata.Path;
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "RecordingMetadata", "Recording metadata from remote data: {0}", targetpath);
+
+                    try
+                    {
+                        // TODO: When we support multi-block metadata this needs to deal with it
+                        using (var ms = new System.IO.MemoryStream())
+                        {
+                            await foreach (var targetblock in restoremetadata.Blocks().ConfigureAwait(false))
+                            {
+                                ms.Position = targetblock.Offset;
+                                var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
+                                if (targetblock.Size == size)
+                                {
+                                    ms.Write(blockbuffer, 0, size);
+                                    await blockmarker
+                                        .SetBlockRestored(restoremetadata.FileID, targetblock.Offset / blocksize, targetblock.Key, size, true)
+                                        .ConfigureAwait(false);
+                                }
+                            }
+
+                            ms.Position = 0;
+                            metadatastorage.Add(targetpath, ms);
+                            //blockmarker.RecordMetadata(restoremetadata.FileID, ms);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "MetatdataRecordFailed", ex, "Failed to record metadata for file: \"{0}\", message: {1}", targetpath, ex.Message);
+                        if (options.UnittestMode)
+                            throw;
+                    }
+                }
+            }
+            await blockmarker
+                .UpdateProcessed(result.OperationProgressUpdater)
+                .ConfigureAwait(false);
+            await blockmarker.CommitAsync().ConfigureAwait(false);
         }
 
         private static void ApplyStoredMetadata(Options options, RestoreHandlerMetadataStorage metadatastorage)
@@ -714,129 +712,19 @@ namespace Duplicati.Library.Main.Operation
         private static async Task ScanForExistingSourceBlocksFast(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result)
         {
             // Fill BLOCKS with data from known local source files
-            using (var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false))
+            using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
+            var updateCount = 0L;
+            await foreach (var entry in database.GetFilesAndSourceBlocksFast(options.Blocksize).ConfigureAwait(false))
             {
-                var updateCount = 0L;
-                await foreach (var entry in database.GetFilesAndSourceBlocksFast(options.Blocksize).ConfigureAwait(false))
+                var targetpath = entry.TargetPath;
+                var targetfileid = entry.TargetFileID;
+                var sourcepath = entry.SourcePath;
+                var patched = false;
+
+                try
                 {
-                    var targetpath = entry.TargetPath;
-                    var targetfileid = entry.TargetFileID;
-                    var sourcepath = entry.SourcePath;
-                    var patched = false;
-
-                    try
+                    if (SystemIO.IO_OS.FileExists(sourcepath))
                     {
-                        if (SystemIO.IO_OS.FileExists(sourcepath))
-                        {
-                            var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
-                            if (!options.Dryrun && !SystemIO.IO_OS.DirectoryExists(folderpath))
-                            {
-                                Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
-                                SystemIO.IO_OS.DirectoryCreate(folderpath);
-                            }
-
-                            using (var targetstream = options.Dryrun ? null : SystemIO.IO_OS.FileOpenWrite(targetpath))
-                            {
-                                try
-                                {
-                                    using (var sourcestream = SystemIO.IO_OS.FileOpenRead(sourcepath))
-                                    {
-                                        await foreach (var block in entry.Blocks().ConfigureAwait(false))
-                                        {
-                                            if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                                                return;
-
-                                            //TODO: Handle metadata
-
-                                            if (sourcestream.Length > block.Offset)
-                                            {
-                                                sourcestream.Position = block.Offset;
-
-                                                int size = Library.Utility.Utility.ForceStreamRead(sourcestream, blockbuffer, blockbuffer.Length);
-                                                if (size == block.Size)
-                                                {
-                                                    var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
-                                                    if (key == block.Hash)
-                                                    {
-                                                        patched = true;
-                                                        if (!options.Dryrun)
-                                                        {
-                                                            targetstream.Position = block.Offset;
-                                                            targetstream.Write(blockbuffer, 0, size);
-                                                        }
-
-                                                        await blockmarker.SetBlockRestored(targetfileid, block.Index, key, block.Size, false)
-                                                            .ConfigureAwait(false);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message);
-                                    if (ex.IsAbortException())
-                                        throw;
-                                }
-                            }
-
-                            if ((++updateCount) % 20 == 0)
-                            {
-                                await blockmarker
-                                    .UpdateProcessed(result.OperationProgressUpdater)
-                                    .ConfigureAwait(false);
-                                if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                                    return;
-                            }
-
-                        }
-                        else
-                        {
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "LocalSourceMissing", "Local source file not found: {0}", sourcepath);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message);
-                        if (ex.IsAbortException())
-                            throw;
-                        if (options.UnittestMode)
-                            throw;
-                    }
-
-                    if (patched)
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "FilePatchedWithLocal", "Target file is patched with some local data: {0}", targetpath);
-                    else
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "FilePatchedWithLocal", "Target file is not patched any local data: {0}", targetpath);
-
-                    if (patched && options.Dryrun)
-                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldPatchWithLocal", "Would patch file with local data: {0}", targetpath);
-                }
-
-                await blockmarker
-                    .UpdateProcessed(result.OperationProgressUpdater)
-                    .ConfigureAwait(false);
-                await blockmarker.CommitAsync().ConfigureAwait(false);
-            }
-        }
-
-        private static async Task ScanForExistingSourceBlocks(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result, RestoreHandlerMetadataStorage metadatastorage)
-        {
-            // Fill BLOCKS with data from known local source files
-            using (var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false))
-            {
-                var updateCount = 0L;
-                await foreach (var restorelist in database.GetFilesAndSourceBlocks(options.SkipMetadata, options.Blocksize).ConfigureAwait(false))
-                {
-                    var targetpath = restorelist.TargetPath;
-                    var targetfileid = restorelist.TargetFileID;
-                    var patched = false;
-                    try
-                    {
-                        if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                            return;
-
                         var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
                         if (!options.Dryrun && !SystemIO.IO_OS.DirectoryExists(folderpath))
                         {
@@ -844,93 +732,195 @@ namespace Duplicati.Library.Main.Operation
                             SystemIO.IO_OS.DirectoryCreate(folderpath);
                         }
 
-                        using (var file = options.Dryrun ? null : SystemIO.IO_OS.FileOpenWrite(targetpath))
-                            await foreach (var targetblock in restorelist.Blocks().ConfigureAwait(false))
+                        using (var targetstream = options.Dryrun ? null : SystemIO.IO_OS.FileOpenWrite(targetpath))
+                        {
+                            try
                             {
-                                await foreach (var source in targetblock.BlockSources().ConfigureAwait(false))
+                                using var sourcestream = SystemIO.IO_OS.FileOpenRead(sourcepath);
+                                await foreach (var block in entry.Blocks().ConfigureAwait(false))
                                 {
-                                    try
+                                    if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                                        return;
+
+                                    //TODO: Handle metadata
+
+                                    if (sourcestream.Length > block.Offset)
                                     {
-                                        if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                                            return;
+                                        sourcestream.Position = block.Offset;
 
-                                        if (SystemIO.IO_OS.FileExists(source.Path))
+                                        int size = Library.Utility.Utility.ForceStreamRead(sourcestream, blockbuffer, blockbuffer.Length);
+                                        if (size == block.Size)
                                         {
-                                            if (source.IsMetadata)
+                                            var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
+                                            if (key == block.Hash)
                                             {
-                                                // TODO: Handle this by reconstructing
-                                                // metadata from file and checking the hash
-
-                                                continue;
-                                            }
-                                            else
-                                            {
-                                                using (var sourcefile = SystemIO.IO_OS.FileOpenRead(source.Path))
+                                                patched = true;
+                                                if (!options.Dryrun)
                                                 {
-                                                    sourcefile.Position = source.Offset;
-                                                    int size = Library.Utility.Utility.ForceStreamRead(sourcefile, blockbuffer, blockbuffer.Length);
-                                                    if (size == targetblock.Size)
-                                                    {
-                                                        var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
-                                                        if (key == targetblock.Hash)
-                                                        {
-                                                            if (!options.Dryrun)
-                                                            {
-                                                                if (targetblock.IsMetadata)
-                                                                    metadatastorage.Add(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size));
-                                                                else
-                                                                {
-                                                                    file.Position = targetblock.Offset;
-                                                                    file.Write(blockbuffer, 0, size);
-                                                                }
-                                                            }
+                                                    targetstream.Position = block.Offset;
+                                                    targetstream.Write(blockbuffer, 0, size);
+                                                }
 
-                                                            await blockmarker
-                                                                .SetBlockRestored(targetfileid, targetblock.Index, key, targetblock.Size, false)
-                                                                .ConfigureAwait(false);
-                                                            patched = true;
-                                                            break;
+                                                await blockmarker.SetBlockRestored(targetfileid, block.Index, key, block.Size, false)
+                                                    .ConfigureAwait(false);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message);
+                                if (ex.IsAbortException())
+                                    throw;
+                            }
+                        }
+
+                        if ((++updateCount) % 20 == 0)
+                        {
+                            await blockmarker
+                                .UpdateProcessed(result.OperationProgressUpdater)
+                                .ConfigureAwait(false);
+                            if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                                return;
+                        }
+
+                    }
+                    else
+                    {
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "LocalSourceMissing", "Local source file not found: {0}", sourcepath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message);
+                    if (ex.IsAbortException())
+                        throw;
+                    if (options.UnittestMode)
+                        throw;
+                }
+
+                if (patched)
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "FilePatchedWithLocal", "Target file is patched with some local data: {0}", targetpath);
+                else
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "FilePatchedWithLocal", "Target file is not patched any local data: {0}", targetpath);
+
+                if (patched && options.Dryrun)
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldPatchWithLocal", "Would patch file with local data: {0}", targetpath);
+            }
+
+            await blockmarker
+                .UpdateProcessed(result.OperationProgressUpdater)
+                .ConfigureAwait(false);
+            await blockmarker.CommitAsync().ConfigureAwait(false);
+        }
+
+        private static async Task ScanForExistingSourceBlocks(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result, RestoreHandlerMetadataStorage metadatastorage)
+        {
+            // Fill BLOCKS with data from known local source files
+            using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
+            var updateCount = 0L;
+            await foreach (var restorelist in database.GetFilesAndSourceBlocks(options.SkipMetadata, options.Blocksize).ConfigureAwait(false))
+            {
+                var targetpath = restorelist.TargetPath;
+                var targetfileid = restorelist.TargetFileID;
+                var patched = false;
+                try
+                {
+                    if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        return;
+
+                    var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
+                    if (!options.Dryrun && !SystemIO.IO_OS.DirectoryExists(folderpath))
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
+                        SystemIO.IO_OS.DirectoryCreate(folderpath);
+                    }
+
+                    using (var file = options.Dryrun ? null : SystemIO.IO_OS.FileOpenWrite(targetpath))
+                        await foreach (var targetblock in restorelist.Blocks().ConfigureAwait(false))
+                        {
+                            await foreach (var source in targetblock.BlockSources().ConfigureAwait(false))
+                            {
+                                try
+                                {
+                                    if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                                        return;
+
+                                    if (SystemIO.IO_OS.FileExists(source.Path))
+                                    {
+                                        if (source.IsMetadata)
+                                        {
+                                            // TODO: Handle this by reconstructing
+                                            // metadata from file and checking the hash
+
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            using var sourcefile = SystemIO.IO_OS.FileOpenRead(source.Path);
+                                            sourcefile.Position = source.Offset;
+                                            int size = Library.Utility.Utility.ForceStreamRead(sourcefile, blockbuffer, blockbuffer.Length);
+                                            if (size == targetblock.Size)
+                                            {
+                                                var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
+                                                if (key == targetblock.Hash)
+                                                {
+                                                    if (!options.Dryrun)
+                                                    {
+                                                        if (targetblock.IsMetadata)
+                                                            metadatastorage.Add(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size));
+                                                        else
+                                                        {
+                                                            file.Position = targetblock.Offset;
+                                                            file.Write(blockbuffer, 0, size);
                                                         }
                                                     }
+
+                                                    await blockmarker
+                                                        .SetBlockRestored(targetfileid, targetblock.Index, key, targetblock.Size, false)
+                                                        .ConfigureAwait(false);
+                                                    patched = true;
+                                                    break;
                                                 }
                                             }
                                         }
                                     }
-                                    catch (Exception ex)
-                                    {
-                                        Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message);
-                                        if (ex.IsAbortException())
-                                            throw;
-                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message);
+                                    if (ex.IsAbortException())
+                                        throw;
                                 }
                             }
+                        }
 
-                        if ((++updateCount) % 20 == 0)
-                            await blockmarker
-                                .UpdateProcessed(result.OperationProgressUpdater)
-                                .ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message);
-                        if (options.UnittestMode)
-                            throw;
-                    }
-
-                    if (patched)
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "FilePatchedWithLocal", "Target file is patched with some local data: {0}", targetpath);
-                    else
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "FilePatchedWithLocal", "Target file is not patched any local data: {0}", targetpath);
-
-                    if (patched && options.Dryrun)
-                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldPatchWithLocal", string.Format("Would patch file with local data: {0}", targetpath));
+                    if ((++updateCount) % 20 == 0)
+                        await blockmarker
+                            .UpdateProcessed(result.OperationProgressUpdater)
+                            .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message);
+                    if (options.UnittestMode)
+                        throw;
                 }
 
-                await blockmarker
-                    .UpdateProcessed(result.OperationProgressUpdater)
-                    .ConfigureAwait(false);
-                await blockmarker.CommitAsync().ConfigureAwait(false);
+                if (patched)
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "FilePatchedWithLocal", "Target file is patched with some local data: {0}", targetpath);
+                else
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "FilePatchedWithLocal", "Target file is not patched any local data: {0}", targetpath);
+
+                if (patched && options.Dryrun)
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldPatchWithLocal", string.Format("Would patch file with local data: {0}", targetpath));
             }
+
+            await blockmarker
+                .UpdateProcessed(result.OperationProgressUpdater)
+                .ConfigureAwait(false);
+            await blockmarker.CommitAsync().ConfigureAwait(false);
         }
 
         private static async Task PrepareBlockAndFileList(LocalRestoreDatabase database, Options options, Library.Utility.IFilter filter, RestoreResults result)
@@ -1024,226 +1014,224 @@ namespace Duplicati.Library.Main.Operation
         private static async Task ScanForExistingTargetBlocks(LocalRestoreDatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm blockhasher, System.Security.Cryptography.HashAlgorithm filehasher, Options options, RestoreResults result)
         {
             // Scan existing files for existing BLOCKS
-            using (var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false))
+            using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
+            var updateCount = 0L;
+            await foreach (var restorelist in database.GetExistingFilesWithBlocks().ConfigureAwait(false))
             {
-                var updateCount = 0L;
-                await foreach (var restorelist in database.GetExistingFilesWithBlocks().ConfigureAwait(false))
+                var rename = !options.Overwrite;
+                var targetpath = restorelist.TargetPath;
+                var targetfileid = restorelist.TargetFileID;
+                var targetfilehash = restorelist.TargetHash;
+                var targetfilelength = restorelist.Length;
+                if (SystemIO.IO_OS.FileExists(targetpath))
                 {
-                    var rename = !options.Overwrite;
-                    var targetpath = restorelist.TargetPath;
-                    var targetfileid = restorelist.TargetFileID;
-                    var targetfilehash = restorelist.TargetHash;
-                    var targetfilelength = restorelist.Length;
-                    if (SystemIO.IO_OS.FileExists(targetpath))
+                    try
+                    {
+                        if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                            return;
+
+                        var currentfilelength = SystemIO.IO_OS.FileLength(targetpath);
+                        var wasTruncated = false;
+
+                        // Adjust file length in overwrite mode if necessary (smaller is ok, will be extended during restore)
+                        // We do it before scanning for blocks. This allows full verification on files that only needs to
+                        // be truncated (i.e. forthwritten log files).
+                        if (!rename && currentfilelength > targetfilelength)
+                        {
+                            var currentAttr = SystemIO.IO_OS.GetFileAttributes(targetpath);
+                            if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0) // clear readonly attribute
+                            {
+                                if (options.Dryrun)
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribute", "Would reset read-only attribute on file: {0}", targetpath);
+                                else SystemIO.IO_OS.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
+                            }
+                            if (options.Dryrun)
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldTruncateFile", "Would truncate file '{0}' to length of {1:N0} bytes", targetpath, targetfilelength);
+                            else
+                            {
+                                using (var file = SystemIO.IO_OS.FileOpenWrite(targetpath))
+                                    file.SetLength(targetfilelength);
+                                currentfilelength = targetfilelength;
+                            }
+                            wasTruncated = true;
+                        }
+
+                        // If file size does not match and we have to rename on conflict,
+                        // the whole scan can be skipped here because all blocks have to be restored anyway.
+                        // For the other cases, we will check block and and file hashes and look for blocks
+                        // to be restored and files that can already be verified.
+                        if (!rename || currentfilelength == targetfilelength)
+                        {
+                            // a file hash for verification will only be necessary if the file has exactly
+                            // the wanted size so we have a chance to already mark the file as data-verified.
+                            bool calcFileHash = (currentfilelength == targetfilelength);
+                            if (calcFileHash) filehasher.Initialize();
+
+                            using (var file = SystemIO.IO_OS.FileOpenRead(targetpath))
+                            using (var block = new Blockprocessor(file, blockbuffer))
+                                await foreach (var targetblock in restorelist.Blocks().ConfigureAwait(false))
+                                {
+                                    var size = block.Readblock();
+                                    if (size <= 0)
+                                        break;
+
+                                    //TODO: Handle Metadata
+
+                                    bool blockhashmatch = false;
+                                    if (size == targetblock.Size)
+                                    {
+                                        // Parallelize file hash calculation on rename. Running read-only on same array should not cause conflicts or races.
+                                        // Actually, in future always calculate the file hash and mark the file data as already verified.
+
+                                        System.Threading.Tasks.Task calcFileHashTask = null;
+                                        if (calcFileHash)
+                                            calcFileHashTask = System.Threading.Tasks.Task.Run(
+                                                () => filehasher.TransformBlock(blockbuffer, 0, size, blockbuffer, 0));
+
+                                        var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
+
+                                        if (calcFileHashTask != null) await calcFileHashTask.ConfigureAwait(false); // wait because blockbuffer will be overwritten.
+
+                                        if (key == targetblock.Hash)
+                                        {
+                                            await blockmarker
+                                                .SetBlockRestored(targetfileid, targetblock.Index, key, size, false)
+                                                .ConfigureAwait(false);
+                                            blockhashmatch = true;
+                                        }
+                                    }
+                                    if (calcFileHash && !blockhashmatch) // will not be necessary anymore
+                                    {
+                                        filehasher.TransformFinalBlock(blockbuffer, 0, 0); // So a new initialize will not throw
+                                        calcFileHash = false;
+                                        if (rename) // file does not match. So break.
+                                            break;
+                                    }
+                                }
+
+                            bool fullfilehashmatch = false;
+                            if (calcFileHash) // now check if files are identical
+                            {
+                                filehasher.TransformFinalBlock(blockbuffer, 0, 0);
+                                var filekey = Convert.ToBase64String(filehasher.Hash);
+                                fullfilehashmatch = (filekey == targetfilehash);
+                            }
+
+                            if (!rename && !fullfilehashmatch && !wasTruncated) // Reset read-only attribute (if set) to overwrite
+                            {
+                                var currentAttr = SystemIO.IO_OS.GetFileAttributes(targetpath);
+                                if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0)
+                                {
+                                    if (options.Dryrun)
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribyte", "Would reset read-only attribute on file: {0}", targetpath);
+                                    else SystemIO.IO_OS.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
+                                }
+                            }
+
+                            if (fullfilehashmatch)
+                            {
+                                //TODO: Check metadata to trigger rename? If metadata changed, it will still be restored for the file in-place.
+                                await blockmarker
+                                    .SetFileDataVerified(targetfileid)
+                                    .ConfigureAwait(false);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "TargetExistsInCorrectVersion", "Target file exists{1} and is correct version: {0}", targetpath, wasTruncated ? " (but was truncated)" : "");
+                                rename = false;
+                            }
+                            else if (rename)
+                            {
+                                // The new file will have none of the correct blocks,
+                                // even if the scanned file had some
+                                await blockmarker
+                                    .SetAllBlocksMissing(targetfileid)
+                                    .ConfigureAwait(false);
+                            }
+                        }
+
+                        if ((++updateCount) % 20 == 0)
+                        {
+                            await blockmarker
+                                .UpdateProcessed(result.OperationProgressUpdater)
+                                .ConfigureAwait(false);
+                            if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                                return;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "TargetFileReadError", ex, "Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message);
+                        if (ex.IsAbortException())
+                            throw;
+                        if (options.UnittestMode)
+                            throw;
+                    }
+                }
+                else
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "MissingTargetFile", "Target file does not exist: {0}", targetpath);
+                    rename = false;
+                }
+
+                if (rename)
+                {
+                    //Select a new filename
+                    var ext = SystemIO.IO_OS.PathGetExtension(targetpath) ?? "";
+                    if (!string.IsNullOrEmpty(ext) && !ext.StartsWith(".", StringComparison.Ordinal))
+                        ext = "." + ext;
+
+                    // First we try with a simple date append, assuming that there are not many conflicts there
+                    var newname = SystemIO.IO_OS.PathChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                    var tr = newname + ext;
+                    var c = 0;
+                    while (SystemIO.IO_OS.FileExists(tr) && c < 1000)
                     {
                         try
                         {
-                            if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                                return;
+                            // If we have a file with the correct name,
+                            // it is most likely the file we want
+                            filehasher.Initialize();
 
-                            var currentfilelength = SystemIO.IO_OS.FileLength(targetpath);
-                            var wasTruncated = false;
+                            string key;
+                            using (var file = SystemIO.IO_OS.FileOpenRead(tr))
+                                key = Convert.ToBase64String(filehasher.ComputeHash(file));
 
-                            // Adjust file length in overwrite mode if necessary (smaller is ok, will be extended during restore)
-                            // We do it before scanning for blocks. This allows full verification on files that only needs to
-                            // be truncated (i.e. forthwritten log files).
-                            if (!rename && currentfilelength > targetfilelength)
+                            if (key == targetfilehash)
                             {
-                                var currentAttr = SystemIO.IO_OS.GetFileAttributes(targetpath);
-                                if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0) // clear readonly attribute
-                                {
-                                    if (options.Dryrun)
-                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribute", "Would reset read-only attribute on file: {0}", targetpath);
-                                    else SystemIO.IO_OS.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
-                                }
-                                if (options.Dryrun)
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldTruncateFile", "Would truncate file '{0}' to length of {1:N0} bytes", targetpath, targetfilelength);
-                                else
-                                {
-                                    using (var file = SystemIO.IO_OS.FileOpenWrite(targetpath))
-                                        file.SetLength(targetfilelength);
-                                    currentfilelength = targetfilelength;
-                                }
-                                wasTruncated = true;
-                            }
-
-                            // If file size does not match and we have to rename on conflict,
-                            // the whole scan can be skipped here because all blocks have to be restored anyway.
-                            // For the other cases, we will check block and and file hashes and look for blocks
-                            // to be restored and files that can already be verified.
-                            if (!rename || currentfilelength == targetfilelength)
-                            {
-                                // a file hash for verification will only be necessary if the file has exactly
-                                // the wanted size so we have a chance to already mark the file as data-verified.
-                                bool calcFileHash = (currentfilelength == targetfilelength);
-                                if (calcFileHash) filehasher.Initialize();
-
-                                using (var file = SystemIO.IO_OS.FileOpenRead(targetpath))
-                                using (var block = new Blockprocessor(file, blockbuffer))
-                                    await foreach (var targetblock in restorelist.Blocks().ConfigureAwait(false))
-                                    {
-                                        var size = block.Readblock();
-                                        if (size <= 0)
-                                            break;
-
-                                        //TODO: Handle Metadata
-
-                                        bool blockhashmatch = false;
-                                        if (size == targetblock.Size)
-                                        {
-                                            // Parallelize file hash calculation on rename. Running read-only on same array should not cause conflicts or races.
-                                            // Actually, in future always calculate the file hash and mark the file data as already verified.
-
-                                            System.Threading.Tasks.Task calcFileHashTask = null;
-                                            if (calcFileHash)
-                                                calcFileHashTask = System.Threading.Tasks.Task.Run(
-                                                    () => filehasher.TransformBlock(blockbuffer, 0, size, blockbuffer, 0));
-
-                                            var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
-
-                                            if (calcFileHashTask != null) await calcFileHashTask.ConfigureAwait(false); // wait because blockbuffer will be overwritten.
-
-                                            if (key == targetblock.Hash)
-                                            {
-                                                await blockmarker
-                                                    .SetBlockRestored(targetfileid, targetblock.Index, key, size, false)
-                                                    .ConfigureAwait(false);
-                                                blockhashmatch = true;
-                                            }
-                                        }
-                                        if (calcFileHash && !blockhashmatch) // will not be necessary anymore
-                                        {
-                                            filehasher.TransformFinalBlock(blockbuffer, 0, 0); // So a new initialize will not throw
-                                            calcFileHash = false;
-                                            if (rename) // file does not match. So break.
-                                                break;
-                                        }
-                                    }
-
-                                bool fullfilehashmatch = false;
-                                if (calcFileHash) // now check if files are identical
-                                {
-                                    filehasher.TransformFinalBlock(blockbuffer, 0, 0);
-                                    var filekey = Convert.ToBase64String(filehasher.Hash);
-                                    fullfilehashmatch = (filekey == targetfilehash);
-                                }
-
-                                if (!rename && !fullfilehashmatch && !wasTruncated) // Reset read-only attribute (if set) to overwrite
-                                {
-                                    var currentAttr = SystemIO.IO_OS.GetFileAttributes(targetpath);
-                                    if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0)
-                                    {
-                                        if (options.Dryrun)
-                                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribyte", "Would reset read-only attribute on file: {0}", targetpath);
-                                        else SystemIO.IO_OS.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
-                                    }
-                                }
-
-                                if (fullfilehashmatch)
-                                {
-                                    //TODO: Check metadata to trigger rename? If metadata changed, it will still be restored for the file in-place.
-                                    await blockmarker
-                                        .SetFileDataVerified(targetfileid)
-                                        .ConfigureAwait(false);
-                                    Logging.Log.WriteVerboseMessage(LOGTAG, "TargetExistsInCorrectVersion", "Target file exists{1} and is correct version: {0}", targetpath, wasTruncated ? " (but was truncated)" : "");
-                                    rename = false;
-                                }
-                                else if (rename)
-                                {
-                                    // The new file will have none of the correct blocks,
-                                    // even if the scanned file had some
-                                    await blockmarker
-                                        .SetAllBlocksMissing(targetfileid)
-                                        .ConfigureAwait(false);
-                                }
-                            }
-
-                            if ((++updateCount) % 20 == 0)
-                            {
+                                //TODO: Also needs metadata check to make correct decision.
+                                //      We stick to the policy to restore metadata in place, if data ok. So, metadata block may be restored.
                                 await blockmarker
-                                    .UpdateProcessed(result.OperationProgressUpdater)
+                                    .SetAllBlocksRestored(targetfileid, false)
                                     .ConfigureAwait(false);
-                                if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                                    return;
+                                await blockmarker
+                                    .SetFileDataVerified(targetfileid)
+                                    .ConfigureAwait(false);
+                                break;
                             }
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "TargetFileReadError", ex, "Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message);
-                            if (ex.IsAbortException())
-                                throw;
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadRestoreTarget", ex, "Failed to read candidate restore target {0}", tr);
                             if (options.UnittestMode)
                                 throw;
                         }
-                    }
-                    else
-                    {
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "MissingTargetFile", "Target file does not exist: {0}", targetpath);
-                        rename = false;
+                        tr = newname + " (" + (c++).ToString() + ")" + ext;
                     }
 
-                    if (rename)
-                    {
-                        //Select a new filename
-                        var ext = SystemIO.IO_OS.PathGetExtension(targetpath) ?? "";
-                        if (!string.IsNullOrEmpty(ext) && !ext.StartsWith(".", StringComparison.Ordinal))
-                            ext = "." + ext;
+                    newname = tr;
 
-                        // First we try with a simple date append, assuming that there are not many conflicts there
-                        var newname = SystemIO.IO_OS.PathChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-                        var tr = newname + ext;
-                        var c = 0;
-                        while (SystemIO.IO_OS.FileExists(tr) && c < 1000)
-                        {
-                            try
-                            {
-                                // If we have a file with the correct name,
-                                // it is most likely the file we want
-                                filehasher.Initialize();
-
-                                string key;
-                                using (var file = SystemIO.IO_OS.FileOpenRead(tr))
-                                    key = Convert.ToBase64String(filehasher.ComputeHash(file));
-
-                                if (key == targetfilehash)
-                                {
-                                    //TODO: Also needs metadata check to make correct decision.
-                                    //      We stick to the policy to restore metadata in place, if data ok. So, metadata block may be restored.
-                                    await blockmarker
-                                        .SetAllBlocksRestored(targetfileid, false)
-                                        .ConfigureAwait(false);
-                                    await blockmarker
-                                        .SetFileDataVerified(targetfileid)
-                                        .ConfigureAwait(false);
-                                    break;
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadRestoreTarget", ex, "Failed to read candidate restore target {0}", tr);
-                                if (options.UnittestMode)
-                                    throw;
-                            }
-                            tr = newname + " (" + (c++).ToString() + ")" + ext;
-                        }
-
-                        newname = tr;
-
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "TargetFileRetargeted", "Target file exists and will be restored to: {0}", newname);
-                        await database
-                            .UpdateTargetPath(targetfileid, newname)
-                            .ConfigureAwait(false);
-                    }
-
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "TargetFileRetargeted", "Target file exists and will be restored to: {0}", newname);
+                    await database
+                        .UpdateTargetPath(targetfileid, newname)
+                        .ConfigureAwait(false);
                 }
 
-                await blockmarker
-                    .UpdateProcessed(result.OperationProgressUpdater)
-                    .ConfigureAwait(false);
-                await blockmarker
-                    .CommitAsync()
-                    .ConfigureAwait(false);
             }
+
+            await blockmarker
+                .UpdateProcessed(result.OperationProgressUpdater)
+                .ConfigureAwait(false);
+            await blockmarker
+                .CommitAsync()
+                .ConfigureAwait(false);
         }
     }
 }

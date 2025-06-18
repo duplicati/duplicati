@@ -52,15 +52,13 @@ namespace Duplicati.Library.Main.Operation
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = await Database.LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false))
-            {
-                await Utility.UpdateOptionsFromDb(db, m_options)
-                    .ConfigureAwait(false);
-                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
-                    .ConfigureAwait(false);
-                await DoRunAsync(backendManager, db, filter, callbackhandler).ConfigureAwait(false);
-                await db.Transaction.RollBackAsync().ConfigureAwait(false);
-            }
+            using var db = await Database.LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false);
+            await Utility.UpdateOptionsFromDb(db, m_options)
+                .ConfigureAwait(false);
+            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
+                .ConfigureAwait(false);
+            await DoRunAsync(backendManager, db, filter, callbackhandler).ConfigureAwait(false);
+            await db.Transaction.RollBackAsync().ConfigureAwait(false);
         }
 
         public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[]?, List<Database.RemoteVolumeEntry>? Missing)> GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, Options options)

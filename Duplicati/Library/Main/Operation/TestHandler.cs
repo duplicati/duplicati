@@ -52,23 +52,21 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = await LocalTestDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false))
-            {
-                await Utility.UpdateOptionsFromDb(db, m_options)
-                    .ConfigureAwait(false);
-                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
-                    .ConfigureAwait(false);
+            using var db = await LocalTestDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false);
+            await Utility.UpdateOptionsFromDb(db, m_options)
+                .ConfigureAwait(false);
+            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
+                .ConfigureAwait(false);
 
-                await db
-                    .VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks)
-                    .ConfigureAwait(false);
+            await db
+                .VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks)
+                .ConfigureAwait(false);
 
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly).ConfigureAwait(false);
-                await DoRunAsync(samples, db, backendManager).ConfigureAwait(false);
-                await db.Transaction
-                    .CommitAsync("TestHandlerComplete")
-                    .ConfigureAwait(false);
-            }
+            await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly).ConfigureAwait(false);
+            await DoRunAsync(samples, db, backendManager).ConfigureAwait(false);
+            await db.Transaction
+                .CommitAsync("TestHandlerComplete")
+                .ConfigureAwait(false);
         }
 
         public async Task DoRunAsync(long samples, LocalTestDatabase db, IBackendManager backend)

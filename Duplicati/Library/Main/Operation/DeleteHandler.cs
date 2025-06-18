@@ -51,21 +51,19 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseFileMissing");
 
-            using (var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Delete", m_options.SqlitePageCache).ConfigureAwait(false))
-            {
-                await Utility.UpdateOptionsFromDb(db, m_options)
+            using var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Delete", m_options.SqlitePageCache).ConfigureAwait(false);
+            await Utility.UpdateOptionsFromDb(db, m_options)
+                .ConfigureAwait(false);
+
+            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
+                .ConfigureAwait(false);
+
+            await DoRunAsync(db, false, false, backendManager).ConfigureAwait(false);
+
+            if (!m_options.Dryrun)
+                await db.Transaction
+                    .CommitAsync("ComitDelete")
                     .ConfigureAwait(false);
-
-                await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
-                    .ConfigureAwait(false);
-
-                await DoRunAsync(db, false, false, backendManager).ConfigureAwait(false);
-
-                if (!m_options.Dryrun)
-                    await db.Transaction
-                        .CommitAsync("ComitDelete")
-                        .ConfigureAwait(false);
-            }
         }
 
         public async Task DoRunAsync(LocalDeleteDatabase db, bool hasVerifiedBackend, bool forceCompact, IBackendManager backendManager)

@@ -540,20 +540,20 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                 m_result.DeleteResults = new DeleteResults(m_result);
-                using (var db = await LocalDeleteDatabase.CreateAsync(m_database).ConfigureAwait(false))
-                    await new DeleteHandler(m_options, (DeleteResults)m_result.DeleteResults)
-                        .DoRunAsync(db, true, currentIsSmall, backendManager)
-                        .ConfigureAwait(false);
+                using var db = await LocalDeleteDatabase.CreateAsync(m_database).ConfigureAwait(false);
+                await new DeleteHandler(m_options, (DeleteResults)m_result.DeleteResults)
+                    .DoRunAsync(db, true, currentIsSmall, backendManager)
+                    .ConfigureAwait(false);
 
             }
             else if (currentIsSmall && !m_options.NoAutoCompact)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
                 m_result.CompactResults = new CompactResults(m_result);
-                using (var db = await LocalDeleteDatabase.CreateAsync(m_database).ConfigureAwait(false))
-                    await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
-                        .DoCompactAsync(db, true, backendManager)
-                        .ConfigureAwait(false);
+                using var db = await LocalDeleteDatabase.CreateAsync(m_database).ConfigureAwait(false);
+                await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
+                    .DoCompactAsync(db, true, backendManager)
+                    .ConfigureAwait(false);
             }
         }
 
@@ -582,10 +582,10 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                 m_result.TestResults = new TestResults(m_result);
 
-                using (var testdb = await LocalTestDatabase.CreateAsync(m_database).ConfigureAwait(false))
-                    await new TestHandler(m_options, (TestResults)m_result.TestResults)
-                        .DoRunAsync(samplesToTest, testdb, backendManager)
-                        .ConfigureAwait(false);
+                using var testdb = await LocalTestDatabase.CreateAsync(m_database).ConfigureAwait(false);
+                await new TestHandler(m_options, (TestResults)m_result.TestResults)
+                    .DoRunAsync(samplesToTest, testdb, backendManager)
+                    .ConfigureAwait(false);
             }
         }
 

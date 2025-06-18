@@ -2738,12 +2738,11 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An enumerable of tuples containing the blocklist hash, the blocklist data and the length of the data</returns>
         public async IAsyncEnumerable<(string Hash, byte[] Buffer, int Size)> GetBlocklists(long volumeid, long blocksize, int hashsize)
         {
-            using (var cmd = m_connection.CreateCommand(m_rtr))
-            {
-                // Group subquery by hash to ensure that each blocklist hash appears only once in the result
-                // The AllBlocks CTE is used to map both active and duplicate blocks from the volume,
-                // because the new volume is initially registered with only duplicate blocks.
-                var sql = @"
+            using var cmd = m_connection.CreateCommand(m_rtr);
+            // Group subquery by hash to ensure that each blocklist hash appears only once in the result
+            // The AllBlocks CTE is used to map both active and duplicate blocks from the volume,
+            // because the new volume is initially registered with only duplicate blocks.
+            var sql = @"
                     WITH ""AllBlocksInVolume"" AS (
                         SELECT DISTINCT
                             ""ID"",
@@ -2796,35 +2795,34 @@ namespace Duplicati.Library.Main.Database
                         ORDER BY ""A"".""BlocksetID"", ""B"".""Index""
                     ";
 
-                string? curHash = null;
-                var count = 0;
-                var buffer = new byte[blocksize];
+            string? curHash = null;
+            var count = 0;
+            var buffer = new byte[blocksize];
 
-                cmd.SetCommandAndParameters(sql)
-                    .SetParameterValue("@VolumeId", volumeid)
-                    .SetParameterValue("@HashesPerBlock", blocksize / hashsize)
-                    .ConfigureAwait(false);
+            cmd.SetCommandAndParameters(sql)
+                .SetParameterValue("@VolumeId", volumeid)
+                .SetParameterValue("@HashesPerBlock", blocksize / hashsize)
+                .ConfigureAwait(false);
 
-                using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
-                    while (await rd.ReadAsync().ConfigureAwait(false))
+            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                while (await rd.ReadAsync().ConfigureAwait(false))
+                {
+                    var blockhash = rd.ConvertValueToString(0);
+                    if (curHash != null && (blockhash != curHash || count + hashsize > buffer.Length))
                     {
-                        var blockhash = rd.ConvertValueToString(0);
-                        if (curHash != null && (blockhash != curHash || count + hashsize > buffer.Length))
-                        {
-                            yield return (curHash, buffer, count);
-                            buffer = new byte[blocksize];
-                            count = 0;
-                        }
-
-                        var hash = Convert.FromBase64String(rd.ConvertValueToString(1) ?? throw new Exception("Hash is null"));
-                        Array.Copy(hash, 0, buffer, count, hashsize);
-                        curHash = blockhash;
-                        count += hashsize;
+                        yield return (curHash, buffer, count);
+                        buffer = new byte[blocksize];
+                        count = 0;
                     }
 
-                if (curHash != null)
-                    yield return (curHash, buffer, count);
-            }
+                    var hash = Convert.FromBase64String(rd.ConvertValueToString(1) ?? throw new Exception("Hash is null"));
+                    Array.Copy(hash, 0, buffer, count, hashsize);
+                    curHash = blockhash;
+                    count += hashsize;
+                }
+
+            if (curHash != null)
+                yield return (curHash, buffer, count);
         }
 
         /// <summary>

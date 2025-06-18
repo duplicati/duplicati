@@ -57,76 +57,74 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
                 using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false))
                 {
-                    using (var filesets = await db.SelectFileSets(m_options.Time, m_options.Version).ConfigureAwait(false))
+                    using var filesets = await db.SelectFileSets(m_options.Time, m_options.Version).ConfigureAwait(false);
+                    if (!filter.Empty)
                     {
-                        if (!filter.Empty)
+                        if (simpleList || (m_options.ListFolderContents && !m_options.AllVersions))
                         {
-                            if (simpleList || (m_options.ListFolderContents && !m_options.AllVersions))
-                            {
-                                await filesets
-                                    .TakeFirst()
-                                    .ConfigureAwait(false);
-                            }
+                            await filesets
+                                .TakeFirst()
+                                .ConfigureAwait(false);
                         }
-
-                        IAsyncEnumerable<Database.LocalListDatabase.IFileversion> files;
-                        if (m_options.ListFolderContents)
-                        {
-                            files = filesets.SelectFolderContents(filter);
-                        }
-                        else if (m_options.ListPrefixOnly)
-                        {
-                            files = filesets.GetLargestPrefix(filter);
-                        }
-                        else if (filter.Empty)
-                        {
-                            files = null;
-                        }
-                        else
-                        {
-                            files = filesets.SelectFiles(filter);
-                        }
-
-                        if (m_options.ListSetsOnly)
-                        {
-                            m_result.SetResult(
-                                await filesets
-                                    .QuickSets()
-                                    .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
-                                    .ToArrayAsync()
-                                    .ConfigureAwait(false),
-                                null
-                            );
-                        }
-                        else
-                        {
-                            m_result.SetResult(
-                                await filesets
-                                    .Sets()
-                                    .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
-                                    .ToArrayAsync()
-                                    .ConfigureAwait(false),
-                                files == null
-                                    ? null
-                                    :
-                                    await files.Select(async n =>
-                                        new ListResultFile(
-                                            n.Path,
-                                            await n
-                                                .Sizes()
-                                                .ToArrayAsync()
-                                                .ConfigureAwait(false)
-                                        )
-                                    )
-                                        .Select(x => x.Result)
-                                        .Cast<IListResultFile>()
-                                        .ToArrayAsync()
-                                        .ConfigureAwait(false)
-                            );
-                        }
-
-                        return;
                     }
+
+                    IAsyncEnumerable<Database.LocalListDatabase.IFileversion> files;
+                    if (m_options.ListFolderContents)
+                    {
+                        files = filesets.SelectFolderContents(filter);
+                    }
+                    else if (m_options.ListPrefixOnly)
+                    {
+                        files = filesets.GetLargestPrefix(filter);
+                    }
+                    else if (filter.Empty)
+                    {
+                        files = null;
+                    }
+                    else
+                    {
+                        files = filesets.SelectFiles(filter);
+                    }
+
+                    if (m_options.ListSetsOnly)
+                    {
+                        m_result.SetResult(
+                            await filesets
+                                .QuickSets()
+                                .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
+                                .ToArrayAsync()
+                                .ConfigureAwait(false),
+                            null
+                        );
+                    }
+                    else
+                    {
+                        m_result.SetResult(
+                            await filesets
+                                .Sets()
+                                .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
+                                .ToArrayAsync()
+                                .ConfigureAwait(false),
+                            files == null
+                                ? null
+                                :
+                                await files.Select(async n =>
+                                    new ListResultFile(
+                                        n.Path,
+                                        await n
+                                            .Sizes()
+                                            .ToArrayAsync()
+                                            .ConfigureAwait(false)
+                                    )
+                                )
+                                    .Select(x => x.Result)
+                                    .Cast<IListResultFile>()
+                                    .ToArrayAsync()
+                                    .ConfigureAwait(false)
+                        );
+                    }
+
+                    return;
                 }
 
             Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, accessing remote store");

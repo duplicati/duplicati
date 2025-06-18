@@ -52,13 +52,11 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = await Database.LocalPurgeDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false))
-            {
-                await DoRunAsync(backendManager, db, filter, null, 0, 1).ConfigureAwait(false);
-                await db
-                    .VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true)
-                    .ConfigureAwait(false);
-            }
+            using var db = await Database.LocalPurgeDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false);
+            await DoRunAsync(backendManager, db, filter, null, 0, 1).ConfigureAwait(false);
+            await db
+                .VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true)
+                .ConfigureAwait(false);
         }
 
         public Task RunAsync(IBackendManager backendManager, Database.LocalPurgeDatabase db, float pgoffset, float pgspan, Func<SqliteCommand, long, string, Task<int>> filtercommand)
@@ -267,14 +265,12 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdateProgress(pgoffset + (0.75f * pgspan));
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Compact);
                     m_result.CompactResults = new CompactResults(m_result);
-                    using (var cdb = await Database.LocalDeleteDatabase.CreateAsync(db).ConfigureAwait(false))
-                    {
-                        await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
-                            .DoCompactAsync(cdb, true, backendManager)
-                            .ConfigureAwait(false);
+                    using var cdb = await Database.LocalDeleteDatabase.CreateAsync(db).ConfigureAwait(false);
+                    await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
+                        .DoCompactAsync(cdb, true, backendManager)
+                        .ConfigureAwait(false);
 
-                        await cdb.Transaction.CommitAsync("PostCompact");
-                    }
+                    await cdb.Transaction.CommitAsync("PostCompact");
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(pgoffset + pgspan);

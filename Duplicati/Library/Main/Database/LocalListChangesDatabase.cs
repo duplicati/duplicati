@@ -388,12 +388,11 @@ namespace Duplicati.Library.Main.Database
 
                 var combined = $"({folders} UNION {symlinks} UNION {files})";
 
-                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
+                using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                if (filter == null || filter.Empty)
                 {
-                    if (filter == null || filter.Empty)
-                    {
-                        // Simple case, select everything
-                        await cmd.SetCommandAndParameters($@"
+                    // Simple case, select everything
+                    await cmd.SetCommandAndParameters($@"
                             INSERT INTO ""{tablename}"" (
                                 ""Path"",
                                 ""FileHash"",
@@ -410,61 +409,61 @@ namespace Duplicati.Library.Main.Database
                             FROM {combined} ""A""
                             WHERE ""A"".""FilesetID"" = @FilesetId
                         ")
-                            .SetParameterValue("@FilesetId", filesetId)
-                            .ExecuteNonQueryAsync()
-                            .ConfigureAwait(false);
-                    }
-                    else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
-                    {
-                        // File list based
-                        // unfortunately we cannot do this if the filesystem is case sensitive as
-                        // SQLite only supports ASCII compares
-                        var p = expression.GetSimpleList();
-                        var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                        await cmd.ExecuteNonQueryAsync($@"
+                        .SetParameterValue("@FilesetId", filesetId)
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
+                }
+                else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
+                {
+                    // File list based
+                    // unfortunately we cannot do this if the filesystem is case sensitive as
+                    // SQLite only supports ASCII compares
+                    var p = expression.GetSimpleList();
+                    var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                    await cmd.ExecuteNonQueryAsync($@"
                             CREATE TEMPORARY TABLE ""{filenamestable}"" (
                                 ""Path"" TEXT NOT NULL
                             )
                         ")
-                            .ConfigureAwait(false);
+                        .ConfigureAwait(false);
 
-                        await cmd.SetCommandAndParameters($@"
+                    await cmd.SetCommandAndParameters($@"
                             INSERT INTO ""{filenamestable}"" (""Path"")
                             VALUES (@Path)
                         ")
-                            .PrepareAsync()
+                        .PrepareAsync()
+                        .ConfigureAwait(false);
+
+                    foreach (var s in p)
+                        await cmd
+                            .SetParameterValue("@Path", s)
+                            .ExecuteNonQueryAsync()
                             .ConfigureAwait(false);
 
-                        foreach (var s in p)
-                            await cmd
-                                .SetParameterValue("@Path", s)
-                                .ExecuteNonQueryAsync()
-                                .ConfigureAwait(false);
-
-                        string whereClause;
-                        if (expression.Result)
-                        {
-                            // Include filter
-                            whereClause = $@"
+                    string whereClause;
+                    if (expression.Result)
+                    {
+                        // Include filter
+                        whereClause = $@"
                                 ""A"".""FilesetID"" = @FilesetId
                                 AND ""A"".""Path"" IN (
                                     SELECT DISTINCT ""Path""
                                     FROM ""{filenamestable}""
                                 )
                             ";
-                        }
-                        else
-                        {
-                            // Exclude filter
-                            whereClause = $@"
+                    }
+                    else
+                    {
+                        // Exclude filter
+                        whereClause = $@"
                                 ""A"".""FilesetID"" = @FilesetId
                                 AND ""A"".""Path"" NOT IN (
                                     SELECT DISTINCT ""Path""
                                     FROM ""{filenamestable}""
                                 )
                             ";
-                        }
-                        await cmd.SetCommandAndParameters($@"
+                    }
+                    await cmd.SetCommandAndParameters($@"
                             INSERT INTO ""{tablename}"" (
                                 ""Path"",
                                 ""FileHash"",
@@ -481,19 +480,19 @@ namespace Duplicati.Library.Main.Database
                             FROM {combined} ""A""
                             WHERE {whereClause}
                         ")
-                            .SetParameterValue("@FilesetId", filesetId)
-                            .ExecuteNonQueryAsync()
-                            .ConfigureAwait(false);
+                        .SetParameterValue("@FilesetId", filesetId)
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
 
-                        await cmd
-                            .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{filenamestable}"" ")
-                            .ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        // Do row-wise iteration
-                        var values = new object[5];
-                        await cmd.SetCommandAndParameters($@"
+                    await cmd
+                        .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{filenamestable}"" ")
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    // Do row-wise iteration
+                    var values = new object[5];
+                    await cmd.SetCommandAndParameters($@"
                             SELECT
                                 ""A"".""Path"",
                                 ""A"".""FileHash"",
@@ -503,12 +502,12 @@ namespace Duplicati.Library.Main.Database
                             FROM {combined} ""A""
                             WHERE ""A"".""FilesetID"" = @FilesetId
                         ")
-                            .SetParameterValue("@FilesetId", filesetId)
-                            .PrepareAsync()
-                            .ConfigureAwait(false);
+                        .SetParameterValue("@FilesetId", filesetId)
+                        .PrepareAsync()
+                        .ConfigureAwait(false);
 
-                        using var cmd2 = m_db.Connection.CreateCommand(m_db.Transaction)
-                            .SetCommandAndParameters($@"
+                    using var cmd2 = m_db.Connection.CreateCommand(m_db.Transaction)
+                        .SetCommandAndParameters($@"
                                 INSERT INTO ""{tablename}"" (
                                     ""Path"",
                                     ""FileHash"",
@@ -524,27 +523,26 @@ namespace Duplicati.Library.Main.Database
                                     @Type
                                 )
                             ");
-                        await cmd2.PrepareAsync().ConfigureAwait(false);
+                    await cmd2.PrepareAsync().ConfigureAwait(false);
 
-                        using var rd = await cmd
-                            .ExecuteReaderAsync()
-                            .ConfigureAwait(false);
+                    using var rd = await cmd
+                        .ExecuteReaderAsync()
+                        .ConfigureAwait(false);
 
-                        while (await rd.ReadAsync().ConfigureAwait(false))
+                    while (await rd.ReadAsync().ConfigureAwait(false))
+                    {
+                        rd.GetValues(values);
+                        var path = values[0] as string;
+                        if (path != null && FilterExpression.Matches(filter, path.ToString()))
                         {
-                            rd.GetValues(values);
-                            var path = values[0] as string;
-                            if (path != null && FilterExpression.Matches(filter, path.ToString()))
-                            {
-                                await cmd2
-                                    .SetParameterValue("@Path", values[0])
-                                    .SetParameterValue("@FileHash", values[1])
-                                    .SetParameterValue("@MetaHash", values[2])
-                                    .SetParameterValue("@Size", values[3])
-                                    .SetParameterValue("@Type", values[4])
-                                    .ExecuteNonQueryAsync()
-                                    .ConfigureAwait(false);
-                            }
+                            await cmd2
+                                .SetParameterValue("@Path", values[0])
+                                .SetParameterValue("@FileHash", values[1])
+                                .SetParameterValue("@MetaHash", values[2])
+                                .SetParameterValue("@Size", values[3])
+                                .SetParameterValue("@Type", values[4])
+                                .ExecuteNonQueryAsync()
+                                .ConfigureAwait(false);
                         }
                     }
                 }
@@ -634,39 +632,37 @@ namespace Duplicati.Library.Main.Database
             {
                 var (Added, Deleted, Modified) = GetSqls(true);
 
-                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
+                using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                var result = new ChangeSizeReport
                 {
-                    var result = new ChangeSizeReport
-                    {
-                        PreviousSize = await cmd.ExecuteScalarInt64Async($@"
+                    PreviousSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_previousTable}""
                         ", 0)
-                            .ConfigureAwait(false),
+                        .ConfigureAwait(false),
 
-                        CurrentSize = await cmd.ExecuteScalarInt64Async($@"
+                    CurrentSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_currentTable}""
                         ", 0)
-                            .ConfigureAwait(false),
+                        .ConfigureAwait(false),
 
-                        AddedSize = await cmd.ExecuteScalarInt64Async($@"
+                    AddedSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_currentTable}""
                             WHERE ""{m_currentTable}"".""Path"" IN ({Added})
                         ", 0)
-                            .ConfigureAwait(false),
+                        .ConfigureAwait(false),
 
-                        DeletedSize = await cmd.ExecuteScalarInt64Async($@"
+                    DeletedSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_previousTable}""
                             WHERE ""{m_previousTable}"".""Path"" IN ({Deleted})
                         ", 0)
-                            .ConfigureAwait(false)
-                    };
+                        .ConfigureAwait(false)
+                };
 
-                    return result;
-                }
+                return result;
             }
 
             /// <summary>

@@ -44,46 +44,44 @@ namespace Duplicati.Library.Main.Operation
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = await Database.LocalListAffectedDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false))
+            using var db = await Database.LocalListAffectedDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false);
+            if (callback == null)
             {
-                if (callback == null)
-                {
-                    m_result.SetResult(
-                        await db.GetFilesets(args)
-                            .OrderByDescending(x => x.Time)
-                            .ToArrayAsync()
-                            .ConfigureAwait(false),
-                        await db.GetFiles(args)
-                            .ToArrayAsync()
-                            .ConfigureAwait(false),
-                        await db.GetLogLines(args)
-                            .ToArrayAsync()
-                            .ConfigureAwait(false),
-                        await db.GetVolumes(args)
-                            .ToArrayAsync()
-                            .ConfigureAwait(false)
-                    );
-                }
-                else
-                {
-                    m_result.SetResult(
-                        await db.GetFilesets(args)
-                            .OrderByDescending(x => x.Time)
-                            .ToArrayAsync()
-                            .ConfigureAwait(false),
-                        await db.GetFiles(args)
-                            .ToArrayAsync()
-                            .ConfigureAwait(false),
-                        await db.GetLogLines(args)
-                            .ToArrayAsync()
-                            .ConfigureAwait(false),
-                        await db.GetVolumes(args)
-                            .ToArrayAsync()
-                            .ConfigureAwait(false)
-                    );
+                m_result.SetResult(
+                    await db.GetFilesets(args)
+                        .OrderByDescending(x => x.Time)
+                        .ToArrayAsync()
+                        .ConfigureAwait(false),
+                    await db.GetFiles(args)
+                        .ToArrayAsync()
+                        .ConfigureAwait(false),
+                    await db.GetLogLines(args)
+                        .ToArrayAsync()
+                        .ConfigureAwait(false),
+                    await db.GetVolumes(args)
+                        .ToArrayAsync()
+                        .ConfigureAwait(false)
+                );
+            }
+            else
+            {
+                m_result.SetResult(
+                    await db.GetFilesets(args)
+                        .OrderByDescending(x => x.Time)
+                        .ToArrayAsync()
+                        .ConfigureAwait(false),
+                    await db.GetFiles(args)
+                        .ToArrayAsync()
+                        .ConfigureAwait(false),
+                    await db.GetLogLines(args)
+                        .ToArrayAsync()
+                        .ConfigureAwait(false),
+                    await db.GetVolumes(args)
+                        .ToArrayAsync()
+                        .ConfigureAwait(false)
+                );
 
-                    callback(m_result);
-                }
+                callback(m_result);
             }
         }
     }

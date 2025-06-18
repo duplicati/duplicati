@@ -277,17 +277,15 @@ namespace Duplicati.Library.Main
                     // and uses the same prefix (see issues #2678, #3845, and #4244).
                     if (File.Exists(m_options.Dbpath))
                     {
-                        using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache).ConfigureAwait(false))
-                        {
-                            var dbRemoteVolumes = db.GetRemoteVolumes();
-                            var dbRemoteFiles = await dbRemoteVolumes
-                                .Select(x => x.Name)
-                                .ToHashSetAsync()
-                                .ConfigureAwait(false);
-                            list = list.Where(x =>
-                                dbRemoteFiles.Contains(x.File.Name)
-                            ).ToList();
-                        }
+                        using LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache).ConfigureAwait(false);
+                        var dbRemoteVolumes = db.GetRemoteVolumes();
+                        var dbRemoteFiles = await dbRemoteVolumes
+                            .Select(x => x.Name)
+                            .ToHashSetAsync()
+                            .ConfigureAwait(false);
+                        list = list.Where(x =>
+                            dbRemoteFiles.Contains(x.File.Name)
+                        ).ToList();
                     }
 
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Deleting);
@@ -524,8 +522,8 @@ namespace Duplicati.Library.Main
                             // instead of relying on the operations to correctly toggle the flag
                             if (File.Exists(m_options.Dbpath) && !m_options.NoLocalDb)
                             {
-                                using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache).Await())
-                                    backend.StopRunnerAndFlushMessages(db).Await();
+                                using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache).Await();
+                                backend.StopRunnerAndFlushMessages(db).Await();
                             }
                             else
                             {
@@ -540,27 +538,25 @@ namespace Duplicati.Library.Main
 
                     if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                     {
-                        using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, m_options.SqlitePageCache).Await())
-                        {
-                            db.WriteResults(result).Await();
-                            db.PurgeLogData(m_options.LogRetention).Await();
-                            db.PurgeDeletedVolumes(DateTime.UtcNow).Await();
+                        using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, m_options.SqlitePageCache).Await();
+                        db.WriteResults(result).Await();
+                        db.PurgeLogData(m_options.LogRetention).Await();
+                        db.PurgeDeletedVolumes(DateTime.UtcNow).Await();
 
-                            // Vacuum is done AFTER the results are written to the database
-                            // This means that the information about the vacuum is not stored in the database,
-                            // but will be reported in the log output and messages sent with any of the reporting modules
-                            if (m_options.AutoVacuum && result is IResultsWithVacuum vacuumResults && result is BasicResults basicResults)
+                        // Vacuum is done AFTER the results are written to the database
+                        // This means that the information about the vacuum is not stored in the database,
+                        // but will be reported in the log output and messages sent with any of the reporting modules
+                        if (m_options.AutoVacuum && result is IResultsWithVacuum vacuumResults && result is BasicResults basicResults)
+                        {
+                            try
                             {
-                                try
-                                {
-                                    vacuumResults.VacuumResults = new VacuumResults(basicResults);
-                                    new Operation.VacuumHandler(m_options, (VacuumResults)vacuumResults.VacuumResults)
-                                        .RunAsync().Await();
-                                }
-                                catch (Exception ex)
-                                {
-                                    Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToVacuum", ex, "Failed to vacuum database");
-                                }
+                                vacuumResults.VacuumResults = new VacuumResults(basicResults);
+                                new Operation.VacuumHandler(m_options, (VacuumResults)vacuumResults.VacuumResults)
+                                    .RunAsync().Await();
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToVacuum", ex, "Failed to vacuum database");
                             }
                         }
                     }

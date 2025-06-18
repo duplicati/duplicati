@@ -423,81 +423,79 @@ namespace Duplicati.Library.Main.Database
         {
             if (names == null || !names.Any()) return;
 
-            using (var deletecmd = m_connection.CreateCommand(m_rtr))
-            {
-                var temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                var volidstable = "DelVolSetIds-" + temptransguid;
+            using var deletecmd = m_connection.CreateCommand(m_rtr);
+            var temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            var volidstable = "DelVolSetIds-" + temptransguid;
 
-                // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
-                await deletecmd.ExecuteNonQueryAsync($@"
+            // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
+            await deletecmd.ExecuteNonQueryAsync($@"
                     CREATE TEMP TABLE ""{volidstable}"" (
                         ""ID"" INTEGER PRIMARY KEY
                     )
                 ")
-                    .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
-                using (var tmptable = await TemporaryDbValueList.CreateAsync(this, names).ConfigureAwait(false))
-                    await (
-                        await deletecmd.SetCommandAndParameters($@"
+            using (var tmptable = await TemporaryDbValueList.CreateAsync(this, names).ConfigureAwait(false))
+                await (
+                    await deletecmd.SetCommandAndParameters($@"
                             INSERT OR IGNORE INTO ""{volidstable}"" (""ID"")
                             SELECT ""ID""
                             FROM ""RemoteVolume""
                             WHERE ""Name"" IN (@Names)
                         ")
-                        .ExpandInClauseParameterMssqliteAsync("@Names", tmptable)
-                        .ConfigureAwait(false)
-                    )
-                      .ExecuteNonQueryAsync()
-                      .ConfigureAwait(false);
+                    .ExpandInClauseParameterMssqliteAsync("@Names", tmptable)
+                    .ConfigureAwait(false)
+                )
+                  .ExecuteNonQueryAsync()
+                  .ConfigureAwait(false);
 
-                var volIdsSubQuery = $@"
+            var volIdsSubQuery = $@"
                     SELECT ""ID""
                     FROM ""{volidstable}""
                 ";
-                deletecmd.Parameters.Clear();
+            deletecmd.Parameters.Clear();
 
-                await deletecmd.ExecuteNonQueryAsync($@"
+            await deletecmd.ExecuteNonQueryAsync($@"
                     DELETE FROM ""IndexBlockLink""
                     WHERE
                         ""BlockVolumeID"" IN ({volIdsSubQuery})
                         OR ""IndexVolumeID"" IN ({volIdsSubQuery})
                 ")
-                    .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
-                await deletecmd.ExecuteNonQueryAsync($@"
+            await deletecmd.ExecuteNonQueryAsync($@"
                     DELETE FROM ""Block""
                     WHERE ""VolumeID"" IN ({volIdsSubQuery})
                 ")
-                    .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
-                await deletecmd.ExecuteNonQueryAsync($@"
+            await deletecmd.ExecuteNonQueryAsync($@"
                     DELETE FROM ""DeletedBlock""
                     WHERE ""VolumeID"" IN ({volIdsSubQuery})
                 ")
-                    .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
-                await deletecmd.ExecuteNonQueryAsync($@"
+            await deletecmd.ExecuteNonQueryAsync($@"
                     DELETE FROM ""DuplicateBlock""
                     WHERE ""VolumeID"" IN ({volIdsSubQuery})
                 ")
-                    .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
-                // Clean up temp tables for subqueries. We truncate content and then try to delete.
-                // Drop in try-block, as it fails in nested transactions (SQLite problem)
-                // SQLite.SQLiteException (0x80004005): database table is locked
+            // Clean up temp tables for subqueries. We truncate content and then try to delete.
+            // Drop in try-block, as it fails in nested transactions (SQLite problem)
+            // SQLite.SQLiteException (0x80004005): database table is locked
+            await deletecmd
+                .ExecuteNonQueryAsync($@"DELETE FROM ""{volidstable}"" ")
+                .ConfigureAwait(false);
+
+            try
+            {
+                deletecmd.CommandTimeout = 2;
                 await deletecmd
-                    .ExecuteNonQueryAsync($@"DELETE FROM ""{volidstable}"" ")
+                    .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{volidstable}"" ")
                     .ConfigureAwait(false);
-
-                try
-                {
-                    deletecmd.CommandTimeout = 2;
-                    await deletecmd
-                        .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{volidstable}"" ")
-                        .ConfigureAwait(false);
-                }
-                catch { /* Ignore, will be deleted on close anyway. */ }
             }
+            catch { /* Ignore, will be deleted on close anyway. */ }
         }
 
         /// <summary>

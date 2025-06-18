@@ -469,29 +469,25 @@ namespace Duplicati.Library.Main.Operation
                         var remoteVolume = await db
                             .GetRemoteVolume(volumename)
                             .ConfigureAwait(false);
-                        using (var tmpfile = await backendManager.GetAsync(remoteVolume.Name, remoteVolume.Hash, remoteVolume.Size, cancellationToken).ConfigureAwait(false))
-                        {
-                            var parsed = VolumeBase.ParseFilename(remoteVolume.Name);
-                            using (var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read))
-                            using (var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions))
-                            using (var recreatedb = await LocalRecreateDatabase.CreateAsync(db, m_options).ConfigureAwait(false))
-                            {
-                                if (compressor == null)
-                                    throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
+                        using var tmpfile = await backendManager.GetAsync(remoteVolume.Name, remoteVolume.Hash, remoteVolume.Size, cancellationToken).ConfigureAwait(false);
+                        var parsed = VolumeBase.ParseFilename(remoteVolume.Name);
+                        using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
+                        using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
+                        using var recreatedb = await LocalRecreateDatabase.CreateAsync(db, m_options).ConfigureAwait(false);
+                        if (compressor == null)
+                            throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
 
-                                var filesetid = await db
-                                    .CreateFileset(remoteVolume.ID, parsed.Time)
-                                    .ConfigureAwait(false);
+                        var filesetid = await db
+                            .CreateFileset(remoteVolume.ID, parsed.Time)
+                            .ConfigureAwait(false);
 
-                                await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, compressor, filesetid, m_options, new FilterExpression())
-                                    .ConfigureAwait(false);
+                        await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, compressor, filesetid, m_options, new FilterExpression())
+                            .ConfigureAwait(false);
 
-                                if (!m_options.Dryrun)
-                                    await recreatedb.Transaction
-                                        .CommitAsync("CommitRecreateFilesetTransaction")
-                                        .ConfigureAwait(false);
-                            }
-                        }
+                        if (!m_options.Dryrun)
+                            await recreatedb.Transaction
+                                .CommitAsync("CommitRecreateFilesetTransaction")
+                                .ConfigureAwait(false);
                     }
 
                     if (!m_options.Dryrun && tp.MissingVolumes.Any())
