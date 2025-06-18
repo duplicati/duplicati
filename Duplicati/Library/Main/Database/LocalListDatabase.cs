@@ -419,11 +419,12 @@ namespace Duplicati.Library.Main.Database
         /// Represents a fileset entry in the list fileset results.
         /// </summary>
         /// <param name="Version">The fileset version
+        /// <param name="ID">The fileset ID</param>
         /// <param name="IsFullBackup">Flag indicating if the backup is a full backup or synthetic backup</param>
         /// <param name="Time">The timestamp of the fileset</param>
         /// <param name="FileCount">The number of files in the fileset</param>
         /// <param name="FileSizes">>The total size of files in the fileset</param>
-        private sealed record FilesetEntry(long Version, bool? IsFullBackup, DateTime Time, long? FileCount, long? FileSizes) : IListFilesetResultFileset;
+        private sealed record FilesetEntry(long Version, long ID, bool? IsFullBackup, DateTime Time, long? FileCount, long? FileSizes) : IListFilesetResultFileset;
 
         /// <summary>
         /// Lists all filesets with summary data
@@ -452,6 +453,7 @@ ORDER BY
     f.""Timestamp"" DESC;
 ";
 
+            var version = 0L;
             using (var cmd = m_connection.CreateCommand(query))
                 foreach (var rd in cmd.ExecuteReaderEnumerable())
                 {
@@ -460,7 +462,7 @@ ORDER BY
                     var isFullBackup = rd.GetInt32(2) == BackupType.FULL_BACKUP;
                     var filecount = rd.ConvertValueToInt64(3, -1L);
                     var filesizes = rd.ConvertValueToInt64(4, -1L);
-                    yield return new FilesetEntry(id, isFullBackup, time, filecount, filesizes);
+                    yield return new FilesetEntry(version++, id, isFullBackup, time, filecount, filesizes);
                 }
         }
 
