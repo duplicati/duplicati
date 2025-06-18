@@ -21,6 +21,7 @@
 #nullable enable
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 
@@ -43,8 +44,9 @@ public static class ChangeStatistics
     /// <param name="results">The results object to update with the statistics.</param>
     /// <param name="currentFilesetId">The ID of the current fileset.</param>
     /// <param name="previousFilesetId">The ID of the previous fileset.</param>
+    /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
     /// <returns>A task that completes when the statistics are updated.</returns>
-    internal static async Task UpdateChangeStatistics(SqliteCommand cmd, BackupResults results, long currentFilesetId, long previousFilesetId)
+    internal static async Task UpdateChangeStatistics(SqliteCommand cmd, BackupResults results, long currentFilesetId, long previousFilesetId, CancellationToken token)
     {
         var tmpName = $"TmpFileState_{Guid.NewGuid():N}";
 
@@ -78,7 +80,7 @@ public static class ChangeStatistics
             ")
                 .SetParameterValue("@LastFilesetId", previousFilesetId)
                 .SetParameterValue("@CurrentFilesetId", currentFilesetId)
-                .ExecuteNonQueryAsync()
+                .ExecuteNonQueryAsync(token)
                 .ConfigureAwait(false);
 
             // Index for fast comparison
@@ -88,47 +90,47 @@ public static class ChangeStatistics
                     ""PrefixID"",
                     ""Path""
                 )
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             // Added
-            results.AddedFolders = await CountAdded(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID)
+            results.AddedFolders = await CountAdded(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID, null, token)
                 .ConfigureAwait(false);
-            results.AddedSymlinks = await CountAdded(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID)
+            results.AddedSymlinks = await CountAdded(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID, null, token)
                 .ConfigureAwait(false);
             results.AddedFiles = await CountAdded(cmd, tmpName, null, [
                 LocalDatabase.FOLDER_BLOCKSET_ID,
                 LocalDatabase.SYMLINK_BLOCKSET_ID
-            ])
+            ], token)
                 .ConfigureAwait(false);
 
             // Deleted
-            results.DeletedFolders = await CountDeleted(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID)
+            results.DeletedFolders = await CountDeleted(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID, null, token)
                 .ConfigureAwait(false);
-            results.DeletedSymlinks = await CountDeleted(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID)
+            results.DeletedSymlinks = await CountDeleted(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID, null, token)
                 .ConfigureAwait(false);
             results.DeletedFiles = await CountDeleted(cmd, tmpName, null, [
                 LocalDatabase.FOLDER_BLOCKSET_ID,
                 LocalDatabase.SYMLINK_BLOCKSET_ID
-            ])
+            ], token)
                 .ConfigureAwait(false);
 
             // Modified
-            results.ModifiedFolders = await CountModified(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID)
+            results.ModifiedFolders = await CountModified(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID, null, token)
                 .ConfigureAwait(false);
-            results.ModifiedSymlinks = await CountModified(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID)
+            results.ModifiedSymlinks = await CountModified(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID, null, token)
                 .ConfigureAwait(false);
             results.ModifiedFiles = await CountModified(cmd, tmpName, null, [
                 LocalDatabase.FOLDER_BLOCKSET_ID,
                 LocalDatabase.SYMLINK_BLOCKSET_ID
-            ])
+            ], token)
                 .ConfigureAwait(false);
         }
         finally
         {
             try
             {
-                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tmpName}"";")
+                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tmpName}"";", token)
                     .ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -145,8 +147,9 @@ public static class ChangeStatistics
     /// <param name="tmpName">The name of the temporary table.</param>
     /// <param name="blocksetId">The ID of the blockset to count, or null for all.</param>
     /// <param name="excludeBlocksets">The blocksets to exclude from the count.</param>
+    /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
     /// <returns>A task that when awaited contains the number of added files or folders.</returns>
-    private static async Task<long> CountAdded(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets = null)
+    private static async Task<long> CountAdded(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets, CancellationToken token)
     {
         var conditions = $@"
             ""Source"" = 1
@@ -160,7 +163,7 @@ public static class ChangeStatistics
             )
         ";
 
-        return await CountWithCondition(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets)
+        return await CountWithCondition(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets, token)
             .ConfigureAwait(false);
     }
 
@@ -171,8 +174,9 @@ public static class ChangeStatistics
     /// <param name="tmpName">The name of the temporary table.</param>
     /// <param name="blocksetId">The ID of the blockset to count, or null for all.</param>
     /// <param name="excludeBlocksets">The blocksets to exclude from the count.</param>
+    /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
     /// <returns>A task that when awaited contains the number of deleted files or folders.</returns>
-    private static async Task<long> CountDeleted(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets = null)
+    private static async Task<long> CountDeleted(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets, CancellationToken token)
     {
         var conditions = @$"
             ""Source"" = 0
@@ -186,7 +190,7 @@ public static class ChangeStatistics
             )
         ";
 
-        return await CountWithCondition(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets)
+        return await CountWithCondition(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets, token)
             .ConfigureAwait(false);
     }
 
@@ -197,8 +201,9 @@ public static class ChangeStatistics
     /// <param name="tmpName">The name of the temporary table.</param>
     /// <param name="blocksetId">The ID of the blockset to count, or null for all.</param>
     /// <param name="excludeBlocksets">The blocksets to exclude from the count.</param>
+    /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
     /// <returns>A task that when awaited contains the number of modified files or folders.</returns>
-    private static async Task<long> CountModified(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets = null)
+    private static async Task<long> CountModified(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets, CancellationToken token)
     {
         string conditions;
 
@@ -241,7 +246,7 @@ public static class ChangeStatistics
 
         return await cmd
             .SetCommandAndParameters(sql)
-            .ExecuteScalarInt64Async(0)
+            .ExecuteScalarInt64Async(0, token)
             .ConfigureAwait(false);
     }
 
@@ -254,8 +259,9 @@ public static class ChangeStatistics
     /// <param name="baseCondition">The base condition for the count.</param>
     /// <param name="blocksetId">The ID of the blockset to count, or null for all.</param>
     /// <param name="excludeBlocksets">The blocksets to exclude from the count.</param>
+    /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
     /// <returns>A task that when awaited contains the number of files or folders that match the condition.</returns>
-    private static async Task<long> CountWithCondition(SqliteCommand cmd, string tmpName, string alias, string baseCondition, long? blocksetId, long[]? excludeBlocksets)
+    private static async Task<long> CountWithCondition(SqliteCommand cmd, string tmpName, string alias, string baseCondition, long? blocksetId, long[]? excludeBlocksets, CancellationToken token)
     {
         var fullCondition = baseCondition;
         var blocksetCondition = GetBlocksetCondition(alias, blocksetId, excludeBlocksets);
@@ -270,7 +276,7 @@ public static class ChangeStatistics
 
         return await cmd
             .SetCommandAndParameters(sql)
-            .ExecuteScalarInt64Async(0)
+            .ExecuteScalarInt64Async(0, token)
             .ConfigureAwait(false);
     }
 
