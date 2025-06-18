@@ -1871,7 +1871,7 @@ namespace Duplicati.Library.Main.Database
             await m_rtr.CommitAsync().ConfigureAwait(false);
         }
 
-        public interface IBlockMarker : IDisposable
+        public interface IBlockMarker : IDisposable, IAsyncDisposable
         {
             Task SetBlockRestored(long targetfileid, long index, string hash, long blocksize, bool metadata);
             Task SetAllBlocksMissing(long targetfileid);
@@ -2067,11 +2067,16 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
-                m_insertblockCommand?.Dispose();
-                m_resetfileCommand?.Dispose();
-                m_updateAsRestoredCommand?.Dispose();
-                m_updateFileAsDataVerifiedCommand?.Dispose();
-                m_statUpdateCommand?.Dispose();
+                DisposeAsync().AsTask().Await();
+            }
+
+            public async ValueTask DisposeAsync()
+            {
+                await m_insertblockCommand.DisposeAsync().ConfigureAwait(false);
+                await m_resetfileCommand.DisposeAsync().ConfigureAwait(false);
+                await m_updateAsRestoredCommand.DisposeAsync().ConfigureAwait(false);
+                await m_updateFileAsDataVerifiedCommand.DisposeAsync().ConfigureAwait(false);
+                await m_statUpdateCommand.DisposeAsync().ConfigureAwait(false);
             }
         }
 
