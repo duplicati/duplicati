@@ -929,7 +929,6 @@ namespace Duplicati.Library.Main.Database
                 SELECT ""ID""
                 FROM ""{volidstable}""
             ";
-            deletecmd.Parameters.Clear();
 
             var bsIdsSubQuery = @$"
                 SELECT DISTINCT ""BlocksetEntry"".""BlocksetID""
@@ -967,7 +966,6 @@ namespace Duplicati.Library.Main.Database
                 SELECT DISTINCT ""ID""
                 FROM ""{blocksetidstable}""
             ";
-            deletecmd.Parameters.Clear();
 
             // Create a temp table to associate metadata that is being deleted to a fileset
             var metadataFilesetQuery = $@"

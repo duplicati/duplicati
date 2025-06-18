@@ -453,7 +453,6 @@ namespace Duplicati.Library.Main.Database
                     SELECT ""ID""
                     FROM ""{volidstable}""
                 ";
-            deletecmd.Parameters.Clear();
 
             await deletecmd.ExecuteNonQueryAsync($@"
                     DELETE FROM ""IndexBlockLink""

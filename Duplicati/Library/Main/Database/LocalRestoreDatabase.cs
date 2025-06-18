@@ -434,8 +434,6 @@ namespace Duplicati.Library.Main.Database
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "SearchingBackup", "Searching backup {0} ({1}) ...", ix, m_restoreTime);
 
-                    cmd.Parameters.Clear();
-
                     await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tempfiletable}"" ")
                         .ConfigureAwait(false);
 
@@ -588,7 +586,6 @@ namespace Duplicati.Library.Main.Database
                             var actualrestoretime = ParseFromEpochSeconds(await cmd.ExecuteScalarInt64Async(0).ConfigureAwait(false));
 
                             Logging.Log.WriteWarningMessage(LOGTAG, "FilesNotFoundInBackupList", null, "{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb);
-                            cmd.Parameters.Clear();
                         }
 
                         await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_filenamestable}"" ")
