@@ -704,9 +704,18 @@ namespace Duplicati.Library.Main.Database
         private class Blocklist : Basiclist, IBlocklist
         {
             private const string TABLE_PREFIX = "Blocklist";
-            private const string TABLE_FORMAT = @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
-            private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (@Hash,@Size)";
-
+            private const string TABLE_FORMAT = @"(
+                ""Hash"" TEXT NOT NULL,
+                ""Size"" INTEGER NOT NULL
+            )";
+            private const string INSERT_COMMAND = @"(
+                ""Hash"",
+                ""Size""
+            )
+            VALUES (
+                @Hash,
+                @Size
+            )";
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             public Blocklist(SqliteConnection connection, string volumename, ReusableTransaction rtr)
             {
@@ -867,9 +876,19 @@ namespace Duplicati.Library.Main.Database
         private class BlocklistHashList : Basiclist, IBlocklistHashList
         {
             private const string TABLE_PREFIX = "BlocklistHashList";
-            private const string TABLE_FORMAT = @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
-            private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (@Hash,@Size)";
+            private const string TABLE_FORMAT = @"(
+                ""Hash"" TEXT NOT NULL,
+                ""Size"" INTEGER NOT NULL
+            )";
 
+            private const string INSERT_COMMAND = @"(
+                ""Hash"",
+                ""Size""
+            )
+            VALUES (
+                @Hash,
+                @Size
+            )";
             [Obsolete("Calling this constructor will throw an exception. Use the CreateAsync method instead.")]
             public BlocklistHashList(SqliteConnection connection, string volumename, ReusableTransaction rtr)
             {
