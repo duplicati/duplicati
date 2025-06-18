@@ -356,7 +356,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public interface IFilelist : IDisposable
+        public interface IFilelist : IDisposable, IAsyncDisposable
         {
             Task Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time);
             IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare();
@@ -538,7 +538,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public interface IIndexlist : IDisposable
+        public interface IIndexlist : IDisposable, IAsyncDisposable
         {
             Task AddBlockLink(string filename, string hash, long length);
             IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
@@ -689,13 +689,13 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public interface IBlocklist : IDisposable
+        public interface IBlocklist : IDisposable, IAsyncDisposable
         {
             Task AddBlock(string key, long value);
             IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
         }
 
-        public interface IBlocklistHashList : IDisposable
+        public interface IBlocklistHashList : IDisposable, IAsyncDisposable
         {
             Task AddBlockHash(string hash, long size);
             IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize);
