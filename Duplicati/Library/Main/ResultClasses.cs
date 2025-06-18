@@ -260,20 +260,26 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public async Task FlushLog(LocalDatabase db)
+        /// <summary>
+        /// Flushes the log messages to the database.
+        /// </summary>
+        /// <param name="db">The database to flush the log messages to.</param>
+        /// <param name="token">The cancellation token to use.</param>
+        /// <returns>A task that completes when the log messages have been flushed.</returns>
+        public async Task FlushLog(LocalDatabase db, CancellationToken token)
         {
             if (m_parent != null)
-                await m_parent.FlushLog(db).ConfigureAwait(false);
+                await m_parent.FlushLog(db, token).ConfigureAwait(false);
             else
             {
-                await m_lock.WaitAsync().ConfigureAwait(false);
+                await m_lock.WaitAsync(token).ConfigureAwait(false);
                 try
                 {
                     while (m_dbqueue.Count > 0)
                     {
                         var el = m_dbqueue.Dequeue();
                         await db
-                            .LogMessage(el.Type, el.Message, el.Exception)
+                            .LogMessage(el.Type, el.Message, el.Exception, token)
                             .ConfigureAwait(false);
                     }
                 }

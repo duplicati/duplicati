@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
@@ -68,6 +69,11 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     /// </summary>
     public SqliteTransaction Transaction => m_disposed ? throw new InvalidOperationException("Transaction is disposed") : m_transaction;
 
+    public async Task CommitAsync(CancellationToken token)
+    {
+        await CommitAsync(token: token).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Async version of Commit: <inheritdoc cref="Commit(string?, bool)"/>
     /// </summary>
@@ -75,7 +81,7 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     /// <param name="restart">True if the transaction should be restarted.</param>
     /// <returns>A task that completes when the commit is done and (potentially) a new transaction has been started.</returns>
     /// <exception cref="InvalidOperationException">If the transaction is already Disposed.</exception>
-    public async Task CommitAsync(string? message = null, bool restart = true)
+    public async Task CommitAsync(string? message = null, bool restart = true, CancellationToken token = default)
     {
         if (m_disposed)
             throw new InvalidOperationException("Transaction is already disposed");
