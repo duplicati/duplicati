@@ -252,11 +252,11 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <summary>
         /// Adds metadata to output, and returns the metadataset ID
         /// </summary>
-        /// <returns>The metadataset ID.</returns>
         /// <param name="path">The path for which metadata is processed.</param>
         /// <param name="meta">The metadata entry.</param>
         /// <param name="database">The database connection.</param>
         /// <param name="streamblockchannel">The channel to write streams to.</param>
+        /// <returns>A task that when awaited returns a tuple with the first value indicating if the metadata set was added, and the second value being the metadata ID.</returns>
         internal static async Task<(bool, long)> AddMetadataToOutputAsync(string path, IMetahash meta, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
         {
             StreamProcessResult res;

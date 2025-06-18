@@ -52,13 +52,13 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Run the recreate procedure
+        /// Run the recreate procedure.
         /// </summary>
-        /// <param name="path">Path to the database that will be created</param>
-        /// <param name="backendManager">The backend manager to use for downloading files</param>
-        /// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
-        /// <param name="filter">Filters the files in a filelist to prevent downloading unwanted data</param>
-        /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
+        /// <param name="path">Path to the database that will be created.</param>
+        /// <param name="backendManager">The backend manager to use for downloading files.</param>
+        /// <param name="filter">Filters the files in a filelist to prevent downloading unwanted data.</param>
+        /// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist.</param>
+        /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists.</param>
         public async Task RunAsync(string path, IBackendManager backendManager, IFilter filter, NumberedFilterFilelistDelegate filelistfilter, BlockVolumePostProcessor blockprocessor)
         {
             if (File.Exists(path))
@@ -77,11 +77,12 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Updates a database with new path information from a remote fileset
+        /// Updates a database with new path information from a remote fileset.
         /// </summary>
-        /// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
-        /// <param name="filter">Filters the files in a filelist to prevent downloading unwanted data</param>
-        /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
+        /// <param name="backendManager">The backend manager to use for downloading files.</param>
+        /// <param name="filter">Filters the files in a filelist to prevent downloading unwanted data.</param>
+        /// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist.</param>
+        /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists.</param>
         public async Task RunUpdateAsync(IBackendManager backendManager, Library.Utility.IFilter filter, NumberedFilterFilelistDelegate filelistfilter, BlockVolumePostProcessor blockprocessor)
         {
             if (!m_options.RepairOnlyPaths)
@@ -119,13 +120,15 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Run the recreate procedure
+        /// Run the recreate procedure.
         /// </summary>
-        /// <param name="dbparent">The database to restore into</param>
-        /// <param name="updating">True if this is an update call, false otherwise</param>
-        /// <param name="filter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
-        /// <param name="filelistfilter">Filters the files in a filelist to prevent downloading unwanted data</param>
-        /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
+        /// <param name="backendManager">The backend manager to use for downloading files.</param>
+        /// <param name="dbparent">The database to restore into.</param>
+        /// <param name="updating">True if this is an update call, false otherwise.</param>
+        /// <param name="filter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist.</param>
+        /// <param name="filelistfilter">Filters the files in a filelist to prevent downloading unwanted data.</param>
+        /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists.</param>
+        /// <returns>A task that completes when the operation is done.</returns>
         internal async Task DoRunAsync(IBackendManager backendManager, LocalDatabase dbparent, bool updating, IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Recreate_Running);
@@ -781,11 +784,11 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Look in the database for filenames similar to the current filename, but with a different compression and encryption module
+        /// Look in the database for filenames similar to the current filename, but with a different compression and encryption module.
         /// </summary>
-        /// <returns>The volume id of the item</returns>
-        /// <param name="filename">The filename read and written</param>
-        /// <param name="restoredb">The database to query</param>
+        /// <param name="filename">The filename read and written.</param>
+        /// <param name="restoredb">The database to query.</param>
+        /// <returns>The volume id of the item.</returns>
         public static async Task<(long, string)> ProbeForMatchingFilename(string filename, LocalRecreateDatabase restoredb)
         {
             var p = VolumeBase.ParseFilename(filename);

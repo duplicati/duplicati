@@ -99,11 +99,11 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Updates the options with settings from the data, if any
+        /// Updates the options with settings from the data, if any.
         /// </summary>
-        /// <param name="db">The database to read from</param>
-        /// <param name="options">The options to update</param>
-        /// <param name="transaction">The transaction to use, if any</param>
+        /// <param name="db">The database to read from.</param>
+        /// <param name="options">The options to update.</param>
+        /// <returns>A task that completes when the options have been updated.</returns>
         internal static async Task UpdateOptionsFromDb(LocalDatabase db, Options options)
         {
             string n = null;
@@ -118,10 +118,10 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Checks if the database contains options that need to be verified, such as the blocksize
+        /// Checks if the database contains options that need to be verified, such as the blocksize.
         /// </summary>
-        /// <param name="db">The database to check</param>
-        /// <returns><c>true</c> if the database contains options that need to be verified; <c>false</c> otherwise</returns>
+        /// <param name="db">The database to check.</param>
+        /// <returns>A task that when awaited returns <c>true</c> if the database contains options that need to be verified; <c>false</c> otherwise.</returns>
         internal static async Task<bool> ContainsOptionsForVerification(LocalDatabase db)
         {
             var opts = await db.GetDbOptions().ConfigureAwait(false);
@@ -136,11 +136,11 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Verifies the parameters in the database, and updates the database if needed
+        /// Verifies the parameters in the database, and updates the database if needed.
         /// </summary>
-        /// <param name="db">The database to check</param>
-        /// <param name="options">The options to verify</param>
-        /// <param name="transaction">The transaction to use, if any</param>
+        /// <param name="db">The database to check.</param>
+        /// <param name="options">The options to verify.</param>
+        /// <returns>A task that completes when the options have been verified and the database has been updated if needed.</returns>
         internal static async Task VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options)
         {
             var newDict = new Dictionary<string, string>

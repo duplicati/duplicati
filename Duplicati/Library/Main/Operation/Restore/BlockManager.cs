@@ -173,6 +173,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_set_wake_set = options.InternalProfiling ? new() : null;
             }
 
+            /// <summary>
+            /// Asynchronously creates a new instance of the <see cref="SleepableDictionary"/> class.
+            /// This method initializes the block and volume counts based on the data in the database.
+            /// </summary>
+            /// <param name="db">The database holding information about how many of each block this restore requires.</param>
+            /// <param name="volume_request">CoCoL channel for submitting block requests from a volume.</param>
+            /// <param name="options">The restore options.</param>
+            /// <param name="readers">The number of readers accessing this dictionary. Used during shutdown / cleanup.</param>
+            /// <returns>A task that when awaited returns a new instance of the <see cref="SleepableDictionary"/> class.</returns>
             public static async Task<SleepableDictionary> CreateAsync(LocalRestoreDatabase db, IWriteChannel<object> volume_request, Options options, int readers)
             {
                 var sd = new SleepableDictionary(db, volume_request, options, readers);

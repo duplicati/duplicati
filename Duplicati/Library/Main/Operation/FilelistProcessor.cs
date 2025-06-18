@@ -63,9 +63,12 @@ namespace Duplicati.Library.Main.Operation
 
         /// <summary>
         /// Helper method that verifies uploaded volumes and updates their state in the database.
-        /// Throws an error if there are issues with the remote storage
+        /// Throws an error if there are issues with the remote storage.
         /// </summary>
-        /// <param name="database">The database to compare with</param>
+        /// <param name="backendManager"> The backend manager instance to use.</param>
+        /// <param name="database">The database to compare with.</param>
+        /// <param name="cancellationToken">The cancellation token to use.</param>
+        /// <returns>A task that completes when the verification is done.</returns>
         public static async Task VerifyLocalList(IBackendManager backendManager, LocalDatabase database, CancellationToken cancellationToken)
         {
             var locallist = database.GetRemoteVolumes();
@@ -104,15 +107,15 @@ namespace Duplicati.Library.Main.Operation
 
         /// <summary>
         /// Helper method that verifies uploaded volumes and updates their state in the database.
-        /// Throws an error if there are issues with the remote storage
+        /// Throws an error if there are issues with the remote storage.
         /// </summary>
-        /// <param name="backend">The backend instance to use</param>
-        /// <param name="options">The options used</param>
-        /// <param name="database">The database to compare with</param>
-        /// <param name="backendWriter">The backend writer to use</param>
-        /// <param name="latestVolumesOnly">True if only the latest volumes should be verified</param>
-        /// <param name="verifyMode">The mode to use for verification</param>
-        /// <returns>An awaitable task</returns>
+        /// <param name="backend">The backend instance to use.</param>
+        /// <param name="options">The options used.</param>
+        /// <param name="database">The database to compare with.</param>
+        /// <param name="backendWriter">The backend writer to use.</param>
+        /// <param name="latestVolumesOnly">True if only the latest volumes should be verified.</param>
+        /// <param name="verifyMode">The mode to use for verification.</param>
+        /// <returns>An awaitable task.</returns>
         public static async Task VerifyRemoteList(IBackendManager backend, Options options, LocalDatabase database, IBackendWriter backendWriter, bool latestVolumesOnly, VerifyMode verifyMode)
         {
             if (!options.NoBackendverification)
@@ -131,17 +134,17 @@ namespace Duplicati.Library.Main.Operation
 
         /// <summary>
         /// Helper method that verifies uploaded volumes and updates their state in the database.
-        /// Throws an error if there are issues with the remote storage
+        /// Throws an error if there are issues with the remote storage.
         /// </summary>
-        /// <param name="backend">The backend instance to use</param>
-        /// <param name="options">The options used</param>
-        /// <param name="database">The database to compare with</param>
-        /// <param name="log">The log instance to use</param>
-        /// <param name="protectedFiles">Filenames that should be exempted from deletion</param>
-        /// <param name="strictExcemptFiles">Filenames that should be exempted from strict verification</param>
-        /// <param name="verifyMode">The mode to use for verification</param>
-        /// <param name="logErrors">Disable the logging of errors to prevent spamming the log; exceptions will be thrown regardless</param>
-        /// <returns>An awaitable task</returns>
+        /// <param name="backend">The backend instance to use.</param>
+        /// <param name="options">The options used.</param>
+        /// <param name="database">The database to compare with.</param>
+        /// <param name="log">The log instance to use.</param>
+        /// <param name="protectedFiles">Filenames that should be exempted from deletion.</param>
+        /// <param name="strictExcemptFiles">Filenames that should be exempted from strict verification.</param>
+        /// <param name="logErrors">Disable the logging of errors to prevent spamming the log; exceptions will be thrown regardless.</param>
+        /// <param name="verifyMode">The mode to use for verification.</param>
+        /// <returns>An awaitable task.</returns>
         public static async Task VerifyRemoteList(IBackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles, IEnumerable<string> strictExcemptFiles, bool logErrors, VerifyMode verifyMode)
         {
             var tp = await RemoteListAnalysis(backend, options, database, log, protectedFiles, strictExcemptFiles, verifyMode).ConfigureAwait(false);
@@ -219,9 +222,10 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Uploads the verification file.
         /// </summary>
-        /// <param name="backendurl">The backend url</param>
-        /// <param name="options">The options to use</param>
-        /// <param name="db">The attached database</param>
+        /// <param name="backendManager">The backend manager instance to use.</param>
+        /// <param name="options">The options to use.</param>
+        /// <param name="db">The attached database.</param>
+        /// <returns>A task that completes when the upload is done.</returns>
         public static async Task UploadVerificationFile(IBackendManager backendManager, Options options, LocalDatabase db)
         {
             using (var tempfile = new Library.Utility.TempFile())
@@ -244,15 +248,16 @@ namespace Duplicati.Library.Main.Operation
 
         /// <summary>
         /// Helper method that verifies uploaded volumes and updates their state in the database.
-        /// Throws an error if there are issues with the remote storage
+        /// Throws an error if there are issues with the remote storage.
         /// </summary>
-        /// <param name="backend">The backend instance to use</param>
-        /// <param name="options">The options used</param>
-        /// <param name="database">The database to compare with</param>
-        /// <param name="protectedFiles">Filenames that should be exempted from deletion</param>
-        /// <param name="strictExcemptFiles">Filenames that should be exempted from strict verification</param>
-        /// <param name="verifyMode">The mode to use for verification</param>
-        /// <returns>The result of the analysis</returns>
+        /// <param name="backendManager">The backend manager instance to use.</param>
+        /// <param name="options">The options used.</param>
+        /// <param name="database">The database to compare with.</param>
+        /// <param name="log">The log instance to use.</param>
+        /// <param name="protectedFiles">Filenames that should be exempted from deletion.</param>
+        /// <param name="strictExcemptFiles">Filenames that should be exempted from strict verification.</param>
+        /// <param name="verifyMode">The mode to use for verification.</param>
+        /// <returns>A task that when awaited contains the analysis result.</returns>
         public static async Task<RemoteAnalysisResult> RemoteListAnalysis(IBackendManager backendManager, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles, IEnumerable<string> strictExcemptFiles, VerifyMode verifyMode)
         {
             // If the last operation completed, no cleanup should be required

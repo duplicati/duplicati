@@ -654,16 +654,15 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Repairs a single fileset by recreating it from the database content and uploading it
+        /// Repairs a single fileset by recreating it from the database content and uploading it.
         /// </summary>
-        /// <param name="backendManager">The backend manager to use for uploading</param>
-        /// <param name="db">The database to use for the repair</param>
-        /// <param name="rtr">The transaction to use for the repair</param>
-        /// <param name="volumeWriter">The volume writer to use for the repair</param>
-        /// <param name="originalVolume">The remote volume entry to repair</param>
-        /// <param name="filesetTime">The time of the new fileset to create</param>
-        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
-        /// <returns>A task representing the asynchronous operation</returns>
+        /// <param name="backendManager">The backend manager to use for uploading.</param>
+        /// <param name="db">The database to use for the repair.</param>
+        /// <param name="volumeWriter">The volume writer to use for the repair.</param>
+        /// <param name="originalVolume">The remote volume entry to repair.</param>
+        /// <param name="filesetTime">The time of the new fileset to create.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private async Task RunRepairDlist(IBackendManager backendManager, LocalRepairDatabase db, FilesetVolumeWriter volumeWriter, RemoteVolumeEntry originalVolume, DateTime filesetTime, CancellationToken cancellationToken)
         {
             volumeWriter.VolumeID = await db
@@ -722,18 +721,15 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Repairs a single index file by recreating it from the database content and uploading it
+        /// Repairs a single index file by recreating it from the database content and uploading it.
         /// </summary>
-        /// <param name="backendManager">The backend manager to use for uploading</param>
-        /// <param name="db">The database to use for the repair</param>
-        /// <param name="rtr">The transaction to use for the repair</param>
-        /// <param name="indexWriter">The volume writer to use for the repair</param>
-        /// <param name="originalVolume">The remote volume entry to repair</param>
-        /// <param name="filesetTime">The time of the new fileset to create</param>
-        /// <param name="options">The options for the current operation</param>
-        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
-        /// <returns>A task representing the asynchronous operation</returns>
-
+        /// <param name="backendManager">The backend manager to use for uploading.</param>
+        /// <param name="db">The database to use for the repair.</param>
+        /// <param name="indexWriter">The volume writer to use for the repair.</param>
+        /// <param name="originalVolume">The remote volume entry to repair.</param>
+        /// <param name="options">The options for the current operation.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public static async Task RunRepairDindex(IBackendManager backendManager, LocalRepairDatabase db, IndexVolumeWriter indexWriter, IRemoteVolume originalVolume, Options options, CancellationToken cancellationToken)
         {
             indexWriter.VolumeID = await db
@@ -792,45 +788,44 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Class for holding the state of a dblock volume that is being constructed
+        /// Class for holding the state of a dblock volume that is being constructed.
         /// </summary>
         private sealed class InProgressDblockVolumes
         {
             /// <summary>
-            /// Database to use for the operation
+            /// Database to use for the operation.
             /// </summary>
             private readonly LocalDatabase m_database;
             /// <summary>
-            /// List of volumes to delete after the upload is complete
+            /// List of volumes to delete after the upload is complete.
             /// </summary>
             private readonly List<RemoteVolumeEntry> m_toDelete = new List<RemoteVolumeEntry>();
             /// <summary>
-            /// Options for the current operation
+            /// Options for the current operation.
             /// </summary>
             private readonly Options m_options;
             /// <summary>
-            /// Maximum size of the volume before it is considered full
+            /// Maximum size of the volume before it is considered full.
             /// </summary>
             private readonly long m_maxVolumeSize;
             /// <summary>
-            /// The writers that are completed and ready to be uploaded
+            /// The writers that are completed and ready to be uploaded.
             /// </summary>
             private readonly List<BlockVolumeWriter> m_completedWriters = new List<BlockVolumeWriter>();
             /// <summary>
-            /// Writer for the current in-progress volume
+            /// Writer for the current in-progress volume.
             /// </summary>
             private BlockVolumeWriter m_activeWriter;
             /// <summary>
-            /// Flag indicating if any data has been added to the volume
+            /// Flag indicating if any data has been added to the volume.
             /// </summary>
             private bool m_anyData = false;
 
             /// <summary>
-            /// Constructor for the InProgressDblockVolume class
+            /// Constructor for the InProgressDblockVolume class.
             /// </summary>
-            /// <param name="options">The options for the current operation</param>
-            /// <param name="db">The database to use for registering a volume in progress</param>
-            /// <param name="transaction">The transaction to use for the operation</param>
+            /// <param name="options">The options for the current operation.</param>
+            /// <param name="db">The database to use for registering a volume in progress.</param>
             private InProgressDblockVolumes(Options options, LocalDatabase db)
             {
                 m_database = db;
@@ -839,6 +834,12 @@ namespace Duplicati.Library.Main.Operation
                 m_activeWriter = new BlockVolumeWriter(options);
             }
 
+            /// <summary>
+            /// Asynchronously creates a new instance of <see cref="InProgressDblockVolumes"/> and registers the initial volume.
+            /// </summary>
+            /// <param name="options">The options for the current operation.</param>
+            /// <param name="db">The database to use for registering the initial volume.</param>
+            /// <returns>A task that completes with the new instance of <see cref="InProgressDblockVolumes"/>.</returns>
             public static async Task<InProgressDblockVolumes> CreateAsync(Options options, LocalDatabase db)
             {
                 var ipdv = new InProgressDblockVolumes(options, db);
@@ -849,39 +850,39 @@ namespace Duplicati.Library.Main.Operation
             }
 
             /// <summary>
-            /// Checks if any data has been added to the current volume
+            /// Checks if any data has been added to the current volume.
             /// </summary>
             public bool AnyData => m_anyData;
             /// <summary>
-            /// Checks if the current volume is full
+            /// Checks if the current volume is full.
             /// </summary>
             private bool IsFull => m_activeWriter.Filesize > m_maxVolumeSize;
 
             /// <summary>
-            /// Gets the volume ID of the current volume
+            /// Gets the volume ID of the current volume.
             /// </summary>
             public long VolumeID => m_activeWriter.VolumeID;
             /// <summary>
-            /// Gets the remote filename of the current volume
+            /// Gets the remote filename of the current volume.
             /// </summary>
             public string RemoteFilename => m_activeWriter.RemoteFilename;
             /// <summary>
-            /// Gets the list of volumes to delete after the upload is complete
+            /// Gets the list of volumes to delete after the upload is complete.
             /// </summary>
             public List<RemoteVolumeEntry> VolumesToDelete => m_toDelete;
             /// <summary>
-            /// Gets the list of completed writers
+            /// Gets the list of completed writers.
             /// </summary>
             public List<BlockVolumeWriter> CompletedWriters => m_completedWriters;
 
             /// <summary>
-            /// Adds a block to the current volume, starting a new volume if the current one is full
+            /// Adds a block to the current volume, starting a new volume if the current one is full.
             /// </summary>
-            /// <param name="hash">The hash of the block</param>
-            /// <param name="buffer">The buffer containing the block data</param>
-            /// <param name="offset">The offset in the buffer where the block data starts</param>
-            /// <param name="size">The size of the block data</param>
-            /// <param name="hint">The compression hint for the block</param>
+            /// <param name="hash">The hash of the block.</param>
+            /// <param name="buffer">The buffer containing the block data.</param>
+            /// <param name="offset">The offset in the buffer where the block data starts.</param>
+            /// <param name="size">The size of the block data.</param>
+            /// <param name="hint">The compression hint for the block.</param>
             public async Task AddBlock(string hash, byte[] buffer, int offset, int size, CompressionHint hint)
             {
                 await m_activeWriter
@@ -893,8 +894,9 @@ namespace Duplicati.Library.Main.Operation
             }
 
             /// <summary>
-            /// Starts a new volume for the current operation
+            /// Starts a new volume for the current operation.
             /// </summary>
+            /// <returns>A task that completes when the new volume is started.</returns>
             public async Task StartNewVolume()
             {
                 if (!m_anyData)
@@ -911,15 +913,14 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Runs the repair process for missing dblock files
+        /// Runs the repair process for missing dblock files.
         /// </summary>
-        /// <param name="backendManager">The backend manager to use for uploading</param>
-        /// <param name="db">The database to use for the repair</param>
-        /// <param name="rtr">The transaction to use for the repair</param>
-        /// <param name="missingDblockFiles">The list of missing dblock files</param>
-        /// <param name="incrementProgress"><The callback to increment the progress</param>
-        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
-        /// <returns>>A task representing the asynchronous operation</returns>
+        /// <param name="backendManager">The backend manager to use for uploading.</param>
+        /// <param name="db">The database to use for the repair.</param>
+        /// <param name="missingDblockFiles">The list of missing dblock files.</param>
+        /// <param name="incrementProgress"><The callback to increment the progress.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>>A task that completes when the repair is finished.</returns>
         private async Task RunRepairDblocks(IBackendManager backendManager, LocalRepairDatabase db, IEnumerable<RemoteVolumeEntry> missingDblockFiles, Action incrementProgress, CancellationToken cancellationToken)
         {
             var currentVolume =
@@ -967,14 +968,13 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Uploads all completed block volumes to the backend and deletes the old files
+        /// Uploads all completed block volumes to the backend and deletes the old files.
         /// </summary>
-        /// <param name="backendManager">The backend manager to use for uploading</param>
-        /// <param name="activeVolume">The completed volume state to upload</param>
-        /// <param name="db">The database to use for the upload</param>
-        /// <param name="rtr">>The transaction to use for the upload</param>
-        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
-        /// <returns>>A task representing the asynchronous operation</returns>
+        /// <param name="backendManager">The backend manager to use for uploading.</param>
+        /// <param name="activeVolume">The completed volume state to upload.</param>
+        /// <param name="db">The database to use for the upload.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>>A task that completes when the upload is finished.</returns>
         async Task UploadCompletedBlockVolumes(IBackendManager backendManager, InProgressDblockVolumes activeVolume, LocalRepairDatabase db, CancellationToken cancellationToken)
         {
             foreach (var completedVolume in activeVolume.CompletedWriters)
@@ -1054,15 +1054,14 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Repairs a single dblock file by recreating it from available data
+        /// Repairs a single dblock file by recreating it from available data.
         /// </summary>
-        /// <param name="backendManager">The backend manager to use for uploading</param>
-        /// <param name="db">The database to use for the repair</param>
-        /// <param name="rtr">The transaction to use for the repair</param>
-        /// <param name="originalVolume">The remote volume entry to recreate</param>
-        /// <param name="pendingVolume">The in-progress dblock volume to use for the recreate</param>
-        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
-        /// <returns>>A task representing the asynchronous operation</returns>
+        /// <param name="backendManager">The backend manager to use for uploading.</param>
+        /// <param name="db">The database to use for the repair.</param>
+        /// <param name="originalVolume">The remote volume entry to recreate.</param>
+        /// <param name="pendingVolume">The in-progress dblock volume to use for the recreate.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>>A task that completes when the repair is finished.</returns>
         private async Task RunRepairDblock(IBackendManager backendManager, LocalRepairDatabase db, RemoteVolumeEntry originalVolume, InProgressDblockVolumes pendingVolume, CancellationToken cancellationToken)
         {
             // The dblock files are the most complex to recreate
@@ -1315,6 +1314,12 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        /// <summary>
+        /// Runs the repair process for broken filesets in the database.
+        /// </summary>
+        /// <param name="backendManager">The backend manager to use for accessing remote files.</param>
+        /// <returns>>A task that completes when the repair is finished.</returns>
+        /// <exception cref="UserInformationException">If the database doesn't exist.</exception>
         public async Task RunRepairBrokenFilesets(IBackendManager backendManager)
         {
             if (!File.Exists(m_options.Dbpath))
@@ -1362,6 +1367,12 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        /// <summary>
+        /// Runs the common repair operations on the database, such as fixing duplicate entries and missing blocklist hashes.
+        /// This method does not require any remote access and can be run without a backend manager.
+        /// </summary>
+        /// <returns>A task that completes when the repair is finished.</returns>
+        /// <exception cref="UserInformationException">If the database file does not exist.</exception>
         public async Task RunRepairCommon()
         {
             if (!File.Exists(m_options.Dbpath))

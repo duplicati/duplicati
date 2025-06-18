@@ -263,11 +263,14 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Tests the volume by examining the internal contents
+        /// Tests the volume by examining the internal contents.
         /// </summary>
-        /// <param name="vol">The remote volume being examined</param>
-        /// <param name="tf">The path to the downloaded copy of the file</param>
-        /// <param name="sample_percent">A value between 0 and 1 that indicates how many blocks are tested in a dblock file</param>
+        /// <param name="db">The local test database to use for verification.</param>
+        /// <param name="vol">The remote volume being examined.</param>
+        /// <param name="tf">The path to the downloaded copy of the file.</param>
+        /// <param name="options">The options to use for the test.</param>
+        /// <param name="sample_percent">A value between 0 and 1 that indicates how many blocks are tested in a dblock file.</param>
+        /// <returns>A task that when awaited returns a key-value pair where the key is the volume name and the value is a list of test results.</returns>
         public static async Task<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> TestVolumeInternals(LocalTestDatabase db, IRemoteVolume vol, string tf, Options options, double sample_percent)
         {
             var hashsize = HashFactory.HashSizeBytes(options.BlockHashAlgorithm);

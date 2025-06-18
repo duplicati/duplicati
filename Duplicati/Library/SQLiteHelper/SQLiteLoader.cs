@@ -30,24 +30,29 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.SQLiteHelper
 {
+    /// <summary>
+    /// Provides methods to load and manage SQLite connections, including handling encrypted databases.
+    /// </summary>
     public static class SQLiteLoader
     {
         /// <summary>
-        /// The minimum value for the SQLite page cache size
+        /// The minimum value for the SQLite page cache size.
         /// </summary>
         public const long MINIMUM_SQLITE_PAGE_CACHE_SIZE = 2048000L;
 
         /// <summary>
-        /// The tag used for logging
+        /// The tag used for logging.
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
 
         /// <summary>
-        /// Helper method with logic to handle opening a database in possibly encrypted format
+        /// Helper method with logic to handle opening a database in possibly encrypted format.
         /// </summary>
-        /// <param name="con">The SQLite connection object</param>
+        /// <param name="con">The SQLite connection object.</param>
         /// <param name="databasePath">The location of Duplicati's database.</param>
         /// <param name="decryptionPassword">The password to use for decryption.</param>
+        /// <returns>A task that completes when the database is opened.</returns>
+        /// <exception cref="UserInformationException">Thrown if the database cannot be opened or decrypted.</exception>
         public static async Task OpenDatabaseAsync(Microsoft.Data.Sqlite.SqliteConnection con, string databasePath, string? decryptionPassword)
         {
             if (!string.IsNullOrWhiteSpace(decryptionPassword) && SQLiteRC4Decrypter.IsDatabaseEncrypted(databasePath))
@@ -84,15 +89,22 @@ namespace Duplicati.Library.SQLiteHelper
                 throw new UserInformationException("Failed to open database for unknown reason, check the logs to see error messages", "DatabaseOpenFailed");
         }
 
+        /// <summary>
+        /// Loads an SQLite connection instance and opening the database.
+        /// </summary>
+        /// <returns>The SQLite connection instance.</returns>
+        /// <remarks>
+        /// This method is synchronous and should be used when you need to load the connection immediately. It calls the asynchronous version and waits for it to complete.
+        /// </remarks>
         public static Microsoft.Data.Sqlite.SqliteConnection LoadConnection()
         {
             return LoadConnectionAsync().Await();
         }
 
         /// <summary>
-        /// Loads an SQLite connection instance and opening the database
+        /// Loads an SQLite connection instance and opening the database.
         /// </summary>
-        /// <returns>The SQLite connection instance.</returns>
+        /// <returns>A task that when awaited returns the SQLite connection instance.</returns>
         public static async Task<Microsoft.Data.Sqlite.SqliteConnection> LoadConnectionAsync()
         {
             Microsoft.Data.Sqlite.SqliteConnection? con = null;
@@ -114,11 +126,11 @@ namespace Duplicati.Library.SQLiteHelper
         }
 
         /// <summary>
-        /// Applies user-supplied custom pragmas to the SQLite connection
+        /// Applies user-supplied custom pragmas to the SQLite connection.
         /// </summary>
         /// <param name="con">The connection to apply the pragmas to.</param>
         /// <param name="pagecachesize"> The page cache size to set.</param>
-        /// <returns>The connection with the pragmas applied.</returns>
+        /// <returns>A task that when awaited returns the connection with the pragmas applied.</returns>
         public static async Task<Microsoft.Data.Sqlite.SqliteConnection> ApplyCustomPragmasAsync(Microsoft.Data.Sqlite.SqliteConnection con, long pagecachesize)
         {
             // TODO more default custom options
@@ -156,17 +168,26 @@ namespace Duplicati.Library.SQLiteHelper
             return con;
         }
 
+        /// <summary>
+        /// Loads an SQLite connection instance and opening the database with a specified page cache size.
+        /// </summary>
+        /// <param name="targetpath">The optional path to the database.</param>
+        /// <param name="pagecachesize">The page cache size to set.</param>
+        /// <returns>The SQLite connection instance.</returns>
+        /// <remarks>
+        /// This method is synchronous and should be used when you need to load the connection immediately. It calls the asynchronous version and waits for it to complete.
+        /// </remarks>
         public static Microsoft.Data.Sqlite.SqliteConnection LoadConnection(string targetpath, long pagecachesize)
         {
             return LoadConnectionAsync(targetpath, pagecachesize).Await();
         }
 
         /// <summary>
-        /// Loads an SQLite connection instance and opening the database
+        /// Loads an SQLite connection instance and opening the database.
         /// </summary>
-        /// <returns>The SQLite connection instance.</returns>
         /// <param name="targetpath">The optional path to the database.</param>
         /// <param name="pagecachesize"> The page cache size to set.</param>
+        /// <returns>A task that when waited returns the SQLite connection instance.</returns>
         public static async Task<Microsoft.Data.Sqlite.SqliteConnection> LoadConnectionAsync(string targetpath, long pagecachesize)
         {
             if (string.IsNullOrWhiteSpace(targetpath))
@@ -192,7 +213,7 @@ namespace Duplicati.Library.SQLiteHelper
         }
 
         /// <summary>
-        /// Returns the SQLiteCommand type for the current architecture
+        /// Returns the SQLiteCommand type for the current architecture.
         /// </summary>
         public static Type SQLiteConnectionType
         {
@@ -203,7 +224,7 @@ namespace Duplicati.Library.SQLiteHelper
         }
 
         /// <summary>
-        /// Returns the version string from the SQLite type
+        /// Returns the version string from the SQLite type.
         /// </summary>
         public static string? SQLiteVersion
         {
@@ -237,9 +258,10 @@ namespace Duplicati.Library.SQLiteHelper
         }
 
         /// <summary>
-        /// Wrapper to dispose the SQLite connection
+        /// Wrapper to dispose the SQLite connection.
         /// </summary>
         /// <param name="con">The connection to close.</param>
+        /// <returns>A task that completes when the connection is disposed.</returns>
         private static async Task DisposeConnectionAsync(Microsoft.Data.Sqlite.SqliteConnection? con)
         {
             if (con != null)
@@ -248,10 +270,11 @@ namespace Duplicati.Library.SQLiteHelper
         }
 
         /// <summary>
-        /// Opens the SQLite file in the given connection, creating the file if required
+        /// Opens the SQLite file in the given connection, creating the file if required.
         /// </summary>
         /// <param name="con">The connection to use.</param>
         /// <param name="path">Path to the file to open, which may not exist.</param>
+        /// <returns>A task that completes when the file is opened.</returns>
         private static async Task OpenSQLiteFileAsync(Microsoft.Data.Sqlite.SqliteConnection con, string path)
         {
             con.ConnectionString = $"Data Source={path};Pooling=false";
@@ -264,9 +287,10 @@ namespace Duplicati.Library.SQLiteHelper
         }
 
         /// <summary>
-        /// Tests the SQLite connection, throwing an exception if the connection does not work
+        /// Tests the SQLite connection, throwing an exception if the connection does not work.
         /// </summary>
         /// <param name="con">The connection to test.</param>
+        /// <returns>A task that completes when the test query is executed.</returns>
         private static async Task TestSQLiteFileAsync(Microsoft.Data.Sqlite.SqliteConnection con)
         {
             // Do a dummy query to make sure we have a working db
