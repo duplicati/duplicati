@@ -23,6 +23,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
@@ -41,13 +43,14 @@ namespace Duplicati.Library.Main.Database
         /// <param name="path">The path to the database file.</param>
         /// <param name="pagecachesize">The size of the page cache.</param>
         /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a new instance of <see cref="LocalListChangesDatabase"/>.</returns>
-        public static async Task<LocalListChangesDatabase> CreateAsync(string path, long pagecachesize, LocalListChangesDatabase? dbnew = null)
+        public static async Task<LocalListChangesDatabase> CreateAsync(string path, long pagecachesize, LocalListChangesDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalListChangesDatabase();
 
             dbnew = (LocalListChangesDatabase)
-                await CreateLocalDatabaseAsync(path, "ListChanges", false, pagecachesize, dbnew)
+                await CreateLocalDatabaseAsync(path, "ListChanges", false, pagecachesize, dbnew, token)
                     .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 
@@ -68,8 +71,9 @@ namespace Duplicati.Library.Main.Database
             /// <param name="size">The size of the file or folder.</param>
             /// <param name="type">The type of the element (file, folder, symlink).</param>
             /// <param name="asNew">If true, adds to the current table; otherwise, adds to the previous table.</param>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that completes when the element is added.</returns>
-            Task AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew);
+            Task AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew, CancellationToken token);
 
             /// <summary>
             /// Adds elements from the database to the temporary storage.
@@ -77,26 +81,30 @@ namespace Duplicati.Library.Main.Database
             /// <param name="filesetId">The ID of the fileset to add.</param>
             /// <param name="asNew">If true, adds to the current table; otherwise, adds to the previous table.</param>
             /// <param name="filter">An optional filter to apply when adding elements.</param>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that completes when the elements are added.</returns>
-            Task AddFromDb(long filesetId, bool asNew, IFilter filter);
+            Task AddFromDb(long filesetId, bool asNew, IFilter filter, CancellationToken token);
 
             /// <summary>
             /// Creates a report containing the count of added, deleted, and modified elements.
             /// </summary>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that, when awaited, returns an <see cref="IChangeCountReport"/> with the change counts.</returns>
-            Task<IChangeCountReport> CreateChangeCountReport();
+            Task<IChangeCountReport> CreateChangeCountReport(CancellationToken token);
 
             /// <summary>
             /// Creates a report containing the size information for added, deleted, previous, and current elements.
             /// </summary>
+            /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>A task that, when awaited, returns an <see cref="IChangeSizeReport"/> with the size details.</returns>
-            Task<IChangeSizeReport> CreateChangeSizeReport();
+            Task<IChangeSizeReport> CreateChangeSizeReport(CancellationToken token);
 
             /// <summary>
             /// Asynchronously generates a report of changed files, yielding tuples that describe the change type, element type, and file path.
             /// </summary>
+            /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of tuples containing the change type, element type, and file path.</returns>
-            IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport();
+            IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport(CancellationToken token);
         }
 
         /// <summary>
@@ -245,8 +253,9 @@ namespace Duplicati.Library.Main.Database
             /// Asynchronously creates a new instance of the <see cref="StorageHelper"/> class.
             /// </summary>
             /// <param name="db">The local database instance to use.</param>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that, when awaited, returns a new instance of <see cref="StorageHelper"/>.</returns>
-            public static async Task<StorageHelper> CreateAsync(LocalDatabase db)
+            public static async Task<StorageHelper> CreateAsync(LocalDatabase db, CancellationToken token)
             {
                 var sh = new StorageHelper
                 {
@@ -265,7 +274,7 @@ namespace Duplicati.Library.Main.Database
                             ""Size"" INTEGER NOT NULL,
                             ""Type"" INTEGER NOT NULL
                         )
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
 
                     await cmd.ExecuteNonQueryAsync($@"
@@ -276,7 +285,7 @@ namespace Duplicati.Library.Main.Database
                             ""Size"" INTEGER NOT NULL,
                             ""Type"" INTEGER NOT NULL
                         )
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
                 }
 
@@ -296,7 +305,7 @@ namespace Duplicati.Library.Main.Database
                             @Size,
                             @Type
                         )
-                    ")
+                    ", token)
                     .ConfigureAwait(false);
 
                 sh.m_insertCurrentElementCommand = await sh.m_db.Connection
@@ -315,13 +324,14 @@ namespace Duplicati.Library.Main.Database
                             @Size,
                             @Type
                         )
-                    ")
+                    ", token)
                     .ConfigureAwait(false);
 
                 return sh;
             }
 
-            public async Task AddFromDb(long filesetId, bool asNew, IFilter filter)
+            /// <inheritdoc/>
+            public async Task AddFromDb(long filesetId, bool asNew, IFilter filter, CancellationToken token)
             {
                 var tablename = asNew ? m_currentTable : m_previousTable;
 
@@ -410,7 +420,7 @@ namespace Duplicati.Library.Main.Database
                             WHERE ""A"".""FilesetID"" = @FilesetId
                         ")
                         .SetParameterValue("@FilesetId", filesetId)
-                        .ExecuteNonQueryAsync()
+                        .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
                 }
                 else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
@@ -424,20 +434,20 @@ namespace Duplicati.Library.Main.Database
                             CREATE TEMPORARY TABLE ""{filenamestable}"" (
                                 ""Path"" TEXT NOT NULL
                             )
-                        ")
+                        ", token)
                         .ConfigureAwait(false);
 
                     await cmd.SetCommandAndParameters($@"
                             INSERT INTO ""{filenamestable}"" (""Path"")
                             VALUES (@Path)
                         ")
-                        .PrepareAsync()
+                        .PrepareAsync(token)
                         .ConfigureAwait(false);
 
                     foreach (var s in p)
                         await cmd
                             .SetParameterValue("@Path", s)
-                            .ExecuteNonQueryAsync()
+                            .ExecuteNonQueryAsync(token)
                             .ConfigureAwait(false);
 
                     string whereClause;
@@ -481,11 +491,11 @@ namespace Duplicati.Library.Main.Database
                             WHERE {whereClause}
                         ")
                         .SetParameterValue("@FilesetId", filesetId)
-                        .ExecuteNonQueryAsync()
+                        .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
 
                     await cmd
-                        .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{filenamestable}"" ")
+                        .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{filenamestable}"" ", token)
                         .ConfigureAwait(false);
                 }
                 else
@@ -503,7 +513,7 @@ namespace Duplicati.Library.Main.Database
                             WHERE ""A"".""FilesetID"" = @FilesetId
                         ")
                         .SetParameterValue("@FilesetId", filesetId)
-                        .PrepareAsync()
+                        .PrepareAsync(token)
                         .ConfigureAwait(false);
 
                     await using var cmd2 = m_db.Connection.CreateCommand(m_db.Transaction)
@@ -523,13 +533,13 @@ namespace Duplicati.Library.Main.Database
                                     @Type
                                 )
                             ");
-                    await cmd2.PrepareAsync().ConfigureAwait(false);
+                    await cmd2.PrepareAsync(token).ConfigureAwait(false);
 
                     await using var rd = await cmd
-                        .ExecuteReaderAsync()
+                        .ExecuteReaderAsync(token)
                         .ConfigureAwait(false);
 
-                    while (await rd.ReadAsync().ConfigureAwait(false))
+                    while (await rd.ReadAsync(token).ConfigureAwait(false))
                     {
                         rd.GetValues(values);
                         var path = values[0] as string;
@@ -541,14 +551,15 @@ namespace Duplicati.Library.Main.Database
                                 .SetParameterValue("@MetaHash", values[2])
                                 .SetParameterValue("@Size", values[3])
                                 .SetParameterValue("@Type", values[4])
-                                .ExecuteNonQueryAsync()
+                                .ExecuteNonQueryAsync(token)
                                 .ConfigureAwait(false);
                         }
                     }
                 }
             }
 
-            public async Task AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew)
+            /// <inheritdoc/>
+            public async Task AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew, CancellationToken token)
             {
                 var cmd = asNew ? m_insertCurrentElementCommand : m_insertPreviousElementCommand;
                 await cmd
@@ -557,7 +568,7 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@MetaHash", metahash)
                     .SetParameterValue("@Size", size)
                     .SetParameterValue("@Type", (int)type)
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
             }
 
@@ -565,11 +576,12 @@ namespace Duplicati.Library.Main.Database
             /// Converts a SqliteDataReader to an asynchronous enumerable of strings.
             /// </summary>
             /// <param name="rd">The SqliteDataReader to read from.</param>
+            /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of strings, where each string is a value from the first column of the reader.</returns>
-            private static async IAsyncEnumerable<string?> ReaderToStringList(SqliteDataReader rd)
+            private static async IAsyncEnumerable<string?> ReaderToStringList(SqliteDataReader rd, [EnumeratorCancellation] CancellationToken token)
             {
                 await using (rd)
-                    while (await rd.ReadAsync().ConfigureAwait(false))
+                    while (await rd.ReadAsync(token).ConfigureAwait(false))
                     {
                         var v = rd.GetValue(0);
                         if (v == null || v == DBNull.Value)
@@ -627,8 +639,9 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// Creates a report of changes in file sizes, including added, deleted, previous, and current sizes.
             /// </summary>
+            /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>A task that, when awaited, returns an <see cref="IChangeSizeReport"/> with the size details.</returns>
-            public async Task<IChangeSizeReport> CreateChangeSizeReport()
+            public async Task<IChangeSizeReport> CreateChangeSizeReport(CancellationToken token)
             {
                 var (Added, Deleted, Modified) = GetSqls(true);
 
@@ -638,27 +651,27 @@ namespace Duplicati.Library.Main.Database
                     PreviousSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_previousTable}""
-                        ", 0)
+                        ", 0, token)
                         .ConfigureAwait(false),
 
                     CurrentSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_currentTable}""
-                        ", 0)
+                        ", 0, token)
                         .ConfigureAwait(false),
 
                     AddedSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_currentTable}""
                             WHERE ""{m_currentTable}"".""Path"" IN ({Added})
-                        ", 0)
+                        ", 0, token)
                         .ConfigureAwait(false),
 
                     DeletedSize = await cmd.ExecuteScalarInt64Async($@"
                             SELECT SUM(""Size"")
                             FROM ""{m_previousTable}""
                             WHERE ""{m_previousTable}"".""Path"" IN ({Deleted})
-                        ", 0)
+                        ", 0, token)
                         .ConfigureAwait(false)
                 };
 
@@ -668,8 +681,9 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// Creates a report containing the count of added, deleted, and modified elements.
             /// </summary>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that, when awaited, returns an <see cref="IChangeCountReport"/> with the change counts.</returns>
-            public async Task<IChangeCountReport> CreateChangeCountReport()
+            public async Task<IChangeCountReport> CreateChangeCountReport(CancellationToken token)
             {
                 var (Added, Deleted, Modified) = GetSqls(false);
 
@@ -695,47 +709,47 @@ namespace Duplicati.Library.Main.Database
                     AddedFolders = await cmd
                         .SetCommandAndParameters(added)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
-                        .ExecuteScalarInt64Async(0)
+                        .ExecuteScalarInt64Async(0, token)
                         .ConfigureAwait(false),
                     AddedSymlinks = await cmd
                         .SetCommandAndParameters(added)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
-                        .ExecuteScalarInt64Async(0)
+                        .ExecuteScalarInt64Async(0, token)
                         .ConfigureAwait(false),
                     AddedFiles = await cmd
                         .SetCommandAndParameters(added)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
-                        .ExecuteScalarInt64Async(0)
+                        .ExecuteScalarInt64Async(0, token)
                         .ConfigureAwait(false),
                     DeletedFolders = await cmd
                         .SetCommandAndParameters(deleted)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
-                        .ExecuteScalarInt64Async(0)
+                        .ExecuteScalarInt64Async(0, token)
                         .ConfigureAwait(false),
                     DeletedSymlinks = await cmd
                         .SetCommandAndParameters(deleted)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
-                        .ExecuteScalarInt64Async(0)
+                        .ExecuteScalarInt64Async(0, token)
                         .ConfigureAwait(false),
                     DeletedFiles = await cmd
                         .SetCommandAndParameters(deleted)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
-                        .ExecuteScalarInt64Async(0)
+                        .ExecuteScalarInt64Async(0, token)
                         .ConfigureAwait(false),
                     ModifiedFolders = await cmd
                         .SetCommandAndParameters(modified)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
-                        .ExecuteScalarInt64Async(0)
+                        .ExecuteScalarInt64Async(0, token)
                         .ConfigureAwait(false),
                     ModifiedSymlinks = await cmd
                         .SetCommandAndParameters(modified)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
-                        .ExecuteScalarInt64Async(0)
+                        .ExecuteScalarInt64Async(0, token)
                         .ConfigureAwait(false),
                     ModifiedFiles = await cmd
                         .SetCommandAndParameters(modified)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
-                        .ExecuteScalarInt64Async(0)
+                        .ExecuteScalarInt64Async(0, token)
                         .ConfigureAwait(false)
                 };
 
@@ -745,8 +759,9 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// Asynchronously creates a report of changed files, yielding tuples that describe the change type, element type, and file path.
             /// </summary>
+            /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of tuples containing the change type, element type, and file path.</returns>
-            public async IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport()
+            public async IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport([EnumeratorCancellation] CancellationToken token)
             {
                 var (Added, Deleted, Modified) = GetSqls(false);
 
@@ -762,7 +777,7 @@ namespace Duplicati.Library.Main.Database
                     {
                         cmd.SetCommandAndParameters(sql);
                         foreach (var type in elTypes)
-                            await foreach (var s in ReaderToStringList(await cmd.SetParameterValue("@Type", (int)type).ExecuteReaderAsync().ConfigureAwait(false)).ConfigureAwait(false))
+                            await foreach (var s in ReaderToStringList(await cmd.SetParameterValue("@Type", (int)type).ExecuteReaderAsync(token).ConfigureAwait(false), token).ConfigureAwait(false))
                                 yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(changeType, type, s ?? "");
                     }
 
@@ -835,10 +850,11 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Creates a new instance of the <see cref="IStorageHelper"/> for managing temporary storage of file changes.
         /// </summary>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that, when awaited, returns an instance of <see cref="IStorageHelper"/>.</returns>
-        public async Task<IStorageHelper> CreateStorageHelper()
+        public async Task<IStorageHelper> CreateStorageHelper(CancellationToken token)
         {
-            return await StorageHelper.CreateAsync(this).ConfigureAwait(false);
+            return await StorageHelper.CreateAsync(this, token).ConfigureAwait(false);
         }
     }
 }
