@@ -294,7 +294,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        private abstract class Basiclist : IDisposable
+        private abstract class Basiclist : IDisposable, IAsyncDisposable
         {
             protected LocalDatabase m_db = null!;
             protected string m_volumename = null!;
@@ -337,10 +337,10 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
-                DisposeAsync().Await();
+                DisposeAsync().AsTask().Await();
             }
 
-            public virtual async Task DisposeAsync()
+            public virtual async ValueTask DisposeAsync()
             {
                 if (m_tablename != null)
                     try
