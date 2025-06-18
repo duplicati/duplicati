@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
@@ -96,10 +97,11 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="db">The database to use.</param>
     /// <param name="values">The values to use.</param>
+    /// <param name="token">A cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the created TemporaryDbValueList.</returns>
-    internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<long> values)
+    internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<long> values, CancellationToken token)
     {
-        return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "INTEGER"))
+        return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "INTEGER"), token)
             .ConfigureAwait(false);
     }
 
@@ -108,10 +110,11 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="db">The database to use.</param>
     /// <param name="values">The values to use.</param>
+    /// <param name="token">A cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the created TemporaryDbValueList.</returns>
-    internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<string> values)
+    internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<string> values, CancellationToken token)
     {
-        return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "TEXT"))
+        return await DoCreateAsync(new TemporaryDbValueList(db.Connection, db.Transaction, values.Cast<object>(), "TEXT"), token)
             .ConfigureAwait(false);
     }
 
@@ -121,10 +124,11 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// <param name="con">The connection to use.</param>
     /// <param name="rtr">The reusable transaction to use.</param>
     /// <param name="values">The values to use.</param>
+    /// <param name="token">A cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the created TemporaryDbValueList.</returns>
-    internal static async Task<TemporaryDbValueList> CreateAsync(SqliteConnection con, ReusableTransaction rtr, IEnumerable<long> values)
+    internal static async Task<TemporaryDbValueList> CreateAsync(SqliteConnection con, ReusableTransaction rtr, IEnumerable<long> values, CancellationToken token)
     {
-        return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "INTEGER"))
+        return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "INTEGER"), token)
             .ConfigureAwait(false);
     }
 
@@ -134,10 +138,11 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// <param name="con">The connection to use.</param>
     /// <param name="rtr">The reusable transaction to use.</param>
     /// <param name="values">The values to use.</param>
+    /// <param name="token">A cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the created TemporaryDbValueList.</returns>
-    internal static async Task<TemporaryDbValueList> CreateAsync(SqliteConnection con, ReusableTransaction rtr, IEnumerable<string> values)
+    internal static async Task<TemporaryDbValueList> CreateAsync(SqliteConnection con, ReusableTransaction rtr, IEnumerable<string> values, CancellationToken token)
     {
-        return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "TEXT"))
+        return await DoCreateAsync(new TemporaryDbValueList(con, rtr, values.Cast<object>(), "TEXT"), token)
             .ConfigureAwait(false);
     }
 
@@ -146,11 +151,12 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// the values are forced into a table.
     /// </summary>
     /// <param name="valueList">The TemporaryDbValueList to create.</param>
+    /// <param name="token">A cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the created TemporaryDbValueList.</returns>
-    private static async Task<TemporaryDbValueList> DoCreateAsync(TemporaryDbValueList valueList)
+    private static async Task<TemporaryDbValueList> DoCreateAsync(TemporaryDbValueList valueList, CancellationToken token)
     {
         if (valueList._values.Count() > LocalDatabase.CHUNK_SIZE)
-            await valueList.ForceToTable().ConfigureAwait(false);
+            await valueList.ForceToTable(token).ConfigureAwait(false);
 
         return valueList;
     }
@@ -168,13 +174,14 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// <summary>
     /// Get the in clause for the values, creating the table if needed.
     /// </summary>
+    /// <param name="token">A cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the SQL in clause string.</returns>
-    public async Task<string> GetInClause()
+    public async Task<string> GetInClause(CancellationToken token)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(TemporaryDbValueList));
 
-        await ForceToTable().ConfigureAwait(false);
+        await ForceToTable(token).ConfigureAwait(false);
 
         return $@"
             SELECT ""Value""
@@ -185,8 +192,9 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// <summary>
     /// Force the values to be written to a table, if not already done.
     /// </summary>
+    /// <param name="token">A cancellation token to cancel the operation.</param>
     /// <returns>A task that completes when the table has been created and the values inserted.</returns>
-    public async Task ForceToTable()
+    public async Task ForceToTable(CancellationToken token)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(TemporaryDbValueList));
@@ -197,7 +205,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
         _cmd = _con.CreateCommand(_rtr);
         await _cmd.ExecuteNonQueryAsync($@"
             CREATE TEMPORARY TABLE ""{_tableName}"" (""Value"" {_valuesType})
-        ")
+        ", token)
             .ConfigureAwait(false);
 
         _isTable = true;
@@ -241,7 +249,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
         {
             if (_cmd != null)
             {
-                await _cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{_tableName}""")
+                await _cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{_tableName}""", default)
                     .ConfigureAwait(false);
                 await _cmd.DisposeAsync().ConfigureAwait(false);
             }

@@ -1225,7 +1225,7 @@ public static partial class ExtensionMethods
             return ExpandInClauseParameter(cmd, originalParamName, values.Values);
 
         // We have a temporary table, so we need to replace the parameter with the table name
-        cmd.CommandText = cmd.CommandText.Replace(originalParamName, values.GetInClause().Await(), StringComparison.OrdinalIgnoreCase);
+        cmd.CommandText = cmd.CommandText.Replace(originalParamName, values.GetInClause(default).Await(), StringComparison.OrdinalIgnoreCase);
         return cmd;
     }
 
