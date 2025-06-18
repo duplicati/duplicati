@@ -1157,6 +1157,7 @@ namespace Duplicati.Library.Main.Operation
                 db.FixDuplicateFileentries();
                 db.FixDuplicateBlocklistHashes(m_options.Blocksize, m_options.BlockhashSize);
                 db.FixMissingBlocklistHashes(m_options.BlockHashAlgorithm, m_options.Blocksize);
+                db.FixEmptyMetadatasets(m_options);
             }
         }
     }
