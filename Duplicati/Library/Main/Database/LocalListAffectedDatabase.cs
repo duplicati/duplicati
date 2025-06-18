@@ -25,6 +25,8 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
+using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -40,13 +42,14 @@ namespace Duplicati.Library.Main.Database
         /// <param name="path">The path to the database file.</param>
         /// <param name="pagecachesize">The size of the page cache in bytes.</param>
         /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns a new instance of <see cref="LocalListAffectedDatabase"/>.</returns>
-        public static async Task<LocalListAffectedDatabase> CreateAsync(string path, long pagecachesize, LocalListAffectedDatabase? dbnew = null)
+        public static async Task<LocalListAffectedDatabase> CreateAsync(string path, long pagecachesize, LocalListAffectedDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalListAffectedDatabase();
 
             dbnew = (LocalListAffectedDatabase)
-                await CreateLocalDatabaseAsync(path, "ListAffected", false, pagecachesize, dbnew)
+                await CreateLocalDatabaseAsync(path, "ListAffected", false, pagecachesize, dbnew, token)
                     .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 
@@ -126,11 +129,12 @@ namespace Duplicati.Library.Main.Database
         /// Retrieves the fileset times from the database.
         /// </summary>
         /// <param name="items">The items to filter the filesets by.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of fileset times.</returns>
-        public async IAsyncEnumerable<Interface.IListResultFileset> GetFilesets(IEnumerable<string> items)
+        public async IAsyncEnumerable<Interface.IListResultFileset> GetFilesets(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
         {
-            var filesets = await FilesetTimes()
-                .ToArrayAsync()
+            var filesets = await FilesetTimes(token)
+                .ToArrayAsync(cancellationToken: token)
                 .ConfigureAwait(false);
 
             var dict = new Dictionary<long, long>();
@@ -170,10 +174,18 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
-            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false);
-            await using var cmd = await m_connection.CreateCommand(sql).SetTransaction(m_rtr).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false);
-            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await rd.ReadAsync().ConfigureAwait(false))
+            await using var tmptable = await TemporaryDbValueList
+                .CreateAsync(this, items, token)
+                .ConfigureAwait(false);
+            await using var cmd = await m_connection
+                .CreateCommand(sql)
+                .SetTransaction(m_rtr)
+                .ExpandInClauseParameterMssqliteAsync("@Names", tmptable, token)
+                .ConfigureAwait(false);
+            await using var rd = await cmd
+                .ExecuteReaderAsync(token)
+                .ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 var v = dict[rd.ConvertValueToInt64(0)];
                 yield return new ListResultFileset()
@@ -188,8 +200,9 @@ namespace Duplicati.Library.Main.Database
         /// Retrieves the list of files from the database.
         /// </summary>
         /// <param name="items">The items to filter the files by.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of file results.</returns>
-        public async IAsyncEnumerable<Interface.IListResultFile> GetFiles(IEnumerable<string> items)
+        public async IAsyncEnumerable<Interface.IListResultFile> GetFiles(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
         {
             var sql = $@"
                 SELECT DISTINCT ""Path""
@@ -249,10 +262,17 @@ namespace Duplicati.Library.Main.Database
                 ORDER BY ""Path""
             ";
 
-            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false);
-            await using var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false);
-            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await rd.ReadAsync().ConfigureAwait(false))
+            await using var tmptable = await TemporaryDbValueList
+                .CreateAsync(this, items, token)
+                .ConfigureAwait(false);
+            await using var cmd = await m_connection
+                .CreateCommand(sql)
+                .ExpandInClauseParameterMssqliteAsync("@Names", tmptable, token)
+                .ConfigureAwait(false);
+            await using var rd = await cmd
+                .ExecuteReaderAsync(token)
+                .ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return new ListResultFile()
                 {
                     Path = rd.ConvertValueToString(0) ?? throw new InvalidOperationException("Path is null"),
@@ -265,8 +285,9 @@ namespace Duplicati.Library.Main.Database
         /// The log lines are retrieved from both the LogData and RemoteOperation tables.
         /// </summary>
         /// <param name="items">The items to filter the log lines by.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of log line results.</returns>
-        public async IAsyncEnumerable<Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items)
+        public async IAsyncEnumerable<Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand();
 
@@ -299,8 +320,8 @@ namespace Duplicati.Library.Main.Database
                 foreach ((var x, var i) in items.Select((x, i) => (x, i)))
                     cmd.SetParameterValue($"@Message{i}", "%" + x + "%");
 
-                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-                while (await rd.ReadAsync().ConfigureAwait(false))
+                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new ListResultRemoteLog()
                     {
                         Timestamp = ParseFromEpochSeconds(rd.ConvertValueToInt64(0)),
@@ -314,8 +335,9 @@ namespace Duplicati.Library.Main.Database
         /// This method queries the database for remote volumes associated with filesets and metadata datasets.
         /// </summary>
         /// <param name="items">The names of the remote volumes to filter by.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of remote volume results.</returns>
-        public async IAsyncEnumerable<Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items)
+        public async IAsyncEnumerable<Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
         {
             var sql = $@"
                 SELECT DISTINCT ""Name""
@@ -382,9 +404,13 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
-            await using var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameterMssqlite("@Names", items.ToArray());
-            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await rd.ReadAsync().ConfigureAwait(false))
+            await using var cmd = m_connection
+                .CreateCommand(sql)
+                .ExpandInClauseParameterMssqlite("@Names", items.ToArray());
+            await using var rd = await cmd
+                .ExecuteReaderAsync(token)
+                .ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return new ListResultRemoteVolume()
                 {
                     Name = rd.ConvertValueToString(0) ?? ""
