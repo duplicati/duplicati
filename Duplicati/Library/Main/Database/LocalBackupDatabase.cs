@@ -24,6 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
@@ -158,15 +160,16 @@ namespace Duplicati.Library.Main.Database
         /// <param name="path">The path to the database file.</param>
         /// <param name="options">The Duplicati options used by the current operation.</param>
         /// <param name="dbnew">An optional existing instance of <see cref="LocalBackupDatabase"/> to reuse. Used when derived classes need to call the base constructor.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited contains a new instance of <see cref="LocalBackupDatabase"/>.</returns>
-        public static async Task<LocalBackupDatabase> CreateAsync(string path, Options options, LocalBackupDatabase? dbnew = null)
+        public static async Task<LocalBackupDatabase> CreateAsync(string path, Options options, CancellationToken token, LocalBackupDatabase? dbnew = null)
         {
             dbnew ??= new LocalBackupDatabase();
 
             dbnew = (LocalBackupDatabase)
-                await CreateLocalDatabaseAsync(path, "Backup", false, options.SqlitePageCache, dbnew)
+                await CreateLocalDatabaseAsync(path, "Backup", false, options.SqlitePageCache, dbnew, token)
                 .ConfigureAwait(false);
-            dbnew = await CreateAsync(dbnew, options).ConfigureAwait(false);
+            dbnew = await CreateAsync(dbnew, options, null, token).ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 
             return dbnew;
@@ -179,12 +182,13 @@ namespace Duplicati.Library.Main.Database
         /// <param name="dbparent">The parent local database from which to create the new backup database.</param>
         /// <param name="options">The Duplicati options used by the current operation.</param>
         /// <param name="dbnew">An optional existing instance of <see cref="LocalBackupDatabase"/> to reuse. Used when derived classes need to call the base constructor.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited contains a new instance of <see cref="LocalBackupDatabase"/>.</returns>
-        public static async Task<LocalBackupDatabase> CreateAsync(LocalDatabase dbparent, Options options, LocalBackupDatabase? dbnew = null)
+        public static async Task<LocalBackupDatabase> CreateAsync(LocalDatabase dbparent, Options options, LocalBackupDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalBackupDatabase();
 
-            dbnew = (LocalBackupDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew)
+            dbnew = (LocalBackupDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew, token)
                 .ConfigureAwait(false);
 
             dbnew.m_logQueries = options.ProfileAllDatabaseQueries;
@@ -195,7 +199,7 @@ namespace Duplicati.Library.Main.Database
                 WHERE
                     ""Hash"" = @Hash
                     AND ""Size"" = @Size
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_findblocksetCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -204,7 +208,7 @@ namespace Duplicati.Library.Main.Database
                 WHERE
                     ""Fullhash"" = @Fullhash
                     AND ""Length"" = @Length
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_findmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -218,7 +222,7 @@ namespace Duplicati.Library.Main.Database
                     AND ""B"".""BlockID"" = ""C"".""ID""
                     AND ""C"".""Hash"" = @Hash
                     AND ""C"".""Size"" = @Size
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_findfilesetCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -229,7 +233,7 @@ namespace Duplicati.Library.Main.Database
                     AND ""MetadataID"" = @MetadataId
                     AND ""Path"" = @Path
                     AND ""PrefixID"" = @PrefixId
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_insertblockCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -244,7 +248,7 @@ namespace Duplicati.Library.Main.Database
                     @Size
                 );
                 SELECT last_insert_rowid();
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_insertfileOperationCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -258,7 +262,7 @@ namespace Duplicati.Library.Main.Database
                     @FileId,
                     @LastModified
                 )
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_insertfileCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -275,7 +279,7 @@ namespace Duplicati.Library.Main.Database
                     @MetadataId
                 );
                 SELECT last_insert_rowid();
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_insertblocksetCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -287,7 +291,8 @@ namespace Duplicati.Library.Main.Database
                     @Length,
                     @Fullhash
                 );
-                SELECT last_insert_rowid();")
+                SELECT last_insert_rowid();
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_insertblocksetentryCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -303,7 +308,7 @@ namespace Duplicati.Library.Main.Database
                 FROM ""Block""
                 WHERE ""Hash"" = @Hash
                 AND ""Size"" = @Size
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_insertblocklistHashesCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -317,14 +322,14 @@ namespace Duplicati.Library.Main.Database
                     @Index,
                     @Hash
                 )
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_insertmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"
                 INSERT INTO ""Metadataset"" (""BlocksetID"")
                 VALUES (@BlocksetId);
                 SELECT last_insert_rowid();
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_selectfilelastmodifiedCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -341,7 +346,7 @@ namespace Duplicati.Library.Main.Database
                 WHERE
                     ""A"".""ID"" = ""B"".""FileID""
                     AND ""B"".""FilesetID"" = @FilesetId
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_selectfilelastmodifiedWithSizeCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -371,7 +376,7 @@ namespace Duplicati.Library.Main.Database
                     ) AS ""C"",
                     ""Blockset"" AS ""D""
                 WHERE ""C"".""BlocksetID"" == ""D"".""ID""
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             dbnew.m_selectfilemetadatahashandsizeCommand = await dbnew.Connection.CreateCommandAsync(@"
@@ -386,7 +391,7 @@ namespace Duplicati.Library.Main.Database
                     ""File"".""ID"" = @FileId
                     AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID""
                     AND ""Metadataset"".""ID"" = ""File"".""MetadataID""
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             // Experimental toggling of the deleted block cache
@@ -404,38 +409,38 @@ namespace Duplicati.Library.Main.Database
                 await using var cmd = dbnew.Connection.CreateCommand();
                 dbnew.m_tempDeletedBlockTable = "DeletedBlock-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 await cmd.SetCommandAndParameters($@"
-                        CREATE TEMPORARY TABLE ""{dbnew.m_tempDeletedBlockTable}"" AS
-                        SELECT
-                            MAX(""ID"") AS ""ID"",
-                            ""Hash"",
-                            ""Size""
-                        FROM ""DeletedBlock""
-                        WHERE ""VolumeID"" IN (
-                            SELECT ""ID""
-                            FROM ""RemoteVolume""
-                            WHERE ""State"" NOT IN (@States)
-                        )
-                        GROUP BY
-                            ""Hash"",
-                            ""Size""
-                    ")
+                    CREATE TEMPORARY TABLE ""{dbnew.m_tempDeletedBlockTable}"" AS
+                    SELECT
+                        MAX(""ID"") AS ""ID"",
+                        ""Hash"",
+                        ""Size""
+                    FROM ""DeletedBlock""
+                    WHERE ""VolumeID"" IN (
+                        SELECT ""ID""
+                        FROM ""RemoteVolume""
+                        WHERE ""State"" NOT IN (@States)
+                    )
+                    GROUP BY
+                        ""Hash"",
+                        ""Size""
+                ")
                     .ExpandInClauseParameterMssqlite("@States", [
                         RemoteVolumeState.Deleted,
                             RemoteVolumeState.Deleting
                     ])
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
 
                 var deletedBlocks = await cmd.ExecuteScalarInt64Async(@$"
                         SELECT COUNT(*)
                         FROM ""{dbnew.m_tempDeletedBlockTable}""
-                    ", 0)
+                    ", 0, token)
                     .ConfigureAwait(false);
 
                 // There are no deleted blocks, so we can drop the table
                 if (deletedBlocks == 0)
                 {
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{dbnew.m_tempDeletedBlockTable}""")
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{dbnew.m_tempDeletedBlockTable}""", token)
                         .ConfigureAwait(false);
                     dbnew.m_tempDeletedBlockTable = null;
 
@@ -453,8 +458,8 @@ namespace Duplicati.Library.Main.Database
                         ")
                         .ConfigureAwait(false);
 
-                    await using (var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
-                        while (await reader.ReadAsync().ConfigureAwait(false))
+                    await using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+                        while (await reader.ReadAsync(token).ConfigureAwait(false))
                         {
                             var id = reader.ConvertValueToInt64(0);
                             var hash = reader.ConvertValueToString(1) ?? throw new Exception("Hash is null");
@@ -465,7 +470,7 @@ namespace Duplicati.Library.Main.Database
                             sizes[size] = id;
                         }
 
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{dbnew.m_tempDeletedBlockTable}""")
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{dbnew.m_tempDeletedBlockTable}""", token)
                         .ConfigureAwait(false);
                     dbnew.m_tempDeletedBlockTable = null;
                 }
@@ -473,44 +478,44 @@ namespace Duplicati.Library.Main.Database
                 else
                 {
                     await cmd.ExecuteNonQueryAsync($@"
-                            CREATE UNIQUE INDEX ""unique_{dbnew.m_tempDeletedBlockTable}""
-                            ON ""{dbnew.m_tempDeletedBlockTable}"" (
-                                ""Hash"",
-                                ""Size""
-                            )
-                        ")
+                        CREATE UNIQUE INDEX ""unique_{dbnew.m_tempDeletedBlockTable}""
+                        ON ""{dbnew.m_tempDeletedBlockTable}"" (
+                            ""Hash"",
+                            ""Size""
+                        )
+                    ", token)
                         .ConfigureAwait(false);
 
                     dbnew.m_findindeletedCommand = await dbnew.Connection.CreateCommandAsync($@"
-                            SELECT ""ID""
-                            FROM ""{dbnew.m_tempDeletedBlockTable}""
-                            WHERE
-                                ""Hash"" = @Hash
-                                AND ""Size"" = @Size
-                        ")
+                        SELECT ""ID""
+                        FROM ""{dbnew.m_tempDeletedBlockTable}""
+                        WHERE
+                            ""Hash"" = @Hash
+                            AND ""Size"" = @Size
+                    ", token)
                         .ConfigureAwait(false);
 
                     dbnew.m_moveblockfromdeletedCommand = await dbnew.Connection.CreateCommandAsync(@$"
-                            INSERT INTO ""Block"" (
-                                ""Hash"",
-                                ""Size"",
-                                ""VolumeID""
-                            )
-                            SELECT
-                                ""Hash"",
-                                ""Size"",
-                                ""VolumeID""
-                            FROM ""DeletedBlock""
-                            WHERE ""ID"" = @DeletedBlockId LIMIT 1;
+                        INSERT INTO ""Block"" (
+                            ""Hash"",
+                            ""Size"",
+                            ""VolumeID""
+                        )
+                        SELECT
+                            ""Hash"",
+                            ""Size"",
+                            ""VolumeID""
+                        FROM ""DeletedBlock""
+                        WHERE ""ID"" = @DeletedBlockId LIMIT 1;
 
-                            DELETE FROM ""DeletedBlock""
-                            WHERE ""ID"" = @DeletedBlockId;
+                        DELETE FROM ""DeletedBlock""
+                        WHERE ""ID"" = @DeletedBlockId;
 
-                            DELETE FROM ""{dbnew.m_tempDeletedBlockTable}""
-                            WHERE ""ID"" = @DeletedBlockId;
+                        DELETE FROM ""{dbnew.m_tempDeletedBlockTable}""
+                        WHERE ""ID"" = @DeletedBlockId;
 
-                            SELECT last_insert_rowid()
-                        ")
+                        SELECT last_insert_rowid()
+                    ", token)
                         .ConfigureAwait(false);
 
                 }
@@ -518,23 +523,23 @@ namespace Duplicati.Library.Main.Database
                 if (deletedBlocks > 0)
                 {
                     dbnew.m_moveblockfromdeletedCommand = await dbnew.m_connection.CreateCommandAsync(@$"
-                            INSERT INTO ""Block"" (
-                                ""Hash"",
-                                ""Size"",
-                                ""VolumeID""
-                            )
-                            SELECT
-                                ""Hash"",
-                                ""Size"",
-                                ""VolumeID""
-                            FROM ""DeletedBlock""
-                            WHERE ""ID"" = @DeletedBlockId LIMIT 1;
+                        INSERT INTO ""Block"" (
+                            ""Hash"",
+                            ""Size"",
+                            ""VolumeID""
+                        )
+                        SELECT
+                            ""Hash"",
+                            ""Size"",
+                            ""VolumeID""
+                        FROM ""DeletedBlock""
+                        WHERE ""ID"" = @DeletedBlockId LIMIT 1;
 
-                            DELETE FROM ""DeletedBlock""
-                            WHERE ""ID"" = @DeletedBlockId;
+                        DELETE FROM ""DeletedBlock""
+                        WHERE ""ID"" = @DeletedBlockId;
 
-                            SELECT last_insert_rowid()
-                        ")
+                        SELECT last_insert_rowid()
+                    ", token)
                         .ConfigureAwait(false);
                 }
             }
@@ -729,14 +734,15 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="key">The block key.</param>
         /// <param name="size">The size of the block.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited contains true if the block should be added to the current output.</returns>
-        public async Task<long> FindBlockID(string key, long size)
+        public async Task<long> FindBlockID(string key, long size, CancellationToken token)
         {
             return await m_findblockCommand
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Hash", key)
                 .SetParameterValue("@Size", size)
-                .ExecuteScalarInt64Async(m_logQueries, -1)
+                .ExecuteScalarInt64Async(m_logQueries, -1, token)
                 .ConfigureAwait(false);
         }
 
@@ -746,10 +752,11 @@ namespace Duplicati.Library.Main.Database
         /// <param name="key">The block key.</param>
         /// <param name="size">The size of the block.</param>
         /// <param name="volumeid">The ID of the volume to which the block belongs.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
         /// <returns>A taskt that when awaited contains true if the block should be added to the current output.</returns>
-        public async Task<bool> AddBlock(string key, long size, long volumeid)
+        public async Task<bool> AddBlock(string key, long size, long volumeid, CancellationToken token)
         {
-            var r = await FindBlockID(key, size).ConfigureAwait(false);
+            var r = await FindBlockID(key, size, token).ConfigureAwait(false);
             if (r == -1L)
             {
                 if (m_moveblockfromdeletedCommand != null)
@@ -762,7 +769,7 @@ namespace Duplicati.Library.Main.Database
                                 await m_moveblockfromdeletedCommand
                                     .SetTransaction(m_rtr)
                                     .SetParameterValue("@DeletedBlockId", id)
-                                    .ExecuteNonQueryAsync(m_logQueries)
+                                    .ExecuteNonQueryAsync(m_logQueries, token)
                                     .ConfigureAwait(false);
 
                                 sizes.Remove(size);
@@ -778,7 +785,7 @@ namespace Duplicati.Library.Main.Database
                             .SetTransaction(m_rtr)
                             .SetParameterValue("@Hash", key)
                             .SetParameterValue("@Size", size)
-                            .ExecuteScalarInt64Async(m_logQueries, -1)
+                            .ExecuteScalarInt64Async(m_logQueries, -1, token)
                             .ConfigureAwait(false);
 
                         if (id != -1)
@@ -786,7 +793,7 @@ namespace Duplicati.Library.Main.Database
                             var c = await m_moveblockfromdeletedCommand
                                 .SetTransaction(m_rtr)
                                 .SetParameterValue("@DeletedBlockId", id)
-                                .ExecuteNonQueryAsync(m_logQueries)
+                                .ExecuteNonQueryAsync(m_logQueries, token)
                                 .ConfigureAwait(false);
 
                             if (c != 2)
@@ -803,7 +810,7 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Hash", key)
                     .SetParameterValue("@VolumeId", volumeid)
                     .SetParameterValue("@Size", size)
-                    .ExecuteNonQueryAsync(m_logQueries)
+                    .ExecuteNonQueryAsync(m_logQueries, token)
                     .ConfigureAwait(false);
 
                 if (ins != 1)
@@ -827,14 +834,15 @@ namespace Duplicati.Library.Main.Database
         /// <param name="blocksize">The size of the blocks in the blockset.</param>
         /// <param name="hashes">The list of hashes.</param>
         /// <param name="blocklistHashes">The list of hashes for the blocklist, or null if no blocklist is used.</param>
+        /// <param name="token"> The cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited contains a tuple with the first value indicating whether the blockset was created, and the second value being the blockset ID.</returns>
-        public async Task<(bool, long)> AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes)
+        public async Task<(bool, long)> AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes, CancellationToken token)
         {
             long blocksetid = await m_findblocksetCommand
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Fullhash", filehash)
                 .SetParameterValue("@Length", size)
-                .ExecuteScalarInt64Async(m_logQueries, -1)
+                .ExecuteScalarInt64Async(m_logQueries, -1, token)
                 .ConfigureAwait(false);
 
             if (blocksetid != -1)
@@ -844,7 +852,7 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Length", size)
                 .SetParameterValue("@Fullhash", filehash)
-                .ExecuteScalarInt64Async(m_logQueries)
+                .ExecuteScalarInt64Async(m_logQueries, token)
                 .ConfigureAwait(false);
 
             long ix = 0;
@@ -859,7 +867,7 @@ namespace Duplicati.Library.Main.Database
                     var c = await m_insertblocklistHashesCommand
                         .SetParameterValue("@Index", ix)
                         .SetParameterValue("@Hash", bh)
-                        .ExecuteNonQueryAsync(m_logQueries)
+                        .ExecuteNonQueryAsync(m_logQueries, token)
                         .ConfigureAwait(false);
 
                     if (c != 1)
@@ -882,7 +890,7 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Index", ix)
                     .SetParameterValue("@Hash", h)
                     .SetParameterValue("@Size", exsize)
-                    .ExecuteNonQueryAsync(m_logQueries)
+                    .ExecuteNonQueryAsync(m_logQueries, token)
                     .ConfigureAwait(false);
 
                 if (c != 1)
@@ -896,7 +904,7 @@ namespace Duplicati.Library.Main.Database
                             WHERE ""Hash"" = @Hash
                         ")
                             .SetParameterValue("@Hash", h)
-                            .ExecuteScalarInt64Async(-1)
+                            .ExecuteScalarInt64Async(-1, token)
                             .ConfigureAwait(false);
 
                         if (bid == -1)
@@ -909,7 +917,7 @@ namespace Duplicati.Library.Main.Database
                         ")
                             .SetParameterValue("@Hash", h);
 
-                        await foreach (var rd in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))
+                        await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
                             Logging.Log.WriteErrorMessage(LOGTAG, "FoundIssue1400Error", null, "Found block with ID {0} and hash {1} and size {2}", bid, h, rd.ConvertValueToInt64(0, -1));
                     }
 
@@ -920,7 +928,7 @@ namespace Duplicati.Library.Main.Database
                 remainsize -= blocksize;
             }
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
 
             return (true, blocksetid);
         }
@@ -930,8 +938,9 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="filehash">The metadata hash.</param>
         /// <param name="size">The size of the metadata.</param>
+        /// <param name="token"> The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a tuple with the first value indicating if the metadataset was found, and the second value being the metadataset ID.</returns>
-        public async Task<(bool, long)> GetMetadatasetID(string filehash, long size)
+        public async Task<(bool, long)> GetMetadatasetID(string filehash, long size, CancellationToken token)
         {
             long metadataid;
 
@@ -941,7 +950,7 @@ namespace Duplicati.Library.Main.Database
                     .SetTransaction(m_rtr)
                     .SetParameterValue("@Hash", filehash)
                     .SetParameterValue("@Size", size)
-                    .ExecuteScalarInt64Async(m_logQueries, -1)
+                    .ExecuteScalarInt64Async(m_logQueries, -1, token)
                     .ConfigureAwait(false);
 
                 return (metadataid != -1, metadataid);
@@ -957,10 +966,11 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filehash">The metadata hash.</param>
         /// <param name="size">The size of the metadata.</param>
         /// <param name="blocksetid">The id of the blockset to add.</param>
+        /// <param name="token"> The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a tuple with the first value indicating if the metadata set was added, and the second value being the metadata ID.</returns>
-        public async Task<(bool, long)> AddMetadataset(string filehash, long size, long blocksetid)
+        public async Task<(bool, long)> AddMetadataset(string filehash, long size, long blocksetid, CancellationToken token)
         {
-            var (metadatafound, metadataid) = await GetMetadatasetID(filehash, size)
+            var (metadatafound, metadataid) = await GetMetadatasetID(filehash, size, token)
                 .ConfigureAwait(false);
             if (metadatafound)
                 return (false, metadataid);
@@ -968,10 +978,10 @@ namespace Duplicati.Library.Main.Database
             metadataid = await m_insertmetadatasetCommand
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@BlocksetId", blocksetid)
-                .ExecuteScalarInt64Async(m_logQueries)
+                .ExecuteScalarInt64Async(m_logQueries, token)
                 .ConfigureAwait(false);
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
 
             return (true, metadataid);
         }
@@ -984,8 +994,9 @@ namespace Duplicati.Library.Main.Database
         /// <param name="lastmodified">The time the file was modified.</param>
         /// <param name="blocksetID">The ID of the hashkey for the file.</param>
         /// <param name="metadataID">The ID for the metadata.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the file is added.</returns>
-        public async Task AddFile(long pathprefixid, string filename, DateTime lastmodified, long blocksetID, long metadataID)
+        public async Task AddFile(long pathprefixid, string filename, DateTime lastmodified, long blocksetID, long metadataID, CancellationToken token)
         {
             var fileidobj = await m_findfilesetCommand
                 .SetTransaction(m_rtr)
@@ -993,7 +1004,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@MetadataId", metadataID)
                 .SetParameterValue("@Path", filename)
                 .SetParameterValue("@PrefixId", pathprefixid)
-                .ExecuteScalarInt64Async(m_logQueries)
+                .ExecuteScalarInt64Async(m_logQueries, token)
                 .ConfigureAwait(false);
 
             if (fileidobj == -1)
@@ -1003,13 +1014,13 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Path", filename)
                     .SetParameterValue("@BlocksetId", blocksetID)
                     .SetParameterValue("@MetadataId", metadataID)
-                    .ExecuteScalarInt64Async(m_logQueries)
+                    .ExecuteScalarInt64Async(m_logQueries, token)
                     .ConfigureAwait(false);
 
-                await m_rtr.CommitAsync().ConfigureAwait(false);
+                await m_rtr.CommitAsync(token).ConfigureAwait(false);
             }
 
-            await AddKnownFile(fileidobj, lastmodified).ConfigureAwait(false);
+            await AddKnownFile(fileidobj, lastmodified, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1019,17 +1030,19 @@ namespace Duplicati.Library.Main.Database
         /// <param name="lastmodified">The time the file was modified.</param>
         /// <param name="blocksetID">The ID of the hashkey for the file.</param>
         /// <param name="metadataID">The ID for the metadata.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the file is added.</returns>
-        public async Task AddFile(string filename, DateTime lastmodified, long blocksetID, long metadataID)
+        public async Task AddFile(string filename, DateTime lastmodified, long blocksetID, long metadataID, CancellationToken token)
         {
             var split = SplitIntoPrefixAndName(filename);
 
             await AddFile(
-                await GetOrCreatePathPrefix(split.Key).ConfigureAwait(false),
+                await GetOrCreatePathPrefix(split.Key, token).ConfigureAwait(false),
                 split.Value,
                 lastmodified,
                 blocksetID,
-                metadataID
+                metadataID,
+                token
             )
                 .ConfigureAwait(false);
         }
@@ -1039,15 +1052,16 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="fileid">Id of the file.</param>
         /// <param name="lastmodified">The time the file was modified.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the file is added.</returns>
-        public async Task AddKnownFile(long fileid, DateTime lastmodified)
+        public async Task AddKnownFile(long fileid, DateTime lastmodified, CancellationToken token)
         {
             await m_insertfileOperationCommand
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", m_filesetId)
                 .SetParameterValue("@FileId", fileid)
                 .SetParameterValue("@LastModified", lastmodified.ToUniversalTime().Ticks)
-                .ExecuteNonQueryAsync(m_logQueries)
+                .ExecuteNonQueryAsync(m_logQueries, token)
                 .ConfigureAwait(false);
         }
 
@@ -1057,10 +1071,11 @@ namespace Duplicati.Library.Main.Database
         /// <param name="path">The path to the directory.</param>
         /// <param name="metadataID">The ID for the metadata.</param>
         /// <param name="lastmodified">The time the directory was modified.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the directory entry is added.</returns>
-        public async Task AddDirectoryEntry(string path, long metadataID, DateTime lastmodified)
+        public async Task AddDirectoryEntry(string path, long metadataID, DateTime lastmodified, CancellationToken token)
         {
-            await AddFile(path, lastmodified, FOLDER_BLOCKSET_ID, metadataID)
+            await AddFile(path, lastmodified, FOLDER_BLOCKSET_ID, metadataID, token)
                 .ConfigureAwait(false);
         }
 
@@ -1070,10 +1085,11 @@ namespace Duplicati.Library.Main.Database
         /// <param name="path">The path to the symlink.</param>
         /// <param name="metadataID">The ID for the metadata.</param>
         /// <param name="lastmodified">The time the symlink was modified.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the symlink entry is added.</returns>
-        public async Task AddSymlinkEntry(string path, long metadataID, DateTime lastmodified)
+        public async Task AddSymlinkEntry(string path, long metadataID, DateTime lastmodified, CancellationToken token)
         {
-            await AddFile(path, lastmodified, SYMLINK_BLOCKSET_ID, metadataID)
+            await AddFile(path, lastmodified, SYMLINK_BLOCKSET_ID, metadataID, token)
                 .ConfigureAwait(false);
         }
 
@@ -1084,8 +1100,9 @@ namespace Duplicati.Library.Main.Database
         /// <param name="path">The path to the file.</param>
         /// <param name="filesetid">The ID of the fileset.</param>
         /// <param name="includeLength">Whether to include the file length in the result.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited contains a tuple with the file ID, last modified time, and file length.</returns>
-        public async Task<(long, DateTime, long)> GetFileLastModified(long prefixid, string path, long filesetid, bool includeLength)
+        public async Task<(long, DateTime, long)> GetFileLastModified(long prefixid, string path, long filesetid, bool includeLength, CancellationToken token)
         {
             DateTime oldModified;
             long length;
@@ -1097,8 +1114,8 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Path", path)
                     .SetParameterValue("@FilesetId", filesetid);
 
-                await using var rd = await m_selectfilelastmodifiedWithSizeCommand.ExecuteReaderAsync(m_logQueries, null).ConfigureAwait(false);
-                if (await rd.ReadAsync().ConfigureAwait(false))
+                await using var rd = await m_selectfilelastmodifiedWithSizeCommand.ExecuteReaderAsync(m_logQueries, token).ConfigureAwait(false);
+                if (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
                     length = rd.ConvertValueToInt64(2);
@@ -1112,8 +1129,8 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Path", path)
                     .SetParameterValue("@FilesetId", filesetid);
 
-                await using var rd = await m_selectfilelastmodifiedCommand.ExecuteReaderAsync(m_logQueries).ConfigureAwait(false);
-                if (await rd.ReadAsync().ConfigureAwait(false))
+                await using var rd = await m_selectfilelastmodifiedCommand.ExecuteReaderAsync(m_logQueries, token).ConfigureAwait(false);
+                if (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     length = -1;
                     oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
@@ -1198,13 +1215,14 @@ namespace Duplicati.Library.Main.Database
         /// Gets the hash of a file.
         /// </summary>
         /// <param name="fileid">The ID of the file.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited contains the hash of the file, or null if the file does not exist.</returns>
-        public async Task<string?> GetFileHash(long fileid)
+        public async Task<string?> GetFileHash(long fileid, CancellationToken token)
         {
             var r = await m_selectfileHashCommand
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@FileId", fileid)
-                .ExecuteScalarAsync(m_logQueries, null)
+                .ExecuteScalarAsync(m_logQueries, token)
                 .ConfigureAwait(false);
 
             if (r == null || r == DBNull.Value)
@@ -1224,7 +1242,7 @@ namespace Duplicati.Library.Main.Database
                 try
                 {
                     await using (var cmd = m_connection.CreateCommand(m_rtr))
-                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{m_tempDeletedBlockTable}""")
+                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{m_tempDeletedBlockTable}""", default)
                             .ConfigureAwait(false);
                     await m_rtr.CommitAsync().ConfigureAwait(false);
                 }
@@ -1239,8 +1257,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Gets the size of the last written DBlock volume.
         /// </summary>
+        /// <param name="token"> The cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited contains the size of the last written DBlock volume, or -1 if no such volume exists.</returns>
-        public async Task<long> GetLastWrittenDBlockVolumeSize()
+        public async Task<long> GetLastWrittenDBlockVolumeSize(CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             return await cmd.SetCommandAndParameters(@"
@@ -1254,7 +1273,7 @@ namespace Duplicati.Library.Main.Database
                 ")
                 .SetParameterValue("@State", RemoteVolumeState.Uploaded.ToString())
                 .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
-                .ExecuteScalarInt64Async(-1)
+                .ExecuteScalarInt64Async(-1, token)
                 .ConfigureAwait(false);
         }
 
@@ -1262,10 +1281,11 @@ namespace Duplicati.Library.Main.Database
         /// Gets the ID of the previous fileset based on the operation timestamp and current fileset ID.
         /// </summary>
         /// <param name="cmd">The command to use for the query.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains the ID of the previous fileset, or -1 if no such fileset exists.</returns>
-        private async Task<long> GetPreviousFilesetID(SqliteCommand cmd)
+        private async Task<long> GetPreviousFilesetID(SqliteCommand cmd, CancellationToken token)
         {
-            return await GetPreviousFilesetID(cmd, OperationTimestamp, m_filesetId)
+            return await GetPreviousFilesetID(cmd, OperationTimestamp, m_filesetId, token)
                 .ConfigureAwait(false);
         }
 
@@ -1275,8 +1295,9 @@ namespace Duplicati.Library.Main.Database
         /// <param name="cmd">The command to use for the query.</param>
         /// <param name="timestamp">The timestamp to use for the query.</param>
         /// <param name="filesetid">The current fileset ID.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains the ID of the previous fileset, or -1 if no such fileset exists.</returns>
-        private async Task<long> GetPreviousFilesetID(SqliteCommand cmd, DateTime timestamp, long filesetid)
+        private async Task<long> GetPreviousFilesetID(SqliteCommand cmd, DateTime timestamp, long filesetid, CancellationToken token)
         {
             return await cmd
                 .SetTransaction(m_rtr)
@@ -1290,41 +1311,42 @@ namespace Duplicati.Library.Main.Database
                 ")
                 .SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(timestamp))
                 .SetParameterValue("@FilesetId", filesetid)
-                .ExecuteScalarInt64Async(-1)
+                .ExecuteScalarInt64Async(-1, token)
                 .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Gets the count and size of files in the last backup fileset.
         /// </summary>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a tuple with the count of files and the total size of files in the last backup fileset.</returns>
-        internal async Task<Tuple<long, long>> GetLastBackupFileCountAndSize()
+        internal async Task<Tuple<long, long>> GetLastBackupFileCountAndSize(CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var lastFilesetId = await cmd.ExecuteScalarInt64Async(@"
-                    SELECT ""ID""
-                    FROM ""Fileset""
-                    ORDER BY ""Timestamp"" DESC
-                    LIMIT 1
-                ")
+                SELECT ""ID""
+                FROM ""Fileset""
+                ORDER BY ""Timestamp"" DESC
+                LIMIT 1
+            ", token)
                 .ConfigureAwait(false);
 
             var count = await cmd.SetCommandAndParameters(@"
-                    SELECT COUNT(*)
-                    FROM ""FileLookup""
-                    INNER JOIN ""FilesetEntry""
-                        ON ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID""
-                    WHERE
-                        ""FilesetEntry"".""FilesetID"" = @FilesetId
-                        AND ""FileLookup"".""BlocksetID"" NOT IN (
-                            @FolderBlocksetId,
-                            @SymlinkBlocksetId
-                        )
-                    ")
+                SELECT COUNT(*)
+                FROM ""FileLookup""
+                INNER JOIN ""FilesetEntry""
+                    ON ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID""
+                WHERE
+                    ""FilesetEntry"".""FilesetID"" = @FilesetId
+                    AND ""FileLookup"".""BlocksetID"" NOT IN (
+                        @FolderBlocksetId,
+                        @SymlinkBlocksetId
+                    )
+            ")
                 .SetParameterValue("@FilesetId", lastFilesetId)
                 .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
                 .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-                .ExecuteScalarInt64Async(-1)
+                .ExecuteScalarInt64Async(-1, token)
                 .ConfigureAwait(false);
 
             var size = await cmd.SetCommandAndParameters(@"
@@ -1345,7 +1367,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@FilesetId", lastFilesetId)
                 .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
                 .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-                .ExecuteScalarInt64Async(-1)
+                .ExecuteScalarInt64Async(-1, token)
                 .ConfigureAwait(false);
 
             return new Tuple<long, long>(count, size);
@@ -1355,13 +1377,14 @@ namespace Duplicati.Library.Main.Database
         /// Updates the change statistics for the current fileset based on the results of a backup operation.
         /// </summary>
         /// <param name="results">The results of the backup operation.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the change statistics are updated.</returns>
-        internal async Task UpdateChangeStatistics(BackupResults results)
+        internal async Task UpdateChangeStatistics(BackupResults results, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
-            var prevFileSetId = await GetPreviousFilesetID(cmd)
+            var prevFileSetId = await GetPreviousFilesetID(cmd, token)
                 .ConfigureAwait(false);
-            await ChangeStatistics.UpdateChangeStatistics(cmd, results, m_filesetId, prevFileSetId)
+            await ChangeStatistics.UpdateChangeStatistics(cmd, results, m_filesetId, prevFileSetId, token)
                 .ConfigureAwait(false);
         }
 
@@ -1369,11 +1392,12 @@ namespace Duplicati.Library.Main.Database
         /// Populates FilesetEntry table with files from previous fileset, which aren't
         /// yet part of the new fileset, and which aren't on the (optional) list of <c>deleted</c> paths.
         /// </summary>
-        /// <param name="deleted">List of deleted paths, or null.</param>
+        /// <param name="deleted">List of deleted paths, or null.</param>"
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the files are appended.</returns>
-        public async Task AppendFilesFromPreviousSet(IEnumerable<string>? deleted = null)
+        public async Task AppendFilesFromPreviousSet(IEnumerable<string>? deleted, CancellationToken token)
         {
-            await AppendFilesFromPreviousSet(deleted, m_filesetId, -1, OperationTimestamp)
+            await AppendFilesFromPreviousSet(deleted, m_filesetId, -1, OperationTimestamp, token)
                 .ConfigureAwait(false);
         }
 
@@ -1385,13 +1409,14 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filesetid">Current file-set ID.</param>
         /// <param name="prevId">Source file-set ID.</param>
         /// <param name="timestamp">If <c>filesetid</c> == -1, used to locate previous file-set.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the files are appended.</returns>
-        public async Task AppendFilesFromPreviousSet(IEnumerable<string>? deleted, long filesetid, long prevId, DateTime timestamp)
+        public async Task AppendFilesFromPreviousSet(IEnumerable<string>? deleted, long filesetid, long prevId, DateTime timestamp, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand();
             await using var cmdDelete = m_connection.CreateCommand();
             long lastFilesetId = prevId < 0 ?
-                await GetPreviousFilesetID(cmd, timestamp, filesetid)
+                await GetPreviousFilesetID(cmd, timestamp, filesetid, token)
                     .ConfigureAwait(false)
                 :
                 prevId;
@@ -1424,13 +1449,13 @@ namespace Duplicati.Library.Main.Database
                     ")
                 .SetParameterValue("@CurrentFilesetId", filesetid)
                 .SetParameterValue("@PreviousFilesetId", lastFilesetId)
-                .ExecuteNonQueryAsync(m_logQueries)
+                .ExecuteNonQueryAsync(m_logQueries, token)
                 .ConfigureAwait(false);
 
             if (deleted != null)
             {
                 await using var tmplist = await TemporaryDbValueList
-                    .CreateAsync(this, deleted)
+                    .CreateAsync(this, deleted, token)
                     .ConfigureAwait(false);
 
                 await (
@@ -1446,14 +1471,14 @@ namespace Duplicati.Library.Main.Database
                                     )
                             ")
                         .SetParameterValue("@FilesetId", filesetid)
-                        .ExpandInClauseParameterMssqliteAsync("@Paths", tmplist)
+                        .ExpandInClauseParameterMssqliteAsync("@Paths", tmplist, token)
                         .ConfigureAwait(false)
                 )
-                    .ExecuteNonQueryAsync(m_logQueries)
+                    .ExecuteNonQueryAsync(m_logQueries, token)
                     .ConfigureAwait(false);
             }
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1462,10 +1487,11 @@ namespace Duplicati.Library.Main.Database
         /// predicate.
         /// </summary>
         /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file).</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the files are appended.</returns>
-        public async Task AppendFilesFromPreviousSetWithPredicate(Func<string, long, bool> exclusionPredicate)
+        public async Task AppendFilesFromPreviousSetWithPredicate(Func<string, long, bool> exclusionPredicate, CancellationToken token)
         {
-            await AppendFilesFromPreviousSetWithPredicate(exclusionPredicate, m_filesetId, -1, OperationTimestamp)
+            await AppendFilesFromPreviousSetWithPredicate(exclusionPredicate, m_filesetId, -1, OperationTimestamp, token)
                 .ConfigureAwait(false);
         }
 
@@ -1478,12 +1504,13 @@ namespace Duplicati.Library.Main.Database
         /// <param name="fileSetId">Current fileset ID</param>
         /// <param name="prevFileSetId">Source fileset ID</param>
         /// <param name="timestamp">If <c>prevFileSetId</c> == -1, used to locate previous fileset</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the files are appended.</returns>
-        public async Task AppendFilesFromPreviousSetWithPredicate(Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
+        public async Task AppendFilesFromPreviousSetWithPredicate(Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp, CancellationToken token)
         {
             if (exclusionPredicate == null)
             {
-                await AppendFilesFromPreviousSet(null, fileSetId, prevFileSetId, timestamp)
+                await AppendFilesFromPreviousSet(null, fileSetId, prevFileSetId, timestamp, token)
                     .ConfigureAwait(false);
                 return;
             }
@@ -1491,7 +1518,7 @@ namespace Duplicati.Library.Main.Database
             await using var cmd = m_connection.CreateCommand();
             await using var cmdDelete = m_connection.CreateCommand();
             long lastFilesetId = prevFileSetId < 0 ?
-                await GetPreviousFilesetID(cmd, timestamp, fileSetId)
+                await GetPreviousFilesetID(cmd, timestamp, fileSetId, token)
                     .ConfigureAwait(false)
                 :
                 prevFileSetId;
@@ -1522,7 +1549,7 @@ namespace Duplicati.Library.Main.Database
                     ")
                 .SetParameterValue("@PreviousFilesetId", lastFilesetId)
                 .SetParameterValue("@CurrentFilesetId", fileSetId)
-                .ExecuteNonQueryAsync()
+                .ExecuteNonQueryAsync(token)
                 .ConfigureAwait(false);
 
             // now we need to remove, from the above, any entries that were enumerated by the
@@ -1552,14 +1579,14 @@ namespace Duplicati.Library.Main.Database
                         ON ""f"".""BlocksetID"" = ""bs"".""ID"";
                 ");
 
-            await foreach (var row in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))
+            await foreach (var row in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
             {
                 var path = row.ConvertValueToString(0) ?? throw new Exception("Unexpected null value for path");
                 var size = row.ConvertValueToInt64(3);
 
                 if (exclusionPredicate(path, size))
                     await cmdDelete.SetParameterValue("@FileId", row.ConvertValueToInt64(1))
-                        .ExecuteNonQueryAsync()
+                        .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
             }
 
@@ -1577,10 +1604,10 @@ namespace Duplicati.Library.Main.Database
                     FROM ""{tempFileSetTable}""
                 ")
                 .SetParameterValue("@FilesetId", fileSetId)
-                .ExecuteNonQueryAsync()
+                .ExecuteNonQueryAsync(token)
                 .ConfigureAwait(false);
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1588,10 +1615,11 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="volumeid">The ID of the fileset volume to update.</param>
         /// <param name="timestamp">The timestamp of the operation to create.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains the ID of the created fileset.</returns>
-        public override async Task<long> CreateFileset(long volumeid, DateTime timestamp)
+        public override async Task<long> CreateFileset(long volumeid, DateTime timestamp, CancellationToken token)
         {
-            return m_filesetId = await base.CreateFileset(volumeid, timestamp)
+            return m_filesetId = await base.CreateFileset(volumeid, timestamp, token)
                 .ConfigureAwait(false);
         }
 
@@ -1599,24 +1627,25 @@ namespace Duplicati.Library.Main.Database
         /// Retrieves the names of temporary fileset volumes that are incomplete.
         /// </summary>
         /// <param name="latestOnly">If true, only the latest incomplete fileset volume will be returned.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a list of volume names.</returns>
-        public async Task<IEnumerable<string>> GetTemporaryFilelistVolumeNames(bool latestOnly)
+        public async Task<IEnumerable<string>> GetTemporaryFilelistVolumeNames(bool latestOnly, CancellationToken token)
         {
-            var incompleteFilesetIDs = GetIncompleteFilesets().OrderBy(x => x.Value).Select(x => x.Key);
+            var incompleteFilesetIDs = GetIncompleteFilesets(token).OrderBy(x => x.Value).Select(x => x.Key);
 
-            if (!await incompleteFilesetIDs.AnyAsync().ConfigureAwait(false))
+            if (!await incompleteFilesetIDs.AnyAsync(token).ConfigureAwait(false))
                 return [];
 
             if (latestOnly)
                 incompleteFilesetIDs = new long[] {
-                    await incompleteFilesetIDs.LastAsync().ConfigureAwait(false)
+                    await incompleteFilesetIDs.LastAsync(token).ConfigureAwait(false)
                 }
                     .ToAsyncEnumerable();
 
             var volumeNames = new List<string>();
             await foreach (var filesetID in incompleteFilesetIDs.ConfigureAwait(false))
                 volumeNames.Add((
-                    await GetRemoteVolumeFromFilesetID(filesetID)
+                    await GetRemoteVolumeFromFilesetID(filesetID, token)
                         .ConfigureAwait(false)
                 ).Name);
 
@@ -1687,11 +1716,12 @@ namespace Duplicati.Library.Main.Database
         /// If it does, an exception is thrown; otherwise, the volume is removed.
         /// </summary>
         /// <param name="name">The name of the remote volume to delete.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the remote volume is safely deleted.</returns>
         /// <exception cref="Exception">Thrown if the volume has associated blocks.</exception>
-        public async Task SafeDeleteRemoteVolume(string name)
+        public async Task SafeDeleteRemoteVolume(string name, CancellationToken token)
         {
-            var volumeid = await GetRemoteVolumeID(name).ConfigureAwait(false);
+            var volumeid = await GetRemoteVolumeID(name, token).ConfigureAwait(false);
 
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var c = await cmd.SetCommandAndParameters(@"
@@ -1700,23 +1730,24 @@ namespace Duplicati.Library.Main.Database
                     WHERE ""VolumeID"" = @VolumeId
                 ")
                 .SetParameterValue("@VolumeId", volumeid)
-                .ExecuteScalarInt64Async(-1)
+                .ExecuteScalarInt64Async(-1, token)
                 .ConfigureAwait(false);
 
             if (c != 0)
                 throw new Exception($"Failed to safe-delete volume {name}, blocks: {c}");
 
-            await RemoveRemoteVolume(name).ConfigureAwait(false);
+            await RemoveRemoteVolume(name, token).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Retrieves the hashes of blocks that are on the blocklist for a given volume.
         /// </summary>
         /// <param name="name">The name of the volume to check.</param>
+        /// <param name="token"> The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains an array of blocklist hashes.</returns>
-        public async Task<string[]> GetBlocklistHashes(string name)
+        public async Task<string[]> GetBlocklistHashes(string name, CancellationToken token)
         {
-            var volumeid = GetRemoteVolumeID(name);
+            var volumeid = GetRemoteVolumeID(name, token);
             await using var cmd = m_connection.CreateCommand(m_rtr);
             // Grab the strings and return as array to avoid concurrent access to the IEnumerable
             cmd.SetCommandAndParameters(@"
@@ -1731,17 +1762,18 @@ namespace Duplicati.Library.Main.Database
                 ")
                 .SetParameterValue("@VolumeId", volumeid);
 
-            return await cmd.ExecuteReaderEnumerableAsync()
+            return await cmd.ExecuteReaderEnumerableAsync(token)
                 .Select(x => x.ConvertValueToString(0) ?? throw new Exception("Unexpected null value for blocklist hash"))
-                .ToArrayAsync()
+                .ToArrayAsync(cancellationToken: token)
                 .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Retrieves the first path in the database, ordered by length in descending order.
         /// </summary>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains the first path, or null if no paths exist.</returns>
-        public async Task<string?> GetFirstPath()
+        public async Task<string?> GetFirstPath(CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var v0 = await cmd.ExecuteScalarAsync(@"
@@ -1749,7 +1781,7 @@ namespace Duplicati.Library.Main.Database
                     FROM ""File""
                     ORDER BY LENGTH(""Path"") DESC
                     LIMIT 1
-                ")
+                ", token)
                 .ConfigureAwait(false);
 
             if (v0 == null || v0 == DBNull.Value)
@@ -1763,7 +1795,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="fileSetId">The Fileset-ID.</param>
         /// <returns>An asynchronous enumerable of USN journal data entries.</returns>
-        public async IAsyncEnumerable<Interface.USNJournalDataEntry> GetChangeJournalData(long fileSetId)
+        public async IAsyncEnumerable<Interface.USNJournalDataEntry> GetChangeJournalData(long fileSetId, [EnumeratorCancellation] CancellationToken token)
         {
             var data = new List<Interface.USNJournalDataEntry>();
 
@@ -1779,8 +1811,8 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", fileSetId);
 
-            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await rd.ReadAsync().ConfigureAwait(false))
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 yield return new Interface.USNJournalDataEntry
                 {
@@ -1796,9 +1828,10 @@ namespace Duplicati.Library.Main.Database
         /// Adds NTFS change journal data for file set and volume.
         /// </summary>
         /// <param name="data">Data to add.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the data is added.</returns>
         /// <exception cref="Exception">Thrown if unable to add change journal entry.</exception>
-        public async Task CreateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data)
+        public async Task CreateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data, CancellationToken token)
         {
             foreach (var entry in data)
             {
@@ -1824,14 +1857,14 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@JournalId", entry.JournalId)
                     .SetParameterValue("@NextUsn", entry.NextUsn)
                     .SetParameterValue("@ConfigHash", entry.ConfigHash)
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
 
                 if (c != 1)
                     throw new Exception("Unable to add change journal entry");
             }
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1839,8 +1872,9 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="data">Data to add.</param>
         /// <param name="fileSetId">Existing file set to update.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the data is added.</returns>
-        public async Task UpdateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data, long fileSetId)
+        public async Task UpdateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data, long fileSetId, CancellationToken token)
         {
             foreach (var entry in data)
             {
@@ -1858,24 +1892,25 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@FilesetId", fileSetId)
                     .SetParameterValue("@VolumeName", entry.Volume)
                     .SetParameterValue("@JournalId", entry.JournalId)
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
             }
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Checks if a blocklist hash is known.
         /// </summary>
         /// <param name="hash">The hash to check.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns true if the hash is known, false otherwise.</returns>
-        public async Task<bool> IsBlocklistHashKnown(string hash)
+        public async Task<bool> IsBlocklistHashKnown(string hash, CancellationToken token)
         {
             var res = await m_getfirstfilesetwithblockinblockset
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Hash", hash)
-                .ExecuteScalarInt64Async()
+                .ExecuteScalarInt64Async(token)
                 .ConfigureAwait(false);
 
             if (res != -1 && res != m_filesetId)
