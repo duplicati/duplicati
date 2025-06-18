@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
@@ -79,7 +80,7 @@ public static partial class ExtensionMethods
     /// <returns>A new <see cref="SqliteCommand"/> with the command text set.</returns>
     public static SqliteCommand CreateCommand(this SqliteConnection self, string cmdtext)
     {
-        return CreateCommandAsync(self, cmdtext).Await();
+        return CreateCommandAsync(self, cmdtext, default).Await();
     }
 
     /// <summary>
@@ -87,12 +88,14 @@ public static partial class ExtensionMethods
     /// </summary>
     /// <param name="self">The <see cref="SqliteConnection"/> to create the command for.</param>
     /// <param name="cmdtext">The command text to set for the command.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A new <see cref="SqliteCommand"/> with the command text set and prepared asynchronously.</returns>
-    public static async Task<SqliteCommand> CreateCommandAsync(this SqliteConnection self, string cmdtext)
+    public static async Task<SqliteCommand> CreateCommandAsync(this SqliteConnection self, string cmdtext, CancellationToken cancellationToken)
     {
         var cmd = self.CreateCommand()
             .SetCommandAndParameters(cmdtext);
-        await cmd.PrepareAsync().ConfigureAwait(false);
+
+        await cmd.PrepareAsync(cancellationToken).ConfigureAwait(false);
 
         return cmd;
     }
@@ -127,10 +130,11 @@ public static partial class ExtensionMethods
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmdtext">The command text to execute.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the number of rows affected.</returns>
-    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string? cmdtext)
+    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string? cmdtext, CancellationToken cancellationToken)
     {
-        return await ExecuteNonQueryAsync(self, true, cmdtext, null)
+        return await ExecuteNonQueryAsync(self, true, cmdtext, null, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -140,10 +144,24 @@ public static partial class ExtensionMethods
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmd">The command text to execute.</param>
     /// <param name="values">The values to use as parameters.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the number of rows affected.</returns>
-    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string cmd, Dictionary<string, object?> values)
+    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string cmd, Dictionary<string, object?> values, CancellationToken cancellationToken)
     {
-        return await ExecuteNonQueryAsync(self, true, cmd, values)
+        return await ExecuteNonQueryAsync(self, true, cmd, values, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes the command asynchronously and returns the number of rows affected.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that when awaited contains the number of rows affected.</returns>
+    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, CancellationToken cancellationToken)
+    {
+        return await ExecuteNonQueryAsync(self, writeLog, null, null, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -154,8 +172,9 @@ public static partial class ExtensionMethods
     /// <param name="writeLog">Whether to write a log entry.</param>
     /// <param name="cmd">The command text to execute.</param>
     /// <param name="values">The values to set as parameters.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the number of rows affected.</returns>
-    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, string? cmd = null, Dictionary<string, object?>? values = null)
+    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, string? cmd, Dictionary<string, object?>? values, CancellationToken cancellationToken)
     {
         if (cmd != null)
             self.SetCommandAndParameters(cmd);
@@ -164,7 +183,7 @@ public static partial class ExtensionMethods
             self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteNonQueryAsync", string.Format("ExecuteNonQueryAsync: {0}", self.GetPrintableCommandText())) : null)
-            return await self.ExecuteNonQueryAsync().ConfigureAwait(false);
+            return await self.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -172,10 +191,11 @@ public static partial class ExtensionMethods
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmdtext">The command text to execute.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the <see cref="SqliteDataReader"/>.</returns>
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext)
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext, CancellationToken cancellationToken)
     {
-        return await ExecuteReaderAsync(self, true, cmdtext, null)
+        return await ExecuteReaderAsync(self, true, cmdtext, null, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -185,10 +205,11 @@ public static partial class ExtensionMethods
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmdtext">The command text to execute.</param>
     /// <param name="values">The values to use as parameters.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the <see cref="SqliteDataReader"/>.</returns>
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values, CancellationToken cancellationToken)
     {
-        return await ExecuteReaderAsync(self, true, cmdtext, values)
+        return await ExecuteReaderAsync(self, true, cmdtext, values, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -199,8 +220,9 @@ public static partial class ExtensionMethods
     /// <param name="writeLog">Whether to write a log entry.</param>
     /// <param name="cmdtext">The command text to execute.</param>
     /// <param name="values">The values to set as parameters.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the <see cref="SqliteDataReader"/>.</returns>
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmdtext = null, Dictionary<string, object?>? values = null)
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmdtext, Dictionary<string, object?>? values, CancellationToken cancellationToken)
     {
         if (cmdtext != null)
             self.SetCommandAndParameters(cmdtext);
@@ -209,17 +231,18 @@ public static partial class ExtensionMethods
             self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReader", string.Format("ExecuteReader: {0}", self.GetPrintableCommandText())) : null)
-            return await self.ExecuteReaderAsync().ConfigureAwait(false);
+            return await self.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Executes the command asynchronously and returns an enumerable of <see cref="SqliteDataReader"/>.
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>An asynchronous enumerable of <see cref="SqliteDataReader"/>.</returns>
-    public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self)
+    public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, CancellationToken cancellationToken)
     {
-        return ExecuteReaderEnumerableAsync(self, true, null, null);
+        return ExecuteReaderEnumerableAsync(self, true, null, null, cancellationToken);
     }
 
     /// <summary>
@@ -227,10 +250,11 @@ public static partial class ExtensionMethods
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmdtext">The command text to execute.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>An asynchronous enumerable of <see cref="SqliteDataReader"/>.</returns>
-    public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmdtext)
+    public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmdtext, CancellationToken cancellationToken)
     {
-        return ExecuteReaderEnumerableAsync(self, true, cmdtext, null);
+        return ExecuteReaderEnumerableAsync(self, true, cmdtext, null, cancellationToken);
     }
 
     /// <summary>
@@ -239,10 +263,11 @@ public static partial class ExtensionMethods
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmdtext">The command text to execute.</param>
     /// <param name="values">The values to use as parameters.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>An asynchronous enumerable of <see cref="SqliteDataReader"/>.</returns>
-    public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
+    public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values, CancellationToken cancellationToken)
     {
-        return ExecuteReaderEnumerableAsync(self, true, cmdtext, values);
+        return ExecuteReaderEnumerableAsync(self, true, cmdtext, values, cancellationToken);
     }
 
     /// <summary>
@@ -253,7 +278,7 @@ public static partial class ExtensionMethods
     /// <param name="cmdtext">The command text to execute.</param>
     /// <param name="values">The values to set as parameters.</param>
     /// <returns>An asynchronous enumerable of <see cref="SqliteDataReader"/>.</returns>
-    public static async IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, bool writeLog, string? cmdtext = null, Dictionary<string, object?>? values = null)
+    public static async IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, bool writeLog, string? cmdtext, Dictionary<string, object?>? values, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cmdtext != null)
             self.SetCommandAndParameters(cmdtext);
@@ -262,8 +287,8 @@ public static partial class ExtensionMethods
             self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReaderEnumerableAsync", $"ExecuteReaderEnumerableAsync: {self.GetPrintableCommandText()}") : null)
-        await using (var rd = await self.ExecuteReaderAsync().ConfigureAwait(false))
-            while (await rd.ReadAsync().ConfigureAwait(false))
+        await using (var rd = await self.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+            while (await rd.ReadAsync(cancellationToken).ConfigureAwait(false))
                 yield return rd;
     }
 
@@ -271,10 +296,11 @@ public static partial class ExtensionMethods
     /// Executes the command asynchronously and returns the first column of the first row in the result set.
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
-    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self)
+    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, CancellationToken cancellationToken)
     {
-        return await self.ExecuteScalarAsync(true, null, null)
+        return await self.ExecuteScalarAsync(true, null, null, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -283,10 +309,11 @@ public static partial class ExtensionMethods
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmdtext">The command text to execute.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
-    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext)
+    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext, CancellationToken cancellationToken)
     {
-        return await self.ExecuteScalarAsync(true, cmdtext, null)
+        return await self.ExecuteScalarAsync(true, cmdtext, null, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -296,10 +323,11 @@ public static partial class ExtensionMethods
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmdtext">The command text to execute.</param>
     /// <param name="values">The values to use as parameters.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
-    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values)
+    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext, Dictionary<string, object?>? values, CancellationToken cancellationToken)
     {
-        return await self.ExecuteScalarAsync(true, cmdtext, values)
+        return await self.ExecuteScalarAsync(true, cmdtext, values, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -310,8 +338,9 @@ public static partial class ExtensionMethods
     /// <param name="writeLog">Whether to write a log entry.</param>
     /// <param name="cmd">The command text to execute.</param>
     /// <param name="values">The values to set as parameters.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
-    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, bool writeLog, string? cmd = null, Dictionary<string, object?>? values = null)
+    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, bool writeLog, string? cmd, Dictionary<string, object?>? values, CancellationToken cancellationToken)
     {
         if (cmd != null)
             self.SetCommandAndParameters(cmd);
@@ -320,16 +349,31 @@ public static partial class ExtensionMethods
             self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarAsync", string.Format("ExecuteScalarAsync: {0}", self.GetPrintableCommandText())) : null)
-            return await self.ExecuteScalarAsync().ConfigureAwait(false);
+            return await self.ExecuteScalarAsync(cancellationToken)
+                .ConfigureAwait(false);
     }
 
     /// <summary>
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, long defaultvalue = -1)
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or -1 if no rows are returned or the value cannot be converted.</returns>
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, CancellationToken cancellationToken)
     {
-        return await ExecuteScalarInt64Async(self, true, null, null, defaultvalue)
+        return await ExecuteScalarInt64Async(self, true, null, null, -1, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or -1 if no rows are returned or the value cannot be converted.</returns>
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, long defaultvalue, CancellationToken cancellationToken)
+    {
+        return await ExecuteScalarInt64Async(self, true, null, null, defaultvalue, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -339,10 +383,24 @@ public static partial class ExtensionMethods
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="writeLog">Whether to write a log entry.</param>
     /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, long defaultvalue)
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, long defaultvalue, CancellationToken cancellationToken)
     {
-        return await ExecuteScalarInt64Async(self, writeLog, null, null, defaultvalue)
+        return await ExecuteScalarInt64Async(self, writeLog, null, null, defaultvalue, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmd">The command text to execute.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, CancellationToken cancellationToken)
+    {
+        return await ExecuteScalarInt64Async(self, true, cmd, null, -1, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -352,10 +410,25 @@ public static partial class ExtensionMethods
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmd">The command text to execute.</param>
     /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, long defaultvalue = -1)
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, long defaultvalue, CancellationToken cancellationToken)
     {
-        return await ExecuteScalarInt64Async(self, true, cmd, null, defaultvalue)
+        return await ExecuteScalarInt64Async(self, true, cmd, null, defaultvalue, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="cmd">The command text to execute.</param>
+    /// <param name="values">The values to use as parameters.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, Dictionary<string, object?>? values, CancellationToken cancellationToken)
+    {
+        return await ExecuteScalarInt64Async(self, true, cmd, values, -1, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -366,10 +439,26 @@ public static partial class ExtensionMethods
     /// <param name="cmd">The command text to execute.</param>
     /// <param name="values">The values to use as parameters.</param>
     /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, Dictionary<string, object?>? values, long defaultvalue = -1)
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, Dictionary<string, object?>? values, long defaultvalue, CancellationToken cancellationToken)
     {
-        return await ExecuteScalarInt64Async(self, true, cmd, values, defaultvalue)
+        return await ExecuteScalarInt64Async(self, true, cmd, values, defaultvalue, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="cmd">The command text to execute.</param>
+    /// <param name="values">The values to set as parameters.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, string? cmd, Dictionary<string, object?>? values, CancellationToken cancellationToken)
+    {
+        return await ExecuteScalarInt64Async(self, writeLog, cmd, values, -1, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -381,8 +470,9 @@ public static partial class ExtensionMethods
     /// <param name="cmd">The command text to execute.</param>
     /// <param name="values">The values to set as parameters.</param>
     /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, string? cmd = null, Dictionary<string, object?>? values = null, long defaultvalue = -1)
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, string? cmd, Dictionary<string, object?>? values, long defaultvalue, CancellationToken cancellationToken)
     {
         if (cmd != null)
             self.SetCommandAndParameters(cmd);
@@ -391,8 +481,8 @@ public static partial class ExtensionMethods
             self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarInt64Async", string.Format("ExecuteScalarInt64Async: {0}", self.GetPrintableCommandText())) : null)
-        await using (var rd = await self.ExecuteReaderAsync().ConfigureAwait(false))
-            if (await rd.ReadAsync().ConfigureAwait(false))
+        await using (var rd = await self.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+            if (await rd.ReadAsync(cancellationToken).ConfigureAwait(false))
                 return ConvertValueToInt64(rd, 0, defaultvalue);
 
         return defaultvalue;
@@ -441,8 +531,9 @@ public static partial class ExtensionMethods
     /// <param name="cmd">The <see cref="SqliteCommand"/> to expand the IN clause parameter for.</param>
     /// <param name="originalParamName">The name of the original parameter to replace, must start with '@'.</param>
     /// <param name="values">The collection of values to expand the IN clause with.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the modified <see cref="SqliteCommand"/> with the IN clause expanded.</returns>
-    internal static async Task<SqliteCommand> ExpandInClauseParameterMssqliteAsync(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values)
+    internal static async Task<SqliteCommand> ExpandInClauseParameterMssqliteAsync(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
             throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));
@@ -453,7 +544,7 @@ public static partial class ExtensionMethods
         // We have a temporary table, so we need to replace the parameter with the table name
         cmd.CommandText = cmd.CommandText.Replace(
             originalParamName,
-            await values.GetInClause().ConfigureAwait(false),
+            await values.GetInClause(cancellationToken).ConfigureAwait(false),
             StringComparison.OrdinalIgnoreCase
         );
 
