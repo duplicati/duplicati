@@ -22,6 +22,7 @@
 #nullable enable
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 
@@ -44,13 +45,14 @@ namespace Duplicati.Library.Main.Database
         /// <param name="path">The path to the database file.</param>
         /// <param name="pagecachesize">The size of the page cache.</param>
         /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a new instance of <see cref="LocalBugReportDatabase"/>.</returns>
-        public static async Task<LocalBugReportDatabase> CreateAsync(string path, long pagecachesize, LocalBugReportDatabase? dbnew = null)
+        public static async Task<LocalBugReportDatabase> CreateAsync(string path, long pagecachesize, LocalBugReportDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalBugReportDatabase();
 
             dbnew = (LocalBugReportDatabase)
-                await CreateLocalDatabaseAsync(path, "BugReportCreate", false, pagecachesize, dbnew)
+                await CreateLocalDatabaseAsync(path, "BugReportCreate", false, pagecachesize, dbnew, token)
                     .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 
@@ -60,8 +62,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Obfuscates sensitive data in the database, readying it for a bug report.
         /// </summary>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the obfuscation is finished.</returns>
-        public async Task Fix()
+        public async Task Fix(CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var tablename = "PathMap-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -76,7 +79,7 @@ namespace Duplicati.Library.Main.Database
                             ""RealPath"" TEXT NOT NULL,
                             ""Obfuscated"" TEXT NULL
                         )
-                    ")
+                    ", token)
                     .ConfigureAwait(false);
 
                 await upcmd.ExecuteNonQueryAsync($@"
@@ -84,7 +87,7 @@ namespace Duplicati.Library.Main.Database
                         SELECT DISTINCT ""Path""
                         FROM ""File""
                         ORDER BY ""Path""
-                    ")
+                    ", token)
                     .ConfigureAwait(false);
 
                 await upcmd.SetCommandAndParameters($@"
@@ -105,7 +108,7 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@StartPath", !OperatingSystem.IsWindows() ? "/" : "X:\\")
                     .SetParameterValue("@DirSep", Util.DirectorySeparatorString)
                     .SetParameterValue("@FileExt", ".bin")
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
 
                 /*long id = 1;
@@ -127,7 +130,7 @@ namespace Duplicati.Library.Main.Database
                     WHERE
                         ""Message"" LIKE '%/%'
                         OR ""Message"" LIKE '%:\%'
-                ")
+                ", token)
                 .ConfigureAwait(false);
 
             await cmd.ExecuteNonQueryAsync(@"
@@ -136,14 +139,14 @@ namespace Duplicati.Library.Main.Database
                     WHERE
                         ""Exception"" LIKE '%/%'
                         OR ""Exception"" LIKE '%:\%'
-                ")
+                ", token)
                 .ConfigureAwait(false);
 
             await cmd.ExecuteNonQueryAsync(@"
                     UPDATE ""Configuration""
                     SET ""Value"" = 'ERASED!'
                     WHERE ""Key"" = 'passphrase'
-                ")
+                ", token)
                 .ConfigureAwait(false);
 
             await cmd.ExecuteNonQueryAsync($@"
@@ -157,24 +160,24 @@ namespace Duplicati.Library.Main.Database
                         ""{tablename}"" ""A"",
                         ""File"" ""B""
                     WHERE ""A"".""RealPath"" = ""B"".""Path""
-                ")
+                ", token)
                 .ConfigureAwait(false);
 
-            await cmd.ExecuteNonQueryAsync(@"DROP VIEW ""File"" ")
+            await cmd.ExecuteNonQueryAsync(@"DROP VIEW ""File"" ", token)
                 .ConfigureAwait(false);
-            await cmd.ExecuteNonQueryAsync(@"DROP TABLE ""FileLookup"" ")
+            await cmd.ExecuteNonQueryAsync(@"DROP TABLE ""FileLookup"" ", token)
                 .ConfigureAwait(false);
-            await cmd.ExecuteNonQueryAsync(@"DROP TABLE ""PathPrefix"" ")
+            await cmd.ExecuteNonQueryAsync(@"DROP TABLE ""PathPrefix"" ", token)
                 .ConfigureAwait(false);
-            await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tablename}"" ")
+            await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tablename}"" ", token)
                 .ConfigureAwait(false);
 
             using (new Logging.Timer(LOGTAG, "CommitUpdateBugReport", "CommitUpdateBugReport"))
-                await m_rtr.CommitAsync().ConfigureAwait(false);
+                await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
 
             cmd.SetTransaction(m_rtr);
-            await cmd.ExecuteNonQueryAsync("VACUUM").ConfigureAwait(false);
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await cmd.ExecuteNonQueryAsync("VACUUM", token).ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
     }
 }
