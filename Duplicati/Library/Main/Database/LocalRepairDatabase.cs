@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main.Database
         /// <exception cref="Exception">Thrown if the remote file does not exist.</exception>
         public async Task<(long FilesetId, DateTime Time, bool IsFullBackup)> GetFilesetFromRemotename(string filelist)
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT
                     ""Fileset"".""ID"",
                     ""Fileset"".""Timestamp"",
@@ -129,7 +129,7 @@ namespace Duplicati.Library.Main.Database
             if (prevFilesetId <= 0)
                 throw new ArgumentException("prevId must be > 0");
 
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 UPDATE ""FilesetEntry""
                 SET ""FilesetID"" = @CurrentFilesetId
                 WHERE ""FilesetID"" = @PreviousFilesetId
@@ -148,7 +148,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of index file names that reference the specified block file.</returns>
         public async IAsyncEnumerable<string> GetIndexFilesReferencingBlockFile(long blockfileid)
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT ""RemoteVolume"".""Name""
                 FROM
                     ""RemoteVolume"",
@@ -172,7 +172,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of key-value pairs where the key is the fileset ID and the value is the timestamp of the fileset.</returns>
         public async IAsyncEnumerable<KeyValuePair<long, DateTime>> GetFilesetsWithMissingFiles()
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT
                     ""ID"",
                     ""Timestamp""
@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetTransaction(m_rtr);
 
-            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await rd.ReadAsync().ConfigureAwait(false))
             {
                 yield return new KeyValuePair<long, DateTime>(
@@ -205,7 +205,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when awaited returns the number of deleted entries.</returns>
         public async Task<int> DeleteFilesetEntries(long filesetid)
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 DELETE FROM ""FilesetEntry""
                 WHERE ""FilesetID"" = @FilesetId
             ")
@@ -254,7 +254,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of <see cref="IRemoteVolume"/> representing the block volumes.</returns>
         public async IAsyncEnumerable<IRemoteVolume> GetBlockVolumesFromIndexName(string indexName)
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT
                     ""Name"",
                     ""Hash"",
@@ -435,7 +435,7 @@ namespace Duplicati.Library.Main.Database
             public static async Task<IMissingBlockList> CreateMissingBlockList(string volumename, SqliteConnection connection, ReusableTransaction transaction)
             {
                 var blocklist = new MissingBlockList(volumename, connection, transaction);
-                using (var cmd = connection.CreateCommand(transaction.Transaction))
+                await using (var cmd = connection.CreateCommand(transaction.Transaction))
                 {
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE TEMPORARY TABLE ""{blocklist.m_tablename}"" (
@@ -572,7 +572,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<BlockWithSourceData> GetSourceFilesWithBlocks(long blocksize)
             {
-                using var cmd = m_connection.CreateCommand($@"
+                await using var cmd = m_connection.CreateCommand($@"
                     SELECT DISTINCT
                         ""{m_tablename}"".""Hash"",
                         ""{m_tablename}"".""Size"",
@@ -612,7 +612,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<BlockWithMetadataSourceData> GetSourceItemsWithMetadataBlocks()
             {
-                using var cmd = m_connection.CreateCommand($@"
+                await using var cmd = m_connection.CreateCommand($@"
                     SELECT DISTINCT
                         ""{m_tablename}"".""Hash"",
                         ""{m_tablename}"".""Size"",
@@ -651,7 +651,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<BlocklistHashesEntry> GetBlocklistHashes(long hashesPerBlock)
             {
-                using var cmd = m_connection.CreateCommand(m_rtr);
+                await using var cmd = m_connection.CreateCommand(m_rtr);
 
                 var blocklistTableName = $"BlocklistHashList-{Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())}";
 
@@ -775,7 +775,7 @@ namespace Duplicati.Library.Main.Database
                     throw new ArgumentOutOfRangeException(nameof(targetVolumeId), "Target volume ID must be greater than 0");
 
                 // Move the source blocks into the DuplicateBlock table
-                using var cmd = m_connection.CreateCommand($@"
+                await using var cmd = m_connection.CreateCommand($@"
                     INSERT OR IGNORE INTO ""DuplicateBlock"" (
                         ""BlockID"",
                         ""VolumeID""
@@ -880,7 +880,7 @@ namespace Duplicati.Library.Main.Database
                         )
                 ";
 
-                using var cmd = m_connection.CreateCommand(cmdtxt)
+                await using var cmd = m_connection.CreateCommand(cmdtxt)
                     .SetTransaction(m_rtr)
                     .SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
 
@@ -895,7 +895,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<IRemoteVolume> GetMissingBlockSources()
             {
-                using var cmd = m_connection.CreateCommand($@"
+                await using var cmd = m_connection.CreateCommand($@"
                     SELECT DISTINCT
                         ""RemoteVolume"".""Name"",
                         ""RemoteVolume"".""Hash"",
@@ -942,7 +942,7 @@ namespace Duplicati.Library.Main.Database
                     if (m_tablename != null)
                     {
 
-                        using var cmd = await m_connection.CreateCommandAsync($@"DROP TABLE IF EXISTS ""{m_tablename}""")
+                        await using var cmd = await m_connection.CreateCommandAsync($@"DROP TABLE IF EXISTS ""{m_tablename}""")
                             .ConfigureAwait(false);
 
                         await cmd.SetTransaction(m_rtr)
@@ -974,7 +974,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
         public async Task FixDuplicateMetahash()
         {
-            using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
+            await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
 
             var sql_count = @"
                 SELECT COUNT(*)
@@ -1025,7 +1025,7 @@ namespace Duplicati.Library.Main.Database
                         AND ""A"".""ID"" = ""B"".""ID""
                 ";
 
-                using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
+                await using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
                 {
                     c2.SetCommandAndParameters($@"
                         UPDATE ""{tablename}""
@@ -1041,7 +1041,7 @@ namespace Duplicati.Library.Main.Database
                             AND ""ID"" != @MetadataId
                     ");
 
-                    using var rd = await cmd.ExecuteReaderAsync(sql)
+                    await using var rd = await cmd.ExecuteReaderAsync(sql)
                         .ConfigureAwait(false);
 
                     while (await rd.ReadAsync().ConfigureAwait(false))
@@ -1078,7 +1078,7 @@ namespace Duplicati.Library.Main.Database
                     ORDER BY ""ID""
                 ";
 
-                using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
+                await using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
                 {
                     c2.SetCommandAndParameters($@"
                         UPDATE ""FilesetEntry""
@@ -1160,7 +1160,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
         public async Task FixDuplicateFileentries()
         {
-            using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
+            await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
 
             var sql_count = @"
                 SELECT COUNT(*)
@@ -1215,7 +1215,7 @@ namespace Duplicati.Library.Main.Database
                     ORDER BY ""ID""
                 ";
 
-                using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
+                await using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
                 {
                     c2.SetCommandAndParameters(@"
                         UPDATE ""FilesetEntry""
@@ -1276,7 +1276,7 @@ namespace Duplicati.Library.Main.Database
         {
             var blocklistbuffer = new byte[blocksize];
 
-            using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
+            await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
             using var blockhasher = HashFactory.CreateHasher(blockhashalgorithm);
 
             var hashsize = blockhasher.HashSize / 8;
@@ -1324,11 +1324,11 @@ namespace Duplicati.Library.Main.Database
             if (itemswithnoblocklisthash != 0)
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "MissingBlocklistHashes", "Found {0} missing blocklisthash entries, repairing", itemswithnoblocklisthash);
-                using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
-                using (var c3 = m_connection.CreateCommand(m_rtr.Transaction))
-                using (var c4 = m_connection.CreateCommand(m_rtr.Transaction))
-                using (var c5 = m_connection.CreateCommand(m_rtr.Transaction))
-                using (var c6 = m_connection.CreateCommand(m_rtr.Transaction))
+                await using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
+                await using (var c3 = m_connection.CreateCommand(m_rtr.Transaction))
+                await using (var c4 = m_connection.CreateCommand(m_rtr.Transaction))
+                await using (var c5 = m_connection.CreateCommand(m_rtr.Transaction))
+                await using (var c6 = m_connection.CreateCommand(m_rtr.Transaction))
                 {
                     c3.SetCommandAndParameters(@"
                         INSERT INTO ""BlocklistHash"" (
@@ -1537,7 +1537,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
         public async Task FixDuplicateBlocklistHashes(long blocksize, long hashsize)
         {
-            using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
+            await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
 
             var dup_sql = @"
                 SELECT *
@@ -1577,7 +1577,7 @@ namespace Duplicati.Library.Main.Database
                 ", 0)
                     .ConfigureAwait(false);
 
-                using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
+                await using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
                 {
                     c2.SetCommandAndParameters(@"
                         DELETE FROM ""BlocklistHash""
@@ -1646,7 +1646,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when awaited indicates the completion of the check.</returns>
         public async Task CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks)
         {
-            using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
+            await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
             var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
             try
@@ -1725,7 +1725,7 @@ namespace Duplicati.Library.Main.Database
         /// <exception cref="Exception">Thrown if the blocklist does not match the expected entries.</exception>
         public async Task CheckBlocklistCorrect(string hash, long length, IEnumerable<string> blocklist, long blocksize, long blockhashlength)
         {
-            using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
+            await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
 
             var query = $@"
                 SELECT
@@ -1782,7 +1782,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of missing local fileset names.</returns>
         public async IAsyncEnumerable<string> MissingLocalFilesets()
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT ""Name""
                 FROM ""RemoteVolume""
                 WHERE
@@ -1810,7 +1810,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of tuples containing the fileset ID, timestamp, and whether it is a full backup.</returns>
         public async IAsyncEnumerable<(long FilesetID, DateTime Timestamp, bool IsFull)> MissingRemoteFilesets()
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT
                     ""ID"",
                     ""Timestamp"",
@@ -1845,7 +1845,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of remote volumes that are empty index files.</returns>
         public async IAsyncEnumerable<IRemoteVolume> EmptyIndexFiles()
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT
                     ""Name"",
                     ""Hash"",

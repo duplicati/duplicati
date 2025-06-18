@@ -49,7 +49,7 @@ internal static class ListFilesetsHandler
         // Use a speedy local query
         if (System.IO.File.Exists(options.Dbpath) && !options.NoLocalDb)
         {
-            using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache)
+            await using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache)
                 .ConfigureAwait(false);
 
             result.Filesets = await db

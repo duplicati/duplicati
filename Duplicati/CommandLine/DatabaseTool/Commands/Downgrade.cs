@@ -161,10 +161,10 @@ public static class Downgrade
             if (!nobackups)
                 Helper.CreateFileBackup(db);
 
-            using var con = await SQLiteLoader.LoadConnectionAsync(db, 0)
+            await using var con = await SQLiteLoader.LoadConnectionAsync(db, 0)
                 .ConfigureAwait(false);
-            using var tr = con.BeginTransaction();
-            using var cmd = con.CreateCommand(tr);
+            await using var tr = con.BeginTransaction();
+            await using var cmd = con.CreateCommand(tr);
             foreach (var script in downgradeScripts)
             {
                 Console.WriteLine($"Applying downgrade script {script.Filename} ...");

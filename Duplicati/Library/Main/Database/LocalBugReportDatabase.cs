@@ -63,12 +63,12 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that completes when the obfuscation is finished.</returns>
         public async Task Fix()
         {
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             var tablename = "PathMap-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
             // TODO: Rewrite this to use PathPrefix
             // TODO: Needs to be much faster
-            using (var upcmd = m_connection.CreateCommand(m_rtr))
+            await using (var upcmd = m_connection.CreateCommand(m_rtr))
             {
                 await upcmd.ExecuteNonQueryAsync($@"
                         CREATE TEMPORARY TABLE ""{tablename}"" (

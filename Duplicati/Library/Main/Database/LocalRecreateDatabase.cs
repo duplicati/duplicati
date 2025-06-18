@@ -203,7 +203,7 @@ namespace Duplicati.Library.Main.Database
 
             if (dbnew.m_connection == null)
                 throw new Exception("Connection is null");
-            using var cmd = dbnew.m_connection.CreateCommand();
+            await using var cmd = dbnew.m_connection.CreateCommand();
 
             await cmd.ExecuteNonQueryAsync($@"
                 CREATE TEMPORARY TABLE ""{dbnew.m_tempblocklist}"" (
@@ -440,7 +440,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that completes when the operation is finished.</returns>
         public async Task FindMissingBlocklistHashes(long hashsize, long blocksize)
         {
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             //Update all small blocklists and matching blocks
 
             var selectSmallBlocks = $@"
@@ -594,7 +594,7 @@ namespace Duplicati.Library.Main.Database
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "BlocksetInsertFailed", ex, "Blockset insert failed, committing temporary tables for trace purposes");
 
-                using (var fixcmd = m_connection.CreateCommand(m_rtr))
+                await using (var fixcmd = m_connection.CreateCommand(m_rtr))
                 {
                     await fixcmd.ExecuteNonQueryAsync($@"
                         CREATE TABLE ""{m_tempblocklist}-Failure"" AS
@@ -640,7 +640,7 @@ namespace Duplicati.Library.Main.Database
         public async Task AddBlockAndBlockSetEntryFromTemp(long hashsize, long blocksize, bool hashOnly = false)
         {
             // TODO should values be parameters, rather than hardcoded into the SQL queries?
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             var extra = hashOnly ? "" : $@"
                     UNION
                     SELECT
@@ -749,7 +749,7 @@ namespace Duplicati.Library.Main.Database
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "BlockOrBlocksetInsertFailed", ex, "Block or Blockset insert failed, committing temporary tables for trace purposes");
 
-                using (var fixcmd = m_connection.CreateCommand(m_rtr))
+                await using (var fixcmd = m_connection.CreateCommand(m_rtr))
                 {
                     await fixcmd.ExecuteNonQueryAsync($@"
                         CREATE TABLE ""{m_tempblocklist}_Failure"" AS
@@ -1086,7 +1086,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable collection of block hashes associated with the specified volume ID.</returns>
         public async IAsyncEnumerable<string> GetBlockLists(long volumeid)
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT DISTINCT ""BlocklistHash"".""Hash""
                 FROM
                     ""BlocklistHash"",
@@ -1098,7 +1098,7 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@VolumeId", volumeid);
 
-            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await rd.ReadAsync().ConfigureAwait(false))
                 yield return rd.ConvertValueToString(0) ?? "";
         }
@@ -1114,7 +1114,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable collection of remote volumes that are missing blocks.</returns>
         public async IAsyncEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo, long blocksize, long hashsize, bool forceBlockUse)
         {
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             var selectCommand = @"
                     SELECT DISTINCT
                         ""RemoteVolume"".""Name"",
@@ -1216,7 +1216,7 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            using var rd = await cmd
+            await using var rd = await cmd
                 .ExecuteReaderAsync()
                 .ConfigureAwait(false);
 
@@ -1365,7 +1365,7 @@ namespace Duplicati.Library.Main.Database
                     AND ""Type"" = '{RemoteVolumeType.Blocks}'
             ";
 
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             var cnt = await cmd.ExecuteScalarInt64Async(countsql)
                 .ConfigureAwait(false);
 
@@ -1401,7 +1401,7 @@ namespace Duplicati.Library.Main.Database
 
             var tmptablename = "DeletedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             // 1. Select blocks not used by any file and not as a blocklist into temporary table
             await cmd.ExecuteNonQueryAsync($@"
                 CREATE TEMPORARY TABLE ""{tmptablename}"" AS
@@ -1463,7 +1463,7 @@ namespace Duplicati.Library.Main.Database
 
         public async override ValueTask DisposeAsync()
         {
-            using (var cmd = m_connection.CreateCommand(m_rtr))
+            await using (var cmd = m_connection.CreateCommand(m_rtr))
             {
                 if (m_tempblocklist != null)
                     try

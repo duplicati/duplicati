@@ -540,7 +540,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                 m_result.DeleteResults = new DeleteResults(m_result);
-                using var db = await LocalDeleteDatabase.CreateAsync(m_database).ConfigureAwait(false);
+                await using var db = await LocalDeleteDatabase.CreateAsync(m_database).ConfigureAwait(false);
                 await new DeleteHandler(m_options, (DeleteResults)m_result.DeleteResults)
                     .DoRunAsync(db, true, currentIsSmall, backendManager)
                     .ConfigureAwait(false);
@@ -550,7 +550,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
                 m_result.CompactResults = new CompactResults(m_result);
-                using var db = await LocalDeleteDatabase.CreateAsync(m_database).ConfigureAwait(false);
+                await using var db = await LocalDeleteDatabase.CreateAsync(m_database).ConfigureAwait(false);
                 await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
                     .DoCompactAsync(db, true, backendManager)
                     .ConfigureAwait(false);
@@ -582,7 +582,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                 m_result.TestResults = new TestResults(m_result);
 
-                using var testdb = await LocalTestDatabase.CreateAsync(m_database).ConfigureAwait(false);
+                await using var testdb = await LocalTestDatabase.CreateAsync(m_database).ConfigureAwait(false);
                 await new TestHandler(m_options, (TestResults)m_result.TestResults)
                     .DoRunAsync(samplesToTest, testdb, backendManager)
                     .ConfigureAwait(false);
@@ -714,7 +714,7 @@ namespace Duplicati.Library.Main.Operation
                         .TerminatedWithActiveUploads(true)
                         .ConfigureAwait(false);
 
-                using (m_database = database)
+                await using (m_database = database)
                 using (var db = new Backup.BackupDatabase(m_database, m_options))
                 // Setup runners and instances here
                 using (var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))

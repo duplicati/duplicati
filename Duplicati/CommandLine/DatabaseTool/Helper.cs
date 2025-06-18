@@ -60,9 +60,9 @@ public static class Helper
         {
             try
             {
-                using var con = await SQLiteLoader.LoadConnectionAsync(serverdb, 0)
+                await using var con = await SQLiteLoader.LoadConnectionAsync(serverdb, 0)
                     .ConfigureAwait(false);
-                using var cmd = con.CreateCommand(@"
+                await using var cmd = con.CreateCommand(@"
                     SELECT ""DBPath""
                     FROM ""Backup""
                 ");
@@ -93,11 +93,11 @@ public static class Helper
     /// <returns>A task that when awaited contains a tuple with the version and whether it is a server database</returns>
     public static async Task<(int Version, bool isserver)> ExamineDatabase(string db)
     {
-        using (var con = await SQLiteLoader.LoadConnectionAsync(db, 0).ConfigureAwait(false))
-        {
-            using var cmd = con.CreateCommand();
+        await using var con = await SQLiteLoader.LoadConnectionAsync(db, 0)
+            .ConfigureAwait(false);
+        await using var cmd = con.CreateCommand();
 
-            var isserverdb = await cmd.ExecuteScalarInt64Async(@"
+        var isserverdb = await cmd.ExecuteScalarInt64Async(@"
                 SELECT COUNT(*)
                 FROM sqlite_master
                 WHERE
@@ -105,16 +105,15 @@ public static class Helper
                     AND name='Backup'
                     OR name='Schedule'
             ")
-                .ConfigureAwait(false) == 2;
+            .ConfigureAwait(false) == 2;
 
-            var version = (int)await cmd.ExecuteScalarInt64Async(@"
+        var version = (int)await cmd.ExecuteScalarInt64Async(@"
                 SELECT MAX(Version)
                 FROM Version
             ")
-                .ConfigureAwait(false);
+            .ConfigureAwait(false);
 
-            return (version, isserverdb);
-        }
+        return (version, isserverdb);
     }
 
     /// <summary>

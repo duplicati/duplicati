@@ -149,7 +149,7 @@ namespace Duplicati.Library.Main.Database
             m_totalprogtable = "TotalProgress-" + m_temptabsetguid;
             m_filesnewlydonetable = createFilesNewlyDoneTracker ? "FilesNewlyDone-" + m_temptabsetguid : null;
 
-            using var cmd = m_connection.CreateCommand()
+            await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
 
             // How to handle METADATA?
@@ -404,7 +404,7 @@ namespace Duplicati.Library.Main.Database
             m_tempfiletable = "Fileset-" + m_temptabsetguid;
             m_tempblocktable = "Blocks-" + m_temptabsetguid;
 
-            using (var cmd = m_connection.CreateCommand())
+            await using (var cmd = m_connection.CreateCommand())
             {
                 cmd.SetTransaction(m_rtr);
                 var filesetIds =
@@ -575,7 +575,7 @@ namespace Duplicati.Library.Main.Database
                                     FROM ""{m_tempfiletable}""
                                 )
                             ");
-                            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                            await using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
                                 while (await rd.ReadAsync().ConfigureAwait(false))
                                     sb.AppendLine(rd.ConvertValueToString(0));
 
@@ -618,7 +618,7 @@ namespace Duplicati.Library.Main.Database
                             .SetParameterValue("@FilesetId", filesetId);
 
                         object[] values = new object[4];
-                        using var cmd2 = m_connection.CreateCommand($@"
+                        await using var cmd2 = m_connection.CreateCommand($@"
                             INSERT INTO ""{m_tempfiletable}"" (
                                 ""ID"",
                                 ""Path"",
@@ -634,7 +634,7 @@ namespace Duplicati.Library.Main.Database
                                 0
                             )
                         ");
-                        using var rd = await cmd.ExecuteReaderAsync()
+                        await using var rd = await cmd.ExecuteReaderAsync()
                             .ConfigureAwait(false);
                         while (await rd.ReadAsync().ConfigureAwait(false))
                         {
@@ -681,7 +681,7 @@ namespace Duplicati.Library.Main.Database
                             ""Blockset""
                         WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID""
                     ");
-                    using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                    await using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
                     {
                         var filecount = 0L;
                         var filesize = 0L;
@@ -712,7 +712,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that, when awaited, returns the first path found in the temporary file table, or null if no paths are found.</returns>
         public async Task<string?> GetFirstPath()
         {
-            using var cmd = m_connection.CreateCommand($@"
+            await using var cmd = m_connection.CreateCommand($@"
                 SELECT ""Path""
                 FROM ""{m_tempfiletable}""
                 ORDER BY LENGTH(""Path"") DESC
@@ -733,7 +733,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that, when awaited, returns the largest prefix path found in the temporary file table.</returns>
         public async Task<string> GetLargestPrefix()
         {
-            using var cmd = m_connection.CreateCommand($@"
+            await using var cmd = m_connection.CreateCommand($@"
                 SELECT ""Path""
                 FROM ""{m_tempfiletable}""
                 ORDER BY LENGTH(""Path"") DESC
@@ -800,7 +800,7 @@ namespace Duplicati.Library.Main.Database
                 :
                 largest_prefix);
 
-            using var cmd = m_connection.CreateCommand()
+            await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
             if (string.IsNullOrEmpty(destination))
             {
@@ -942,7 +942,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that completes when the missing blocks have been found and inserted into the temporary block table.</returns>
         public async Task FindMissingBlocks(bool skipMetadata)
         {
-            using var cmd = m_connection.CreateCommand()
+            await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
             var p1 = await cmd.ExecuteNonQueryAsync($@"
                 INSERT INTO ""{m_tempblocktable}"" (
@@ -1041,7 +1041,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that completes when the target path has been updated.</returns>
         public async Task UpdateTargetPath(long ID, string newname)
         {
-            using var cmd = m_connection.CreateCommand($@"
+            await using var cmd = m_connection.CreateCommand($@"
                 UPDATE ""{m_tempfiletable}""
                 SET ""TargetPath"" = @TargetPath
                 WHERE ""ID"" = @ID
@@ -1303,7 +1303,7 @@ namespace Duplicati.Library.Main.Database
             /// <returns>An asynchronous enumerable of IExistingFile objects representing the existing files with their blocks.</returns>
             public static async IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks(LocalDatabase db, string tablename)
             {
-                using var cmd = db.Connection.CreateCommand($@"
+                await using var cmd = db.Connection.CreateCommand($@"
                     SELECT
                         ""{tablename}"".""TargetPath"",
                         ""Blockset"".""FullHash"",
@@ -1326,7 +1326,7 @@ namespace Duplicati.Library.Main.Database
                         ""BlocksetEntry"".""Index""
                 ")
                     .SetTransaction(db.Transaction);
-                using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                 if (await rd.ReadAsync().ConfigureAwait(false))
                 {
                     var more = true;
@@ -1488,7 +1488,7 @@ namespace Duplicati.Library.Main.Database
             {
                 // TODO: Skip metadata as required
                 // Have to order by target path and hash, to ensure BlockDescriptor and BlockSource match adjacent rows
-                using var cmd = db.Connection.CreateCommand($@"
+                await using var cmd = db.Connection.CreateCommand($@"
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""A"".""ID"",
@@ -1518,7 +1518,7 @@ namespace Duplicati.Library.Main.Database
                         ""B"".""Index""
                 ")
                     .SetTransaction(db.Transaction);
-                using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                 var more = await rd.ReadAsync().ConfigureAwait(false);
 
                 while (more)
@@ -1553,7 +1553,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of IRemoteVolume objects representing the missing remote volumes.</returns>
         public async IAsyncEnumerable<IRemoteVolume> GetMissingVolumes()
         {
-            using var cmd = m_connection.CreateCommand($@"
+            await using var cmd = m_connection.CreateCommand($@"
                 SELECT
                     ""RV"".""Name"",
                     ""RV"".""Hash"",
@@ -1583,7 +1583,7 @@ namespace Duplicati.Library.Main.Database
             // Now it is likely to restore all files from front to back. Large files will always be done last.
             // One could also use like the average block number in a volume, that needs to be measured.
 
-            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await rd.ReadAsync().ConfigureAwait(false))
             {
                 yield return new RemoteVolume(
@@ -1632,7 +1632,7 @@ namespace Duplicati.Library.Main.Database
                     m_blocksize = blocksize,
                 };
 
-                using var c = db.Connection.CreateCommand()
+                await using var c = db.Connection.CreateCommand()
                     .SetTransaction(db.Transaction);
                 fam.m_tmptable = "VolumeFiles-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 await c.ExecuteNonQueryAsync($@"
@@ -1677,7 +1677,7 @@ namespace Duplicati.Library.Main.Database
             {
                 if (m_tmptable != null)
                 {
-                    using var c = m_db.Connection.CreateCommand(@$"DROP TABLE IF EXISTS ""{m_tmptable}""")
+                    await using var c = m_db.Connection.CreateCommand(@$"DROP TABLE IF EXISTS ""{m_tmptable}""")
                         .SetTransaction(m_db.Transaction);
                     await c.ExecuteNonQueryAsync().ConfigureAwait(false);
                     await m_db.Transaction.CommitAsync().ConfigureAwait(false);
@@ -1746,7 +1746,7 @@ namespace Duplicati.Library.Main.Database
             public async IAsyncEnumerable<IVolumePatch> FilesWithMissingBlocks()
             {
                 // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
-                using var cmd = m_db.Connection.CreateCommand($@"
+                await using var cmd = m_db.Connection.CreateCommand($@"
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""BB"".""FileID"",
@@ -1775,7 +1775,7 @@ namespace Duplicati.Library.Main.Database
                 ")
                     .SetTransaction(m_db.Transaction);
 
-                using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                 if (await rd.ReadAsync().ConfigureAwait(false))
                 {
                     var more = true;
@@ -1799,7 +1799,7 @@ namespace Duplicati.Library.Main.Database
             public async IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks()
             {
                 // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
-                using var cmd = m_db.Connection.CreateCommand($@"
+                await using var cmd = m_db.Connection.CreateCommand($@"
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""BB"".""FileID"",
@@ -1828,7 +1828,7 @@ namespace Duplicati.Library.Main.Database
                 ")
                     .SetTransaction(m_db.Transaction);
 
-                using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                 if (await rd.ReadAsync().ConfigureAwait(false))
                 {
                     var more = true;
@@ -1915,7 +1915,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of IFileToRestore objects representing the files to restore.</returns>
         public async IAsyncEnumerable<IFileToRestore> GetFilesToRestore(bool onlyNonVerified)
         {
-            using var cmd = m_connection.CreateCommand($@"
+            await using var cmd = m_connection.CreateCommand($@"
                 SELECT
                     ""{m_tempfiletable}"".""ID"",
                     ""{m_tempfiletable}"".""TargetPath"",
@@ -1931,7 +1931,7 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Verified", !onlyNonVerified);
 
-            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await rd.ReadAsync().ConfigureAwait(false))
                 yield return new FileToRestore(
                     rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "", rd.ConvertValueToString(2) ?? "", rd.ConvertValueToInt64(3));
@@ -1944,7 +1944,7 @@ namespace Duplicati.Library.Main.Database
         public async IAsyncEnumerable<FileRequest> GetFilesAndSymlinksToRestore()
         {
             // Order by length descending, so that larger files are restored first.
-            using var cmd = m_connection.CreateCommand($@"
+            await using var cmd = m_connection.CreateCommand($@"
                 SELECT
                     ""F"".""ID"",
                     ""F"".""Path"",
@@ -1959,7 +1959,7 @@ namespace Duplicati.Library.Main.Database
                 ORDER BY ""Length"" DESC
             ")
                 .SetTransaction(m_rtr);
-            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await rd.ReadAsync().ConfigureAwait(false))
                 yield return new FileRequest(
                     rd.ConvertValueToInt64(0),
@@ -1977,9 +1977,9 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of FileRequest objects representing the folders to restore.</returns>
         public async IAsyncEnumerable<FileRequest> GetFolderMetadataToRestore()
         {
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
             cmd.SetTransaction(m_rtr);
-            using var rd = await cmd.ExecuteReaderAsync($@"
+            await using var rd = await cmd.ExecuteReaderAsync($@"
                 SELECT
                     ""F"".""ID"",
                     '',
@@ -2027,7 +2027,7 @@ namespace Duplicati.Library.Main.Database
                     ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
             ";
 
-            using var cmd = Connection.CreateCommand($@"
+            await using var cmd = Connection.CreateCommand($@"
                 SELECT
                     ""Block"".""ID"",
                     ""Block"".""VolumeID""
@@ -2040,7 +2040,7 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetTransaction(m_rtr);
 
-            using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await reader.ReadAsync().ConfigureAwait(false))
                 yield return (
                     reader.ConvertValueToInt64(0),
@@ -2061,7 +2061,7 @@ namespace Duplicati.Library.Main.Database
             try
             {
 
-                using var cmd = connection.CreateCommand(@$"
+                await using var cmd = connection.CreateCommand(@$"
                 SELECT
                     ""Block"".""ID"",
                     ""Block"".""Hash"",
@@ -2076,7 +2076,7 @@ namespace Duplicati.Library.Main.Database
                     .SetTransaction(transaction)
                     .SetParameterValue("@BlocksetID", blocksetID);
 
-                using var reader = await cmd.ExecuteReaderAsync()
+                await using var reader = await cmd.ExecuteReaderAsync()
                     .ConfigureAwait(false);
                 for (long i = 0; await reader.ReadAsync().ConfigureAwait(false); i++)
                     yield return new BlockRequest(
@@ -2106,7 +2106,7 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
             try
             {
-                using var cmd = connection.CreateCommand($@"
+                await using var cmd = connection.CreateCommand($@"
                 SELECT
                     ""Block"".""ID"",
                     ""Block"".""Hash"",
@@ -2124,7 +2124,7 @@ namespace Duplicati.Library.Main.Database
                     .SetTransaction(transaction)
                     .SetParameterValue("@FileID", fileID);
 
-                using var reader = await cmd.ExecuteReaderAsync()
+                await using var reader = await cmd.ExecuteReaderAsync()
                     .ConfigureAwait(false);
                 for (long i = 0; await reader.ReadAsync().ConfigureAwait(false); i++)
                 {
@@ -2152,7 +2152,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of tuples containing the volume name, size, and hash.</returns>
         public async IAsyncEnumerable<(string, long, string)> GetVolumeInfo(long VolumeID)
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT
                     ""Name"",
                     ""Size"",
@@ -2163,7 +2163,7 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@VolumeID", VolumeID);
 
-            using var reader = await cmd.ExecuteReaderAsync()
+            await using var reader = await cmd.ExecuteReaderAsync()
                 .ConfigureAwait(false);
             while (await reader.ReadAsync().ConfigureAwait(false))
                 yield return (
@@ -2179,7 +2179,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that completes when the temporary tables are dropped and the transaction is committed.</returns>
         public async Task DropRestoreTable()
         {
-            using var cmd = m_connection.CreateCommand()
+            await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
 
             if (m_tempfiletable != null)
@@ -2438,7 +2438,7 @@ namespace Duplicati.Library.Main.Database
                     return;
 
                 m_hasUpdates = false;
-                using var rd = await m_statUpdateCommand
+                await using var rd = await m_statUpdateCommand
                     .SetTransaction(m_db.Transaction)
                     .ExecuteReaderAsync()
                     .ConfigureAwait(false);
@@ -2584,7 +2584,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of strings representing the target folders.</returns>
         public async IAsyncEnumerable<string> GetTargetFolders()
         {
-            using var cmd = m_connection.CreateCommand($@"
+            await using var cmd = m_connection.CreateCommand($@"
                 SELECT ""TargetPath""
                 FROM ""{m_tempfiletable}""
                 WHERE ""BlocksetID"" == @BlocksetID
@@ -2592,7 +2592,7 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@BlocksetID", FOLDER_BLOCKSET_ID);
 
-            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await rd.ReadAsync().ConfigureAwait(false))
                 yield return rd.ConvertValueToString(0) ?? "";
         }
@@ -2727,8 +2727,8 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of <see cref="IFastSource"/> representing the files and their source blocks.</returns>
         public async IAsyncEnumerable<IFastSource> GetFilesAndSourceBlocksFast(long blocksize)
         {
-            using (var cmdReader = m_connection.CreateCommand())
-            using (var cmd = m_connection.CreateCommand())
+            await using (var cmdReader = m_connection.CreateCommand())
+            await using (var cmd = m_connection.CreateCommand())
             {
                 cmdReader.SetTransaction(m_rtr);
                 cmd.SetTransaction(m_rtr);
@@ -2741,7 +2741,7 @@ namespace Duplicati.Library.Main.Database
                     SELECT DISTINCT ""{m_tempfiletable}"".""Path""
                     FROM ""{m_tempfiletable}""
                 ");
-                using (var rd = await cmdReader.ExecuteReaderAsync().ConfigureAwait(false))
+                await using (var rd = await cmdReader.ExecuteReaderAsync().ConfigureAwait(false))
                 {
                     while (await rd.ReadAsync().ConfigureAwait(false))
                     {
@@ -2803,7 +2803,7 @@ namespace Duplicati.Library.Main.Database
                 GROUP BY ""File"".""Path""
             ";
 
-            using (var cmd = m_connection.CreateCommand())
+            await using (var cmd = m_connection.CreateCommand())
             {
                 cmd.SetTransaction(m_rtr);
                 await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_latestblocktable}"" ")
@@ -2852,10 +2852,10 @@ namespace Duplicati.Library.Main.Database
                     ""{m_tempblocktable}"".""Index""
                 ";
 
-            using (var cmd = m_connection.CreateCommand())
+            await using (var cmd = m_connection.CreateCommand())
             {
                 cmd.SetTransaction(m_rtr);
-                using var rd = await cmd.ExecuteReaderAsync(sources)
+                await using var rd = await cmd.ExecuteReaderAsync(sources)
                     .ConfigureAwait(false);
                 if (await rd.ReadAsync().ConfigureAwait(false))
                 {

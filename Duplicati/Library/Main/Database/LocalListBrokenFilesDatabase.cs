@@ -219,7 +219,7 @@ namespace Duplicati.Library.Main.Database
 
             query += @" GROUP BY ""A"".""FilesetID""";
 
-            using var cmd = Connection.CreateCommand(m_rtr)
+            await using var cmd = Connection.CreateCommand(m_rtr)
                 .SetCommandAndParameters(query)
                 .SetParameterValues(clause.Values);
 
@@ -239,7 +239,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of broken file IDs.</returns>
         public async IAsyncEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid)
         {
-            using var cmd = Connection.CreateCommand(m_rtr)
+            await using var cmd = Connection.CreateCommand(m_rtr)
                 .SetCommandAndParameters(BROKEN_FILE_NAMES)
                 .SetParameterValue("@FilesetId", filesetid);
 
@@ -257,7 +257,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of <see cref="RemoteVolume"/> representing the orphaned index files.</returns>
         public async IAsyncEnumerable<RemoteVolume> GetOrphanedIndexFiles()
         {
-            using var cmd = Connection.CreateCommand($@"
+            await using var cmd = Connection.CreateCommand($@"
                 SELECT
                     ""Name"",
                     ""Hash"",
@@ -289,7 +289,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that completes when the insertion is finished.</returns>
         public async Task InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname)
         {
-            using var cmd = Connection.CreateCommand(m_rtr)
+            await using var cmd = Connection.CreateCommand(m_rtr)
                 .SetCommandAndParameters(INSERT_BROKEN_IDS(tablename, IDfieldname))
                 .SetParameterValue("@FilesetId", filesetid);
 
@@ -307,7 +307,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when awaited contains the ID of the empty metadata blockset, or -1 if no suitable blockset is found</returns>
         public async Task<long> GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize)
         {
-            using var cmd = Connection.CreateCommand(@"
+            await using var cmd = Connection.CreateCommand(@"
                 SELECT ""ID""
                 FROM ""Blockset""
                 WHERE
@@ -386,7 +386,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when awaited contains the number of rows affected</returns>
         public async Task<int> ReplaceMetadata(long filesetId, long emptyBlocksetId)
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 UPDATE ""Metadataset""
                 SET ""BlocksetID"" = @EmptyBlocksetID
                 WHERE
@@ -423,7 +423,7 @@ namespace Duplicati.Library.Main.Database
         {
             if (names == null || !names.Any()) return;
 
-            using var deletecmd = m_connection.CreateCommand(m_rtr);
+            await using var deletecmd = m_connection.CreateCommand(m_rtr);
             var temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             var volidstable = "DelVolSetIds-" + temptransguid;
 
@@ -435,7 +435,7 @@ namespace Duplicati.Library.Main.Database
                 ")
                 .ConfigureAwait(false);
 
-            using (var tmptable = await TemporaryDbValueList.CreateAsync(this, names).ConfigureAwait(false))
+            await using (var tmptable = await TemporaryDbValueList.CreateAsync(this, names).ConfigureAwait(false))
                 await (
                     await deletecmd.SetCommandAndParameters($@"
                             INSERT OR IGNORE INTO ""{volidstable}"" (""ID"")
@@ -505,7 +505,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when awaited contains the count of files in the specified fileset.</returns>
         public async Task<long> GetFilesetFileCount(long filesetid)
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT COUNT(*)
                 FROM ""FilesetEntry""
                 WHERE ""FilesetID"" = @FilesetId

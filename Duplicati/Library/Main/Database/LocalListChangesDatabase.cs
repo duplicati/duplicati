@@ -255,7 +255,7 @@ namespace Duplicati.Library.Main.Database
                     m_currentTable = "Current-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())
                 };
 
-                using (var cmd = sh.m_db.Connection.CreateCommand(db.Transaction))
+                await using (var cmd = sh.m_db.Connection.CreateCommand(db.Transaction))
                 {
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE TEMPORARY TABLE ""{sh.m_previousTable}"" (
@@ -388,7 +388,7 @@ namespace Duplicati.Library.Main.Database
 
                 var combined = $"({folders} UNION {symlinks} UNION {files})";
 
-                using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
                 if (filter == null || filter.Empty)
                 {
                     // Simple case, select everything
@@ -506,7 +506,7 @@ namespace Duplicati.Library.Main.Database
                         .PrepareAsync()
                         .ConfigureAwait(false);
 
-                    using var cmd2 = m_db.Connection.CreateCommand(m_db.Transaction)
+                    await using var cmd2 = m_db.Connection.CreateCommand(m_db.Transaction)
                         .SetCommandAndParameters($@"
                                 INSERT INTO ""{tablename}"" (
                                     ""Path"",
@@ -525,7 +525,7 @@ namespace Duplicati.Library.Main.Database
                             ");
                     await cmd2.PrepareAsync().ConfigureAwait(false);
 
-                    using var rd = await cmd
+                    await using var rd = await cmd
                         .ExecuteReaderAsync()
                         .ConfigureAwait(false);
 
@@ -568,7 +568,7 @@ namespace Duplicati.Library.Main.Database
             /// <returns>An asynchronous enumerable of strings, where each string is a value from the first column of the reader.</returns>
             private static async IAsyncEnumerable<string?> ReaderToStringList(SqliteDataReader rd)
             {
-                using (rd)
+                await using (rd)
                     while (await rd.ReadAsync().ConfigureAwait(false))
                     {
                         var v = rd.GetValue(0);
@@ -632,7 +632,7 @@ namespace Duplicati.Library.Main.Database
             {
                 var (Added, Deleted, Modified) = GetSqls(true);
 
-                using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
                 var result = new ChangeSizeReport
                 {
                     PreviousSize = await cmd.ExecuteScalarInt64Async($@"
@@ -688,7 +688,7 @@ namespace Duplicati.Library.Main.Database
                     FROM ({Modified})
                 ";
 
-                using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
 
                 var result = new ChangeCountReport
                 {
@@ -750,7 +750,7 @@ namespace Duplicati.Library.Main.Database
             {
                 var (Added, Deleted, Modified) = GetSqls(false);
 
-                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
+                await using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
                     var elTypes = new[] {
                         Interface.ListChangesElementType.Folder,

@@ -252,9 +252,9 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new ListRemoteResults(), async (result, backendManager) =>
             {
-                using (var tf = File.Exists(m_options.Dbpath) ? null : new TempFile())
-                using (var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache).ConfigureAwait(false))
-                    result.SetResult(await backendManager.ListAsync(CancellationToken.None).ConfigureAwait(false));
+                using var tf = File.Exists(m_options.Dbpath) ? null : new TempFile();
+                await using var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache).ConfigureAwait(false);
+                result.SetResult(await backendManager.ListAsync(CancellationToken.None).ConfigureAwait(false));
             });
         }
 
@@ -277,7 +277,7 @@ namespace Duplicati.Library.Main
                     // and uses the same prefix (see issues #2678, #3845, and #4244).
                     if (File.Exists(m_options.Dbpath))
                     {
-                        using LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache).ConfigureAwait(false);
+                        await using LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache).ConfigureAwait(false);
                         var dbRemoteVolumes = db.GetRemoteVolumes();
                         var dbRemoteFiles = await dbRemoteVolumes
                             .Select(x => x.Name)

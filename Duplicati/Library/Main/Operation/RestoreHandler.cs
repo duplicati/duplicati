@@ -159,8 +159,8 @@ namespace Duplicati.Library.Main.Operation
             var fullblockverification = options.FullBlockVerification;
 
             using var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm);
-            using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
-            using var volumekeeper = await database.GetMissingBlockData(blocks, options.Blocksize).ConfigureAwait(false);
+            await using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
+            await using var volumekeeper = await database.GetMissingBlockData(blocks, options.Blocksize).ConfigureAwait(false);
             await foreach (var restorelist in volumekeeper.FilesWithMissingBlocks().ConfigureAwait(false))
             {
                 var targetpath = restorelist.Path;
@@ -712,7 +712,7 @@ namespace Duplicati.Library.Main.Operation
         private static async Task ScanForExistingSourceBlocksFast(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result)
         {
             // Fill BLOCKS with data from known local source files
-            using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
+            await using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
             var updateCount = 0L;
             await foreach (var entry in database.GetFilesAndSourceBlocksFast(options.Blocksize).ConfigureAwait(false))
             {
@@ -818,7 +818,7 @@ namespace Duplicati.Library.Main.Operation
         private static async Task ScanForExistingSourceBlocks(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result, RestoreHandlerMetadataStorage metadatastorage)
         {
             // Fill BLOCKS with data from known local source files
-            using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
+            await using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
             var updateCount = 0L;
             await foreach (var restorelist in database.GetFilesAndSourceBlocks(options.SkipMetadata, options.Blocksize).ConfigureAwait(false))
             {
@@ -1014,7 +1014,7 @@ namespace Duplicati.Library.Main.Operation
         private static async Task ScanForExistingTargetBlocks(LocalRestoreDatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm blockhasher, System.Security.Cryptography.HashAlgorithm filehasher, Options options, RestoreResults result)
         {
             // Scan existing files for existing BLOCKS
-            using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
+            await using var blockmarker = await database.CreateBlockMarkerAsync().ConfigureAwait(false);
             var updateCount = 0L;
             await foreach (var restorelist in database.GetExistingFilesWithBlocks().ConfigureAwait(false))
             {

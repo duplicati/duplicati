@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.Operation
             long knownRemotes = -1;
             try
             {
-                using var db =
+                await using var db =
                     await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache)
                         .ConfigureAwait(false);
                 knownRemotes = await db
@@ -133,7 +133,7 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
-            using var db =
+            await using var db =
                 await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache)
                     .ConfigureAwait(false);
 
@@ -230,7 +230,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (tp.VerificationRequiredVolumes.Any())
                     {
-                        using var testdb =
+                        await using var testdb =
                             await LocalTestDatabase.CreateAsync(db)
                                 .ConfigureAwait(false);
 
@@ -473,7 +473,7 @@ namespace Duplicati.Library.Main.Operation
                         var parsed = VolumeBase.ParseFilename(remoteVolume.Name);
                         using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
                         using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
-                        using var recreatedb = await LocalRecreateDatabase.CreateAsync(db, m_options).ConfigureAwait(false);
+                        await using var recreatedb = await LocalRecreateDatabase.CreateAsync(db, m_options).ConfigureAwait(false);
                         if (compressor == null)
                             throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
 
@@ -1063,7 +1063,7 @@ namespace Duplicati.Library.Main.Operation
             // The dblock files are the most complex to recreate
             // as data can be either file contents, metadata or blocklist hashes
             // We attempt to recover all three source parts in the steps below
-            using var mbl = await db
+            await using var mbl = await db
                 .CreateBlockList(originalVolume.Name)
                 .ConfigureAwait(false);
 
@@ -1321,7 +1321,7 @@ namespace Duplicati.Library.Main.Operation
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using var db =
+            await using var db =
                 await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache)
                     .ConfigureAwait(false);
 
@@ -1351,7 +1351,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Clear out the old fileset
                 await db.DeleteFilesetEntries(entry.Key).ConfigureAwait(false);
-                using (var rdb = await LocalRecreateDatabase.CreateAsync(db, m_options).ConfigureAwait(false))
+                await using (var rdb = await LocalRecreateDatabase.CreateAsync(db, m_options).ConfigureAwait(false))
                 {
                     await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(rdb, compressor, entry.Key, m_options, new FilterExpression())
                         .ConfigureAwait(false);
@@ -1376,7 +1376,7 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
-            using var db =
+            await using var db =
                 await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache)
                     .ConfigureAwait(false);
 

@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Operation
             if (File.Exists(path))
                 throw new UserInformationException(string.Format("Cannot recreate database because file already exists: {0}", path), "RecreateTargetDatabaseExists");
 
-            using var db =
+            await using var db =
                 await LocalDatabase.CreateLocalDatabaseAsync(path, "Recreate", true, m_options.SqlitePageCache)
                     .ConfigureAwait(false);
 
@@ -88,7 +88,7 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.RepairOnlyPaths)
                 throw new UserInformationException(string.Format("Can only update with paths, try setting --{0}", "repair-only-paths"), "RepairUpdateRequiresPathsOnly");
 
-            using var db =
+            await using var db =
                 await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "Recreate", true, m_options.SqlitePageCache)
                 .ConfigureAwait(false);
             if ((await db.FindMatchingFilesets(m_options.Time, m_options.Version).ConfigureAwait(false)).Any())
@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Recreate_Running);
 
             //We build a local database in steps.
-            using var restoredb =
+            await using var restoredb =
                 await LocalRecreateDatabase.CreateAsync(dbparent, m_options)
                     .ConfigureAwait(false);
             await restoredb.RepairInProgress(true).ConfigureAwait(false);
@@ -652,7 +652,7 @@ namespace Duplicati.Library.Main.Operation
                 // except to continue a backup
                 m_result.EndTime = DateTime.UtcNow;
 
-                using (var lbfdb = await LocalListBrokenFilesDatabase.CreateAsync(restoredb).ConfigureAwait(false))
+                await using (var lbfdb = await LocalListBrokenFilesDatabase.CreateAsync(restoredb).ConfigureAwait(false))
                 {
                     var broken = await lbfdb
                         .GetBrokenFilesets(new DateTime(0), null)

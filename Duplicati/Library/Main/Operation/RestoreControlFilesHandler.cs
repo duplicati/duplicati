@@ -46,7 +46,7 @@ namespace Duplicati.Library.Main.Operation
                 Directory.CreateDirectory(m_options.Restorepath);
 
             using var tmpdb = new TempFile();
-            using var db = await Database.LocalDatabase.CreateLocalDatabaseAsync(File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true, m_options.SqlitePageCache).ConfigureAwait(false);
+            await using var db = await Database.LocalDatabase.CreateLocalDatabaseAsync(File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true, m_options.SqlitePageCache).ConfigureAwait(false);
             var filter = JoinedFilterExpression.Join(new FilterExpression(filterstrings), compositefilter);
 
             try

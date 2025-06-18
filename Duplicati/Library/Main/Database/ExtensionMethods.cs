@@ -262,7 +262,7 @@ public static partial class ExtensionMethods
             self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReaderEnumerableAsync", $"ExecuteReaderEnumerableAsync: {self.GetPrintableCommandText()}") : null)
-        using (var rd = await self.ExecuteReaderAsync().ConfigureAwait(false))
+        await using (var rd = await self.ExecuteReaderAsync().ConfigureAwait(false))
             while (await rd.ReadAsync().ConfigureAwait(false))
                 yield return rd;
     }
@@ -391,7 +391,7 @@ public static partial class ExtensionMethods
             self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarInt64Async", string.Format("ExecuteScalarInt64Async: {0}", self.GetPrintableCommandText())) : null)
-        using (var rd = await self.ExecuteReaderAsync().ConfigureAwait(false))
+        await using (var rd = await self.ExecuteReaderAsync().ConfigureAwait(false))
             if (await rd.ReadAsync().ConfigureAwait(false))
                 return ConvertValueToInt64(rd, 0, defaultvalue);
 

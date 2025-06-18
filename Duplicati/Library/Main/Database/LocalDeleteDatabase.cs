@@ -118,10 +118,10 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An async enumerable of key-value pairs, where the key is the fileset name and the value is the size of the fileset.</returns>
         public async IAsyncEnumerable<KeyValuePair<string, long>> DropFilesetsFromTable(DateTime[] toDelete)
         {
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             var deleted = 0;
 
-            using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds)).ConfigureAwait(false))
+            await using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds)).ConfigureAwait(false))
                 deleted += await (
                     await cmd.SetCommandAndParameters(@"
                             DELETE FROM ""Fileset""
@@ -281,7 +281,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
                 .SetParameterValue("@State", RemoteVolumeState.Deleting.ToString());
 
-            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await rd.ReadAsync().ConfigureAwait(false))
                 yield return new KeyValuePair<string, long>(
                     rd.ConvertValueToString(0) ?? "",
@@ -297,7 +297,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An async enumerable of IListResultFileset.</returns>
         internal async IAsyncEnumerable<IListResultFileset> FilesetsWithBackupVersion()
         {
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             // TODO check if this is still the case? (shouldn't be with new sqlite driver):
             // We can also use the ROW_NUMBER() window function to generate the backup versions,
             // but this requires at least SQLite 3.25, which is not available in some common
@@ -310,7 +310,7 @@ namespace Duplicati.Library.Main.Database
                     ORDER BY ""Timestamp"" DESC
                 ");
 
-            using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             int version = 0;
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
@@ -497,7 +497,7 @@ namespace Duplicati.Library.Main.Database
 
             var createtable = $"{@$"CREATE {TEMPORARY} TABLE ""{tmptablename}"" AS "}{collected}";
 
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             try
             {
                 await cmd
@@ -523,7 +523,7 @@ namespace Duplicati.Library.Main.Database
                         ORDER BY ""B"".""Sorttime"" ASC
                     ");
 
-                using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                 while (await rd.ReadAsync().ConfigureAwait(false))
                     yield return new VolumeUsage(
                         rd.ConvertValueToString(0) ?? "",
@@ -881,7 +881,7 @@ namespace Duplicati.Library.Main.Database
             if (deletedVolume.Type != RemoteVolumeType.Blocks)
                 return;
 
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             var updatedBlocks = "BlocksToUpdate-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             var replacementBlocks = "ReplacementBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             try
@@ -896,7 +896,7 @@ namespace Duplicati.Library.Main.Database
                     .ExecuteNonQueryAsync()
                     .ConfigureAwait(false);
 
-                using (var tempTable = await TemporaryDbValueList.CreateAsync(this, volumeIdsToBeRemoved).ConfigureAwait(false))
+                await using (var tempTable = await TemporaryDbValueList.CreateAsync(this, volumeIdsToBeRemoved).ConfigureAwait(false))
                     await (
                         await cmd.SetCommandAndParameters($@"
                                 CREATE {TEMPORARY} TABLE ""{replacementBlocks}"" AS
@@ -1005,7 +1005,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of <see cref="IRemoteVolume"/> that represents the order in which volumes should be deleted.</returns>
         public async IAsyncEnumerable<IRemoteVolume> ReOrderDeleteableVolumes(IEnumerable<IRemoteVolume> deleteableVolumes)
         {
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             // Although the generated index volumes are always in pairs,
             // this code handles many-to-many relations between
             // index files and block volumes, should this be added later
@@ -1029,7 +1029,7 @@ namespace Duplicati.Library.Main.Database
                         AND ""B"".""Size"" IS NOT NULL
                 ");
 
-            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+            await using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
                 while (await rd.ReadAsync().ConfigureAwait(false))
                 {
                     var name = rd.ConvertValueToString(0) ?? "";

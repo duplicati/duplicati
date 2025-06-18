@@ -80,7 +80,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that represents the asynchronous operation.</returns>
         public async Task UpdateVerificationCount(string name)
         {
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             await cmd.SetCommandAndParameters(@"
                     UPDATE ""RemoteVolume""
                     SET ""VerificationCount"" = MAX(1,
@@ -204,7 +204,7 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
 
             samples = Math.Max(1, samples);
-            using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             var files = new List<RemoteVolume>();
             var max = cmd.ExecuteScalarInt64(@"
                     SELECT MAX(""VerificationCount"")
@@ -237,13 +237,13 @@ namespace Duplicati.Library.Main.Database
                         RemoteVolumeState.Uploaded.ToString()
                 ]);
 
-                using (var rd = cmd.ExecuteReader())
+                await using (var rd = cmd.ExecuteReader())
                     while (rd.Read())
                         yield return new RemoteVolume(rd);
 
                 //First we select some filesets
                 var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
-                using (var rd = cmd.SetCommandAndParameters(@$"
+                await using (var rd = cmd.SetCommandAndParameters(@$"
                         SELECT
                             ""A"".""VolumeID"",
                             ""A"".""Name"",
@@ -307,7 +307,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@Type", RemoteVolumeType.Index.ToString())
                 .ExpandInClauseParameterMssqlite("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
-            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+            await using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
                 while (await rd.ReadAsync().ConfigureAwait(false))
                     files.Add(new RemoteVolume(rd));
 
@@ -336,7 +336,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
                 .ExpandInClauseParameterMssqlite("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
-            using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+            await using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
                 while (await rd.ReadAsync().ConfigureAwait(false))
                     files.Add(new RemoteVolume(rd));
 
@@ -397,7 +397,7 @@ namespace Duplicati.Library.Main.Database
                 bl.m_volumename = volumename;
                 var tablename = tablePrefix + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-                using (var cmd = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction))
+                await using (var cmd = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction))
                 {
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE TEMPORARY TABLE ""{tablename}""
@@ -427,7 +427,7 @@ namespace Duplicati.Library.Main.Database
                 if (m_tablename != null)
                     try
                     {
-                        using var cmd = m_db.Connection.CreateCommand(m_db.Transaction.Transaction);
+                        await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction.Transaction);
                         await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tablename}""")
                             .ConfigureAwait(false);
                     }
@@ -629,7 +629,7 @@ namespace Duplicati.Library.Main.Database
 
                 var drop = $@"DROP TABLE IF EXISTS ""{cmpName}"" ";
 
-                using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
                 try
                 {
                     await cmd
@@ -644,7 +644,7 @@ namespace Duplicati.Library.Main.Database
                         .SetParameterValue("@TypeMissing", (int)Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Interface.TestEntryStatus.Modified);
 
-                    using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                    await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                     while (await rd.ReadAsync().ConfigureAwait(false))
                         yield return new KeyValuePair<Interface.TestEntryStatus, string>(
                             (Interface.TestEntryStatus)rd.ConvertValueToInt64(0),
@@ -822,7 +822,7 @@ namespace Duplicati.Library.Main.Database
 
                 var drop = $@"DROP TABLE IF EXISTS ""{cmpName}"" ";
 
-                using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
                 try
                 {
                     await cmd
@@ -837,7 +837,7 @@ namespace Duplicati.Library.Main.Database
                         .SetParameterValue("@TypeMissing", (int)Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Interface.TestEntryStatus.Modified);
 
-                    using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                    await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                     while (await rd.ReadAsync().ConfigureAwait(false))
                         yield return new KeyValuePair<Interface.TestEntryStatus, string>((Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
@@ -1054,7 +1054,7 @@ namespace Duplicati.Library.Main.Database
 
                 var drop = $@"DROP TABLE IF EXISTS ""{cmpName}"" ";
 
-                using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
                 try
                 {
                     await cmd
@@ -1073,7 +1073,7 @@ namespace Duplicati.Library.Main.Database
                         .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
 
-                    using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                    await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                     while (await rd.ReadAsync().ConfigureAwait(false))
                         yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
@@ -1266,7 +1266,7 @@ namespace Duplicati.Library.Main.Database
 
                 var drop = $@"DROP TABLE IF EXISTS ""{cmpName}""";
 
-                using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
                 try
                 {
                     // Create expected hash+size table filtered by volume
@@ -1283,7 +1283,7 @@ namespace Duplicati.Library.Main.Database
                         .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
 
-                    using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                    await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                     while (await rd.ReadAsync().ConfigureAwait(false))
                         yield return new KeyValuePair<Library.Interface.TestEntryStatus, string>(
                             (Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0),

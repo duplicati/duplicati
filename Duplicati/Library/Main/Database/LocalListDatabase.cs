@@ -182,7 +182,7 @@ namespace Duplicati.Library.Main.Database
                 var query = tmp.Item1;
                 var args = tmp.Item2;
 
-                using (var cmd = fs.m_db.Connection.CreateCommand())
+                await using (var cmd = fs.m_db.Connection.CreateCommand())
                 {
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE TEMPORARY TABLE ""{fs.m_tablename}"" AS
@@ -312,8 +312,8 @@ namespace Duplicati.Library.Main.Database
             /// <returns>An asynchronous enumerable of file versions representing the largest prefix.</returns>
             private async IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string? prefixrule)
             {
-                using var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, filter).ConfigureAwait(false);
-                using var cmd = m_db.Connection.CreateCommand();
+                await using var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, filter).ConfigureAwait(false);
+                await using var cmd = m_db.Connection.CreateCommand();
                 //First we trim the filelist to exclude filenames not found in any of the filesets
                 await cmd.ExecuteNonQueryAsync($@"
                         DELETE FROM ""{tmpnames.Tablename}""
@@ -449,7 +449,7 @@ namespace Duplicati.Library.Main.Database
                     SELECT DISTINCT ""Path""
                     FROM ""{table}""
                 ");
-                using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                 while (await rd.ReadAsync().ConfigureAwait(false))
                 {
                     var s = rd.ConvertValueToString(0) ?? "";
@@ -487,8 +487,8 @@ namespace Duplicati.Library.Main.Database
                     if (pathprefix.Length > 0 || dirsep == "/")
                         pathprefix = Util.AppendDirSeparator(pathprefix, dirsep);
 
-                    using var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, new FilterExpression(new string[] { pathprefix + "*" }, true)).ConfigureAwait(false);
-                    using var cmd = m_db.Connection.CreateCommand();
+                    await using var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, new FilterExpression(new string[] { pathprefix + "*" }, true)).ConfigureAwait(false);
+                    await using var cmd = m_db.Connection.CreateCommand();
                     //First we trim the filelist to exclude filenames not found in any of the filesets
                     await cmd.ExecuteNonQueryAsync($@"
                             DELETE FROM ""{tmpnames.Tablename}""
@@ -523,7 +523,7 @@ namespace Duplicati.Library.Main.Database
                         ")
                         .ConfigureAwait(false);
 
-                    using (var c2 = m_db.Connection.CreateCommand())
+                    await using (var c2 = m_db.Connection.CreateCommand())
                     {
                         c2.SetCommandAndParameters($@"
                                 INSERT INTO ""{tbname}"" (""Path"")
@@ -593,7 +593,7 @@ namespace Duplicati.Library.Main.Database
                                 AND ""C"".""Path"" = ""D"".""Path""
                         ";
 
-                    using var rd = await cmd
+                    await using var rd = await cmd
                         .ExecuteReaderAsync(query)
                         .ConfigureAwait(false);
 
@@ -621,7 +621,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     try
                     {
-                        using var c = m_db.Connection.CreateCommand();
+                        await using var c = m_db.Connection.CreateCommand();
                         await c.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tbname}""")
                             .ConfigureAwait(false);
                     }
@@ -633,8 +633,8 @@ namespace Duplicati.Library.Main.Database
 
             public async IAsyncEnumerable<IFileversion> SelectFiles(IFilter filter)
             {
-                using var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, filter).ConfigureAwait(false);
-                using var cmd = m_db.Connection.CreateCommand();
+                await using var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, filter).ConfigureAwait(false);
+                await using var cmd = m_db.Connection.CreateCommand();
                 //First we trim the filelist to exclude filenames not found in any of the filesets
                 await cmd.ExecuteNonQueryAsync($@"
                         DELETE FROM ""{tmpnames.Tablename}""
@@ -703,7 +703,7 @@ namespace Duplicati.Library.Main.Database
                             AND ""C"".""Path"" = ""D"".""Path""
                     ";
 
-                using var rd = await cmd.ExecuteReaderAsync(query)
+                await using var rd = await cmd.ExecuteReaderAsync(query)
                     .ConfigureAwait(false);
                 if (await rd.ReadAsync().ConfigureAwait(false))
                 {
@@ -722,7 +722,7 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             public async Task TakeFirst()
             {
-                using var cmd = m_db.Connection.CreateCommand();
+                await using var cmd = m_db.Connection.CreateCommand();
                 await cmd.ExecuteNonQueryAsync($@"
                     DELETE FROM ""{m_tablename}""
                     WHERE ""FilesetID"" NOT IN (
@@ -741,8 +741,8 @@ namespace Duplicati.Library.Main.Database
                 for (var i = 0; i < m_filesets.Length; i++)
                     dict[m_filesets[i].Key] = i;
 
-                using var cmd = m_db.Connection.CreateCommand();
-                using var rd = await cmd.ExecuteReaderAsync(@"
+                await using var cmd = m_db.Connection.CreateCommand();
+                await using var rd = await cmd.ExecuteReaderAsync(@"
                     SELECT DISTINCT
                         ""ID"",
                         ""IsFullBackup""
@@ -789,8 +789,8 @@ namespace Duplicati.Library.Main.Database
                             GROUP BY ""A"".""FilesetID""
                 ";
 
-                using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
-                using var rd = await cmd.ExecuteReaderAsync($@"
+                await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                await using var rd = await cmd.ExecuteReaderAsync($@"
                     SELECT DISTINCT
                         ""A"".""FilesetID"",
                         ""A"".""IsFullBackup"",
@@ -832,7 +832,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     try
                     {
-                        using var cmd = m_db.Connection.CreateCommand();
+                        await using var cmd = m_db.Connection.CreateCommand();
                         await cmd.ExecuteNonQueryAsync(@$"DROP TABLE IF EXISTS ""{m_tablename}"" ")
                             .ConfigureAwait(false);
                     }
@@ -888,7 +888,7 @@ namespace Duplicati.Library.Main.Database
                 ORDER BY ""f"".""Timestamp"" DESC;
             ";
 
-            using var cmd = m_connection.CreateCommand(query);
+            await using var cmd = m_connection.CreateCommand(query);
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))
             {
                 var id = rd.ConvertValueToInt64(0);
@@ -932,7 +932,7 @@ namespace Duplicati.Library.Main.Database
             if (limit <= 0)
                 limit = long.MaxValue;
 
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             if (prefixIds.Count() == 0)
                 return new PaginatedResults<IListFolderEntry>(0, (int)limit, 0, 0, Enumerable.Empty<IListFolderEntry>());
@@ -1043,7 +1043,7 @@ namespace Duplicati.Library.Main.Database
             if (limit <= 0)
                 limit = long.MaxValue;
 
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             if (!prefixIds.Any())
                 return new PaginatedResults<IListFolderEntry>(0, (int)limit, 0, 0, Enumerable.Empty<IListFolderEntry>());
@@ -1136,9 +1136,9 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="prefixes">The prefixes to get the IDs for.</param>
         /// <returns>An asynchronous enumerable of prefix IDs.</returns>
-        public IAsyncEnumerable<long> GetPrefixIds(IEnumerable<string> prefixes)
+        public async IAsyncEnumerable<long> GetPrefixIds(IEnumerable<string> prefixes)
         {
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             // Map folders to prefix IDs
             cmd.SetCommandAndParameters($@"
@@ -1148,8 +1148,10 @@ namespace Duplicati.Library.Main.Database
             ")
                 .ExpandInClauseParameter("@Prefixes", prefixes);
 
-            return cmd.ExecuteReaderEnumerableAsync()
-                .Select(x => x.ConvertValueToInt64(0));
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))
+            {
+                yield return rd.ConvertValueToInt64(0);
+            }
         }
 
         /// <summary>
@@ -1157,9 +1159,9 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="filesetid">The filesetId to get the prefixes for.</param>
         /// <returns>An asynchronous enumerable of root prefixes.</returns>
-        public IAsyncEnumerable<long> GetRootPrefixes(long filesetid)
+        public async IAsyncEnumerable<long> GetRootPrefixes(long filesetid)
         {
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             cmd.SetCommandAndParameters(@"
                 WITH Prefixes AS (
@@ -1187,9 +1189,14 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetParameterValue("@filesetid", filesetid);
 
-            return cmd.ExecuteReaderEnumerableAsync()
-                .Select(x => x.ConvertValueToInt64(0, -1))
-                .Where(x => x != -1);
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))
+            {
+                var prefixId = rd.ConvertValueToInt64(0, -1);
+                if (prefixId != -1)
+                {
+                    yield return prefixId;
+                }
+            }
         }
 
         /// <summary>
@@ -1199,7 +1206,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when awaited returns an asynchronous enumerable of (PrefixID, ParentPrefixID) pairs.</returns>
         public async Task<IAsyncEnumerable<(long PrefixId, long ParentPrefixId)>> GetRootPrefixesWithParents(long filesetid)
         {
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             var dirSeparator = Util.GuessDirSeparator((
                 await cmd.SetCommandAndParameters(@"
@@ -1274,7 +1281,7 @@ namespace Duplicati.Library.Main.Database
             if (limit <= 0)
                 limit = long.MaxValue;
 
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             var countWhere = "WHERE fl.\"Path\" IN (@Paths)";
             if (filesetIds != null && filesetIds.Length > 0)
@@ -1416,7 +1423,7 @@ namespace Duplicati.Library.Main.Database
             if (limit <= 0)
                 limit = long.MaxValue;
 
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             // Analyze the filter to determine the default behavior
             FilterExpression.AnalyzeFilters(filter, out var includes, out var excludes);

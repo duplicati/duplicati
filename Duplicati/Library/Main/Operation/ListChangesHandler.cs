@@ -80,8 +80,8 @@ namespace Duplicati.Library.Main.Operation
             DateTime compareVersionTime;
 
             using var tmpdb = useLocalDb ? null : new TempFile();
-            using var db = await Database.LocalListChangesDatabase.CreateAsync(useLocalDb ? m_options.Dbpath : (string)tmpdb, m_options.SqlitePageCache).ConfigureAwait(false);
-            using var storageKeeper = await db.CreateStorageHelper().ConfigureAwait(false);
+            await using var db = await Database.LocalListChangesDatabase.CreateAsync(useLocalDb ? m_options.Dbpath : (string)tmpdb, m_options.SqlitePageCache).ConfigureAwait(false);
+            await using var storageKeeper = await db.CreateStorageHelper().ConfigureAwait(false);
             if (useLocalDb)
             {
                 var dbtimes = await db

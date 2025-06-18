@@ -170,9 +170,9 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
-            using var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false);
-            using var cmd = await m_connection.CreateCommand(sql).SetTransaction(m_rtr).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false);
-            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false);
+            await using var cmd = await m_connection.CreateCommand(sql).SetTransaction(m_rtr).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await rd.ReadAsync().ConfigureAwait(false))
             {
                 var v = dict[rd.ConvertValueToInt64(0)];
@@ -249,9 +249,9 @@ namespace Duplicati.Library.Main.Database
                 ORDER BY ""Path""
             ";
 
-            using var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false);
-            using var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false);
-            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, items).ConfigureAwait(false);
+            await using var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterMssqliteAsync("@Names", tmptable).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await rd.ReadAsync().ConfigureAwait(false))
                 yield return new ListResultFile()
                 {
@@ -268,7 +268,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of log line results.</returns>
         public async IAsyncEnumerable<Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items)
         {
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             foreach (var slice in items.Chunk(CHUNK_SIZE / 2))
             {
@@ -299,7 +299,7 @@ namespace Duplicati.Library.Main.Database
                 foreach ((var x, var i) in items.Select((x, i) => (x, i)))
                     cmd.SetParameterValue($"@Message{i}", "%" + x + "%");
 
-                using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
                 while (await rd.ReadAsync().ConfigureAwait(false))
                     yield return new ListResultRemoteLog()
                     {
@@ -382,8 +382,8 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
-            using var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameterMssqlite("@Names", items.ToArray());
-            using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            await using var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameterMssqlite("@Names", items.ToArray());
+            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
             while (await rd.ReadAsync().ConfigureAwait(false))
                 yield return new ListResultRemoteVolume()
                 {

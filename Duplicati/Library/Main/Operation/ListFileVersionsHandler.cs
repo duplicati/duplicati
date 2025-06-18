@@ -47,7 +47,7 @@ internal static class ListFileVersionsHandler
         if (!System.IO.File.Exists(options.Dbpath) || options.NoLocalDb)
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
-        using var db =
+        await using var db =
             await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache)
                 .ConfigureAwait(false);
         long[]? filesetIds = null;

@@ -52,7 +52,7 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
-            using (var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Compact", m_options.SqlitePageCache).ConfigureAwait(false))
+            await using (var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Compact", m_options.SqlitePageCache).ConfigureAwait(false))
             {
                 await Utility.UpdateOptionsFromDb(db, m_options)
                     .ConfigureAwait(false);

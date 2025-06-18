@@ -54,7 +54,7 @@ namespace Duplicati.Library.Main.Operation
             if (filter != null && !filter.Empty)
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersNotAllowedOnPurgeBrokenFiles");
 
-            using var db = await LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false);
+            await using var db = await LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false);
             if (await db.PartiallyRecreated().ConfigureAwait(false))
                 throw new UserInformationException("The command does not work on partially recreated databases", "CannotPurgeOnPartialDatabase");
 
@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteInformationMessage(LOGTAG, "RemovingFilesets", "Removing {0} filesets where all file(s) are broken: {1}", fully_emptied.Length, string.Join(", ", fully_emptied.Select(x => x.Timestamp.ToLocalTime().ToString())));
 
                     m_result.DeleteResults = new DeleteResults(m_result);
-                    using (var rmdb = await LocalDeleteDatabase.CreateAsync(db).ConfigureAwait(false))
+                    await using (var rmdb = await LocalDeleteDatabase.CreateAsync(db).ConfigureAwait(false))
                     {
                         var opts = new Options(new Dictionary<string, string?>(m_options.RawOptions));
                         opts.RawOptions["version"] = string.Join(",", fully_emptied.Select(x => x.Version.ToString()));
@@ -163,7 +163,7 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteInformationMessage(LOGTAG, "PurgingFiles", "Purging {0} file(s) from fileset {1}", bs.RemoveCount, bs.Timestamp.ToLocalTime());
                         var opts = new Options(new Dictionary<string, string?>(m_options.RawOptions));
 
-                        using (var pgdb = await Database.LocalPurgeDatabase.CreateAsync(db).ConfigureAwait(false))
+                        await using (var pgdb = await Database.LocalPurgeDatabase.CreateAsync(db).ConfigureAwait(false))
                         {
                             // Recompute the version number after we deleted the versions before
                             filesets = await pgdb

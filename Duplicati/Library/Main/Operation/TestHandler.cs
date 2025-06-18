@@ -52,7 +52,7 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using var db = await LocalTestDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false);
+            await using var db = await LocalTestDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false);
             await Utility.UpdateOptionsFromDb(db, m_options)
                 .ConfigureAwait(false);
             await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
@@ -280,7 +280,7 @@ namespace Duplicati.Library.Main.Operation
                 case RemoteVolumeType.Files:
                     //Compare with db and see if all files are accounted for
                     // with correct file hashes and blocklist hashes
-                    using (var fl = await db.CreateFilelist(vol.Name).ConfigureAwait(false))
+                    await using (var fl = await db.CreateFilelist(vol.Name).ConfigureAwait(false))
                     {
                         using (var rd = new Volumes.FilesetVolumeReader(parsedInfo.CompressionModule, tf, options))
                             foreach (var f in rd.Files)
@@ -301,7 +301,7 @@ namespace Duplicati.Library.Main.Operation
                         foreach (var v in rd.Volumes)
                         {
                             blocklinks.Add(new Tuple<string, string, long>(v.Filename, v.Hash, v.Length));
-                            using (var bl = await db.CreateBlocklist(v.Filename).ConfigureAwait(false))
+                            await using (var bl = await db.CreateBlocklist(v.Filename).ConfigureAwait(false))
                             {
                                 foreach (var h in v.Blocks)
                                     await bl
@@ -320,7 +320,7 @@ namespace Duplicati.Library.Main.Operation
                         if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                         {
                             var hashesPerBlock = options.Blocksize / options.BlockhashSize;
-                            using (var bl = await db.CreateBlocklistHashList(vol.Name).ConfigureAwait(false))
+                            await using (var bl = await db.CreateBlocklistHashList(vol.Name).ConfigureAwait(false))
                             {
                                 foreach (var b in rd.BlockLists)
                                     await bl
@@ -338,7 +338,7 @@ namespace Duplicati.Library.Main.Operation
                     }
 
                     // Compare with db and see that all blocklists are listed
-                    using (var il = await db.CreateIndexlist(vol.Name).ConfigureAwait(false))
+                    await using (var il = await db.CreateIndexlist(vol.Name).ConfigureAwait(false))
                     {
                         foreach (var t in blocklinks)
                             await il
@@ -356,7 +356,7 @@ namespace Duplicati.Library.Main.Operation
                     return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, combined);
                 case RemoteVolumeType.Blocks:
                     using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
-                    using (var bl = await db.CreateBlocklist(vol.Name).ConfigureAwait(false))
+                    await using (var bl = await db.CreateBlocklist(vol.Name).ConfigureAwait(false))
                     using (var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, options))
                     {
                         //Verify that all blocks are in the file
@@ -406,7 +406,7 @@ namespace Duplicati.Library.Main.Operation
 
         private async Task ReplaceFaultyIndexFilesAsync(List<IRemoteVolume> faultyIndexFiles, IBackendManager backendManager, LocalTestDatabase db, CancellationToken cancellationToken)
         {
-            using var repairdb =
+            await using var repairdb =
                 await LocalRepairDatabase.CreateAsync(db)
                     .ConfigureAwait(false);
 
