@@ -165,17 +165,17 @@ namespace Duplicati.Library.Main.Database
                                 ""A"".""Hash"" AS ""BlocklistHash"",
                                 ""B"".""Length""
                             FROM
-                                ""BlocklistHash"" A,
-                                ""Blockset"" B
+                                ""BlocklistHash"" ""A"",
+                                ""Blockset"" ""B""
                             WHERE
                                 ""B"".""ID"" = ""A"".""BlocksetID""
-                        ) C,
-                        ""Block"" D
+                        ) ""C"",
+                        ""Block"" ""D""
                     WHERE
                         ""C"".""BlocklistHash"" = ""D"".""Hash""
                         AND ""C"".""BlocklistSize"" = ""D"".""Size""
-                ) E,
-                ""{temptable}"" F
+                ) ""E"",
+                ""{temptable}"" ""F""
             WHERE
                 ""F"".""BlocklistHash"" = ""E"".""Hash""
             ORDER BY
@@ -488,8 +488,8 @@ namespace Duplicati.Library.Main.Database
                             THEN -1
                             ELSE ""B"".""Size""
                         END AS ""Size""
-                    FROM ({selectAllBlocks}) A
-                    LEFT OUTER JOIN ""Block"" B
+                    FROM ({selectAllBlocks}) ""A""
+                    LEFT OUTER JOIN ""Block"" ""B""
                         ON ""B"".""Hash"" =  ""A"".""FullHash""
                         AND ""B"".""Size"" = ""A"".""Length""
                 )
@@ -520,10 +520,10 @@ namespace Duplicati.Library.Main.Database
                     ""D"".""FullIndex"" AS ""Index"",
                     ""F"".""ID"" AS ""BlockID""
                 FROM
-                    ({SELECT_BLOCKLIST_ENTRIES(blocksize, hashsize, m_tempblocklist, blocksize / hashsize)}) D,
-                    ""BlocklistHash"" E,
-                    ""Block"" F,
-                    ""Block"" G
+                    ({SELECT_BLOCKLIST_ENTRIES(blocksize, hashsize, m_tempblocklist, blocksize / hashsize)}) ""D"",
+                    ""BlocklistHash"" ""E"",
+                    ""Block"" ""F"",
+                    ""Block"" ""G""
                 WHERE
                     ""D"".""BlocksetID"" = ""E"".""BlocksetID""
                     AND ""D"".""BlocklistHash"" = ""E"".""Hash""
@@ -541,7 +541,7 @@ namespace Duplicati.Library.Main.Database
                 FROM
                     ""Blockset"",
                     ""Block"",
-                    ""{m_tempsmalllist}"" S
+                    ""{m_tempsmalllist}"" ""S""
                 WHERE
                     ""Blockset"".""Fullhash"" = ""S"".""FileHash""
                     AND ""S"".""BlockHash"" = ""Block"".""Hash""
@@ -639,48 +639,49 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that completes when the operation is finished.</returns>
         public async Task AddBlockAndBlockSetEntryFromTemp(long hashsize, long blocksize, bool hashOnly = false)
         {
+            // TODO should values be parameters, rather than hardcoded into the SQL queries?
             using var cmd = m_connection.CreateCommand(m_rtr);
             var extra = hashOnly ? "" : $@"
                     UNION
                     SELECT
-                        TS.BlockHash,
-                        TS.BlockSize
-                    FROM {m_tempsmalllist} TS
+                        ""TS"".""BlockHash"",
+                        ""TS"".""BlockSize""
+                    FROM ""{m_tempsmalllist}"" ""TS""
                     WHERE NOT EXISTS (
                         SELECT ""X""
-                        FROM Block AS B
+                        FROM Block AS ""B""
                         WHERE
-                            B.Hash =  TS.BlockHash
-                            AND B.Size = TS.BlockSize
+                            ""B"".""Hash"" =  ""TS"".""BlockHash""
+                            AND ""B"".""Size"" = ""TS"".""BlockSize""
                     )
                 ";
             var insertBlocksCommand = $@"
-                INSERT INTO BLOCK (
-                    Hash,
-                    Size,
-                    VolumeID
+                INSERT INTO ""Block"" (
+                    ""Hash"",
+                    ""Size"",
+                    ""VolumeID""
                 )
                 SELECT DISTINCT
-                    BlockHash AS Hash,
-                    BlockSize AS Size,
-                    -1 AS VolumeID
+                    ""BlockHash"" AS ""Hash"",
+                    ""BlockSize"" AS ""Size"",
+                    -1 AS ""VolumeID""
                 FROM (
                     SELECT
-                        NB.BlockHash,
-                        MIN({blocksize}, BS.Length - ((NB.""Index"" + (BH.""Index"" * {blocksize / hashsize})) * {blocksize})) AS BlockSize
+                        ""NB"".""BlockHash"",
+                        MIN({blocksize}, ""BS"".""Length"" - ((""NB"".""Index"" + (BH.""Index"" * {blocksize / hashsize})) * {blocksize})) AS ""BlockSize""
                     FROM (
                         SELECT
-                            TBL.BlockListHash,
-                            TBL.BlockHash,
-                            TBL.""Index"" FROM {m_tempblocklist} TBL
-                        LEFT OUTER JOIN Block B
-                            ON (B.Hash = TBL.BlockHash)
-                        WHERE B.Hash IS NULL
-                    ) NB
-                    JOIN BlocklistHash BH
-                        ON (BH.Hash = NB.BlocklistHash)
-                    JOIN Blockset BS
-                        ON (BS.ID = BH.Blocksetid)
+                            ""TBL"".""BlockListHash"",
+                            ""TBL"".""BlockHash"",
+                            ""TBL"".""Index"" FROM ""{m_tempblocklist}"" ""TBL""
+                        LEFT OUTER JOIN ""Block"" ""B""
+                            ON (""B"".""Hash"" = ""TBL"".""BlockHash"")
+                        WHERE ""B"".""Hash"" IS NULL
+                    ) ""NB""
+                    JOIN ""BlocklistHash"" ""BH""
+                        ON (""BH"".""Hash"" = ""NB"".""BlocklistHash"")
+                    JOIN ""Blockset"" ""BS""
+                        ON (""BS"".""ID"" = ""BH"".""Blocksetid"")
                     {extra}
                 )
             ";
@@ -688,50 +689,51 @@ namespace Duplicati.Library.Main.Database
             extra = hashOnly ? "" : $@"
                 UNION
                     SELECT
-                        BS.ID AS BlocksetID,
+                        ""BS"".""ID"" AS ""BlocksetID"",
                         0 AS ""Index"",
-                        BL.ID AS BlockID
-                    FROM {m_tempsmalllist} TS
-                    JOIN Blockset BS
+                        ""BL"".""ID"" AS ""BlockID""
+                    FROM ""{m_tempsmalllist}"" ""TS""
+                    JOIN ""Blockset"" ""BS""
                         ON (
-                            BS.FullHash = TS.FileHash
-                            AND BS.Length = TS.BlockSize
-                            AND BS.Length <= {blocksize}
+                            ""BS"".""FullHash"" = ""TS"".""FileHash""
+                            AND ""BS"".""Length"" = ""TS"".""BlockSize""
+                            AND ""BS"".""Length"" <= {blocksize}
                         )
-                    JOIN Block BL
+                    JOIN ""Block"" ""BL""
                         ON (
-                            BL.Hash = TS.BlockHash
-                            AND BL.Size = TS.BlockSize
+                            ""BL"".""Hash"" = ""TS"".""BlockHash""
+                            AND ""BL"".""Size"" = ""TS"".""BlockSize""
                         )
-                    LEFT OUTER JOIN BlocksetEntry BE
+                    LEFT OUTER JOIN ""BlocksetEntry"" ""BE""
                         ON (
-                            BE.BlocksetID = BS.ID
-                            AND BE.""Index"" = 0
+                            ""BE"".""BlocksetID"" = ""BS"".""ID""
+                            AND ""BE"".""Index"" = 0
                         )
-                    WHERE BE.BlocksetID IS NULL
+                    WHERE ""BE"".""BlocksetID"" IS NULL
             ";
             var insertBlocksetEntriesCommand = $@"
-                INSERT INTO BlocksetEntry (
-                    BlocksetID,
+                INSERT INTO ""BlocksetEntry"" (
+                    ""BlocksetID"",
                     ""Index"",
-                    BlockID
+                    ""BlockID""
                 )
                 SELECT DISTINCT
-                    BH.blocksetid,
-                    (BH.""Index"" * {blocksize / hashsize})+TBL.""Index"" as FullIndex,
-                    BK.ID AS BlockID
-                FROM {m_tempblocklist} TBL
-                    JOIN blocklisthash BH
-                        ON (BH.hash = TBL.blocklisthash)
-                    JOIN block BK
-                        ON (BK.Hash = TBL.BlockHash)
-                    LEFT OUTER JOIN BlocksetEntry BE
+                    ""BH"".""blocksetid"",
+                    (""BH"".""Index"" * {blocksize / hashsize}) + ""TBL"".""Index"" as ""FullIndex"",
+                    ""BK"".""ID"" AS ""BlockID""
+                FROM ""{m_tempblocklist}"" ""TBL""
+                    JOIN ""blocklisthash"" ""BH""
+                        ON (""BH"".""Hash"" = ""TBL"".""blocklisthash"")
+                    JOIN ""Block"" ""BK""
+                        ON (""BK"".""Hash"" = ""TBL"".""BlockHash"")
+                    LEFT OUTER JOIN ""BlocksetEntry"" ""BE""
                         ON (
-                            BE.BlockSetID = BH.BlocksetID
-                            AND BE.""Index"" = (BH.""Index"" * {blocksize / hashsize})+TBL.""Index""
+                            BE.""BlockSetID"" = ""BH"".""BlocksetID""
+                            AND BE.""Index"" = (""BH"".""Index"" * {blocksize / hashsize})+""TBL"".""Index""
                         )
-                WHERE BE.BlockSetID IS NULL
-                {extra}";
+                WHERE ""BE"".""BlockSetID"" IS NULL
+                {extra}
+            ";
 
             try
             {
@@ -1137,14 +1139,14 @@ namespace Duplicati.Library.Main.Database
                     FROM ""Block""
                     WHERE
                         ""VolumeID"" < 0
-                        AND SIZE > 0
+                        AND ""Size"" > 0
                 ";
 
                 var missingBlocklistVolumes = $@"
                     SELECT ""VolumeID""
                     FROM
                         ""Block"",
-                        ({missingBlocklistEntries}) A
+                        ({missingBlocklistEntries}) ""A""
                     WHERE ""A"".""Hash"" = ""Block"".""Hash""
                 ";
 

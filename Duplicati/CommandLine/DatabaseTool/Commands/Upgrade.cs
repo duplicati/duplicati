@@ -188,8 +188,8 @@ public static class Upgrade
                     if (r != null)
                         throw new UserInformationException($"{r}", "UpgradeScriptFailure");
                     await cmd.SetCommandAndParameters(@"
-                        UPDATE Version
-                        SET Version = @Version
+                        UPDATE ""Version""
+                        SET ""Version"" = @Version
                     ")
                         .SetParameterValue("@Version", script.Version)
                         .ExecuteNonQueryAsync()

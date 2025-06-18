@@ -54,24 +54,24 @@ public static class ChangeStatistics
             await cmd.SetCommandAndParameters($@"
                 CREATE TEMP TABLE ""{tmpName}"" AS
                 SELECT
-                    FL.""PrefixID"",
-                    FL.""Path"",
-                    FL.""BlocksetID"",
-                    BS_Meta.""Fullhash"" AS ""Metahash"",
-                    CASE FE.""FilesetID""
+                    ""FL"".""PrefixID"",
+                    ""FL"".""Path"",
+                    ""FL"".""BlocksetID"",
+                    ""BS_Meta"".""Fullhash"" AS ""Metahash"",
+                    CASE ""FE"".""FilesetID""
                         WHEN @LastFilesetId THEN 0
                         WHEN @CurrentFilesetId THEN 1
-                    END AS Source
-                FROM ""FileLookup"" FL
-                JOIN ""FilesetEntry"" FE
-                    ON FL.""ID"" = FE.""FileID""
-                LEFT JOIN ""Blockset"" BS_Data
-                    ON FL.""BlocksetID"" = BS_Data.""ID""
+                    END AS ""Source""
+                FROM ""FileLookup"" ""FL""
+                JOIN ""FilesetEntry"" ""FE""
+                    ON ""FL"".""ID"" = ""FE"".""FileID""
+                LEFT JOIN ""Blockset"" ""BS_Data""
+                    ON ""FL"".""BlocksetID"" = ""BS_Data"".""ID""
                 LEFT JOIN ""Metadataset"" M
-                    ON FL.""MetadataID"" = M.""ID""
-                LEFT JOIN ""Blockset"" BS_Meta
-                    ON M.""BlocksetID"" = BS_Meta.""ID""
-                WHERE FE.""FilesetID"" IN (
+                    ON ""FL"".""MetadataID"" = M.""ID""
+                LEFT JOIN ""Blockset"" ""BS_Meta""
+                    ON M.""BlocksetID"" = ""BS_Meta"".""ID""
+                WHERE ""FE"".""FilesetID"" IN (
                     @LastFilesetId,
                     @CurrentFilesetId
                 );
@@ -149,14 +149,14 @@ public static class ChangeStatistics
     private static async Task<long> CountAdded(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets = null)
     {
         var conditions = $@"
-            Source = 1
+            ""Source"" = 1
             AND NOT EXISTS (
                 SELECT 1
-                FROM ""{tmpName}"" B
+                FROM ""{tmpName}"" ""B""
                 WHERE
-                    B.Source = 0
-                    AND B.PrefixID = A.PrefixID
-                    AND B.Path = A.Path
+                    ""B"".""Source"" = 0
+                    AND ""B"".""PrefixID"" = ""A"".""PrefixID""
+                    AND ""B"".""Path"" = ""A"".""Path""
             )
         ";
 
@@ -175,14 +175,14 @@ public static class ChangeStatistics
     private static async Task<long> CountDeleted(SqliteCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets = null)
     {
         var conditions = @$"
-            Source = 0
+            ""Source"" = 0
             AND NOT EXISTS (
                 SELECT 1
-                FROM ""{tmpName}"" B
+                FROM ""{tmpName}"" ""B""
                 WHERE
-                    B.Source = 1
-                    AND B.PrefixID = A.PrefixID
-                    AND B.Path = A.Path
+                    ""B"".""Source"" = 1
+                    AND ""B"".""PrefixID"" = ""A"".""PrefixID""
+                    AND ""B"".""Path"" = ""A"".""Path""
             )
         ";
 
@@ -205,23 +205,23 @@ public static class ChangeStatistics
         if (blocksetId == LocalDatabase.FOLDER_BLOCKSET_ID || blocksetId == LocalDatabase.SYMLINK_BLOCKSET_ID)
         {
             conditions = @"
-                A.Source = 0
-                AND B.Source = 1
-                AND A.PrefixID = B.PrefixID
-                AND A.Path = B.Path
-                AND A.Metahash IS NOT B.Metahash
+                ""A"".""Source"" = 0
+                AND ""B"".""Source"" = 1
+                AND ""A"".""PrefixID"" = ""B"".""PrefixID""
+                AND ""A"".""Path"" = ""B"".""Path""
+                AND ""A"".""Metahash"" IS NOT ""B"".""Metahash""
             ";
         }
         else
         {
             conditions = @"
-                A.Source = 0
-                AND B.Source = 1
-                AND A.PrefixID = B.PrefixID
-                AND A.Path = B.Path
+                ""A"".""Source"" = 0
+                AND ""B"".""Source"" = 1
+                AND ""A"".""PrefixID"" = ""B"".""PrefixID""
+                AND ""A"".""Path"" = ""B"".""Path""
                 AND (
-                    A.BlocksetID IS NOT B.BlocksetID
-                    OR A.Metahash IS NOT B.Metahash
+                    ""A"".""BlocksetID"" IS NOT ""B"".""BlocksetID""
+                    OR ""A"".""Metahash"" IS NOT ""B"".""Metahash""
                 )
             ";
         }
@@ -232,10 +232,10 @@ public static class ChangeStatistics
 
         string sql = $@"
             SELECT COUNT(*)
-            FROM ""{tmpName}"" A
-            JOIN ""{tmpName}"" B
-                ON A.PrefixID = B.PrefixID
-                AND A.Path = B.Path
+            FROM ""{tmpName}"" ""A""
+            JOIN ""{tmpName}"" ""B""
+                ON ""A"".""PrefixID"" = ""B"".""PrefixID""
+                AND ""A"".""Path"" = ""B"".""Path""
             WHERE {conditions}
         ";
 
@@ -264,7 +264,7 @@ public static class ChangeStatistics
 
         var sql = $@"
             SELECT COUNT(*)
-            FROM ""{tmpName}"" {alias}
+            FROM ""{tmpName}"" ""{alias}""
             WHERE {fullCondition}
         ";
 

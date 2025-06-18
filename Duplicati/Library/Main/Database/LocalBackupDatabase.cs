@@ -210,9 +210,9 @@ namespace Duplicati.Library.Main.Database
             dbnew.m_findmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"
                 SELECT ""A"".""ID""
                 FROM
-                    ""Metadataset"" A,
-                    ""BlocksetEntry"" B,
-                    ""Block"" C
+                    ""Metadataset"" ""A"",
+                    ""BlocksetEntry"" ""B"",
+                    ""Block"" ""C""
                 WHERE
                     ""A"".""BlocksetID"" = ""B"".""BlocksetID""
                     AND ""B"".""BlockID"" = ""C"".""ID""
@@ -297,8 +297,8 @@ namespace Duplicati.Library.Main.Database
                     ""BlockID""
                 )
                 SELECT
-                    @BlocksetId AS A,
-                    @Index AS B,
+                    @BlocksetId AS ""A"",
+                    @Index AS ""B"",
                     ""ID""
                 FROM ""Block""
                 WHERE ""Hash"" = @Hash
@@ -641,25 +641,25 @@ namespace Duplicati.Library.Main.Database
                 case 3:
                     findQuery = @"
                         SELECT
-                            FileLookup.ID as FileID,
-                            FilesetEntry.Lastmodified,
-                            FileBlockset.Length,
-                            MetaBlockset.FullHash AS Metahash,
-                            MetaBlockset.Length as Metasize
-                        FROM FilesetEntry
-                        INNER JOIN Fileset
-                            ON (FileSet.ID = FilesetEntry.FilesetID)
-                        INNER JOIN FileLookup
-                            ON (FileLookup.ID = FilesetEntry.FileID)
-                        INNER JOIN Metadataset
-                            ON (Metadataset.ID = FileLookup.MetadataID)
-                        INNER JOIN Blockset AS MetaBlockset
-                            ON (MetaBlockset.ID = Metadataset.BlocksetID)
-                        LEFT JOIN Blockset AS FileBlockset
-                            ON (FileBlockset.ID = FileLookup.BlocksetID)
+                            ""FileLookup"".""ID"" as ""FileID"",
+                            ""FilesetEntry"".""Lastmodified"",
+                            ""FileBlockset"".""Length"",
+                            ""MetaBlockset"".""FullHash"" AS ""Metahash"",
+                            ""MetaBlockset"".""Length"" as ""Metasize""
+                        FROM ""FilesetEntry""
+                        INNER JOIN ""Fileset""
+                            ON (""FileSet"".""ID"" = ""FilesetEntry"".FilesetID)
+                        INNER JOIN ""FileLookup""
+                            ON (""FileLookup"".""ID"" = ""FilesetEntry"".""FileID"")
+                        INNER JOIN ""Metadataset""
+                            ON (""Metadataset"".""ID"" = ""FileLookup"".""MetadataID"")
+                        INNER JOIN Blockset AS ""MetaBlockset""
+                            ON (""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"")
+                        LEFT JOIN Blockset AS ""FileBlockset""
+                            ON (""FileBlockset"".""ID"" = ""FileLookup"".""BlocksetID"")
                         WHERE
-                            FileLookup.PrefixID = @PrefixId
-                            AND FileLookup.Path = @Path
+                            ""FileLookup"".""PrefixID"" = @PrefixId
+                            AND ""FileLookup"".""Path"" = @Path
                             AND FilesetID = @FilesetId
                         LIMIT 1
                     ";
@@ -1546,20 +1546,20 @@ namespace Duplicati.Library.Main.Database
                 // enumerate files from new temporary file set, and remove any entries handled by UNC
                 cmd.SetCommandAndParameters($@"
                     SELECT
-                        f.""Path"",
-                        fs.""FileID"",
-                        fs.""Lastmodified"",
-                        COALESCE(bs.""Length"", -1)
+                        ""f"".""Path"",
+                        ""fs"".""FileID"",
+                        ""fs"".""Lastmodified"",
+                        COALESCE(""bs"".""Length"", -1)
                     FROM (
                         SELECT DISTINCT
                             ""FileID"",
                             ""Lastmodified""
                         FROM ""{tempFileSetTable}""
-                    ) AS fs
-                    LEFT JOIN ""File"" AS f
-                        ON fs.""FileID"" = f.""ID""
-                    LEFT JOIN ""Blockset"" AS bs
-                        ON f.""BlocksetID"" = bs.""ID"";
+                    ) AS ""fs""
+                    LEFT JOIN ""File"" AS ""f""
+                        ON ""fs"".""FileID"" = ""f"".""ID""
+                    LEFT JOIN ""Blockset"" AS ""bs""
+                        ON ""f"".""BlocksetID"" = ""bs"".""ID"";
                 ");
 
                 await foreach (var row in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))

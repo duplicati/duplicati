@@ -399,7 +399,7 @@ namespace Duplicati.Library.Main.Database
                     if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
                     {
                         var paths = cmd.ExecuteReaderEnumerableAsync($@"
-                            SELECT Path
+                            SELECT ""Path""
                             FROM ""{tmpnames.Tablename}""
                         ")
                             .Select(x => x.ConvertValueToString(0) ?? "");
@@ -560,8 +560,8 @@ namespace Duplicati.Library.Main.Database
                                 ""A"".""Path"",
                                 ""B"".""FilesetID""
                             FROM
-                                ""{tbname}"" A,
-                                ({filesets}) B
+                                ""{tbname}"" ""A"",
+                                ({filesets}) ""B""
                             ORDER BY
                                 ""A"".""Path"" ASC,
                                 ""B"".""Timestamp"" DESC
@@ -590,8 +590,8 @@ namespace Duplicati.Library.Main.Database
                                 ""C"".""Path"",
                                 ""D"".""Length"",
                                 ""C"".""FilesetID""
-                            FROM ({cartesianPathFileset}) C
-                            LEFT OUTER JOIN ({filesWithSizes}) D
+                            FROM ({cartesianPathFileset}) ""C""
+                            LEFT OUTER JOIN ({filesWithSizes}) ""D""
                                 ON ""C"".""FilesetID"" = ""D"".""FilesetID""
                                 AND ""C"".""Path"" = ""D"".""Path""
                         ";
@@ -672,8 +672,8 @@ namespace Duplicati.Library.Main.Database
                             ""A"".""Path"",
                             ""B"".""FilesetID""
                         FROM
-                            ""{tmpnames.Tablename}"" A,
-                            ({filesets}) B
+                            ""{tmpnames.Tablename}"" ""A"",
+                            ({filesets}) ""B""
                         ORDER BY
                             ""A"".""Path"" ASC,
                             ""B"".""Timestamp"" DESC
@@ -702,8 +702,8 @@ namespace Duplicati.Library.Main.Database
                             ""C"".""Path"",
                             ""D"".""Length"",
                             ""C"".""FilesetID""
-                        FROM ({cartesianPathFileset}) C
-                        LEFT OUTER JOIN ({filesWithSizes}) D
+                        FROM ({cartesianPathFileset}) ""C""
+                        LEFT OUTER JOIN ({filesWithSizes}) ""D""
                             ON ""C"".""FilesetID"" = ""D"".""FilesetID""
                             AND ""C"".""Path"" = ""D"".""Path""
                     ";
@@ -783,9 +783,9 @@ namespace Duplicati.Library.Main.Database
                         COUNT(*) AS ""FileCount"",
                         SUM(""C"".""Length"") AS ""FileSizes""
                     FROM
-                        ""FilesetEntry"" A,
-                        ""File"" B,
-                        ""Blockset"" C
+                        ""FilesetEntry"" ""A"",
+                        ""File"" ""B"",
+                        ""Blockset"" ""C""
                     WHERE
                         ""A"".""FileID"" = ""B"".""ID""
                         AND ""B"".""BlocksetID"" = ""C"".""ID""
@@ -802,8 +802,8 @@ namespace Duplicati.Library.Main.Database
                         ""A"".""IsFullBackup"",
                         ""B"".""FileCount"",
                         ""B"".""FileSizes""
-                    FROM ""{m_tablename}"" A
-                    LEFT OUTER JOIN ( {summation} ) B
+                    FROM ""{m_tablename}"" ""A""
+                    LEFT OUTER JOIN ( {summation} ) ""B""
                         ON ""A"".""FilesetID"" = ""B"".""FilesetID""
                     ORDER BY ""A"".""Timestamp"" DESC
                 ")
@@ -878,20 +878,20 @@ namespace Duplicati.Library.Main.Database
         {
             const string query = @"
                 SELECT
-                    f.""ID"" AS ""FilesetID"",
-                    f.""Timestamp"",
-                    f.""IsFullBackup"",
-                    COUNT(fe.""FileID"") AS ""NumberOfFiles"",
-                    COALESCE(SUM(b.""Length""), 0) AS ""TotalFileSize""
-                FROM ""Fileset"" f
-                LEFT JOIN ""FilesetEntry"" fe
-                    ON f.""ID"" = fe.""FilesetID""
-                LEFT JOIN ""FileLookup"" fl
-                    ON fe.""FileID"" = fl.""ID""
-                LEFT JOIN ""Blockset"" b
-                    ON fl.""BlocksetID"" = b.""ID""
-                GROUP BY f.""ID""
-                ORDER BY f.""Timestamp"" DESC;
+                    ""f"".""ID"" AS ""FilesetID"",
+                    ""f"".""Timestamp"",
+                    ""f"".""IsFullBackup"",
+                    COUNT(""fe"".""FileID"") AS ""NumberOfFiles"",
+                    COALESCE(SUM(""b"".""Length""), 0) AS ""TotalFileSize""
+                FROM ""Fileset"" ""f""
+                LEFT JOIN ""FilesetEntry"" ""fe""
+                    ON ""f"".""ID"" = ""fe"".""FilesetID""
+                LEFT JOIN ""FileLookup"" ""fl""
+                    ON ""fe"".""FileID"" = ""fl"".""ID""
+                LEFT JOIN ""Blockset"" ""b""
+                    ON ""fl"".""BlocksetID"" = ""b"".""ID""
+                GROUP BY ""f"".""ID""
+                ORDER BY ""f"".""Timestamp"" DESC;
             ";
 
             using (var cmd = m_connection.CreateCommand(query))
@@ -946,32 +946,32 @@ namespace Duplicati.Library.Main.Database
             // Then query the matching files
             cmd.SetCommandAndParameters($@"
                 SELECT
-                    pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
-                    b.""Length"",
+                    ""pp"".""Prefix"" || ""fl"".""Path"" AS ""FullPath"",
+                    ""b"".""Length"",
                     (CASE
-                        WHEN fl.""BlocksetID"" = @FolderBlocksetId
+                        WHEN ""fl"".""BlocksetID"" = @FolderBlocksetId
                         THEN 1
                         ELSE 0
                     END) AS ""IsDirectory"",
                     (CASE
-                        WHEN fl.""BlocksetID"" = @SymlinkBlocksetId
+                        WHEN ""fl"".""BlocksetID"" = @SymlinkBlocksetId
                         THEN 1
                         ELSE 0
                     END) AS ""IsSymlink"",
-                    fe.""Lastmodified""
-                FROM ""FilesetEntry"" fe
-                INNER JOIN ""FileLookup"" fl
-                    ON fe.""FileID"" = fl.""ID""
-                INNER JOIN ""PathPrefix"" pp
-                    ON fl.""PrefixID"" = pp.""ID""
-                LEFT JOIN ""Blockset"" b
-                    ON fl.""BlocksetID"" = b.""ID""
+                    ""fe"".""Lastmodified""
+                FROM ""FilesetEntry"" ""fe""
+                INNER JOIN ""FileLookup"" ""fl""
+                    ON ""fe"".""FileID"" = ""fl"".""ID""
+                INNER JOIN ""PathPrefix"" ""pp""
+                    ON ""fl"".""PrefixID"" = ""pp"".""ID""
+                LEFT JOIN ""Blockset"" ""b""
+                    ON ""fl"".""BlocksetID"" = ""b"".""ID""
                 WHERE
-                    fe.""FilesetID"" = @filesetid
-                    AND fl.""PrefixID"" IN (@PrefixIds)
+                    ""fe"".""FilesetID"" = @filesetid
+                    AND ""fl"".""PrefixID"" IN (@PrefixIds)
                 ORDER BY
-                    pp.""Prefix"" ASC,
-                    fl.""Path"" ASC
+                    ""pp"".""Prefix"" ASC,
+                    ""fl"".""Path"" ASC
                 LIMIT @limit
                 OFFSET @offset
             ")
@@ -1016,12 +1016,12 @@ namespace Duplicati.Library.Main.Database
                 // Get the total count of files for the given fileset and prefix IDs
                 totalCount = await cmd.SetCommandAndParameters($@"
                     SELECT COUNT(*)
-                    FROM FilesetEntry fe
-                    INNER JOIN FileLookup fl
-                        ON fe.FileID = fl.ID
+                    FROM ""FilesetEntry"" ""fe""
+                    INNER JOIN ""FileLookup"" ""fl""
+                        ON ""fe"".""FileID"" = ""fl"".""ID""
                     WHERE
-                        fe.FilesetID = @filesetid
-                        AND fl.PrefixID IN (@PrefixIds)
+                        ""fe"".""FilesetID"" = @filesetid
+                        AND ""fl"".""PrefixID"" IN (@PrefixIds)
                 ")
                     .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
                     .SetParameterValue("@filesetid", filesetid)
@@ -1057,32 +1057,32 @@ namespace Duplicati.Library.Main.Database
             // Fetch entries
             cmd.SetCommandAndParameters(@"
                 SELECT
-                    pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
-                    b.""Length"",
+                    ""pp"".""Prefix"" || ""fl"".""Path"" AS ""FullPath"",
+                    ""b"".""Length"",
                     CASE
-                        WHEN fl.""BlocksetID"" = @FolderBlocksetId
+                        WHEN ""fl"".""BlocksetID"" = @FolderBlocksetId
                         THEN 1
                         ELSE 0
                     END AS ""IsDirectory"",
                     CASE
-                        WHEN fl.""BlocksetID"" = @SymlinkBlocksetId
+                        WHEN ""fl"".""BlocksetID"" = @SymlinkBlocksetId
                         THEN 1
                         ELSE 0
                     END AS ""IsSymlink"",
-                    fe.""Lastmodified""
-                FROM ""FilesetEntry"" fe
-                INNER JOIN ""FileLookup"" fl
-                    ON fe.""FileID"" = fl.""ID""
-                INNER JOIN ""PathPrefix"" pp
-                    ON fl.""PrefixID"" = pp.""ID""
+                    ""fe"".""Lastmodified""
+                FROM ""FilesetEntry"" ""fe""
+                INNER JOIN ""FileLookup"" ""fl""
+                    ON ""fe"".""FileID"" = ""fl"".""ID""
+                INNER JOIN ""PathPrefix"" ""pp""
+                    ON ""fl"".""PrefixID"" = ""pp"".""ID""
                 LEFT JOIN ""Blockset"" b
-                    ON fl.""BlocksetID"" = b.""ID""
+                    ON ""fl"".""BlocksetID"" = ""b"".""ID""
                 WHERE
-                    fe.""FilesetId"" = @FilesetId
-                    AND fl.""PrefixId"" IN (@PrefixIds)
+                    ""fe"".""FilesetId"" = @FilesetId
+                    AND ""fl"".""PrefixId"" IN (@PrefixIds)
                 ORDER BY
-                    pp.""Prefix"" ASC,
-                    fl.""Path"" ASC
+                    ""pp"".""Prefix"" ASC,
+                    ""fl"".""Path"" ASC
                 LIMIT @limit
                 OFFSET @offset
             ")
@@ -1120,12 +1120,12 @@ namespace Duplicati.Library.Main.Database
             {
                 totalCount = await cmd.SetCommandAndParameters(@"
                     SELECT COUNT(*)
-                    FROM ""FilesetEntry"" fe
-                    INNER JOIN ""FileLookup"" fl
-                        ON fe.""FileID"" = fl.""ID""
+                    FROM ""FilesetEntry"" ""fe""
+                    INNER JOIN ""FileLookup"" ""fl""
+                        ON ""fe"".""FileID"" = ""fl"".""ID""
                     WHERE
-                        fe.""FilesetId"" = @FilesetId
-                        AND fl.""PrefixId"" IN (@PrefixIds)
+                        ""fe"".""FilesetId"" = @FilesetId
+                        AND ""fl"".""PrefixId"" IN (@PrefixIds)
                 ")
                     .SetParameterValue("@FilesetId", filesetid)
                     .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
@@ -1170,26 +1170,26 @@ namespace Duplicati.Library.Main.Database
             cmd.SetCommandAndParameters(@"
                 WITH Prefixes AS (
                     SELECT DISTINCT
-                        fl.""PrefixID"",
-                        pp.""Prefix""
-                    FROM ""FilesetEntry"" fe
-                    INNER JOIN ""FileLookup"" fl
-                        ON fe.""FileID"" = fl.""ID""
-                    INNER JOIN ""PathPrefix"" pp
-                        ON fl.""PrefixID"" = pp.""ID""
-                    WHERE fe.""FilesetID"" = @filesetid
+                        ""fl"".""PrefixID"",
+                        ""pp"".""Prefix""
+                    FROM ""FilesetEntry"" ""fe""
+                    INNER JOIN ""FileLookup"" ""fl""
+                        ON ""fe"".""FileID"" = ""fl"".""ID""
+                    INNER JOIN ""PathPrefix"" ""pp""
+                        ON ""fl"".""PrefixID"" = ""pp"".""ID""
+                    WHERE ""fe"".""FilesetID"" = @filesetid
                 )
-                SELECT p1.""PrefixID""
-                FROM Prefixes p1
+                SELECT ""p1"".""PrefixID""
+                FROM Prefixes ""p1""
                 WHERE NOT EXISTS (
                     SELECT 1
-                    FROM Prefixes p2
+                    FROM Prefixes ""p2""
                     WHERE
-                        p2.""PrefixID"" != p1.""PrefixID""
-                        AND p1.""Prefix"" LIKE p2.""Prefix"" || '%'
-                        AND LENGTH(p1.""Prefix"") > LENGTH(p2.""Prefix"")
+                        ""p2"".""PrefixID"" != ""p1"".""PrefixID""
+                        AND ""p1"".""Prefix"" LIKE ""p2"".""Prefix"" || '%'
+                        AND LENGTH(""p1"".""Prefix"") > LENGTH(""p2"".""Prefix"")
                 )
-                ORDER BY p1.""Prefix"" ASC
+                ORDER BY ""p1"".""Prefix"" ASC
             ")
                 .SetParameterValue("@filesetid", filesetid);
 
@@ -1218,39 +1218,39 @@ namespace Duplicati.Library.Main.Database
             )?.ToString());
 
             cmd.SetCommandAndParameters(@"
-                WITH Prefixes AS (
+                WITH ""Prefixes"" AS (
                     SELECT DISTINCT
-                        fl.""PrefixID"",
-                        pp.""Prefix""
-                    FROM ""FilesetEntry"" fe
-                    INNER JOIN ""FileLookup"" fl
-                        ON fe.""FileID"" = fl.""ID""
-                    INNER JOIN ""PathPrefix"" pp
-                        ON fl.""PrefixID"" = pp.""ID""
-                    WHERE fe.""FilesetID"" = @filesetid
+                        ""fl"".""PrefixID"",
+                        ""pp"".""Prefix""
+                    FROM ""FilesetEntry"" ""fe""
+                    INNER JOIN ""FileLookup"" ""fl""
+                        ON ""fe"".""FileID"" = ""fl"".""ID""
+                    INNER JOIN ""PathPrefix"" ""pp""
+                        ON ""fl"".""PrefixID"" = ""pp"".""ID""
+                    WHERE ""fe"".""FilesetID"" = @filesetid
                 ),
-                PrefixParents AS (
+                ""PrefixParents"" AS (
                     SELECT
-                        child.""PrefixID"" AS ChildPrefixID,
-                        parent.""PrefixID"" AS ParentPrefixID,
-                        LENGTH(parent.""Prefix"") AS ParentLength
-                    FROM Prefixes child
-                    JOIN Prefixes parent
-                        ON LENGTH(child.""Prefix"") > LENGTH(parent.""Prefix"")
-                        AND SUBSTR(child.""Prefix"", 1, LENGTH(parent.""Prefix"")) = parent.""Prefix""
-                        AND (SUBSTR(child.""Prefix"", LENGTH(parent.""Prefix"") + 1, 1) = @dirSeparator)
+                        ""child"".""PrefixID"" AS ""ChildPrefixID"",
+                        ""parent"".""PrefixID"" AS ""ParentPrefixID"",
+                        LENGTH(""parent"".""Prefix"") AS ""ParentLength""
+                    FROM ""Prefixes"" ""child""
+                    JOIN ""Prefixes"" ""parent""
+                        ON LENGTH(""child"".""Prefix"") > LENGTH(""parent"".""Prefix"")
+                        AND SUBSTR(""child"".""Prefix"", 1, LENGTH(""parent"".""Prefix"")) = ""parent"".""Prefix""
+                        AND (SUBSTR(""child"".""Prefix"", LENGTH(""parent"".""Prefix"") + 1, 1) = @dirSeparator)
                 )
                 SELECT
-                    child.""PrefixID"",
+                    ""child"".""PrefixID"",
                     (
-                        SELECT ParentPrefixID
-                        FROM PrefixParents pp
-                        WHERE pp.ChildPrefixID = child.""PrefixID""
-                        ORDER BY pp.ParentLength DESC
+                        SELECT ""ParentPrefixID""
+                        FROM PrefixParents ""pp""
+                        WHERE ""pp"".""ChildPrefixID"" = ""child"".""PrefixID""
+                        ORDER BY ""pp"".""ParentLength"" DESC
                         LIMIT 1
-                    ) AS ParentPrefixID
-                FROM Prefixes child
-                ORDER BY child.""Prefix"" ASC
+                    ) AS ""ParentPrefixID""
+                FROM ""Prefixes"" ""child""
+                ORDER BY ""child"".""Prefix"" ASC
             ")
                 .SetParameterValue("@dirSeparator", dirSeparator)
                 .SetParameterValue("@filesetid", filesetid);
@@ -1301,32 +1301,32 @@ namespace Duplicati.Library.Main.Database
             // Then fetch the actual data
             var fetchSql = @$"
                 SELECT
-                    fe.""FilesetID"",
-                    f.""Timestamp"",
-                    fl.""Path"",
-                    COALESCE(b.""Length"", 0) AS ""Size"",
+                    ""fe"".""FilesetID"",
+                    ""f"".""Timestamp"",
+                    ""fl"".""Path"",
+                    COALESCE(""b"".""Length"", 0) AS ""Size"",
                     CASE
-                        WHEN fl.""BlocksetID"" = @FolderBlocksetId
+                        WHEN ""fl"".""BlocksetID"" = @FolderBlocksetId
                         THEN 1
                         ELSE 0
                     END AS ""IsDirectory"",
                     CASE
-                        WHEN fl.""BlocksetID"" = @SymlinkBlocksetId
+                        WHEN ""fl"".""BlocksetID"" = @SymlinkBlocksetId
                         THEN 1
                         ELSE 0
                     END AS ""IsSymlink"",
-                    fe.""Lastmodified""
-                FROM ""FilesetEntry"" fe
-                INNER JOIN ""FileLookup"" fl
-                    ON fe.""FileID"" = fl.""ID""
-                INNER JOIN ""Fileset"" f
-                    ON fe.""FilesetID"" = f.""ID""
-                LEFT JOIN ""Blockset"" b
-                    ON fl.""BlocksetID"" = b.""ID""
+                    ""fe"".""Lastmodified""
+                FROM ""FilesetEntry"" ""fe""
+                INNER JOIN ""FileLookup"" ""fl""
+                    ON ""fe"".""FileID"" = ""fl"".""ID""
+                INNER JOIN ""Fileset"" ""f""
+                    ON ""fe"".""FilesetID"" = ""f"".""ID""
+                LEFT JOIN ""Blockset"" ""b""
+                    ON ""fl"".""BlocksetID"" = ""b"".""ID""
                 {countWhere}
                 ORDER BY
-                    fl.""Path"" ASC,
-                    f.""Timestamp"" ASC
+                    ""fl"".""Path"" ASC,
+                    ""f"".""Timestamp"" ASC
                 LIMIT @limit
                 OFFSET @offset
             ";
@@ -1379,9 +1379,9 @@ namespace Duplicati.Library.Main.Database
                 // Get total count
                 var countSql = @"
                     SELECT COUNT(*)
-                    FROM ""FilesetEntry"" fe
-                    INNER JOIN ""FileLookup"" fl
-                        ON fe.""FileID"" = fl.""ID""
+                    FROM ""FilesetEntry"" ""fe""
+                    INNER JOIN ""FileLookup"" ""fl""
+                        ON ""fe"".""FileID"" = ""fl"".""ID""
                 ";
 
                 cmd.SetCommandAndParameters(countSql + "\n" + countWhere)
@@ -1557,35 +1557,35 @@ namespace Duplicati.Library.Main.Database
             // Fetch results
             var fetchSql = $@"
                 SELECT
-                    fe.""FilesetID"",
-                    f.""Timestamp"",
-                    pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
-                    COALESCE(b.""Length"", 0) AS ""Size"",
+                    ""fe"".""FilesetID"",
+                    ""f"".""Timestamp"",
+                    ""pp"".""Prefix"" || ""fl"".""Path"" AS ""FullPath"",
+                    COALESCE(""b"".""Length"", 0) AS ""Size"",
                     CASE
-                        WHEN fl.""BlocksetID"" = @FolderBlocksetId
+                        WHEN ""fl"".""BlocksetID"" = @FolderBlocksetId
                         THEN 1
                         ELSE 0
                     END AS ""IsDirectory"",
                     CASE
-                        WHEN fl.""BlocksetID"" = @SymlinkBlocksetId
+                        WHEN ""fl"".""BlocksetID"" = @SymlinkBlocksetId
                         THEN 1
                         ELSE 0
                     END AS ""IsSymlink"",
-                    fe.""Lastmodified""
-                FROM ""FilesetEntry"" fe
-                INNER JOIN ""FileLookup"" fl
-                    ON fe.""FileID"" = fl.""ID""
-                INNER JOIN ""Fileset"" f
-                    ON fe.""FilesetID"" = f.""ID""
-                LEFT JOIN ""Blockset"" b
-                    ON fl.""BlocksetID"" = b.""ID""
-                INNER JOIN ""PathPrefix"" pp
-                    ON fl.""PrefixID"" = pp.""ID""
+                    ""fe"".""Lastmodified""
+                FROM ""FilesetEntry"" ""fe""
+                INNER JOIN ""FileLookup"" ""fl""
+                    ON ""fe"".""FileID"" = ""fl"".""ID""
+                INNER JOIN ""Fileset"" ""f""
+                    ON ""fe"".""FilesetID"" = ""f"".""ID""
+                LEFT JOIN ""Blockset"" ""b""
+                    ON ""fl"".""BlocksetID"" = ""b"".""ID""
+                INNER JOIN ""PathPrefix"" ""pp""
+                    ON ""fl"".""PrefixID"" = ""pp"".""ID""
                 WHERE {whereClause}
                 ORDER BY
-                    pp.""Prefix"" ASC,
-                    fl.""Path"" ASC,
-                    f.""Timestamp"" ASC
+                    ""pp"".""Prefix"" ASC,
+                    ""fl"".""Path"" ASC,
+                    ""f"".""Timestamp"" ASC
                 LIMIT @limit
                 OFFSET @offset
             ";
@@ -1636,11 +1636,11 @@ namespace Duplicati.Library.Main.Database
                 // Calculate the total
                 var countSql = $@"
                     SELECT COUNT(*)
-                    FROM ""FilesetEntry"" fe
-                    INNER JOIN ""FileLookup"" fl
-                        ON fe.""FileID"" = fl.""ID""
-                    INNER JOIN ""PathPrefix"" pp
-                        ON fl.""PrefixID"" = pp.""ID""
+                    FROM ""FilesetEntry"" ""fe""
+                    INNER JOIN ""FileLookup"" ""fl""
+                        ON ""fe"".""FileID"" = ""fl"".""ID""
+                    INNER JOIN ""PathPrefix"" ""pp""
+                        ON ""fl"".""PrefixID"" = ""pp"".""ID""
                     WHERE {whereClause}
                 ";
 

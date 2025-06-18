@@ -67,8 +67,8 @@ namespace Duplicati.Library.Main.Database
                     SELECT
                         ""A"".""ID"" AS ""ID"",
                         ""B"".""BlocksetID"" AS ""BlocksetID""
-                    FROM ""FileLookup"" A
-                    LEFT JOIN ""Metadataset"" B
+                    FROM ""FileLookup"" ""A""
+                    LEFT JOIN ""Metadataset"" ""B""
                         ON ""A"".""MetadataID"" = ""B"".""ID""
             )
             WHERE
@@ -93,8 +93,8 @@ namespace Duplicati.Library.Main.Database
                             )
                         UNION
                             SELECT ""A"".""ID"" AS ""BlocksetID""
-                            FROM ""Blockset"" A
-                            LEFT JOIN ""BlocksetEntry"" B
+                            FROM ""Blockset"" ""A""
+                            LEFT JOIN ""BlocksetEntry"" ""B""
                                 ON ""A"".""ID"" = ""B"".""BlocksetID""
                             WHERE
                                 ""A"".""Length"" > 0
@@ -117,8 +117,8 @@ namespace Duplicati.Library.Main.Database
                 ""A"".""FilesetID"",
                 COUNT(""A"".""FileID"") AS ""FileCount""
             FROM
-                ""FilesetEntry"" A,
-                ""Fileset"" B
+                ""FilesetEntry"" ""A"",
+                ""Fileset"" ""B""
             WHERE
                 ""A"".""FilesetID"" = ""B"".""ID""
                 AND ""A"".""FileID"" IN ({BROKEN_FILE_IDS})
@@ -131,8 +131,8 @@ namespace Duplicati.Library.Main.Database
             SELECT
                 ""A"".""Path"",
                 ""B"".""Length""
-            FROM ""File"" A
-            LEFT JOIN ""Blockset"" B
+            FROM ""File"" ""A""
+            LEFT JOIN ""Blockset"" ""B""
                 ON (""A"".""BlocksetID"" = ""B"".""ID"")
             WHERE
                 ""A"".""ID"" IN ({BROKEN_FILE_IDS})

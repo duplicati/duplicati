@@ -266,7 +266,7 @@ namespace Duplicati.Library.Main.Database
                                         @State1,
                                         @State2
                                     )
-                            ) A,
+                            ) ""A"",
                             ""Fileset""
                         {whereClause}
                             ""A"".""VolumeID"" = ""Fileset"".""VolumeID""
@@ -584,10 +584,10 @@ namespace Duplicati.Library.Main.Database
                             AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID""
                             AND ""File"".""ID"" = ""FilesetEntry"".""FileID""
                             AND ""File"".""MetadataID"" = ""Metadataset"".""ID""
-                    ) A
-                    LEFT OUTER JOIN ""Blockset"" B
+                    ) ""A""
+                    LEFT OUTER JOIN ""Blockset"" ""B""
                         ON ""B"".""ID"" = ""A"".""FileBlocksetID""
-                    LEFT OUTER JOIN ""Blockset"" C
+                    LEFT OUTER JOIN ""Blockset"" ""C""
                         ON ""C"".""ID""=""A"".""MetadataBlocksetID""
                 ";
 
@@ -617,8 +617,8 @@ namespace Duplicati.Library.Main.Database
                         @TypeModified AS ""Type"",
                         ""E"".""Path"" AS ""Path""
                     FROM
-                        ""{m_tablename}"" E,
-                        ""{cmpName}"" D
+                        ""{m_tablename}"" ""E"",
+                        ""{cmpName}"" ""D""
                     WHERE
                         ""D"".""Path"" = ""E"".""Path""
                         AND (
@@ -778,8 +778,8 @@ namespace Duplicati.Library.Main.Database
                         ""A"".""Hash"",
                         ""A"".""Size""
                     FROM
-                        ""Remotevolume"" A,
-                        ""Remotevolume"" B,
+                        ""Remotevolume"" ""A"",
+                        ""Remotevolume"" ""B"",
                         ""IndexBlockLink""
                     WHERE
                         ""B"".""Name"" = @Name
@@ -814,8 +814,8 @@ namespace Duplicati.Library.Main.Database
                         @TypeModified AS ""Type"",
                         ""E"".""Name"" AS ""Name""
                     FROM
-                        ""{m_tablename}"" E,
-                        ""{cmpName}"" D
+                        ""{m_tablename}"" ""E"",
+                        ""{cmpName}"" ""D""
                     WHERE
                         ""D"".""Name"" = ""E"".""Name""
                         AND (
@@ -1183,87 +1183,93 @@ namespace Duplicati.Library.Main.Database
                         ""Size""
                     )
                     SELECT
-                        b.""Hash"",
-                        b.""Size""
-                    FROM Block b
+                        ""b"".""Hash"",
+                        ""b"".""Size""
+                    FROM ""Block"" ""b""
                     JOIN (
                         SELECT
-                            blh.""Hash"",
+                            ""blh"".""Hash"",
                             CASE
-                                WHEN blh.""Index"" = (((bs.""Length"" + {blockSize} - 1) / {blockSize} - 1) / {hashesPerBlock})
-                                     AND ((bs.""Length"" + {blockSize} - 1) / {blockSize}) % {hashesPerBlock} != 0
-                                THEN {hashSize} * ((bs.""Length"" + {blockSize} - 1) / {blockSize} % {hashesPerBlock})
+                                WHEN ""blh"".""Index"" = (((""bs"".""Length"" + {blockSize} - 1) / {blockSize} - 1) / {hashesPerBlock})
+                                     AND ((""bs"".""Length"" + {blockSize} - 1) / {blockSize}) % {hashesPerBlock} != 0
+                                THEN {hashSize} * ((""bs"".""Length"" + {blockSize} - 1) / {blockSize} % {hashesPerBlock})
                                 ELSE {hashSize} * {hashesPerBlock}
                             END AS ""Size""
-                        FROM BlocklistHash blh
-                        JOIN Blockset bs
-                            ON bs.""ID"" = blh.""BlocksetID""
-                    ) expected
+                        FROM ""BlocklistHash"" ""blh""
+                        JOIN ""Blockset"" ""bs""
+                            ON ""bs"".""ID"" = ""blh"".""BlocksetID""
+                    ) ""Expected""
                         ON
-                            b.""Hash"" = expected.""Hash""
-                            AND b.""Size"" = expected.""Size""
-                    WHERE b.""VolumeID"" IN (
-                        SELECT ibl.""BlockVolumeID""
-                        FROM Remotevolume idx
-                        JOIN IndexBlockLink ibl
-                            ON ibl.""IndexVolumeID"" = idx.""ID""
-                        WHERE idx.""Name"" = @Name
+                            ""b"".""Hash"" = ""Expected"".""Hash""
+                            AND ""b"".""Size"" = ""Expected"".""Size""
+                    WHERE ""b"".""VolumeID"" IN (
+                        SELECT ""ibl"".""BlockVolumeID""
+                        FROM ""Remotevolume"" ""idx""
+                        JOIN IndexBlockLink ""ibl""
+                            ON ""ibl"".""IndexVolumeID"" = ""idx"".""ID""
+                        WHERE ""idx"".""Name"" = @Name
                     );
                 ";
 
                 var compare = $@"
                     WITH
-                        Expected AS (
+                        ""Expected"" AS (
                             SELECT
                                 ""Hash"",
                                 ""Size""
                             FROM ""{cmpName}""
                         ),
-                        Actual AS (
+                        ""Actual"" AS (
                             SELECT
                                 ""Hash"",
                                 ""Size""
                             FROM ""{m_tablename}""
                         ),
-                        Extra AS (
-                            SELECT @TypeExtra AS Type, a.""Hash""
-                            FROM Actual a
-                            LEFT JOIN Expected e
+                        ""Extra"" AS (
+                            SELECT
+                                @TypeExtra AS ""Type"",
+                                ""a"".""Hash""
+                            FROM ""Actual"" ""a""
+                            LEFT JOIN ""Expected"" ""e""
                                 ON
-                                    a.""Hash"" = e.""Hash""
-                                    AND a.""Size"" = e.""Size""
-                            WHERE e.""Hash"" IS NULL
+                                    ""a"".""Hash"" = ""e"".""Hash""
+                                    AND ""a"".""Size"" = ""e"".""Size""
+                            WHERE ""e"".""Hash"" IS NULL
                         ),
-                        Missing AS (
-                            SELECT @TypeMissing AS Type, e.""Hash""
-                            FROM Expected e
-                            LEFT JOIN Actual a
+                        ""Missing"" AS (
+                            SELECT
+                                @TypeMissing AS ""Type"",
+                                ""e"".""Hash""
+                            FROM ""Expected"" ""e""
+                            LEFT JOIN ""Actual"" ""a""
                                 ON
-                                    a.""Hash"" = e.""Hash""
-                                    AND a.""Size"" = e.""Size""
-                            WHERE a.""Hash"" IS NULL
+                                    ""a"".""Hash"" = ""e"".""Hash""
+                                    AND ""a"".""Size"" = ""e"".""Size""
+                            WHERE ""a"".""Hash"" IS NULL
                         ),
-                        Modified AS (
-                            SELECT @TypeModified AS Type, a.""Hash""
-                            FROM Actual a
-                            JOIN Expected e
-                                ON a.""Hash"" = e.""Hash""
+                        ""Modified"" AS (
+                            SELECT
+                                @TypeModified AS ""Type"",
+                                ""a"".""Hash""
+                            FROM ""Actual"" ""a""
+                            JOIN ""Expected"" ""e""
+                                ON ""a"".""Hash"" = ""e"".""Hash""
                             WHERE
-                                a.""Size"" != e.""Size""
+                                ""a"".""Size"" != ""e"".""Size""
                                 AND NOT EXISTS (
                                     SELECT 1
-                                    FROM Extra x
-                                    WHERE x.""Hash"" = a.""Hash""
+                                    FROM ""Extra"" ""x""
+                                    WHERE ""x"".""Hash"" = ""a"".""Hash""
                                 )
                         )
                     SELECT *
-                    FROM Extra
+                    FROM ""Extra""
                     UNION
                         SELECT *
-                        FROM Missing
+                        FROM ""Missing""
                     UNION
                         SELECT *
-                        FROM Modified;
+                        FROM ""Modified"";
                 ";
 
                 var drop = $@"DROP TABLE IF EXISTS ""{cmpName}""";

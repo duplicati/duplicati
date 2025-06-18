@@ -48,7 +48,19 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// SQL command to register a duplicate block.
         /// </summary>
-        private const string REGISTER_COMMAND = @"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") SELECT ""ID"", @VolumeId FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size ";
+        private const string REGISTER_COMMAND = @"
+            INSERT OR IGNORE INTO ""DuplicateBlock"" (
+                ""BlockID"",
+                ""VolumeID""
+            )
+            SELECT
+                ""ID"",
+                @VolumeId
+            FROM ""Block""
+            WHERE
+                ""Hash"" = @Hash
+                AND ""Size"" = @Size
+        ";
 
         /// <summary>
         /// The command to register a duplicate block.
@@ -447,8 +459,8 @@ namespace Duplicati.Library.Main.Database
                         THEN 0
                         ELSE ""B"".""Sorttime""
                     END AS ""Sorttime""
-                FROM ({usedBlocks}) A
-                LEFT OUTER JOIN ({scantime}) B
+                FROM ({usedBlocks}) ""A""
+                LEFT OUTER JOIN ({scantime}) ""B""
                     ON ""B"".""VolumeID"" = ""A"".""VolumeID""
             ";
 
@@ -512,8 +524,8 @@ namespace Duplicati.Library.Main.Database
                             ""B"".""InactiveSize"",
                             ""A"".""Size""
                         FROM
-                            ""Remotevolume"" A,
-                            ""{tmptablename}"" B
+                            ""Remotevolume"" ""A"",
+                            ""{tmptablename}"" ""B""
                         WHERE ""A"".""ID"" = ""B"".""VolumeID""
                         ORDER BY ""B"".""Sorttime"" ASC
                     ");
@@ -957,7 +969,7 @@ namespace Duplicati.Library.Main.Database
                                     ""RB"".""BlockID""
                                     || ':'
                                     || ""RB"".""VolumeID""
-                                FROM ""{replacementBlocks}"" RB
+                                FROM ""{replacementBlocks}"" ""RB""
                             )
                     ")
                         .ConfigureAwait(false);

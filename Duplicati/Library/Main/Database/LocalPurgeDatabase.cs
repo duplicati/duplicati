@@ -93,8 +93,8 @@ namespace Duplicati.Library.Main.Database
                 SELECT
                     ""B"".""Name""
                 FROM
-                    ""Fileset"" A,
-                    ""RemoteVolume"" B
+                    ""Fileset"" ""A"",
+                    ""RemoteVolume"" ""B""
                 WHERE
                     ""A"".""VolumeID"" = ""B"".""ID""
                     AND ""A"".""ID"" = @FilesetId
@@ -292,8 +292,8 @@ namespace Duplicati.Library.Main.Database
                             INSERT INTO ""{m_tablename}"" (""FileID"")
                             SELECT DISTINCT ""A"".""FileID""
                             FROM
-                                ""FilesetEntry"" A,
-                                ""File"" B
+                                ""FilesetEntry"" ""A"",
+                                ""File"" ""B""
                             WHERE
                                 ""A"".""FilesetID"" = @FilesetId
                                 AND ""A"".""FileID"" = ""B"".""ID""
@@ -327,8 +327,8 @@ namespace Duplicati.Library.Main.Database
                                 ""B"".""Path"",
                                 ""A"".""FileID""
                             FROM
-                                ""FilesetEntry"" A,
-                                ""File"" B
+                                ""FilesetEntry"" ""A"",
+                                ""File"" ""B""
                             WHERE
                                 ""A"".""FilesetID"" = @FilesetId
                                 AND ""A"".""FileID"" = ""B"".""ID""
@@ -374,10 +374,10 @@ namespace Duplicati.Library.Main.Database
                     RemovedFileSize = await cmd.ExecuteScalarInt64Async($@"
                         SELECT SUM(""C"".""Length"")
                         FROM
-                            ""{m_tablename}"" A,
-                            ""FileLookup"" B,
-                            ""Blockset"" C,
-                            ""Metadataset"" D
+                            ""{m_tablename}"" ""A"",
+                            ""FileLookup"" ""B"",
+                            ""Blockset"" ""C"",
+                            ""Metadataset"" ""D""
                         WHERE
                             ""A"".""FileID"" = ""B"".""ID""
                             AND (
@@ -390,11 +390,13 @@ namespace Duplicati.Library.Main.Database
                     ", 0)
                         .ConfigureAwait(false);
 
-                    var filesetcount = await cmd.ExecuteScalarInt64Async($@"
+                    var filesetcount = await cmd.SetCommandAndParameters($@"
                         SELECT COUNT(*)
                         FROM ""FilesetEntry""
-                        WHERE ""FilesetID"" = {ParentID}
-                    ", 0)
+                        WHERE ""FilesetID"" = @ParentID
+                    ")
+                        .SetParameterValue("@ParentID", ParentID)
+                        .ExecuteScalarInt64Async(0)
                         .ConfigureAwait(false);
 
                     if (filesetcount == RemovedFileCount)
@@ -446,9 +448,9 @@ namespace Duplicati.Library.Main.Database
                         ""B"".""Path"",
                         ""C"".""Length""
                     FROM
-                        ""{m_tablename}"" A,
-                        ""File"" B,
-                        ""Blockset"" C
+                        ""{m_tablename}"" ""A"",
+                        ""File"" ""B"",
+                        ""Blockset"" ""C""
                     WHERE
                         ""A"".""FileID"" = ""B"".""ID""
                         AND ""B"".""BlocksetID"" = ""C"".""ID""

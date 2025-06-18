@@ -174,11 +174,11 @@ namespace Duplicati.Library.Main.Database
         {
             using var cmd = m_connection.CreateCommand(@"
                 SELECT
-                    ID,
-                    Timestamp
-                FROM Fileset
-                WHERE ID IN (
-                    SELECT FilesetID
+                    ""ID"",
+                    ""Timestamp""
+                FROM ""Fileset""
+                WHERE ""ID"" IN (
+                    SELECT ""FilesetID""
                     FROM ""FilesetEntry""
                     WHERE ""FileID"" NOT IN (
                         SELECT ""ID""
@@ -661,32 +661,32 @@ namespace Duplicati.Library.Main.Database
                     await cmd.SetCommandAndParameters($@"
                         CREATE TEMPORARY TABLE ""{blocklistTableName}"" AS
                         SELECT
-                            b.""Hash"" AS ""BlockHash"",
-                            bs.""Id"" AS ""BlocksetId"",
-                            bs.""Length"" AS ""BlocksetLength"",
-                            bse.""Index"" / @HashesPerBlock AS ""BlocklistHashIndex"",
+                            ""b"".""Hash"" AS ""BlockHash"",
+                            ""bs"".""Id"" AS ""BlocksetId"",
+                            ""bs"".""Length"" AS ""BlocksetLength"",
+                            ""bse"".""Index"" / @HashesPerBlock AS ""BlocklistHashIndex"",
                             (
-                                SELECT blh.""Hash""
-                                FROM ""BlocklistHash"" blh
+                                SELECT ""blh"".""Hash""
+                                FROM ""BlocklistHash"" ""blh""
                                 WHERE
-                                    blh.""BlocksetID"" = bs.""ID""
-                                    AND blh.""Index"" == bse.""Index"" / @HashesPerBlock
+                                    ""blh"".""BlocksetID"" = ""bs"".""ID""
+                                    AND ""blh"".""Index"" == ""bse"".""Index"" / @HashesPerBlock
                                 LIMIT 1
                             ) AS ""BlocklistHashHash"",
-                            bse.""Index"" AS ""BlocksetEntryIndex""
-                        FROM ""BlocksetEntry"" bse
-                        JOIN ""Block"" b
-                            ON b.""ID"" = bse.""BlockID""
-                        JOIN ""Blockset"" bs
-                            ON bs.""ID"" = bse.""BlocksetID""
+                            ""bse"".""Index"" AS ""BlocksetEntryIndex""
+                        FROM ""BlocksetEntry"" ""bse""
+                        JOIN ""Block"" ""b""
+                            ON ""b"".""ID"" = ""bse"".""BlockID""
+                        JOIN ""Blockset"" ""bs""
+                            ON ""bs"".""ID"" = ""bse"".""BlocksetID""
                         WHERE EXISTS (
                             SELECT 1
-                            FROM ""BlocklistHash"" blh
-                            JOIN ""{m_tablename}"" mt
-                                ON mt.""Hash"" = blh.""Hash""
+                            FROM ""BlocklistHash"" ""blh""
+                            JOIN ""{m_tablename}"" ""mt""
+                                ON ""mt"".""Hash"" = ""blh"".""Hash""
                             WHERE
-                                blh.""BlocksetID"" = bs.""ID""
-                                AND mt.""Restored"" = @Restored
+                                ""blh"".""BlocksetID"" = ""bs"".""ID""
+                                AND ""mt"".""Restored"" = @Restored
                         )
                 ")
                     .SetParameterValue("@HashesPerBlock", hashesPerBlock)
@@ -781,12 +781,12 @@ namespace Duplicati.Library.Main.Database
                         ""VolumeID""
                     )
                     SELECT
-                        b.""ID"",
-                        b.""VolumeID""
-                    FROM ""Block"" b
+                        ""b"".""ID"",
+                        ""b"".""VolumeID""
+                    FROM ""Block"" ""b""
                     WHERE
-                        b.""VolumeID"" = @SourceVolumeId
-                        AND (b.""Hash"", b.""Size"") IN (
+                        ""b"".""VolumeID"" = @SourceVolumeId
+                        AND (""b"".""Hash"", ""b"".""Size"") IN (
                             SELECT
                                 ""Hash"",
                                 ""Size""
@@ -979,7 +979,7 @@ namespace Duplicati.Library.Main.Database
             var sql_count = @"
                 SELECT COUNT(*)
                 FROM (
-                    SELECT DISTINCT c1
+                    SELECT DISTINCT ""C1""
                     FROM (
                         SELECT COUNT(*) AS ""C1""
                         FROM (
@@ -1003,7 +1003,8 @@ namespace Duplicati.Library.Main.Database
 
                 await cmd.ExecuteNonQueryAsync($@"
                     CREATE TEMPORARY TABLE ""{tablename}""
-                    AS SELECT * FROM ""File""
+                    AS SELECT *
+                    FROM ""File""
                 ")
                     .ConfigureAwait(false);
 
@@ -1132,7 +1133,7 @@ namespace Duplicati.Library.Main.Database
                     UPDATE ""FileLookup""
                     SET ""MetadataID"" = (
                         SELECT ""MetadataID""
-                        FROM ""{tablename}"" A
+                        FROM ""{tablename}"" ""A""
                         WHERE ""A"".""ID"" = ""FileLookup"".""ID""
                     )
                 ")
@@ -1691,8 +1692,8 @@ namespace Duplicati.Library.Main.Database
                     SELECT COUNT(*)
                     FROM (
                         SELECT ""A"".""VolumeID""
-                        FROM ""{tablename}"" B
-                        LEFT OUTER JOIN ""Block"" A
+                        FROM ""{tablename}"" ""B""
+                        LEFT OUTER JOIN ""Block"" ""A""
                             ON ""A"".""Hash"" = ""B"".""Hash""
                             AND ""A"".""Size"" = ""B"".""Size""
                     )
@@ -1731,7 +1732,7 @@ namespace Duplicati.Library.Main.Database
                     ""C"".""Hash"",
                     ""C"".""Size""
                 FROM
-                    ""BlocksetEntry"" A,
+                    ""BlocksetEntry"" ""A"",
                     (
                         SELECT
                             ""Y"".""BlocksetID"",
@@ -1740,15 +1741,15 @@ namespace Duplicati.Library.Main.Database
                             ""Z"".""Size"" AS ""BlocklistSize"",
                             ""Z"".""ID"" AS ""BlocklistHashBlockID""
                         FROM
-                            ""BlocklistHash"" Y,
-                            ""Block"" Z
+                            ""BlocklistHash"" ""Y"",
+                            ""Block"" ""Z""
                         WHERE
                             ""Y"".""Hash"" = ""Z"".""Hash""
                             AND ""Y"".""Hash"" = @Hash
                             AND ""Z"".""Size"" = @Size
                         LIMIT 1
-                    ) B,
-                    ""Block"" C
+                    ) ""B"",
+                    ""Block"" ""C""
                 WHERE
                     ""A"".""BlocksetID"" = ""B"".""BlocksetID""
                     AND ""A"".""BlockID"" = ""C"".""ID""

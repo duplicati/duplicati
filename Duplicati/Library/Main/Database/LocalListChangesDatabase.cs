@@ -407,7 +407,7 @@ namespace Duplicati.Library.Main.Database
                                 ""MetaHash"",
                                 ""Size"",
                                 ""Type""
-                            FROM {combined} A
+                            FROM {combined} ""A""
                             WHERE ""A"".""FilesetID"" = @FilesetId
                         ")
                             .SetParameterValue("@FilesetId", filesetId)
@@ -478,7 +478,7 @@ namespace Duplicati.Library.Main.Database
                                 ""MetaHash"",
                                 ""Size"",
                                 ""Type""
-                            FROM {combined} A
+                            FROM {combined} ""A""
                             WHERE {whereClause}
                         ")
                             .SetParameterValue("@FilesetId", filesetId)
@@ -500,7 +500,7 @@ namespace Duplicati.Library.Main.Database
                                 ""A"".""MetaHash"",
                                 ""A"".""Size"",
                                 ""A"".""Type""
-                            FROM {combined} A
+                            FROM {combined} ""A""
                             WHERE ""A"".""FilesetID"" = @FilesetId
                         ")
                             .SetParameterValue("@FilesetId", filesetId)

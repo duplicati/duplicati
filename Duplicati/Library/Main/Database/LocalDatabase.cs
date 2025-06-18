@@ -972,34 +972,34 @@ namespace Duplicati.Library.Main.Database
             // Create a temp table to associate metadata that is being deleted to a fileset
             var metadataFilesetQuery = $@"
                 SELECT
-                    Metadataset.ID,
-                    FilesetEntry.FilesetID
-                FROM Metadataset
-                INNER JOIN FileLookup
-                    ON FileLookup.MetadataID = Metadataset.ID
-                INNER JOIN FilesetEntry
-                    ON FilesetEntry.FileID = FileLookup.ID
-                WHERE Metadataset.BlocksetID IN ({bsIdsSubQuery})
-                OR Metadataset.ID IN (
-                    SELECT MetadataID
-                    FROM FileLookup
-                    WHERE BlocksetID IN ({bsIdsSubQuery})
+                    ""Metadataset"".""ID"",
+                    ""FilesetEntry"".""FilesetID""
+                FROM ""Metadataset""
+                INNER JOIN ""FileLookup""
+                    ON ""FileLookup"".""MetadataID"" = ""Metadataset"".""ID""
+                INNER JOIN ""FilesetEntry""
+                    ON ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID""
+                WHERE ""Metadataset"".""BlocksetID"" IN ({bsIdsSubQuery})
+                OR ""Metadataset"".""ID"" IN (
+                    SELECT ""MetadataID""
+                    FROM ""FileLookup""
+                    WHERE ""BlocksetID"" IN ({bsIdsSubQuery})
                 )
             ";
 
             var metadataFilesetTable = $"DelMetadataFilesetIds-{temptransguid}";
             await deletecmd.ExecuteNonQueryAsync($@"
                 CREATE TEMP TABLE ""{metadataFilesetTable}"" (
-                    MetadataID INTEGER PRIMARY KEY,
-                    FilesetID INTEGER
+                    ""MetadataID"" INTEGER PRIMARY KEY,
+                    ""FilesetID"" INTEGER
                 )
             ")
                 .ConfigureAwait(false);
 
             await deletecmd.ExecuteNonQueryAsync($@"
                 INSERT OR IGNORE INTO ""{metadataFilesetTable}"" (
-                    MetadataID,
-                    FilesetID
+                    ""MetadataID"",
+                    ""FilesetID""
                 )
                 {metadataFilesetQuery}
             ")
@@ -1007,19 +1007,19 @@ namespace Duplicati.Library.Main.Database
 
             // Delete FilesetEntry rows that had their metadata deleted
             await deletecmd.ExecuteNonQueryAsync($@"
-                DELETE FROM FilesetEntry
+                DELETE FROM ""FilesetEntry""
                 WHERE
-                    FilesetEntry.FilesetID IN (
-                        SELECT DISTINCT FilesetID
+                    ""FilesetEntry"".""FilesetID"" IN (
+                        SELECT DISTINCT ""FilesetID""
                         FROM ""{metadataFilesetTable}""
                     )
-                    AND FilesetEntry.FileID IN (
-                        SELECT FilesetEntry.FileID
-                        FROM FilesetEntry
-                        INNER JOIN FileLookup
-                            ON FileLookup.ID = FilesetEntry.FileID
-                        WHERE FileLookup.MetadataID IN (
-                            SELECT MetadataID
+                    AND ""FilesetEntry"".""FileID"" IN (
+                        SELECT ""FilesetEntry"".""FileID""
+                        FROM ""FilesetEntry""
+                        INNER JOIN ""FileLookup""
+                            ON ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID""
+                        WHERE ""FileLookup"".""MetadataID"" IN (
+                            SELECT ""MetadataID""
                             FROM ""{metadataFilesetTable}""
                         )
                     )
@@ -1028,19 +1028,19 @@ namespace Duplicati.Library.Main.Database
 
             // Delete FilesetEntry rows that had their blocks deleted
             await deletecmd.ExecuteNonQueryAsync($@"
-                DELETE FROM FilesetEntry
-                WHERE FilesetEntry.FileID IN (
-                    SELECT ID
-                    FROM FileLookup
-                    WHERE FileLookup.BlocksetID IN ({bsIdsSubQuery})
+                DELETE FROM ""FilesetEntry""
+                WHERE ""FilesetEntry"".""FileID"" IN (
+                    SELECT ""ID""
+                    FROM ""FileLookup""
+                    WHERE ""FileLookup"".""BlocksetID"" IN ({bsIdsSubQuery})
                 )
             ")
                 .ConfigureAwait(false);
 
             await deletecmd.ExecuteNonQueryAsync($@"
-                DELETE FROM FileLookup
-                WHERE FileLookup.MetadataID IN (
-                    SELECT MetadataID
+                DELETE FROM ""FileLookup""
+                WHERE ""FileLookup"".""MetadataID"" IN (
+                    SELECT ""MetadataID""
                     FROM ""{metadataFilesetTable}""
                 )
             ")
@@ -1107,11 +1107,11 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
 
             await deletecmd.ExecuteNonQueryAsync($@"
-                DELETE FROM FilesetEntry
-                WHERE FilesetID IN (
-                    SELECT ID
-                    FROM Fileset
-                    WHERE VolumeID IN ({volIdsSubQuery})
+                DELETE FROM ""FilesetEntry""
+                WHERE ""FilesetID"" IN (
+                    SELECT ""ID""
+                    FROM ""Fileset""
+                    WHERE ""VolumeID"" IN ({volIdsSubQuery})
                 )
             ")
                 .ConfigureAwait(false);
@@ -1143,7 +1143,7 @@ namespace Duplicati.Library.Main.Database
                     )
                     AND ""Fileset"".""ID"" NOT IN (
                         SELECT DISTINCT ""FilesetID""
-                        FROM FilesetEntry
+                        FROM ""FilesetEntry""
                     )
             ")
                 .ConfigureAwait(false);
@@ -1627,7 +1627,7 @@ namespace Duplicati.Library.Main.Database
                     ""A"".""ID"" AS ""BlocksetID"",
                     IFNULL(""B"".""CalcLen"", 0) AS ""CalcLen"",
                     ""A"".""Length""
-                FROM ""Blockset"" A
+                FROM ""Blockset"" ""A""
                 LEFT OUTER JOIN (
                     SELECT
                         ""BlocksetEntry"".""BlocksetID"",
@@ -1636,7 +1636,7 @@ namespace Duplicati.Library.Main.Database
                     LEFT OUTER JOIN ""Block""
                     ON ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
                     GROUP BY ""BlocksetEntry"".""BlocksetID""
-                ) B
+                ) ""B""
                     ON ""A"".""ID"" = ""B"".""BlocksetID""
             ";
 
@@ -1647,7 +1647,7 @@ namespace Duplicati.Library.Main.Database
                     ""Length"", ""A"".""BlocksetID"",
                     ""File"".""Path""
                 FROM
-                    ({combinedLengths}) A,
+                    ({combinedLengths}) ""A"",
                     ""File""
                 WHERE
                     ""A"".""BlocksetID"" = ""File"".""BlocksetID""
@@ -1676,13 +1676,13 @@ namespace Duplicati.Library.Main.Database
                 }
 
             var real_count = await cmd.ExecuteScalarInt64Async(@"
-                SELECT Count(*)
+                SELECT COUNT(*)
                 FROM ""BlocklistHash""
             ", 0)
                 .ConfigureAwait(false);
 
             var unique_count = await cmd.ExecuteScalarInt64Async(@"
-                SELECT Count(*)
+                SELECT COUNT(*)
                 FROM (
                     SELECT DISTINCT
                         ""BlocksetID"",
@@ -2205,22 +2205,22 @@ namespace Duplicati.Library.Main.Database
                         ""H"".""Hash"" AS ""FirstMetaBlockHash"",
                         ""H"".""Size"" AS ""FirstMetaBlockSize"",
                         ""C"".""BlocksetID"" AS ""MetablocksetID""
-                    FROM ""File"" A
-                    LEFT JOIN ""Blockset"" B
+                    FROM ""File"" ""A""
+                    LEFT JOIN ""Blockset"" ""B""
                         ON ""A"".""BlocksetID"" = ""B"".""ID""
-                    LEFT JOIN ""Metadataset"" C
+                    LEFT JOIN ""Metadataset"" ""C""
                         ON ""A"".""MetadataID"" = ""C"".""ID""
-                    LEFT JOIN ""FilesetEntry"" D
+                    LEFT JOIN ""FilesetEntry"" ""D""
                         ON ""A"".""ID"" = ""D"".""FileID""
-                    LEFT JOIN ""Blockset"" E
+                    LEFT JOIN ""Blockset"" ""E""
                         ON ""E"".""ID"" = ""C"".""BlocksetID""
-                    LEFT JOIN ""BlocksetEntry"" G
+                    LEFT JOIN ""BlocksetEntry"" ""G""
                         ON ""B"".""ID"" = ""G"".""BlocksetID""
-                    LEFT JOIN ""Block"" F
+                    LEFT JOIN ""Block"" ""F""
                         ON ""G"".""BlockID"" = ""F"".""ID""
-                    LEFT JOIN ""BlocksetEntry"" I
+                    LEFT JOIN ""BlocksetEntry"" ""I""
                         ON ""E"".""ID"" = ""I"".""BlocksetID""
-                    LEFT JOIN ""Block"" H
+                    LEFT JOIN ""Block"" ""H""
                         ON ""I"".""BlockID"" = ""H"".""ID""
                     WHERE
                         ""A"".""BlocksetId"" >= 0
@@ -2233,14 +2233,14 @@ namespace Duplicati.Library.Main.Database
                             ""G"".""Index"" = 0
                             OR ""G"".""Index"" IS NULL
                         )
-                ) J
-                LEFT OUTER JOIN ""BlocklistHash"" K
+                ) ""J""
+                LEFT OUTER JOIN ""BlocklistHash"" ""K""
                     ON ""K"".""BlocksetID"" = ""J"".""BlocksetID""
                 ORDER BY
                     ""J"".""Path"",
                     ""K"".""Index""
-            ) L
-            LEFT OUTER JOIN ""BlocklistHash"" M
+            ) ""L""
+            LEFT OUTER JOIN ""BlocklistHash"" ""M""
                 ON ""M"".""BlocksetID"" = ""L"".""MetablocksetID""
         ";
 
@@ -2268,12 +2268,12 @@ namespace Duplicati.Library.Main.Database
                     ""F"".""Hash"" AS ""FirstMetaBlockHash"",
                     ""C"".""BlocksetID"" AS ""MetaBlocksetID""
                 FROM
-                    ""FilesetEntry"" A,
-                    ""File"" B,
-                    ""Metadataset"" C,
-                    ""Blockset"" D,
-                    ""BlocksetEntry"" E,
-                    ""Block"" F
+                    ""FilesetEntry"" ""A"",
+                    ""File"" ""B"",
+                    ""Metadataset"" ""C"",
+                    ""Blockset"" ""D"",
+                    ""BlocksetEntry"" ""E"",
+                    ""Block"" ""F""
                 WHERE
                     ""A"".""FileID"" = ""B"".""ID""
                     AND ""B"".""MetadataID"" = ""C"".""ID""
@@ -2286,8 +2286,8 @@ namespace Duplicati.Library.Main.Database
                         OR ""B"".""BlocksetID"" = @SymlinkBlocksetId
                     )
                     AND ""A"".""FilesetID"" = @FilesetId
-            ) G
-            LEFT OUTER JOIN ""BlocklistHash"" H
+            ) ""G""
+            LEFT OUTER JOIN ""BlocklistHash"" ""H""
                 ON ""H"".""BlocksetID"" = ""G"".""MetaBlocksetID""
             ORDER BY
                 ""G"".""Path"",
@@ -2419,17 +2419,17 @@ namespace Duplicati.Library.Main.Database
         public async Task PushTimestampChangesToPreviousVersion(long filesetId)
         {
             var query = @"
-                UPDATE FilesetEntry AS oldVersion
-                SET Lastmodified = tempVersion.Lastmodified
-                FROM FilesetEntry AS tempVersion
+                UPDATE ""FilesetEntry"" AS ""oldVersion""
+                SET ""Lastmodified"" = ""tempVersion"".""Lastmodified""
+                FROM ""FilesetEntry"" AS ""tempVersion""
                 WHERE
-                    oldVersion.FileID = tempVersion.FileID
-                    AND tempVersion.FilesetID = @FilesetId
-                    AND oldVersion.FilesetID = (
-                        SELECT ID
-                        FROM Fileset
-                        WHERE ID != @FilesetId
-                        ORDER BY Timestamp DESC
+                    ""oldVersion"".""FileID"" = ""tempVersion"".""FileID""
+                    AND ""tempVersion"".""FilesetID"" = @FilesetId
+                    AND ""oldVersion"".""FilesetID"" = (
+                        SELECT ""ID""
+                        FROM ""Fileset""
+                        WHERE ""ID"" != @FilesetId
+                        ORDER BY ""Timestamp"" DESC
                         LIMIT 1
                     )
             ";
@@ -2784,9 +2784,9 @@ namespace Duplicati.Library.Main.Database
                             GROUP BY
                                 ""AllBlocksInVolume"".""Hash"",
                                 ""AllBlocksInVolume"".""Size""
-                        ) A,
-                        ""BlocksetEntry"" B,
-                        ""Block"" C
+                        ) ""A"",
+                        ""BlocksetEntry"" ""B"",
+                        ""Block"" ""C""
 
                     WHERE
                         ""B"".""BlocksetID"" = ""A"".""BlocksetID""

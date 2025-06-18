@@ -1505,7 +1505,7 @@ namespace Duplicati.Library.Main.Database
                         ""{blocktablename}"" ""B"",
                         ""File"" ""C"",
                         ""BlocksetEntry"" ""D"",
-                        ""Block"" E
+                        ""Block"" ""E""
                     WHERE
                         ""A"".""ID"" = ""B"".""FileID""
                         AND ""C"".""BlocksetID"" = ""D"".""BlocksetID""
@@ -1650,7 +1650,8 @@ namespace Duplicati.Library.Main.Database
                     )
                     VALUES (
                         @Hash,
-                        @Size)
+                        @Size
+                    )
                 ");
                 foreach (var s in curvolume.Blocks)
                 {
@@ -1945,16 +1946,16 @@ namespace Duplicati.Library.Main.Database
             // Order by length descending, so that larger files are restored first.
             using var cmd = m_connection.CreateCommand($@"
                 SELECT
-                    F.ID,
-                    F.Path,
-                    F.TargetPath,
-                    IFNULL(B.FullHash, ''),
-                    IFNULL(B.Length, 0) AS ""Length"",
-                    F.BlocksetID
-                FROM ""{m_tempfiletable}"" F
-                LEFT JOIN Blockset B
-                    ON F.BlocksetID = B.ID
-                WHERE F.BlocksetID != {FOLDER_BLOCKSET_ID}
+                    ""F"".""ID"",
+                    ""F"".""Path"",
+                    ""F"".""TargetPath"",
+                    IFNULL(""B"".""FullHash"", ''),
+                    IFNULL(""B"".""Length"", 0) AS ""Length"",
+                    ""F"".""BlocksetID""
+                FROM ""{m_tempfiletable}"" ""F""
+                LEFT JOIN ""Blockset"" ""B""
+                    ON ""F"".""BlocksetID"" = ""B"".""ID""
+                WHERE ""F"".""BlocksetID"" != {FOLDER_BLOCKSET_ID}
                 ORDER BY ""Length"" DESC
             ")
                 .SetTransaction(m_rtr);
@@ -1980,17 +1981,17 @@ namespace Duplicati.Library.Main.Database
             cmd.SetTransaction(m_rtr);
             using var rd = await cmd.ExecuteReaderAsync($@"
                 SELECT
-                    F.ID,
+                    ""F"".""ID"",
                     '',
-                    F.TargetPath,
+                    ""F"".""TargetPath"",
                     '',
                     0,
                     {FOLDER_BLOCKSET_ID}
-                FROM ""{m_tempfiletable}"" F
+                FROM ""{m_tempfiletable}"" ""F""
                 WHERE
-                    F.BlocksetID = {FOLDER_BLOCKSET_ID}
-                    AND F.MetadataID IS NOT NULL
-                    AND F.MetadataID >= 0
+                    ""F"".""BlocksetID"" = {FOLDER_BLOCKSET_ID}
+                    AND ""F"".""MetadataID"" IS NOT NULL
+                    AND ""F"".""MetadataID"" >= 0
             ")
                 .ConfigureAwait(false);
 
@@ -2153,11 +2154,11 @@ namespace Duplicati.Library.Main.Database
         {
             using var cmd = m_connection.CreateCommand(@"
                 SELECT
-                    Name,
-                    Size,
-                    Hash
-                FROM RemoteVolume
-                WHERE ID = @VolumeID
+                    ""Name"",
+                    ""Size"",
+                    ""Hash""
+                FROM ""RemoteVolume""
+                WHERE ""ID"" = @VolumeID
             ")
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@VolumeID", VolumeID);
@@ -2734,7 +2735,7 @@ namespace Duplicati.Library.Main.Database
                 cmd.SetCommandAndParameters($@"
                     UPDATE ""{m_tempfiletable}""
                     SET ""LocalSourceExists"" = 1
-                    WHERE Path = @Path
+                    WHERE ""Path"" = @Path
                 ");
                 cmdReader.SetCommandAndParameters($@"
                     SELECT DISTINCT ""{m_tempfiletable}"".""Path""
@@ -2819,10 +2820,10 @@ namespace Duplicati.Library.Main.Database
 
                 await cmd.ExecuteNonQueryAsync($@"
                     UPDATE ""{m_tempfiletable}""
-                    SET LatestBlocksetId = (
-                        SELECT BlocksetId
+                    SET ""LatestBlocksetId"" = (
+                        SELECT ""BlocksetId""
                         FROM ""{m_latestblocktable}""
-                        WHERE Path = ""{m_tempfiletable}"".Path
+                        WHERE ""Path"" = ""{m_tempfiletable}"".""Path""
                     )
                 ")
                     .ConfigureAwait(false);

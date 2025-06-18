@@ -176,8 +176,8 @@ public static class Downgrade
                         throw new UserInformationException($"{r}", "DowngradeScriptFailure");
 
                     await cmd.SetCommandAndParameters(@"
-                        UPDATE Version
-                        SET Version = @Version
+                        UPDATE ""Version""
+                        SET ""Version"" = @Version
                     ")
                         .SetParameterValue("@Version", script.Version - 1)
                         .ExecuteNonQueryAsync()
