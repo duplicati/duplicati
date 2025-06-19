@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 while (true)
                 {
-                    var e = await self.Input.ReadAsync();
+                    var e = await self.Input.ReadAsync().ConfigureAwait(false);
 
                     // We ignore the stop signal, but not the pause and terminate
                     await taskreader.ProgressRendevouz().ConfigureAwait(false);
@@ -57,7 +57,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     try
                     {
                         var hint = options.GetCompressionHintFromFilename(e.Entry.Path);
-                        var oldHash = e.OldId < 0 ? null : await database.GetFileHashAsync(e.OldId);
+                        var oldHash = e.OldId < 0 ? null : await database.GetFileHashAsync(e.OldId, taskreader.ProgressToken).ConfigureAwait(false);
 
                         StreamProcessResult filestreamdata;
 
@@ -68,7 +68,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 // If we have determined that metadata has not changed, just grab the ID
                                 if (!e.MetadataChanged)
                                 {
-                                    var res = await database.GetMetadataIDAsync(e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length);
+                                    var res = await database.GetMetadataIDAsync(e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, taskreader.ProgressToken).ConfigureAwait(false);
                                     if (res.Item1)
                                         return res.Item2;
 
@@ -76,15 +76,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     e.MetadataChanged = true;
                                 }
 
-                                return (await MetadataPreProcess.AddMetadataToOutputAsync(e.Entry.Path, e.MetaHashAndSize, database, self.StreamBlockChannel)).Item2;
+                                return (await MetadataPreProcess.AddMetadataToOutputAsync(e.Entry.Path, e.MetaHashAndSize, database, self.StreamBlockChannel, taskreader.ProgressToken).ConfigureAwait(false)).Item2;
                             });
 
-                        using (var fs = await e.Entry.OpenRead(taskreader.ProgressToken))
-                            filestreamdata = await StreamBlock.ProcessStream(self.StreamBlockChannel, e.Entry.Path, fs, false, hint);
+                        using (var fs = await e.Entry.OpenRead(taskreader.ProgressToken).ConfigureAwait(false))
+                            filestreamdata = await StreamBlock.ProcessStream(self.StreamBlockChannel, e.Entry.Path, fs, false, hint).ConfigureAwait(false);
 
-                        await stats.AddOpenedFile(filestreamdata.Streamlength);
+                        await stats.AddOpenedFile(filestreamdata.Streamlength).ConfigureAwait(false);
 
-                        var metadataid = await metatask;
+                        var metadataid = await metatask.ConfigureAwait(false);
                         var filekey = filestreamdata.Streamhash;
                         var filesize = filestreamdata.Streamlength;
 
@@ -110,18 +110,18 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddChangedFile", "Would add changed file {0}, size {1}", e.Entry.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
 
-                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid, taskreader.ProgressToken).ConfigureAwait(false);
                         }
                         else if (e.MetadataChanged)
                         {
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", e.Entry.Path);
-                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid, taskreader.ProgressToken).ConfigureAwait(false);
                         }
                         else if (e.TimestampChanged)
                         {
                             await stats.AddTimestampChangedFile();
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileTimestampChanged", "File has only timestamp changes {0}", e.Entry.Path);
-                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite, taskreader.ProgressToken).ConfigureAwait(false);
                         }
                         else /*if (e.OldId >= 0)*/
                         {
@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             try
                             {
-                                await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                                await database.AddUnmodifiedAsync(e.OldId, e.LastWrite, taskreader.ProgressToken).ConfigureAwait(false);
                             }
                             catch (Exception ex)
                             {

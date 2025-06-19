@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 #nullable enable
@@ -42,16 +42,22 @@ internal static class ListFileVersionsHandler
     /// <param name="offset">The offset to start listing from</param>
     /// <param name="limit">The maximum number of results to return</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    public static Task RunAsync(Options options, ListFileVersionsResults result, string[] paths, long offset, long limit)
+    public async static Task RunAsync(Options options, ListFileVersionsResults result, string[] paths, long offset, long limit)
     {
         if (!System.IO.File.Exists(options.Dbpath) || options.NoLocalDb)
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
-        using var db = new Database.LocalListDatabase(options.Dbpath, options.SqlitePageCache);
+        await using var db =
+            await Database.LocalListDatabase.CreateAsync(options.Dbpath, null, result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
         long[]? filesetIds = null;
         if (!options.AllVersions)
         {
-            filesetIds = db.GetFilesetIDs(options.Time, options.Version).ToArray();
+            filesetIds = await db
+                .GetFilesetIDs(options.Time, options.Version, false, result.TaskControl.ProgressToken)
+                .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+
             if (filesetIds.Length == 0)
                 throw new UserInformationException("No filesets found", "NoFilesetsFound");
         }
@@ -60,8 +66,8 @@ internal static class ListFileVersionsHandler
             throw new UserInformationException("No path specified", "NoPathSpecified");
 
         paths = paths.Select(path => Util.AppendDirSeparator(path)).ToArray();
-        result.FileVersions = db.ListFileVersions(paths, filesetIds, offset, limit);
-
-        return Task.CompletedTask;
+        result.FileVersions = await db
+            .ListFileVersions(paths, filesetIds, offset, limit, result.TaskControl.ProgressToken)
+            .ConfigureAwait(false);
     }
 }

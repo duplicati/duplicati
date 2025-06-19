@@ -1,32 +1,34 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Newtonsoft.Json;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
-using System.Linq;
+using System.Threading;
 
 namespace Duplicati.Library.Main
 {
@@ -98,15 +100,16 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Updates the options with settings from the data, if any
+        /// Updates the options with settings from the data, if any.
         /// </summary>
-        /// <param name="db">The database to read from</param>
-        /// <param name="options">The options to update</param>
-        /// <param name="transaction">The transaction to use, if any</param>
-        internal static void UpdateOptionsFromDb(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
+        /// <param name="db">The database to read from.</param>
+        /// <param name="options">The options to update.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the options have been updated.</returns>
+        internal static async Task UpdateOptionsFromDb(LocalDatabase db, Options options, CancellationToken cancellationToken)
         {
             string n = null;
-            var opts = db.GetDbOptions(transaction);
+            var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
             if (opts.ContainsKey("blocksize") && (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n)))
                 options.RawOptions["blocksize"] = opts["blocksize"] + "b";
 
@@ -117,23 +120,32 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Checks if the database contains options that need to be verified, such as the blocksize
+        /// Checks if the database contains options that need to be verified, such as the blocksize.
         /// </summary>
-        /// <param name="db">The database to check</param>
-        /// <returns><c>true</c> if the database contains options that need to be verified; <c>false</c> otherwise</returns>
-        internal static bool ContainsOptionsForVerification(LocalDatabase db)
+        /// <param name="db">The database to check.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns <c>true</c> if the database contains options that need to be verified; <c>false</c> otherwise.</returns>
+        internal static async Task<bool> ContainsOptionsForVerification(LocalDatabase db, CancellationToken cancellationToken)
         {
-            var opts = db.GetDbOptions();
-            return new[] { "blocksize", "blockhash", "filehash", "passphrase" }.Any(opts.ContainsKey);
+            var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
+            await db.Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return new[] {
+                "blocksize",
+                "blockhash",
+                "filehash",
+                "passphrase"
+            }
+                .Any(opts.ContainsKey);
         }
 
         /// <summary>
-        /// Verifies the parameters in the database, and updates the database if needed
+        /// Verifies the parameters in the database, and updates the database if needed.
         /// </summary>
-        /// <param name="db">The database to check</param>
-        /// <param name="options">The options to verify</param>
-        /// <param name="transaction">The transaction to use, if any</param>
-        internal static void VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
+        /// <param name="db">The database to check.</param>
+        /// <param name="options">The options to verify.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the options have been verified and the database has been updated if needed.</returns>
+        internal static async Task VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options, CancellationToken cancellationToken)
         {
             var newDict = new Dictionary<string, string>
             {
@@ -141,7 +153,7 @@ namespace Duplicati.Library.Main
                 { "blockhash", options.BlockHashAlgorithm },
                 { "filehash", options.FileHashAlgorithm }
             };
-            var opts = db.GetDbOptions(transaction);
+            var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
 
             if (options.NoEncryption)
             {
@@ -162,7 +174,7 @@ namespace Duplicati.Library.Main
 
                 newDict["passphrase-salt"] = salt;
 
-                // We avoid storing the passphrase directly, 
+                // We avoid storing the passphrase directly,
                 // instead we salt and rehash repeatedly
                 newDict.Add("passphrase", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(options.Passphrase, salt, 1200)));
             }
@@ -191,7 +203,7 @@ namespace Duplicati.Library.Main
                 }
 
             //Extra sanity check
-            if (db.GetBlocksLargerThan(options.Blocksize) > 0)
+            if (await db.GetBlocksLargerThan(options.Blocksize, cancellationToken).ConfigureAwait(false) > 0)
                 throw new Duplicati.Library.Interface.UserInformationException("You have attempted to change the block-size on an existing backup, which is not supported. Please configure a new clean backup if you want to change the block-size.", "BlockSizeChangeNotSupported");
 
             if (needsUpdate)
@@ -201,7 +213,7 @@ namespace Duplicati.Library.Main
                     if (!newDict.ContainsKey(k.Key))
                         newDict[k.Key] = k.Value;
 
-                db.SetDbOptions(newDict, transaction);
+                await db.SetDbOptions(newDict, cancellationToken).ConfigureAwait(false);
             }
         }
     }

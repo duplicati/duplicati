@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -36,24 +36,24 @@ namespace Duplicati.Library.SQLiteHelper
     /// Updates should have the form &quot;1.Sample upgrade.sql&quot;.
     /// When the database schema changes, simply put a new file into the folder
     /// and set it to be embedded in the binary.
-    /// 
-    /// Additionally, it's possible to execute custom code before and after 
+    ///
+    /// Additionally, it's possible to execute custom code before and after
     /// the SQL is executed. To set up a custom upgrade stage, add your
     /// code to DbUpgradesRegistry along with the DB version to apply it with.
-    /// 
+    ///
     /// Even if all the DB upgrade code is handled in C#, you still have to add
     /// a dummy SQL file to indicate the version ID is already taken.
-    /// 
+    ///
     /// Each upgrade file should ONLY upgrade from the previous version.
     /// If done correctly, a user may be upgrade from the very first version
     /// to the very latest.
-    /// 
-    /// The Schema.sql file should ALWAYS have the latest schema, as that will 
+    ///
+    /// The Schema.sql file should ALWAYS have the latest schema, as that will
     /// ensure that new installs do not run upgrades after installation.
-    /// Also remember to update the last line in Schema.sql to insert the 
+    /// Also remember to update the last line in Schema.sql to insert the
     /// current version number in the version table.
-    /// 
-    /// Currently no upgrades may contain semicolons, except as the SQL statement 
+    ///
+    /// Currently no upgrades may contain semicolons, except as the SQL statement
     /// delimiter.
     /// </summary>
     public static class DatabaseUpgrader
@@ -203,14 +203,21 @@ namespace Duplicati.Library.SQLiteHelper
                 try
                 {
                     //See if the version table is present,
-                    cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER WHERE Name LIKE 'Version'";
+                    cmd.CommandText = @"
+                        SELECT COUNT(*)
+                        FROM SQLITE_MASTER
+                        WHERE Name LIKE 'Version'
+                    ";
                     int count = Convert.ToInt32(cmd.ExecuteScalar());
 
                     if (count == 0)
                         dbversion = -1; //Empty
                     else if (count == 1)
                     {
-                        cmd.CommandText = "SELECT max(Version) FROM Version";
+                        cmd.CommandText = @"
+                            SELECT max(Version)
+                            FROM Version
+                        ";
                         dbversion = Convert.ToInt32(cmd.ExecuteScalar());
                     }
                     else

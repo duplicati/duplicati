@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
@@ -321,11 +323,12 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void GetRootPrefixes_ShouldReturnCorrectLinuxPrefixes()
+        public async Task GetRootPrefixes_ShouldReturnCorrectLinuxPrefixes()
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = new LocalListDatabase(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "/folder1/", // 1
                 "/folder1/sub1/",
@@ -335,7 +338,10 @@ namespace Duplicati.UnitTest
             ]);
 
             // Act
-            var result = db.GetRootPrefixes(1).ToList();
+            var result = await db
+                .GetRootPrefixes(1, CancellationToken.None)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             // Assert
             Assert.That(result, Does.Contain(1L));
@@ -347,11 +353,12 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void GetRootPrefixes_ShouldReturnCorrectWindowsDrivePrefixes()
+        public async Task GetRootPrefixes_ShouldReturnCorrectWindowsDrivePrefixes()
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = new LocalListDatabase(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "C:\\folder1\\",
                 "C:\\folder1\\sub1\\",
@@ -360,7 +367,10 @@ namespace Duplicati.UnitTest
             ]);
 
             // Act
-            var result = db.GetRootPrefixes(1).ToList();
+            var result = await db
+                .GetRootPrefixes(1, CancellationToken.None)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             // Assert
             Assert.That(result, Does.Contain(1L));
@@ -371,11 +381,12 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void GetRootPrefixes_ShouldReturnCorrectWindowsUncPrefixes()
+        public async Task GetRootPrefixes_ShouldReturnCorrectWindowsUncPrefixes()
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = new LocalListDatabase(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "\\\\server\\share\\folder\\",
                 "\\\\server\\share\\folder\\subfolder\\",
@@ -383,7 +394,10 @@ namespace Duplicati.UnitTest
             ]);
 
             // Act
-            var result = db.GetRootPrefixes(1).ToList();
+            var result = await db
+                .GetRootPrefixes(1, CancellationToken.None)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             // Assert
             Assert.That(result, Does.Contain(1L));
@@ -393,11 +407,12 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void GetRootPrefixes_ShouldHandleMixedWindowsDriveAndUncPaths()
+        public async Task GetRootPrefixes_ShouldHandleMixedWindowsDriveAndUncPaths()
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = new LocalListDatabase(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "C:\\data\\", // 1
                 "C:\\data\\sub1\\",
@@ -409,7 +424,10 @@ namespace Duplicati.UnitTest
             ]);
 
             // Act
-            var result = db.GetRootPrefixes(1).ToList();
+            var result = await db
+                .GetRootPrefixes(1, CancellationToken.None)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             // Assert
             Assert.That(result, Does.Contain(1L));

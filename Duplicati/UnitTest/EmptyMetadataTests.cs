@@ -28,6 +28,9 @@ using Duplicati.Library.Main.Database;
 using Duplicati.Library.Interface;
 using Duplicati.Library.SQLiteHelper;
 using NUnit.Framework;
+using System.Threading;
+using System.Threading.Tasks;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest;
 
@@ -35,7 +38,7 @@ public class EmptyMetadataTests : BasicSetupHelper
 {
     [Test]
     [Category("Targeted")]
-    public void ReplaceMissingMetadataRestoresConsistency()
+    public async Task ReplaceMissingMetadataRestoresConsistency()
     {
         var testopts = TestOptions.Expand(new { no_encryption = true });
 
@@ -49,7 +52,7 @@ public class EmptyMetadataTests : BasicSetupHelper
         long metaBlocksetId;
         long filesetId;
 
-        using (var db = SQLiteLoader.LoadConnection(DBFILE, 0))
+        using (var db = SQLiteLoader.LoadConnection(DBFILE))
         using (var cmd = db.CreateCommand())
         {
             // Find metadata blockset ID and fileset ID for the backed up folder
@@ -79,26 +82,28 @@ public class EmptyMetadataTests : BasicSetupHelper
         }
 
         var opts = new Options(testopts);
-        var emptyMeta = Utility.WrapMetadata(new Dictionary<string, string>(), opts);
+        var emptyMeta = Duplicati.Library.Main.Utility.WrapMetadata(new Dictionary<string, string>(), opts);
 
         Assert.Throws<DatabaseInconsistencyException>(() =>
         {
-            using var db = new LocalDatabase(DBFILE, "verify", true, 0);
-            db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, null);
+            using var db = LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "verify", true, null, CancellationToken.None).Await();
+            db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None).Await();
         });
 
-        using (var db = new LocalListBrokenFilesDatabase(DBFILE, 0))
+        await using (var db = await LocalListBrokenFilesDatabase.CreateAsync(DBFILE, null, CancellationToken.None).ConfigureAwait(false))
         {
             var blockVolumeIds = Array.Empty<long>();
 
-            var emptyId = db.GetEmptyMetadataBlocksetId(blockVolumeIds, emptyMeta.FileHash, emptyMeta.Blob.Length, null);
+            var emptyId = await db.GetEmptyMetadataBlocksetId(blockVolumeIds, emptyMeta.FileHash, emptyMeta.Blob.Length, CancellationToken.None);
             Assert.That(emptyId, Is.GreaterThanOrEqualTo(0), "Empty metadata blockset not found");
 
-            var replaced = db.ReplaceMetadata(filesetId, emptyId, null);
+            var replaced = await db.ReplaceMetadata(filesetId, emptyId, CancellationToken.None);
             Assert.That(replaced, Is.GreaterThan(0), "No metadata rows replaced");
+
+            await db.Transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
         }
 
-        using (var db = new LocalDatabase(DBFILE, "verify", true, 0))
-            db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, null);
+        await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "verify", true, null, CancellationToken.None))
+            await db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None);
     }
 }

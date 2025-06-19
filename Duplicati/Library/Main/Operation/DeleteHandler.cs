@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -51,25 +51,33 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseFileMissing");
 
-            using (var db = new LocalDeleteDatabase(m_options.Dbpath, "Delete", m_options.SqlitePageCache))
-            using (var tr = new ReusableTransaction(db))
-            {
-                Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+            await using var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Delete", null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await Utility.UpdateOptionsFromDb(db, m_options, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
 
-                await DoRunAsync(db, tr, false, false, backendManager).ConfigureAwait(false);
+            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
 
-                if (!m_options.Dryrun)
-                    tr.Commit("ComitDelete", restart: false);
-            }
+            await DoRunAsync(db, false, false, backendManager).ConfigureAwait(false);
+
+            if (!m_options.Dryrun)
+                await db.Transaction
+                    .CommitAsync("ComitDelete")
+                    .ConfigureAwait(false);
         }
 
-        public async Task DoRunAsync(LocalDeleteDatabase db, ReusableTransaction rtr, bool hasVerifiedBackend, bool forceCompact, IBackendManager backendManager)
+        public async Task DoRunAsync(LocalDeleteDatabase db, bool hasVerifiedBackend, bool forceCompact, IBackendManager backendManager)
         {
             if (!hasVerifiedBackend)
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict, rtr.Transaction).ConfigureAwait(false);
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
-            var filesets = db.FilesetsWithBackupVersion.ToArray();
+            // We collapse the async enumerablo into a array to avoid multiple
+            // enumerations (and thus multiple database queries)
+            var filesets = await db
+                .FilesetsWithBackupVersion(m_result.TaskControl.ProgressToken)
+                .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+
             List<IListResultFileset> versionsToDelete =
             [
                 .. new SpecificVersionsRemover(m_options).GetFilesetsToDelete(filesets),
@@ -97,18 +105,31 @@ namespace Duplicati.Library.Main.Operation
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", versionsToDelete.Count);
 
-                var lst = db.DropFilesetsFromTable(versionsToDelete.Select(x => x.Time).ToArray(), rtr.Transaction).ToArray();
+                var lst = await db
+                    .DropFilesetsFromTable(
+                        versionsToDelete
+                            .Select(x => x.Time)
+                            .ToArray(),
+                        m_result.TaskControl.ProgressToken
+                    )
+                    .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
+                    .ConfigureAwait(false);
+
                 foreach (var f in lst)
-                    db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, rtr.Transaction);
+                    await db
+                        .UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, m_result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false);
 
                 if (!m_options.Dryrun)
-                    rtr.Commit("CommitBeforeDelete");
+                    await db.Transaction
+                        .CommitAsync("CommitBeforeDelete", true, m_result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false);
 
                 foreach (var f in lst)
                 {
                     if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                     {
-                        await backendManager.WaitForEmptyAsync(db, rtr.Transaction, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                        await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                         return;
                     }
 
@@ -118,7 +139,7 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFileset", "Would delete remote fileset: {0}", f.Key);
                 }
 
-                await backendManager.WaitForEmptyAsync(db, rtr.Transaction, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
                 var count = lst.Length;
                 if (!m_options.Dryrun)
@@ -145,7 +166,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.CompactResults = new CompactResults(m_result);
                 await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
-                    .DoCompactAsync(db, true, rtr, backendManager).ConfigureAwait(false);
+                    .DoCompactAsync(db, true, backendManager).ConfigureAwait(false);
             }
 
             m_result.SetResults(versionsToDelete.Select(v => new Tuple<long, DateTime>(v.Version, v.Time)), m_options.Dryrun);
