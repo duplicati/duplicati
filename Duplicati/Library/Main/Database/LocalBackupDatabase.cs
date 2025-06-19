@@ -1143,8 +1143,16 @@ namespace Duplicati.Library.Main.Database
             return (-1, oldModified, length);
         }
 
-
-        public async Task<(long, DateTime, long, string?, long)> GetFileEntry(long prefixid, string path, long filesetid)
+        /// <summary>
+        /// Gets the file entry for a given path in the fileset.
+        /// </summary>
+        /// <param name="prefixid">The ID of the path prefix.</param>
+        /// <param name="path">The path to the file.</param>
+        /// <param name="filesetid">The ID of the fileset.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that when awaited contains a tuple with the file ID, last modified time, file size, metadata hash, and metadata size.</returns>
+        /// <remarks>
+        public async Task<(long, DateTime, long, string?, long)> GetFileEntry(long prefixid, string path, long filesetid, CancellationToken token)
         {
             DateTime oldModified;
             long lastFileSize;
@@ -1157,8 +1165,8 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@Path", path)
                 .SetParameterValue("@FilesetId", filesetid);
 
-            await using var rd = await m_findfileCommand.ExecuteReaderAsync().ConfigureAwait(false);
-            if (await rd.ReadAsync().ConfigureAwait(false))
+            await using var rd = await m_findfileCommand.ExecuteReaderAsync(token).ConfigureAwait(false);
+            if (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
                 lastFileSize = rd.ConvertValueToInt64(2);
@@ -1194,15 +1202,16 @@ namespace Duplicati.Library.Main.Database
         /// Gets the metadata hash and size for a file.
         /// </summary>
         /// <param name="fileid">The ID of the file.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited contains a tuple with the metadata hash and size, or null if the file does not exist.</returns>
-        public async Task<(string MetadataHash, long Size)?> GetMetadataHashAndSizeForFile(long fileid)
+        public async Task<(string MetadataHash, long Size)?> GetMetadataHashAndSizeForFile(long fileid, CancellationToken token)
         {
             m_selectfilemetadatahashandsizeCommand
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@FileId", fileid);
 
-            await using var rd = await m_selectfilemetadatahashandsizeCommand.ExecuteReaderAsync().ConfigureAwait(false);
-            if (await rd.ReadAsync().ConfigureAwait(false))
+            await using var rd = await m_selectfilemetadatahashandsizeCommand.ExecuteReaderAsync(token).ConfigureAwait(false);
+            if (await rd.ReadAsync(token).ConfigureAwait(false))
                 return (
                     rd.ConvertValueToString(1) ?? throw new InvalidOperationException("Metadata hash is null"),
                     rd.ConvertValueToInt64(0)
@@ -1655,8 +1664,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Retrieves the names of remote volumes that are missing index files.
         /// </summary>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of volume names that are missing index files.</returns>
-        public async IAsyncEnumerable<string> GetMissingIndexFiles()
+        public async IAsyncEnumerable<string> GetMissingIndexFiles([EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr)
                 .SetCommandAndParameters(@"
@@ -1676,8 +1686,8 @@ namespace Duplicati.Library.Main.Database
                     RemoteVolumeState.Verified.ToString()
                 ]);
 
-            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await rd.ReadAsync().ConfigureAwait(false))
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return rd.ConvertValueToString(0) ?? throw new Exception("Unexpected null value for volume name");
         }
 
@@ -1688,8 +1698,9 @@ namespace Duplicati.Library.Main.Database
         /// <param name="size">The size of the block to move.</param>
         /// <param name="sourcevolumeid">The ID of the source volume.</param>
         /// <param name="targetvolumeid">The ID of the target volume.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the block is moved.</returns>
-        public async Task MoveBlockToVolume(string blockkey, long size, long sourcevolumeid, long targetvolumeid)
+        public async Task MoveBlockToVolume(string blockkey, long size, long sourcevolumeid, long targetvolumeid, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var c = await cmd.SetCommandAndParameters(@"
@@ -1704,7 +1715,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@Hash", blockkey)
                 .SetParameterValue("@Size", size)
                 .SetParameterValue("@PreviousVolumeId", sourcevolumeid)
-                .ExecuteNonQueryAsync()
+                .ExecuteNonQueryAsync(token)
                 .ConfigureAwait(false);
 
             if (c != 1)
