@@ -48,14 +48,14 @@ internal static class ListFileVersionsHandler
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
         await using var db =
-            await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache)
+            await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache, null, result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
         long[]? filesetIds = null;
         if (!options.AllVersions)
         {
             filesetIds = await db
-                .GetFilesetIDs(options.Time, options.Version)
-                .ToArrayAsync()
+                .GetFilesetIDs(options.Time, options.Version, false, result.TaskControl.ProgressToken)
+                .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             if (filesetIds.Length == 0)
@@ -67,7 +67,7 @@ internal static class ListFileVersionsHandler
 
         paths = paths.Select(path => Util.AppendDirSeparator(path)).ToArray();
         result.FileVersions = await db
-            .ListFileVersions(paths, filesetIds, offset, limit)
+            .ListFileVersions(paths, filesetIds, offset, limit, result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
     }
 }

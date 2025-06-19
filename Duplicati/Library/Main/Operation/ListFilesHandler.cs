@@ -55,15 +55,15 @@ namespace Duplicati.Library.Main.Operation
 
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
-                await using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false))
+                await using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
-                    await using var filesets = await db.SelectFileSets(m_options.Time, m_options.Version).ConfigureAwait(false);
+                    await using var filesets = await db.SelectFileSets(m_options.Time, m_options.Version, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     if (!filter.Empty)
                     {
                         if (simpleList || (m_options.ListFolderContents && !m_options.AllVersions))
                         {
                             await filesets
-                                .TakeFirst()
+                                .TakeFirst(m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
                         }
                     }
@@ -71,11 +71,11 @@ namespace Duplicati.Library.Main.Operation
                     IAsyncEnumerable<Database.LocalListDatabase.IFileversion> files;
                     if (m_options.ListFolderContents)
                     {
-                        files = filesets.SelectFolderContents(filter);
+                        files = filesets.SelectFolderContents(filter, m_result.TaskControl.ProgressToken);
                     }
                     else if (m_options.ListPrefixOnly)
                     {
-                        files = filesets.GetLargestPrefix(filter);
+                        files = filesets.GetLargestPrefix(filter, m_result.TaskControl.ProgressToken);
                     }
                     else if (filter.Empty)
                     {
@@ -83,16 +83,16 @@ namespace Duplicati.Library.Main.Operation
                     }
                     else
                     {
-                        files = filesets.SelectFiles(filter);
+                        files = filesets.SelectFiles(filter, m_result.TaskControl.ProgressToken);
                     }
 
                     if (m_options.ListSetsOnly)
                     {
                         m_result.SetResult(
                             await filesets
-                                .QuickSets()
+                                .QuickSets(m_result.TaskControl.ProgressToken)
                                 .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
-                                .ToArrayAsync()
+                                .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false),
                             null
                         );
@@ -101,9 +101,9 @@ namespace Duplicati.Library.Main.Operation
                     {
                         m_result.SetResult(
                             await filesets
-                                .Sets()
+                                .Sets(m_result.TaskControl.ProgressToken)
                                 .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
-                                .ToArrayAsync()
+                                .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false),
                             files == null
                                 ? null
@@ -112,14 +112,14 @@ namespace Duplicati.Library.Main.Operation
                                     new ListResultFile(
                                         n.Path,
                                         await n
-                                            .Sizes()
-                                            .ToArrayAsync()
+                                            .Sizes(m_result.TaskControl.ProgressToken)
+                                            .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                             .ConfigureAwait(false)
                                     )
                                 )
                                     .Select(x => x.Result)
                                     .Cast<IListResultFile>()
-                                    .ToArrayAsync()
+                                    .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                     .ConfigureAwait(false)
                         );
                     }
@@ -137,7 +137,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new TempFile())
-            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(tmpdb, "List", true, m_options.SqlitePageCache).ConfigureAwait(false))
+            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(tmpdb, "List", true, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
             {
                 var filteredList = ParseAndFilterFilesets(await backendManager.ListAsync(cancellationToken).ConfigureAwait(false), m_options);
                 if (filteredList.Count == 0)

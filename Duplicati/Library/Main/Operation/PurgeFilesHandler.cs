@@ -52,10 +52,10 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            await using var db = await Database.LocalPurgeDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache).ConfigureAwait(false);
+            await using var db = await Database.LocalPurgeDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await DoRunAsync(backendManager, db, filter, null, 0, 1).ConfigureAwait(false);
             await db
-                .VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true)
+                .VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
         }
 
@@ -69,44 +69,44 @@ namespace Duplicati.Library.Main.Operation
 
             var doCompactStep = !m_options.NoAutoCompact && filtercommand == null;
 
-            if (await db.PartiallyRecreated().ConfigureAwait(false))
+            if (await db.PartiallyRecreated(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 throw new UserInformationException("The purge command does not work on partially recreated databases", "PurgeNotAllowedOnPartialDatabase");
 
-            if (await db.RepairInProgress().ConfigureAwait(false) && filtercommand == null)
+            if (await db.RepairInProgress(m_result.TaskControl.ProgressToken).ConfigureAwait(false) && filtercommand == null)
                 throw new UserInformationException(string.Format("The purge command does not work on an incomplete database, try the {0} operation.", "purge-broken-files"), "PurgeNotAllowedOnIncompleteDatabase");
 
             var versions = await db
-                .GetFilesetIDs(m_options.Time, m_options.Version)
+                .GetFilesetIDs(m_options.Time, m_options.Version, false, m_result.TaskControl.ProgressToken)
                 .OrderByDescending(x => x)
-                .ToArrayAsync()
+                .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
             if (versions.Length <= 0)
                 throw new UserInformationException("No filesets matched the supplied time or versions", "NoFilesetFoundForTimeOrVersion");
 
-            var orphans = await db.CountOrphanFiles().ConfigureAwait(false);
+            var orphans = await db.CountOrphanFiles(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             if (orphans != 0)
                 throw new UserInformationException(string.Format("Unable to start the purge process as there are {0} orphan file(s)", orphans), "CannotPurgeWithOrphans");
 
-            await Utility.UpdateOptionsFromDb(db, m_options)
+            await Utility.UpdateOptionsFromDb(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
-            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
+            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             if (filtercommand == null)
             {
-                await db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, false)
+                await db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, false, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
                 if (m_options.NoBackendverification)
                     await FilelistProcessor.VerifyLocalList(backendManager, db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
-                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, null, null, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
+                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, null, null, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
 
             var filesets = await db
-                .FilesetTimes()
+                .FilesetTimes(m_result.TaskControl.ProgressToken)
                 .OrderByDescending(x => x.Value)
-                .ToArrayAsync()
+                .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             var versionprogress = ((doCompactStep ? 0.75f : 1.0f) / versions.Length) * pgspan;
@@ -118,7 +118,7 @@ namespace Duplicati.Library.Main.Operation
 
             // If we crash now, it is possible that the remote storage contains partial files
             if (!m_options.Dryrun)
-                await db.TerminatedWithActiveUploads(true).ConfigureAwait(false);
+                await db.TerminatedWithActiveUploads(m_result.TaskControl.ProgressToken, true).ConfigureAwait(false);
 
             // Reverse makes sure we re-write the old versions first
             foreach (var versionid in versions.Reverse())
@@ -132,18 +132,18 @@ namespace Duplicati.Library.Main.Operation
 
                 var ts = await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, tsOriginal)
                     .ConfigureAwait(false);
-                var prevfilename = await db.GetRemoteVolumeNameForFileset(filesets[ix].Key)
+                var prevfilename = await db.GetRemoteVolumeNameForFileset(filesets[ix].Key, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
                 if (ix != 0 && filesets[ix - 1].Value <= ts)
                     throw new Exception(string.Format("Unable to create a new fileset for {0} because the resulting timestamp {1} is larger than the next timestamp {2}", prevfilename, ts, filesets[ix - 1].Value));
 
-                await using (var tempset = await db.CreateTemporaryFileset(versionid).ConfigureAwait(false))
+                await using (var tempset = await db.CreateTemporaryFileset(versionid, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
                     if (filtercommand == null)
-                        await tempset.ApplyFilter(filter).ConfigureAwait(false);
+                        await tempset.ApplyFilter(filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     else
-                        await tempset.ApplyFilter(filtercommand)
+                        await tempset.ApplyFilter(filtercommand, m_result.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
 
                     if (tempset.RemovedFileCount + tempset.UpdatedFileCount == 0)
@@ -161,10 +161,10 @@ namespace Duplicati.Library.Main.Operation
                         using (var vol = new FilesetVolumeWriter(m_options, ts))
                         {
                             var isOriginalFilesetFullBackup = await db
-                                .IsFilesetFullBackup(tsOriginal)
+                                .IsFilesetFullBackup(tsOriginal, m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
                             var newids = await tempset
-                                .ConvertToPermanentFileset(vol.RemoteFilename, ts, isOriginalFilesetFullBackup)
+                                .ConvertToPermanentFileset(vol.RemoteFilename, ts, isOriginalFilesetFullBackup, m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
                             vol.VolumeID = newids.Item1;
                             vol.CreateFilesetFile(isOriginalFilesetFullBackup);
@@ -172,7 +172,7 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteInformationMessage(LOGTAG, "ReplacingFileset", "Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize));
 
                             await db
-                                .WriteFileset(vol, newids.Item2)
+                                .WriteFileset(vol, newids.Item2, m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
 
                             m_result.RemovedFileSize += tempset.RemovedFileSize;
@@ -185,7 +185,7 @@ namespace Duplicati.Library.Main.Operation
 
                             if (m_options.Dryrun || m_options.FullResult)
                             {
-                                await foreach (var fe in tempset.ListAllDeletedFiles().ConfigureAwait(false))
+                                await foreach (var fe in tempset.ListAllDeletedFiles(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                                 {
                                     var msg = string.Format("  Purging file {0} ({1})", fe.Key, Library.Utility.Utility.FormatSizeString(fe.Value));
 
@@ -212,19 +212,19 @@ namespace Duplicati.Library.Main.Operation
                             else
                             {
                                 await db
-                                    .UpdateRemoteVolume(vol.RemoteFilename, RemoteVolumeState.Uploading, -1, null)
+                                    .UpdateRemoteVolume(vol.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_result.TaskControl.ProgressToken)
                                     .ConfigureAwait(false);
                                 var lst = await db
-                                    .DropFilesetsFromTable(new[] { tsOriginal })
-                                    .ToArrayAsync()
+                                    .DropFilesetsFromTable(new[] { tsOriginal }, m_result.TaskControl.ProgressToken)
+                                    .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                     .ConfigureAwait(false);
                                 foreach (var f in lst)
                                     await db
-                                        .UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null)
+                                        .UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, m_result.TaskControl.ProgressToken)
                                         .ConfigureAwait(false);
 
                                 await db.Transaction
-                                    .CommitAsync()
+                                    .CommitAsync(m_result.TaskControl.ProgressToken)
                                     .ConfigureAwait(false);
 
                                 await backendManager.PutAsync(vol, null, null, true, async () =>
@@ -235,7 +235,7 @@ namespace Duplicati.Library.Main.Operation
                                     // passing down a transaction, but maybe is
                                     // not needed anymore.
                                     await db.Transaction
-                                        .CommitAsync()
+                                        .CommitAsync(m_result.TaskControl.ProgressToken)
                                         .ConfigureAwait(false);
                                 }, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                 await backendManager.DeleteAsync(prevfilename, -1, true, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -251,7 +251,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (!m_options.Dryrun)
                 await db
-                    .TerminatedWithActiveUploads(false)
+                    .TerminatedWithActiveUploads(m_result.TaskControl.ProgressToken, false)
                     .ConfigureAwait(false);
 
             if (doCompactStep)
@@ -265,12 +265,12 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdateProgress(pgoffset + (0.75f * pgspan));
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Compact);
                     m_result.CompactResults = new CompactResults(m_result);
-                    await using var cdb = await Database.LocalDeleteDatabase.CreateAsync(db).ConfigureAwait(false);
+                    await using var cdb = await Database.LocalDeleteDatabase.CreateAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
                         .DoCompactAsync(cdb, true, backendManager)
                         .ConfigureAwait(false);
 
-                    await cdb.Transaction.CommitAsync("PostCompact");
+                    await cdb.Transaction.CommitAsync("PostCompact", true, m_result.TaskControl.ProgressToken);
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(pgoffset + pgspan);

@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
+using System.Threading;
 
 namespace Duplicati.Library.Main
 {
@@ -103,11 +104,12 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="db">The database to read from.</param>
         /// <param name="options">The options to update.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the options have been updated.</returns>
-        internal static async Task UpdateOptionsFromDb(LocalDatabase db, Options options)
+        internal static async Task UpdateOptionsFromDb(LocalDatabase db, Options options, CancellationToken cancellationToken)
         {
             string n = null;
-            var opts = await db.GetDbOptions().ConfigureAwait(false);
+            var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
             if (opts.ContainsKey("blocksize") && (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n)))
                 options.RawOptions["blocksize"] = opts["blocksize"] + "b";
 
@@ -121,11 +123,12 @@ namespace Duplicati.Library.Main
         /// Checks if the database contains options that need to be verified, such as the blocksize.
         /// </summary>
         /// <param name="db">The database to check.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns <c>true</c> if the database contains options that need to be verified; <c>false</c> otherwise.</returns>
-        internal static async Task<bool> ContainsOptionsForVerification(LocalDatabase db)
+        internal static async Task<bool> ContainsOptionsForVerification(LocalDatabase db, CancellationToken cancellationToken)
         {
-            var opts = await db.GetDbOptions().ConfigureAwait(false);
-            await db.Transaction.CommitAsync().ConfigureAwait(false);
+            var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
+            await db.Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             return new[] {
                 "blocksize",
                 "blockhash",
@@ -140,8 +143,9 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="db">The database to check.</param>
         /// <param name="options">The options to verify.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the options have been verified and the database has been updated if needed.</returns>
-        internal static async Task VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options)
+        internal static async Task VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options, CancellationToken cancellationToken)
         {
             var newDict = new Dictionary<string, string>
             {
@@ -149,7 +153,7 @@ namespace Duplicati.Library.Main
                 { "blockhash", options.BlockHashAlgorithm },
                 { "filehash", options.FileHashAlgorithm }
             };
-            var opts = await db.GetDbOptions().ConfigureAwait(false);
+            var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
 
             if (options.NoEncryption)
             {
@@ -199,7 +203,7 @@ namespace Duplicati.Library.Main
                 }
 
             //Extra sanity check
-            if (await db.GetBlocksLargerThan(options.Blocksize).ConfigureAwait(false) > 0)
+            if (await db.GetBlocksLargerThan(options.Blocksize, cancellationToken).ConfigureAwait(false) > 0)
                 throw new Duplicati.Library.Interface.UserInformationException("You have attempted to change the block-size on an existing backup, which is not supported. Please configure a new clean backup if you want to change the block-size.", "BlockSizeChangeNotSupported");
 
             if (needsUpdate)
@@ -209,7 +213,7 @@ namespace Duplicati.Library.Main
                     if (!newDict.ContainsKey(k.Key))
                         newDict[k.Key] = k.Value;
 
-                await db.SetDbOptions(newDict).ConfigureAwait(false);
+                await db.SetDbOptions(newDict, cancellationToken).ConfigureAwait(false);
             }
         }
     }

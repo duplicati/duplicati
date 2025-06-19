@@ -71,7 +71,9 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// Asynchronously retrieves the sizes of the file versions.
             /// </summary>
-            IAsyncEnumerable<long> Sizes();
+            /// <param name="token">A cancellation token to cancel the operation.</param>
+            /// <returns>An asynchronous enumerable of file sizes.</returns>
+            IAsyncEnumerable<long> Sizes(CancellationToken token);
         }
 
         /// <summary>
@@ -301,12 +303,13 @@ namespace Duplicati.Library.Main.Database
                     More = true;
                 }
 
-                public async IAsyncEnumerable<long> Sizes()
+                /// <inheritdoc />
+                public async IAsyncEnumerable<long> Sizes([EnumeratorCancellation] CancellationToken token)
                 {
                     while (More && Path == m_reader.ConvertValueToString(0))
                     {
                         yield return m_reader.ConvertValueToInt64(1, -1);
-                        More = await m_reader.ReadAsync().ConfigureAwait(false);
+                        More = await m_reader.ReadAsync(token).ConfigureAwait(false);
                     }
                 }
             }
@@ -316,8 +319,10 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             private class FileversionFixed : IFileversion
             {
+                /// <inheritdoc/>
                 public string? Path { get; internal set; }
-                public IAsyncEnumerable<long> Sizes() => AsyncEnumerable.Empty<long>();
+                /// <inheritdoc/>
+                public IAsyncEnumerable<long> Sizes(CancellationToken token) => AsyncEnumerable.Empty<long>();
             }
 
             /// <inheritdoc />

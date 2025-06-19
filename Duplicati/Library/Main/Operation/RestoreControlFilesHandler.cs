@@ -46,7 +46,14 @@ namespace Duplicati.Library.Main.Operation
                 Directory.CreateDirectory(m_options.Restorepath);
 
             using var tmpdb = new TempFile();
-            await using var db = await Database.LocalDatabase.CreateLocalDatabaseAsync(File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true, m_options.SqlitePageCache).ConfigureAwait(false);
+            await using var db = await Database.LocalDatabase.CreateLocalDatabaseAsync(
+                File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles",
+                true,
+                m_options.SqlitePageCache,
+                null,
+                m_result.TaskControl.ProgressToken
+            ).ConfigureAwait(false);
+
             var filter = JoinedFilterExpression.Join(new FilterExpression(filterstrings), compositefilter);
 
             try
@@ -68,7 +75,7 @@ namespace Duplicati.Library.Main.Operation
 
                         var file = fileversion.Value.File;
                         var entry = await db
-                            .GetRemoteVolume(file.Name)
+                            .GetRemoteVolume(file.Name, m_result.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
 
                         var res = new List<string>();

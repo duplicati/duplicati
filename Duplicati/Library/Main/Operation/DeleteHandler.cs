@@ -51,11 +51,11 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseFileMissing");
 
-            await using var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Delete", m_options.SqlitePageCache).ConfigureAwait(false);
-            await Utility.UpdateOptionsFromDb(db, m_options)
+            await using var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Delete", m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await Utility.UpdateOptionsFromDb(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
-            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options)
+            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             await DoRunAsync(db, false, false, backendManager).ConfigureAwait(false);
@@ -69,13 +69,13 @@ namespace Duplicati.Library.Main.Operation
         public async Task DoRunAsync(LocalDeleteDatabase db, bool hasVerifiedBackend, bool forceCompact, IBackendManager backendManager)
         {
             if (!hasVerifiedBackend)
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             // We collapse the async enumerablo into a array to avoid multiple
             // enumerations (and thus multiple database queries)
             var filesets = await db
-                .FilesetsWithBackupVersion()
-                .ToArrayAsync()
+                .FilesetsWithBackupVersion(m_result.TaskControl.ProgressToken)
+                .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             List<IListResultFileset> versionsToDelete =
@@ -109,19 +109,20 @@ namespace Duplicati.Library.Main.Operation
                     .DropFilesetsFromTable(
                         versionsToDelete
                             .Select(x => x.Time)
-                            .ToArray()
+                            .ToArray(),
+                        m_result.TaskControl.ProgressToken
                     )
-                    .ToArrayAsync()
+                    .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
                 foreach (var f in lst)
                     await db
-                        .UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null)
+                        .UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
 
                 if (!m_options.Dryrun)
                     await db.Transaction
-                        .CommitAsync("CommitBeforeDelete")
+                        .CommitAsync("CommitBeforeDelete", true, m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
 
                 foreach (var f in lst)

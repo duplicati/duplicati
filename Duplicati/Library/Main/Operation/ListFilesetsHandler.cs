@@ -22,6 +22,7 @@
 #nullable enable
 
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 
@@ -49,12 +50,12 @@ internal static class ListFilesetsHandler
         // Use a speedy local query
         if (System.IO.File.Exists(options.Dbpath) && !options.NoLocalDb)
         {
-            await using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache)
+            await using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache, null, result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             result.Filesets = await db
-                .ListFilesetsExtended()
-                .ToArrayAsync()
+                .ListFilesetsExtended(result.TaskControl.ProgressToken)
+                .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             return;

@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var cancellationToken = CancellationToken.None;
             using var tmpdb = new TempFile();
-            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "ListControlFiles", true, m_options.SqlitePageCache).ConfigureAwait(false);
+            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "ListControlFiles", true, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             var filter = JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
 
             try
@@ -62,7 +62,7 @@ namespace Duplicati.Library.Main.Operation
 
                         var file = fileversion.Value.File;
                         var entry = await db
-                            .GetRemoteVolume(file.Name)
+                            .GetRemoteVolume(file.Name, m_result.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
 
                         var files = new List<Library.Interface.IListResultFile>();

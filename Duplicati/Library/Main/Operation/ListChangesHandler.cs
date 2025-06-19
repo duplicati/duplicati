@@ -80,13 +80,13 @@ namespace Duplicati.Library.Main.Operation
             DateTime compareVersionTime;
 
             using var tmpdb = useLocalDb ? null : new TempFile();
-            await using var db = await Database.LocalListChangesDatabase.CreateAsync(useLocalDb ? m_options.Dbpath : (string)tmpdb, m_options.SqlitePageCache).ConfigureAwait(false);
-            await using var storageKeeper = await db.CreateStorageHelper().ConfigureAwait(false);
+            await using var db = await Database.LocalListChangesDatabase.CreateAsync(useLocalDb ? m_options.Dbpath : (string)tmpdb, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await using var storageKeeper = await db.CreateStorageHelper(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             if (useLocalDb)
             {
                 var dbtimes = await db
-                    .FilesetTimes()
-                    .ToListAsync()
+                    .FilesetTimes(m_result.TaskControl.ProgressToken)
+                    .ToListAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
                 if (dbtimes.Count < 2)
@@ -101,10 +101,10 @@ namespace Duplicati.Library.Main.Operation
                 SelectTime(compareVersion, times, out compareVersionIndex, out compareVersionTime, out compareVersionId);
 
                 await storageKeeper
-                    .AddFromDb(baseVersionId, false, filter)
+                    .AddFromDb(baseVersionId, false, filter, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
                 await storageKeeper
-                    .AddFromDb(compareVersionId, true, filter)
+                    .AddFromDb(compareVersionId, true, filter, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
             }
             else
@@ -151,7 +151,7 @@ namespace Duplicati.Library.Main.Operation
                     foreach (var f in rd.Files)
                         if (FilterExpression.Matches(filter, f.Path))
                             await storageKeeper
-                                .AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false)
+                                .AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false, m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
 
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
@@ -162,20 +162,20 @@ namespace Duplicati.Library.Main.Operation
                     foreach (var f in rd.Files)
                         if (FilterExpression.Matches(filter, f.Path))
                             await storageKeeper
-                                .AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), true)
+                                .AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), true, m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
             }
 
             var changes = await storageKeeper
-                .CreateChangeCountReport()
+                .CreateChangeCountReport(m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             var sizes = await storageKeeper
-                .CreateChangeSizeReport()
+                .CreateChangeSizeReport(m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             var lst = (m_options.FullResult || callback != null) ?
-                    (from n in storageKeeper.CreateChangedFileReport()
+                    (from n in storageKeeper.CreateChangedFileReport(m_result.TaskControl.ProgressToken)
                      select n) : null;
 
             m_result.SetResult(
@@ -184,7 +184,7 @@ namespace Duplicati.Library.Main.Operation
                 changes.DeletedFolders, changes.DeletedSymlinks, changes.DeletedFiles,
                 changes.ModifiedFolders, changes.ModifiedSymlinks, changes.ModifiedFiles,
                 sizes.AddedSize, sizes.DeletedSize, sizes.PreviousSize, sizes.CurrentSize,
-                (lst == null || callback == null) ? null : await lst.ToArrayAsync().ConfigureAwait(false)
+                (lst == null || callback == null) ? null : await lst.ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken).ConfigureAwait(false)
             );
 
             if (callback != null)

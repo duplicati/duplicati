@@ -46,12 +46,12 @@ internal static class ListFolderHandler
         if (!System.IO.File.Exists(options.Dbpath) || options.NoLocalDb)
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
-        await using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache)
+        await using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache, null, result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
         var filesetIds = await db
-            .GetFilesetIDs(options.Time, options.Version, singleTimeMatch: true)
-            .ToArrayAsync()
+            .GetFilesetIDs(options.Time, options.Version, singleTimeMatch: true, result.TaskControl.ProgressToken)
+            .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
         if (filesetIds.Length == 0)
@@ -65,10 +65,11 @@ internal static class ListFolderHandler
                 throw new UserInformationException("When no folder is specified, only one folder can be listed", "MultipleFoldersFound");
             result.Entries = await db
                 .ListFilesetEntries(
-                    db.GetRootPrefixes(filesetIds[0]).ToEnumerable(),
+                    db.GetRootPrefixes(filesetIds[0], result.TaskControl.ProgressToken).ToEnumerable(),
                     filesetIds[0],
                     offset,
-                    limit
+                    limit,
+                    result.TaskControl.ProgressToken
                 )
                 .ConfigureAwait(false);
         }
@@ -76,10 +77,11 @@ internal static class ListFolderHandler
         {
             result.Entries = await db
                 .ListFolder(
-                    db.GetPrefixIds(folders).ToEnumerable(),
+                    db.GetPrefixIds(folders, result.TaskControl.ProgressToken).ToEnumerable(),
                     filesetIds[0],
                     offset,
-                    limit
+                    limit,
+                    result.TaskControl.ProgressToken
                 )
                 .ConfigureAwait(false);
         }
