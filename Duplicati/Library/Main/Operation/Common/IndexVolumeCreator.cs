@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
@@ -67,14 +68,15 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Creates an index volume with the temporary contents
         /// </summary>
-        /// <returns>The index volume.</returns>
         /// <param name="blockfilename">The name of the block file.</param>
         /// <param name="options">The options used in this run.</param>
         /// <param name="database">The database to use.</param>
-        public async Task<IndexVolumeWriter> CreateVolume(string blockfilename, Options options, DatabaseCommon database)
+        /// <param name="cancellationToken">The cancellation token to use.</param>
+        /// <returns>The index volume.</returns>
+        public async Task<IndexVolumeWriter> CreateVolume(string blockfilename, Options options, DatabaseCommon database, CancellationToken cancellationToken)
         {
             var w = new IndexVolumeWriter(options);
-            w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
+            w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, cancellationToken).ConfigureAwait(false);
 
             var enumerator = blockListHashes.GetEnumerator();
             while (enumerator.MoveNext())
@@ -158,23 +160,23 @@ namespace Duplicati.Library.Main.Operation.Common
     /// </summary>
     internal static class IndexVolumeCreator
     {
-        public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.DatabaseCommon database)
+        public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.DatabaseCommon database, CancellationToken cancellationToken)
         {
             using (var h = HashFactory.CreateHasher(options.BlockHashAlgorithm))
             {
                 var w = new IndexVolumeWriter(options);
-                w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
+                w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, cancellationToken).ConfigureAwait(false);
 
-                var blockvolume = await database.GetVolumeInfoAsync(blockname);
+                var blockvolume = await database.GetVolumeInfoAsync(blockname, cancellationToken).ConfigureAwait(false);
 
                 w.StartVolume(blockname);
-                foreach (var b in await database.GetBlocksAsync(blockvolume.ID))
+                foreach (var b in await database.GetBlocksAsync(blockvolume.ID, cancellationToken).ConfigureAwait(false))
                     w.AddBlock(b.Hash, b.Size);
 
                 w.FinishVolume(blockvolume.Hash, blockvolume.Size);
 
                 if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                    foreach (var b in await database.GetBlocklistsAsync(blockvolume.ID, options.Blocksize, options.BlockhashSize))
+                    foreach (var b in await database.GetBlocklistsAsync(blockvolume.ID, options.Blocksize, options.BlockhashSize, cancellationToken).ConfigureAwait(false))
                     {
                         var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
                         if (bh != b.Item1)
@@ -185,7 +187,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 w.Close();
 
                 // Register that the index file is tracking the block file
-                await database.AddIndexBlockLinkAsync(w.VolumeID, blockvolume.ID);
+                await database.AddIndexBlockLinkAsync(w.VolumeID, blockvolume.ID, cancellationToken).ConfigureAwait(false);
 
                 return w;
             }

@@ -49,127 +49,127 @@ namespace Duplicati.Library.Main.Operation.Common
             m_options = options;
         }
 
-        public Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, RemoteVolumeState state)
+        public Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, RemoteVolumeState state, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_db
-                    .RegisterRemoteVolume(name, type, state)
+                    .RegisterRemoteVolume(name, type, state, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup = false, TimeSpan deleteGraceTime = default(TimeSpan), bool? setArchived = null)
+        public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, bool? setArchived, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_db
-                    .UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, setArchived)
+                    .UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, setArchived, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public async Task FlushBackendMessagesAndCommitAsync(IBackendManager backendManager)
+        public async Task FlushBackendMessagesAndCommitAsync(IBackendManager backendManager, CancellationToken cancellationToken)
         {
-            await FlushPendingBackendMessagesAsync(backendManager).ConfigureAwait(false);
-            await CommitTransactionAsync("FlushBackendMessagesAndCommitAsync").ConfigureAwait(false);
+            await FlushPendingBackendMessagesAsync(backendManager, cancellationToken).ConfigureAwait(false);
+            await CommitTransactionAsync("FlushBackendMessagesAndCommitAsync", true, cancellationToken).ConfigureAwait(false);
         }
 
-        private Task FlushPendingBackendMessagesAsync(IBackendManager backendManager)
-            => RunOnMain(async () => await backendManager.FlushPendingMessagesAsync(m_db, CancellationToken.None).ConfigureAwait(false));
+        private Task FlushPendingBackendMessagesAsync(IBackendManager backendManager, CancellationToken cancellationToken)
+            => RunOnMain(async () => await backendManager.FlushPendingMessagesAsync(m_db, cancellationToken).ConfigureAwait(false));
 
-        public Task CommitTransactionAsync(string message, bool restart = true)
+        public Task CommitTransactionAsync(string message, bool restart, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
             {
                 if (m_options.Dryrun)
                 {
                     await m_db.Transaction
-                        .RollBackAsync()
+                        .RollBackAsync(cancellationToken)
                         .ConfigureAwait(false);
                 }
                 else
                 {
                     using (new Logging.Timer(LOGTAG, "CommitTransactionAsync", message))
                         await m_db.Transaction
-                            .CommitAsync(message, restart)
+                            .CommitAsync(message, restart, cancellationToken)
                             .ConfigureAwait(false);
                 }
             });
         }
 
-        public Task RollbackTransactionAsync()
+        public Task RollbackTransactionAsync(CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_db.Transaction
-                    .RollBackAsync()
+                    .RollBackAsync(cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task RenameRemoteFileAsync(string oldname, string newname)
+        public Task RenameRemoteFileAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_db
-                    .RenameRemoteFile(oldname, newname)
+                    .RenameRemoteFile(oldname, newname, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task LogRemoteOperationAsync(string operation, string path, string data)
+        public Task LogRemoteOperationAsync(string operation, string path, string data, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_db
-                    .LogRemoteOperation(operation, path, data)
+                    .LogRemoteOperation(operation, path, data, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<LocalDatabase.IBlock[]> GetBlocksAsync(long volumeid)
-        {
-            // TODO: Figure out how to return the enumerable, while keeping the lock
-            // and not creating the entire result in memory
-            return RunOnMain(async () =>
-                await m_db
-                    .GetBlocks(volumeid)
-                    .ToArrayAsync()
-                    .ConfigureAwait(false)
-            );
-        }
-
-        public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename)
-        {
-            return RunOnMain(async () =>
-                await m_db
-                    .GetRemoteVolume(remotename)
-                    .ConfigureAwait(false)
-            );
-        }
-
-        public Task<(string Hash, byte[] Buffer, int Size)[]> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
+        public Task<LocalDatabase.IBlock[]> GetBlocksAsync(long volumeid, CancellationToken cancellationToken)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
             return RunOnMain(async () =>
                 await m_db
-                    .GetBlocklists(volumeid, blocksize, hashsize)
-                    .ToArrayAsync()
+                    .GetBlocks(volumeid, cancellationToken)
+                    .ToArrayAsync(cancellationToken: cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<long> GetRemoteVolumeIDAsync(string remotename)
+        public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_db
-                    .GetRemoteVolumeID(remotename)
+                    .GetRemoteVolume(remotename, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID)
+        public Task<(string Hash, byte[] Buffer, int Size)[]> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize, CancellationToken cancellationToken)
+        {
+            // TODO: Figure out how to return the enumerable, while keeping the lock
+            // and not creating the entire result in memory
+            return RunOnMain(async () =>
+                await m_db
+                    .GetBlocklists(volumeid, blocksize, hashsize, cancellationToken)
+                    .ToArrayAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
+        public Task<long> GetRemoteVolumeIDAsync(string remotename, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_db
-                    .AddIndexBlockLink(indexVolumeID, blockVolumeID)
+                    .GetRemoteVolumeID(remotename, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
+        public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID, CancellationToken cancellationToken)
+        {
+            return RunOnMain(async () =>
+                await m_db
+                    .AddIndexBlockLink(indexVolumeID, blockVolumeID, cancellationToken)
                     .ConfigureAwait(false)
             );
         }

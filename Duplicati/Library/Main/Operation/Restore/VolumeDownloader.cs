@@ -76,12 +76,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_wait?.Start();
                         TempFile f;
                         var (volume_name, size, hash) = await db
-                            .GetVolumeInfo(volume_id)
+                            .GetVolumeInfo(volume_id, results.TaskControl.ProgressToken)
                             .FirstAsync()
                             .ConfigureAwait(false);
                         try
                         {
-                            f = await backend.GetDirectAsync(volume_name, hash, size, CancellationToken.None).ConfigureAwait(false);
+                            f = await backend.GetDirectAsync(volume_name, hash, size, results.TaskControl.TransferToken).ConfigureAwait(false);
                         }
                         catch (Exception)
                         {

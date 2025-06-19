@@ -35,20 +35,20 @@ internal static class RecreateMissingIndexFiles
 	{
 		if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
 		{
-			await foreach (var blockfile in (await database.GetMissingIndexFilesAsync().ConfigureAwait(false)).ConfigureAwait(false))
+			await foreach (var blockfile in (await database.GetMissingIndexFilesAsync(taskreader.ProgressToken).ConfigureAwait(false)).ConfigureAwait(false))
 			{
 				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
 					return;
 
 				Logging.Log.WriteInformationMessage(LOGTAG, "RecreateMissingIndexFile", "Re-creating missing index file for {0}", blockfile);
-				var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database).ConfigureAwait(false);
+				var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database, taskreader.ProgressToken).ConfigureAwait(false);
 
 				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
 					return;
 
-				await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null).ConfigureAwait(false);
-				await database.CommitTransactionAsync("RecreateMissingIndexFile").ConfigureAwait(false);
-				await backendManager.PutAsync(w, null, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager), taskreader.ProgressToken).ConfigureAwait(false);
+				await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, false, default, null, taskreader.ProgressToken).ConfigureAwait(false);
+				await database.CommitTransactionAsync("RecreateMissingIndexFile", true, taskreader.ProgressToken).ConfigureAwait(false);
+				await backendManager.PutAsync(w, null, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager, taskreader.ProgressToken), taskreader.ProgressToken).ConfigureAwait(false);
 			}
 		}
 	}

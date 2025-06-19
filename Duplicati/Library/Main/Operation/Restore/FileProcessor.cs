@@ -120,7 +120,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 decremented = true;
                             }
 
-                            await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp)
+                            await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
 
                             continue;
@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // TODO rather than keeping all of the blocks in memory, we could do a single pass over the blocks using a cursor, only keeping the relevant block requests in memory. Maybe even only a single block request at a time.
                         sw_block?.Start();
                         var blocks = await db
-                            .GetBlocksFromFile(file.BlocksetID)
+                            .GetBlocksFromFile(file.BlocksetID, results.TaskControl.ProgressToken)
                             .ToArrayAsync()
                             .ConfigureAwait(false);
                         sw_block?.Stop();
@@ -435,7 +435,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (!options.SkipMetadata)
                         {
-                            empty_file_or_symlink |= await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp).ConfigureAwait(false);
+                            empty_file_or_symlink |= await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken).ConfigureAwait(false);
                             sw_work_meta?.Stop();
                         }
 
@@ -601,7 +601,9 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="sw_work">The stopwatch for internal profiling of the general processing.</param>
         /// <param name="sw_req">The stopwatch for internal profiling of the block requests.</param>
         /// <param name="sw_resp">The stopwatch for internal profiling of the block responses.</param>
-        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<Task<byte[]>> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
+        /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+        /// <returns>An awaitable `Task`, which returns `true` if the metadata was restored successfully, `false` otherwise.</returns>
+        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<Task<byte[]>> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp, CancellationToken cancellationToken)
         {
             sw_meta?.Start();
             // Since each FileProcessor should have its own connection, it's ok
@@ -609,7 +611,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             // time, as the other processes should still be able to read.
             // Therefore, we don't need to read the entire result set into
             // memory.
-            var blocks = db.GetMetadataBlocksFromFile(file.ID);
+            var blocks = db.GetMetadataBlocksFromFile(file.ID, cancellationToken);
             sw_meta?.Stop();
 
             using var ms = new MemoryStream();

@@ -299,7 +299,7 @@ internal partial class BackendManager : IBackendManager
     /// <returns>A task that completes when the messages are flushed.</returns>
     public async Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken)
     {
-        await context.Database.FlushPendingMessages(database).ConfigureAwait(false);
+        await context.Database.FlushPendingMessages(database, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using Duplicati.Library.Main.Volumes;
 using System.Linq;
 using Duplicati.Library.Interface;
+using System.Threading;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -54,93 +55,93 @@ namespace Duplicati.Library.Main.Operation.Backup
             m_database = database;
         }
 
-        public Task<long> FindBlockIDAsync(string hash, long size)
+        public Task<long> FindBlockIDAsync(string hash, long size, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .FindBlockID(hash, size)
+                    .FindBlockID(hash, size, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<bool> AddBlockAsync(string hash, long size, long volumeid)
+        public Task<bool> AddBlockAsync(string hash, long size, long volumeid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AddBlock(hash, size, volumeid)
+                    .AddBlock(hash, size, volumeid, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<string> GetFileHashAsync(long fileid)
+        public Task<string> GetFileHashAsync(long fileid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .GetFileHash(fileid)
+                    .GetFileHash(fileid, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<(bool, long)> AddMetadatasetAsync(string hash, long size, long blocksetid)
+        public Task<(bool, long)> AddMetadatasetAsync(string hash, long size, long blocksetid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AddMetadataset(hash, size, blocksetid)
+                    .AddMetadataset(hash, size, blocksetid, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<(bool, long)> GetMetadataIDAsync(string hash, long size)
+        public Task<(bool, long)> GetMetadataIDAsync(string hash, long size, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .GetMetadatasetID(hash, size)
+                    .GetMetadatasetID(hash, size, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task AddDirectoryEntryAsync(string filename, long metadataid, DateTime lastModified)
+        public Task AddDirectoryEntryAsync(string filename, long metadataid, DateTime lastModified, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AddDirectoryEntry(filename, metadataid, lastModified)
+                    .AddDirectoryEntry(filename, metadataid, lastModified, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task AddSymlinkEntryAsync(string filename, long metadataid, DateTime lastModified)
+        public Task AddSymlinkEntryAsync(string filename, long metadataid, DateTime lastModified, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AddSymlinkEntry(filename, metadataid, lastModified)
+                    .AddSymlinkEntry(filename, metadataid, lastModified, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<(string MetadataHash, long Size)?> GetMetadataHashAndSizeForFileAsync(long fileid)
+        public Task<(string MetadataHash, long Size)?> GetMetadataHashAndSizeForFileAsync(long fileid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .GetMetadataHashAndSizeForFile(fileid)
+                    .GetMetadataHashAndSizeForFile(fileid, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<(long, DateTime, long)> GetFileLastModifiedAsync(long prefixid, string path, long lastfilesetid, bool includeLength)
+        public Task<(long, DateTime, long)> GetFileLastModifiedAsync(long prefixid, string path, long lastfilesetid, bool includeLength, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .GetFileLastModified(prefixid, path, lastfilesetid, includeLength)
+                    .GetFileLastModified(prefixid, path, lastfilesetid, includeLength, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<FileEntryData> GetFileEntryAsync(long prefixid, string path, long lastfilesetid)
+        public Task<FileEntryData> GetFileEntryAsync(long prefixid, string path, long lastfilesetid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
             {
                 var (id, oldModified, lastFileSize, oldMetahash, oldMetasize) =
-                    await m_database.GetFileEntry(prefixid, path, lastfilesetid)
+                    await m_database.GetFileEntry(prefixid, path, lastfilesetid, cancellationToken)
                         .ConfigureAwait(false);
 
                 return
@@ -158,74 +159,74 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-        public Task<long> AddBlocksetAsync(string filehash, long size, int blocksize, IEnumerable<string> hashlist, IEnumerable<string> blocklisthashes)
+        public Task<long> AddBlocksetAsync(string filehash, long size, int blocksize, IEnumerable<string> hashlist, IEnumerable<string> blocklisthashes, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
             {
                 var (_, blocksetid) = await m_database
-                    .AddBlockset(filehash, size, blocksize, hashlist, blocklisthashes)
+                    .AddBlockset(filehash, size, blocksize, hashlist, blocklisthashes, cancellationToken)
                     .ConfigureAwait(false);
 
                 return blocksetid;
             });
         }
 
-        public Task<long> GetOrCreatePathPrefix(string prefix)
+        public Task<long> GetOrCreatePathPrefix(string prefix, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .GetOrCreatePathPrefix(prefix)
+                    .GetOrCreatePathPrefix(prefix, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task AddFileAsync(long prefixid, string filename, DateTime lastmodified, long blocksetid, long metadataid)
+        public Task AddFileAsync(long prefixid, string filename, DateTime lastmodified, long blocksetid, long metadataid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AddFile(prefixid, filename, lastmodified, blocksetid, metadataid)
+                    .AddFile(prefixid, filename, lastmodified, blocksetid, metadataid, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task AddUnmodifiedAsync(long fileid, DateTime lastModified)
+        public Task AddUnmodifiedAsync(long fileid, DateTime lastModified, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AddKnownFile(fileid, lastModified)
+                    .AddKnownFile(fileid, lastModified, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
 
-        public Task MoveBlockToVolumeAsync(string blockkey, long size, long sourcevolumeid, long targetvolumeid)
+        public Task MoveBlockToVolumeAsync(string blockkey, long size, long sourcevolumeid, long targetvolumeid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .MoveBlockToVolume(blockkey, size, sourcevolumeid, targetvolumeid)
+                    .MoveBlockToVolume(blockkey, size, sourcevolumeid, targetvolumeid, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task SafeDeleteRemoteVolumeAsync(string remotename)
+        public Task SafeDeleteRemoteVolumeAsync(string remotename, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .SafeDeleteRemoteVolume(remotename)
+                    .SafeDeleteRemoteVolume(remotename, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<string[]> GetBlocklistHashesAsync(string remotename)
+        public Task<string[]> GetBlocklistHashesAsync(string remotename, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .GetBlocklistHashes(remotename)
+                    .GetBlocklistHashes(remotename, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task UpdateIndexVolumeAsync(IndexVolumeWriter indexvolume, BlockVolumeWriter blockvolume)
+        public Task UpdateIndexVolumeAsync(IndexVolumeWriter indexvolume, BlockVolumeWriter blockvolume, CancellationToken cancellationToken)
         {
             if (indexvolume != null)
                 return Task.FromResult<bool>(true);
@@ -233,58 +234,43 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(async () =>
             {
                 await m_database
-                    .AddIndexBlockLink(indexvolume.VolumeID, blockvolume.VolumeID)
+                    .AddIndexBlockLink(indexvolume.VolumeID, blockvolume.VolumeID, cancellationToken)
                     .ConfigureAwait(false);
 
                 indexvolume.StartVolume(blockvolume.RemoteFilename);
 
-                await foreach (var b in m_database.GetBlocks(blockvolume.VolumeID).ConfigureAwait(false))
+                await foreach (var b in m_database.GetBlocks(blockvolume.VolumeID, cancellationToken).ConfigureAwait(false))
                     indexvolume.AddBlock(b.Hash, b.Size);
 
                 await m_database
-                    .UpdateRemoteVolume(indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null)
+                    .UpdateRemoteVolume(indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, cancellationToken)
                     .ConfigureAwait(false);
             });
         }
 
-        public Task AppendFilesFromPreviousSetAsync()
+        public Task AppendFilesFromPreviousSetAsync(CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AppendFilesFromPreviousSet()
+                    .AppendFilesFromPreviousSet(null, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task AppendFilesFromPreviousSetAsync(string[] deletedFilelist)
+        public Task AppendFilesFromPreviousSetAsync(string[] deletedFilelist, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AppendFilesFromPreviousSet(deletedFilelist)
+                    .AppendFilesFromPreviousSet(deletedFilelist, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task AppendFilesFromPreviousSetAsync(string[] deletedFilelist, long filesetid, long prevId, DateTime timestamp)
+        public Task AppendFilesFromPreviousSetAsync(string[] deletedFilelist, long filesetid, long prevId, DateTime timestamp, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AppendFilesFromPreviousSet(deletedFilelist, filesetid, prevId, timestamp)
-                    .ConfigureAwait(false)
-            );
-        }
-
-        /// <summary>
-        /// Populates FilesetEntry table with files from previous fileset, which aren't
-        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion
-        /// predicate.
-        /// </summary>
-        /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
-        public Task AppendFilesFromPreviousSetWithPredicateAsync(Func<string, long, bool> exclusionPredicate)
-        {
-            return RunOnMain(async () =>
-                await m_database
-                    .AppendFilesFromPreviousSetWithPredicate(exclusionPredicate)
+                    .AppendFilesFromPreviousSet(deletedFilelist, filesetid, prevId, timestamp, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
@@ -295,155 +281,172 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// predicate.
         /// </summary>
         /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
-        /// <param name="fileSetId">Current fileset ID</param>
-        /// <param name="prevFileSetId">Source fileset ID</param>
-        /// <param name="timestamp">If <c>prevFileSetId</c> == -1, used to locate previous fileset</param>
-        public Task AppendFilesFromPreviousSetWithPredicateAsync(Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
+        public Task AppendFilesFromPreviousSetWithPredicateAsync(Func<string, long, bool> exclusionPredicate, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AppendFilesFromPreviousSetWithPredicate(exclusionPredicate, fileSetId, prevFileSetId, timestamp)
+                    .AppendFilesFromPreviousSetWithPredicate(exclusionPredicate, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<KeyValuePair<long, DateTime>[]> GetIncompleteFilesetsAsync()
+        /// <summary>
+        /// Populates FilesetEntry table with files from previous fileset, which aren't
+        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion
+        /// predicate.
+        /// </summary>
+        /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file).</param>
+        /// <param name="fileSetId">Current fileset ID.</param>
+        /// <param name="prevFileSetId">Source fileset ID.</param>
+        /// <param name="timestamp">If <c>prevFileSetId</c> == -1, used to locate previous fileset.</param>
+        /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+        /// <returns>Task that completes when the files have been appended.</returns>
+        public Task AppendFilesFromPreviousSetWithPredicateAsync(Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .GetIncompleteFilesets()
+                    .AppendFilesFromPreviousSetWithPredicate(exclusionPredicate, fileSetId, prevFileSetId, timestamp, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
+        public Task<KeyValuePair<long, DateTime>[]> GetIncompleteFilesetsAsync(CancellationToken cancellationToken)
+        {
+            return RunOnMain(async () =>
+                await m_database
+                    .GetIncompleteFilesets(cancellationToken)
                     .OrderBy(x => x.Value)
-                    .ToArrayAsync()
+                    .ToArrayAsync(cancellationToken: cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<KeyValuePair<long, DateTime>[]> GetFilesetTimesAsync()
+        public Task<KeyValuePair<long, DateTime>[]> GetFilesetTimesAsync(CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .FilesetTimes()
-                    .ToArrayAsync()
+                    .FilesetTimes(cancellationToken)
+                    .ToArrayAsync(cancellationToken: cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<long> CreateFilesetAsync(long volumeID, DateTime fileTime)
+        public Task<long> CreateFilesetAsync(long volumeID, DateTime fileTime, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 {
                     var fs = await m_database
-                        .CreateFileset(volumeID, fileTime)
+                        .CreateFileset(volumeID, fileTime, cancellationToken)
                         .ConfigureAwait(false);
 
                     await m_database.Transaction
-                        .CommitAsync()
+                        .CommitAsync(cancellationToken)
                         .ConfigureAwait(false);
 
                     return fs;
                 });
         }
 
-        public Task LinkFilesetToVolumeAsync(long filesetid, long volumeid)
+        public Task LinkFilesetToVolumeAsync(long filesetid, long volumeid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .LinkFilesetToVolume(filesetid, volumeid)
+                    .LinkFilesetToVolume(filesetid, volumeid, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task WriteFilesetAsync(FilesetVolumeWriter fsw, long filesetid)
+        public Task WriteFilesetAsync(FilesetVolumeWriter fsw, long filesetid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .WriteFileset(fsw, filesetid)
+                    .WriteFileset(fsw, filesetid, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task PushTimestampChangesToPreviousVersionAsync(long filesetid)
+        public Task PushTimestampChangesToPreviousVersionAsync(long filesetid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .PushTimestampChangesToPreviousVersion(filesetid)
+                    .PushTimestampChangesToPreviousVersion(filesetid, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task UpdateFilesetAndMarkAsFullBackupAsync(long filesetid)
+        public Task UpdateFilesetAndMarkAsFullBackupAsync(long filesetid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .UpdateFullBackupStateInFileset(filesetid, true)
+                    .UpdateFullBackupStateInFileset(filesetid, true, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<IAsyncEnumerable<string>> GetMissingIndexFilesAsync()
+        public Task<IAsyncEnumerable<string>> GetMissingIndexFilesAsync(CancellationToken cancellationToken)
         {
-            return RunOnMain(() => m_database.GetMissingIndexFiles());
+            return RunOnMain(() => m_database.GetMissingIndexFiles(cancellationToken));
         }
 
-        public Task UpdateChangeStatisticsAsync(BackupResults result)
+        public Task UpdateChangeStatisticsAsync(BackupResults result, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .UpdateChangeStatistics(result)
+                    .UpdateChangeStatistics(result, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task VerifyConsistencyAsync(int blocksize, int blockhashSize, bool verifyfilelists)
+        public Task VerifyConsistencyAsync(int blocksize, int blockhashSize, bool verifyfilelists, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .VerifyConsistency(blocksize, blockhashSize, verifyfilelists)
+                    .VerifyConsistency(blocksize, blockhashSize, verifyfilelists, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task RemoveRemoteVolumeAsync(string remoteFilename)
+        public Task RemoveRemoteVolumeAsync(string remoteFilename, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .RemoveRemoteVolume(remoteFilename)
+                    .RemoveRemoteVolume(remoteFilename, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<RemoteVolumeEntry> GetRemoteVolumeFromFilesetIDAsync(long filesetID)
+        public Task<RemoteVolumeEntry> GetRemoteVolumeFromFilesetIDAsync(long filesetID, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .GetRemoteVolumeFromFilesetID(filesetID)
+                    .GetRemoteVolumeFromFilesetID(filesetID, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task CreateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData)
+        public Task CreateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .CreateChangeJournalData(journalData)
+                    .CreateChangeJournalData(journalData, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task UpdateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData, long lastfilesetid)
+        public Task UpdateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData, long lastfilesetid, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .UpdateChangeJournalData(journalData, lastfilesetid)
+                    .UpdateChangeJournalData(journalData, lastfilesetid, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
-        public Task<bool> IsBlocklistHashKnownAsync(string hash)
+        public Task<bool> IsBlocklistHashKnownAsync(string hash, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .IsBlocklistHashKnown(hash)
+                    .IsBlocklistHashKnown(hash, cancellationToken)
                     .ConfigureAwait(false)
             );
         }

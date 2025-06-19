@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Operation
                 if (ix < 0 || tsOriginal.Ticks == 0)
                     throw new InvalidProgramException(string.Format("Fileset was reported with id {0}, but could not be found?", versionid));
 
-                var ts = await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, tsOriginal)
+                var ts = await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, tsOriginal, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
                 var prevfilename = await db.GetRemoteVolumeNameForFileset(filesets[ix].Key, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);

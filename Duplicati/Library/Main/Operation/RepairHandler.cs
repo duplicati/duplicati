@@ -420,7 +420,7 @@ namespace Duplicati.Library.Main.Operation
                         progress++;
                         m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
                         var fileTime =
-                            await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp)
+                            await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp, cancellationToken)
                                 .ConfigureAwait(false);
 
                         var fsw = new FilesetVolumeWriter(m_options, fileTime);
@@ -520,7 +520,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             var timestamp = VolumeBase.ParseFilename(n.Name).Time;
                             var fileTime =
-                                await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp)
+                                await FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp, cancellationToken)
                                     .ConfigureAwait(false);
                             var volumeWriter = newEntry = new FilesetVolumeWriter(m_options, fileTime);
 

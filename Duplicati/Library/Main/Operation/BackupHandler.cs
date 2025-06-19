@@ -445,7 +445,7 @@ namespace Duplicati.Library.Main.Operation
                                     options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames,
                                     GetBlacklistedPaths(options), options.ChangedFilelist, taskreader,
                                     () => result.PartialBackup = true, CancellationToken.None),
-                                Backup.FilePreFilterProcess.Run(channels, options, stats, database),
+                                Backup.FilePreFilterProcess.Run(channels, options, stats, database, taskreader),
                                 Backup.MetadataPreProcess.Run(channels, options, database, lastfilesetid, taskreader),
                                 Backup.SpillCollectorProcess.Run(channels, options, database, backendManager, taskreader),
                                 Backup.ProgressHandler.Run(channels, result)
@@ -473,7 +473,7 @@ namespace Duplicati.Library.Main.Operation
                 if (options.ChangedFilelist != null && options.ChangedFilelist.Length >= 1)
                 {
                     await database
-                        .AppendFilesFromPreviousSetAsync(options.DeletedFilelist)
+                        .AppendFilesFromPreviousSetAsync(options.DeletedFilelist, taskreader.ProgressToken)
                         .ConfigureAwait(false);
                 }
                 else if (journalService != null)
@@ -495,7 +495,7 @@ namespace Duplicati.Library.Main.Operation
                             stats.AddExaminedFile(fileSize);
 
                         return false;
-                    })
+                    }, taskreader.ProgressToken)
                         .ConfigureAwait(false);
 
                     // store journal data in database, unless job is being canceled
@@ -506,12 +506,12 @@ namespace Duplicati.Library.Main.Operation
                         {
                             // always record change journal data for current fileset (entry may be dropped later if nothing is uploaded)
                             await database
-                                .CreateChangeJournalDataAsync(data)
+                                .CreateChangeJournalDataAsync(data, taskreader.ProgressToken)
                                 .ConfigureAwait(false);
 
                             // update the previous fileset's change journal entry to resume at this point in case nothing was backed up
                             await database
-                                .UpdateChangeJournalDataAsync(data, lastfilesetid)
+                                .UpdateChangeJournalDataAsync(data, lastfilesetid, taskreader.ProgressToken)
                                 .ConfigureAwait(false);
                         }
                     }
@@ -524,7 +524,7 @@ namespace Duplicati.Library.Main.Operation
                 else
                 {
                     await database
-                        .UpdateFilesetAndMarkAsFullBackupAsync(filesetid)
+                        .UpdateFilesetAndMarkAsFullBackupAsync(filesetid, taskreader.ProgressToken)
                         .ConfigureAwait(false);
                 }
 
@@ -675,9 +675,9 @@ namespace Duplicati.Library.Main.Operation
 
             try
             {
-                await database.FlushBackendMessagesAndCommitAsync(backendManager).ConfigureAwait(false);
+                await database.FlushBackendMessagesAndCommitAsync(backendManager, result.TaskControl.ProgressToken).ConfigureAwait(false);
                 await backendManager.WaitForEmptyAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
-                await database.FlushBackendMessagesAndCommitAsync(backendManager).ConfigureAwait(false);
+                await database.FlushBackendMessagesAndCommitAsync(backendManager, result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
             catch (RetiredException)
             {
@@ -748,18 +748,18 @@ namespace Duplicati.Library.Main.Operation
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
 
                             var repcnt = 0;
-                            while (repcnt < 100 && await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename).ConfigureAwait(false) >= 0)
+                            while (repcnt < 100 && await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename, m_taskReader.ProgressToken).ConfigureAwait(false) >= 0)
                                 filesetvolume.ResetRemoteFilename(m_options, m_database.OperationTimestamp.AddSeconds(repcnt++));
 
-                            if (await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename).ConfigureAwait(false) >= 0)
+                            if (await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename, m_taskReader.ProgressToken).ConfigureAwait(false) >= 0)
                                 throw new Exception("Unable to generate a unique fileset name");
 
                             var filesetvolumeid = await db
-                                .RegisterRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary)
+                                .RegisterRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_taskReader.ProgressToken)
                                 .ConfigureAwait(false);
 
                             filesetid = await db
-                                .CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time)
+                                .CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time, m_taskReader.ProgressToken)
                                 .ConfigureAwait(false);
 
                             var journalService = GetJournalService(source, filter, lastfilesetid);
@@ -798,7 +798,7 @@ namespace Duplicati.Library.Main.Operation
                     // Ensure the database is in a sane state after adding data
                     using (new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))
                         await db
-                            .VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, false)
+                            .VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, false, m_taskReader.ProgressToken)
                             .ConfigureAwait(false);
 
                     await FlushBackend(db, m_result, backendManager)
@@ -819,7 +819,8 @@ namespace Duplicati.Library.Main.Operation
                             .ConfigureAwait(false);
 
                     // Make sure we have the database up-to-date
-                    await db.CommitTransactionAsync("CommitAfterUpload")
+                    await db
+                        .CommitTransactionAsync("CommitAfterUpload", true, m_taskReader.ProgressToken)
                         .ConfigureAwait(false);
 
                     // If this throws, we should roll back the transaction

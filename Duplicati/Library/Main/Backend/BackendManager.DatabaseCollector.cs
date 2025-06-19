@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main.Database;
@@ -115,8 +116,9 @@ partial class BackendManager
         /// Flushes all messages to the database.
         /// </summary>
         /// <param name="db">The database to write pending messages to.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains whether any messages were flushed.</returns>
-        public async Task<bool> FlushPendingMessages(LocalDatabase db)
+        public async Task<bool> FlushPendingMessages(LocalDatabase db, CancellationToken cancellationToken)
         {
             List<IRemoteOperationEntry> entries;
             lock (m_dbqueuelock)
@@ -134,19 +136,19 @@ partial class BackendManager
             // As we replace the list, we can now freely access the elements without locking
             foreach (var e in entries)
                 if (e is RemoteOperationLogEntry operation)
-                    await db.LogRemoteOperation(operation.Action, operation.File, operation.Result)
+                    await db.LogRemoteOperation(operation.Action, operation.File, operation.Result, cancellationToken)
                         .ConfigureAwait(false);
                 else if (e is RemoteVolumeUpdate update && update.State == RemoteVolumeState.Deleted)
                 {
-                    await db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), null)
+                    await db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), null, cancellationToken)
                         .ConfigureAwait(false);
                     volsRemoved.Add(update.Remotename);
                 }
                 else if (e is RemoteVolumeUpdate dbUpdate)
-                    await db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash)
+                    await db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash, cancellationToken)
                         .ConfigureAwait(false);
                 else if (e is RenameRemoteVolume rename)
-                    await db.RenameRemoteFile(rename.Oldname, rename.Newname)
+                    await db.RenameRemoteFile(rename.Oldname, rename.Newname, cancellationToken)
                         .ConfigureAwait(false);
                 else if (e != null)
                     Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
@@ -154,11 +156,11 @@ partial class BackendManager
             // Finally remove volumes from DB.
             if (volsRemoved.Count > 0)
             {
-                await db.RemoveRemoteVolumes(volsRemoved).ConfigureAwait(false);
+                await db.RemoveRemoteVolumes(volsRemoved, cancellationToken).ConfigureAwait(false);
                 // This commit is to mimic the pre Microsoft.Data.Sqlite backend
                 // behavior, in which RemoveRemoteVolumes started a new
                 // transaction, if none was passed down.
-                await db.Transaction.CommitAsync().ConfigureAwait(false);
+                await db.Transaction.CommitAsync(token: cancellationToken).ConfigureAwait(false);
             }
 
             return true;

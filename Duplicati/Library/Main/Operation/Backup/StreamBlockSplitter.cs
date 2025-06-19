@@ -162,7 +162,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 filehasher.TransformFinalBlock(new byte[0], 0, 0);
                                 var filehash = Convert.ToBase64String(filehasher.Hash);
-                                var blocksetid = await database.AddBlocksetAsync(filehash, filesize, blocksize, hashcollector, blocklisthashes);
+                                var blocksetid = await database.AddBlocksetAsync(filehash, filesize, blocksize, hashcollector, blocklisthashes, taskreader.ProgressToken);
                                 cur.SetResult(new StreamProcessResult() { Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid });
                                 cur = null;
                             }
