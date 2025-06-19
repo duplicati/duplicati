@@ -35,9 +35,9 @@ namespace Duplicati.Library
 
         private readonly OAuthHelperHttpClient m_oauth;
 
-        public OAuthHttpMessageHandler(string authid, string protocolKey)
+        public OAuthHttpMessageHandler(string authid, string protocolKey, string oauthurl)
         {
-            this.m_oauth = new OAuthHelperHttpClient(authid, protocolKey);
+            this.m_oauth = new OAuthHelperHttpClient(authid, protocolKey, oauthurl);
         }
 
         private static readonly HttpRequestOptionsKey<bool> PreventAuthenticationOption = new HttpRequestOptionsKey<bool>("PreventAuthentication");

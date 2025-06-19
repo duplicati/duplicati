@@ -33,17 +33,17 @@ public sealed class DropBoxTests : BaseTest
     [TestMethod]
     public Task TestDropBox()
     {
-        CheckRequiredEnvironment(["TESTCREDENTIAL_DROPBOX_FOLDER","TESTCREDENTIAL_DROPBOX_TOKEN"]);
+        CheckRequiredEnvironment(["TESTCREDENTIAL_DROPBOX_FOLDER", "TESTCREDENTIAL_DROPBOX_TOKEN"]);
 
         var exitCode = CommandLine.BackendTester.Program.Main(
             new[]
             {
-                $"dropbox://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_DROPBOX_FOLDER")}/?authid={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_DROPBOX_TOKEN"))}"
+                $"dropbox://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_DROPBOX_FOLDER")}/?authid={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_DROPBOX_TOKEN") ?? "")}"
             }.Concat(Parameters.GlobalTestParameters).ToArray());
 
         if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
 
         return Task.CompletedTask;
     }
-    
+
 }

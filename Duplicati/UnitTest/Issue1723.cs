@@ -29,7 +29,7 @@ namespace Duplicati.UnitTest
 	public class Issue1723 : BasicSetupHelper
 	{
 		[Test]
-        [Category("Targeted")]
+		[Category("Targeted")]
 		public void RunCommands()
 		{
 			var testopts = TestOptions;
@@ -40,8 +40,7 @@ namespace Duplicati.UnitTest
 			using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
 			{
 				var r = c.Backup(new string[] { DATAFOLDER });
-				Assert.AreEqual(0, r.Errors.Count());
-				Assert.AreEqual(0, r.Warnings.Count());
+				TestUtils.AssertResults(r);
 				var pr = (Library.Interface.IParsedBackendStatistics)r.BackendStatistics;
 				if (pr.KnownFileSize == 0 || pr.KnownFileCount != 3 || pr.BackupListCount != 1)
 					throw new Exception(string.Format("Failed to get stats from remote backend: {0}, {1}, {2}", pr.KnownFileSize, pr.KnownFileCount, pr.BackupListCount));

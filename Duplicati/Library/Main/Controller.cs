@@ -627,19 +627,19 @@ namespace Duplicati.Library.Main
 
         private void OperationComplete(IBasicResults result, Exception exception)
         {
-            if (m_options != null && m_options.LoadedModules != null)
+            if (m_options?.LoadedModules != null)
             {
-                foreach (KeyValuePair<bool, IGenericModule> mx in m_options.LoadedModules)
-                    if (mx.Key && mx.Value is IGenericCallbackModule module)
+                foreach (var mx in m_options.LoadedModules)
+                    if (mx is IGenericCallbackModule module)
                         try { module.OnFinish(result, exception); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishError{mx.Key}", ex, "OnFinish callback {0} failed: {1}", mx.Key, ex.Message); }
 
-                foreach (KeyValuePair<bool, IGenericModule> mx in m_options.LoadedModules)
-                    if (mx.Key && mx.Value is IDisposable disposable)
+                foreach (var mx in m_options.LoadedModules)
+                    if (mx is IDisposable disposable)
                         try { disposable.Dispose(); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"DisposeError{mx.Key}", ex, "Dispose for {0} failed: {1}", mx.Key, ex.Message); }
 
-                m_options.LoadedModules.Clear();
+                m_options.ClearLoadedModules();
             }
 
             if (m_localeChange != null)
@@ -667,11 +667,17 @@ namespace Duplicati.Library.Main
                     break;
             }
 
-            //Load all generic modules
-            m_options.LoadedModules.Clear();
+            //Load generic modules
+            m_options.ClearLoadedModules();
 
-            foreach (IGenericModule m in DynamicLoader.GenericLoader.Modules)
-                m_options.LoadedModules.Add(new KeyValuePair<bool, IGenericModule>(!m_options.DisableModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase) && (m.LoadAsDefault || m_options.EnableModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase)), m));
+            foreach (var m in DynamicLoader.GenericLoader.Modules)
+            {
+                var active = !m_options.DisableModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase) && (m.LoadAsDefault || m_options.EnableModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase));
+                if (!active)
+                    continue;
+
+                m_options.AddLoadedModule(DynamicLoader.GenericLoader.GetModule(m.Key));
+            }
 
             // Make the filter read-n-write able in the generic modules
             var pristinefilter = string.Join(Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
@@ -683,40 +689,27 @@ namespace Duplicati.Library.Main
             foreach (var k in qp.Keys)
                 conopts[(string)k] = qp[(string)k];
 
-            //// Since Configure in RunScript can alter the RawOptions, make sure it is first in the list for Configure
-            var LoadedModules = new List<KeyValuePair<bool, Interface.IGenericModule>>();
             foreach (var mx in m_options.LoadedModules)
-                if (mx.Value.ToString().IndexOf("runscript", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    LoadedModules.Insert(0, mx);
-                }
+            {
+                if (mx is IConnectionModule)
+                    mx.Configure(conopts);
                 else
-                {
-                    LoadedModules.Add(mx);
-                }
+                    mx.Configure(m_options.RawOptions);
 
-            foreach (var mx in LoadedModules)
-                if (mx.Key)
+                if (mx is IGenericSourceModule sourcemodule)
                 {
-                    if (mx.Value is IConnectionModule)
-                        mx.Value.Configure(conopts);
-                    else
-                        mx.Value.Configure(m_options.RawOptions);
-
-                    if (mx.Value is IGenericSourceModule sourcemodule)
+                    if (sourcemodule.ContainFilesForBackup(paths))
                     {
-                        if (sourcemodule.ContainFilesForBackup(paths))
-                        {
-                            var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
+                        var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
 
-                            foreach (var sourceoption in sourceoptions)
-                                m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
-                        }
+                        foreach (var sourceoption in sourceoptions)
+                            m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
                     }
-
-                    if (mx.Value is IGenericCallbackModule module)
-                        module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths);
                 }
+
+                if (mx is IGenericCallbackModule module)
+                    module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths);
+            }
 
             // If the filters were changed by a module, read them back in
             if (pristinefilter != m_options.RawOptions["filter"])
@@ -830,26 +823,31 @@ namespace Duplicati.Library.Main
             var supportedOptions = new Dictionary<string, ICommandLineArgument>();
 
             //There are a few internal options that are not accessible from outside, and thus not listed
-            foreach (string s in Options.InternalOptions)
+            foreach (var s in Options.InternalOptions)
                 supportedOptions[s] = null;
 
             //Figure out what module options are supported in the current setup
             var moduleOptions = new List<ICommandLineArgument>();
             var disabledModuleOptions = new Dictionary<string, string>();
+            var loadedModuleKeys = m_options.LoadedModules.Select(k => k.Key).ToHashSet();
 
-            foreach (var m in m_options.LoadedModules)
-                if (m.Value.SupportedCommands != null)
-                    if (m.Key)
-                        moduleOptions.AddRange(m.Value.SupportedCommands);
-                    else
-                        foreach (ICommandLineArgument c in m.Value.SupportedCommands)
-                        {
-                            disabledModuleOptions[c.Name] = m.Value.DisplayName + " (" + m.Value.Key + ")";
+            foreach (var m in DynamicLoader.GenericLoader.Modules)
+            {
+                if (m.SupportedCommands == null)
+                    continue;
 
-                            if (c.Aliases != null)
-                                foreach (string s in c.Aliases)
-                                    disabledModuleOptions[s] = disabledModuleOptions[c.Name];
-                        }
+                if (loadedModuleKeys.Contains(m.Key))
+                    moduleOptions.AddRange(m.SupportedCommands);
+                else
+                    foreach (var c in m.SupportedCommands)
+                    {
+                        disabledModuleOptions[c.Name] = m.DisplayName + " (" + m.Key + ")";
+
+                        if (c.Aliases != null)
+                            foreach (string s in c.Aliases)
+                                disabledModuleOptions[s] = disabledModuleOptions[c.Name];
+                    }
+            }
 
             // Throw url-encoded options into the mix
             //TODO: This can hide values if both commandline and url-parameters supply the same key
@@ -900,6 +898,9 @@ namespace Duplicati.Library.Main
                                 }
 
                         }
+
+                        if (a.Type == CommandLineArgument.ArgumentType.Boolean && a.DefaultValue == "true" && !a.Deprecated)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "DefaultBooleanOption", null, Strings.Controller.WrongDefaultBooleanOptionWarning(a.Name), null);
                     }
             }
 

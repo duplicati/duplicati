@@ -26,8 +26,8 @@ using System.Linq;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
-using Duplicati.Library.Utility;
 using NUnit.Framework;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {
@@ -160,7 +160,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] {DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -268,7 +268,7 @@ namespace Duplicati.UnitTest
                 }
 
             // A dry-run should run without exceptions (see issue #4379).
-            Dictionary<string, string> dryRunOptions = new Dictionary<string, string>(testopts) {["dry-run"] = "true"};
+            Dictionary<string, string> dryRunOptions = new Dictionary<string, string>(testopts) { ["dry-run"] = "true" };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, dryRunOptions, null))
             {
                 IPurgeBrokenFilesResults purgeResults = c.PurgeBrokenFiles(null);
@@ -300,7 +300,7 @@ namespace Duplicati.UnitTest
             // A subsequent backup should be successful.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }

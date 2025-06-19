@@ -19,28 +19,18 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using NUnit.Framework;
-using System.Security.Cryptography;
-using Assert = NUnit.Framework.Legacy.ClassicAssert;
-
-namespace Duplicati.UnitTest
+namespace Duplicati.Library.Interface
 {
-    public class HashExtentions : BasicSetupHelper
+    /// <summary>
+    /// Interface for implementing a generic module with a priority
+    /// </summary>
+    public interface IGenericPriorityModule : IGenericModule
     {
-        [Test]
-        [Category("HashExtentions")]
-        public static void ComputeHashes()
-        {
-            string data = "FIXED DATA WITH KNOWN SHA256 HASH";
-            string expectedHash = "A4B902FA51819A29890225999C542D8BD6B5499E96B6B581E43B04FE46C39B12";
-
-            string hashed = data.ComputeHashToHex(SHA256.Create());
-
-            Assert.IsNotNull(hashed);
-            Assert.IsNotEmpty(hashed);
-            Assert.AreEqual(expectedHash, hashed);
-
-        }
-
+        /// <summary>
+        /// The priority of the module, higher values are executed first.
+        /// Negative values places the module at the end of the queue.
+        /// A value of 0 means the module is executed in the default order.
+        /// </summary>
+        int Priority { get; }
     }
 }

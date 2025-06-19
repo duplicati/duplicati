@@ -87,7 +87,11 @@ namespace Duplicati.Library.Backend
             { "Seagate Lyve - US-West-1", "https://s3.us-west-1.lyvecloud.seagate.com" },
             { "Seagate Lyve - AP-Southeast-1", "https://s3.ap-southeast-1.lyvecloud.seagate.com" },
             { "Seagate Lyve - EU-West-1", "https://s3.eu-west-1.lyvecloud.seagate.com" },
-            { "Seagate Lyve - US-Central-2", "https://s3.us-central-2.lyvecloud.seagate.com" }
+            { "Seagate Lyve - US-Central-2", "https://s3.us-central-2.lyvecloud.seagate.com" },
+            { "Mega S4 - Amsterdam", "eu-central-1.s4.mega.io" },
+            { "Mega S4 - Bettembourg", "eu-central-2.s4.mega.io" },
+            { "Mega S4 - Montreal", "ca-central-1.s4.mega.io" },
+            { "Mega S4 - Vancouver", "ca-west-1.s4.mega.io" }
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region

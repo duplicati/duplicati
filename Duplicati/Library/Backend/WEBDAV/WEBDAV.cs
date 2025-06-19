@@ -31,6 +31,23 @@ namespace Duplicati.Library.Backend
     public class WEBDAV : IStreamingBackend
     {
         /// <summary>
+        /// The integrated authentication option name
+        /// </summary>
+        private const string INTEGRATED_AUTHENTICATION_OPTION = "integrated-authentication";
+        /// <summary>
+        /// The force digest authentication option name
+        /// </summary>
+        private const string FORCE_DIGEST_AUTHENTICATION_OPTION = "force-digest-authentication";
+        /// <summary>
+        /// The debug propfind file option name
+        /// </summary>
+        private const string DEBUG_PROPFIND_FILE_OPTION = "debug-propfind-file";
+        /// <summary>
+        /// The use extended propfind option name
+        /// </summary>
+        private const string USE_EXTENDED_PROPFIND_OPTION = "use-extended-propfind";
+
+        /// <summary>
         /// The credentials to use for the connection
         /// </summary>
         private readonly NetworkCredential? m_userInfo;
@@ -90,13 +107,23 @@ namespace Duplicati.Library.Backend
         // I've found this description: http://www.webdav.org/specs/rfc2518.html#METHOD_PROPFIND
         //  "An empty PROPFIND request body MUST be treated as a request for the names and values of all properties."
         //
-        //private static readonly byte[] PROPFIND_BODY = System.Text.Encoding.UTF8.GetBytes("<?xml version=\"1.0\"?><D:propfind xmlns:D=\"DAV:\"><D:allprop/></D:propfind>");
-        private static readonly byte[] PROPFIND_BODY = new byte[0];
+        private static readonly byte[] PROPFIND_BODY_EXT = System.Text.Encoding.UTF8.GetBytes("<?xml version=\"1.0\"?><D:propfind xmlns:D=\"DAV:\"><D:allprop/></D:propfind>");
+        private static readonly byte[] PROPFIND_BODY_EMPTY = new byte[0];
 
         /// <summary>
         /// The HTTP client to use for all operations
         /// </summary>
         private HttpClient? m_httpClient = null;
+
+        /// <summary>
+        /// If set, the PROPFIND response will be written to this file for debugging purposes.
+        /// </summary>
+        private readonly string? m_debugPropfindFile;
+
+        /// <summary>
+        /// Flag to indicate if extended PROPFIND should be used.
+        /// </summary>
+        private readonly bool m_useExtendedPropfind;
 
         public WEBDAV()
         {
@@ -126,8 +153,10 @@ namespace Duplicati.Library.Backend
             }
 
             m_certificateOptions = SslOptionsHelper.Parse(options);
-            m_useIntegratedAuthentication = Utility.Utility.ParseBoolOption(options, "integrated-authentication");
-            m_forceDigestAuthentication = Utility.Utility.ParseBoolOption(options, "force-digest-authentication");
+            m_useIntegratedAuthentication = Utility.Utility.ParseBoolOption(options, INTEGRATED_AUTHENTICATION_OPTION);
+            m_forceDigestAuthentication = Utility.Utility.ParseBoolOption(options, FORCE_DIGEST_AUTHENTICATION_OPTION);
+            m_useExtendedPropfind = Utility.Utility.ParseBoolOption(options, USE_EXTENDED_PROPFIND_OPTION);
+            m_debugPropfindFile = options.GetValueOrDefault(DEBUG_PROPFIND_FILE_OPTION);
 
             // Explicitly support setups with no username and password
             if (m_forceDigestAuthentication && m_userInfo == null)
@@ -201,10 +230,11 @@ namespace Duplicati.Library.Backend
         ///<inheritdoc/>
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
+            var body = m_useExtendedPropfind ? PROPFIND_BODY_EXT : PROPFIND_BODY_EMPTY;
             using var request = CreateRequest(string.Empty, new HttpMethod("PROPFIND"));
             request.Headers.Add("Depth", "1");
-            request.Content = new StreamContent(new MemoryStream(PROPFIND_BODY));
-            request.Content.Headers.ContentLength = PROPFIND_BODY.Length;
+            request.Content = new StreamContent(new MemoryStream(body));
+            request.Content.Headers.ContentLength = body.Length;
 
             var doc = new System.Xml.XmlDocument();
 
@@ -216,12 +246,23 @@ namespace Duplicati.Library.Backend
 
                 response.EnsureSuccessStatusCode();
 
-                using var sourceStream = await Utility.Utility.WithTimeout(m_timeouts.ReadWriteTimeout, cancelToken, ct =>
+                using var sourceStream = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct =>
                     response.Content.ReadAsStreamAsync(ct)
                 ).ConfigureAwait(false);
 
-                using var timeoutStream = sourceStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
-                doc.Load(timeoutStream);
+                using var timeoutStream = sourceStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true);
+                if (!string.IsNullOrWhiteSpace(m_debugPropfindFile))
+                {
+                    // Write the response to a file for debugging purposes
+                    using (var debugStream = File.Create(m_debugPropfindFile))
+                        await timeoutStream.CopyToAsync(debugStream, cancelToken).ConfigureAwait(false);
+
+                    doc.Load(m_debugPropfindFile);
+                }
+                else
+                {
+                    doc.Load(timeoutStream);
+                }
             }
             catch (HttpRequestException wex)
             {
@@ -237,14 +278,14 @@ namespace Duplicati.Library.Backend
             var nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
             nm.AddNamespace("D", "DAV:");
 
-            var filenamelist = new HashSet<string>();
             var lst = doc.SelectNodes("D:multistatus/D:response/D:href", nm);
             if (lst == null)
             {
-                m_filenamelist = filenamelist;
+                m_filenamelist = new();
                 yield break;
             }
 
+            var entries = new List<IFileEntry>();
             foreach (System.Xml.XmlNode n in lst)
             {
                 //IIS uses %20 for spaces and %2B for +
@@ -309,11 +350,17 @@ namespace Duplicati.Library.Backend
                     IsFolder = isCollection
                 };
 
-                filenamelist.Add(name);
-                yield return fe;
+                entries.Add(fe);
             }
 
-            m_filenamelist = filenamelist;
+            m_filenamelist = entries.Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var entry in entries)
+            {
+                if (cancelToken.IsCancellationRequested)
+                    yield break;
+
+                yield return entry;
+            }
         }
 
         ///<inheritdoc/>
@@ -358,8 +405,10 @@ namespace Duplicati.Library.Backend
         public IList<ICommandLineArgument> SupportedCommands =>
         [
             .. AuthOptionsHelper.GetOptions(),
-            new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
-            new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
+            new CommandLineArgument(INTEGRATED_AUTHENTICATION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
+            new CommandLineArgument(FORCE_DIGEST_AUTHENTICATION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
+            new CommandLineArgument(DEBUG_PROPFIND_FILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.WEBDAV.DescriptionDebugPropfindShort, Strings.WEBDAV.DescriptionDebugPropfindLong),
+            new CommandLineArgument(USE_EXTENDED_PROPFIND_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseExtendedPropfindShort, Strings.WEBDAV.DescriptionUseExtendedPropfindLong),
             .. SslOptionsHelper.GetOptions(),
             .. TimeoutOptionsHelper.GetOptions()
         ];

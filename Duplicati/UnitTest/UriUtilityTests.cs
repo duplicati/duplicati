@@ -21,6 +21,7 @@
 
 using NUnit.Framework;
 using System.Collections.Specialized;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {

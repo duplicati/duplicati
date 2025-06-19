@@ -32,7 +32,7 @@ using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Modules.Builtin
 {
-    public class RunScript : IGenericCallbackModule
+    public class RunScript : IGenericCallbackModule, IGenericPriorityModule
     {
         /// <summary>
         /// The tag used for logging
@@ -91,6 +91,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private FileBackedStringList m_logstorage;
 
+        /// <summary>
+        /// The priority of the module, used to determine the order in which modules are executed.
+        /// </summary>
+        public int Priority => 100;
 
         #region IGenericModule implementation
         public void Configure(IDictionary<string, string> commandlineOptions)

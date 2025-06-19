@@ -1400,6 +1400,9 @@ namespace Duplicati.Library.Main.Operation
             await db
                 .FixMissingBlocklistHashes(m_options.BlockHashAlgorithm, m_options.Blocksize, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
+            await db
+                .FixEmptyMetadatasets(m_options, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
         }
     }
 }

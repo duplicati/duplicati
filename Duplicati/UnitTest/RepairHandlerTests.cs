@@ -33,6 +33,8 @@ using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {
@@ -644,6 +646,42 @@ namespace Duplicati.UnitTest
             {
                 Assert.AreEqual(filesetEntries, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry"));
                 Assert.AreEqual(fileLookupEntries, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FileLookup"));
+            }
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        public void RepairReplacesZeroLengthMetadata()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "a.txt"), "a");
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "b.txt"), "b");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var cmd = con.CreateCommand())
+            {
+                var lookupId = cmd.ExecuteScalarInt64("SELECT ID FROM FileLookup LIMIT 1");
+                var metaId = cmd.SetCommandAndParameters("SELECT MetadataID FROM FileLookup WHERE ID = @Id")
+                    .SetParameterValue("@Id", lookupId).ExecuteScalarInt64(-1);
+                var blocksetId = cmd.SetCommandAndParameters("SELECT BlocksetID FROM Metadataset WHERE ID = @Id")
+                    .SetParameterValue("@Id", metaId).ExecuteScalarInt64(-1);
+                cmd.SetCommandAndParameters("UPDATE Blockset SET Length = 0 WHERE ID = @Id")
+                    .SetParameterValue("@Id", blocksetId).ExecuteNonQuery();
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var res = c.Repair();
+                Assert.AreEqual(0, res.Errors.Count());
+                Assert.AreEqual(0, res.Warnings.Count());
+            }
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var cmd = con.CreateCommand())
+            {
+                var remaining = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");
+                Assert.AreEqual(0, remaining, "Zero-length metadata should have been replaced");
             }
         }
     }

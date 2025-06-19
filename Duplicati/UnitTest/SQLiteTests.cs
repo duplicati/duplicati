@@ -27,6 +27,7 @@ using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
 using NUnit.Framework;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {

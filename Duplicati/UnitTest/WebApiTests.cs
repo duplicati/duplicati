@@ -21,6 +21,7 @@
 
 using NUnit.Framework;
 using Duplicati.Library.Backend.WebApi;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
 {

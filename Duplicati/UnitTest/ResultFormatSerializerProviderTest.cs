@@ -32,7 +32,7 @@ namespace Duplicati.UnitTest
         public void TestGetSerializerGivenDuplicatiReturnsDuplicatiSerializer()
         {
             IResultFormatSerializer serializer = ResultFormatSerializerProvider.GetSerializer(ResultExportFormat.Duplicati);
-            Assert.AreEqual(typeof(DuplicatiFormatSerializer), serializer.GetType());
+            Assert.That(serializer, Is.InstanceOf<DuplicatiFormatSerializer>());
         }
 
         [Test]
@@ -40,7 +40,7 @@ namespace Duplicati.UnitTest
         public void TestGetSerializerGivenJsonReturnsJsonSerializer()
         {
             IResultFormatSerializer serializer = ResultFormatSerializerProvider.GetSerializer(ResultExportFormat.Json);
-            Assert.AreEqual(typeof(JsonFormatSerializer), serializer.GetType());
+            Assert.That(serializer, Is.InstanceOf<JsonFormatSerializer>());
         }
     }
 }

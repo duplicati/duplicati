@@ -37,5 +37,7 @@ Error message: {3}", foldername, filename, extension, errormessage); }
         public static string DescriptionDebugPropfindLong { get { return LC.L(@"To aid in debugging issues, it is possible to set a path to a file that will be overwritten with the PROPFIND response."); } }
         public static string DescriptionDebugPropfindShort { get { return LC.L(@"Dump the PROPFIND response"); } }
         public static string UsernameRequired { get { return LC.L(@"Digest authentication requires a username to be set"); } }
+        public static string DescriptionUseExtendedPropfindShort { get { return LC.L(@"Use extended PROPFIND body"); } }
+        public static string DescriptionUseExtendedPropfindLong { get { return LC.L(@"Use an extended PROPFIND body to request listings of files and folders. This is required for some servers"); } }
     }
 }

@@ -3077,6 +3077,87 @@ namespace Duplicati.Library.Main.Database
             await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Returns the ID of an empty metadata blockset. If no empty blockset is found, it returns the ID of the smallest blockset that is not in the given block volume IDs.
+        /// If no such blockset is found, it returns -1.
+        /// </summary>
+        /// <param name="blockVolumeIds">The volume ids to ignore when searching for a suitable metadata block.</param>
+        /// <param name="emptyHash">The hash of the empty blockset.</param>
+        /// <param name="emptyHashSize">The size of the empty blockset.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the ID of the empty metadata blockset, or -1 if no suitable blockset is found</returns>
+        public async Task<long> GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, CancellationToken token)
+        {
+            await using var cmd = Connection.CreateCommand(@"
+                SELECT ""ID""
+                FROM ""Blockset""
+                WHERE
+                    ""FullHash"" = @EmptyHash
+                    AND ""Length"" == @EmptyHashSize
+                    AND ""ID"" NOT IN (
+                        SELECT ""BlocksetID""
+                        FROM
+                            ""BlocksetEntry"",
+                            ""Block""
+                        WHERE
+                            ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                            AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
+                    )
+            ")
+                .SetTransaction(m_rtr)
+                .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
+                .SetParameterValue("@EmptyHash", emptyHash)
+                .SetParameterValue("@EmptyHashSize", emptyHashSize);
+
+            var res = await cmd.ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            // No empty block found, try to find a zero-length block instead
+            if (res < 0 && emptyHashSize != 0)
+                res = await cmd.SetCommandAndParameters(@"
+                    SELECT ""ID""
+                    FROM ""Blockset""
+                    WHERE
+                        ""Length"" == @EmptyHashSize
+                        AND ""ID"" NOT IN (
+                            SELECT ""BlocksetID""
+                            FROM
+                                ""BlocksetEntry"",
+                                ""Block""
+                            WHERE
+                                ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                                AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
+                        )
+                ")
+                  .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
+                  .SetParameterValue("@EmptyHashSize", 0)
+                  .ExecuteScalarInt64Async(-1, token)
+                  .ConfigureAwait(false);
+
+            // No empty block found, pick the smallest one
+            if (res < 0)
+                res = await cmd.SetCommandAndParameters(@"
+                    SELECT ""Blockset"".""ID""
+                    FROM
+                        ""BlocksetEntry"",
+                        ""Blockset"",
+                        ""Metadataset"",
+                        ""Block""
+                    WHERE
+                        ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
+                        AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID""
+                        AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
+                        AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
+                    ORDER BY ""Blockset"".""Length"" ASC
+                    LIMIT 1
+                ")
+                  .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
+                  .ExecuteScalarInt64Async(-1, token)
+                  .ConfigureAwait(false);
+
+            return res;
+        }
+
         public virtual void Dispose()
         {
             this.DisposeAsync().AsTask().Await();

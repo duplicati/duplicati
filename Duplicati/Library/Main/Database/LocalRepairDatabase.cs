@@ -1901,6 +1901,141 @@ namespace Duplicati.Library.Main.Database
                     rd.ConvertValueToInt64(2)
                 );
         }
+
+        public async Task FixEmptyMetadatasets(Options options, CancellationToken token)
+        {
+            using var cmd = m_connection.CreateCommand(@"
+                SELECT COUNT(*)
+                FROM Metadataset
+                JOIN Blockset
+                    ON Metadataset.BlocksetID = Blockset.ID
+                WHERE Blockset.Length = 0
+            ")
+                .SetTransaction(m_rtr);
+
+            var emptyMetaCount = await cmd.ExecuteScalarInt64Async(0, token)
+                .ConfigureAwait(false);
+            if (emptyMetaCount <= 0)
+                return;
+
+            Logging.Log.WriteInformationMessage(LOGTAG, "ZeroLengthMetadata", "Found {0} zero-length metadata entries", emptyMetaCount);
+
+            // Create replacement metadata
+            var emptyMeta = Utility.WrapMetadata(new Dictionary<string, string>(), options);
+            var emptyBlocksetId = await GetEmptyMetadataBlocksetId(Array.Empty<long>(), emptyMeta.FileHash, emptyMeta.Blob.Length, token)
+                .ConfigureAwait(false);
+
+            if (emptyBlocksetId < 0)
+                throw new Interface.UserInformationException(
+                    "Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.",
+                    "FailedToLocateEmptyMetadataBlockset");
+
+            // Step 1: Create temp table with Metadataset IDs referencing empty blocksets (excluding the one to keep)
+            var tablename = "FixMetadatasets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+
+            try
+            {
+                await cmd.SetCommandAndParameters(@$"
+                    CREATE TEMP TABLE ""{tablename}"" AS
+                    SELECT
+                        m.ID AS MetadataID,
+                        m.BlocksetID
+                    FROM Metadataset m
+                    JOIN Blockset b
+                        ON m.BlocksetID = b.ID
+                    WHERE
+                        b.Length = 0
+                        AND m.BlocksetID != @KeepBlockset
+                ")
+                    .SetParameterValue("@KeepBlockset", emptyBlocksetId)
+                    .ExecuteNonQueryAsync(token)
+                    .ConfigureAwait(false);
+
+                // Step 2: Update FileLookup to use a valid metadata ID
+                await cmd.SetCommandAndParameters(@$"
+                    UPDATE FileLookup
+                    SET MetadataID = (
+                        SELECT ID
+                        FROM Metadataset
+                        WHERE BlocksetID = @KeepBlockset
+                        LIMIT 1
+                    )
+                    WHERE MetadataID IN (
+                        SELECT MetadataID
+                        FROM ""{tablename}""
+                    )
+                ")
+                    .SetParameterValue("@KeepBlockset", emptyBlocksetId)
+                    .ExecuteNonQueryAsync(token)
+                    .ConfigureAwait(false);
+
+                // Step 3: Delete obsolete Metadataset entries
+                await cmd.SetCommandAndParameters(@$"
+                    DELETE FROM Metadataset
+                    WHERE ID IN (
+                        SELECT MetadataID
+                        FROM ""{tablename}""
+                    )
+                ")
+                    .ExecuteNonQueryAsync(token)
+                    .ConfigureAwait(false);
+
+                // Step 4: Delete orphaned blocksets (affected only)
+                await cmd.SetCommandAndParameters(@$"
+                    DELETE FROM Blockset
+                    WHERE
+                        ID IN (
+                            SELECT BlocksetID
+                            FROM ""{tablename}""
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM Metadataset
+                            WHERE BlocksetID = Blockset.ID
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM File
+                            WHERE BlocksetID = Blockset.ID
+                        )
+                ")
+                    .ExecuteNonQueryAsync(token)
+                    .ConfigureAwait(false);
+
+                // Step 5: Confirm all broken metadata entries are resolved
+                cmd.SetCommandAndParameters(@"
+                    SELECT COUNT(*)
+                    FROM Metadataset
+                    JOIN Blockset
+                        ON Metadataset.BlocksetID = Blockset.ID
+                    WHERE Blockset.Length = 0
+                ");
+
+                var remaining = await cmd.ExecuteScalarInt64Async(0, token);
+                if (remaining > 0)
+                    throw new Interface.UserInformationException(
+                        "Some zero-length metadata entries could not be repaired.",
+                        "MetadataRepairFailed");
+
+                Logging.Log.WriteInformationMessage(LOGTAG, "ZeroLengthMetadataRepaired", "Zero length metadata entries repaired successfully");
+
+                await m_rtr.CommitAsync(token: token)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                try
+                {
+                    await cmd.SetCommandAndParameters($@"DROP TABLE IF EXISTS ""{tablename}"" ")
+                        .ExecuteNonQueryAsync(token)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "ErrorDroppingTempTable", ex, "Failed to drop temporary table {0}: {1}", tablename, ex.Message);
+                }
+            }
+        }
     }
 
 }

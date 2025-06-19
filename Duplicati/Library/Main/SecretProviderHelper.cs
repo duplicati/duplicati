@@ -168,7 +168,7 @@ public static class SecretProviderHelper
     {
         // Unwrap ${} to support ${name is long}
         var suffix = string.Empty;
-        var matcher = @"(\w|/)";
+        var matcher = @"(\w|_|-|/)";
         if (matchpattern.EndsWith("{}") || matchpattern.EndsWith("()") || matchpattern.EndsWith("[]"))
         {
             suffix = matchpattern[^1..];
@@ -179,10 +179,13 @@ public static class SecretProviderHelper
         // For the values, they could be urls, so we need to look inside the strings
         var pattern = new Regex(@$"{Regex.Escape(matchpattern)}(?<key>{matcher}+){Regex.Escape(suffix)}", RegexOptions.ExplicitCapture);
 
+        // Collect all partial matches, so we can report them later
+        var partialMatches = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         // When we get the secrets, replace these values
         var optionsMap = options
             .Where(x => !x.Key.StartsWith("secret-provider", StringComparison.OrdinalIgnoreCase))
-            .Select(x => (x.Key, Secret: GetKey(x.Value, pattern)))
+            .Select(x => (x.Key, Secret: GetKeyEx(x.Value, pattern, matchpattern, partialMatches)))
             .Where(x => !string.IsNullOrWhiteSpace(x.Secret))
             .GroupBy(x => x.Secret!)
             .ToDictionary(x => x.Key, x => x.Select(y => y.Key).ToArray());
@@ -192,7 +195,7 @@ public static class SecretProviderHelper
             .Where(x => !string.IsNullOrWhiteSpace(x.First?.Query))
             .Select(x => (Source: x.Second, Params: HttpUtility.ParseQueryString(x.First!.Query)))
             .SelectMany(x => x.Params.AllKeys.Select(k => (Source: x.Source, Key: k, Value: x.Params[k])))
-            .Select(x => (x.Source, x.Key, Secret: GetKey(x.Value, pattern)))
+            .Select(x => (x.Source, x.Key, Secret: GetKeyEx(x.Value, pattern, matchpattern, partialMatches)))
             .Where(x => !string.IsNullOrWhiteSpace(x.Secret))
             .GroupBy(x => x.Secret!)
             .ToDictionary(x => x.Key, x => x.Select(y => (y.Source, y.Key)).ToArray());
@@ -203,7 +206,7 @@ public static class SecretProviderHelper
             .Where(x => !string.IsNullOrWhiteSpace(x.Value.Query))
             .Select(x => (Source: x.Source, Params: x.Value.QueryParameters))
             .SelectMany(x => x.Params.AllKeys.Select(k => (Source: x.Source, Key: k, Value: x.Params[k])))
-            .Select(x => (x.Source, x.Key, Secret: GetKey(x.Value, pattern)))
+            .Select(x => (x.Source, x.Key, Secret: GetKeyEx(x.Value, pattern, matchpattern, partialMatches)))
             .Where(x => !string.IsNullOrWhiteSpace(x.Secret))
             .GroupBy(x => x.Secret!)
             .ToDictionary(x => x.Key, x => x.Select(y => (y.Source, y.Key)).ToArray());
@@ -213,6 +216,10 @@ public static class SecretProviderHelper
             .Concat(optionsMap.Keys)
             .Distinct()
             .ToArray();
+
+        // If there are partial matches, log them
+        if (partialMatches.Count > 0)
+            Log.WriteWarningMessage(LOGTAG, "SecretProviderPartialMatches", null, "Found {0} partial secret matches where the value starts with the pattern {1}, value transformation not applied to those", partialMatches.Count, matchpattern);
 
         if (secrets.Length == 0)
             return;
@@ -255,6 +262,30 @@ public static class SecretProviderHelper
             }
 
         return;
+    }
+
+    /// <summary>
+    /// Gets the key from a value using the pattern, and also collects partial matches
+    /// </summary>
+    /// <param name="value">The value to get the key from</param>
+    /// <param name="pattern">The pattern to use</param>
+    /// <param name="prefix">The prefix to look for</param>
+    /// <param name="partialMatches">A set to collect partial matches</param>
+    /// <returns>>The key or null if not found</returns>
+    private static string? GetKeyEx(string? value, Regex pattern, string prefix, HashSet<string> partialMatches)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var match = GetKey(value, pattern);
+        if (match != null)
+            return match;
+
+        // If the value starts with the prefix, but does not match the pattern, it is a partial match
+        if (value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            partialMatches.Add(value);
+
+        return null;
     }
 
     /// <summary>

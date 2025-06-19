@@ -83,7 +83,7 @@ namespace Duplicati.UnitTest
             var verifyopts = testopts.Expand(new
             {
                 full_remote_verification = nameof(Options.RemoteTestStrategy.IndexOnly),
-                replace_faulty_index_files = false,
+                dont_replace_faulty_index_files = true,
             });
             using (var c = new Controller("file://" + TARGETFOLDER, verifyopts, null))
                 TestUtils.AssertResults(c.Test(short.MaxValue));
@@ -134,7 +134,7 @@ namespace Duplicati.UnitTest
             var repairopts = testopts.Expand(new
             {
                 full_remote_verification = nameof(Options.RemoteTestStrategy.IndexOnly),
-                replace_faulty_index_files = true,
+                dont_replace_faulty_index_files = false,
             });
 
             using (var c = new Controller("file://" + TARGETFOLDER, repairopts, null))

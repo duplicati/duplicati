@@ -49,17 +49,17 @@ public static class StaticFilesExtensions
         MaxAge = TimeSpan.FromDays(7)
     };
 
-    private sealed record SpaConfig(string Prefix, byte[] IndexFile, string BasePath);
+    private const string FORWARDED_PREFIX_HEADER = "X-Forwarded-Prefix";
+    private const string DEFAULT_FORWARDED_PREFIX = "/ngclient";
 
-    private static byte[] ReadAndPatchIndexFile(FileInfo file, string prefix)
+    private sealed record SpaConfig(string Prefix, string FileContent, string BasePath);
+
+    private static string PatchIndexContent(string fileContent, string prefix)
     {
         if (!prefix.EndsWith("/"))
             prefix += "/";
 
-        var index = File.ReadAllBytes(file.FullName);
-        var indexStr = Encoding.UTF8.GetString(index);
-        indexStr = indexStr.Replace("<base href=\"/\">", $"<base href=\"{prefix}\">");
-        return Encoding.UTF8.GetBytes(indexStr);
+        return fileContent.Replace("<base href=\"/\">", $"<base href=\"{prefix}\">");
     }
 
     public static IApplicationBuilder UseDefaultStaticFiles(this WebApplication app, string webroot, IEnumerable<string> spaPaths)
@@ -91,7 +91,7 @@ public static class StaticFilesExtensions
             var fi = new FileInfo(file);
             if (fi.Exists)
             {
-                prefixHandlerMap.Add(new SpaConfig(prefix, ReadAndPatchIndexFile(fi, prefix), basepath));
+                prefixHandlerMap.Add(new SpaConfig(prefix, File.ReadAllText(fi.FullName), basepath));
             }
 #if DEBUG            
             else
@@ -99,9 +99,9 @@ public static class StaticFilesExtensions
                 // Install from NPM in debug mode for easier development
                 var spaConfig = NpmSpaHelper.ProbeForNpmSpa(basepath);
                 if (spaConfig != null)
-                    prefixHandlerMap.Add(new SpaConfig(prefix, ReadAndPatchIndexFile(spaConfig.IndexFile, prefix), spaConfig.BasePath));
+                    prefixHandlerMap.Add(new SpaConfig(prefix, File.ReadAllText(spaConfig.IndexFile.FullName), spaConfig.BasePath));
                 else if (spaConfig == null && missingFile.Exists)
-                    prefixHandlerMap.Add(new SpaConfig(prefix, File.ReadAllBytes(missingFile.FullName), basepath));
+                    prefixHandlerMap.Add(new SpaConfig(prefix, File.ReadAllText(missingFile.FullName), basepath));
             }
 #endif
         }
@@ -132,11 +132,16 @@ public static class StaticFilesExtensions
                     // Serve the index file
                     context.Response.ContentType = "text/html";
                     context.Response.StatusCode = 200;
+                    var indexContent = spaConfig.FileContent;
 #if DEBUG
-                    await context.Response.Body.WriteAsync(ReadAndPatchIndexFile(new FileInfo(Path.Combine(spaConfig.BasePath, "index.html")), spaConfig.Prefix));
-#else
-                    await context.Response.Body.WriteAsync(spaConfig.IndexFile);
-#endif                    
+                    // In debug mode, we re-read the index file to ensure we have the latest content for debugging
+                    indexContent = File.ReadAllText(Path.Combine(spaConfig.BasePath, "index.html"));
+#endif
+                    var forwardedPrefix = context.Request.Headers[FORWARDED_PREFIX_HEADER].FirstOrDefault();
+                    if (string.IsNullOrEmpty(forwardedPrefix))
+                        forwardedPrefix = DEFAULT_FORWARDED_PREFIX;
+
+                    await context.Response.WriteAsync(PatchIndexContent(indexContent, forwardedPrefix), context.RequestAborted);
                     await context.Response.CompleteAsync();
                 }
                 else

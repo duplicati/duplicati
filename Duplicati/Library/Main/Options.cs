@@ -303,8 +303,6 @@ namespace Duplicati.Library.Main
 
         protected readonly Dictionary<string, string?> m_options;
 
-        protected readonly List<KeyValuePair<bool, Library.Interface.IGenericModule>> m_loadedModules = new List<KeyValuePair<bool, IGenericModule>>();
-
         /// <summary>
         /// Lookup table for compression hints
         /// </summary>
@@ -331,6 +329,7 @@ namespace Duplicati.Library.Main
             AuthOptionsHelper.GetOptions().Select(x => x.Name)
             .Concat(SslOptionsHelper.GetOptions().Select(x => x.Name))
             .Concat(TimeoutOptionsHelper.GetOptions().Select(x => x.Name))
+            .Concat(AuthIdOptionsHelper.GetOptions("").Select(x => x.Name))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
@@ -463,7 +462,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), DEFAULT_BACKUP_TEST_SAMPLES.ToString()),
             new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Decimal, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0.1"),
             new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), Enum.GetName(typeof(RemoteTestStrategy), RemoteTestStrategy.False), null, Enum.GetNames(typeof(RemoteTestStrategy))),
-            new CommandLineArgument("replace-faulty-index-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ReplaceFaultyIndexFilesShort, Strings.Options.ReplaceFaultyIndexFilesLong, "true"),
+            new CommandLineArgument("dont-replace-faulty-index-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ReplaceFaultyIndexFilesShort, Strings.Options.ReplaceFaultyIndexFilesLong, "false"),
 
             new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
@@ -516,7 +515,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0m"),
             new CommandLineArgument("auto-vacuum-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoVacuumIntervalShort, Strings.Options.AutoVacuumIntervalLong, "0m"),
 
-            new CommandLineArgument("secret-provider", CommandLineArgument.ArgumentType.String, Strings.Options.SecretProviderShort, Strings.Options.SecretProviderLong(Library.AutoUpdater.PackageHelper.GetExecutableName(AutoUpdater.PackageHelper.NamedExecutable.SecretTool))),
+            new CommandLineArgument("secret-provider", CommandLineArgument.ArgumentType.Password, Strings.Options.SecretProviderShort, Strings.Options.SecretProviderLong(Library.AutoUpdater.PackageHelper.GetExecutableName(AutoUpdater.PackageHelper.NamedExecutable.SecretTool))),
             new CommandLineArgument("secret-provider-pattern", CommandLineArgument.ArgumentType.String, Strings.Options.SecretProviderPatternShort, Strings.Options.SecretProviderPatternLong, SecretProviderHelper.DEFAULT_PATTERN),
             new CommandLineArgument("secret-provider-cache", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SecretProviderCacheShort, Strings.Options.SecretProviderCacheLong, Enum.GetName(SecretProviderHelper.CachingLevel.None), null, Enum.GetNames(typeof(SecretProviderHelper.CachingLevel))),
             new CommandLineArgument("cpu-intensity", CommandLineArgument.ArgumentType.Integer, Strings.Options.CPUIntensityShort, Strings.Options.CPUIntensityLong, "10", null, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]),
@@ -1343,7 +1342,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets a value indicating if defective index files should be replaced
         /// </summary>
-        public bool ReplaceFaultyIndexFiles => GetBool("replace-faulty-index-files");
+        public bool ReplaceFaultyIndexFiles => !GetBool("dont-replace-faulty-index-files");
 
         /// <summary>
         /// The block hash algorithm to use
@@ -1520,10 +1519,33 @@ namespace Duplicati.Library.Main
             return h;
         }
 
+
+        protected readonly List<IGenericModule> m_loadedModules = new();
+
         /// <summary>
-        /// Gets a list of modules, the key indicates if they are loaded
+        /// Gets a list of loaded modules, in their activation order
         /// </summary>
-        public List<KeyValuePair<bool, IGenericModule>> LoadedModules => m_loadedModules;
+        public IEnumerable<IGenericModule> LoadedModules => m_loadedModules
+            .OrderByDescending(x => (x as IGenericPriorityModule)?.Priority ?? 0);
+
+        /// <summary>
+        /// Adds a loaded module to the list of loaded modules.
+        /// </summary>
+        /// <param name="module">The module to add</param>
+        public void AddLoadedModule(IGenericModule module)
+        {
+            if (module == null)
+                throw new ArgumentNullException(nameof(module));
+            m_loadedModules.Add(module);
+        }
+
+        /// <summary>
+        /// Clears the list of loaded modules.
+        /// </summary>
+        public void ClearLoadedModules()
+        {
+            m_loadedModules.Clear();
+        }
 
         /// <summary>
         /// Helper method to extract boolean values.

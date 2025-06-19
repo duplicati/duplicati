@@ -40,13 +40,11 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Targeted")]
-        public void TestDuplicatedBlocklists1([Values] bool deleteAllIndexFiles, [Values] bool restore_legacy)
+        [TestCase(true)]
+        [TestCase(false)]
+        public void TestDuplicatedBlocklists1(bool deleteAllIndexFiles)
         {
-            var testopts = TestOptions.Expand(new
-            {
-                blocksize = "1kb",
-                restore_legacy = restore_legacy.ToString()
-            });
+            var testopts = TestOptions.Expand(new { blocksize = "1kb" });
             var hashes = new List<string>();
 
             // Full blocklist with zeroes
@@ -88,7 +86,7 @@ namespace Duplicati.UnitTest
                 {
                     TestUtils.AssertResults(c.Restore(null));
                     var hash = CalculateFileHash(Path.Combine(DATAFOLDER, "a"));
-                    Assert.AreEqual(hashes[version], hash, "Hash mismatch for version " + version);
+                    Assert.That(hashes[version], Is.EqualTo(hash), "Hash mismatch for version " + version);
                 }
             }
         }
@@ -143,7 +141,7 @@ namespace Duplicati.UnitTest
                 {
                     TestUtils.AssertResults(c.Restore(null));
                     var hash = CalculateFileHash(Path.Combine(DATAFOLDER, "a"));
-                    Assert.AreEqual(hashes[version], hash, "Hash mismatch for version " + version);
+                    Assert.That(hashes[version], Is.EqualTo(hash), "Hash mismatch for version " + version);
                 }
             }
         }

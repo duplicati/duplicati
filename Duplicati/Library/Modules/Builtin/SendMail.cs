@@ -27,6 +27,9 @@ using Duplicati.Library.Interface;
 using MailKit.Net.Smtp;
 using MimeKit;
 using DnsClient;
+using Duplicati.Library.Logging;
+
+#nullable enable
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -109,23 +112,23 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The server url to use
         /// </summary>
-        private string m_server;
+        private string? m_server;
         /// <summary>
         /// The server username
         /// </summary>
-        private string m_username;
+        private string? m_username;
         /// <summary>
         /// The server password
         /// </summary>
-        private string m_password;
+        private string? m_password;
         /// <summary>
         /// The mail sender
         /// </summary>
-        private string m_from;
+        private string? m_from;
         /// <summary>
         /// The mail recipient
         /// </summary>
-        private string m_to;
+        private string? m_to;
         #endregion
 
 
@@ -220,14 +223,19 @@ namespace Duplicati.Library.Modules.Builtin
         {
             var message = new MimeMessage();
             MailboxAddress mailbox;
-            foreach (string s in m_to.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var s in (m_to ?? "").Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries))
                 if (MailboxAddress.TryParse(s.Replace("\"", ""), out mailbox))
                     message.To.Add(mailbox);
+                else
+                    Log.WriteWarningMessage(LOGTAG, "SendMailInvalidRecipient", null, Strings.SendMail.InvalidRecipient(s));
+
+            if (!message.To.Any())
+                throw new ArgumentException(Strings.SendMail.NoRecipientsSpecified(OPTION_RECIPIENT));
 
             var mailboxToFirst = (MailboxAddress)message.To.First();
             string toMailDomain = mailboxToFirst.Address.Substring(mailboxToFirst.Address.LastIndexOf("@", StringComparison.Ordinal) + 1);
 
-            string from = m_from.Trim().Replace("\"", "");
+            var from = (m_from ?? "").Trim().Replace("\"", "");
             if (from.IndexOf('@') < 0)
             {
                 if (from.EndsWith(">", StringComparison.Ordinal))
@@ -242,7 +250,7 @@ namespace Duplicati.Library.Modules.Builtin
             message.Subject = subject;
             message.Body = new TextPart("plain") { Text = body, ContentTransferEncoding = ContentEncoding.EightBit };
 
-            List<string> servers = null;
+            List<string>? servers = null;
             if (string.IsNullOrEmpty(m_server))
             {
                 var dnsclient = new LookupClient();
@@ -260,8 +268,8 @@ namespace Duplicati.Library.Modules.Builtin
                            select srv).Distinct().ToList();
             }
 
-            Exception lastEx = null;
-            string lastServer = null;
+            Exception? lastEx = null;
+            string? lastServer = null;
 
             foreach (var server in servers)
             {
