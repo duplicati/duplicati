@@ -61,6 +61,11 @@ namespace Duplicati.Server
         public event EventHandler<EventArgs?>? TaskQueueUpdate;
 
         /// <summary>
+        /// An eventhandler for subscribing to task completion without blocking
+        /// </summary>
+        public event EventHandler<long>? TaskCompleted;
+
+        /// <summary>
         /// An eventhandler for subscribing backup list updates without blocking
         /// </summary>
         public event EventHandler<EventArgs?>? BackupListUpdate;
@@ -126,6 +131,9 @@ namespace Duplicati.Server
 
         public void SignalTaskQueueUpdate()
             => TaskQueueUpdate?.Invoke(this, null);
+
+        public void SignalTaskCompleted(long taskId)
+            => TaskCompleted?.Invoke(this, taskId);
 
         public void SignalServerSettingsUpdated()
             => ServerSettingsUpdate?.Invoke(this, null!);

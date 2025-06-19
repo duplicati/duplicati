@@ -53,6 +53,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v1:subscribe:serversettings",
         "v1:subscribe:progress",
         "v1:subscribe:taskqueue",
+        "v1:subscribe:taskcompleted",
         "v1:subscribe:notifications",
 
         // "v1:subscribe:scheduler",
