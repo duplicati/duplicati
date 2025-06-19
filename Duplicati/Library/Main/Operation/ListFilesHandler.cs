@@ -55,7 +55,7 @@ namespace Duplicati.Library.Main.Operation
 
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
-                await using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                await using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
                     await using var filesets = await db.SelectFileSets(m_options.Time, m_options.Version, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     if (!filter.Empty)
@@ -137,7 +137,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new TempFile())
-            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(tmpdb, "List", true, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(tmpdb, "List", true, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
             {
                 var filteredList = ParseAndFilterFilesets(await backendManager.ListAsync(cancellationToken).ConfigureAwait(false), m_options);
                 if (filteredList.Count == 0)

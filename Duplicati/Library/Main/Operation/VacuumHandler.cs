@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main.Operation
         public virtual async Task RunAsync()
         {
             await using var db =
-                await Database.LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "Vacuum", false, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken)
+                await Database.LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "Vacuum", false, null, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
             await db.Vacuum(m_result.TaskControl.ProgressToken).ConfigureAwait(false);

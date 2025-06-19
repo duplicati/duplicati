@@ -60,7 +60,7 @@ public static class Helper
         {
             try
             {
-                await using var con = await SQLiteLoader.LoadConnectionAsync(serverdb, 0)
+                await using var con = await SQLiteLoader.LoadConnectionAsync(serverdb)
                     .ConfigureAwait(false);
                 await using var cmd = con.CreateCommand(@"
                     SELECT ""DBPath""
@@ -93,7 +93,7 @@ public static class Helper
     /// <returns>A task that when awaited contains a tuple with the version and whether it is a server database</returns>
     public static async Task<(int Version, bool isserver)> ExamineDatabase(string db)
     {
-        await using var con = await SQLiteLoader.LoadConnectionAsync(db, 0)
+        await using var con = await SQLiteLoader.LoadConnectionAsync(db)
             .ConfigureAwait(false);
         await using var cmd = con.CreateCommand();
 

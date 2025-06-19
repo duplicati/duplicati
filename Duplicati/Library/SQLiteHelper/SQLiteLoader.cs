@@ -36,11 +36,6 @@ namespace Duplicati.Library.SQLiteHelper
     public static class SQLiteLoader
     {
         /// <summary>
-        /// The minimum value for the SQLite page cache size.
-        /// </summary>
-        public const long MINIMUM_SQLITE_PAGE_CACHE_SIZE = 2048000L;
-
-        /// <summary>
         /// The tag used for logging.
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
@@ -129,9 +124,8 @@ namespace Duplicati.Library.SQLiteHelper
         /// Applies user-supplied custom pragmas to the SQLite connection.
         /// </summary>
         /// <param name="con">The connection to apply the pragmas to.</param>
-        /// <param name="pagecachesize"> The page cache size to set.</param>
         /// <returns>A task that when awaited returns the connection with the pragmas applied.</returns>
-        public static async Task<Microsoft.Data.Sqlite.SqliteConnection> ApplyCustomPragmasAsync(Microsoft.Data.Sqlite.SqliteConnection con, long pagecachesize)
+        public static async Task<Microsoft.Data.Sqlite.SqliteConnection> ApplyCustomPragmasAsync(Microsoft.Data.Sqlite.SqliteConnection con)
         {
             // TODO more default custom options
             //await cmd.ExecuteNonQueryAsync("PRAGMA synchronous = NORMAL;");
@@ -172,23 +166,21 @@ namespace Duplicati.Library.SQLiteHelper
         /// Loads an SQLite connection instance and opening the database with a specified page cache size.
         /// </summary>
         /// <param name="targetpath">The optional path to the database.</param>
-        /// <param name="pagecachesize">The page cache size to set.</param>
         /// <returns>The SQLite connection instance.</returns>
         /// <remarks>
         /// This method is synchronous and should be used when you need to load the connection immediately. It calls the asynchronous version and waits for it to complete.
         /// </remarks>
-        public static Microsoft.Data.Sqlite.SqliteConnection LoadConnection(string targetpath, long pagecachesize)
+        public static Microsoft.Data.Sqlite.SqliteConnection LoadConnection(string targetpath)
         {
-            return LoadConnectionAsync(targetpath, pagecachesize).Await();
+            return LoadConnectionAsync(targetpath).Await();
         }
 
         /// <summary>
         /// Loads an SQLite connection instance and opening the database.
         /// </summary>
         /// <param name="targetpath">The optional path to the database.</param>
-        /// <param name="pagecachesize"> The page cache size to set.</param>
         /// <returns>A task that when waited returns the SQLite connection instance.</returns>
-        public static async Task<Microsoft.Data.Sqlite.SqliteConnection> LoadConnectionAsync(string targetpath, long pagecachesize)
+        public static async Task<Microsoft.Data.Sqlite.SqliteConnection> LoadConnectionAsync(string targetpath)
         {
             if (string.IsNullOrWhiteSpace(targetpath))
                 throw new ArgumentNullException(nameof(targetpath));
@@ -208,7 +200,7 @@ namespace Duplicati.Library.SQLiteHelper
             }
 
             // set custom Sqlite options
-            return await ApplyCustomPragmasAsync(con, pagecachesize)
+            return await ApplyCustomPragmasAsync(con)
                 .ConfigureAwait(false);
         }
 

@@ -74,16 +74,15 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="path">The path to the database file.</param>
         /// <param name="operation">The operation name.</param>
-        /// <param name="pagecachesize">The size of the page cache.</param>
         /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
         /// <param name="token"> A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a new instance of <see cref="LocalDeleteDatabase"/>.</returns>
-        public static async Task<LocalDeleteDatabase> CreateAsync(string path, string operation, long pagecachesize, LocalDeleteDatabase? dbnew, CancellationToken token)
+        public static async Task<LocalDeleteDatabase> CreateAsync(string path, string operation, LocalDeleteDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalDeleteDatabase();
 
             dbnew = (LocalDeleteDatabase)
-                await CreateLocalDatabaseAsync(path, operation, true, pagecachesize, dbnew, token)
+                await CreateLocalDatabaseAsync(path, operation, true, dbnew, token)
                     .ConfigureAwait(false);
 
             dbnew.m_registerDuplicateBlockCommand =

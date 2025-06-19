@@ -179,7 +179,7 @@ public class BackupGet : IEndpointV1
         if (!File.Exists(bk.DBPath))
             return new List<Dictionary<string, object>>();
 
-        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath, 0))
+        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath))
         using (var cmd = con.CreateCommand())
             return LogData.DumpTable(cmd, "LogData", "ID", offset, pagesize);
     }
@@ -189,7 +189,7 @@ public class BackupGet : IEndpointV1
         if (!File.Exists(bk.DBPath))
             return new List<Dictionary<string, object>>();
 
-        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath, 0))
+        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath))
         using (var cmd = con.CreateCommand())
         {
             var dt = LogData.DumpTable(cmd, "RemoteOperation", "ID", offset, pagesize);

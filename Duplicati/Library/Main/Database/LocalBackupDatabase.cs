@@ -167,7 +167,7 @@ namespace Duplicati.Library.Main.Database
             dbnew ??= new LocalBackupDatabase();
 
             dbnew = (LocalBackupDatabase)
-                await CreateLocalDatabaseAsync(path, "Backup", false, options.SqlitePageCache, dbnew, token)
+                await CreateLocalDatabaseAsync(path, "Backup", false, dbnew, token)
                 .ConfigureAwait(false);
             dbnew = await CreateAsync(dbnew, options, null, token).ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;

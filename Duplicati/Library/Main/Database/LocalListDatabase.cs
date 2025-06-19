@@ -43,16 +43,15 @@ namespace Duplicati.Library.Main.Database
         /// Creates a new instance of the LocalListDatabase.
         /// </summary>
         /// <param name="path">The path to the database file.</param>
-        /// <param name="pagecachesize">The size of the page cache.</param>
         /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a new instance of LocalListDatabase.</returns>
-        public static async Task<LocalListDatabase> CreateAsync(string path, long pagecachesize, LocalListDatabase? dbnew, CancellationToken token)
+        public static async Task<LocalListDatabase> CreateAsync(string path, LocalListDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalListDatabase();
 
             dbnew = (LocalListDatabase)
-                await CreateLocalDatabaseAsync(path, "List", false, pagecachesize, dbnew, token)
+                await CreateLocalDatabaseAsync(path, "List", false, dbnew, token)
                     .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 

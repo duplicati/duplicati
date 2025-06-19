@@ -324,7 +324,7 @@ namespace Duplicati.UnitTest
 
             (long remoteVolumes, long duplicatedBlocks, List<long> blockVolumeIds, List<(long, long)> indexVolumeLinks) GetDbSignature()
             {
-                using var db = SQLiteLoader.LoadConnection(DBFILE, 0);
+                using var db = SQLiteLoader.LoadConnection(DBFILE);
                 using var cmd = db.CreateCommand();
 
                 var remoteVolumes = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM RemoteVolume");

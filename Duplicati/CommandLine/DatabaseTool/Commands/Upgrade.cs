@@ -173,7 +173,7 @@ public static class Upgrade
             if (!nobackups)
                 Helper.CreateFileBackup(db);
 
-            await using var con = await SQLiteLoader.LoadConnectionAsync(db, 0)
+            await using var con = await SQLiteLoader.LoadConnectionAsync(db)
                 .ConfigureAwait(false);
             await using var tr = con.BeginTransaction();
             await using var cmd = con.CreateCommand(tr);

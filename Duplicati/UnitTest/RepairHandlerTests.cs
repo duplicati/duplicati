@@ -85,7 +85,7 @@ namespace Duplicati.UnitTest
             List<int> expectedBlocksetIDs = new List<int>();
             List<int> expectedIndexes = new List<int>();
             List<string> expectedHashes = new List<string>();
-            using (IDbConnection connection = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (IDbConnection connection = SQLiteLoader.LoadConnection(options["dbpath"]))
             {
                 // Read the contents of the BlocklistHash table so that we can
                 // compare them to the contents after the repair operation.
@@ -122,7 +122,7 @@ namespace Duplicati.UnitTest
             List<int> repairedBlocksetIDs = new List<int>();
             List<int> repairedIndexes = new List<int>();
             List<string> repairedHashes = new List<string>();
-            using (IDbConnection connection = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (IDbConnection connection = SQLiteLoader.LoadConnection(options["dbpath"]))
             {
                 using (IDbCommand command = connection.CreateCommand())
                 {
@@ -426,7 +426,7 @@ namespace Duplicati.UnitTest
             }
 
             // Check database block link
-            using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "Test", true, 0, null, CancellationToken.None).ConfigureAwait(false))
+            using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "Test", true, null, CancellationToken.None).ConfigureAwait(false))
             {
                 var indexVolumeId = await db
                     .GetRemoteVolumeID(Path.GetFileName(origFile), CancellationToken.None)
@@ -505,7 +505,7 @@ namespace Duplicati.UnitTest
                 dlistFiles = dlistFiles.Reverse();
 
             var dlistFile = dlistFiles.First();
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand("DELETE FROM RemoteVolume WHERE Name = @Name"))
                 Assert.AreEqual(1, cmd.SetParameterValue("@Name", Path.GetFileName(dlistFile)).ExecuteNonQuery());
 
@@ -525,7 +525,7 @@ namespace Duplicati.UnitTest
             }
 
             // Check that the entry was recreated
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand("SELECT COUNT(*) FROM RemoteVolume WHERE Name LIKE '%.dlist.%' AND State != @State"))
                 Assert.AreEqual(2, cmd.SetParameterValue("@State", RemoteVolumeState.Deleted.ToString()).ExecuteScalarInt64(-1));
 
@@ -562,7 +562,7 @@ namespace Duplicati.UnitTest
                 TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
             // Remove a fileset
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 var filesetId = cmd.ExecuteScalarInt64("SELECT Id FROM Fileset ORDER BY Id DESC LIMIT 1");
@@ -592,7 +592,7 @@ namespace Duplicati.UnitTest
             }
 
             // Check that entry was recreated
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
                 Assert.AreEqual(2, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM Fileset"));
         }
@@ -616,7 +616,7 @@ namespace Duplicati.UnitTest
             // Remove a fileset
             long filesetEntries;
             long fileLookupEntries;
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 filesetEntries = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry");
@@ -639,7 +639,7 @@ namespace Duplicati.UnitTest
             }
 
             // Check that entry was recreated
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 Assert.AreEqual(filesetEntries, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry"));

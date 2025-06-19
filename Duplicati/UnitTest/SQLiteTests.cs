@@ -35,7 +35,7 @@ namespace Duplicati.UnitTest
     {
         private static async Task<SqliteConnection> CreateDummyDatabase(string path)
         {
-            var connection = SQLiteLoader.LoadConnection(path, 0);
+            var connection = SQLiteLoader.LoadConnection(path);
 
             using (var command = connection.CreateCommand())
             {

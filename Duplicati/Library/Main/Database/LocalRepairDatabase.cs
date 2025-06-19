@@ -52,16 +52,15 @@ namespace Duplicati.Library.Main.Database
         /// Creates a new local repair database.
         /// </summary>
         /// <param name="path">The path to the database.</param>
-        /// <param name="pagecachesize">The page cache size.</param>
         /// <param name="dbnew">An optional existing database instance to use.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns> A task that when awaited returns a new instance of <see cref="LocalRepairDatabase"/>.</returns>
-        public static async Task<LocalRepairDatabase> CreateRepairDatabase(string path, long pagecachesize, LocalRepairDatabase? dbnew, CancellationToken token)
+        public static async Task<LocalRepairDatabase> CreateRepairDatabase(string path, LocalRepairDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalRepairDatabase();
 
             dbnew = (LocalRepairDatabase)
-                await CreateLocalDatabaseAsync(path, "Repair", true, pagecachesize, dbnew, token)
+                await CreateLocalDatabaseAsync(path, "Repair", true, dbnew, token)
                     .ConfigureAwait(false);
 
             return dbnew;

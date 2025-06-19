@@ -46,7 +46,7 @@ internal static class ListFolderHandler
         if (!System.IO.File.Exists(options.Dbpath) || options.NoLocalDb)
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
-        await using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, options.SqlitePageCache, null, result.TaskControl.ProgressToken)
+        await using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, null, result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
         var filesetIds = await db

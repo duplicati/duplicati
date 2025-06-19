@@ -48,7 +48,7 @@ public static class Execute
                 if (createbackup)
                     Helper.CreateFileBackup(database);
 
-                using var connection = SQLiteLoader.LoadConnection(database, 0);
+                using var connection = SQLiteLoader.LoadConnection(database);
                 try
                 {
                     if (command.IndexOfAny(Path.GetInvalidPathChars()) < 0 && File.Exists(command))

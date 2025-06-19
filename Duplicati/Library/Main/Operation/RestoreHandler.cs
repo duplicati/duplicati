@@ -115,7 +115,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
                 {
-                    db = await LocalRestoreDatabase.CreateAsync(m_options.Dbpath, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken)
+                    db = await LocalRestoreDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
                 }
                 else
@@ -123,7 +123,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
                     tmpdb = new TempFile();
                     RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
-                    db = await LocalRestoreDatabase.CreateAsync(tmpdb, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken)
+                    db = await LocalRestoreDatabase.CreateAsync(tmpdb, null, m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
                     using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))

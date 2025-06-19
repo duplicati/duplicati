@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
             try
             {
                 await using var db =
-                    await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken)
+                    await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, null, m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
                 knownRemotes = await db
                     .GetRemoteVolumes(m_result.TaskControl.ProgressToken)
@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
             await using var db =
-                await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache, null, cancellationToken)
+                await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, null, cancellationToken)
                     .ConfigureAwait(false);
 
             try
@@ -1326,7 +1326,7 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             await using var db =
-                await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken)
+                await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, null, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
             var sets = await db
@@ -1383,7 +1383,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
             await using var db =
-                await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken)
+                await LocalRepairDatabase.CreateRepairDatabase(m_options.Dbpath, null, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
             await Utility.UpdateOptionsFromDb(db, m_options, m_result.TaskControl.ProgressToken)

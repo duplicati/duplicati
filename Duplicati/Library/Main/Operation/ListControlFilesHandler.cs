@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var cancellationToken = CancellationToken.None;
             using var tmpdb = new TempFile();
-            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "ListControlFiles", true, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "ListControlFiles", true, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             var filter = JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
 
             try

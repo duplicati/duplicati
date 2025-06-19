@@ -34,7 +34,7 @@ namespace Duplicati.UnitTest
         public async Task TestLocalDbMethods()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile, 0);
+            using var db = SQLiteLoader.LoadConnection(dbfile);
             using var cmd = db.CreateCommand();
             cmd.CommandText = LocalSchemaV12;
             cmd.ExecuteNonQuery();
@@ -54,7 +54,7 @@ namespace Duplicati.UnitTest
         public async Task TestServerDbMethods()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile, 0);
+            using var db = SQLiteLoader.LoadConnection(dbfile);
             using var cmd = db.CreateCommand();
             cmd.CommandText = ServerSchemaV6;
             cmd.ExecuteNonQuery();
@@ -141,8 +141,8 @@ CREATE TABLE ""Notification"" (
     ""ID"" INTEGER PRIMARY KEY,
     ""Type"" TEXT NOT NULL,
     ""Title"" TEXT NOT NULL,
-    ""Message"" TEXT NOT NULL, 
-    ""Exception"" TEXT NOT NULL, 
+    ""Message"" TEXT NOT NULL,
+    ""Exception"" TEXT NOT NULL,
     ""BackupID"" TEXT NULL,
     ""Action"" TEXT NOT NULL,
     ""Timestamp"" INTEGER NOT NULL,
@@ -152,15 +152,15 @@ CREATE TABLE ""Notification"" (
 );
 
 CREATE TABLE ""UIStorage"" (
-    ""Scheme"" TEXT NOT NULL, 
-    ""Key"" TEXT NOT NULL, 
+    ""Scheme"" TEXT NOT NULL,
+    ""Key"" TEXT NOT NULL,
     ""Value"" TEXT NOT NULL
 );
 
 CREATE TABLE ""TempFile"" (
     ""ID"" INTEGER PRIMARY KEY,
-    ""Origin"" TEXT NOT NULL, 
-    ""Path"" TEXT NOT NULL, 
+    ""Origin"" TEXT NOT NULL,
+    ""Path"" TEXT NOT NULL,
     ""Timestamp"" INTEGER NOT NULL,
     ""Expires"" INTEGER NOT NULL
 );
@@ -250,7 +250,7 @@ CREATE TABLE ""Blockset"" (
 );
 
 CREATE UNIQUE INDEX ""BlocksetFullHash"" ON ""Blockset"" (""FullHash"", ""Length"");
-  
+
 CREATE TABLE ""BlocksetEntry"" (
 	""BlocksetID"" INTEGER NOT NULL,
 	""Index"" INTEGER NOT NULL,
@@ -325,11 +325,11 @@ CREATE TABLE ""Configuration"" (
 
 CREATE TABLE ""ChangeJournalData"" (
     ""ID"" INTEGER PRIMARY KEY,
-    ""FilesetID"" INTEGER NOT NULL,       
-    ""VolumeName"" TEXT NOT NULL,         
-    ""JournalID"" INTEGER NOT NULL,       
-    ""NextUsn"" INTEGER NOT NULL,         
-    ""ConfigHash"" TEXT NOT NULL  
+    ""FilesetID"" INTEGER NOT NULL,
+    ""VolumeName"" TEXT NOT NULL,
+    ""JournalID"" INTEGER NOT NULL,
+    ""NextUsn"" INTEGER NOT NULL,
+    ""ConfigHash"" TEXT NOT NULL
 );
 
 INSERT INTO ""Version"" (""Version"") VALUES (12);

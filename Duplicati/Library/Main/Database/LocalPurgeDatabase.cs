@@ -40,16 +40,15 @@ namespace Duplicati.Library.Main.Database
         /// Creates a new instance of the <see cref="LocalPurgeDatabase"/> class.
         /// </summary>
         /// <param name="path">The path to the database file.</param>
-        /// <param name="pagecachesize">The size of the page cache.</param>
         /// <param name="dbnew">The optional existing database instance to use. Used to mimic constructor chaining.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a new instance of <see cref="LocalPurgeDatabase"/>.</returns>
-        public static async Task<LocalPurgeDatabase> CreateAsync(string path, long pagecachesize, LocalPurgeDatabase? dbnew, CancellationToken token)
+        public static async Task<LocalPurgeDatabase> CreateAsync(string path, LocalPurgeDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalPurgeDatabase();
 
             dbnew = (LocalPurgeDatabase)
-                await LocalDeleteDatabase.CreateAsync(path, "Purge", pagecachesize, dbnew, token)
+                await LocalDeleteDatabase.CreateAsync(path, "Purge", dbnew, token)
                     .ConfigureAwait(false);
 
             dbnew.ShouldCloseConnection = true;

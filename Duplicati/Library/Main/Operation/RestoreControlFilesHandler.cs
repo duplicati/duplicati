@@ -49,7 +49,6 @@ namespace Duplicati.Library.Main.Operation
             await using var db = await Database.LocalDatabase.CreateLocalDatabaseAsync(
                 File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles",
                 true,
-                m_options.SqlitePageCache,
                 null,
                 m_result.TaskControl.ProgressToken
             ).ConfigureAwait(false);

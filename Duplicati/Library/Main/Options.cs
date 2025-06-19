@@ -177,11 +177,6 @@ namespace Duplicati.Library.Main
         private static readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = Environment.ProcessorCount;
 
         /// <summary>
-        /// The default value for the size of the SQLite page cache
-        /// </summary>
-        private static readonly string DEFAULT_SQLITE_PAGE_CACHE_SIZE = MemoryInfo.GetTotalMemoryString(0.01, SQLiteLoader.MINIMUM_SQLITE_PAGE_CACHE_SIZE); // 1% of the total memory
-
-        /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
         public enum OptimizationStrategy
@@ -536,7 +531,6 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, DEFAULT_RESTORE_VOLUME_DOWNLOADERS.ToString()),
             new CommandLineArgument("restore-channel-buffer-size", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreChannelBufferSizeShort, Strings.Options.RestoreChannelBufferSizeLong, DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE.ToString()),
             new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
-            new CommandLineArgument("sqlite-page-cache", CommandLineArgument.ArgumentType.Size, Strings.Options.SqlitePageCacheShort, Strings.Options.SqlitePageCacheLong(SQLiteLoader.MINIMUM_SQLITE_PAGE_CACHE_SIZE), DEFAULT_SQLITE_PAGE_CACHE_SIZE),
             new CommandLineArgument("ignore-update-if-version-exists", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreUpdateIfVersionExistsShort, Strings.Options.IgnoreUpdateIfVersionExistsLong, "false"),
         ];
 
@@ -1677,19 +1671,6 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool InternalProfiling => GetBool("internal-profiling");
 
-        /// <summary>
-        /// Gets the size of file-blocks
-        /// </summary>
-        public long SqlitePageCache
-        {
-            get
-            {
-                var pagesize = GetSize("sqlite-page-cache", "kb", DEFAULT_SQLITE_PAGE_CACHE_SIZE);
-                return pagesize <= SQLiteLoader.MINIMUM_SQLITE_PAGE_CACHE_SIZE
-                    ? 0
-                    : pagesize;
-            }
-        }
         /// <summary>
         /// Ignores the update if the version already exists in the database.
         /// </summary>

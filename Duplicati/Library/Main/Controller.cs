@@ -253,7 +253,7 @@ namespace Duplicati.Library.Main
             return RunAction(new ListRemoteResults(), async (result, backendManager) =>
             {
                 using var tf = File.Exists(m_options.Dbpath) ? null : new TempFile();
-                await using var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                await using var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? m_options.Dbpath, "list-remote", true, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
                 result.SetResult(await backendManager.ListAsync(CancellationToken.None).ConfigureAwait(false));
             });
         }
@@ -277,7 +277,7 @@ namespace Duplicati.Library.Main
                     // and uses the same prefix (see issues #2678, #3845, and #4244).
                     if (File.Exists(m_options.Dbpath))
                     {
-                        await using LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                        await using LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "list-remote", true, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
                         var dbRemoteVolumes = db.GetRemoteVolumes(result.TaskControl.ProgressToken);
                         var dbRemoteFiles = await dbRemoteVolumes
                             .Select(x => x.Name)
@@ -522,7 +522,7 @@ namespace Duplicati.Library.Main
                             // instead of relying on the operations to correctly toggle the flag
                             if (File.Exists(m_options.Dbpath) && !m_options.NoLocalDb)
                             {
-                                using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache, null, CancellationToken.None).Await();
+                                using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).Await();
                                 backend.StopRunnerAndFlushMessages(db).Await();
                             }
                             else
@@ -538,7 +538,7 @@ namespace Duplicati.Library.Main
 
                     if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                     {
-                        using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, m_options.SqlitePageCache, null, CancellationToken.None).Await();
+                        using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).Await();
                         db.WriteResults(result, CancellationToken.None).Await();
                         db.PurgeLogData(m_options.LogRetention, CancellationToken.None).Await();
                         db.PurgeDeletedVolumes(DateTime.UtcNow, CancellationToken.None).Await();
@@ -580,7 +580,7 @@ namespace Duplicati.Library.Main
                     {
                         // No operation was started in database, so write logs to new operation
                         if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
-                            using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache, null, CancellationToken.None).Await())
+                            using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).Await())
                                 db.WriteResults(result, CancellationToken.None).Await();
                     }
                     catch (Exception we)
@@ -605,7 +605,7 @@ namespace Duplicati.Library.Main
                         resultSetter.Fatal = true;
                         // Write logs to previous operation if database exists
                         if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
-                            using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, m_options.SqlitePageCache, null, CancellationToken.None).Await())
+                            using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).Await())
                                 db.WriteResults(result, CancellationToken.None).Await();
                     }
                     catch (Exception we)

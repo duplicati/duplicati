@@ -327,7 +327,7 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1, null, CancellationToken.None)
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
                 .ConfigureAwait(false);
             SeedTestData(db, [
                 "/folder1/", // 1
@@ -357,7 +357,7 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1, null, CancellationToken.None)
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
                 .ConfigureAwait(false);
             SeedTestData(db, [
                 "C:\\folder1\\",
@@ -385,7 +385,7 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1, null, CancellationToken.None)
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
                 .ConfigureAwait(false);
             SeedTestData(db, [
                 "\\\\server\\share\\folder\\",
@@ -411,7 +411,7 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1, null, CancellationToken.None)
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
                 .ConfigureAwait(false);
             SeedTestData(db, [
                 "C:\\data\\", // 1

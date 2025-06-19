@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(string.Format("Cannot recreate database because file already exists: {0}", path), "RecreateTargetDatabaseExists");
 
             await using var db =
-                await LocalDatabase.CreateLocalDatabaseAsync(path, "Recreate", true, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken)
+                await LocalDatabase.CreateLocalDatabaseAsync(path, "Recreate", true, null, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
             await DoRunAsync(backendManager, db, false, filter, filelistfilter, blockprocessor).ConfigureAwait(false);
@@ -90,7 +90,7 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(string.Format("Can only update with paths, try setting --{0}", "repair-only-paths"), "RepairUpdateRequiresPathsOnly");
 
             await using var db =
-                await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "Recreate", true, m_options.SqlitePageCache, null, m_result.TaskControl.ProgressToken)
+                await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "Recreate", true, null, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
             if ((await db.FindMatchingFilesets(m_options.Time, m_options.Version, m_result.TaskControl.ProgressToken).ConfigureAwait(false)).Any())
             {

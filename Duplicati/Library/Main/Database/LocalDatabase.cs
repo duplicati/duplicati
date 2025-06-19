@@ -183,15 +183,14 @@ namespace Duplicati.Library.Main.Database
         /// This method ensures that the directory for the database exists and upgrades the database schema if necessary.
         /// </summary>
         /// <param name="path">The path to the SQLite database file.</param>
-        /// <param name="pagecachesize">The size of the SQLite page cache in bytes.</param>
         /// <returns>A task that, when awaited, returns a new <see cref="SqliteConnection"/> to the specified database.</returns>
-        protected static async Task<SqliteConnection> CreateConnectionAsync(string path, long pagecachesize)
+        protected static async Task<SqliteConnection> CreateConnectionAsync(string path)
         {
             path = Path.GetFullPath(path);
             if (!Directory.Exists(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path) ?? throw new DirectoryNotFoundException("Path was a root folder."));
 
-            var c = await SQLiteHelper.SQLiteLoader.LoadConnectionAsync(path, pagecachesize)
+            var c = await SQLiteHelper.SQLiteLoader.LoadConnectionAsync(path)
                 .ConfigureAwait(false);
 
             try
@@ -215,21 +214,19 @@ namespace Duplicati.Library.Main.Database
         /// <param name="path">The path to the SQLite database file.</param>
         /// <param name="operation">The description of the operation being performed.</param>
         /// <param name="shouldclose">Indicates whether the connection should be closed when the database is disposed.</param>
-        /// <param name="pagecachesize">The size of the SQLite page cache in bytes.</param>
         /// <param name="db">An optional existing <see cref="LocalDatabase"/> instance to use. If not provided, a new instance will be created.</param>
         /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that, when awaited, returns a new instance of <see cref="LocalDatabase"/>.</returns>
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string operation, bool shouldclose, long pagecachesize, LocalDatabase? db, CancellationToken token)
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string operation, bool shouldclose, LocalDatabase? db, CancellationToken token)
         {
             db ??= new LocalDatabase();
 
-            var connection = await CreateConnectionAsync(path, pagecachesize)
+            var connection = await CreateConnectionAsync(path)
                 .ConfigureAwait(false);
             db = await CreateLocalDatabaseAsync(connection, operation, db, token)
                 .ConfigureAwait(false);
 
             db.ShouldCloseConnection = shouldclose;
-            db.m_pagecachesize = pagecachesize;
 
             return db;
         }

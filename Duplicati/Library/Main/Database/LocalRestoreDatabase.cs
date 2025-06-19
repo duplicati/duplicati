@@ -99,16 +99,15 @@ namespace Duplicati.Library.Main.Database
         /// Initializes a new instance of the <see cref="LocalRestoreDatabase"/> class.
         /// </summary>
         /// <param name="path">The path to the database file.</param>
-        /// <param name="pagecachesize">The size of the page cache for the database.</param>
         /// <param name="dbnew">An optional existing instance of <see cref="LocalRestoreDatabase"/> to use, or null to create a new one. Used to mimic constructor chaining.</param>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited on, returns a new instance of <see cref="LocalRestoreDatabase"/>.</returns>
-        public static async Task<LocalRestoreDatabase> CreateAsync(string path, long pagecachesize, LocalRestoreDatabase? dbnew, CancellationToken token)
+        public static async Task<LocalRestoreDatabase> CreateAsync(string path, LocalRestoreDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalRestoreDatabase();
 
             dbnew = (LocalRestoreDatabase)
-                await CreateLocalDatabaseAsync(path, "Restore", false, pagecachesize, dbnew, token)
+                await CreateLocalDatabaseAsync(path, "Restore", false, dbnew, token)
                     .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 
@@ -1922,7 +1921,7 @@ namespace Duplicati.Library.Main.Database
 
                 connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared";
                 await connection.OpenAsync(token).ConfigureAwait(false);
-                await SQLiteLoader.ApplyCustomPragmasAsync(connection, m_pagecachesize)
+                await SQLiteLoader.ApplyCustomPragmasAsync(connection)
                     .ConfigureAwait(false);
 
                 var transaction = new ReusableTransaction(connection);
