@@ -659,7 +659,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
                 TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 var lookupId = cmd.ExecuteScalarInt64("SELECT ID FROM FileLookup LIMIT 1");
@@ -677,7 +677,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
             }
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 var remaining = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");
