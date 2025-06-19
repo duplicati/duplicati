@@ -203,6 +203,19 @@ public static partial class ExtensionMethods
     /// Executes the command asynchronously and returns a <see cref="SqliteDataReader"/>.
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that when awaited contains the <see cref="SqliteDataReader"/>.</returns>
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, CancellationToken cancellationToken)
+    {
+        return await ExecuteReaderAsync(self, writeLog, null, null, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes the command asynchronously and returns a <see cref="SqliteDataReader"/>.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmdtext">The command text to execute.</param>
     /// <param name="values">The values to use as parameters.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
@@ -321,6 +334,19 @@ public static partial class ExtensionMethods
     /// Executes the command asynchronously and returns the first column of the first row in the result set.
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
+    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, bool writeLog, CancellationToken cancellationToken)
+    {
+        return await self.ExecuteScalarAsync(writeLog, null, null, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmdtext">The command text to execute.</param>
     /// <param name="values">The values to use as parameters.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
@@ -369,11 +395,25 @@ public static partial class ExtensionMethods
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or -1 if no rows are returned or the value cannot be converted.</returns>
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, long defaultvalue, CancellationToken cancellationToken)
     {
         return await ExecuteScalarInt64Async(self, true, null, null, defaultvalue, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
+    /// </summary>
+    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
+    /// <param name="writeLog">Whether to write a log entry.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or -1 if no rows are returned or the value cannot be converted.</returns>
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, CancellationToken cancellationToken)
+    {
+        return await ExecuteScalarInt64Async(self, writeLog, null, null, -1, cancellationToken)
             .ConfigureAwait(false);
     }
 
