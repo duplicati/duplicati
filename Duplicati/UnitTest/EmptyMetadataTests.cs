@@ -30,6 +30,7 @@ using Duplicati.Library.SQLiteHelper;
 using NUnit.Framework;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest;
 
@@ -81,12 +82,12 @@ public class EmptyMetadataTests : BasicSetupHelper
         }
 
         var opts = new Options(testopts);
-        var emptyMeta = Utility.WrapMetadata(new Dictionary<string, string>(), opts);
+        var emptyMeta = Duplicati.Library.Main.Utility.WrapMetadata(new Dictionary<string, string>(), opts);
 
-        Assert.Throws<DatabaseInconsistencyException>(async () =>
+        Assert.Throws<DatabaseInconsistencyException>(() =>
         {
-            using var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "verify", true, null, CancellationToken.None);
-            await db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None);
+            using var db = LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "verify", true, null, CancellationToken.None).Await();
+            db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None).Await();
         });
 
         await using (var db = await LocalListBrokenFilesDatabase.CreateAsync(DBFILE, null, CancellationToken.None).ConfigureAwait(false))
