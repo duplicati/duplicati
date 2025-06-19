@@ -69,9 +69,14 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     /// </summary>
     public SqliteTransaction Transaction => m_disposed ? throw new InvalidOperationException("Transaction is disposed") : m_transaction;
 
+    /// <summary>
+    /// Commits the transaction and restarts it.
+    /// </summary>
+    /// <param name="token">A cancellation token to cancel the operation.</param>
+    /// <returns>A task that completes when the commit is done and a new transaction has been started.</returns>
     public async Task CommitAsync(CancellationToken token)
     {
-        await CommitAsync(token: token).ConfigureAwait(false);
+        await CommitAsync(null, true, token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -127,13 +132,24 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     }
 
     /// <summary>
+    /// Rolls back the transaction and restarts it.
+    /// </summary>
+    /// <param name="token">A cancellation token to cancel the operation.</param>
+    /// <returns>A task that completes when the rollback is done and a new transaction has been started.</returns>
+    public async Task RollBackAsync(CancellationToken token)
+    {
+        await RollBackAsync(null, true, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Rolls back the transaction and optionally restarts it.
     /// </summary>
     /// <param name="message">Message to log.</param>
     /// <param name="restart">Whether to restart the transaction after rolling back.</param>
+    /// <param name="token">A cancellation token to cancel the operation.</param>
     /// <returns>A task that completes when the rollback is done and (potentially) a new transaction has been started.</returns>
     /// <exception cref="InvalidOperationException">If the transaction has already been disposed.</exception>
-    public async Task RollBackAsync(string? message = null, bool restart = true)
+    public async Task RollBackAsync(string? message = null, bool restart = true, CancellationToken token = default)
     {
         if (m_disposed)
             throw new InvalidOperationException("Transaction is already disposed");
