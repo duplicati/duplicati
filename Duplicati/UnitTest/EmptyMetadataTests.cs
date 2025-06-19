@@ -99,6 +99,8 @@ public class EmptyMetadataTests : BasicSetupHelper
 
             var replaced = await db.ReplaceMetadata(filesetId, emptyId, CancellationToken.None);
             Assert.That(replaced, Is.GreaterThan(0), "No metadata rows replaced");
+
+            await db.Transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
         }
 
         await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "verify", true, null, CancellationToken.None))
