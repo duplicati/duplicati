@@ -426,13 +426,13 @@ namespace Duplicati.UnitTest
             }
 
             // Check database block link
-            using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "Test", true, 0).ConfigureAwait(false))
+            using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "Test", true, 0, null, CancellationToken.None).ConfigureAwait(false))
             {
                 var indexVolumeId = await db
-                    .GetRemoteVolumeID(Path.GetFileName(origFile))
+                    .GetRemoteVolumeID(Path.GetFileName(origFile), CancellationToken.None)
                     .ConfigureAwait(false);
                 var duplicateVolumeId = await db
-                    .GetRemoteVolumeID(Path.GetFileName(dupFile))
+                    .GetRemoteVolumeID(Path.GetFileName(dupFile), CancellationToken.None)
                     .ConfigureAwait(false);
                 Assert.AreNotEqual(-1, indexVolumeId);
                 Assert.AreNotEqual(-1, duplicateVolumeId);
@@ -443,12 +443,12 @@ namespace Duplicati.UnitTest
                     var linkedIndexId = await cmd
                         .SetCommandAndParameters(sql)
                         .SetParameterValue("@VolumeId", indexVolumeId)
-                        .ExecuteScalarInt64Async(-1)
+                        .ExecuteScalarInt64Async(-1, CancellationToken.None)
                         .ConfigureAwait(false);
                     var linkedDuplicateId = await cmd
                         .SetCommandAndParameters(sql)
                         .SetParameterValue("@VolumeId", duplicateVolumeId)
-                        .ExecuteScalarInt64Async(-1)
+                        .ExecuteScalarInt64Async(-1, CancellationToken.None)
                         .ConfigureAwait(false);
                     Assert.AreEqual(linkedIndexId, linkedDuplicateId);
                 }

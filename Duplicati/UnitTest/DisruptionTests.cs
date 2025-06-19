@@ -805,7 +805,7 @@ namespace Duplicati.UnitTest
                 }
                 catch (TestUtils.TestVerificationException e)
                 {
-                    using var db = await LocalDatabase.CreateLocalDatabaseAsync(testopts["dbpath"], "test", true, 0).ConfigureAwait(false);
+                    using var db = await LocalDatabase.CreateLocalDatabaseAsync(testopts["dbpath"], "test", true, 0, null, CancellationToken.None).ConfigureAwait(false);
                     using var cmd = db.Connection.CreateCommand();
 
                     var sb = new StringBuilder();

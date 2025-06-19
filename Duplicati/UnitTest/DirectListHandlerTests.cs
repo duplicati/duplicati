@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
@@ -326,7 +327,7 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1)
+            using var db = await LocalListDatabase.CreateAsync(tempFile, 1, null, CancellationToken.None)
                 .ConfigureAwait(false);
             SeedTestData(db, [
                 "/folder1/", // 1
@@ -338,7 +339,7 @@ namespace Duplicati.UnitTest
 
             // Act
             var result = await db
-                .GetRootPrefixes(1)
+                .GetRootPrefixes(1, CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -356,7 +357,7 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1)
+            using var db = await LocalListDatabase.CreateAsync(tempFile, 1, null, CancellationToken.None)
                 .ConfigureAwait(false);
             SeedTestData(db, [
                 "C:\\folder1\\",
@@ -367,7 +368,7 @@ namespace Duplicati.UnitTest
 
             // Act
             var result = await db
-                .GetRootPrefixes(1)
+                .GetRootPrefixes(1, CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -384,7 +385,7 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1)
+            using var db = await LocalListDatabase.CreateAsync(tempFile, 1, null, CancellationToken.None)
                 .ConfigureAwait(false);
             SeedTestData(db, [
                 "\\\\server\\share\\folder\\",
@@ -394,7 +395,7 @@ namespace Duplicati.UnitTest
 
             // Act
             var result = await db
-                .GetRootPrefixes(1)
+                .GetRootPrefixes(1, CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -410,7 +411,7 @@ namespace Duplicati.UnitTest
         {
             // Arrange
             using var tempFile = new TempFile();
-            using var db = await LocalListDatabase.CreateAsync(tempFile, 1)
+            using var db = await LocalListDatabase.CreateAsync(tempFile, 1, null, CancellationToken.None)
                 .ConfigureAwait(false);
             SeedTestData(db, [
                 "C:\\data\\", // 1
@@ -424,7 +425,7 @@ namespace Duplicati.UnitTest
 
             // Act
             var result = await db
-                .GetRootPrefixes(1)
+                .GetRootPrefixes(1, CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 

@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
@@ -75,25 +76,25 @@ namespace Duplicati.UnitTest
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
                 command.ExpandInClauseParameter("@List", new long[] { 1, 2, 3 });
-                Assert.AreEqual(3, await command.ExecuteScalarInt64Async().ConfigureAwait(false));
+                Assert.AreEqual(3, await command.ExecuteScalarInt64Async(CancellationToken.None).ConfigureAwait(false));
             }
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
                 command.ExpandInClauseParameter("@List", new long[] { 1, 2 });
-                Assert.AreEqual(2, await command.ExecuteScalarInt64Async().ConfigureAwait(false));
+                Assert.AreEqual(2, await command.ExecuteScalarInt64Async(CancellationToken.None).ConfigureAwait(false));
             }
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
                 command.ExpandInClauseParameter("@List", new long[] { 1 });
-                Assert.AreEqual(1, await command.ExecuteScalarInt64Async().ConfigureAwait(false));
+                Assert.AreEqual(1, await command.ExecuteScalarInt64Async(CancellationToken.None).ConfigureAwait(false));
             }
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
                 command.ExpandInClauseParameter("@List", new long[0]);
-                Assert.AreEqual(0, await command.ExecuteScalarInt64Async().ConfigureAwait(false));
+                Assert.AreEqual(0, await command.ExecuteScalarInt64Async(CancellationToken.None).ConfigureAwait(false));
             }
 
             var list = new List<long>();
@@ -102,10 +103,10 @@ namespace Duplicati.UnitTest
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
             {
-                using var tmplist = await TemporaryDbValueList.CreateAsync(connection, rtr, list)
+                using var tmplist = await TemporaryDbValueList.CreateAsync(connection, rtr, list, CancellationToken.None)
                     .ConfigureAwait(false);
                 command.ExpandInClauseParameter("@List", list);
-                Assert.AreEqual(3, await command.ExecuteScalarInt64Async().ConfigureAwait(false));
+                Assert.AreEqual(3, await command.ExecuteScalarInt64Async(CancellationToken.None).ConfigureAwait(false));
             }
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))
@@ -113,10 +114,10 @@ namespace Duplicati.UnitTest
                 list.Remove(1);
                 list.Remove(2);
 
-                using var tmplist = await TemporaryDbValueList.CreateAsync(connection, rtr, list)
+                using var tmplist = await TemporaryDbValueList.CreateAsync(connection, rtr, list, CancellationToken.None)
                     .ConfigureAwait(false);
                 command.ExpandInClauseParameter("@List", list);
-                Assert.AreEqual(1, await command.ExecuteScalarInt64Async().ConfigureAwait(false));
+                Assert.AreEqual(1, await command.ExecuteScalarInt64Async(CancellationToken.None).ConfigureAwait(false));
             }
         }
     }

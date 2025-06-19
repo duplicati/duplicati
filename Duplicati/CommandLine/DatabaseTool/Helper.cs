@@ -66,7 +66,7 @@ public static class Helper
                     SELECT ""DBPath""
                     FROM ""Backup""
                 ");
-                await foreach (var rd in cmd.ExecuteReaderEnumerableAsync().ConfigureAwait(false))
+                await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(CancellationToken.None).ConfigureAwait(false))
                     dbpaths.Add(rd.ConvertValueToString(0) ?? "");
             }
             catch
@@ -104,13 +104,13 @@ public static class Helper
                     type='table'
                     AND name='Backup'
                     OR name='Schedule'
-            ")
+            ", CancellationToken.None)
             .ConfigureAwait(false) == 2;
 
         var version = (int)await cmd.ExecuteScalarInt64Async(@"
                 SELECT MAX(Version)
                 FROM Version
-            ")
+            ", CancellationToken.None)
             .ConfigureAwait(false);
 
         return (version, isserverdb);
