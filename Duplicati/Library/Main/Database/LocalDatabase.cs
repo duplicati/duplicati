@@ -3148,6 +3148,7 @@ namespace Duplicati.Library.Main.Database
                         AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID""
                         AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
                         AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
+                        AND ""Blockset"".""Length"" > 0
                     ORDER BY ""Blockset"".""Length"" ASC
                     LIMIT 1
                 ")
