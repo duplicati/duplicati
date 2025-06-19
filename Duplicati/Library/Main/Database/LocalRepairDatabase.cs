@@ -1935,17 +1935,18 @@ namespace Duplicati.Library.Main.Database
 
             try
             {
+                // TODO quotes
                 await cmd.SetCommandAndParameters(@$"
                     CREATE TEMP TABLE ""{tablename}"" AS
                     SELECT
-                        m.ID AS MetadataID,
-                        m.BlocksetID
-                    FROM Metadataset m
-                    JOIN Blockset b
-                        ON m.BlocksetID = b.ID
+                        ""m"".""ID"" AS ""MetadataID"",
+                        ""m"".""BlocksetID""
+                    FROM Metadataset ""m""
+                    JOIN Blockset ""b""
+                        ON ""m"".""BlocksetID"" = ""b"".""ID""
                     WHERE
-                        b.Length = 0
-                        AND m.BlocksetID != @KeepBlockset
+                        ""b"".""Length"" = 0
+                        AND ""m"".""BlocksetID"" != @KeepBlockset
                 ")
                     .SetParameterValue("@KeepBlockset", emptyBlocksetId)
                     .ExecuteNonQueryAsync(token)
@@ -1953,15 +1954,15 @@ namespace Duplicati.Library.Main.Database
 
                 // Step 2: Update FileLookup to use a valid metadata ID
                 await cmd.SetCommandAndParameters(@$"
-                    UPDATE FileLookup
-                    SET MetadataID = (
-                        SELECT ID
-                        FROM Metadataset
-                        WHERE BlocksetID = @KeepBlockset
+                    UPDATE ""FileLookup""
+                    SET ""MetadataID"" = (
+                        SELECT ""ID""
+                        FROM ""Metadataset""
+                        WHERE ""BlocksetID"" = @KeepBlockset
                         LIMIT 1
                     )
-                    WHERE MetadataID IN (
-                        SELECT MetadataID
+                    WHERE ""MetadataID"" IN (
+                        SELECT ""MetadataID""
                         FROM ""{tablename}""
                     )
                 ")
@@ -1971,9 +1972,9 @@ namespace Duplicati.Library.Main.Database
 
                 // Step 3: Delete obsolete Metadataset entries
                 await cmd.SetCommandAndParameters(@$"
-                    DELETE FROM Metadataset
+                    DELETE FROM ""Metadataset""
                     WHERE ID IN (
-                        SELECT MetadataID
+                        SELECT ""MetadataID""
                         FROM ""{tablename}""
                     )
                 ")
@@ -1982,21 +1983,21 @@ namespace Duplicati.Library.Main.Database
 
                 // Step 4: Delete orphaned blocksets (affected only)
                 await cmd.SetCommandAndParameters(@$"
-                    DELETE FROM Blockset
+                    DELETE FROM ""Blockset""
                     WHERE
                         ID IN (
-                            SELECT BlocksetID
+                            SELECT ""BlocksetID""
                             FROM ""{tablename}""
                         )
                         AND NOT EXISTS (
                             SELECT 1
-                            FROM Metadataset
-                            WHERE BlocksetID = Blockset.ID
+                            FROM ""Metadataset""
+                            WHERE ""BlocksetID"" = ""Blockset"".""ID""
                         )
                         AND NOT EXISTS (
                             SELECT 1
-                            FROM File
-                            WHERE BlocksetID = Blockset.ID
+                            FROM ""File""
+                            WHERE ""BlocksetID"" = ""Blockset"".""ID""
                         )
                 ")
                     .ExecuteNonQueryAsync(token)
@@ -2005,10 +2006,10 @@ namespace Duplicati.Library.Main.Database
                 // Step 5: Confirm all broken metadata entries are resolved
                 cmd.SetCommandAndParameters(@"
                     SELECT COUNT(*)
-                    FROM Metadataset
-                    JOIN Blockset
-                        ON Metadataset.BlocksetID = Blockset.ID
-                    WHERE Blockset.Length = 0
+                    FROM ""Metadataset""
+                    JOIN ""Blockset""
+                        ON ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
+                    WHERE ""Blockset"".""Length"" = 0
                 ");
 
                 var remaining = await cmd.ExecuteScalarInt64Async(0, token);
