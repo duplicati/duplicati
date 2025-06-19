@@ -22,7 +22,9 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -127,26 +129,33 @@ namespace Duplicati.Library.SQLiteHelper
         /// <returns>A task that when awaited returns the connection with the pragmas applied.</returns>
         public static async Task<Microsoft.Data.Sqlite.SqliteConnection> ApplyCustomPragmasAsync(Microsoft.Data.Sqlite.SqliteConnection con)
         {
-            // TODO more default custom options
-            //await cmd.ExecuteNonQueryAsync("PRAGMA synchronous = NORMAL;");
-            //await cmd.ExecuteNonQueryAsync("PRAGMA temp_store = MEMORY;");
-            //await cmd.ExecuteNonQueryAsync("PRAGMA journal_mode = WAL;");
-            //await cmd.ExecuteNonQueryAsync("PRAGMA cache_size = -512000;");
-            //await cmd.ExecuteNonQueryAsync("PRAGMA threads = 8;");
-            //await cmd.ExecuteNonQueryAsync("PRAGMA read_uncommitted = 1;");
-            //await cmd.ExecuteNonQueryAsync("PRAGMA mmap_size = 41943040;");
-            //await cmd.ExecuteNonQueryAsync("PRAGMA shared_cache = true;");
-            var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI") ?? "";
-            if (pagecachesize > MINIMUM_SQLITE_PAGE_CACHE_SIZE)
-                opts = string.Format(CultureInfo.InvariantCulture, "cache_size=-{0};{1}", pagecachesize / 1024L, opts);
-
-            if (string.IsNullOrWhiteSpace(opts))
-                return con;
+            Dictionary<string, string> customOptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "synchronous", "NORMAL" }, // NORMAL is more performant than FULL (the default), but less safe, as it no longer blocks until the disk sync syscall to the OS has completed.
+                { "temp_store", "MEMORY" }, // Use memory for temporary storage to improve performance.
+                { "journal_mode", "WAL" }, // Use Write-Ahead Logging for better concurrency and performance.
+                { "cache_size", "-65536" }, // Set cache size to 64 MB (negative value means in KB, so -64000 = 64 MB). Default is 2000 pages, which is 2 MB (2000 * 1024 bytes).
+                { "mmap_size", "67108864" }, // 64 MB.
+                { "threads", "8" }, // Use 8 threads for parallel processing where applicable.
+                { "shared_cache", "true" } //
+            };
+            // Override the default options with any custom options set in the environment variable.
+            var customOptionsEnv = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS");
+            if (!string.IsNullOrWhiteSpace(customOptionsEnv))
+            {
+                foreach (var opt in customOptionsEnv.Split([';'], StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var parts = opt.Split(new[] { '=' }, 2);
+                    if (parts.Length == 2)
+                        customOptions[parts[0].Trim()] = parts[1].Trim();
+                }
+            }
 
             using (var cmd = con.CreateCommand())
             {
-                foreach (var opt in opts.Split([';'], StringSplitOptions.RemoveEmptyEntries))
+                foreach (var (key, value) in customOptions)
                 {
+                    var opt = $"{key}={value}";
                     Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
                     try
                     {
