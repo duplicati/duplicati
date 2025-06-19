@@ -1075,6 +1075,8 @@ namespace Duplicati.Server
 
             notificationUpdateService.IncrementLastDataUpdateId();
             eventPollNotify.SignalNewEvent();
+            if (!backup.IsTemporary)
+                eventPollNotify.SignalBackupListUpdate();
         }
 
         private static bool TestIfOptionApplies()
