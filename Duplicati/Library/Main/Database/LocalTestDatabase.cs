@@ -27,6 +27,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using Duplicati.Library.Utility;
+using System.Threading;
+using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -43,13 +45,14 @@ namespace Duplicati.Library.Main.Database
         /// <param name="path">The path to the database file.</param>
         /// <param name="pagecachesize">The size of the page cache in bytes.</param>
         /// <param name="dbnew">An optional existing <see cref="LocalTestDatabase"/> instance to use. Used to mimic constructor chaining.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the created <see cref="LocalTestDatabase"/> instance.</returns>
-        public static async Task<LocalTestDatabase> CreateAsync(string path, long pagecachesize, LocalTestDatabase? dbnew = null)
+        public static async Task<LocalTestDatabase> CreateAsync(string path, long pagecachesize, LocalTestDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalTestDatabase();
 
             dbnew = (LocalTestDatabase)
-                await CreateLocalDatabaseAsync(path, "Test", true, pagecachesize, dbnew)
+                await CreateLocalDatabaseAsync(path, "Test", true, pagecachesize, dbnew, token)
                     .ConfigureAwait(false);
 
             dbnew.ShouldCloseConnection = true;
@@ -62,13 +65,14 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="dbparent">The parent database to use for creating the new test database.</param>
         /// <param name="dbnew">An optional existing <see cref="LocalTestDatabase"/> instance to use. Used to mimic constructor chaining.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the created <see cref="LocalTestDatabase"/> instance.</returns>
-        public static async Task<LocalTestDatabase> CreateAsync(LocalDatabase dbparent, LocalTestDatabase? dbnew = null)
+        public static async Task<LocalTestDatabase> CreateAsync(LocalDatabase dbparent, LocalTestDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalTestDatabase();
 
             return (LocalTestDatabase)
-                await CreateLocalDatabaseAsync(dbparent, dbnew)
+                await CreateLocalDatabaseAsync(dbparent, dbnew, token)
                     .ConfigureAwait(false);
         }
 
@@ -77,8 +81,9 @@ namespace Duplicati.Library.Main.Database
         /// Increments the count by 1, or sets it to the maximum of 1 if it was previously 0 or negative.
         /// </summary>
         /// <param name="name">The name of the remote volume to update.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        public async Task UpdateVerificationCount(string name)
+        public async Task UpdateVerificationCount(string name, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             await cmd.SetCommandAndParameters(@"
@@ -96,7 +101,7 @@ namespace Duplicati.Library.Main.Database
                     WHERE ""Name"" = @Name
                 ")
                 .SetParameterValue("@Name", name)
-                .ExecuteNonQueryAsync()
+                .ExecuteNonQueryAsync(token)
                 .ConfigureAwait(false);
         }
 
@@ -197,10 +202,11 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="samples">The number of remote volumes to select for testing.</param>
         /// <param name="options">The options that define selection criteria, such as time, version, and verification strategy.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>An asynchronous enumerable of <see cref="IRemoteVolume"/> representing the selected test targets.</returns>
-        public async IAsyncEnumerable<IRemoteVolume> SelectTestTargets(long samples, Options options)
+        public async IAsyncEnumerable<IRemoteVolume> SelectTestTargets(long samples, Options options, [EnumeratorCancellation] CancellationToken token)
         {
-            var tp = await GetFilelistWhereClause(options.Time, options.Version)
+            var tp = await GetFilelistWhereClause(options.Time, options.Version, null, false, token)
                 .ConfigureAwait(false);
 
             samples = Math.Max(1, samples);
@@ -237,13 +243,13 @@ namespace Duplicati.Library.Main.Database
                         RemoteVolumeState.Uploaded.ToString()
                 ]);
 
-                await using (var rd = cmd.ExecuteReader())
-                    while (rd.Read())
+                await using (var rd = await cmd.ExecuteReaderAsync(token))
+                    while (await rd.ReadAsync(token))
                         yield return new RemoteVolume(rd);
 
                 //First we select some filesets
                 var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
-                await using (var rd = cmd.SetCommandAndParameters(@$"
+                await using (var rd = await cmd.SetCommandAndParameters(@$"
                         SELECT
                             ""A"".""VolumeID"",
                             ""A"".""Name"",
@@ -274,8 +280,8 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@State1", RemoteVolumeState.Uploaded.ToString())
                     .SetParameterValue("@State2", RemoteVolumeState.Verified.ToString())
                     .SetParameterValues(tp.Item2)
-                    .ExecuteReader())
-                    while (rd.Read())
+                    .ExecuteReaderAsync(token))
+                    while (await rd.ReadAsync(token))
                         files.Add(new RemoteVolume(rd));
 
                 if (files.Count == 0)
@@ -307,8 +313,8 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@Type", RemoteVolumeType.Index.ToString())
                 .ExpandInClauseParameterMssqlite("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
-            await using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
-                while (await rd.ReadAsync().ConfigureAwait(false))
+            await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+                while (await rd.ReadAsync(token).ConfigureAwait(false))
                     files.Add(new RemoteVolume(rd));
 
             foreach (var f in FilterByVerificationCount(files, samples, max))
@@ -336,8 +342,8 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
                 .ExpandInClauseParameterMssqlite("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
-            await using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
-                while (await rd.ReadAsync().ConfigureAwait(false))
+            await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+                while (await rd.ReadAsync(token).ConfigureAwait(false))
                     files.Add(new RemoteVolume(rd));
 
             foreach (var f in FilterByVerificationCount(files, samples, max))
@@ -390,8 +396,9 @@ namespace Duplicati.Library.Main.Database
             /// <param name="tablePrefix">The prefix for the temporary table name.</param>
             /// <param name="tableFormat">The SQL format for creating the temporary table.</param>
             /// <param name="insertCommand">The SQL command for inserting data into the temporary table.</param>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>A task that represents the asynchronous operation. The task result contains the initialized <see cref="Basiclist"/> instance.</returns>
-            protected static async Task<Basiclist> CreateAsync(Basiclist bl, LocalDatabase db, string volumename, string tablePrefix, string tableFormat, string insertCommand)
+            protected static async Task<Basiclist> CreateAsync(Basiclist bl, LocalDatabase db, string volumename, string tablePrefix, string tableFormat, string insertCommand, CancellationToken token)
             {
                 bl.m_db = db;
                 bl.m_volumename = volumename;
@@ -402,7 +409,7 @@ namespace Duplicati.Library.Main.Database
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE TEMPORARY TABLE ""{tablename}""
                         {tableFormat}
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
 
                     bl.m_tablename = tablename;
@@ -411,7 +418,7 @@ namespace Duplicati.Library.Main.Database
                 bl.m_insertCommand = await bl.m_db.Connection.CreateCommandAsync($@"
                     INSERT INTO ""{bl.m_tablename}""
                     {insertCommand}
-                ")
+                ", token)
                     .ConfigureAwait(false);
 
                 return bl;
@@ -428,7 +435,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction.Transaction);
-                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tablename}""")
+                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tablename}""", default)
                             .ConfigureAwait(false);
                     }
                     catch { }
@@ -455,14 +462,16 @@ namespace Duplicati.Library.Main.Database
             /// <param name="blocklistHashes">A collection of blocklist hashes associated with the file.</param>
             /// <param name="type">The type of the file entry.</param>
             /// <param name="time">The timestamp of the file entry.</param>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>A task that completes when the file entry has been added.</returns>
-            Task Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time);
+            Task Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time, CancellationToken token);
 
             /// <summary>
             /// Asynchronously compares the file list with remote volumes and yields differences.
             /// </summary>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>An asynchronous enumerable of key-value pairs representing the comparison results, where the key is the test entry status and the value is the file path.</returns>
-            IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare();
+            IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(CancellationToken token);
         }
 
         /// <summary>
@@ -528,16 +537,18 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="db">The local database to use for the file list.</param>
             /// <param name="volumename">The name of the volume associated with this file list.</param>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>A task that when awaited returns a new instance of the <see cref="Filelist"/> class.</returns>
-            public static async Task<Filelist> CreateAsync(LocalDatabase db, string volumename)
+            public static async Task<Filelist> CreateAsync(LocalDatabase db, string volumename, CancellationToken token)
             {
                 var bl = new Filelist();
                 return (Filelist)
-                    await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
+                    await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND, token)
                         .ConfigureAwait(false);
             }
 
-            public async Task Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time)
+            /// <inheritdoc/>
+            public async Task Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time, CancellationToken token)
             {
                 await m_insertCommand
                     .SetTransaction(m_db.Transaction)
@@ -546,11 +557,12 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Metasize", metasize)
                     .SetParameterValue("@Metahash", metahash)
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
             }
 
-            public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare()
+            /// <inheritdoc/>
+            public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare([EnumeratorCancellation] CancellationToken token)
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -635,7 +647,7 @@ namespace Duplicati.Library.Main.Database
                     await cmd
                         .SetCommandAndParameters(create)
                         .SetParameterValue("@Name", m_volumename)
-                        .ExecuteNonQueryAsync()
+                        .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
 
                     cmd
@@ -644,8 +656,8 @@ namespace Duplicati.Library.Main.Database
                         .SetParameterValue("@TypeMissing", (int)Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Interface.TestEntryStatus.Modified);
 
-                    await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-                    while (await rd.ReadAsync().ConfigureAwait(false))
+                    await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                    while (await rd.ReadAsync(token).ConfigureAwait(false))
                         yield return new KeyValuePair<Interface.TestEntryStatus, string>(
                             (Interface.TestEntryStatus)rd.ConvertValueToInt64(0),
                             rd.ConvertValueToString(1) ?? ""
@@ -657,7 +669,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         await cmd
-                            .ExecuteNonQueryAsync(drop)
+                            .ExecuteNonQueryAsync(drop, token)
                             .ConfigureAwait(false);
                     }
                     catch { }
@@ -677,14 +689,16 @@ namespace Duplicati.Library.Main.Database
             /// <param name="filename">The name of the file associated with the block link.</param>
             /// <param name="hash">The hash of the block link.</param>
             /// <param name="length">The length of the block link in bytes.</param>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>A task that completes when the block link has been added.</returns>
-            Task AddBlockLink(string filename, string hash, long length);
+            Task AddBlockLink(string filename, string hash, long length, CancellationToken token);
 
             /// <summary>
             /// Asynchronously compares the index list with remote volumes and yields differences.
             /// </summary>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>An asynchronous enumerable of key-value pairs representing the comparison results, where the key is the test entry status and the value is the file path.</returns>
-            IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
+            IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare(CancellationToken token);
         }
 
         /// <summary>
@@ -744,27 +758,30 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="db">The local database to use for the index list.</param>
             /// <param name="volumename">The name of the volume associated with this index list.</param>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>A task that when awaited returns a new instance of the <see cref="Indexlist"/> class.</returns>
-            public static async Task<Indexlist> CreateAsync(LocalDatabase db, string volumename)
+            public static async Task<Indexlist> CreateAsync(LocalDatabase db, string volumename, CancellationToken token)
             {
                 var bl = new Indexlist();
                 return (Indexlist)
-                    await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
+                    await CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND, token)
                         .ConfigureAwait(false);
             }
 
-            public async Task AddBlockLink(string filename, string hash, long length)
+            /// <inheritdoc/>
+            public async Task AddBlockLink(string filename, string hash, long length, CancellationToken token)
             {
                 await m_insertCommand
                     .SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Name", filename)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", length)
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
             }
 
-            public async IAsyncEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare()
+            /// <inheritdoc/>
+            public async IAsyncEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare([EnumeratorCancellation] CancellationToken token)
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var create = $@"
@@ -828,7 +845,7 @@ namespace Duplicati.Library.Main.Database
                     await cmd
                         .SetCommandAndParameters(create)
                         .SetParameterValue("@Name", m_volumename)
-                        .ExecuteNonQueryAsync()
+                        .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
 
                     cmd
@@ -837,8 +854,8 @@ namespace Duplicati.Library.Main.Database
                         .SetParameterValue("@TypeMissing", (int)Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Interface.TestEntryStatus.Modified);
 
-                    await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-                    while (await rd.ReadAsync().ConfigureAwait(false))
+                    await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                    while (await rd.ReadAsync(token).ConfigureAwait(false))
                         yield return new KeyValuePair<Interface.TestEntryStatus, string>((Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
                 }
@@ -847,7 +864,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         await cmd
-                            .ExecuteNonQueryAsync(drop)
+                            .ExecuteNonQueryAsync(drop, token)
                             .ConfigureAwait(false);
                     }
                     catch { }
@@ -866,14 +883,16 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="key">The key (hash) of the block.</param>
             /// <param name="value">The size of the block in bytes.</param>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>A task that completes when the block has been added.</returns>
-            Task AddBlock(string key, long value);
+            Task AddBlock(string key, long value, CancellationToken token);
 
             /// <summary>
             /// Asynchronously compares the blocklist with remote volumes and yields differences.
             /// </summary>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>An asynchronous enumerable of key-value pairs representing the comparison results, where the key is the test entry status and the value is the block hash.</returns>
-            IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
+            IAsyncEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare(CancellationToken token);
         }
 
         public interface IBlocklistHashList : IDisposable, IAsyncDisposable
@@ -883,8 +902,9 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="hash">The hash of the block.</param>
             /// <param name="size">The size of the block in bytes.</param>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>A task that completes when the block hash has been added.</returns>
-            Task AddBlockHash(string hash, long size);
+            Task AddBlockHash(string hash, long size, CancellationToken token);
 
             /// <summary>
             /// Asynchronously compares the blocklist hash list with remote volumes and yields differences.
@@ -892,8 +912,9 @@ namespace Duplicati.Library.Main.Database
             /// <param name="hashesPerBlock">The number of hashes per block.</param>
             /// <param name="hashSize">The size of each hash in bytes.</param>
             /// <param name="blockSize">The size of each block in bytes.</param>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>An asynchronous enumerable of key-value pairs representing the comparison results, where the key is the test entry status and the value is the block hash.</returns>
-            IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize);
+            IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize, CancellationToken token);
         }
 
         /// <summary>
@@ -943,26 +964,29 @@ namespace Duplicati.Library.Main.Database
             /// Asynchronously creates a new instance of the <see cref="Blocklist"/> class.
             /// </summary>
             /// <param name="db">The local database to use for the blocklist.</param>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <param name="volumename">The name of the volume associated with this blocklist.</param>
-            public static async Task<Blocklist> CreateAsync(LocalDatabase db, string volumename)
+            public static async Task<Blocklist> CreateAsync(LocalDatabase db, string volumename, CancellationToken token)
             {
                 var bl = new Blocklist();
                 return (Blocklist)
-                    await Basiclist.CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
+                    await Basiclist.CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND, token)
                         .ConfigureAwait(false);
             }
 
-            public async Task AddBlock(string hash, long size)
+            /// <inheritdoc/>
+            public async Task AddBlock(string hash, long size, CancellationToken token)
             {
                 await m_insertCommand
                     .SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
             }
 
-            public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare()
+            /// <inheritdoc/>
+            public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare([EnumeratorCancellation] CancellationToken token)
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -1060,7 +1084,7 @@ namespace Duplicati.Library.Main.Database
                     await cmd
                         .SetCommandAndParameters(create)
                         .SetParameterValue("@Name", m_volumename)
-                        .ExecuteNonQueryAsync()
+                        .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
 
                     cmd
@@ -1073,8 +1097,8 @@ namespace Duplicati.Library.Main.Database
                         .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
 
-                    await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-                    while (await rd.ReadAsync().ConfigureAwait(false))
+                    await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                    while (await rd.ReadAsync(token).ConfigureAwait(false))
                         yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
                 }
@@ -1083,7 +1107,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         await cmd
-                            .ExecuteNonQueryAsync(drop)
+                            .ExecuteNonQueryAsync(drop, token)
                             .ConfigureAwait(false);
                     }
                     catch { }
@@ -1141,26 +1165,29 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="db">The local database to use for the blocklist hash list.</param>
             /// <param name="volumename">The name of the volume associated with this blocklist hash list.</param>
+            /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
             /// <returns>A task that when awaited returns a new instance of the <see cref="BlocklistHashList"/> class.</returns>
-            public static async Task<BlocklistHashList> CreateAsync(LocalDatabase db, string volumename)
+            public static async Task<BlocklistHashList> CreateAsync(LocalDatabase db, string volumename, CancellationToken token)
             {
                 var bl = new BlocklistHashList();
                 return (BlocklistHashList)
-                    await Basiclist.CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
+                    await Basiclist.CreateAsync(bl, db, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND, token)
                         .ConfigureAwait(false);
             }
 
-            public async Task AddBlockHash(string hash, long size)
+            /// <inheritdoc/>
+            public async Task AddBlockHash(string hash, long size, CancellationToken token)
             {
                 await m_insertCommand
                     .SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
             }
 
-            public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize)
+            /// <inheritdoc/>
+            public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize, [EnumeratorCancellation] CancellationToken token)
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -1273,7 +1300,7 @@ namespace Duplicati.Library.Main.Database
                     await cmd
                         .SetCommandAndParameters(create)
                         .SetParameterValue("@Name", m_volumename)
-                        .ExecuteNonQueryAsync()
+                        .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
 
                     // Compare against actual values inserted into temp table
@@ -1283,8 +1310,8 @@ namespace Duplicati.Library.Main.Database
                         .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
 
-                    await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-                    while (await rd.ReadAsync().ConfigureAwait(false))
+                    await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                    while (await rd.ReadAsync(token).ConfigureAwait(false))
                         yield return new KeyValuePair<Library.Interface.TestEntryStatus, string>(
                             (Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0),
                             rd.ConvertValueToString(1) ?? "");
@@ -1294,7 +1321,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         await cmd
-                            .ExecuteNonQueryAsync(drop)
+                            .ExecuteNonQueryAsync(drop, token)
                             .ConfigureAwait(false);
                     }
                     catch { }
@@ -1306,40 +1333,47 @@ namespace Duplicati.Library.Main.Database
         /// Creates a new filelist in the local test database.
         /// </summary>
         /// <param name="name">The name of the filelist to create.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that when awaited returns a new instance of the <see cref="IFilelist"/> interface.</returns>
-        public async Task<IFilelist> CreateFilelist(string name)
+        public async Task<IFilelist> CreateFilelist(string name, CancellationToken token)
         {
-            return await Filelist.CreateAsync(this, name).ConfigureAwait(false);
+            return await Filelist.CreateAsync(this, name, token)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Creates a new indexlist in the local test database.
         /// </summary>
         /// <param name="name">The name of the indexlist to create.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that when awaited returns a new instance of the <see cref="IIndexlist"/> interface.</returns>
-        public async Task<IIndexlist> CreateIndexlist(string name)
+        public async Task<IIndexlist> CreateIndexlist(string name, CancellationToken token)
         {
-            return await Indexlist.CreateAsync(this, name).ConfigureAwait(false);
+            return await Indexlist.CreateAsync(this, name, token)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Creates a new blocklist in the local test database.
         /// </summary>
         /// <param name="name">The name of the blocklist to create.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that when awaited returns a new instance of the <see cref="IBlocklist"/> interface.</returns>
-        public async Task<IBlocklist> CreateBlocklist(string name)
+        public async Task<IBlocklist> CreateBlocklist(string name, CancellationToken token)
         {
-            return await Blocklist.CreateAsync(this, name).ConfigureAwait(false);
+            return await Blocklist.CreateAsync(this, name, token)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Creates a new blocklist hash list in the local test database.
         /// </summary>
         /// <param name="name">The name of the blocklist hash list to create.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that when awaited returns a new instance of the <see cref="IBlocklistHashList"/> interface.</returns>
-        public async Task<IBlocklistHashList> CreateBlocklistHashList(string name)
+        public async Task<IBlocklistHashList> CreateBlocklistHashList(string name, CancellationToken token)
         {
-            return await BlocklistHashList.CreateAsync(this, name)
+            return await BlocklistHashList.CreateAsync(this, name, token)
                 .ConfigureAwait(false);
         }
     }
