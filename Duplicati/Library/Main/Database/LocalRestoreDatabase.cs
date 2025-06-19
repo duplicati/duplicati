@@ -25,7 +25,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Operation.Restore;
@@ -99,13 +101,14 @@ namespace Duplicati.Library.Main.Database
         /// <param name="path">The path to the database file.</param>
         /// <param name="pagecachesize">The size of the page cache for the database.</param>
         /// <param name="dbnew">An optional existing instance of <see cref="LocalRestoreDatabase"/> to use, or null to create a new one. Used to mimic constructor chaining.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited on, returns a new instance of <see cref="LocalRestoreDatabase"/>.</returns>
-        public static async Task<LocalRestoreDatabase> CreateAsync(string path, long pagecachesize, LocalRestoreDatabase? dbnew = null)
+        public static async Task<LocalRestoreDatabase> CreateAsync(string path, long pagecachesize, LocalRestoreDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalRestoreDatabase();
 
             dbnew = (LocalRestoreDatabase)
-                await CreateLocalDatabaseAsync(path, "Restore", false, pagecachesize, dbnew)
+                await CreateLocalDatabaseAsync(path, "Restore", false, pagecachesize, dbnew, token)
                     .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
 
@@ -117,13 +120,14 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="dbparent">The parent database from which to create the restore database.</param>
         /// <param name="dbnew">An optional existing instance of <see cref="LocalRestoreDatabase"/> to use, or null to create a new one. Used to mimic constructor chaining.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited on, returns a new instance of <see cref="LocalRestoreDatabase"/>.</returns>
-        public static async Task<LocalRestoreDatabase> CreateAsync(LocalDatabase dbparent, LocalRestoreDatabase? dbnew = null)
+        public static async Task<LocalRestoreDatabase> CreateAsync(LocalDatabase dbparent, LocalRestoreDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalRestoreDatabase();
 
             return (LocalRestoreDatabase)
-                await CreateLocalDatabaseAsync(dbparent, dbnew)
+                await CreateLocalDatabaseAsync(dbparent, dbnew, token)
                     .ConfigureAwait(false);
         }
 
@@ -134,6 +138,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="createFilesNewlyDoneTracker">This allows to create another table that keeps track
         /// of all files that are done (all data blocks restored).</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <remarks>
         /// The method is prepared to create a table that keeps track of all files being done completely.
         /// That means, it fires for files where the number of restored blocks equals the number of all blocks.
@@ -143,7 +148,7 @@ namespace Duplicati.Library.Main.Database
         ///       But if it reaches a restored state later, it will be re-added (trigger will fire)
         /// </remarks>
         /// <returns>A task that completes when the progress tracker is created.</returns>
-        public async Task CreateProgressTracker(bool createFilesNewlyDoneTracker)
+        public async Task CreateProgressTracker(bool createFilesNewlyDoneTracker, CancellationToken token)
         {
             m_fileprogtable = "FileProgress-" + m_temptabsetguid;
             m_totalprogtable = "TotalProgress-" + m_temptabsetguid;
@@ -153,7 +158,7 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr);
 
             // How to handle METADATA?
-            await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_fileprogtable}"" ")
+            await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_fileprogtable}"" ", token)
                 .ConfigureAwait(false);
 
             await cmd.ExecuteNonQueryAsync($@"
@@ -164,10 +169,10 @@ namespace Duplicati.Library.Main.Database
                     ""BlocksRestored"" INTEGER NOT NULL,
                     ""SizeRestored"" INTEGER NOT NULL
                 )
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
-            await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_totalprogtable}"" ")
+            await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_totalprogtable}"" ", token)
                 .ConfigureAwait(false);
 
             await cmd.ExecuteNonQueryAsync($@"
@@ -180,19 +185,19 @@ namespace Duplicati.Library.Main.Database
                     ""BlocksRestored"" INTEGER NOT NULL,
                     ""SizeRestored"" INTEGER NOT NULL
                 )
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             if (createFilesNewlyDoneTracker)
             {
-                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_filesnewlydonetable}"" ")
+                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_filesnewlydonetable}"" ", token)
                     .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync($@"
                     CREATE TEMPORARY TABLE ""{m_filesnewlydonetable}"" (
                         ""ID"" INTEGER PRIMARY KEY
                     )
-                ")
+                ", token)
                     .ConfigureAwait(false);
             }
 
@@ -242,7 +247,7 @@ namespace Duplicati.Library.Main.Database
                         ON  ""B"".""FileID"" = ""F"".""ID""
                     WHERE ""B"".""Metadata"" IS NOT 1
                     GROUP BY ""F"".""ID""
-                ")
+                ", token)
                     .ConfigureAwait(false);
 
                 // Will result in a single line (no support to also track metadata)
@@ -285,7 +290,7 @@ namespace Duplicati.Library.Main.Database
                         IFNULL(SUM(""P"".""BlocksRestored""), 0),
                         IFNULL(SUM(""P"".""SizeRestored""), 0)
                     FROM ""{m_fileprogtable}"" ""P""
-                ")
+                ", token)
                     .ConfigureAwait(false);
 
                 // Finally we create TRIGGERs to keep all our statistics up to date.
@@ -311,7 +316,7 @@ namespace Duplicati.Library.Main.Database
                             + ((NEW.""Restored"" - OLD.""Restored"") * NEW.Size)
                     WHERE ""{m_fileprogtable}"".""FileId"" = NEW.""FileID""
                     ; END
-                ")
+                ", token)
                     .ConfigureAwait(false);
 
                 // A trigger to update total stats each time a file stat changed (nested triggering by file-stats)
@@ -357,7 +362,7 @@ namespace Duplicati.Library.Main.Database
                             + NEW.""SizeRestored""
                             - OLD.""SizeRestored""
                     ; END
-                ")
+                ", token)
                     .ConfigureAwait(false);
 
                 if (createFilesNewlyDoneTracker)
@@ -374,7 +379,7 @@ namespace Duplicati.Library.Main.Database
                             INSERT OR IGNORE INTO ""{m_filesnewlydonetable}"" (""ID"")
                             VALUES (NEW.""FileId"");
                         END
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
                 }
 
@@ -388,7 +393,7 @@ namespace Duplicati.Library.Main.Database
             }
             finally
             {
-                await m_rtr.CommitAsync().ConfigureAwait(false);
+                await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
             }
         }
 
@@ -398,8 +403,9 @@ namespace Duplicati.Library.Main.Database
         /// <param name="restoretime">The time at which the restore operation is being performed.</param>
         /// <param name="versions">An array of version identifiers to filter the filesets.</param>
         /// <param name="filter">An optional filter to apply to the files being restored.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that, when awaited, returns a tuple containing the count of files to restore and the total size of those files.</returns>
-        public async Task<Tuple<long, long>> PrepareRestoreFilelist(DateTime restoretime, long[] versions, IFilter filter)
+        public async Task<Tuple<long, long>> PrepareRestoreFilelist(DateTime restoretime, long[] versions, IFilter filter, CancellationToken token)
         {
             m_tempfiletable = "Fileset-" + m_temptabsetguid;
             m_tempblocktable = "Blocks-" + m_temptabsetguid;
@@ -408,8 +414,8 @@ namespace Duplicati.Library.Main.Database
             {
                 cmd.SetTransaction(m_rtr);
                 var filesetIds =
-                    await GetFilesetIDs(Library.Utility.Utility.NormalizeDateTime(restoretime), versions)
-                    .ToListAsync()
+                    await GetFilesetIDs(Library.Utility.Utility.NormalizeDateTime(restoretime), versions, false, token)
+                    .ToListAsync(cancellationToken: token)
                     .ConfigureAwait(false);
 
                 while (filesetIds.Count > 0)
@@ -423,21 +429,24 @@ namespace Duplicati.Library.Main.Database
                         WHERE ""ID"" = @FilesetId
                     ")
                         .SetParameterValue("@FilesetId", filesetId);
-                    m_restoreTime = ParseFromEpochSeconds(await cmd.ExecuteScalarInt64Async(0).ConfigureAwait(false));
+                    m_restoreTime = ParseFromEpochSeconds(
+                        await cmd.ExecuteScalarInt64Async(0, token)
+                            .ConfigureAwait(false)
+                    );
 
-                    var ix = await FilesetTimes()
+                    var ix = await FilesetTimes(token)
                             .Select((value, index) => new { value.Key, index })
                             .Where(n => n.Key == filesetId)
                             .Select(pair => pair.index + 1)
-                            .FirstOrDefaultAsync()
+                            .FirstOrDefaultAsync(cancellationToken: token)
                             .ConfigureAwait(false) - 1;
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "SearchingBackup", "Searching backup {0} ({1}) ...", ix, m_restoreTime);
 
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tempfiletable}"" ")
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tempfiletable}"" ", token)
                         .ConfigureAwait(false);
 
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tempblocktable}"" ")
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tempblocktable}"" ", token)
                         .ConfigureAwait(false);
 
                     await cmd.ExecuteNonQueryAsync($@"
@@ -451,7 +460,7 @@ namespace Duplicati.Library.Main.Database
                             ""LatestBlocksetId"" INTEGER,
                             ""LocalSourceExists"" BOOLEAN
                         )
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
 
                     await cmd.ExecuteNonQueryAsync($@"
@@ -466,7 +475,7 @@ namespace Duplicati.Library.Main.Database
                             ""VolumeID"" INTEGER NOT NULL,
                             ""BlockID"" INTEGER NOT NULL
                         )
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
 
                     // TODO: Optimize to use the path prefix
@@ -496,13 +505,13 @@ namespace Duplicati.Library.Main.Database
                                 AND ""FilesetEntry"".""FilesetID"" = @FilesetId
                         ")
                             .SetParameterValue("@FilesetId", filesetId)
-                            .ExecuteNonQueryAsync()
+                            .ExecuteNonQueryAsync(token)
                             .ConfigureAwait(false);
                     }
                     else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == FilterType.Simple)
                     {
                         using (new Logging.Timer(LOGTAG, "CommitBeforePrepareFileset", "CommitBeforePrepareFileset"))
-                            await m_rtr.CommitAsync().ConfigureAwait(false);
+                            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
 
                         cmd.SetTransaction(m_rtr);
                         // If we get a list of filenames, the lookup table is faster
@@ -514,7 +523,7 @@ namespace Duplicati.Library.Main.Database
                             CREATE TEMPORARY TABLE ""{m_filenamestable}"" (
                                 ""Path"" TEXT NOT NULL
                             )
-                        ")
+                        ", token)
                             .ConfigureAwait(false);
 
                         cmd.SetCommandAndParameters($@"
@@ -527,7 +536,7 @@ namespace Duplicati.Library.Main.Database
                         {
                             await cmd
                                 .SetParameterValue("@Path", s)
-                                .ExecuteNonQueryAsync()
+                                .ExecuteNonQueryAsync(token)
                                 .ConfigureAwait(false);
                         }
 
@@ -557,7 +566,7 @@ namespace Duplicati.Library.Main.Database
                                 )
                         ")
                             .SetParameterValue("@FilesetId", filesetId)
-                            .ExecuteNonQueryAsync()
+                            .ExecuteNonQueryAsync(token)
                             .ConfigureAwait(false);
 
                         if (c != p.Length && c != 0)
@@ -573,8 +582,8 @@ namespace Duplicati.Library.Main.Database
                                     FROM ""{m_tempfiletable}""
                                 )
                             ");
-                            await using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
-                                while (await rd.ReadAsync().ConfigureAwait(false))
+                            await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+                                while (await rd.ReadAsync(token).ConfigureAwait(false))
                                     sb.AppendLine(rd.ConvertValueToString(0));
 
                             cmd.SetCommandAndParameters(@"
@@ -583,16 +592,19 @@ namespace Duplicati.Library.Main.Database
                                 WHERE ""ID"" = @FilesetId
                             ")
                                 .SetParameterValue("@FilesetId", filesetId);
-                            var actualrestoretime = ParseFromEpochSeconds(await cmd.ExecuteScalarInt64Async(0).ConfigureAwait(false));
+                            var actualrestoretime = ParseFromEpochSeconds(
+                                await cmd.ExecuteScalarInt64Async(0, token)
+                                    .ConfigureAwait(false)
+                            );
 
                             Logging.Log.WriteWarningMessage(LOGTAG, "FilesNotFoundInBackupList", null, "{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb);
                         }
 
-                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_filenamestable}"" ")
+                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_filenamestable}"" ", token)
                             .ConfigureAwait(false);
 
                         using (new Logging.Timer(LOGTAG, "CommitAfterPrepareFileset", "CommitAfterPrepareFileset"))
-                            await m_rtr.CommitAsync().ConfigureAwait(false);
+                            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
                         cmd.SetTransaction(m_rtr);
                     }
                     else
@@ -631,9 +643,9 @@ namespace Duplicati.Library.Main.Database
                                 0
                             )
                         ");
-                        await using var rd = await cmd.ExecuteReaderAsync()
+                        await using var rd = await cmd.ExecuteReaderAsync(token)
                             .ConfigureAwait(false);
-                        while (await rd.ReadAsync().ConfigureAwait(false))
+                        while (await rd.ReadAsync(token).ConfigureAwait(false))
                         {
                             rd.GetValues(values);
                             var path = values[1] as string;
@@ -644,7 +656,7 @@ namespace Duplicati.Library.Main.Database
                                     .SetParameterValue("@Path", values[1])
                                     .SetParameterValue("@BlocksetID", values[2])
                                     .SetParameterValue("@MetadataID", values[3])
-                                    .ExecuteNonQueryAsync()
+                                    .ExecuteNonQueryAsync(token)
                                     .ConfigureAwait(false);
                             }
                         }
@@ -654,19 +666,19 @@ namespace Duplicati.Library.Main.Database
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE INDEX ""{m_tempfiletable}_ID""
                         ON ""{m_tempfiletable}"" (""ID"")
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
 
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE INDEX ""{m_tempfiletable}_TargetPath""
                         ON ""{m_tempfiletable}"" (""TargetPath"")
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
 
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE INDEX ""{m_tempfiletable}_Path""
                         ON ""{m_tempfiletable}"" (""Path"")
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
 
                     cmd.SetCommandAndParameters($@"
@@ -678,12 +690,12 @@ namespace Duplicati.Library.Main.Database
                             ""Blockset""
                         WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID""
                     ");
-                    await using (var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                    await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
                     {
                         var filecount = 0L;
                         var filesize = 0L;
 
-                        if (await rd.ReadAsync().ConfigureAwait(false))
+                        if (await rd.ReadAsync(token).ConfigureAwait(false))
                         {
                             filecount = rd.ConvertValueToInt64(0, 0);
                             filesize = rd.ConvertValueToInt64(1, 0);
@@ -697,7 +709,7 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
 
-                await m_rtr.CommitAsync().ConfigureAwait(false);
+                await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
             }
 
             return new Tuple<long, long>(0, 0);
@@ -706,8 +718,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Retrieves the first path from the temporary file table.
         /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that, when awaited, returns the first path found in the temporary file table, or null if no paths are found.</returns>
-        public async Task<string?> GetFirstPath()
+        public async Task<string?> GetFirstPath(CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand($@"
                 SELECT ""Path""
@@ -717,7 +730,7 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetTransaction(m_rtr);
 
-            var v0 = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
+            var v0 = await cmd.ExecuteScalarAsync(token).ConfigureAwait(false);
             if (v0 == null || v0 == DBNull.Value)
                 return null;
 
@@ -727,8 +740,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Retrieves the largest prefix path from the temporary file table.
         /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that, when awaited, returns the largest prefix path found in the temporary file table.</returns>
-        public async Task<string> GetLargestPrefix()
+        public async Task<string> GetLargestPrefix(CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand($@"
                 SELECT ""Path""
@@ -738,7 +752,7 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetTransaction(m_rtr);
 
-            var v0 = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
+            var v0 = await cmd.ExecuteScalarAsync(token).ConfigureAwait(false);
             var maxpath = "";
             if (v0 != null && v0 != DBNull.Value)
                 maxpath = v0.ToString()!;
@@ -748,7 +762,7 @@ namespace Duplicati.Library.Main.Database
             var filecount = await cmd.ExecuteScalarInt64Async($@"
                 SELECT COUNT(*)
                 FROM ""{m_tempfiletable}""
-            ", -1)
+            ", -1, token)
                 .ConfigureAwait(false);
 
             var foundfiles = -1L;
@@ -766,7 +780,7 @@ namespace Duplicati.Library.Main.Database
                 foundfiles = await cmd
                     .SetParameterValue("@PrefixLength", mp.Length)
                     .SetParameterValue("@Prefix", mp)
-                    .ExecuteScalarInt64Async(-1)
+                    .ExecuteScalarInt64Async(-1, token)
                     .ConfigureAwait(false);
 
                 if (filecount != foundfiles)
@@ -789,11 +803,12 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="largest_prefix">The largest prefix path to use for adjusting target paths.</param>
         /// <param name="destination">The destination path to prepend to the target paths.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that completes when the target paths have been set.</returns>
-        public async Task SetTargetPaths(string largest_prefix, string destination)
+        public async Task SetTargetPaths(string largest_prefix, string destination, CancellationToken token)
         {
             var dirsep = Util.GuessDirSeparator(string.IsNullOrWhiteSpace(largest_prefix) ?
-                await GetFirstPath().ConfigureAwait(false)
+                await GetFirstPath(token).ConfigureAwait(false)
                 :
                 largest_prefix);
 
@@ -816,7 +831,7 @@ namespace Duplicati.Library.Main.Database
                             THEN '\\' || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3)
                             ELSE ""Path""
                         END
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
 
                     await cmd.ExecuteNonQueryAsync($@"
@@ -827,7 +842,7 @@ namespace Duplicati.Library.Main.Database
                             THEN '\\' || SUBSTR(""Path"", 2)
                             ELSE ""Path""
                         END
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
 
                 }
@@ -844,7 +859,7 @@ namespace Duplicati.Library.Main.Database
                             END
                     ")
                         .SetParameterValue("@Path", Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"))
-                        .ExecuteNonQueryAsync()
+                        .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
                 }
                 else
@@ -853,7 +868,7 @@ namespace Duplicati.Library.Main.Database
                     await cmd.ExecuteNonQueryAsync($@"
                         UPDATE ""{m_tempfiletable}""
                         SET ""Targetpath"" = ""Path""
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
                 }
             }
@@ -872,7 +887,7 @@ namespace Duplicati.Library.Main.Database
                                 THEN SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3)
                                 ELSE ""Path""
                             END
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
 
                     // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>
@@ -884,7 +899,7 @@ namespace Duplicati.Library.Main.Database
                             THEN SUBSTR(""Path"", 2)
                             ELSE ""TargetPath""
                         END
-                    ")
+                    ", token)
                         .ConfigureAwait(false);
                 }
                 else
@@ -895,7 +910,7 @@ namespace Duplicati.Library.Main.Database
                         SET ""TargetPath"" = SUBSTR(""Path"", @PrefixLength)
                     ")
                         .SetParameterValue("@PrefixLength", largest_prefix.Length + 1)
-                        .ExecuteNonQueryAsync()
+                        .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
                 }
             }
@@ -906,14 +921,14 @@ namespace Duplicati.Library.Main.Database
                 await cmd.ExecuteNonQueryAsync($@"
                     UPDATE ""{m_tempfiletable}""
                     SET ""TargetPath"" = REPLACE(""TargetPath"", '\', '/')
-                ")
+                ", token)
                     .ConfigureAwait(false);
             else if (OperatingSystem.IsWindows() && dirsep == "/")
                 // For Linux paths on Windows
                 await cmd.ExecuteNonQueryAsync($@"
                     UPDATE ""{m_tempfiletable}""
                     SET ""TargetPath"" = REPLACE(REPLACE(""TargetPath"", '\', '_'), '/', '\')
-                ")
+                ", token)
                     .ConfigureAwait(false);
 
             if (!string.IsNullOrEmpty(destination))
@@ -925,19 +940,20 @@ namespace Duplicati.Library.Main.Database
                     SET ""TargetPath"" = @Destination || ""TargetPath""
                 ")
                     .SetParameterValue("@Destination", Util.AppendDirSeparator(destination))
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
             }
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Finds missing blocks in the temporary block table.
         /// </summary>
         /// <param name="skipMetadata">If true, skips metadata blocks when searching for missing blocks.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that completes when the missing blocks have been found and inserted into the temporary block table.</returns>
-        public async Task FindMissingBlocks(bool skipMetadata)
+        public async Task FindMissingBlocks(bool skipMetadata, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
@@ -968,7 +984,7 @@ namespace Duplicati.Library.Main.Database
                 WHERE
                     ""{m_tempfiletable}"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
                     AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             var p2 = 0;
@@ -1002,32 +1018,32 @@ namespace Duplicati.Library.Main.Database
                         ""{m_tempfiletable}"".""MetadataID"" = ""Metadataset"".""ID""
                         AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
                         AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                ")
+                ", token)
                     .ConfigureAwait(false);
 
             // Creating indexes after insertion is much faster
             await cmd.ExecuteNonQueryAsync($@"
                 CREATE INDEX ""{m_tempblocktable}_HashSizeIndex""
                 ON ""{m_tempblocktable}"" (""Hash"", ""Size"")
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             // Better suited to speed up commit on UpdateBlocks
             await cmd.ExecuteNonQueryAsync($@"
                 CREATE INDEX ""{m_tempblocktable}_FileIdIndexIndex""
                 ON ""{m_tempblocktable}"" (""FileId"", ""Index"")
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
             var size = await cmd.ExecuteScalarInt64Async($@"
                 SELECT SUM(""Size"")
                 FROM ""{m_tempblocktable}""
-            ", 0)
+            ", 0, token)
                 .ConfigureAwait(false);
 
             Logging.Log.WriteVerboseMessage(LOGTAG, "RestoreSourceSize", "Restore list contains {0} blocks with a total size of {1}", p1 + p2, Library.Utility.Utility.FormatSizeString(size));
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1035,8 +1051,9 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="ID">The ID of the file in the temporary file table.</param>
         /// <param name="newname">The new target path to set for the file.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that completes when the target path has been updated.</returns>
-        public async Task UpdateTargetPath(long ID, string newname)
+        public async Task UpdateTargetPath(long ID, string newname, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand($@"
                 UPDATE ""{m_tempfiletable}""
@@ -1047,10 +1064,10 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@TargetPath", newname)
                 .SetParameterValue("@ID", ID)
-                .ExecuteNonQueryAsync()
+                .ExecuteNonQueryAsync(token)
                 .ConfigureAwait(false);
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1096,7 +1113,8 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// An asynchronous enumerable of the blocks in the file.
             /// </summary>
-            IAsyncEnumerable<IExistingFileBlock> Blocks();
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+            IAsyncEnumerable<IExistingFileBlock> Blocks(CancellationToken token);
         }
 
         /// <summary>
@@ -1146,7 +1164,8 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// An asynchronous enumerable of block sources for this block descriptor.
             /// </summary>
-            IAsyncEnumerable<IBlockSource> BlockSources();
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+            IAsyncEnumerable<IBlockSource> BlockSources(CancellationToken token);
         }
 
         /// <summary>
@@ -1165,7 +1184,8 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// An asynchronous enumerable of block descriptors for the file.
             /// </summary>
-            IAsyncEnumerable<IBlockDescriptor> Blocks();
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+            IAsyncEnumerable<IBlockDescriptor> Blocks(CancellationToken token);
         }
 
         /// <summary>
@@ -1222,7 +1242,8 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// Gets the size of the remote volume in bytes.
             /// </summary>
-            IAsyncEnumerable<IPatchBlock> Blocks();
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+            IAsyncEnumerable<IPatchBlock> Blocks(CancellationToken token);
         }
 
         /// <summary>
@@ -1281,14 +1302,15 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// Gets the blocks in the existing file.
             /// </summary>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>An asynchronous enumerable of IExistingFileBlock objects representing the blocks in the file.</returns>
-            public async IAsyncEnumerable<IExistingFileBlock> Blocks()
+            public async IAsyncEnumerable<IExistingFileBlock> Blocks([EnumeratorCancellation] CancellationToken token)
             {
                 string p = TargetPath;
                 while (HasMore && p == TargetPath)
                 {
                     yield return new ExistingFileBlock(m_reader);
-                    HasMore = await m_reader.ReadAsync().ConfigureAwait(false);
+                    HasMore = await m_reader.ReadAsync(token).ConfigureAwait(false);
                 }
             }
 
@@ -1297,8 +1319,9 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="db">The LocalDatabase instance to query.</param>
             /// <param name="tablename">The name of the table containing existing files.</param>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>An asynchronous enumerable of IExistingFile objects representing the existing files with their blocks.</returns>
-            public static async IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks(LocalDatabase db, string tablename)
+            public static async IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks(LocalDatabase db, string tablename, [EnumeratorCancellation] CancellationToken token)
             {
                 await using var cmd = db.Connection.CreateCommand($@"
                     SELECT
@@ -1323,8 +1346,8 @@ namespace Duplicati.Library.Main.Database
                         ""BlocksetEntry"".""Index""
                 ")
                     .SetTransaction(db.Transaction);
-                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-                if (await rd.ReadAsync().ConfigureAwait(false))
+                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                if (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     var more = true;
                     while (more)
@@ -1335,7 +1358,7 @@ namespace Duplicati.Library.Main.Database
 
                         more = f.HasMore;
                         while (more && current == f.TargetPath)
-                            more = await rd.ReadAsync().ConfigureAwait(false);
+                            more = await rd.ReadAsync(token).ConfigureAwait(false);
                     }
                 }
             }
@@ -1344,12 +1367,13 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Retrieves existing files with their blocks from the temporary file table.
         /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of IExistingFile objects representing the existing files with their blocks.</returns>
-        public IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks()
+        public IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks(CancellationToken token)
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
                 throw new InvalidOperationException("No temporary file table set up for this restore.");
-            return ExistingFile.GetExistingFilesWithBlocks(this, m_tempfiletable);
+            return ExistingFile.GetExistingFilesWithBlocks(this, m_tempfiletable, token);
         }
 
         /// <summary>
@@ -1417,7 +1441,8 @@ namespace Duplicati.Library.Main.Database
                 /// </summary>
                 public bool HasMore { get; private set; }
 
-                public async IAsyncEnumerable<IBlockSource> BlockSources()
+                /// <inheritdoc/>
+                public async IAsyncEnumerable<IBlockSource> BlockSources([EnumeratorCancellation] CancellationToken token)
                 {
                     var p = TargetPath;
                     var h = Hash;
@@ -1426,7 +1451,7 @@ namespace Duplicati.Library.Main.Database
                     while (HasMore && p == TargetPath && h == Hash && s == Size)
                     {
                         yield return new BlockSource(m_reader);
-                        HasMore = await m_reader.ReadAsync().ConfigureAwait(false);
+                        HasMore = await m_reader.ReadAsync(token).ConfigureAwait(false);
                     }
                 }
 
@@ -1455,7 +1480,8 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             public bool HasMore { get; private set; }
 
-            public async IAsyncEnumerable<IBlockDescriptor> Blocks()
+            /// <inheritdoc/>
+            public async IAsyncEnumerable<IBlockDescriptor> Blocks([EnumeratorCancellation] CancellationToken token)
             {
                 var p = TargetPath;
                 while (HasMore && p == TargetPath)
@@ -1468,7 +1494,7 @@ namespace Duplicati.Library.Main.Database
 
                     HasMore = c.HasMore;
                     while (HasMore && c.Hash == h && c.Size == s && TargetPath == p)
-                        HasMore = await m_reader.ReadAsync().ConfigureAwait(false);
+                        HasMore = await m_reader.ReadAsync(token).ConfigureAwait(false);
                 }
             }
 
@@ -1480,8 +1506,9 @@ namespace Duplicati.Library.Main.Database
             /// <param name="blocktablename">The name of the block table to query.</param>
             /// <param name="blocksize">The size of each block in bytes.</param>
             /// <param name="skipMetadata">If true, skips metadata blocks when retrieving files and source blocks.</param>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>An asynchronous enumerable of ILocalBlockSource objects representing the files and their source blocks.</returns>
-            public static async IAsyncEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(LocalDatabase db, string filetablename, string blocktablename, long blocksize, bool skipMetadata)
+            public static async IAsyncEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(LocalDatabase db, string filetablename, string blocktablename, long blocksize, bool skipMetadata, [EnumeratorCancellation] CancellationToken token)
             {
                 // TODO: Skip metadata as required
                 // Have to order by target path and hash, to ensure BlockDescriptor and BlockSource match adjacent rows
@@ -1515,8 +1542,8 @@ namespace Duplicati.Library.Main.Database
                         ""B"".""Index""
                 ")
                     .SetTransaction(db.Transaction);
-                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-                var more = await rd.ReadAsync().ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                var more = await rd.ReadAsync(token).ConfigureAwait(false);
 
                 while (more)
                 {
@@ -1526,7 +1553,7 @@ namespace Duplicati.Library.Main.Database
 
                     more = f.HasMore;
                     while (more && current == f.TargetPath)
-                        more = await rd.ReadAsync().ConfigureAwait(false);
+                        more = await rd.ReadAsync(token).ConfigureAwait(false);
                 }
             }
         }
@@ -1536,19 +1563,21 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="skipMetadata">If true, skips metadata blocks when retrieving files and source blocks.</param>
         /// <param name="blocksize">The size of each block in bytes.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of ILocalBlockSource objects representing the files and their source blocks.</returns>
-        public IAsyncEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata, long blocksize)
+        public IAsyncEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata, long blocksize, CancellationToken token)
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
                 throw new InvalidOperationException("No temporary file table set up for this restore.");
-            return LocalBlockSource.GetFilesAndSourceBlocks(this, m_tempfiletable, m_tempblocktable, blocksize, skipMetadata);
+            return LocalBlockSource.GetFilesAndSourceBlocks(this, m_tempfiletable, m_tempblocktable, blocksize, skipMetadata, token);
         }
 
         /// <summary>
         /// Retrieves the missing remote volumes that need to be restored.
         /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of IRemoteVolume objects representing the missing remote volumes.</returns>
-        public async IAsyncEnumerable<IRemoteVolume> GetMissingVolumes()
+        public async IAsyncEnumerable<IRemoteVolume> GetMissingVolumes([EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand($@"
                 SELECT
@@ -1580,8 +1609,8 @@ namespace Duplicati.Library.Main.Database
             // Now it is likely to restore all files from front to back. Large files will always be done last.
             // One could also use like the average block number in a volume, that needs to be measured.
 
-            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await rd.ReadAsync().ConfigureAwait(false))
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 yield return new RemoteVolume(
                     rd.ConvertValueToString(0),
@@ -1598,8 +1627,16 @@ namespace Duplicati.Library.Main.Database
         {
             /// <summary>
             /// Retrieves files with missing blocks.
-            IAsyncEnumerable<IVolumePatch> FilesWithMissingBlocks();
-            IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks();
+            /// </summary>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+            /// <returns>An asynchronous enumerable of IVolumePatch objects representing the files with missing blocks.</returns>
+            IAsyncEnumerable<IVolumePatch> FilesWithMissingBlocks(CancellationToken token);
+            /// <summary>
+            /// Retrieves metadata with missing blocks.
+            /// </summary>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+            /// <returns>An asynchronous enumerable of IVolumePatch objects representing the metadata with missing blocks.</returns>
+            IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks(CancellationToken token);
         }
 
         private class FilesAndMetadata : IFilesAndMetadata
@@ -1619,7 +1656,17 @@ namespace Duplicati.Library.Main.Database
 
             private FilesAndMetadata() { }
 
-            public static async Task<FilesAndMetadata> CreateAsync(LocalDatabase db, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
+            /// <summary>
+            /// Creates a new instance of FilesAndMetadata, initializing the temporary table and inserting blocks from the current volume.
+            /// </summary>
+            /// <param name="db">The LocalDatabase instance to use for database operations.</param>
+            /// <param name="filetablename">The name of the file table in the database.</param>
+            /// <param name="blocktablename">The name of the block table in the database.</param>
+            /// <param name="blocksize">The size of each block in bytes.</param>
+            /// <param name="curvolume">The BlockVolumeReader containing the current volume's blocks.</param>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+            /// <returns>A task that when awaited returns an instance of <see cref="FilesAndMetadata"/>.</returns>
+            public static async Task<FilesAndMetadata> CreateAsync(LocalDatabase db, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume, CancellationToken token)
             {
                 var fam = new FilesAndMetadata()
                 {
@@ -1637,7 +1684,7 @@ namespace Duplicati.Library.Main.Database
                         ""Hash"" TEXT NOT NULL,
                         ""Size"" INTEGER NOT NULL
                     )
-                ")
+                ", token)
                     .ConfigureAwait(false);
 
                 c.SetCommandAndParameters($@"
@@ -1654,13 +1701,13 @@ namespace Duplicati.Library.Main.Database
                 {
                     await c.SetParameterValue("@Hash", s.Key)
                         .SetParameterValue("@Size", s.Value)
-                        .ExecuteNonQueryAsync()
+                        .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
                 }
 
                 // The index _HashSizeIndex is not needed anymore. Index on "Blocks-..." is used on Join in GetMissingBlocks
 
-                await db.Transaction.CommitAsync().ConfigureAwait(false);
+                await db.Transaction.CommitAsync(token: token).ConfigureAwait(false);
 
                 return fam;
             }
@@ -1725,13 +1772,14 @@ namespace Duplicati.Library.Main.Database
                 public long FileID { get { return m_reader.ConvertValueToInt64(1); } }
                 public bool HasMore { get; private set; }
 
-                public async IAsyncEnumerable<IPatchBlock> Blocks()
+                /// <inheritdoc/>
+                public async IAsyncEnumerable<IPatchBlock> Blocks([EnumeratorCancellation] CancellationToken token)
                 {
                     string p = Path;
                     while (HasMore && p == Path)
                     {
                         yield return new PatchBlock(m_reader);
-                        HasMore = await m_reader.ReadAsync().ConfigureAwait(false);
+                        HasMore = await m_reader.ReadAsync(token).ConfigureAwait(false);
                     }
                 }
             }
@@ -1739,8 +1787,9 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// Retrieves the files with missing blocks.
             /// </summary>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>An asynchronous enumerable of IVolumePatch objects representing the files with missing blocks.</returns>
-            public async IAsyncEnumerable<IVolumePatch> FilesWithMissingBlocks()
+            public async IAsyncEnumerable<IVolumePatch> FilesWithMissingBlocks([EnumeratorCancellation] CancellationToken token)
             {
                 // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
                 await using var cmd = m_db.Connection.CreateCommand($@"
@@ -1772,8 +1821,8 @@ namespace Duplicati.Library.Main.Database
                 ")
                     .SetTransaction(m_db.Transaction);
 
-                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-                if (await rd.ReadAsync().ConfigureAwait(false))
+                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                if (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     var more = true;
                     while (more)
@@ -1784,7 +1833,7 @@ namespace Duplicati.Library.Main.Database
 
                         more = f.HasMore;
                         while (more && current == f.Path)
-                            more = await rd.ReadAsync().ConfigureAwait(false);
+                            more = await rd.ReadAsync(token).ConfigureAwait(false);
                     }
                 }
             }
@@ -1792,8 +1841,9 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// Retrieves the metadata with missing blocks.
             /// </summary>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>An asynchronous enumerable of IVolumePatch objects representing the metadata with missing blocks.</returns>
-            public async IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks()
+            public async IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks([EnumeratorCancellation] CancellationToken token)
             {
                 // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
                 await using var cmd = m_db.Connection.CreateCommand($@"
@@ -1825,8 +1875,8 @@ namespace Duplicati.Library.Main.Database
                 ")
                     .SetTransaction(m_db.Transaction);
 
-                await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-                if (await rd.ReadAsync().ConfigureAwait(false))
+                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                if (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     var more = true;
                     while (more)
@@ -1837,7 +1887,7 @@ namespace Duplicati.Library.Main.Database
 
                         more = f.HasMore;
                         while (more && current == f.Path)
-                            more = await rd.ReadAsync().ConfigureAwait(false);
+                            more = await rd.ReadAsync(token).ConfigureAwait(false);
                     }
                 }
             }
@@ -1848,20 +1898,22 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="blocksize"> The size of each block in bytes.</param>
         /// <param name="curvolume">The current volume reader containing the blocks to restore.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited returns an IFilesAndMetadata instance containing the files and metadata with missing blocks.</returns>
-        public async Task<IFilesAndMetadata> GetMissingBlockData(BlockVolumeReader curvolume, long blocksize)
+        public async Task<IFilesAndMetadata> GetMissingBlockData(BlockVolumeReader curvolume, long blocksize, CancellationToken token)
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
                 throw new InvalidOperationException("No temporary file table set up for this restore.");
-            return await FilesAndMetadata.CreateAsync(this, m_tempfiletable, m_tempblocktable, blocksize, curvolume)
+            return await FilesAndMetadata.CreateAsync(this, m_tempfiletable, m_tempblocktable, blocksize, curvolume, token)
                 .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Returns a connection and transaction from the connection pool.
         /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited returns a tuple containing the SqliteConnection and ReusableTransaction.</returns>
-        public async Task<(SqliteConnection, ReusableTransaction)> GetConnectionFromPool()
+        public async Task<(SqliteConnection, ReusableTransaction)> GetConnectionFromPool(CancellationToken token)
         {
             if (!m_connection_pool.TryTake(out var entry))
             {
@@ -1869,7 +1921,7 @@ namespace Duplicati.Library.Main.Database
                     .ConfigureAwait(false);
 
                 connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared";
-                await connection.OpenAsync().ConfigureAwait(false);
+                await connection.OpenAsync(token).ConfigureAwait(false);
                 await SQLiteLoader.ApplyCustomPragmasAsync(connection, m_pagecachesize)
                     .ConfigureAwait(false);
 
@@ -1909,8 +1961,9 @@ namespace Duplicati.Library.Main.Database
         /// Returns a list of files to restore, including their target paths, hashes, and lengths.
         /// </summary>
         /// <param name="onlyNonVerified">If true, only returns files that have not been verified.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of IFileToRestore objects representing the files to restore.</returns>
-        public async IAsyncEnumerable<IFileToRestore> GetFilesToRestore(bool onlyNonVerified)
+        public async IAsyncEnumerable<IFileToRestore> GetFilesToRestore(bool onlyNonVerified, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand($@"
                 SELECT
@@ -1928,8 +1981,8 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Verified", !onlyNonVerified);
 
-            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await rd.ReadAsync().ConfigureAwait(false))
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return new FileToRestore(
                     rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "", rd.ConvertValueToString(2) ?? "", rd.ConvertValueToInt64(3));
         }
@@ -1937,8 +1990,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Returns a list of files and symlinks to restore.
         /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of FileRequest objects representing the files and symlinks to restore.</returns>
-        public async IAsyncEnumerable<FileRequest> GetFilesAndSymlinksToRestore()
+        public async IAsyncEnumerable<FileRequest> GetFilesAndSymlinksToRestore([EnumeratorCancellation] CancellationToken token)
         {
             // Order by length descending, so that larger files are restored first.
             await using var cmd = m_connection.CreateCommand($@"
@@ -1956,8 +2010,8 @@ namespace Duplicati.Library.Main.Database
                 ORDER BY ""Length"" DESC
             ")
                 .SetTransaction(m_rtr);
-            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await rd.ReadAsync().ConfigureAwait(false))
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return new FileRequest(
                     rd.ConvertValueToInt64(0),
                     rd.ConvertValueToString(1),
@@ -1971,8 +2025,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Returns a list of folders to restore. Used to restore folder metadata.
         /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of FileRequest objects representing the folders to restore.</returns>
-        public async IAsyncEnumerable<FileRequest> GetFolderMetadataToRestore()
+        public async IAsyncEnumerable<FileRequest> GetFolderMetadataToRestore([EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand();
             cmd.SetTransaction(m_rtr);
@@ -1989,10 +2044,10 @@ namespace Duplicati.Library.Main.Database
                     ""F"".""BlocksetID"" = {FOLDER_BLOCKSET_ID}
                     AND ""F"".""MetadataID"" IS NOT NULL
                     AND ""F"".""MetadataID"" >= 0
-            ")
+            ", token)
                 .ConfigureAwait(false);
 
-            while (await rd.ReadAsync().ConfigureAwait(false))
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return new FileRequest(
                     rd.ConvertValueToInt64(0),
                     rd.ConvertValueToString(1),
@@ -2007,8 +2062,9 @@ namespace Duplicati.Library.Main.Database
         /// Returns a list of blocks and their volume IDs. Used by the <see cref="BlockManager"/> to keep track of blocks and volumes to automatically evict them from the respective caches.
         /// </summary>
         /// <param name="skipMetadata">Flag indicating whether the returned blocks should exclude the metadata blocks.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of tuples containing the block ID and volume ID.</returns>
-        public async IAsyncEnumerable<(long, long)> GetBlocksAndVolumeIDs(bool skipMetadata)
+        public async IAsyncEnumerable<(long, long)> GetBlocksAndVolumeIDs(bool skipMetadata, [EnumeratorCancellation] CancellationToken token)
         {
             var metadata_query = skipMetadata ? "" : $@"
                 UNION ALL
@@ -2037,8 +2093,8 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetTransaction(m_rtr);
 
-            await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await reader.ReadAsync().ConfigureAwait(false))
+            await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
                 yield return (
                     reader.ConvertValueToInt64(0),
                     reader.ConvertValueToInt64(1)
@@ -2049,10 +2105,11 @@ namespace Duplicati.Library.Main.Database
         /// Returns a list of <see cref="BlockRequest"/> for the given blockset ID. It is used by the <see cref="FileProcessor"/> to restore the blocks of a file.
         /// </summary>
         /// <param name="blocksetID">The BlocksetID of the file.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of <see cref="BlockRequest"/> representing the blocks of the file.</returns>
-        public async IAsyncEnumerable<BlockRequest> GetBlocksFromFile(long blocksetID)
+        public async IAsyncEnumerable<BlockRequest> GetBlocksFromFile(long blocksetID, [EnumeratorCancellation] CancellationToken token)
         {
-            var (connection, transaction) = await GetConnectionFromPool()
+            var (connection, transaction) = await GetConnectionFromPool(token)
                 .ConfigureAwait(false);
 
             try
@@ -2073,9 +2130,9 @@ namespace Duplicati.Library.Main.Database
                     .SetTransaction(transaction)
                     .SetParameterValue("@BlocksetID", blocksetID);
 
-                await using var reader = await cmd.ExecuteReaderAsync()
+                await using var reader = await cmd.ExecuteReaderAsync(token)
                     .ConfigureAwait(false);
-                for (long i = 0; await reader.ReadAsync().ConfigureAwait(false); i++)
+                for (long i = 0; await reader.ReadAsync(token).ConfigureAwait(false); i++)
                     yield return new BlockRequest(
                         reader.ConvertValueToInt64(0),
                         i,
@@ -2096,10 +2153,11 @@ namespace Duplicati.Library.Main.Database
         /// Returns a list of <see cref="BlockRequest"/> for the metadata blocks of the given file. It is used by the <see cref="FileProcessor"/> to restore the metadata of a file.
         /// </summary>
         /// <param name="fileID">The ID of the file.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of <see cref="BlockRequest"/> representing the metadata blocks of the file.</returns>
-        public async IAsyncEnumerable<BlockRequest> GetMetadataBlocksFromFile(long fileID)
+        public async IAsyncEnumerable<BlockRequest> GetMetadataBlocksFromFile(long fileID, [EnumeratorCancellation] CancellationToken token)
         {
-            var (connection, transaction) = await GetConnectionFromPool()
+            var (connection, transaction) = await GetConnectionFromPool(token)
                 .ConfigureAwait(false);
             try
             {
@@ -2121,9 +2179,9 @@ namespace Duplicati.Library.Main.Database
                     .SetTransaction(transaction)
                     .SetParameterValue("@FileID", fileID);
 
-                await using var reader = await cmd.ExecuteReaderAsync()
+                await using var reader = await cmd.ExecuteReaderAsync(token)
                     .ConfigureAwait(false);
-                for (long i = 0; await reader.ReadAsync().ConfigureAwait(false); i++)
+                for (long i = 0; await reader.ReadAsync(token).ConfigureAwait(false); i++)
                 {
                     yield return new BlockRequest(
                         reader.ConvertValueToInt64(0),
@@ -2146,8 +2204,9 @@ namespace Duplicati.Library.Main.Database
         /// Returns the volume information for the given volume ID. It is used by the <see cref="VolumeManager"/> to get the volume information for the given volume ID.
         /// </summary>
         /// <param name="VolumeID">The ID of the volume.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of tuples containing the volume name, size, and hash.</returns>
-        public async IAsyncEnumerable<(string, long, string)> GetVolumeInfo(long VolumeID)
+        public async IAsyncEnumerable<(string, long, string)> GetVolumeInfo(long VolumeID, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(@"
                 SELECT
@@ -2160,9 +2219,9 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@VolumeID", VolumeID);
 
-            await using var reader = await cmd.ExecuteReaderAsync()
+            await using var reader = await cmd.ExecuteReaderAsync(token)
                 .ConfigureAwait(false);
-            while (await reader.ReadAsync().ConfigureAwait(false))
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
                 yield return (
                     reader.ConvertValueToString(0) ?? "",
                     reader.ConvertValueToInt64(1),
@@ -2173,8 +2232,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Drops all temporary tables used for the restore process and commits the transaction.
         /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that completes when the temporary tables are dropped and the transaction is committed.</returns>
-        public async Task DropRestoreTable()
+        public async Task DropRestoreTable(CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
@@ -2182,7 +2242,7 @@ namespace Duplicati.Library.Main.Database
             if (m_tempfiletable != null)
                 try
                 {
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tempfiletable}""")
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tempfiletable}""", token)
                         .ConfigureAwait(false);
                 }
                 catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
@@ -2191,7 +2251,7 @@ namespace Duplicati.Library.Main.Database
             if (m_tempblocktable != null)
                 try
                 {
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tempblocktable}""")
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tempblocktable}""", token)
                         .ConfigureAwait(false);
                 }
                 catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
@@ -2200,7 +2260,7 @@ namespace Duplicati.Library.Main.Database
             if (m_latestblocktable != null)
                 try
                 {
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_latestblocktable}""")
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_latestblocktable}""", token)
                         .ConfigureAwait(false);
                 }
                 catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
@@ -2209,7 +2269,7 @@ namespace Duplicati.Library.Main.Database
             if (m_fileprogtable != null)
                 try
                 {
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_fileprogtable}""")
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_fileprogtable}""", token)
                         .ConfigureAwait(false);
                 }
                 catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
@@ -2218,7 +2278,7 @@ namespace Duplicati.Library.Main.Database
             if (m_totalprogtable != null)
                 try
                 {
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_totalprogtable}""")
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_totalprogtable}""", token)
                         .ConfigureAwait(false);
                 }
                 catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
@@ -2227,13 +2287,13 @@ namespace Duplicati.Library.Main.Database
             if (m_filesnewlydonetable != null)
                 try
                 {
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_filesnewlydonetable}""")
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_filesnewlydonetable}""", token)
                         .ConfigureAwait(false);
                 }
                 catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                 finally { m_filesnewlydonetable = null; }
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -2249,43 +2309,49 @@ namespace Duplicati.Library.Main.Database
             /// <param name="hash">The hash of the block.</param>
             /// <param name="blocksize">The size of the block.</param>
             /// <param name="metadata">Indicates whether the block is metadata.</param>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>A task that completes when the block is marked as restored.</returns>
-            Task SetBlockRestored(long targetfileid, long index, string hash, long blocksize, bool metadata);
+            Task SetBlockRestored(long targetfileid, long index, string hash, long blocksize, bool metadata, CancellationToken token);
 
             /// <summary>
             /// Marks all blocks of a specific file as missing.
             /// </summary>
             /// <param name="targetfileid">The ID of the target file.</param>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>A task that completes when all blocks of the file are marked as missing.</returns>
-            Task SetAllBlocksMissing(long targetfileid);
+            Task SetAllBlocksMissing(long targetfileid, CancellationToken token);
 
             /// <summary>
             /// Marks all blocks of a specific file as restored.
             /// </summary>
             /// <param name="targetfileid">The ID of the target file.</param>
             /// <param name="includeMetadata">Indicates whether to include metadata blocks.</param>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>A task that completes when all blocks of the file are marked as restored.</returns>
-            Task SetAllBlocksRestored(long targetfileid, bool includeMetadata);
+            Task SetAllBlocksRestored(long targetfileid, bool includeMetadata, CancellationToken token);
 
             /// <summary>
             /// Marks the data of a specific file as verified.
             /// </summary>
             /// <param name="targetfileid">The ID of the target file.</param>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>A task that completes when the file data is marked as verified.</returns>
-            Task SetFileDataVerified(long targetfileid);
+            Task SetFileDataVerified(long targetfileid, CancellationToken token);
 
             /// <summary>
             /// Commits the changes made by the block marker.
             /// </summary>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>A task that completes when the changes are committed.</returns>
-            Task CommitAsync();
+            Task CommitAsync(CancellationToken token);
 
             /// <summary>
             /// Updates the processed statistics for the blocks and files.
             /// </summary>
             /// <param name="writer">An operation progress updater to report the processed statistics.</param>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>A task that completes when the processed statistics are updated.</returns>
-            Task UpdateProcessed(IOperationProgressUpdater writer);
+            Task UpdateProcessed(IOperationProgressUpdater writer, CancellationToken token);
         }
 
         /// <summary>
@@ -2360,8 +2426,9 @@ namespace Duplicati.Library.Main.Database
             /// <param name="blocktablename">The name of the temporary block table.</param>
             /// <param name="filetablename">The name of the temporary file table.</param>
             /// <param name="statstablename">The name of the statistics table, or null if not available.</param>
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
             /// <returns>A task that when awaited returns a new instance of the <see cref="DirectBlockMarker"/> class.</returns>
-            public static async Task<DirectBlockMarker> CreateAsync(LocalDatabase db, string blocktablename, string filetablename, string statstablename)
+            public static async Task<DirectBlockMarker> CreateAsync(LocalDatabase db, string blocktablename, string filetablename, string statstablename, CancellationToken token)
             {
                 var dbm = new DirectBlockMarker()
                 {
@@ -2378,14 +2445,14 @@ namespace Duplicati.Library.Main.Database
                             AND ""Size"" = @Size
                             AND ""Metadata"" = @Metadata
                             AND ""Restored"" = 0
-                    ")
+                    ", token)
                         .ConfigureAwait(false),
 
                     m_resetfileCommand = await db.Connection.CreateCommandAsync($@"
                         UPDATE ""{blocktablename}""
                         SET ""Restored"" = 0
                         WHERE ""FileID"" = @TargetFileId
-                    ")
+                    ", token)
                         .ConfigureAwait(false),
 
                     m_updateAsRestoredCommand = await db.Connection.CreateCommandAsync($@"
@@ -2394,14 +2461,14 @@ namespace Duplicati.Library.Main.Database
                         WHERE
                             ""FileID"" = @TargetFileId
                             AND ""Metadata"" <= @Metadata
-                    ")
+                    ", token)
                         .ConfigureAwait(false),
 
                     m_updateFileAsDataVerifiedCommand = await db.Connection.CreateCommandAsync($@"
                         UPDATE ""{filetablename}""
                         SET ""DataVerified"" = 1
                         WHERE ""ID"" = @TargetFileId
-                    ")
+                    ", token)
                         .ConfigureAwait(false),
 
                     m_statUpdateCommand = statstablename == null ?
@@ -2412,7 +2479,7 @@ namespace Duplicati.Library.Main.Database
                                 SUM(""Size"")
                             FROM ""{blocktablename}""
                             WHERE ""Restored"" = 1
-                        ")
+                        ", token)
                             .ConfigureAwait(false)
                         :
                         // Fields in Stats: TotalFiles, TotalBlocks, TotalSize
@@ -2422,14 +2489,15 @@ namespace Duplicati.Library.Main.Database
                                 SUM(""FilesFullyRestored""),
                                 SUM(""SizeRestored"")
                             FROM ""{statstablename}""
-                        ")
+                        ", token)
                             .ConfigureAwait(false)
                 };
 
                 return dbm;
             }
 
-            public async Task UpdateProcessed(IOperationProgressUpdater updater)
+            /// <inheritdoc/>
+            public async Task UpdateProcessed(IOperationProgressUpdater updater, CancellationToken token)
             {
                 if (!m_hasUpdates)
                     return;
@@ -2437,7 +2505,7 @@ namespace Duplicati.Library.Main.Database
                 m_hasUpdates = false;
                 await using var rd = await m_statUpdateCommand
                     .SetTransaction(m_db.Transaction)
-                    .ExecuteReaderAsync()
+                    .ExecuteReaderAsync(token)
                     .ConfigureAwait(false);
 
                 var filesprocessed = 0L;
@@ -2452,20 +2520,22 @@ namespace Duplicati.Library.Main.Database
                 updater.UpdatefilesProcessed(filesprocessed, processedsize);
             }
 
-            public async Task SetAllBlocksMissing(long targetfileid)
+            // <inheritdoc/>
+            public async Task SetAllBlocksMissing(long targetfileid, CancellationToken token)
             {
                 m_hasUpdates = true;
                 m_resetfileCommand
                     .SetTransaction(m_db.Transaction)
                     .SetParameterValue("@TargetFileId", targetfileid);
 
-                var r = await m_resetfileCommand.ExecuteNonQueryAsync()
+                var r = await m_resetfileCommand.ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
                 if (r <= 0)
                     throw new Exception("Unexpected reset result");
             }
 
-            public async Task SetAllBlocksRestored(long targetfileid, bool includeMetadata)
+            /// <inheritdoc/>
+            public async Task SetAllBlocksRestored(long targetfileid, bool includeMetadata, CancellationToken token)
             {
                 m_hasUpdates = true;
                 m_updateAsRestoredCommand
@@ -2474,13 +2544,14 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Metadata", includeMetadata ? 1 : 0);
 
                 var r = await m_updateAsRestoredCommand
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
                 if (r <= 0)
                     throw new Exception("Unexpected reset result");
             }
 
-            public async Task SetFileDataVerified(long targetfileid)
+            /// <inheritdoc/>
+            public async Task SetFileDataVerified(long targetfileid, CancellationToken token)
             {
                 m_hasUpdates = true;
                 m_updateFileAsDataVerifiedCommand
@@ -2488,13 +2559,14 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@TargetFileId", targetfileid);
 
                 var r = await m_updateFileAsDataVerifiedCommand
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
                 if (r != 1)
                     throw new Exception("Unexpected result when marking file as verified.");
             }
 
-            public async Task SetBlockRestored(long targetfileid, long index, string hash, long size, bool metadata)
+            /// <inheritdoc/>
+            public async Task SetBlockRestored(long targetfileid, long index, string hash, long size, bool metadata, CancellationToken token)
             {
                 m_hasUpdates = true;
                 m_insertblockCommand
@@ -2506,17 +2578,18 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Metadata", metadata);
 
                 var r = await m_insertblockCommand
-                    .ExecuteNonQueryAsync()
+                    .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
 
                 if (r != 1)
                     throw new Exception("Unexpected result when marking block.");
             }
 
-            public async Task CommitAsync()
+            /// <inheritdoc/>
+            public async Task CommitAsync(CancellationToken token)
             {
                 using (new Logging.Timer(LOGTAG, "CommitBlockMarker", "CommitBlockMarker"))
-                    await m_db.Transaction.CommitAsync().ConfigureAwait(false);
+                    await m_db.Transaction.CommitAsync(token: token).ConfigureAwait(false);
             }
 
             public void Dispose()
@@ -2537,14 +2610,15 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Creates a new block marker for marking blocks as restored, missing, or verified.
         /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited returns an instance of <see cref="IBlockMarker"/>.</returns>
-        public async Task<IBlockMarker> CreateBlockMarkerAsync()
+        public async Task<IBlockMarker> CreateBlockMarkerAsync(CancellationToken token)
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
                 throw new InvalidOperationException("No temporary file table set up for this restore.");
             if (string.IsNullOrWhiteSpace(m_totalprogtable))
                 throw new InvalidOperationException("No progress table set up for this restore.");
-            return await DirectBlockMarker.CreateAsync(this, m_tempblocktable, m_tempfiletable, m_totalprogtable)
+            return await DirectBlockMarker.CreateAsync(this, m_tempblocktable, m_tempfiletable, m_totalprogtable, token)
                 .ConfigureAwait(false);
         }
 
@@ -2556,7 +2630,7 @@ namespace Duplicati.Library.Main.Database
         public override async ValueTask DisposeAsync()
         {
             await DisposePoolAsync().ConfigureAwait(false);
-            await DropRestoreTable().ConfigureAwait(false);
+            await DropRestoreTable(default).ConfigureAwait(false);
             await base.DisposeAsync().ConfigureAwait(false);
         }
 
@@ -2578,8 +2652,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Returns a list of target folders for the folder blockset.
         /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of strings representing the target folders.</returns>
-        public async IAsyncEnumerable<string> GetTargetFolders()
+        public async IAsyncEnumerable<string> GetTargetFolders([EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand($@"
                 SELECT ""TargetPath""
@@ -2589,8 +2664,8 @@ namespace Duplicati.Library.Main.Database
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@BlocksetID", FOLDER_BLOCKSET_ID);
 
-            await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-            while (await rd.ReadAsync().ConfigureAwait(false))
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return rd.ConvertValueToString(0) ?? "";
         }
 
@@ -2614,7 +2689,9 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// Gets an asynchronous enumerable of block entries for the file.
             /// </summary>
-            IAsyncEnumerable<IBlockEntry> Blocks();
+            /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+            /// <returns>An asynchronous enumerable of <see cref="IBlockEntry"/> representing the blocks of the file.</returns>
+            IAsyncEnumerable<IBlockEntry> Blocks(CancellationToken token);
         }
 
         /// <summary>
@@ -2706,14 +2783,15 @@ namespace Duplicati.Library.Main.Database
             public long TargetFileID { get { return m_rd.ConvertValueToInt64(2); } }
             public string SourcePath { get { return m_rd.ConvertValueToString(1) ?? ""; } }
 
-            public async IAsyncEnumerable<IBlockEntry> Blocks()
+            /// <inheritdoc/>
+            public async IAsyncEnumerable<IBlockEntry> Blocks([EnumeratorCancellation] CancellationToken token)
             {
                 var tid = TargetFileID;
 
                 do
                 {
                     yield return new BlockEntry(m_rd, m_blocksize);
-                } while ((MoreData = await m_rd.ReadAsync().ConfigureAwait(false)) && tid == TargetFileID);
+                } while ((MoreData = await m_rd.ReadAsync(token).ConfigureAwait(false)) && tid == TargetFileID);
             }
         }
 
@@ -2721,8 +2799,9 @@ namespace Duplicati.Library.Main.Database
         /// Returns a list of files and their source blocks for fast restoration.
         /// </summary>
         /// <param name="blocksize">The size of the blocks to be used for restoration.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of <see cref="IFastSource"/> representing the files and their source blocks.</returns>
-        public async IAsyncEnumerable<IFastSource> GetFilesAndSourceBlocksFast(long blocksize)
+        public async IAsyncEnumerable<IFastSource> GetFilesAndSourceBlocksFast(long blocksize, [EnumeratorCancellation] CancellationToken token)
         {
             await using (var cmdReader = m_connection.CreateCommand())
             await using (var cmd = m_connection.CreateCommand())
@@ -2738,16 +2817,16 @@ namespace Duplicati.Library.Main.Database
                     SELECT DISTINCT ""{m_tempfiletable}"".""Path""
                     FROM ""{m_tempfiletable}""
                 ");
-                await using (var rd = await cmdReader.ExecuteReaderAsync().ConfigureAwait(false))
+                await using (var rd = await cmdReader.ExecuteReaderAsync(token).ConfigureAwait(false))
                 {
-                    while (await rd.ReadAsync().ConfigureAwait(false))
+                    while (await rd.ReadAsync(token).ConfigureAwait(false))
                     {
                         var sourcepath = rd.ConvertValueToString(0);
                         if (SystemIO.IO_OS.FileExists(sourcepath))
                         {
                             await cmd
                                 .SetParameterValue("@Path", sourcepath)
-                                .ExecuteNonQueryAsync()
+                                .ExecuteNonQueryAsync(token)
                                 .ConfigureAwait(false);
                         }
                         else
@@ -2761,10 +2840,10 @@ namespace Duplicati.Library.Main.Database
                 await cmd.ExecuteNonQueryAsync($@"
                     CREATE INDEX ""{m_tempfiletable}_LocalSourceExists""
                     ON ""{m_tempfiletable}"" (""LocalSourceExists"")
-                ")
+                ", token)
                     .ConfigureAwait(false);
 
-                await m_rtr.CommitAsync().ConfigureAwait(false);
+                await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
             }
 
             m_latestblocktable = "LatestBlocksetIds-" + m_temptabsetguid;
@@ -2803,16 +2882,16 @@ namespace Duplicati.Library.Main.Database
             await using (var cmd = m_connection.CreateCommand())
             {
                 cmd.SetTransaction(m_rtr);
-                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_latestblocktable}"" ")
+                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_latestblocktable}"" ", token)
                     .ConfigureAwait(false);
 
-                await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{m_latestblocktable}"" AS {latestBlocksetIds}")
+                await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{m_latestblocktable}"" AS {latestBlocksetIds}", token)
                     .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync($@"
                     CREATE INDEX ""{m_latestblocktable}_path""
                     ON ""{m_latestblocktable}"" (""Path"")
-                ")
+                ", token)
                     .ConfigureAwait(false);
 
                 await cmd.ExecuteNonQueryAsync($@"
@@ -2822,7 +2901,7 @@ namespace Duplicati.Library.Main.Database
                         FROM ""{m_latestblocktable}""
                         WHERE ""Path"" = ""{m_tempfiletable}"".""Path""
                     )
-                ")
+                ", token)
                     .ConfigureAwait(false);
             }
 
@@ -2852,9 +2931,9 @@ namespace Duplicati.Library.Main.Database
             await using (var cmd = m_connection.CreateCommand())
             {
                 cmd.SetTransaction(m_rtr);
-                await using var rd = await cmd.ExecuteReaderAsync(sources)
+                await using var rd = await cmd.ExecuteReaderAsync(sources, token)
                     .ConfigureAwait(false);
-                if (await rd.ReadAsync().ConfigureAwait(false))
+                if (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     bool more;
                     do
@@ -2865,13 +2944,13 @@ namespace Duplicati.Library.Main.Database
 
                         more = n.MoreData;
                         while (more && n.TargetFileID == tid)
-                            more = await rd.ReadAsync().ConfigureAwait(false);
+                            more = await rd.ReadAsync(token).ConfigureAwait(false);
 
                     } while (more);
                 }
             }
 
-            await m_rtr.CommitAsync().ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
     }
