@@ -137,10 +137,16 @@ namespace Duplicati.UnitTest
                 dont_replace_faulty_index_files = false,
             });
 
+            var brokenIndexFileNames = brokenIndexFiles.Select(Path.GetFileName).ToHashSet();
+
             using (var c = new Controller("file://" + TARGETFOLDER, repairopts, null))
             {
                 var res = c.Test(short.MaxValue);
                 Assert.That(res.Warnings, Is.Not.Empty, "Expected warnings during test with broken index files");
+                var faultyResults = res.Verifications
+                    .Where(x => x.Value.Any())
+                    .Where(x => brokenIndexFileNames.Contains(x.Key)).ToList();
+                Assert.That(faultyResults, Is.Empty, "Expected no faulty index files reported after repair");
             }
 
             var indexFilesAfter = Directory.GetFiles(TARGETFOLDER, "*.dindex.zip", SearchOption.TopDirectoryOnly).ToHashSet();

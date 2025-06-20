@@ -373,6 +373,7 @@ namespace Duplicati.Library.Main.Operation
                         await backendManager.DeleteAsync(vol.Name, vol.Size, true, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
                         await backendManager.WaitForEmptyAsync(repairdb, rtr.Transaction, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
                         rtr.Commit("ReplaceFaultyIndexFileCommit");
+                        m_results.RemoveResult(vol.Name);
                     }
                 }
                 catch (Exception ex)
