@@ -42,13 +42,19 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
             var opts = {};
             var obj = {'Backup': {'TargetURL':  $scope.TargetURL } };
 
-            if (($scope.EncryptionPassphrase || '') == '')
-                opts['--no-encryption'] = 'true';
-            else
-                opts['passphrase'] = $scope.EncryptionPassphrase;
-
             if (!AppUtils.parse_extra_options($scope.ExtendedOptions, opts))
                 return false;
+
+            if (($scope.EncryptionPassphrase || '') == '')
+            {
+                opts['--no-encryption'] = 'true';
+                delete opts['passphrase'];
+            }
+            else
+            {
+                opts['passphrase'] = $scope.EncryptionPassphrase;
+                delete opts['--no-encryption'];
+            }
 
             obj.Backup.Settings = [];
             for(var k in opts) {
