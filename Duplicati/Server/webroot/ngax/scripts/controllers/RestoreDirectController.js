@@ -118,6 +118,8 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
             if (tmpsettings[i].Name == 'passphrase') {
                 $scope.EncryptionPassphrase = tmpsettings[i].Value;
                 tmpsettings.splice(i, 1);
+            } else if (tmpsettings[i].Name.indexOf('--') == 0) {
+                res[tmpsettings[i].Name] = tmpsettings[i].Value;
             } else {
                 res['--' + tmpsettings[i].Name] = tmpsettings[i].Value;
             }
