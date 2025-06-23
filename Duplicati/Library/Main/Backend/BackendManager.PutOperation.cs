@@ -105,7 +105,7 @@ partial class BackendManager
         public static Func<Task> OnDbUpdateDefault = () => Task.CompletedTask;
 
         /// <summary>
-        /// Creates a new put operation 
+        /// Creates a new put operation
         /// </summary>
         /// <param name="context">The execution context</param>
         /// <param name="waitForComplete">True if the operation should wait for completion</param>
@@ -345,7 +345,7 @@ partial class BackendManager
             Context.Database.LogRemoteVolumeRenamed(oldname, newname);
             remoteFilename = newname;
 
-            // If there is an index file attached to the block file, 
+            // If there is an index file attached to the block file,
             // it references the block filename, so we create a new index file
             // which is a copy of the current, but with the new name
             if (indexOperation != null)
