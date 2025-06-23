@@ -9,14 +9,6 @@
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
-
-  <ItemGroup>
-    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
-    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
-    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.4" />
   </ItemGroup>
