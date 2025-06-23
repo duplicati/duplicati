@@ -54,7 +54,7 @@ public static partial class Command
                 "Google.Apis.Auth.dll",
                 "Google.Apis.Core.dll",
                 "SQLiteHelper.dll",
-                "SQLite.Interop.dll",
+                "Microsoft.Data.Sqlite.dll",
                 "Microsoft.IdentityModel.Abstractions.dll",
                 "System.Reactive.dll"
             };
