@@ -394,7 +394,7 @@ namespace Duplicati.Library.Main.Operation
 
         private async Task FinishVolumeAndUpload(LocalDeleteDatabase db, IBackendManager backendManager, BlockVolumeWriter newvol, IndexVolumeWriter newvolindex, List<KeyValuePair<string, long>> uploadedVolumes)
         {
-            Action indexVolumeFinished = null;
+            Func<Task> indexVolumeFinished = null;
             if (newvolindex != null && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                 indexVolumeFinished = async () =>
                 {

@@ -985,7 +985,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Create a new index file that points to the new volume
                 IndexVolumeWriter newvolindex = null;
-                Action indexVolumeFinished = null;
+                Func<Task> indexVolumeFinished = null;
                 if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
                 {
                     newvolindex = new IndexVolumeWriter(m_options);

@@ -28,7 +28,7 @@ internal interface IBackendManager : IDisposable
     /// <param name="onDbUpdate">The action to call when the database should be updated</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task PutAsync(VolumeWriterBase blockVolume, IndexVolumeWriter? indexVolume, Action? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken);
+    Task PutAsync(VolumeWriterBase blockVolume, IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken);
 
     /// <summary>
     /// Uploads a file to the backend without encryption

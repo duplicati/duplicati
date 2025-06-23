@@ -246,7 +246,7 @@ internal partial class BackendManager : IBackendManager
     /// <param name="onDbUpdate">The callback to call when the database is updated</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task PutAsync(VolumeWriterBase volume, IndexVolumeWriter? indexVolume, Action? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken)
+    public async Task PutAsync(VolumeWriterBase volume, IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken)
     {
         volume.Close();
 

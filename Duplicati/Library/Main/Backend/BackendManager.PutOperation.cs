@@ -98,7 +98,7 @@ partial class BackendManager
         /// <summary>
         /// A callback that is invoked when the index volume is finished
         /// </summary>
-        public required Action? IndexVolumeFinishedCallback { get; init; }
+        public required Func<Task>? IndexVolumeFinishedCallback { get; init; }
         /// <summary>
         /// The default callback for database updates (no-op)
         /// </summary>
@@ -234,7 +234,8 @@ partial class BackendManager
 
 
                 OriginalIndexFile.FinishVolume(hash, size);
-                IndexVolumeFinishedCallback?.Invoke();
+                if (IndexVolumeFinishedCallback != null)
+                    await IndexVolumeFinishedCallback();
                 OriginalIndexFile.Close();
 
                 indexOperation = (OriginalIndexFile, req2);
