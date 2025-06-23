@@ -561,81 +561,7 @@ ORDER BY
             var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
             return new PaginatedResults<IListFolderEntry>((int)(offset / limit), (int)intLimit, (int)((totalCount + limit - 1) / limit), totalCount, results);
         }
-        
-        /// <summary>
-        /// Lists virtual folder entries for the prefixes, that is folders that exist to complete the tree structure, but do not exist in the backup.
-        /// </summary>
-        /// <param name="prefixIds">The list of prefix ids</param>
-        /// <param name="filesetid">The filesets to filter for</param>
-        /// <returns>The list of virtual folders</returns>
-        public IEnumerable<IListFolderEntry> ListVirtualFolders(IEnumerable<long> prefixIds, long filesetId)
-        {
-            using var cmd = m_connection.CreateCommand();
 
-            cmd.SetCommandAndParameters(@"
-                WITH
-                ParentPrefixes AS (
-                    SELECT ID, Prefix FROM PathPrefix WHERE ID IN (@PrefixIds)
-                ),
-                UsedPrefixes AS (
-                    SELECT DISTINCT fl.PrefixID
-                    FROM FilesetEntry fe
-                    JOIN FileLookup fl ON fe.FileID = fl.ID
-                    WHERE fe.FilesetID = @FilesetId
-                ),
-                DirectlyUsedFolders AS (
-                    SELECT DISTINCT fl.PrefixID
-                    FROM FilesetEntry fe
-                    JOIN FileLookup fl ON fe.FileID = fl.ID
-                    WHERE fe.FilesetID = @FilesetId AND fl.Path = ''
-                ),
-                DescendantPrefixes AS (
-                    SELECT pp.ID, pp.Prefix
-                    FROM PathPrefix pp
-                    JOIN ParentPrefixes p ON pp.Prefix LIKE p.Prefix || '%' AND pp.ID != p.ID
-                ),
-                VirtualCandidates AS (
-                    SELECT dp.ID AS PrefixID
-                    FROM DescendantPrefixes dp
-                    JOIN UsedPrefixes up ON up.PrefixID = dp.ID
-                    LEFT JOIN DirectlyUsedFolders duf ON duf.PrefixID = dp.ID
-                    WHERE duf.PrefixID IS NULL
-                ),
-                FilesetPaths AS (
-                    SELECT f.Path
-                    FROM File f
-                    JOIN FilesetEntry fe ON fe.FileID = f.ID
-                    WHERE fe.FilesetID = @FilesetId
-                ),
-                VirtualFolders AS (
-                    SELECT pp.ID, pp.Prefix
-                    FROM VirtualCandidates vc
-                    JOIN PathPrefix pp ON pp.ID = vc.PrefixID
-                    LEFT JOIN FilesetPaths fp ON pp.Prefix = fp.Path
-                    WHERE fp.Path IS NULL
-                )
-
-                SELECT pp.ID, pp.Prefix
-                FROM PathPrefix pp
-                WHERE pp.ID IN (@PrefixIds)
-
-                UNION
-
-                SELECT ID, Prefix FROM VirtualFolders
-                ORDER BY Prefix
-            ")
-            .SetParameterValue("@FilesetId", filesetId)
-            .ExpandInClauseParameter("@PrefixIds", prefixIds);
-
-            var results = new List<IListFolderEntry>();
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
-            {
-                var path = rd.ConvertValueToString(1) ?? string.Empty;
-                results.Add(new FolderEntry(path, -1, true, false, DateTime.MinValue));
-            }
-
-            return results;
-        }
 
         /// <summary>
         /// Gets the prefix IDs for a given set of folder-prefixes.
@@ -656,39 +582,59 @@ ORDER BY
         }
 
         /// <summary>
-        /// Gathers root prefixes from the fileset entries.
+        /// Gets the minimal unique prefix entries for a given fileset ID.
+        /// This returns the roots of all unique paths in the fileset.
         /// </summary>
-        /// <param name="filesetid">The filesetId to get the prefixes for</param>
-        /// <returns>A list of root prefixes</returns>
-        public IEnumerable<long> GetRootPrefixes(long filesetid)
+        /// <param name="filesetId">The fileset id</param>
+        /// <returns>The entries that are unique roots</returns>
+        public IList<IListFolderEntry> GetMinimalUniquePrefixEntries(long filesetId)
         {
+            var results = new List<IListFolderEntry>();
+
             using var cmd = m_connection.CreateCommand();
-
             cmd.SetCommandAndParameters(@"
-        WITH Prefixes AS (
-            SELECT DISTINCT fl.""PrefixID"", pp.""Prefix""
-            FROM ""FilesetEntry"" fe
-            INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-            INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
-            WHERE fe.""FilesetID"" = @filesetid
-        )
-        SELECT p1.""PrefixID""
-        FROM Prefixes p1
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM Prefixes p2
-            WHERE p2.""PrefixID"" != p1.""PrefixID""
-            AND p1.""Prefix"" LIKE p2.""Prefix"" || '%'
-            AND LENGTH(p1.""Prefix"") > LENGTH(p2.""Prefix"")
-        )
-        ORDER BY p1.""Prefix"" ASC
-    ")
-            .SetParameterValue("@filesetid", filesetid);
+                WITH AllPaths AS (
+                    SELECT fl.""ID"" AS ""FileID"", 
+                        pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
+                        fl.""BlocksetID"", 
+                        b.""Length"", 
+                        fe.""Lastmodified""
+                    FROM ""FilesetEntry"" fe
+                    JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+                    JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+                    LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
+                    WHERE fe.""FilesetID"" = @FilesetId
+                ),
+                RootCandidates AS (
+                    SELECT a1.*
+                    FROM AllPaths a1
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM AllPaths a2
+                        WHERE a2.""FullPath"" != a1.""FullPath""
+                        AND a1.""FullPath"" LIKE a2.""FullPath"" || '%'
+                    )
+                )
+                SELECT ""FullPath"", ""Length"",
+                    CASE WHEN ""BlocksetID"" = -100 THEN 1 ELSE 0 END AS ""IsDirectory"",
+                    CASE WHEN ""BlocksetID"" = -200 THEN 1 ELSE 0 END AS ""IsSymlink"",
+                    ""Lastmodified""
+                FROM RootCandidates
+                ORDER BY ""FullPath""
+            ");
+            cmd.SetParameterValue("@FilesetId", filesetId);
 
-            return cmd.ExecuteReaderEnumerable()
-                .Select(x => x.ConvertValueToInt64(0, -1))
-                .Where(x => x != -1)
-                .ToList();
+            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            {
+                var path = rd.ConvertValueToString(0) ?? string.Empty;
+                var size = rd.ConvertValueToInt64(1, -1);
+                var isDir = rd.GetInt32(2) != 0;
+                var isSymlink = rd.GetInt32(3) != 0;
+                var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
+
+                results.Add(new FolderEntry(path, size, isDir, isSymlink, lastModified));
+            }
+
+            return results;
         }
 
         /// <summary>

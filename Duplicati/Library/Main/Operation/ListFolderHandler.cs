@@ -57,7 +57,7 @@ internal static class ListFolderHandler
         {
             if (folders != null && folders.Length > 1)
                 throw new UserInformationException("When no folder is specified, only one folder can be listed", "MultipleFoldersFound");
-            var rootFolders = db.ListVirtualFolders(db.GetRootPrefixes(filesetIds[0]), filesetIds[0]).ToList();
+            var rootFolders = db.GetMinimalUniquePrefixEntries(filesetIds[0]);
             result.Entries = new PaginatedResults<IListFolderEntry>(0, rootFolders.Count, 1, rootFolders.Count, rootFolders);
         }
         else
