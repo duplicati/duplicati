@@ -433,9 +433,9 @@ namespace Duplicati.Library.Main.Operation
                         await backendManager.DeleteAsync(vol.Name, vol.Size, true, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                         await backendManager.WaitForEmptyAsync(repairdb, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                         await repairdb.Transaction
-                            .CommitAsync("ReplaceFaultyIndexFileCommit")
+                            .CommitAsync("ReplaceFaultyIndexFileCommit", token: cancellationToken)
                             .ConfigureAwait(false);
-                        m_results.RemoveResult(vol.Name);
+                        m_result.RemoveResult(vol.Name);
                     }
                 }
                 catch (Exception ex)

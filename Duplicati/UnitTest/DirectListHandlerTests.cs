@@ -337,7 +337,8 @@ namespace Duplicati.UnitTest
             ]);
 
             var result = await db
-                .GetMinimalUniquePrefixEntries(1).Select(e => e.Path, CancellationToken.None)
+                .GetMinimalUniquePrefixEntries(1, CancellationToken.None)
+                .Select(e => e.Path)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -363,7 +364,8 @@ namespace Duplicati.UnitTest
             ]);
 
             var result = await db
-                .GetMinimalUniquePrefixEntries(1).Select(e => e.Path, CancellationToken.None)
+                .GetMinimalUniquePrefixEntries(1, CancellationToken.None)
+                .Select(e => e.Path)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -387,7 +389,8 @@ namespace Duplicati.UnitTest
             ]);
 
             var result = await db
-                .GetMinimalUniquePrefixEntries(1).Select(e => e.Path, CancellationToken.None)
+                .GetMinimalUniquePrefixEntries(1, CancellationToken.None)
+                .Select(e => e.Path)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -414,7 +417,8 @@ namespace Duplicati.UnitTest
             ]);
 
             var result = await db
-                .GetMinimalUniquePrefixEntries(1).Select(e => e.Path, CancellationToken.None)
+                .GetMinimalUniquePrefixEntries(1, CancellationToken.None)
+                .Select(e => e.Path)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -429,7 +433,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void GetMinimalUniquePrefixEntries_ShouldReturnExpectedMinimalRoots()
+        public async Task GetMinimalUniquePrefixEntries_ShouldReturnExpectedMinimalRoots()
         {
             // Arrange: Prepare prefixes (minimal unique) and contents
             var testPrefixes = new[]
@@ -448,10 +452,15 @@ namespace Duplicati.UnitTest
 
             // Act
             using var tempFile = new TempFile();
-            using var db = new LocalListDatabase(tempFile, 1);
+            await using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
             SeedTestData(db, testPrefixes);
 
-            var resultItems = db.GetMinimalUniquePrefixEntries(1).ToList();
+            var resultItems = await db
+                .GetMinimalUniquePrefixEntries(1, CancellationToken.None)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
             var result = resultItems.Select(e => e.Path).ToList();
 
             Assert.That(result, Does.Contain(@"C:\Downloads\testsource\AA\"));
