@@ -323,39 +323,35 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public async Task GetRootPrefixes_ShouldReturnCorrectLinuxPrefixes()
+        public async Task GetMinimalUniquePrefixEntries_ShouldReturnCorrectLinuxPrefixes()
         {
-            // Arrange
             using var tempFile = new TempFile();
             using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
                 .ConfigureAwait(false);
             SeedTestData(db, [
-                "/folder1/", // 1
+                "/folder1/",
                 "/folder1/sub1/",
-                "/folder2/", // 3
+                "/folder2/",
                 "/folder2/sub2/",
-                "/folder3/" // 5
+                "/folder3/"
             ]);
 
-            // Act
             var result = await db
-                .GetRootPrefixes(1, CancellationToken.None)
+                .GetMinimalUniquePrefixEntries(1).Select(e => e.Path, CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            // Assert
-            Assert.That(result, Does.Contain(1L));
-            Assert.That(result, Does.Contain(3L));
-            Assert.That(result, Does.Contain(5L));
-            Assert.That(result, Does.Not.Contain(2L));
-            Assert.That(result, Does.Not.Contain(4L));
+            Assert.That(result, Does.Contain("/folder1/"));
+            Assert.That(result, Does.Contain("/folder2/"));
+            Assert.That(result, Does.Contain("/folder3/"));
+            Assert.That(result.Any(x => x.Contains("sub1")), Is.False);
+            Assert.That(result.Any(x => x.Contains("sub2")), Is.False);
             Assert.That(result.Count, Is.EqualTo(3));
         }
 
         [Test]
-        public async Task GetRootPrefixes_ShouldReturnCorrectWindowsDrivePrefixes()
+        public async Task GetMinimalUniquePrefixEntries_ShouldReturnCorrectWindowsDrivePrefixes()
         {
-            // Arrange
             using var tempFile = new TempFile();
             using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
                 .ConfigureAwait(false);
@@ -366,24 +362,21 @@ namespace Duplicati.UnitTest
                 "D:\\otherfolder\\"
             ]);
 
-            // Act
             var result = await db
-                .GetRootPrefixes(1, CancellationToken.None)
+                .GetMinimalUniquePrefixEntries(1).Select(e => e.Path, CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            // Assert
-            Assert.That(result, Does.Contain(1L));
-            Assert.That(result, Does.Contain(3L));
-            Assert.That(result, Does.Contain(4L));
-            Assert.That(result, Does.Not.Contain(2L));
+            Assert.That(result, Does.Contain("C:\\folder1\\"));
+            Assert.That(result, Does.Contain("C:\\folder2\\"));
+            Assert.That(result, Does.Contain("D:\\otherfolder\\"));
+            Assert.That(result.Any(x => x.Contains("sub1")), Is.False);
             Assert.That(result.Count, Is.EqualTo(3));
         }
 
         [Test]
-        public async Task GetRootPrefixes_ShouldReturnCorrectWindowsUncPrefixes()
+        public async Task GetMinimalUniquePrefixEntries_ShouldReturnCorrectWindowsUncPrefixes()
         {
-            // Arrange
             using var tempFile = new TempFile();
             using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
                 .ConfigureAwait(false);
@@ -393,83 +386,155 @@ namespace Duplicati.UnitTest
                 "\\\\server\\share\\otherfolder\\"
             ]);
 
-            // Act
             var result = await db
-                .GetRootPrefixes(1, CancellationToken.None)
+                .GetMinimalUniquePrefixEntries(1).Select(e => e.Path, CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            // Assert
-            Assert.That(result, Does.Contain(1L));
-            Assert.That(result, Does.Contain(3L));
-            Assert.That(result, Does.Not.Contain(2L));
+            Assert.That(result, Does.Contain("\\\\server\\share\\folder\\"));
+            Assert.That(result, Does.Contain("\\\\server\\share\\otherfolder\\"));
+            Assert.That(result.Any(x => x.Contains("subfolder")), Is.False);
             Assert.That(result.Count, Is.EqualTo(2));
         }
 
         [Test]
-        public async Task GetRootPrefixes_ShouldHandleMixedWindowsDriveAndUncPaths()
+        public async Task GetMinimalUniquePrefixEntries_ShouldHandleMixedWindowsDriveAndUncPaths()
         {
-            // Arrange
             using var tempFile = new TempFile();
             using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
                 .ConfigureAwait(false);
             SeedTestData(db, [
-                "C:\\data\\", // 1
+                "C:\\data\\",
                 "C:\\data\\sub1\\",
-                "C:\\music\\", // 3
-                "D:\\videos\\", // 4
-                "\\\\server\\share\\docs\\", // 5
+                "C:\\music\\",
+                "D:\\videos\\",
+                "\\\\server\\share\\docs\\",
                 "\\\\server\\share\\docs\\subdoc\\",
-                "\\\\server\\share\\pictures\\" // 7
+                "\\\\server\\share\\pictures\\"
             ]);
 
-            // Act
             var result = await db
-                .GetRootPrefixes(1, CancellationToken.None)
+                .GetMinimalUniquePrefixEntries(1).Select(e => e.Path, CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            // Assert
-            Assert.That(result, Does.Contain(1L));
-            Assert.That(result, Does.Contain(3L));
-            Assert.That(result, Does.Contain(4L));
-            Assert.That(result, Does.Contain(5L));
-            Assert.That(result, Does.Contain(7L));
-            Assert.That(result, Does.Not.Contain(2L));
-            Assert.That(result, Does.Not.Contain(6L));
+            Assert.That(result, Does.Contain("C:\\data\\"));
+            Assert.That(result, Does.Contain("C:\\music\\"));
+            Assert.That(result, Does.Contain("D:\\videos\\"));
+            Assert.That(result, Does.Contain("\\\\server\\share\\docs\\"));
+            Assert.That(result, Does.Contain("\\\\server\\share\\pictures\\"));
+            Assert.That(result.Any(x => x.Contains("sub1")), Is.False);
+            Assert.That(result.Any(x => x.Contains("subdoc")), Is.False);
             Assert.That(result.Count, Is.EqualTo(5));
         }
 
-        private void SeedTestData(LocalListDatabase db, IEnumerable<string> prefixes)
+        [Test]
+        public void GetMinimalUniquePrefixEntries_ShouldReturnExpectedMinimalRoots()
         {
-            long filesetId = 1;
-            long prefixId = 1;
+            // Arrange: Prepare prefixes (minimal unique) and contents
+            var testPrefixes = new[]
+            {
+                @"C:\Downloads\testsource\AA\",
+                @"C:\Downloads\testsource\AA\readme.txt",
+                @"C:\Downloads\testsource\AAA\",
+                @"C:\Downloads\testsource\AAA\readme.txt",
+                @"C:\Downloads\testsource\AAAA\",
+                @"C:\Downloads\testsource\AAAA\readme.txt",
+                @"C:\Downloads\Kits\",
+                @"C:\Downloads\Kits\abc.txt",
+                @"Y:\source\",
+                @"Y:\source\123.bin"
+            };
+
+            // Act
+            using var tempFile = new TempFile();
+            using var db = new LocalListDatabase(tempFile, 1);
+            SeedTestData(db, testPrefixes);
+
+            var resultItems = db.GetMinimalUniquePrefixEntries(1).ToList();
+            var result = resultItems.Select(e => e.Path).ToList();
+
+            Assert.That(result, Does.Contain(@"C:\Downloads\testsource\AA\"));
+            Assert.That(result, Does.Contain(@"C:\Downloads\testsource\AAA\"));
+            Assert.That(result, Does.Contain(@"C:\Downloads\testsource\AAAA\"));
+            Assert.That(result, Does.Contain(@"C:\Downloads\Kits\"));
+            Assert.That(result, Does.Contain(@"Y:\source\"));
+            Assert.That(result.Count, Is.EqualTo(5), "Expected 5 unique prefixes");
+        }
+
+        private void SeedTestData(LocalListDatabase db, IEnumerable<string> fullPaths)
+        {
+            const long filesetId = 1;
             long fileId = 1;
+
             using var cmd = db.Connection.CreateCommand();
 
+            // Insert fileset entry
             cmd.SetCommandAndParameters(@"
-        INSERT INTO Fileset (ID, OperationID, VolumeID, IsFullBackup, Timestamp)
-        VALUES (@filesetId, 1, 1, 1, 0);")
+                INSERT OR IGNORE INTO Fileset (ID, OperationID, VolumeID, IsFullBackup, Timestamp)
+                VALUES (@filesetId, 1, 1, 1, 0);")
                 .SetParameterValue("@filesetId", filesetId)
                 .ExecuteNonQuery();
 
-            foreach (var prefix in prefixes)
+            foreach (var rawPath in fullPaths)
             {
-                cmd.SetCommandAndParameters(@"
-                    INSERT INTO PathPrefix (ID, Prefix) VALUES (@prefixId, @prefix);
-                    INSERT INTO FileLookup (ID, PrefixID, Path, BlocksetID, MetadataID)
-                    VALUES (@fileId, @prefixId, @path, 1, 1);
-                    INSERT INTO FilesetEntry (FilesetID, FileID, Lastmodified)
-                    VALUES (@filesetId, @fileId, 0);"
-                )
-                .SetParameterValue("@prefixId", prefixId)
-                .SetParameterValue("@prefix", prefix)
-                .SetParameterValue("@fileId", fileId)
-                .SetParameterValue("@filesetId", filesetId)
-                .SetParameterValue("@path", prefix)
-                .ExecuteNonQuery();
+                // Normalize path separators but preserve OS style
+                var path = rawPath.Replace('\\', Path.DirectorySeparatorChar)
+                                .Replace('/', Path.DirectorySeparatorChar);
 
-                prefixId++;
+                string prefix;
+                string relative;
+
+                if (rawPath.EndsWith("/") || rawPath.EndsWith("\\"))
+                {
+                    // Directory: entire path is prefix, no file
+                    prefix = rawPath;
+                    relative = string.Empty;
+                }
+                else
+                {
+                    int lastSep = Math.Max(rawPath.LastIndexOf('/'), rawPath.LastIndexOf('\\'));
+                    if (lastSep < 0)
+                    {
+                        // No separator: file in root
+                        prefix = string.Empty;
+                        relative = rawPath;
+                    }
+                    else
+                    {
+                        prefix = rawPath.Substring(0, lastSep + 1); // include slash
+                        relative = rawPath.Substring(lastSep + 1);
+                    }
+                }
+
+                // Insert prefix if not present
+                cmd.SetCommandAndParameters(@"
+                    INSERT OR IGNORE INTO PathPrefix (Prefix)
+                    VALUES (@prefix);")
+                    .SetParameterValue("@prefix", prefix)
+                    .ExecuteNonQuery();
+
+                long prefixId = cmd.SetCommandAndParameters("SELECT ID FROM PathPrefix WHERE Prefix = @prefix")
+                    .SetParameterValue("@prefix", prefix)
+                    .ExecuteScalarInt64();
+
+                // Insert FileLookup
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO FileLookup (ID, PrefixID, Path, BlocksetID, MetadataID)
+                    VALUES (@fileId, @prefixId, @path, 1, 1);")
+                    .SetParameterValue("@fileId", fileId)
+                    .SetParameterValue("@prefixId", prefixId)
+                    .SetParameterValue("@path", relative)
+                    .ExecuteNonQuery();
+
+                // Insert FilesetEntry
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO FilesetEntry (FilesetID, FileID, Lastmodified)
+                    VALUES (@filesetId, @fileId, 0);")
+                    .SetParameterValue("@filesetId", filesetId)
+                    .SetParameterValue("@fileId", fileId)
+                    .ExecuteNonQuery();
+
                 fileId++;
             }
         }

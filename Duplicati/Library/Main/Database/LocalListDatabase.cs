@@ -1070,109 +1070,6 @@ namespace Duplicati.Library.Main.Database
             return new PaginatedResults<IListFolderEntry>((int)(offset / limit), (int)intLimit, (int)((totalCount + limit - 1) / limit), totalCount, results);
         }
 
-        /// <summary>
-        /// Lists the folder entries for a given fileset and prefix IDs.
-        /// </summary>
-        /// <param name="prefixIds">The prefix IDs to return entries for.</param>
-        /// <param name="filesetid">The fileset ID to filter the folder entries.</param>
-        /// <param name="offset">The offset for pagination.</param>
-        /// <param name="limit">The limit for pagination.</param>
-        /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <returns>A task that when awaited returns a paginated result set of folder entries.</returns>
-        public async Task<IPaginatedResults<IListFolderEntry>> ListFilesetEntries(IEnumerable<long> prefixIds, long filesetid, long offset, long limit, CancellationToken token)
-        {
-            if (offset != 0 && limit <= 0)
-                throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
-            if (limit <= 0)
-                limit = long.MaxValue;
-
-            await using var cmd = m_connection.CreateCommand();
-
-            if (!prefixIds.Any())
-                return new PaginatedResults<IListFolderEntry>(0, (int)limit, 0, 0, Enumerable.Empty<IListFolderEntry>());
-
-            // Fetch entries
-            cmd.SetCommandAndParameters(@"
-                SELECT
-                    ""pp"".""Prefix"" || ""fl"".""Path"" AS ""FullPath"",
-                    ""b"".""Length"",
-                    CASE
-                        WHEN ""fl"".""BlocksetID"" = @FolderBlocksetId
-                        THEN 1
-                        ELSE 0
-                    END AS ""IsDirectory"",
-                    CASE
-                        WHEN ""fl"".""BlocksetID"" = @SymlinkBlocksetId
-                        THEN 1
-                        ELSE 0
-                    END AS ""IsSymlink"",
-                    ""fe"".""Lastmodified""
-                FROM ""FilesetEntry"" ""fe""
-                INNER JOIN ""FileLookup"" ""fl""
-                    ON ""fe"".""FileID"" = ""fl"".""ID""
-                INNER JOIN ""PathPrefix"" ""pp""
-                    ON ""fl"".""PrefixID"" = ""pp"".""ID""
-                LEFT JOIN ""Blockset"" b
-                    ON ""fl"".""BlocksetID"" = ""b"".""ID""
-                WHERE
-                    ""fe"".""FilesetId"" = @FilesetId
-                    AND ""fl"".""PrefixId"" IN (@PrefixIds)
-                ORDER BY
-                    ""pp"".""Prefix"" ASC,
-                    ""fl"".""Path"" ASC
-                LIMIT @limit
-                OFFSET @offset
-            ")
-                .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
-                .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-                .SetParameterValue("@FilesetId", filesetid)
-                .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
-                .SetParameterValue("@limit", limit)
-                .SetParameterValue("@offset", offset);
-
-            var results = new List<IListFolderEntry>();
-            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
-            {
-                var path = rd.ConvertValueToString(0) ?? string.Empty;
-                var size = rd.ConvertValueToInt64(-1);
-                var isDir = rd.GetInt32(2) != 0;
-                var isSymlink = rd.GetInt32(3) != 0;
-                var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
-
-                results.Add(new FolderEntry(path, size, isDir, isSymlink, lastModified));
-            }
-
-            long totalCount;
-            if (offset != 0)
-            {
-                // Only calculate the total for the first query
-                totalCount = -1;
-            }
-            else if (results.Count <= limit)
-            {
-                // If we have all results, we already know the total
-                totalCount = results.Count;
-            }
-            else
-            {
-                totalCount = await cmd.SetCommandAndParameters(@"
-                    SELECT COUNT(*)
-                    FROM ""FilesetEntry"" ""fe""
-                    INNER JOIN ""FileLookup"" ""fl""
-                        ON ""fe"".""FileID"" = ""fl"".""ID""
-                    WHERE
-                        ""fe"".""FilesetId"" = @FilesetId
-                        AND ""fl"".""PrefixId"" IN (@PrefixIds)
-                ")
-                    .SetParameterValue("@FilesetId", filesetid)
-                    .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
-                    .ExecuteScalarInt64Async(0, token)
-                    .ConfigureAwait(false);
-            }
-
-            var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
-            return new PaginatedResults<IListFolderEntry>((int)(offset / limit), intLimit, (int)((totalCount + limit - 1) / limit), totalCount, results);
-        }
 
         /// <summary>
         /// Gets the prefix IDs for a given set of folder-prefixes.
@@ -1199,114 +1096,59 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Gathers root prefixes from the fileset entries.
+        /// Gets the minimal unique prefix entries for a given fileset ID.
+        /// This returns the roots of all unique paths in the fileset.
         /// </summary>
-        /// <param name="filesetid">The filesetId to get the prefixes for.</param>
-        /// <param name="token"> A cancellation token to cancel the operation.</param>
-        /// <returns>An asynchronous enumerable of root prefixes.</returns>
-        public async IAsyncEnumerable<long> GetRootPrefixes(long filesetid, [EnumeratorCancellation] CancellationToken token)
+        /// <param name="filesetId">The fileset id</param>
+        /// <returns>The entries that are unique roots</returns>
+        public IList<IListFolderEntry> GetMinimalUniquePrefixEntries(long filesetId)
         {
-            await using var cmd = m_connection.CreateCommand();
+            var results = new List<IListFolderEntry>();
 
+            using var cmd = m_connection.CreateCommand();
             cmd.SetCommandAndParameters(@"
-                WITH Prefixes AS (
-                    SELECT DISTINCT
-                        ""fl"".""PrefixID"",
-                        ""pp"".""Prefix""
-                    FROM ""FilesetEntry"" ""fe""
-                    INNER JOIN ""FileLookup"" ""fl""
-                        ON ""fe"".""FileID"" = ""fl"".""ID""
-                    INNER JOIN ""PathPrefix"" ""pp""
-                        ON ""fl"".""PrefixID"" = ""pp"".""ID""
-                    WHERE ""fe"".""FilesetID"" = @filesetid
-                )
-                SELECT ""p1"".""PrefixID""
-                FROM Prefixes ""p1""
-                WHERE NOT EXISTS (
-                    SELECT 1
-                    FROM Prefixes ""p2""
-                    WHERE
-                        ""p2"".""PrefixID"" != ""p1"".""PrefixID""
-                        AND ""p1"".""Prefix"" LIKE ""p2"".""Prefix"" || '%'
-                        AND LENGTH(""p1"".""Prefix"") > LENGTH(""p2"".""Prefix"")
-                )
-                ORDER BY ""p1"".""Prefix"" ASC
-            ")
-                .SetParameterValue("@filesetid", filesetid);
-
-            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
-            {
-                var prefixId = rd.ConvertValueToInt64(0, -1);
-                if (prefixId != -1)
-                {
-                    yield return prefixId;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gathers all prefixes and their parent prefix IDs from the fileset entries.
-        /// </summary>
-        /// <param name="filesetid">The filesetId to get the prefixes for</param>
-        /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <returns>A task that when awaited returns an asynchronous enumerable of (PrefixID, ParentPrefixID) pairs.</returns>
-        public async Task<IAsyncEnumerable<(long PrefixId, long ParentPrefixId)>> GetRootPrefixesWithParents(long filesetid, CancellationToken token)
-        {
-            await using var cmd = m_connection.CreateCommand();
-
-            var dirSeparator = Util.GuessDirSeparator((
-                await cmd.SetCommandAndParameters(@"
-                    SELECT ""Prefix""
-                    FROM ""PathPrefix""
-                    LIMIT 1
-                ")
-                    .ExecuteScalarAsync(token)
-                    .ConfigureAwait(false)
-            )?.ToString());
-
-            cmd.SetCommandAndParameters(@"
-                WITH ""Prefixes"" AS (
-                    SELECT DISTINCT
-                        ""fl"".""PrefixID"",
-                        ""pp"".""Prefix""
-                    FROM ""FilesetEntry"" ""fe""
-                    INNER JOIN ""FileLookup"" ""fl""
-                        ON ""fe"".""FileID"" = ""fl"".""ID""
-                    INNER JOIN ""PathPrefix"" ""pp""
-                        ON ""fl"".""PrefixID"" = ""pp"".""ID""
-                    WHERE ""fe"".""FilesetID"" = @filesetid
+                WITH AllPaths AS (
+                    SELECT fl.""ID"" AS ""FileID"",
+                        pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
+                        fl.""BlocksetID"",
+                        b.""Length"",
+                        fe.""Lastmodified""
+                    FROM ""FilesetEntry"" fe
+                    JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+                    JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+                    LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
+                    WHERE fe.""FilesetID"" = @FilesetId
                 ),
-                ""PrefixParents"" AS (
-                    SELECT
-                        ""child"".""PrefixID"" AS ""ChildPrefixID"",
-                        ""parent"".""PrefixID"" AS ""ParentPrefixID"",
-                        LENGTH(""parent"".""Prefix"") AS ""ParentLength""
-                    FROM ""Prefixes"" ""child""
-                    JOIN ""Prefixes"" ""parent""
-                        ON LENGTH(""child"".""Prefix"") > LENGTH(""parent"".""Prefix"")
-                        AND SUBSTR(""child"".""Prefix"", 1, LENGTH(""parent"".""Prefix"")) = ""parent"".""Prefix""
-                        AND (SUBSTR(""child"".""Prefix"", LENGTH(""parent"".""Prefix"") + 1, 1) = @dirSeparator)
+                RootCandidates AS (
+                    SELECT a1.*
+                    FROM AllPaths a1
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM AllPaths a2
+                        WHERE a2.""FullPath"" != a1.""FullPath""
+                        AND a1.""FullPath"" LIKE a2.""FullPath"" || '%'
+                    )
                 )
-                SELECT
-                    ""child"".""PrefixID"",
-                    (
-                        SELECT ""ParentPrefixID""
-                        FROM PrefixParents ""pp""
-                        WHERE ""pp"".""ChildPrefixID"" = ""child"".""PrefixID""
-                        ORDER BY ""pp"".""ParentLength"" DESC
-                        LIMIT 1
-                    ) AS ""ParentPrefixID""
-                FROM ""Prefixes"" ""child""
-                ORDER BY ""child"".""Prefix"" ASC
-            ")
-                .SetParameterValue("@dirSeparator", dirSeparator)
-                .SetParameterValue("@filesetid", filesetid);
+                SELECT ""FullPath"", ""Length"",
+                    CASE WHEN ""BlocksetID"" = -100 THEN 1 ELSE 0 END AS ""IsDirectory"",
+                    CASE WHEN ""BlocksetID"" = -200 THEN 1 ELSE 0 END AS ""IsSymlink"",
+                    ""Lastmodified""
+                FROM RootCandidates
+                ORDER BY ""FullPath""
+            ");
+            cmd.SetParameterValue("@FilesetId", filesetId);
 
-            return cmd.ExecuteReaderEnumerableAsync(token)
-                .Select(x => (
-                    PrefixId: x.ConvertValueToInt64(0, -1),
-                    ParentPrefixId: x.ConvertValueToInt64(1, -1)
-                ));
+            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            {
+                var path = rd.ConvertValueToString(0) ?? string.Empty;
+                var size = rd.ConvertValueToInt64(1, -1);
+                var isDir = rd.GetInt32(2) != 0;
+                var isSymlink = rd.GetInt32(3) != 0;
+                var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
+
+                results.Add(new FolderEntry(path, size, isDir, isSymlink, lastModified));
+            }
+
+            return results;
         }
 
         /// <summary>

@@ -51,6 +51,11 @@ public sealed record BackupDto
     public required string DBPath { get; init; }
 
     /// <summary>
+    /// Gets a value indicating whether the database path exists
+    /// </summary>
+    public required bool DBPathExists { get; init; }
+
+    /// <summary>
     /// The backup source folders and files
     /// </summary>
     public required string[] Sources { get; init; }

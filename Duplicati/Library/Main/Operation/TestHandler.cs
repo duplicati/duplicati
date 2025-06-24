@@ -435,6 +435,7 @@ namespace Duplicati.Library.Main.Operation
                         await repairdb.Transaction
                             .CommitAsync("ReplaceFaultyIndexFileCommit")
                             .ConfigureAwait(false);
+                        m_results.RemoveResult(vol.Name);
                     }
                 }
                 catch (Exception ex)

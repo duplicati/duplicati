@@ -63,15 +63,8 @@ internal static class ListFolderHandler
         {
             if (folders != null && folders.Length > 1)
                 throw new UserInformationException("When no folder is specified, only one folder can be listed", "MultipleFoldersFound");
-            result.Entries = await db
-                .ListFilesetEntries(
-                    db.GetRootPrefixes(filesetIds[0], result.TaskControl.ProgressToken).ToEnumerable(),
-                    filesetIds[0],
-                    offset,
-                    limit,
-                    result.TaskControl.ProgressToken
-                )
-                .ConfigureAwait(false);
+            var rootFolders = db.GetMinimalUniquePrefixEntries(filesetIds[0]);
+            result.Entries = new PaginatedResults<IListFolderEntry>(0, rootFolders.Count, 1, rootFolders.Count, rootFolders);
         }
         else
         {

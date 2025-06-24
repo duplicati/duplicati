@@ -165,6 +165,7 @@ public class QueueRunnerService(
                 _current = (null, null);
             eventPollNotify.SignalNewEvent();
             eventPollNotify.SignalTaskQueueUpdate();
+            eventPollNotify.SignalTaskCompleted(task.TaskID);
             StartNextTask();
         }
     }

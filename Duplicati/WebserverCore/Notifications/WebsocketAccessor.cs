@@ -74,6 +74,7 @@ public class WebsocketAccessor : IWebsocketAccessor
         eventPollNotify.BackupListUpdate += async (_, _) => { await Send(SubscriptionService.BackupList); };
         eventPollNotify.NotificationsUpdated += async (_, _) => { await Send(SubscriptionService.Notifications); };
         eventPollNotify.TaskQueueUpdate += async (_, _) => { await Send(SubscriptionService.TaskQueue); };
+        eventPollNotify.TaskCompleted += async (_, taskId) => { await SendTaskCompleted(taskId, GetConnections()); };
         eventPollNotify.ProgressUpdate += async (_, progress) =>
         {
             if (progress == null)
@@ -184,6 +185,18 @@ public class WebsocketAccessor : IWebsocketAccessor
     private Task SendRequestFailureReply<T>(WebSocket socket, WebSocketRequest req, string message, T? data = default)
         => socket.SendAsync(GetBytes(new WebSocketReply(APIVersion, req.Id, req.Service, message, false, data)), WebSocketMessageType.Text, true, CancellationToken.None);
 
+    private async Task SendTaskCompleted(long taskId, IEnumerable<WebSocket> connections)
+    {
+        var task = _taskQueueService.GetTaskInfo(taskId);
+        if (task == null)
+        {
+            Log.WriteWarningMessage(LOGTAG, "WebsocketTaskNotFound", null, $"Task with ID {taskId} not found for completion notification.");
+            return;
+        }
+        await SendData(SubscriptionService.TaskCompleted, task, connections);
+    }
+
+
     private async Task Send(SubscriptionService key, IEnumerable<WebSocket> connections)
     {
         // Avoid generating data for subscriptions that are not active
@@ -218,6 +231,9 @@ public class WebsocketAccessor : IWebsocketAccessor
                 break;
             case SubscriptionService.TaskQueue:
                 await SendData(SubscriptionService.TaskQueue, _taskQueueService.GetTaskQueue(), connections);
+                break;
+            case SubscriptionService.TaskCompleted:
+                // This event is sent when a task completes, so we do not send initial data
                 break;
             case SubscriptionService.Progress:
                 // Progress updates are sent via the event system, so we cannot send information in advance

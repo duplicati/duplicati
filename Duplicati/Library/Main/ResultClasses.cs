@@ -892,6 +892,13 @@ namespace Duplicati.Library.Main
             m_verifications.Add(res);
             return res;
         }
+
+        public void RemoveResult(string volume)
+        {
+            var item = m_verifications.FirstOrDefault(x => x.Key == volume);
+            if (item.Key == volume)
+                m_verifications.Remove(item);
+        }
     }
 
     internal class TestFilterResults : BasicResults, ITestFilterResults

@@ -48,6 +48,10 @@ public enum SubscriptionService
     /// </summary>
     TaskQueue,
     /// <summary>
+    /// Completed tasks updates, such as when a task finishes or fails.
+    /// </summary>
+    TaskCompleted,
+    /// <summary>
     /// Notification messages
     /// </summary>
     Notifications,
