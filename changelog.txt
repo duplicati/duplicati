@@ -1,3 +1,115 @@
+2025-06-24 - 2.1.0.120_canary_2025-06-24
+==========
+This release is a canary release intended to be used for testing.
+
+The intention is to tap this release as an experimental release if no significant issues are uncovered.
+
+# Major changes in this version
+
+This release is mostly fixing minor issues reported from 2.1.0.119, with only a few changes that could impact backups.
+A significant amount of fixes has been completed for ngclient.
+
+The repair flow can now detect and fix cases where a file or folder has been assigned no metadata.
+Since the codebase does not support this, the current fix is to assign an empty metadata block if possible, and otherwise use the smallest metadata block.
+The Test output no longer reports failures on index files that were fixed during the test process.
+
+The destination picker UI in ngclient has been reworked in multiple ways, providing a more robust experience with the Test button and results being more prominent.
+
+The restore flow and file picker has been updated to fix a number of issues with files and folders that have the same prefix.
+Some issues with the picker not having the correct visual representation of the state.
+
+## Detailed list of changes:
+- Reduced logging from remote connection
+- Filter sent reports by destination to avoid duplicates
+- Disable WebSocket for Agent
+- Added support for using ssh-agent with the SSH backend
+- Detect bind-permissions denied for the Duplicati webserver
+- Improved secret provider pattern matching and misconfiguration detection
+- Updated MailKit library to latest version
+- Updated Windows script example
+- Updated logic for assigning the OAuth url option
+- Messages in test-command handler are now localizable
+- Added attributes for macOS entitlements
+- Detecting EPERM as "Permission Denied" on Linux/macOS
+- Added null checks and invalid email detection for email report module
+- Fixed 100s timeouts on some backends
+- Reduced logging of messages during websocket authentication
+- Changed secret provider option to be a password-type
+- Changed `replace-faulty-index-files` option name to `dont-replace-faulty-index-files`
+- Added correct loading and unloading of modules
+- Added back PROPFIND debug options to WebDAV
+- Added support for `X-Forwarded-For` prefix
+- Added Mega S4 endpoints
+- Added check and repair to detect empty metadata entries
+- Fixed Ids being returned for filesets instead of version numbers
+- Websocket sends update signal after metadata update
+- Websocket has task-completed event
+- Fixed not adding quadruple `----` on restore from config
+- Removed fixed files from test output
+- Handle transitive virtual folders in ListFolderContents
+
+## Ngclient changes:
+- Upgraded to Angular 20
+- Fixed some colors not being selected
+- Added plurals for log view
+- Updated destination url picker
+- Fixed issues with quadruple dashes in commandline
+- Added support for "empty" view for backends with no UI configuration
+- Added support for additional localization
+- Fixed MSGraph not showing site-id as mandatory option
+- Avoid `undefined` in target url
+- Added support for custom OAuth URLs
+- Updated logic in export page to be consistent with the current state
+- Show the version number of the current server on the About page
+- Added zh-Hans to list of languages
+- Fixed issue with localized content not showing icons
+- Fixed issue with localization not being applied
+- Handling of plurals in localization
+- Improved locale support for date/time/number formats
+- Fixed issue with Azure blob storage UI
+- Added summary to log lines headers
+- Marking fields as required in destination configuration
+- Fixed commandline sending empty arguments
+- Prevent adding quadruple slashes
+- All destinations are now in searchable dropdown
+- Fixed some logic detecting an empty folder on restore
+- Showing size of backup data during restore, if known
+- Added backend config for AliyunOSS
+- Improved logic for buttons on the database management page
+- Fixed the "last backup" timestamp not showing the correct information
+- Fixed an incorrect draft backup creation during restore
+- Fixed loader on "Restore files" being shown even when not loading
+- Restore view keeps track of temporarily recreated versions
+- Restore view supports reload of the page and some navigation
+- Database page does not attempt to delete non-existing file
+- Added a check for restores with a backup that is missing a local database
+- Fixed an issue with custom dropdowns in the destination selector not picking the correct value
+- Added FTP to the list of backends (aFTP was already there)
+- Added lazy-loading of custom dropdown values
+- Fixed incorrect size being shown on the "Delete backup" page
+- After direct import, go to home page
+- Improved support for default backup options, retaining more options
+- Fixed a non-working "back" button in the restore flow
+- Added button to copy target url to clipboard
+- Fixed some warning indicators not being correctly colored
+- Updated restore view to support additional complex path configurations
+- Added missing option to include metadata during restore
+- Fixed not adding wildcards to file paths for restore flow
+- Fixed an issue where task completion would sometimes leave the UI in an incomplete state
+- Fixed url-encoding of options for export configuration
+- Better detection of encrypted configuration in import configuration
+- During export, disable buttons until data is correctly entered
+- Fixed "No encryption" option being lost (visualy) on navigation
+- Made the test status more visible and suggest to test on new backups and direct restore
+- Improved waiting for repair to complete during restore without a local database
+- Updated restore flow to better detect a completed restore
+- Reworked all destination dialogs to better support hostname/bucketname, and path-only destinations
+- Updated file picker to work better with multi-select and cross-os support
+- Fixed importing metadata when importing a backup configuration
+- Fixed a number of cases where icons and help-text would be rendered incorrectly
+- Fixed an issue with settings view being obscured by the top-bar
+- Fixed top-level source files in restore being shown as folders
+
 2025-05-29 - 2.1.0.119_canary_2025-05-29
 ==========
 This release is a canary release intended to be used for testing.
