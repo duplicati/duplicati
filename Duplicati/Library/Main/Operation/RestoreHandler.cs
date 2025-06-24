@@ -147,7 +147,8 @@ namespace Duplicati.Library.Main.Operation
             }
             finally
             {
-                db?.Dispose();
+                if (db != null)
+                    await db.DisposeAsync().ConfigureAwait(false);
                 tmpdb?.Dispose();
             }
         }
