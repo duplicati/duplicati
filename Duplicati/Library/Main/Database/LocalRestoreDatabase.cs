@@ -86,6 +86,11 @@ namespace Duplicati.Library.Main.Database
         protected string? m_filesnewlydonetable;
 
         /// <summary>
+        /// A semaphore used to ensure that only one thread can access the database at a time.
+        /// </summary>
+        private SemaphoreSlim m_dbLock = new(1, 1);
+
+        /// <summary>
         /// The time at which the restore operation begins.
         /// </summary>
         protected DateTime m_restoreTime;
@@ -1989,48 +1994,63 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Returns a list of files and symlinks to restore.
         /// </summary>
+        /// <remarks>At its current state, this method is designed to be called by Duplicati.Library.Main.Operation.Restore.FileLister. It locks the database to ensure that calls from Duplicati.Library.Main.Operation.Restore.BlockManager do not interfere with each other.</remarks>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of FileRequest objects representing the files and symlinks to restore.</returns>
         public async IAsyncEnumerable<FileRequest> GetFilesAndSymlinksToRestore([EnumeratorCancellation] CancellationToken token)
         {
-            // Order by length descending, so that larger files are restored first.
-            await using var cmd = m_connection.CreateCommand($@"
-                SELECT
-                    ""F"".""ID"",
-                    ""F"".""Path"",
-                    ""F"".""TargetPath"",
-                    IFNULL(""B"".""FullHash"", ''),
-                    IFNULL(""B"".""Length"", 0) AS ""Length"",
-                    ""F"".""BlocksetID""
-                FROM ""{m_tempfiletable}"" ""F""
-                LEFT JOIN ""Blockset"" ""B""
-                    ON ""F"".""BlocksetID"" = ""B"".""ID""
-                WHERE ""F"".""BlocksetID"" != {FOLDER_BLOCKSET_ID}
-                ORDER BY ""Length"" DESC
-            ")
-                .SetTransaction(m_rtr);
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
-            while (await rd.ReadAsync(token).ConfigureAwait(false))
-                yield return new FileRequest(
-                    rd.ConvertValueToInt64(0),
-                    rd.ConvertValueToString(1),
-                    rd.ConvertValueToString(2),
-                    rd.ConvertValueToString(3),
-                    rd.ConvertValueToInt64(4),
-                    rd.ConvertValueToInt64(5)
-                );
+            await m_dbLock.WaitAsync(token).ConfigureAwait(false);
+            try
+            {
+                // Order by length descending, so that larger files are restored first.
+                await using var cmd = m_connection.CreateCommand($@"
+                    SELECT
+                        ""F"".""ID"",
+                        ""F"".""Path"",
+                        ""F"".""TargetPath"",
+                        IFNULL(""B"".""FullHash"", ''),
+                        IFNULL(""B"".""Length"", 0) AS ""Length"",
+                        ""F"".""BlocksetID""
+                    FROM ""{m_tempfiletable}"" ""F""
+                    LEFT JOIN ""Blockset"" ""B""
+                        ON ""F"".""BlocksetID"" = ""B"".""ID""
+                    WHERE ""F"".""BlocksetID"" != {FOLDER_BLOCKSET_ID}
+                    ORDER BY ""Length"" DESC
+                ")
+                    .SetTransaction(m_rtr);
+
+                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                while (await rd.ReadAsync(token).ConfigureAwait(false))
+                    yield return new FileRequest(
+                        rd.ConvertValueToInt64(0),
+                        rd.ConvertValueToString(1),
+                        rd.ConvertValueToString(2),
+                        rd.ConvertValueToString(3),
+                        rd.ConvertValueToInt64(4),
+                        rd.ConvertValueToInt64(5)
+                    );
+            }
+            finally
+            {
+                m_dbLock.Release();
+            }
         }
 
         /// <summary>
         /// Returns a list of folders to restore. Used to restore folder metadata.
         /// </summary>
+        /// <remarks>At its current state, this method is designed to be called by Duplicati.Library.Main.Operation.Restore.FileLister. It locks the database to ensure that calls from Duplicati.Library.Main.Operation.Restore.BlockManager do not interfere with each other.</remarks>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of FileRequest objects representing the folders to restore.</returns>
         public async IAsyncEnumerable<FileRequest> GetFolderMetadataToRestore([EnumeratorCancellation] CancellationToken token)
         {
-            await using var cmd = m_connection.CreateCommand();
-            cmd.SetTransaction(m_rtr);
-            await using var rd = await cmd.ExecuteReaderAsync($@"
+            await m_dbLock.WaitAsync(token).ConfigureAwait(false);
+
+            try
+            {
+                await using var cmd = m_connection.CreateCommand();
+                cmd.SetTransaction(m_rtr);
+                await using var rd = await cmd.ExecuteReaderAsync($@"
                 SELECT
                     ""F"".""ID"",
                     '',
@@ -2044,60 +2064,75 @@ namespace Duplicati.Library.Main.Database
                     AND ""F"".""MetadataID"" IS NOT NULL
                     AND ""F"".""MetadataID"" >= 0
             ", token)
-                .ConfigureAwait(false);
+                    .ConfigureAwait(false);
 
-            while (await rd.ReadAsync(token).ConfigureAwait(false))
-                yield return new FileRequest(
-                    rd.ConvertValueToInt64(0),
-                    rd.ConvertValueToString(1),
-                    rd.ConvertValueToString(2),
-                    rd.ConvertValueToString(3),
-                    rd.ConvertValueToInt64(4),
-                    rd.ConvertValueToInt64(5)
-                );
+                while (await rd.ReadAsync(token).ConfigureAwait(false))
+                    yield return new FileRequest(
+                        rd.ConvertValueToInt64(0),
+                        rd.ConvertValueToString(1),
+                        rd.ConvertValueToString(2),
+                        rd.ConvertValueToString(3),
+                        rd.ConvertValueToInt64(4),
+                        rd.ConvertValueToInt64(5)
+                    );
+            }
+            finally
+            {
+                m_dbLock.Release();
+            }
         }
 
         /// <summary>
         /// Returns a list of blocks and their volume IDs. Used by the <see cref="BlockManager"/> to keep track of blocks and volumes to automatically evict them from the respective caches.
         /// </summary>
+        /// <remarks>At its current state, this method is designed to be called by Duplicati.Library.Main.Operation.Restore.BlockManager. It locks the database to ensure that calls from Duplicati.Library.Main.Operation.Restore.FileLister do not interfere with each other.</remarks>
         /// <param name="skipMetadata">Flag indicating whether the returned blocks should exclude the metadata blocks.</param>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>An asynchronous enumerable of tuples containing the block ID and volume ID.</returns>
         public async IAsyncEnumerable<(long, long)> GetBlocksAndVolumeIDs(bool skipMetadata, [EnumeratorCancellation] CancellationToken token)
         {
-            var metadata_query = skipMetadata ? "" : $@"
-                UNION ALL
-                SELECT
-                    ""Block"".""ID"",
-                    ""Block"".""VolumeID""
-                FROM ""{m_tempfiletable}""
-                INNER JOIN ""Metadataset""
-                    ON ""{m_tempfiletable}"".""MetadataID"" = ""Metadataset"".""ID""
-                INNER JOIN ""BlocksetEntry""
-                    ON ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
-                INNER JOIN ""Block""
-                    ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-            ";
+            await m_dbLock.WaitAsync(token).ConfigureAwait(false);
 
-            await using var cmd = Connection.CreateCommand($@"
-                SELECT
-                    ""Block"".""ID"",
-                    ""Block"".""VolumeID""
-                FROM ""BlocksetEntry""
-                INNER JOIN ""{m_tempfiletable}""
-                    ON ""BlocksetEntry"".""BlocksetID"" = ""{m_tempfiletable}"".""BlocksetID""
-                INNER JOIN ""Block""
-                    ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                {metadata_query}
-            ")
-                .SetTransaction(m_rtr);
+            try
+            {
+                var metadata_query = skipMetadata ? "" : $@"
+                    UNION ALL
+                    SELECT
+                        ""Block"".""ID"",
+                        ""Block"".""VolumeID""
+                    FROM ""{m_tempfiletable}""
+                    INNER JOIN ""Metadataset""
+                        ON ""{m_tempfiletable}"".""MetadataID"" = ""Metadataset"".""ID""
+                    INNER JOIN ""BlocksetEntry""
+                        ON ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
+                    INNER JOIN ""Block""
+                        ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                ";
 
-            await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
-            while (await reader.ReadAsync(token).ConfigureAwait(false))
-                yield return (
-                    reader.ConvertValueToInt64(0),
-                    reader.ConvertValueToInt64(1)
-                );
+                await using var cmd = m_connection.CreateCommand($@"
+                    SELECT
+                        ""Block"".""ID"",
+                        ""Block"".""VolumeID""
+                    FROM ""BlocksetEntry""
+                    INNER JOIN ""{m_tempfiletable}""
+                        ON ""BlocksetEntry"".""BlocksetID"" = ""{m_tempfiletable}"".""BlocksetID""
+                    INNER JOIN ""Block""
+                        ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    {metadata_query}
+                ")
+                    .SetTransaction(m_rtr);
+
+                await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                while (await reader.ReadAsync(token).ConfigureAwait(false))
+                    yield return (
+                        reader.ConvertValueToInt64(0),
+                        reader.ConvertValueToInt64(1)
+                    );
+            }
+            finally
+            {
+                m_dbLock.Release();
+            }
         }
 
         /// <summary>
@@ -2113,19 +2148,18 @@ namespace Duplicati.Library.Main.Database
 
             try
             {
-
                 await using var cmd = connection.CreateCommand(@$"
-                SELECT
-                    ""Block"".""ID"",
-                    ""Block"".""Hash"",
-                    ""Block"".""Size"",
-                    ""Block"".""VolumeID""
-                FROM ""BlocksetEntry""
-                INNER JOIN ""Block""
-                    ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                WHERE ""BlocksetEntry"".""BlocksetID"" = @BlocksetID
-                ORDER BY ""BlocksetEntry"".""Index""
-            ")
+                    SELECT
+                        ""Block"".""ID"",
+                        ""Block"".""Hash"",
+                        ""Block"".""Size"",
+                        ""Block"".""VolumeID""
+                    FROM ""BlocksetEntry""
+                    INNER JOIN ""Block""
+                        ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    WHERE ""BlocksetEntry"".""BlocksetID"" = @BlocksetID
+                    ORDER BY ""BlocksetEntry"".""Index""
+                ")
                     .SetTransaction(transaction)
                     .SetParameterValue("@BlocksetID", blocksetID);
 
@@ -2158,23 +2192,24 @@ namespace Duplicati.Library.Main.Database
         {
             var (connection, transaction) = await GetConnectionFromPool(token)
                 .ConfigureAwait(false);
+
             try
             {
                 await using var cmd = connection.CreateCommand($@"
-                SELECT
-                    ""Block"".""ID"",
-                    ""Block"".""Hash"",
-                    ""Block"".""Size"",
-                    ""Block"".""VolumeID""
-                FROM ""File""
-                INNER JOIN ""Metadataset""
-                    ON ""File"".""MetadataID"" = ""Metadataset"".""ID""
-                INNER JOIN ""BlocksetEntry""
-                    ON ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
-                INNER JOIN ""Block""
-                    ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                WHERE ""File"".""ID"" = @FileID
-            ")
+                    SELECT
+                        ""Block"".""ID"",
+                        ""Block"".""Hash"",
+                        ""Block"".""Size"",
+                        ""Block"".""VolumeID""
+                    FROM ""File""
+                    INNER JOIN ""Metadataset""
+                        ON ""File"".""MetadataID"" = ""Metadataset"".""ID""
+                    INNER JOIN ""BlocksetEntry""
+                        ON ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
+                    INNER JOIN ""Block""
+                        ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    WHERE ""File"".""ID"" = @FileID
+                ")
                     .SetTransaction(transaction)
                     .SetParameterValue("@FileID", fileID);
 
@@ -2207,25 +2242,35 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of tuples containing the volume name, size, and hash.</returns>
         public async IAsyncEnumerable<(string, long, string)> GetVolumeInfo(long VolumeID, [EnumeratorCancellation] CancellationToken token)
         {
-            await using var cmd = m_connection.CreateCommand(@"
-                SELECT
-                    ""Name"",
-                    ""Size"",
-                    ""Hash""
-                FROM ""RemoteVolume""
-                WHERE ""ID"" = @VolumeID
-            ")
-                .SetTransaction(m_rtr)
-                .SetParameterValue("@VolumeID", VolumeID);
-
-            await using var reader = await cmd.ExecuteReaderAsync(token)
+            var (connection, transaction) = await GetConnectionFromPool(token)
                 .ConfigureAwait(false);
-            while (await reader.ReadAsync(token).ConfigureAwait(false))
-                yield return (
-                    reader.ConvertValueToString(0) ?? "",
-                    reader.ConvertValueToInt64(1),
-                    reader.ConvertValueToString(2) ?? ""
-                );
+
+            try
+            {
+                await using var cmd = connection.CreateCommand(@"
+                    SELECT
+                        ""Name"",
+                        ""Size"",
+                        ""Hash""
+                    FROM ""RemoteVolume""
+                    WHERE ""ID"" = @VolumeID
+                ")
+                    .SetTransaction(transaction)
+                    .SetParameterValue("@VolumeID", VolumeID);
+
+                await using var reader = await cmd.ExecuteReaderAsync(token)
+                    .ConfigureAwait(false);
+                while (await reader.ReadAsync(token).ConfigureAwait(false))
+                    yield return (
+                        reader.ConvertValueToString(0) ?? "",
+                        reader.ConvertValueToInt64(1),
+                        reader.ConvertValueToString(2) ?? ""
+                    );
+            }
+            finally
+            {
+                m_connection_pool.Add((connection, transaction));
+            }
         }
 
         /// <summary>
