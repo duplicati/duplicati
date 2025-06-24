@@ -19,8 +19,8 @@
       <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.3" />
     -->
 
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.0" />
-    <PackageReference Include="System.Data.SQLite.Core.MSIL" Version="1.0.115.0" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
+    <PackageReference Include="System.Data.SQLite.Core.MSIL" Version="1.0.119" />
     <PackageReference Include="System.Data.SQLite.Core.Duplicati.macos.arm64" Version="1.0.116.1" />
     <PackageReference Include="System.Data.SQLite.Core.Duplicati.linux.arm64" Version="1.0.116" />
     <PackageReference Include="System.Data.SQLite.Core.Duplicati.linux.armv7" Version="1.0.116" />
