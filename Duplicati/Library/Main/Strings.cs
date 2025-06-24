@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ThrottleuploadShort { get { return LC.L(@"Max number of kilobytes to upload pr. second"); } }
         public static string DisablethrottleLong { get { return LC.L(@"Disable the throttling of upload and download speeds for this task. If there is a throttle set, it will be ignored when running this task."); } }
         public static string DisablethrottleShort { get { return LC.L(@"Disable throttling"); } }
-        public static string DisablethrottlebackendsLong(string option) { return LC.L(@"Disable the throttling of upload and download speeds for specific backends. If there is a throttle set, it will be ignore when running this task, if the backend is one of the specified backends. Multiple backends can be specified with a comma separator. This option has no effect if there is no throttle or if --{0} is set", option); }
+        public static string DisablethrottlebackendsLong(string option) { return LC.L(@"Disable the throttling of upload and download speeds for specific backends. If there is a throttle set, it will be ignored when running this task, if the backend is one of the specified backends. Multiple backends can be specified with a comma separator. This option has no effect if there is no throttle or if --{0} is set", option); }
         public static string DisablethrottlebackendsShort { get { return LC.L(@"Disable throttling for specific backends"); } }
         public static string NoencryptionLong { get { return LC.L(@"If you store the backups on a local disk, and prefer that they are kept unencrypted, you can turn of encryption completely by using this switch."); } }
         public static string NoencryptionShort { get { return LC.L(@"Disable encryption"); } }
