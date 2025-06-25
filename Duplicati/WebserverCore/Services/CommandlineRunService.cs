@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.Text;
+using Duplicati.Library.Utility;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 
@@ -144,6 +145,28 @@ public class CommandlineRunService(IQueueRunnerService queueRunnerService, ILogW
             {
                 k.Thread = Thread.CurrentThread;
                 k.Started = true;
+
+                // Expand sources for supporting %DOCUMENTS% and similar
+                if (args.Length > 2 && args[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
+                {
+                    var options = args.Skip(1).Where(x => x.StartsWith("--", StringComparison.OrdinalIgnoreCase))
+                        .ToArray();
+
+                    var allargs =
+                        args.Skip(1)
+                        .Where(x => !x.StartsWith("--", StringComparison.OrdinalIgnoreCase));
+
+                    if (allargs.Count() > 1)
+                    {
+                        var sources = allargs
+                            .Skip(1)
+                            .Select(SpecialFolders.ExpandEnvironmentVariables)
+                            .WhereNotNullOrWhiteSpace()
+                            .ToArray();
+
+                        args = [args[0], allargs.First(), .. sources, .. options];
+                    }
+                }
 
                 var code = CommandLine.Program.RunCommandLine(k.Writer, k.Writer, c =>
                 {
