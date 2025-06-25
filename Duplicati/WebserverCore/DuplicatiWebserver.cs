@@ -91,6 +91,11 @@ public class DuplicatiWebserver
     /// The task that will be set when the server is terminated
     /// </summary>
     public Task TerminationTask { get; private set; } = Task.CompletedTask;
+    
+    /// <summary>
+    /// ApplicationLifetime for the webserver, used to register shutdown handlers
+    /// </summary>
+    private static IHostApplicationLifetime _applicationLifetime;
 
     /// <summary>
     /// If Swagger should be enabled
@@ -391,7 +396,7 @@ public class DuplicatiWebserver
             app.Services.GetRequiredService<IRemoteController>().Enable();
 
         // Preload static system info, for better first-load experience
-        var _ = Task.Run(() => app.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
+        _ = Task.Run(() => app.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
 
         // Get a string description of the listen interface used
         var listenInterface = settings.Interface == IPAddress.Any
@@ -400,6 +405,14 @@ public class DuplicatiWebserver
                 ? "localhost"
                 : settings.Interface.ToString();
 
+        var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+
+        // Register SIGTERM handler
+        lifetime.ApplicationStopping.Register(() =>
+        {
+            applicationSettings.ApplicationExitEvent.Set();
+        });
+        
         return new DuplicatiWebserver()
         {
             Configuration = builder.Configuration,

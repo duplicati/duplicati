@@ -143,6 +143,11 @@ namespace Duplicati.Server
             PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.Server, out var preloadDbSettings);
 
             applicationSettings ??= new ApplicationSettings();
+            
+            System.Runtime.Loader.AssemblyLoadContext.Default.Unloading += context =>
+            {
+                applicationSettings.ApplicationExitEvent?.Set();
+            };
 
             //If this executable is invoked directly, write to console, otherwise throw exceptions
             var writeToConsoleOnException = applicationSettings.Origin == "Server";
@@ -333,7 +338,7 @@ namespace Duplicati.Server
                         logHandler?.Dispose();
                     }
                 };
-
+                
                 foreach (var teardownStep in steps)
                 {
                     try
