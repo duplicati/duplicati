@@ -140,8 +140,7 @@ namespace Duplicati.GUI.TrayIcon
             {
                 lifetime.Start(args);
             }
-
-            catch (System.NullReferenceException ex)
+            catch (NullReferenceException)
             {
                 //Ignoring exception that can happen while Avalonia is finalizing on shutdown.
             }
