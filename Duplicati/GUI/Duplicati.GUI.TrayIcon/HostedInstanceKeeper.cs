@@ -21,6 +21,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using Duplicati.WebserverCore.Abstractions;
 
 namespace Duplicati.GUI.TrayIcon
@@ -33,7 +34,9 @@ namespace Duplicati.GUI.TrayIcon
         private readonly System.Threading.Thread m_runner;
         private Exception m_runnerException = null;
         public Action InstanceShutdown;
-        private readonly IApplicationSettings applicationSettings;
+        private int _InstanceShutdownInvoked = 0;
+          
+        public readonly IApplicationSettings applicationSettings;
 
         public HostedInstanceKeeper(IApplicationSettings applicationSettings, string[] args)
         {
@@ -57,15 +60,18 @@ namespace Duplicati.GUI.TrayIcon
                 }
                 finally
                 {
-                    if (InstanceShutdown != null)
-                        try { InstanceShutdown(); }
-                        catch (Exception shutex)
-                        {
-                            if (m_runnerException != null)
-                                m_runnerException = new AggregateException(m_runnerException, shutex);
-                            else
-                                m_runnerException = shutex;
-                        }
+                    try
+                    {
+                        if (Interlocked.CompareExchange(ref _InstanceShutdownInvoked, 1, 0) == 0)
+                            InstanceShutdown?.Invoke();
+                    }
+                    catch (Exception shutex)
+                    {
+                        if (m_runnerException != null)
+                            m_runnerException = new AggregateException(m_runnerException, shutex);
+                        else
+                            m_runnerException = shutex;
+                    }
                 }
 
             });

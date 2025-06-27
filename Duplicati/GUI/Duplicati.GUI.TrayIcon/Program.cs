@@ -146,8 +146,10 @@ namespace Duplicati.GUI.TrayIcon
                 try
                 {
                     // Tell the hosted server it was started by the TrayIcon
-                    var applicationSettings = new ApplicationSettings();
-                    applicationSettings.Origin = "Tray icon";
+                    var applicationSettings = new ApplicationSettings
+                    {
+                        Origin = "Tray icon"
+                    };
                     passwordSource = PasswordSource.HostedServer;
                     // Ignore TrayIcon specific settings
                     foreach (var c in BasicSupportedCommands.Select(x => x.Name))
@@ -246,17 +248,17 @@ No password provided, unable to connect to server, exiting");
                     try
                     {
                         ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
-                        using (Connection = new HttpServerConnection(serverURL, password, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options))
+                        
+                        using (Connection = new HttpServerConnection(hosted.applicationSettings, serverURL, password, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options))
                         {
                             // Make sure we have the latest status, but don't care if it fails
                             Connection.UpdateStatus().FireAndForget();
 
                             using (var tk = RunTrayIcon())
                             {
-                                if (hosted != null && Server.Program.ApplicationInstance != null)
+                                if (Server.Program.ApplicationInstance != null)
                                     Server.Program.ApplicationInstance.SecondInstanceDetected +=
-                                        new SingleInstance.SecondInstanceDelegate(
-                                            x => tk.ShowStatusWindow());
+                                        x => tk.ShowStatusWindow();
 
                                 // TODO: If we change to hosted browser this should be a callback
                                 if (openui)
@@ -286,11 +288,11 @@ No password provided, unable to connect to server, exiting");
                                     reSpawn = 100;
                                     tk.InvokeExit();
                                 };
-
+                                
                                 Connection.ConnectionClosed = shutdownEvent;
                                 if (hosted != null)
                                     hosted.InstanceShutdown = shutdownEvent;
-
+                                
                                 tk.Init(_args);
 
                                 // If the tray-icon quits, stop the server
@@ -304,6 +306,7 @@ No password provided, unable to connect to server, exiting");
 
                             }
                         }
+                        
                     }
                     catch (HttpRequestException ex)
                     {
