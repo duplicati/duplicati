@@ -110,6 +110,7 @@ public class DuplicatiWebserver
     /// <param name="Certificate">The certificate, if using SSL</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
+    /// <param name="TokenLifetimeInMinutes">The lifetime of refresh tokens in minutes</param>
     /// <param name="SPAPaths">The paths to serve as SPAs</param>
     /// <param name="CorsOrigins">The origins to allow for CORS</param>
     /// <param name="PreAuthTokens">The pre-authenticated tokens</param>
@@ -120,6 +121,7 @@ public class DuplicatiWebserver
         X509Certificate2Collection? Certificate,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
+        int TokenLifetimeInMinutes,
         IEnumerable<string> SPAPaths,
         IEnumerable<string> CorsOrigins,
         IReadOnlySet<string> PreAuthTokens
@@ -192,6 +194,9 @@ public class DuplicatiWebserver
 
         var jwtConfig = JsonSerializer.Deserialize<JWTConfig>(connection.ApplicationSettings.JWTConfig)
             ?? throw new Exception("Failed to deserialize JWTConfig");
+
+        if (settings.TokenLifetimeInMinutes > 0)
+            jwtConfig = jwtConfig with { RefreshTokenDurationInMinutes = Math.Min(settings.TokenLifetimeInMinutes, 60 * 24 * 30) };
 
         if (EnableSwagger)
         {
