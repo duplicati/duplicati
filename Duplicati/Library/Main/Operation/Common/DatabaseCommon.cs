@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -40,7 +40,6 @@ namespace Duplicati.Library.Main.Operation.Common
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<DatabaseCommon>();
 
         protected readonly LocalDatabase m_db;
-        private System.Data.IDbTransaction m_transaction;
         protected readonly Options m_options;
 
         public DatabaseCommon(LocalDatabase db, Options options)
@@ -48,112 +47,131 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             m_db = db;
             m_options = options;
-            m_transaction = db.BeginTransaction();
         }
 
-        protected System.Data.IDbTransaction GetTransaction()
+        public Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, RemoteVolumeState state, CancellationToken cancellationToken)
         {
-            m_workerSource.Token.ThrowIfCancellationRequested();
-
-            if (m_transaction == null)
-                m_transaction = m_db.BeginTransaction();
-            return m_transaction;
+            return RunOnMain(async () =>
+                await m_db
+                    .RegisterRemoteVolume(name, type, state, cancellationToken)
+                    .ConfigureAwait(false)
+            );
         }
 
-        public Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, RemoteVolumeState state)
+        public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, bool? setArchived, CancellationToken cancellationToken)
         {
-            return RunOnMain(() => m_db.RegisterRemoteVolume(name, type, state, GetTransaction()));
+            return RunOnMain(async () =>
+                await m_db
+                    .UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, setArchived, cancellationToken)
+                    .ConfigureAwait(false)
+            );
         }
 
-        public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup = false, TimeSpan deleteGraceTime = default(TimeSpan), bool? setArchived = null)
+        public async Task FlushBackendMessagesAndCommitAsync(IBackendManager backendManager, CancellationToken cancellationToken)
         {
-            return RunOnMain(() => m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, setArchived, GetTransaction()));
+            await FlushPendingBackendMessagesAsync(backendManager, cancellationToken).ConfigureAwait(false);
+            await CommitTransactionAsync("FlushBackendMessagesAndCommitAsync", true, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task FlushBackendMessagesAndCommitAsync(IBackendManager backendManager)
-        {
-            await FlushPendingBackendMessagesAsync(backendManager).ConfigureAwait(false);
-            await CommitTransactionAsync("FlushBackendMessagesAndCommitAsync").ConfigureAwait(false);
-        }
+        private Task FlushPendingBackendMessagesAsync(IBackendManager backendManager, CancellationToken cancellationToken)
+            => RunOnMain(async () => await backendManager.FlushPendingMessagesAsync(m_db, cancellationToken).ConfigureAwait(false));
 
-        private Task FlushPendingBackendMessagesAsync(IBackendManager backendManager)
-            => RunOnMain(() => backendManager.FlushPendingMessagesAsync(m_db, GetTransaction(), CancellationToken.None).ConfigureAwait(false));
-
-        public Task CommitTransactionAsync(string message, bool restart = true)
+        public Task CommitTransactionAsync(string message, bool restart, CancellationToken cancellationToken)
         {
-            return RunOnMain(() =>
+            return RunOnMain(async () =>
             {
                 if (m_options.Dryrun)
                 {
-                    if (!restart)
-                    {
-                        if (m_transaction != null)
-                            m_transaction.Rollback();
-                        m_transaction = null;
-                    }
-                    return;
+                    await m_db.Transaction
+                        .RollBackAsync(cancellationToken)
+                        .ConfigureAwait(false);
                 }
-
-                if (m_transaction != null)
+                else
                 {
                     using (new Logging.Timer(LOGTAG, "CommitTransactionAsync", message))
-                        m_transaction.Commit();
-                    m_transaction = null;
+                        await m_db.Transaction
+                            .CommitAsync(message, restart, cancellationToken)
+                            .ConfigureAwait(false);
                 }
             });
         }
 
-        public Task RollbackTransactionAsync()
+        public Task RollbackTransactionAsync(CancellationToken cancellationToken)
         {
-            return RunOnMain(() =>
-            {
-                if (m_transaction != null)
-                {
-                    m_transaction.Rollback();
-                    m_transaction = null;
-                }
-            });
+            return RunOnMain(async () =>
+                await m_db.Transaction
+                    .RollBackAsync(cancellationToken)
+                    .ConfigureAwait(false)
+            );
         }
 
-
-
-        public Task RenameRemoteFileAsync(string oldname, string newname)
+        public Task RenameRemoteFileAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
-            return RunOnMain(() => m_db.RenameRemoteFile(oldname, newname, GetTransaction()));
+            return RunOnMain(async () =>
+                await m_db
+                    .RenameRemoteFile(oldname, newname, cancellationToken)
+                    .ConfigureAwait(false)
+            );
         }
 
-        public Task LogRemoteOperationAsync(string operation, string path, string data)
+        public Task LogRemoteOperationAsync(string operation, string path, string data, CancellationToken cancellationToken)
         {
-            return RunOnMain(() => m_db.LogRemoteOperation(operation, path, data, GetTransaction()));
+            return RunOnMain(async () =>
+                await m_db
+                    .LogRemoteOperation(operation, path, data, cancellationToken)
+                    .ConfigureAwait(false)
+            );
         }
 
-        public Task<LocalDatabase.IBlock[]> GetBlocksAsync(long volumeid)
+        public Task<LocalDatabase.IBlock[]> GetBlocksAsync(long volumeid, CancellationToken cancellationToken)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
-            return RunOnMain(() => m_db.GetBlocks(volumeid, GetTransaction()).ToArray());
+            return RunOnMain(async () =>
+                await m_db
+                    .GetBlocks(volumeid, cancellationToken)
+                    .ToArrayAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false)
+            );
         }
 
-        public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename)
+        public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename, CancellationToken cancellationToken)
         {
-            return RunOnMain(() => m_db.GetRemoteVolume(remotename, GetTransaction()));
+            return RunOnMain(async () =>
+                await m_db
+                    .GetRemoteVolume(remotename, cancellationToken)
+                    .ConfigureAwait(false)
+            );
         }
 
-        public Task<(string Hash, byte[] Buffer, int Size)[]> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
+        public Task<(string Hash, byte[] Buffer, int Size)[]> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize, CancellationToken cancellationToken)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
-            return RunOnMain(() => m_db.GetBlocklists(volumeid, blocksize, hashsize, GetTransaction()).ToArray());
+            return RunOnMain(async () =>
+                await m_db
+                    .GetBlocklists(volumeid, blocksize, hashsize, cancellationToken)
+                    .ToArrayAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false)
+            );
         }
 
-        public Task<long> GetRemoteVolumeIDAsync(string remotename)
+        public Task<long> GetRemoteVolumeIDAsync(string remotename, CancellationToken cancellationToken)
         {
-            return RunOnMain(() => m_db.GetRemoteVolumeID(remotename, GetTransaction()));
+            return RunOnMain(async () =>
+                await m_db
+                    .GetRemoteVolumeID(remotename, cancellationToken)
+                    .ConfigureAwait(false)
+            );
         }
 
-        public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID)
+        public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID, CancellationToken cancellationToken)
         {
-            return RunOnMain(() => m_db.AddIndexBlockLink(indexVolumeID, blockVolumeID, GetTransaction()));
+            return RunOnMain(async () =>
+                await m_db
+                    .AddIndexBlockLink(indexVolumeID, blockVolumeID, cancellationToken)
+                    .ConfigureAwait(false)
+            );
         }
 
 
@@ -162,14 +180,7 @@ namespace Duplicati.Library.Main.Operation.Common
             if (m_workerSource.IsCancellationRequested)
                 return;
 
-            RunOnMain(() =>
-            {
-                base.Dispose(isDisposing);
-
-                var tr = Interlocked.Exchange(ref m_transaction, null);
-                tr?.Commit();
-                tr?.Dispose();
-            }).Await();
+            base.Dispose(isDisposing);
         }
 
     }

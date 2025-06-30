@@ -1,23 +1,24 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -54,59 +55,76 @@ namespace Duplicati.Library.Main.Operation
 
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
-                using (var db = new Database.LocalListDatabase(m_options.Dbpath, m_options.SqlitePageCache))
+                await using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
-                    using (var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
+                    await using var filesets = await db.SelectFileSets(m_options.Time, m_options.Version, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    if (!filter.Empty)
                     {
-                        if (!filter.Empty)
+                        if (simpleList || (m_options.ListFolderContents && !m_options.AllVersions))
                         {
-                            if (simpleList || (m_options.ListFolderContents && !m_options.AllVersions))
-                            {
-                                filesets.TakeFirst();
-                            }
+                            await filesets
+                                .TakeFirst(m_result.TaskControl.ProgressToken)
+                                .ConfigureAwait(false);
                         }
-
-                        IEnumerable<Database.LocalListDatabase.IFileversion> files;
-                        if (m_options.ListFolderContents)
-                        {
-                            files = filesets.SelectFolderContents(filter);
-                        }
-                        else if (m_options.ListPrefixOnly)
-                        {
-                            files = filesets.GetLargestPrefix(filter);
-                        }
-                        else if (filter.Empty)
-                        {
-                            files = null;
-                        }
-                        else
-                        {
-                            files = filesets.SelectFiles(filter);
-                        }
-
-                        if (m_options.ListSetsOnly)
-                        {
-                            m_result.SetResult(
-                                filesets.QuickSets.Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes)).ToArray(),
-                                null
-                            );
-                        }
-                        else
-                        {
-                            m_result.SetResult(
-                                filesets.Sets.Select(x =>
-                                    new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes)).ToArray(),
-                                files == null
-                                    ? null
-                                    : (from n in files
-                                       select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Path,
-                                           n.Sizes.ToArray())))
-                                    .ToArray()
-                            );
-                        }
-
-                        return;
                     }
+
+                    IAsyncEnumerable<Database.LocalListDatabase.IFileversion> files;
+                    if (m_options.ListFolderContents)
+                    {
+                        files = filesets.SelectFolderContents(filter, m_result.TaskControl.ProgressToken);
+                    }
+                    else if (m_options.ListPrefixOnly)
+                    {
+                        files = filesets.GetLargestPrefix(filter, m_result.TaskControl.ProgressToken);
+                    }
+                    else if (filter.Empty)
+                    {
+                        files = null;
+                    }
+                    else
+                    {
+                        files = filesets.SelectFiles(filter, m_result.TaskControl.ProgressToken);
+                    }
+
+                    if (m_options.ListSetsOnly)
+                    {
+                        m_result.SetResult(
+                            await filesets
+                                .QuickSets(m_result.TaskControl.ProgressToken)
+                                .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
+                                .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
+                                .ConfigureAwait(false),
+                            null
+                        );
+                    }
+                    else
+                    {
+                        m_result.SetResult(
+                            await filesets
+                                .Sets(m_result.TaskControl.ProgressToken)
+                                .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
+                                .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
+                                .ConfigureAwait(false),
+                            files == null
+                                ? null
+                                :
+                                await files.Select(async n =>
+                                    new ListResultFile(
+                                        n.Path,
+                                        await n
+                                            .Sizes(m_result.TaskControl.ProgressToken)
+                                            .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
+                                            .ConfigureAwait(false)
+                                    )
+                                )
+                                    .Select(x => x.Result)
+                                    .Cast<IListResultFile>()
+                                    .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
+                                    .ConfigureAwait(false)
+                        );
+                    }
+
+                    return;
                 }
 
             Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, accessing remote store");
@@ -119,13 +137,14 @@ namespace Duplicati.Library.Main.Operation
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new TempFile())
-            using (var db = new LocalDatabase(tmpdb, "List", true, m_options.SqlitePageCache))
+            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(tmpdb, "List", true, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
             {
                 var filteredList = ParseAndFilterFilesets(await backendManager.ListAsync(cancellationToken).ConfigureAwait(false), m_options);
                 if (filteredList.Count == 0)
                     throw new UserInformationException("No filesets found on remote target", "EmptyRemoteFolder");
 
-                var numberSeq = await CreateResultSequence(filteredList, backendManager, m_options, cancellationToken);
+                var numberSeq = await CreateResultSequence(filteredList, backendManager, m_options, cancellationToken)
+                    .ConfigureAwait(false);
                 if (filter.Empty)
                 {
                     m_result.SetResult(numberSeq, null);

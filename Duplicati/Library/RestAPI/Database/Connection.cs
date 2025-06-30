@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -108,7 +108,7 @@ namespace Duplicati.Server.Database
 
         public void ReWriteAllFieldsIfEncryptionChanged()
         {
-            // The token is automatically decrypted when the settings are loaded  
+            // The token is automatically decrypted when the settings are loaded
             // In case the password has changed, this will fail and return the encrypted
             // hex-string, but will crash before reaching this point
             if (this.ApplicationSettings.EncryptedFields != m_encryptSensitiveFields)
@@ -246,22 +246,25 @@ namespace Duplicati.Server.Database
         internal void SetMetadata(IDictionary<string, string> values, long id, IDbTransaction? transaction)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
-                {
-                    OverwriteAndUpdateDb(
-                        tr,
-                        cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Metadata"" WHERE ""BackupID"" = @Id")
-                            .SetParameterValue("@Id", id),
-                        values ?? new Dictionary<string, string>(),
-                        cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Metadata"" (""BackupID"", ""Name"", ""Value"") VALUES (@BackupId, @Name, @Value)"),
-                        (cmd, f) => cmd.SetParameterValue("@BackupId", id)
-                            .SetParameterValue("@Name", f.Key)
-                            .SetParameterValue("@Value", f.Value)
-                    );
+            {
+                var tr = transaction ?? m_connection.BeginTransaction();
+                OverwriteAndUpdateDb(
+                    tr,
+                    cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Metadata"" WHERE ""BackupID"" = @Id")
+                        .SetParameterValue("@Id", id),
+                    values ?? new Dictionary<string, string>(),
+                    cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Metadata"" (""BackupID"", ""Name"", ""Value"") VALUES (@BackupId, @Name, @Value)"),
+                    (cmd, f) => cmd.SetParameterValue("@BackupId", id)
+                        .SetParameterValue("@Name", f.Key)
+                        .SetParameterValue("@Value", f.Value)
+                );
 
-                    if (tr != null)
-                        tr.Commit();
+                if (transaction == null)
+                {
+                    tr.Commit();
+                    tr.Dispose();
                 }
+            }
         }
 
         internal IFilter[] GetFilters(long id)
@@ -282,23 +285,26 @@ namespace Duplicati.Server.Database
         internal void SetFilters(IEnumerable<IFilter> values, long id, IDbTransaction? transaction = null)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
-                {
-                    OverwriteAndUpdateDb(
-                        tr,
-                        cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Filter"" WHERE ""BackupID"" = @Id")
-                            .SetParameterValue("@Id", id),
-                        values,
-                        cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Filter"" (""BackupID"", ""Order"", ""Include"", ""Expression"") VALUES (@Id, @Order, @Include, @Expression)"),
-                        (cmd, f) => cmd.SetParameterValue("@Id", id)
-                            .SetParameterValue("@Order", f.Order)
-                            .SetParameterValue("@Include", f.Include)
-                            .SetParameterValue("@Expression", f.Expression)
-                    );
+            {
+                var tr = transaction ?? m_connection.BeginTransaction();
+                OverwriteAndUpdateDb(
+                    tr,
+                    cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Filter"" WHERE ""BackupID"" = @Id")
+                        .SetParameterValue("@Id", id),
+                    values,
+                    cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Filter"" (""BackupID"", ""Order"", ""Include"", ""Expression"") VALUES (@Id, @Order, @Include, @Expression)"),
+                    (cmd, f) => cmd.SetParameterValue("@Id", id)
+                        .SetParameterValue("@Order", f.Order)
+                        .SetParameterValue("@Include", f.Include)
+                        .SetParameterValue("@Expression", f.Expression)
+                );
 
-                    if (tr != null)
-                        tr.Commit();
+                if (transaction == null)
+                {
+                    tr.Commit();
+                    tr.Dispose();
                 }
+            }
         }
 
         public ISetting[] GetSettings(long id)
@@ -320,37 +326,40 @@ namespace Duplicati.Server.Database
         internal void SetSettings(IEnumerable<ISetting> values, long id, IDbTransaction? transaction = null)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
+            {
+                var tr = transaction ?? m_connection.BeginTransaction();
+                if (m_encryptSensitiveFields)
+                    values = values.Select(x => new Setting
+                    {
+                        Filter = x.Filter,
+                        Name = x.Name,
+                        Value = EncryptSensitiveFields(x.Name, x.Value, m_key)
+                    }).ToList();
+
+                OverwriteAndUpdateDb(
+                    tr,
+                    cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Option"" WHERE ""BackupID"" = @Id")
+                        .SetParameterValue("@Id", id),
+                    values,
+                    cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"") VALUES (@BackupId, @Filter, @Name, @Value)"),
+                    (cmd, f) =>
+                    {
+                        if (PASSWORD_PLACEHOLDER.Equals(f.Value))
+                            throw new Exception("Attempted to save a property with the placeholder password");
+
+                        cmd.SetParameterValue("@BackupId", id)
+                            .SetParameterValue("@Filter", f.Filter ?? "")
+                            .SetParameterValue("@Name", f.Name ?? "")
+                            .SetParameterValue("@Value", f.Value ?? "");
+                    }
+                );
+
+                if (transaction == null)
                 {
-                    if (m_encryptSensitiveFields)
-                        values = values.Select(x => new Setting
-                        {
-                            Filter = x.Filter,
-                            Name = x.Name,
-                            Value = EncryptSensitiveFields(x.Name, x.Value, m_key)
-                        }).ToList();
-
-                    OverwriteAndUpdateDb(
-                        tr,
-                        cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Option"" WHERE ""BackupID"" = @Id")
-                            .SetParameterValue("@Id", id),
-                        values,
-                        cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"") VALUES (@BackupId, @Filter, @Name, @Value)"),
-                        (cmd, f) =>
-                        {
-                            if (PASSWORD_PLACEHOLDER.Equals(f.Value))
-                                throw new Exception("Attempted to save a property with the placeholder password");
-
-                            cmd.SetParameterValue("@BackupId", id)
-                                .SetParameterValue("@Filter", f.Filter ?? "")
-                                .SetParameterValue("@Name", f.Name ?? "")
-                                .SetParameterValue("@Value", f.Value ?? "");
-                        }
-                    );
-
-                    if (tr != null)
-                        tr.Commit();
+                    tr.Commit();
+                    tr.Dispose();
                 }
+            }
         }
 
         internal string?[] GetSources(long id)
@@ -366,21 +375,24 @@ namespace Duplicati.Server.Database
         internal void SetSources(IEnumerable<string> values, long id, IDbTransaction transaction)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
-                {
-                    OverwriteAndUpdateDb(
-                        tr,
-                        cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Source"" WHERE ""BackupID"" = @Id")
-                            .SetParameterValue("@Id", id),
-                        values,
-                        cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Source"" (""BackupID"", ""Path"") VALUES (@BackupId, @Path)"),
-                        (cmd, f) => cmd.SetParameterValue("@BackupId", id)
-                            .SetParameterValue("@Path", f)
-                    );
+            {
+                var tr = transaction ?? m_connection.BeginTransaction();
+                OverwriteAndUpdateDb(
+                    tr,
+                    cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Source"" WHERE ""BackupID"" = @Id")
+                        .SetParameterValue("@Id", id),
+                    values,
+                    cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Source"" (""BackupID"", ""Path"") VALUES (@BackupId, @Path)"),
+                    (cmd, f) => cmd.SetParameterValue("@BackupId", id)
+                        .SetParameterValue("@Path", f)
+                );
 
-                    if (tr != null)
-                        tr.Commit();
+                if (transaction == null)
+                {
+                    tr.Commit();
+                    tr.Dispose();
                 }
+            }
         }
 
         internal long[] GetBackupIDsForTags(string[] tags)
@@ -624,7 +636,7 @@ namespace Duplicati.Server.Database
         {
             lock (m_lock)
             {
-                using (var tr = m_connection.BeginTransactionSafe())
+                using (var tr = m_connection.BeginTransaction())
                 {
                     using (var cmd = m_connection.CreateCommand(tr, @"UPDATE ""Backup"" SET ""DBPath""= @Dbpath WHERE ""ID""= @Id"))
                     {
@@ -665,7 +677,7 @@ namespace Duplicati.Server.Database
                         throw new Exception("Unable to generate a unique database file name");
                 }
 
-                using (var tr = m_connection.BeginTransactionSafe())
+                using (var tr = m_connection.BeginTransaction())
                 {
                     OverwriteAndUpdateDb(
                         tr,
@@ -760,7 +772,7 @@ namespace Duplicati.Server.Database
         internal void AddOrUpdateSchedule(ISchedule item)
         {
             lock (m_lock)
-                using (var tr = m_connection.BeginTransactionSafe())
+                using (var tr = m_connection.BeginTransaction())
                 {
                     AddOrUpdateSchedule(item, tr);
                     tr.Commit();
@@ -811,7 +823,7 @@ namespace Duplicati.Server.Database
 
             lock (m_lock)
             {
-                using (var tr = m_connection.BeginTransactionSafe())
+                using (var tr = m_connection.BeginTransaction())
                 {
                     var existing = GetScheduleIDsFromTags(new string[] { "ID=" + ID.ToString() });
                     if (existing.Any())
@@ -1000,7 +1012,7 @@ namespace Duplicati.Server.Database
         //Workaround to clean up the database after invalid settings update
         public void FixInvalidBackupId()
         {
-            using (var tr = m_connection.BeginTransactionSafe())
+            using (var tr = m_connection.BeginTransaction())
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 cmd.SetCommandAndParameters(@"DELETE FROM ""Option"" WHERE ""BackupID"" = @BackupId")
@@ -1051,7 +1063,7 @@ namespace Duplicati.Server.Database
         public void SetUISettings(string scheme, IDictionary<string, string?> values, IDbTransaction? transaction = null)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
+                using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
                 {
                     OverwriteAndUpdateDb(
                         tr,
@@ -1075,7 +1087,7 @@ namespace Duplicati.Server.Database
         public void UpdateUISettings(string scheme, IDictionary<string, string?> values, IDbTransaction? transaction = null)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
+                using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
                 {
                     OverwriteAndUpdateDb(
                         tr,
@@ -1128,7 +1140,7 @@ namespace Duplicati.Server.Database
         {
             var t = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(purgeDate);
 
-            using (var tr = m_connection.BeginTransactionSafe())
+            using (var tr = m_connection.BeginTransaction())
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 cmd.SetCommandAndParameters(@"DELETE FROM ""ErrorLog"" WHERE ""Timestamp"" < @Time")
@@ -1207,7 +1219,7 @@ namespace Duplicati.Server.Database
         {
             if (transaction == null)
             {
-                using (var tr = m_connection.BeginTransactionSafe())
+                using (var tr = m_connection.BeginTransaction())
                 {
                     var r = DeleteFromDb(tablename, id, tr);
                     tr.Commit();

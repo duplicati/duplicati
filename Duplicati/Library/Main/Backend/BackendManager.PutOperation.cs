@@ -98,14 +98,14 @@ partial class BackendManager
         /// <summary>
         /// A callback that is invoked when the index volume is finished
         /// </summary>
-        public required Action? IndexVolumeFinishedCallback { get; init; }
+        public required Func<Task>? IndexVolumeFinishedCallback { get; init; }
         /// <summary>
         /// The default callback for database updates (no-op)
         /// </summary>
         public static Func<Task> OnDbUpdateDefault = () => Task.CompletedTask;
 
         /// <summary>
-        /// Creates a new put operation 
+        /// Creates a new put operation
         /// </summary>
         /// <param name="context">The execution context</param>
         /// <param name="waitForComplete">True if the operation should wait for completion</param>
@@ -234,7 +234,8 @@ partial class BackendManager
 
 
                 OriginalIndexFile.FinishVolume(hash, size);
-                IndexVolumeFinishedCallback?.Invoke();
+                if (IndexVolumeFinishedCallback != null)
+                    await IndexVolumeFinishedCallback();
                 OriginalIndexFile.Close();
 
                 indexOperation = (OriginalIndexFile, req2);
@@ -344,7 +345,7 @@ partial class BackendManager
             Context.Database.LogRemoteVolumeRenamed(oldname, newname);
             remoteFilename = newname;
 
-            // If there is an index file attached to the block file, 
+            // If there is an index file attached to the block file,
             // it references the block filename, so we create a new index file
             // which is a copy of the current, but with the new name
             if (indexOperation != null)

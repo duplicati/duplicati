@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -79,103 +79,118 @@ namespace Duplicati.Library.Main.Operation
             DateTime baseVersionTime;
             DateTime compareVersionTime;
 
-            using (var tmpdb = useLocalDb ? null : new TempFile())
-            using (var db = new Database.LocalListChangesDatabase(useLocalDb ? m_options.Dbpath : (string)tmpdb, m_options.SqlitePageCache))
-            using (var storageKeeper = db.CreateStorageHelper())
+            using var tmpdb = useLocalDb ? null : new TempFile();
+            await using var db = await Database.LocalListChangesDatabase.CreateAsync(useLocalDb ? m_options.Dbpath : (string)tmpdb, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await using var storageKeeper = await db.CreateStorageHelper(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            if (useLocalDb)
             {
-                if (useLocalDb)
-                {
-                    var dbtimes = db.FilesetTimes.ToList();
-                    if (dbtimes.Count < 2)
-                        throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", dbtimes.Count), "NeedTwoBackupsToStartDiff");
+                var dbtimes = await db
+                    .FilesetTimes(m_result.TaskControl.ProgressToken)
+                    .ToListAsync(cancellationToken: m_result.TaskControl.ProgressToken)
+                    .ConfigureAwait(false);
 
-                    long baseVersionId;
-                    long compareVersionId;
+                if (dbtimes.Count < 2)
+                    throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", dbtimes.Count), "NeedTwoBackupsToStartDiff");
 
-                    var times = dbtimes.Zip(Enumerable.Range(0, dbtimes.Count), (a, b) => new Tuple<long, DateTime, long>(b, a.Value, a.Key)).ToList();
-                    var bt = SelectTime(baseVersion, times, out baseVersionIndex, out baseVersionTime, out baseVersionId);
-                    times.Remove(bt);
-                    SelectTime(compareVersion, times, out compareVersionIndex, out compareVersionTime, out compareVersionId);
+                long baseVersionId;
+                long compareVersionId;
 
-                    storageKeeper.AddFromDb(baseVersionId, false, filter);
-                    storageKeeper.AddFromDb(compareVersionId, true, filter);
-                }
-                else
-                {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, accessing remote store");
+                var times = dbtimes.Zip(Enumerable.Range(0, dbtimes.Count), (a, b) => new Tuple<long, DateTime, long>(b, a.Value, a.Key)).ToList();
+                var bt = SelectTime(baseVersion, times, out baseVersionIndex, out baseVersionTime, out baseVersionId);
+                times.Remove(bt);
+                SelectTime(compareVersion, times, out compareVersionIndex, out compareVersionTime, out compareVersionId);
 
-                    var parsedlist = (await backendManager.ListAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
-                        .Select(n => Volumes.VolumeBase.ParseFilename(n))
-                        .Where(p => p != null && p.FileType == RemoteVolumeType.Files)
-                        .OrderByDescending(p => p.Time)
-                        .ToArray();
-
-                    var numberedList = parsedlist.Zip(Enumerable.Range(0, parsedlist.Length), (a, b) => new Tuple<long, DateTime, Volumes.IParsedVolume>(b, a.Time, a)).ToList();
-                    if (numberedList.Count < 2)
-                        throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", numberedList.Count), "NeedTwoBackupsToStartDiff");
-
-                    Volumes.IParsedVolume baseFile;
-                    Volumes.IParsedVolume compareFile;
-
-                    var bt = SelectTime(baseVersion, numberedList, out baseVersionIndex, out baseVersionTime, out baseFile);
-                    numberedList.Remove(bt);
-                    SelectTime(compareVersion, numberedList, out compareVersionIndex, out compareVersionTime, out compareFile);
-
-                    Func<FilelistEntryType, ListChangesElementType> conv = (x) =>
-                    {
-                        switch (x)
-                        {
-                            case FilelistEntryType.File:
-                                return ListChangesElementType.File;
-                            case FilelistEntryType.Folder:
-                                return ListChangesElementType.Folder;
-                            case FilelistEntryType.Symlink:
-                                return ListChangesElementType.Symlink;
-                            default:
-                                return (ListChangesElementType)(-1);
-                        }
-                    };
-
-                    if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                        return;
-
-                    using (var tmpfile = await backendManager.GetAsync(baseFile.File.Name, null, baseFile.File.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
-                    using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
-                        foreach (var f in rd.Files)
-                            if (FilterExpression.Matches(filter, f.Path))
-                                storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false);
-
-                    if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                        return;
-
-                    using (var tmpfile = await backendManager.GetAsync(compareFile.File.Name, null, compareFile.File.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
-                    using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
-                        foreach (var f in rd.Files)
-                            if (FilterExpression.Matches(filter, f.Path))
-                                storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), true);
-                }
-
-                var changes = storageKeeper.CreateChangeCountReport();
-                var sizes = storageKeeper.CreateChangeSizeReport();
-
-                var lst = (m_options.FullResult || callback != null) ?
-                        (from n in storageKeeper.CreateChangedFileReport()
-                         select n) : null;
-
-                m_result.SetResult(
-                    baseVersionTime, baseVersionIndex, compareVersionTime, compareVersionIndex,
-                    changes.AddedFolders, changes.AddedSymlinks, changes.AddedFiles,
-                    changes.DeletedFolders, changes.DeletedSymlinks, changes.DeletedFiles,
-                    changes.ModifiedFolders, changes.ModifiedSymlinks, changes.ModifiedFiles,
-                    sizes.AddedSize, sizes.DeletedSize, sizes.PreviousSize, sizes.CurrentSize,
-                    (lst == null || callback == null) ? null : lst.ToArray()
-                );
-
-                if (callback != null)
-                    callback(m_result, lst);
-
-                return;
+                await storageKeeper
+                    .AddFromDb(baseVersionId, false, filter, m_result.TaskControl.ProgressToken)
+                    .ConfigureAwait(false);
+                await storageKeeper
+                    .AddFromDb(compareVersionId, true, filter, m_result.TaskControl.ProgressToken)
+                    .ConfigureAwait(false);
             }
+            else
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, accessing remote store");
+
+                var parsedlist = (await backendManager.ListAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    .Select(n => Volumes.VolumeBase.ParseFilename(n))
+                    .Where(p => p != null && p.FileType == RemoteVolumeType.Files)
+                    .OrderByDescending(p => p.Time)
+                    .ToArray();
+
+                var numberedList = parsedlist.Zip(Enumerable.Range(0, parsedlist.Length), (a, b) => new Tuple<long, DateTime, Volumes.IParsedVolume>(b, a.Time, a)).ToList();
+                if (numberedList.Count < 2)
+                    throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", numberedList.Count), "NeedTwoBackupsToStartDiff");
+
+                Volumes.IParsedVolume baseFile;
+                Volumes.IParsedVolume compareFile;
+
+                var bt = SelectTime(baseVersion, numberedList, out baseVersionIndex, out baseVersionTime, out baseFile);
+                numberedList.Remove(bt);
+                SelectTime(compareVersion, numberedList, out compareVersionIndex, out compareVersionTime, out compareFile);
+
+                Func<FilelistEntryType, ListChangesElementType> conv = (x) =>
+                {
+                    switch (x)
+                    {
+                        case FilelistEntryType.File:
+                            return ListChangesElementType.File;
+                        case FilelistEntryType.Folder:
+                            return ListChangesElementType.Folder;
+                        case FilelistEntryType.Symlink:
+                            return ListChangesElementType.Symlink;
+                        default:
+                            return (ListChangesElementType)(-1);
+                    }
+                };
+
+                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                    return;
+
+                using (var tmpfile = await backendManager.GetAsync(baseFile.File.Name, null, baseFile.File.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
+                    foreach (var f in rd.Files)
+                        if (FilterExpression.Matches(filter, f.Path))
+                            await storageKeeper
+                                .AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false, m_result.TaskControl.ProgressToken)
+                                .ConfigureAwait(false);
+
+                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                    return;
+
+                using (var tmpfile = await backendManager.GetAsync(compareFile.File.Name, null, compareFile.File.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
+                    foreach (var f in rd.Files)
+                        if (FilterExpression.Matches(filter, f.Path))
+                            await storageKeeper
+                                .AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), true, m_result.TaskControl.ProgressToken)
+                                .ConfigureAwait(false);
+            }
+
+            var changes = await storageKeeper
+                .CreateChangeCountReport(m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+
+            var sizes = await storageKeeper
+                .CreateChangeSizeReport(m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+
+            var lst = (m_options.FullResult || callback != null) ?
+                    (from n in storageKeeper.CreateChangedFileReport(m_result.TaskControl.ProgressToken)
+                     select n) : null;
+
+            m_result.SetResult(
+                baseVersionTime, baseVersionIndex, compareVersionTime, compareVersionIndex,
+                changes.AddedFolders, changes.AddedSymlinks, changes.AddedFiles,
+                changes.DeletedFolders, changes.DeletedSymlinks, changes.DeletedFiles,
+                changes.ModifiedFolders, changes.ModifiedSymlinks, changes.ModifiedFiles,
+                sizes.AddedSize, sizes.DeletedSize, sizes.PreviousSize, sizes.CurrentSize,
+                (lst == null || callback == null) ? null : await lst.ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken).ConfigureAwait(false)
+            );
+
+            if (callback != null)
+                callback(m_result, lst.ToEnumerable());
+
+            return;
         }
     }
 }

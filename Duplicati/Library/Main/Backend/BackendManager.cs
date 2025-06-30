@@ -246,7 +246,7 @@ internal partial class BackendManager : IBackendManager
     /// <param name="onDbUpdate">The callback to call when the database is updated</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task PutAsync(VolumeWriterBase volume, IndexVolumeWriter? indexVolume, Action? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken)
+    public async Task PutAsync(VolumeWriterBase volume, IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken)
     {
         volume.Close();
 
@@ -292,23 +292,21 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
-    /// Flushes the database messages to the database
+    /// Flushes the database messages to the database.
     /// </summary>
-    /// <param name="database">The database to write to</param>
-    /// <param name="transaction">The transaction to use</param>
-    /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns></returns>
-    public Task FlushPendingMessagesAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken)
+    /// <param name="database">The database to write to.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task that completes when the messages are flushed.</returns>
+    public async Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken)
     {
-        context.Database.FlushPendingMessages(database, transaction);
-        return Task.CompletedTask;
+        await context.Database.FlushPendingMessages(database, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Waits for the backend queue to be empty
+    /// Waits for the backend queue to be empty.
     /// </summary>
-    /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>An awaitable task</returns>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>An awaitable task.</returns>
     public async Task WaitForEmptyAsync(CancellationToken cancellationToken)
     {
         var op = new WaitForEmptyOperation(context, cancellationToken);
@@ -323,22 +321,22 @@ internal partial class BackendManager : IBackendManager
     /// <param name="transaction">The transaction to use</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken)
+    public async Task WaitForEmptyAsync(LocalDatabase database, CancellationToken cancellationToken)
     {
-        await FlushPendingMessagesAsync(database, transaction, cancellationToken).ConfigureAwait(false);
+        await FlushPendingMessagesAsync(database, cancellationToken).ConfigureAwait(false);
         await WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
-        await FlushPendingMessagesAsync(database, transaction, cancellationToken).ConfigureAwait(false);
+        await FlushPendingMessagesAsync(database, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Stops the backend manager and flushes any pending messages to the database
+    /// Stops the backend manager and flushes any pending messages to the database.
     /// </summary>
-    /// <param name="database">The database to write pending messages to</param>
-    /// <param name="transaction">The transaction to use, if any</param>
-    public async Task StopRunnerAndFlushMessages(LocalDatabase database, IDbTransaction? transaction)
+    /// <param name="database">The database to write pending messages to.</param>
+    /// <returns>A task that completes when the runner is stopped and messages are flushed.</returns>
+    public async Task StopRunnerAndFlushMessages(LocalDatabase database)
     {
         await requestChannel.RetireAsync().ConfigureAwait(false);
-        await FlushPendingMessagesAsync(database, transaction, CancellationToken.None).ConfigureAwait(false);
+        await FlushPendingMessagesAsync(database, CancellationToken.None).ConfigureAwait(false);
 
         if (queueRunner.IsFaulted)
             Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
@@ -368,7 +366,8 @@ internal partial class BackendManager : IBackendManager
             yield break;
 
         // Get the first volume, so we do not have pending parallel transfers
-        var prevResult = await GetWithInfoAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken);
+        var prevResult = await GetWithInfoAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken)
+            .ConfigureAwait(false);
 
         foreach (var volume in volumes.Skip(1))
         {
@@ -381,7 +380,7 @@ internal partial class BackendManager : IBackendManager
 
             // Set up for next iteration
             prevVolume = volume;
-            prevResult = await nextTask;
+            prevResult = await nextTask.ConfigureAwait(false);
         }
 
         // Return the last result

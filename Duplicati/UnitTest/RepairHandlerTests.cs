@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
@@ -25,6 +25,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
@@ -86,7 +87,7 @@ namespace Duplicati.UnitTest
             List<int> expectedBlocksetIDs = new List<int>();
             List<int> expectedIndexes = new List<int>();
             List<string> expectedHashes = new List<string>();
-            using (IDbConnection connection = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (IDbConnection connection = SQLiteLoader.LoadConnection(options["dbpath"]))
             {
                 // Read the contents of the BlocklistHash table so that we can
                 // compare them to the contents after the repair operation.
@@ -123,7 +124,7 @@ namespace Duplicati.UnitTest
             List<int> repairedBlocksetIDs = new List<int>();
             List<int> repairedIndexes = new List<int>();
             List<string> repairedHashes = new List<string>();
-            using (IDbConnection connection = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (IDbConnection connection = SQLiteLoader.LoadConnection(options["dbpath"]))
             {
                 using (IDbCommand command = connection.CreateCommand())
                 {
@@ -403,7 +404,7 @@ namespace Duplicati.UnitTest
         [Category("RepairHandler")]
         [TestCase("true")]
         [TestCase("false")]
-        public void RepairExtraIndexFiles(string noEncryption)
+        public async Task RepairExtraIndexFiles(string noEncryption)
         {
             // Extra index files will be added to the database and should have a correct link established
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) { ["no-encryption"] = noEncryption };
@@ -427,18 +428,30 @@ namespace Duplicati.UnitTest
             }
 
             // Check database block link
-            using (LocalDatabase db = new LocalDatabase(DBFILE, "Test", true, 0))
+            using (LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "Test", true, null, CancellationToken.None).ConfigureAwait(false))
             {
-                var indexVolumeId = db.GetRemoteVolumeID(Path.GetFileName(origFile));
-                var duplicateVolumeId = db.GetRemoteVolumeID(Path.GetFileName(dupFile));
+                var indexVolumeId = await db
+                    .GetRemoteVolumeID(Path.GetFileName(origFile), CancellationToken.None)
+                    .ConfigureAwait(false);
+                var duplicateVolumeId = await db
+                    .GetRemoteVolumeID(Path.GetFileName(dupFile), CancellationToken.None)
+                    .ConfigureAwait(false);
                 Assert.AreNotEqual(-1, indexVolumeId);
                 Assert.AreNotEqual(-1, duplicateVolumeId);
 
                 using (var cmd = db.Connection.CreateCommand())
                 {
                     var sql = @"SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = @VolumeId";
-                    var linkedIndexId = cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", indexVolumeId).ExecuteScalarInt64(-1);
-                    var linkedDuplicateId = cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", duplicateVolumeId).ExecuteScalarInt64(-1);
+                    var linkedIndexId = await cmd
+                        .SetCommandAndParameters(sql)
+                        .SetParameterValue("@VolumeId", indexVolumeId)
+                        .ExecuteScalarInt64Async(-1, CancellationToken.None)
+                        .ConfigureAwait(false);
+                    var linkedDuplicateId = await cmd
+                        .SetCommandAndParameters(sql)
+                        .SetParameterValue("@VolumeId", duplicateVolumeId)
+                        .ExecuteScalarInt64Async(-1, CancellationToken.None)
+                        .ConfigureAwait(false);
                     Assert.AreEqual(linkedIndexId, linkedDuplicateId);
                 }
             }
@@ -494,7 +507,7 @@ namespace Duplicati.UnitTest
                 dlistFiles = dlistFiles.Reverse();
 
             var dlistFile = dlistFiles.First();
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand("DELETE FROM RemoteVolume WHERE Name = @Name"))
                 Assert.AreEqual(1, cmd.SetParameterValue("@Name", Path.GetFileName(dlistFile)).ExecuteNonQuery());
 
@@ -514,7 +527,7 @@ namespace Duplicati.UnitTest
             }
 
             // Check that the entry was recreated
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand("SELECT COUNT(*) FROM RemoteVolume WHERE Name LIKE '%.dlist.%' AND State != @State"))
                 Assert.AreEqual(2, cmd.SetParameterValue("@State", RemoteVolumeState.Deleted.ToString()).ExecuteScalarInt64(-1));
 
@@ -551,7 +564,7 @@ namespace Duplicati.UnitTest
                 TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
             // Remove a fileset
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 var filesetId = cmd.ExecuteScalarInt64("SELECT Id FROM Fileset ORDER BY Id DESC LIMIT 1");
@@ -581,7 +594,7 @@ namespace Duplicati.UnitTest
             }
 
             // Check that entry was recreated
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
                 Assert.AreEqual(2, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM Fileset"));
         }
@@ -605,7 +618,7 @@ namespace Duplicati.UnitTest
             // Remove a fileset
             long filesetEntries;
             long fileLookupEntries;
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 filesetEntries = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry");
@@ -628,7 +641,7 @@ namespace Duplicati.UnitTest
             }
 
             // Check that entry was recreated
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 Assert.AreEqual(filesetEntries, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry"));
@@ -646,7 +659,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
                 TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 var lookupId = cmd.ExecuteScalarInt64("SELECT ID FROM FileLookup LIMIT 1");
@@ -664,7 +677,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
             }
-            using (var con = SQLiteLoader.LoadConnection(options["dbpath"], 0))
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 var remaining = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");

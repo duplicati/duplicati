@@ -28,7 +28,7 @@ internal interface IBackendManager : IDisposable
     /// <param name="onDbUpdate">The action to call when the database should be updated</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task PutAsync(VolumeWriterBase blockVolume, IndexVolumeWriter? indexVolume, Action? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken);
+    Task PutAsync(VolumeWriterBase blockVolume, IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken);
 
     /// <summary>
     /// Uploads a file to the backend without encryption
@@ -50,10 +50,9 @@ internal interface IBackendManager : IDisposable
     /// Waits for the backend queue to be empty and flushes any pending messages to the database
     /// </summary>
     /// <param name="database">The database to write pending messages to</param>
-    /// <param name="transaction">The transaction to use, if any</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken);
+    Task WaitForEmptyAsync(LocalDatabase database, CancellationToken cancellationToken);
 
     /// <summary>
     /// Lists the files on the backend
@@ -130,10 +129,9 @@ internal interface IBackendManager : IDisposable
     /// Flushes the database messages to the database
     /// </summary>
     /// <param name="database">The database to write to</param>
-    /// <param name="transaction">The transaction to use</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns></returns>
-    Task FlushPendingMessagesAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken);
+    Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken);
 
     /// <summary>
     /// Updates the throttle values for upload and download

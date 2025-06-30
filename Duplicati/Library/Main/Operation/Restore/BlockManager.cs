@@ -131,10 +131,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
             /// </summary>
-            /// <param name="db">The database holding information about how many of each block this restore requires.</param>
             /// <param name="volume_request">Channel for submitting block requests from a volume.</param>
             /// <param name="readers">Number of readers accessing this dictionary. Used during shutdown / cleanup.</param>
-            public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<object> volume_request, Options options, int readers)
+            private SleepableDictionary(IWriteChannel<object> volume_request, Options options, int readers)
             {
                 m_options = options;
                 m_volume_request = volume_request;
@@ -171,14 +170,31 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_set_set = options.InternalProfiling ? new() : null;
                 sw_set_wake_get = options.InternalProfiling ? new() : null;
                 sw_set_wake_set = options.InternalProfiling ? new() : null;
+            }
 
-                foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDs(options.SkipMetadata))
+            /// <summary>
+            /// Asynchronously creates a new instance of the <see cref="SleepableDictionary"/> class.
+            /// This method initializes the block and volume counts based on the data in the database.
+            /// </summary>
+            /// <param name="db">The database holding information about how many of each block this restore requires.</param>
+            /// <param name="volume_request">CoCoL channel for submitting block requests from a volume.</param>
+            /// <param name="options">The restore options.</param>
+            /// <param name="readers">The number of readers accessing this dictionary. Used during shutdown / cleanup.</param>
+            /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+            /// <returns>A task that when awaited returns a new instance of the <see cref="SleepableDictionary"/> class.</returns>
+            public static async Task<SleepableDictionary> CreateAsync(LocalRestoreDatabase db, IWriteChannel<object> volume_request, Options options, int readers, CancellationToken cancellationToken)
+            {
+                var sd = new SleepableDictionary(volume_request, options, readers);
+
+                await foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDs(options.SkipMetadata, cancellationToken).ConfigureAwait(false))
                 {
-                    var bc = m_blockcount.TryGetValue(block_id, out var c);
-                    m_blockcount[block_id] = bc ? c + 1 : 1;
-                    var vc = m_volumecount.TryGetValue(volume_id, out var v);
-                    m_volumecount[volume_id] = vc ? v + 1 : 1;
+                    var bc = sd.m_blockcount.TryGetValue(block_id, out var c);
+                    sd.m_blockcount[block_id] = bc ? c + 1 : 1;
+                    var vc = sd.m_volumecount.TryGetValue(volume_id, out var v);
+                    sd.m_volumecount[volume_id] = vc ? v + 1 : 1;
                 }
+
+                return sd;
             }
 
             /// <summary>
@@ -303,7 +319,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     sw_get_wait?.Stop();
                 }
 
-                return await new_tcs.Task;
+                return await new_tcs.Task.ConfigureAwait(false);
             }
 
             /// <summary>
@@ -421,10 +437,11 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="db">The database holding information about how many of each block this restore requires.</param>
-        /// <param name="options">The restore options.</param>
         /// <param name="fp_requests">The channels for reading block requests from the `FileProcessor`.</param>
         /// <param name="fp_responses">The channels for writing block responses back to the `FileProcessor`.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<Task<byte[]>>[] fp_responses)
+        /// <param name="options">The restore options.</param>
+        /// <param name="results">The results of the restore operation.</param>
+        public static Task Run(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest>[] fp_requests, IChannel<Task<byte[]>>[] fp_responses, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -435,7 +452,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             async self =>
             {
                 // Create a cache for the blocks,
-                using SleepableDictionary cache = new(db, self.Output, options, fp_requests.Length);
+                using SleepableDictionary cache =
+                    await SleepableDictionary.CreateAsync(db, self.Output, options, fp_requests.Length, results.TaskControl.ProgressToken)
+                        .ConfigureAwait(false);
 
                 // The volume consumer will read blocks from the input channel (data blocks from the volumes) and store them in the cache.
                 var volume_consumer = Task.Run(async () =>
