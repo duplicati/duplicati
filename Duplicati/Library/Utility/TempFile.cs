@@ -57,7 +57,9 @@ namespace Duplicati.Library.Utility
         {
             var st = new System.Diagnostics.StackTrace();
             foreach (var f in st.GetFrames())
-                if (f.GetMethod().DeclaringType.Assembly != typeof(TempFile).Assembly)
+            {
+                var asm = f.GetMethod()?.DeclaringType?.Assembly;
+                if (asm != null && asm != typeof(TempFile).Assembly)
                 {
                     var n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.FullName, f.GetMethod().Name, Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow), Guid.NewGuid().ToString().Substring(0, 8));
                     if (n.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0)
@@ -69,6 +71,7 @@ namespace Duplicati.Library.Utility
                         return n;
                     }
                 }
+            }
 
             var s = Guid.NewGuid().ToString();
             lock (m_lock)
