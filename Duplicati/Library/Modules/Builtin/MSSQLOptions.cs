@@ -125,7 +125,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             if (paths == null || !ContainFilesForBackup(paths) || !mssqlUtility.IsMSSQLInstalled)
                 return changedOptions;
-            
+
             if (commandlineOptions.Keys.Contains("vss-exclude-writers"))
             {
                 var excludedWriters = commandlineOptions["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
@@ -144,15 +144,15 @@ namespace Duplicati.Library.Modules.Builtin
             }
 
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingMsSqlQuery", "Starting to gather Microsoft SQL Server information", Logging.LogMessageType.Information);
-            var provider = Utility.Utility.ParseEnumOption(changedOptions.AsReadOnly(), "snapshot-provider", SnapshotProvider.AlphaVSS);
+            var provider = Utility.Utility.ParseEnumOption(changedOptions.AsReadOnly(), "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
             mssqlUtility.QueryDBsInfo(provider);
             Logging.Log.WriteInformationMessage(LOGTAG, "MsSqlDatabaseCount", "Found {0} databases on Microsoft SQL Server", mssqlUtility.DBs.Count);
 
-            foreach(var db in mssqlUtility.DBs)
+            foreach (var db in mssqlUtility.DBs)
                 Logging.Log.WriteProfilingMessage(LOGTAG, "MsSqlDatabaseName", "Found DB name {0}, ID {1}, files {2}", db.Name, db.ID, string.Join(";", db.DataPaths));
 
             List<MSSQLDB> dbsForBackup = new List<MSSQLDB>();
-            
+
             if (paths.Contains(m_MSSQLPathAllRegExp, StringComparer.OrdinalIgnoreCase))
                 dbsForBackup = mssqlUtility.DBs;
             else
@@ -196,7 +196,7 @@ namespace Duplicati.Library.Modules.Builtin
             var pathsForBackup = new List<string>(paths);
             var filterhandler = new Utility.FilterExpression(
                 filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-", StringComparison.Ordinal)).Select(x => x.Substring(1)).ToList());
-            
+
             foreach (var dbForBackup in dbsForBackup)
                 foreach (var pathForBackup in dbForBackup.DataPaths)
                 {
@@ -214,7 +214,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             return changedOptions;
         }
-        
+
         public bool ContainFilesForBackup(string[] paths)
         {
             if (paths == null || !OperatingSystem.IsWindows())

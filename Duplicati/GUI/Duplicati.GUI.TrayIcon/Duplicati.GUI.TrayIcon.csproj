@@ -45,7 +45,6 @@
     <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj" />
     <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\..\Library\Main\Duplicati.Library.Main.csproj" />
-    <ProjectReference Include="..\..\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
     <ProjectReference Include="..\..\License\Duplicati.License.csproj" />
     <ProjectReference Include="..\..\Library\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />

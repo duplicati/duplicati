@@ -950,7 +950,7 @@ namespace Duplicati.Library.Main.Operation
                             continue;
                         }
 
-                        using var snapshot = Snapshots.SnapshotUtility.CreateNoSnapshot([block.Path], true, true);
+                        using var snapshot = Snapshots.SnapshotUtility.CreateNoSnapshot([block.Path], true, true, PermissionHelper.HasSeBackupPrivilege());
                         var entry = snapshot.GetFilesystemEntry(block.Path, isDir);
                         if (entry == null)
                         {

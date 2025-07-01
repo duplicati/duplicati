@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <RootNamespace>Duplicati.Library.WindowsModules</RootNamespace>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Vanara.PInvoke.VssApi" Version="4.1.6" />
+    <PackageReference Include="Vanara.PInvoke.Kernel32" Version="4.1.6" />
+    <PackageReference Include="Vanara.PInvoke.Security" Version="4.1.6" />
+    <PackageReference Include="Vanara.Security" Version="4.1.6" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
+    <!-- <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" /> -->
+  </ItemGroup>
+</Project>

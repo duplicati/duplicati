@@ -44,8 +44,16 @@ public static partial class Command
                 .Select(x => Path.GetFileName(x))
                 .ToHashSet(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
 
+            string[] extras = target.OS switch
+            {
+                OSType.Windows => ["Vanara.PInvoke.Kernel32.dll", "Vanara.PInvoke.VssApi.dll", "Duplicati.Library.WindowsModules.dll"],
+                OSType.MacOS => [],
+                OSType.Linux => [],
+                _ => throw new Exception($"Not supported OS: {target.OS}")
+            };
+
             // Random sample of files we expect
-            var probeFiles = new string[] {
+            string[] probeFiles = [
                 "System.CommandLine.dll",
                 "System.CommandLine.NamingConventionBinder.dll",
                 "AWSSDK.S3.dll",
@@ -56,8 +64,9 @@ public static partial class Command
                 "SQLiteHelper.dll",
                 "SQLite.Interop.dll",
                 "Microsoft.IdentityModel.Abstractions.dll",
-                "System.Reactive.dll"
-            };
+                "System.Reactive.dll",
+                .. extras
+            ];
 
             var missing = probeFiles.Where(x => !rootFiles.Contains(x)).ToArray();
             if (missing.Length > 0)
@@ -266,8 +275,9 @@ public static partial class Command
         /// </summary>
         /// <param name="folder">The folder to check</param>
         /// <param name="input">The parsed output from the dotnet list command</param>
+        /// <param name="allowAssemblyMismatch">If true, allows mismatches between the assembly version and the nuget version</param>
         /// <returns>An awaitable task</returns>
-        public static Task VerifyDuplicatedVersionsAreMaxVersions(string folder, RootJson input)
+        public static Task VerifyDuplicatedVersionsAreMaxVersions(string folder, RootJson input, bool allowAssemblyMismatch)
         {
             var duplicatedVersions = GetDuplicatedVersions(input)
                 .Select(x =>
@@ -296,7 +306,8 @@ public static partial class Command
                 var sb = new StringBuilder();
                 foreach (var mismatch in mismatches)
                     sb.AppendLine($"File {mismatch.Path} has version {mismatch.Actual} but expected {mismatch.Expected}");
-                throw new Exception(sb.ToString());
+                if (!allowAssemblyMismatch)
+                    throw new Exception(sb.ToString());
             }
 
             return Task.CompletedTask;
