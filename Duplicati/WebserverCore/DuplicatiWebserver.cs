@@ -196,7 +196,7 @@ public class DuplicatiWebserver
             ?? throw new Exception("Failed to deserialize JWTConfig");
 
         if (settings.TokenLifetimeInMinutes > 0)
-            jwtConfig = jwtConfig with { RefreshTokenDurationInMinutes = Math.Min(settings.TokenLifetimeInMinutes, 60 * 24 * 30) };
+            jwtConfig = jwtConfig with { RefreshTokenDurationInMinutes = settings.TokenLifetimeInMinutes };
 
         if (EnableSwagger)
         {
