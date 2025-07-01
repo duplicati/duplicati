@@ -10,8 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SMBLibrary" Version="1.5.3.5" />
-    <PackageReference Include="SMBLibrary.Win32" Version="1.5.3" />
+    <PackageReference Include="SMBLibrary" Version="1.5.4" />
+    <PackageReference Include="SMBLibrary.Win32" Version="1.5.4" />
   </ItemGroup>
 
   <ItemGroup>

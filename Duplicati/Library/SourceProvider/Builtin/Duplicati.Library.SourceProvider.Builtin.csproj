@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.IO.Pipelines" Version="9.0.2" />
+    <PackageReference Include="System.IO.Pipelines" Version="9.0.6" />
   </ItemGroup>
 
   <ItemGroup>

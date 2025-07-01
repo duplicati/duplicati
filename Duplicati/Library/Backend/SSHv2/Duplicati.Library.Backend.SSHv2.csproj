@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="SSH.NET" Version="2025.0.0" />
-    <PackageReference Include="SshNet.Agent" Version="2024.2.0" />
+    <PackageReference Include="SshNet.Agent" Version="2024.2.0.1" />
   </ItemGroup>
 
   <ItemGroup>
