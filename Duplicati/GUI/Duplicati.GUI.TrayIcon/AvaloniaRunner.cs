@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 #nullable enable
@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -46,6 +47,8 @@ namespace Duplicati.GUI.TrayIcon
         private bool closed = false;
         private ProcessBasedActionDelay actionDelayer = new ProcessBasedActionDelay();
         private IEnumerable<AvaloniaMenuItem> menuItems = Enumerable.Empty<AvaloniaMenuItem>();
+        private int _disposed;
+        private int _exitCalled;
 
         public override void Init(string[] args)
         {
@@ -55,11 +58,20 @@ namespace Duplicati.GUI.TrayIcon
         protected override Task UpdateUIState(Action action)
             => RunOnUIThread(action);
 
+
         internal Task RunOnUIThread(Action action)
-            => actionDelayer.ExecuteAction(() =>
+        {
+          if (_disposed != 0)
+              return Task.CompletedTask;
+
+          return actionDelayer.ExecuteAction(() =>
             {
                 try
                 {
+                    if (_disposed != 0 )
+                    {
+                        return;
+                    }
                     RunOnUIThreadInternal(action);
                 }
                 catch (Exception ex)
@@ -68,11 +80,16 @@ namespace Duplicati.GUI.TrayIcon
                     throw;
                 }
             });
+        }
 
         private void RunOnUIThreadInternal(Action action)
         {
+
             if (closed)
                 return;
+
+            if (_disposed != 0)
+                return ;
 
             if (Dispatcher.UIThread.CheckAccess())
                 action();
@@ -96,6 +113,8 @@ namespace Duplicati.GUI.TrayIcon
 
             lifetime.Startup += (_, _) => CheckForAppInitialized(lifetime);
 
+
+
             var builder = AppBuilder
                 .Configure(() => new AvaloniaApp() { Name = AutoUpdateSettings.AppName })
                 .UsePlatformDetect()
@@ -117,7 +136,15 @@ namespace Duplicati.GUI.TrayIcon
             application.SetMenu(menuItems);
             application.Configure();
 
-            lifetime.Start(args);
+            try
+            {
+                lifetime.Start(args);
+            }
+            catch (NullReferenceException)
+            {
+                //Ignoring exception that can happen while Avalonia is finalizing on shutdown.
+            }
+
         }
 
         private async void CheckForAppInitialized(IClassicDesktopStyleApplicationLifetime lifetime)
@@ -192,12 +219,21 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override void Exit()
         {
-            UpdateUIState(() =>
+            if (Interlocked.CompareExchange(ref _exitCalled, 1, 0) != 0)
+                return;
+
+            actionDelayer.Cancel();
+
+            RunOnUIThreadInternal(() =>
             {
                 this.closed = true;
-                this.application?.Shutdown();
-
+                try
+                {
+                    this.application?.Shutdown();
+                }
+                catch { }
             });
+
         }
 
         protected override void SetIcon(TrayIcons icon)
@@ -207,6 +243,10 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override void SetMenu(IEnumerable<IMenuItem> items)
         {
+            if (_disposed != 0 || _exitCalled != 0)
+            {
+                return;
+            }
             this.menuItems = items.Select(i => (AvaloniaMenuItem)i);
             if (this.application != null)
                 UpdateUIState(() => this.application?.SetMenu(menuItems));
@@ -214,6 +254,8 @@ namespace Duplicati.GUI.TrayIcon
 
         public override void Dispose()
         {
+            if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
+                return;
             actionDelayer.Dispose();
         }
         #endregion
@@ -292,13 +334,13 @@ namespace Duplicati.GUI.TrayIcon
         }
 
         /// <summary>
-        /// Performs unguarded update of the icon, ensure calling thread is UI 
+        /// Performs unguarded update of the icon, ensure calling thread is UI
         /// and the nativeMenuItem has been set
         /// </summary>
         private void UpdateIcon()
         {
             if (nativeMenuItem == null)
-                return;
+                    return;
 
             nativeMenuItem.Icon = this.Icon switch
             {
@@ -320,7 +362,7 @@ namespace Duplicati.GUI.TrayIcon
         public void SetDefault(bool value)
         {
             this.IsDefault = value;
-            // Not currently supported by Avalonia, 
+            // Not currently supported by Avalonia,
             // used to set the menu bold on Windows to indicate the default entry
         }
 
@@ -431,8 +473,18 @@ namespace Duplicati.GUI.TrayIcon
 
         public void Shutdown()
         {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-                desktop.Shutdown();
+            try
+            {
+                if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                {
+                    desktop.Shutdown();
+                }
+            }
+            catch (Exception ex)
+            {
+                 Console.WriteLine($"AVALALONIA desktop.Shutdown() failed because of {ex}");
+            }
+
         }
 
         public override void OnFrameworkInitializationCompleted()

@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Utility;
@@ -44,13 +45,18 @@ public class ProcessBasedActionDelay : IDisposable
     /// Reference to the task running
     /// </summary>
     private readonly Task m_task;
+    
+    /// <summary>
+    /// CancellationToken for the running task
+    /// </summary>
+    private readonly CancellationTokenSource _cancellationToken = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessBasedActionDelay"/> class.
     /// </summary>
     public ProcessBasedActionDelay()
     {
-        m_task = RunProcessor(m_inboundActionChannel.AsReadOnly(), m_initializedChannel.AsReadOnly());
+        m_task = RunProcessor(m_inboundActionChannel.AsReadOnly(), m_initializedChannel.AsReadOnly(), _cancellationToken.Token);
     }
 
     /// <summary>
@@ -58,8 +64,9 @@ public class ProcessBasedActionDelay : IDisposable
     /// </summary>
     /// <param name="inboundChannel">The channel with actions to be delayed.</param>
     /// <param name="initializedChannel">The channel that sends the start signal.</param>
+    /// <param name="cancellationToken">A cancelationToken</param>
     /// <returns>The task running the processor process.</returns>
-    private static Task RunProcessor(IReadChannelEnd<Action> inboundChannel, IReadChannelEnd<bool> initializedChannel)
+    private static Task RunProcessor(IReadChannelEnd<Action> inboundChannel, IReadChannelEnd<bool> initializedChannel, CancellationToken cancellationToken)
         => AutomationExtensions.RunTask(new
         {
             inboundChannel,
@@ -69,12 +76,11 @@ public class ProcessBasedActionDelay : IDisposable
             // Wait for initialization
             await self.initializedChannel.ReadAsync();
 
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 var action = await self.inboundChannel.ReadAsync();
                 action();
             }
-
         });
 
     /// <summary>
@@ -83,6 +89,12 @@ public class ProcessBasedActionDelay : IDisposable
     /// <param name="action">The action to execute</param>
     public async Task ExecuteAction(Action action)
     {
+        if (_cancellationToken.IsCancellationRequested)
+        {
+            // If the processor is cancelled, we do not queue the action
+            return;
+        }
+        
         // Note: WriteNoWait() is used to avoid waiting for the action to be read,
         // as this would cause deadlocks if called from within the processor.
         // The buffer size should be sufficient to allow for a reasonable number of actions to be queued.
@@ -94,6 +106,13 @@ public class ProcessBasedActionDelay : IDisposable
             await task;
     }
 
+    /// <summary>
+    /// Halts execution of the processor (pending actions will not be executed), but channels are not retired.
+    /// </summary>
+    public void Cancel()
+    {
+        _cancellationToken.Cancel();
+    }
     /// <summary>
     /// Signals the start of the processor
     /// </summary>
