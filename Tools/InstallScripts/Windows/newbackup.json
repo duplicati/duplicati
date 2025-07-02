@@ -1,0 +1,8 @@
+{
+  "Backup": {
+    "Settings": {
+      "Name": "retention-policy",
+      "Value": "1W:1D,4W:1W,12M:1M"
+    }
+  }
+}
