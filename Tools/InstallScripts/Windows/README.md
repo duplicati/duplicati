@@ -58,12 +58,14 @@ The [`presets.ini`](./presets.ini) file can be used to configure various variabl
 
 Have a structure such as:
 
+```
 DuplicatiInstaller/
-├── install-service.ps1 # Main installer script
-├── presets.ini # Optional preset file for non-interactive values
-├── newbackup.json # Optional preset file for new backups
-├── vc_redist.x64.exe # Optional VC++ redist fallback
-|-- duplicati-2.1.0.5_stable.msi # Optional local installer
+├── install-service.ps1        # Main installer script
+├── presets.ini                # Optional preset file for non-interactive values
+├── newbackup.json             # Optional preset file for new backups
+├── vc_redist.x64.exe          # Optional VC++ redist fallback
+└── duplicati-2.1.0.5_stable.msi  # Optional local installer
+```
 
 ### Intune
 
