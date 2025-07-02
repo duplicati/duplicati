@@ -263,24 +263,35 @@ if (-not $KeepArm64) {
     }
 }
 
-#──────────────────────────  Ensure ProgramData & ACL  ─────────────────
+# ────────── Ensure ProgramData\Duplicati with locked-down ACL ─────────
 function Ensure-ProgramDataFolder {
     if (-not (Test-Path $ProgramDataDup)) {
         New-Item -Path $ProgramDataDup -ItemType Directory | Out-Null
     }
-    $acl = Get-Acl $ProgramDataDup
-    $hasRule = $acl.Access | Where-Object {
-        $_.IdentityReference -eq $DupSvcAccount -and
-        $_.FileSystemRights -band 'FullControl'
-    }
-    if (-not $hasRule) {
-        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-            $DupSvcAccount,'FullControl','ContainerInherit, ObjectInherit','None','Allow')
-        $acl.AddAccessRule($rule)
-        Set-Acl $ProgramDataDup $acl
-    }
+
+    # Build a brand-new ACL
+    $acl = New-Object System.Security.AccessControl.DirectorySecurity
+
+    # Full control for SYSTEM
+    $sidSystem = New-Object System.Security.Principal.SecurityIdentifier 'S-1-5-18'
+    $ruleSystem = New-Object System.Security.AccessControl.FileSystemAccessRule `
+        ($sidSystem,'FullControl','ContainerInherit, ObjectInherit','None','Allow')
+    $acl.AddAccessRule($ruleSystem)
+
+    # Full control for the built-in Administrators group
+    $sidAdmins = New-Object System.Security.Principal.SecurityIdentifier 'S-1-5-32-544'
+    $ruleAdmins = New-Object System.Security.AccessControl.FileSystemAccessRule `
+        ($sidAdmins,'FullControl','ContainerInherit, ObjectInherit','None','Allow')
+    $acl.AddAccessRule($ruleAdmins)
+
+    # Disable inheritance and replace existing ACLs with ours
+    $acl.SetAccessRuleProtection($true,$false)
+
+    # Apply the ACL
+    Set-Acl -Path $ProgramDataDup -AclObject $acl
 }
-Ensure-ProgramDataFolder   # needed early for PFX export
+
+Ensure-ProgramDataFolder   # call early (needed for PFX export)
 
 #──────────────────────────  VC++ redistributable  ─────────────────────
 function Test-VCRedistInstalled {
