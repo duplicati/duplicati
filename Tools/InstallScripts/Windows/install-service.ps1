@@ -75,12 +75,6 @@ $AuthCredKey = "${CredPrefix}AuthPassphrase"
 
 $LatestJsonUrl = "https://updates.duplicati.com/$Channel/latest-v2.json"
 
-# ── helper: are we running as the target service account? ─────────────
-$runningAsDupSvc = (
-    # normalise both sides to upper-case for case-insensitive compare
-    ([Environment]::UserName).ToUpper() -eq $DupSvcAccount.ToUpper()
-)
-
 # ── helper: Handle Credentials without a Nuget Package ─────────────
 if (-not ('InstallScript.CREDENTIAL' -as [type])) {
 Add-Type @"
@@ -458,9 +452,7 @@ if ($OverwriteAll -or -not (Test-Path $PfxPath)) {
 
     $certPw = New-RandomString 24
     $secPw  = ConvertTo-SecureString $certPw -AsPlainText -Force
-    Write-Host "Before export"
     Export-PfxCertificate -Cert $cert -FilePath $PfxPath -Password $secPw | Out-Null
-    Write-Host "After export"
     Ensure-Credential $CertCredKey $certPw -Force:$OverwriteAll
     Write-Host "TLS cert exported to $PfxPath"
 } else {
