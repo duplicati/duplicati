@@ -181,8 +181,8 @@ function Ensure-Credential {
 #──────────────────────────  Helpers  ──────────────────────────────────
 function Confirm-Step($Message) {
     if ($NonInteractive) { return }
-    $c = Read-Host "$Message (Y/N)"
-    if ($c -notmatch '^[Yy]') { Write-Host 'Cancelled.'; exit }
+    $c = Read-Host "$Message (Y/n)"
+    if ($c -notmatch '^[Yy]' -and $c -ne '') { Write-Host 'Cancelled.'; exit }
 }
 
 function New-RandomString([int]$Bytes = 32) {
