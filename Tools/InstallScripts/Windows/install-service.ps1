@@ -362,6 +362,7 @@ function Install-Duplicati {
             Install-Msi $pick.File.FullName $DuplicatiMsiProperties
             $instVer=$pick.Ver
         }
+        return
     }
     # Remote?
     $json = Invoke-RestMethod -Uri $LatestJsonUrl
