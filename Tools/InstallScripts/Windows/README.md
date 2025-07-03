@@ -18,7 +18,7 @@ This script [`install-service.ps1`](./install-service.ps1) provides a one-touch,
 
 - PowerShell 5.1 or later
 - Run as SYSTEM (required for correct certificate and credential installation)
-- Access to internet (unless local MSI and VC redist is provided)
+- Access to internet (unless local MSI and VC redist is provided, use -OfflineMode to enforce it)
 
 ## Usage
 

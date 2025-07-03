@@ -21,6 +21,7 @@ param(
     [switch] $NonInteractive,
     [switch] $OverwriteAll,
     [switch] $KeepArm64,
+    [switch] $OfflineMode,
 
     # ── overrides / presets ───────────────────────────────────────
     [string] $AuthPassphrase,                           # optional CLI override
@@ -263,6 +264,13 @@ if (-not $KeepArm64) {
     }
 }
 
+if (-not $OfflineMode) {
+    $iniFlag = Get-PresetValue 'OfflineMode'
+    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
+        $OfflineMode = $true
+    }
+}
+
 # ────────── Ensure ProgramData\Duplicati with locked-down ACL ─────────
 function Ensure-ProgramDataFolder {
     if (-not (Test-Path $ProgramDataDup)) {
@@ -303,6 +311,11 @@ function Test-VCRedistInstalled {
     $false
 }
 
+function Local-VCRedistExists {
+    $local = Get-ChildItem $ScriptDir -Filter $VcExeName -ea SilentlyContinue | Select-Object -First 1
+    return $local -ne $null
+}
+
 function Install-VCRedist {
     $local = Get-ChildItem $ScriptDir -Filter $VcExeName -ea SilentlyContinue|Select-Object -First 1
     if($local){
@@ -319,6 +332,9 @@ function Install-VCRedist {
 
 if (Test-VCRedistInstalled) {
     Write-Host 'VC++ Redistributable already installed.'
+} elseif ($OfflineMode -and -not (Local-VCRedistExists)) {
+    Write-Warning 'VC++ Redistributable not installed, offline mode is enabled and no local installer found.'
+    Write-Warning 'This will cause VSS snapshots to fail when running backups.'
 } else {
     Confirm-Step 'Install / update VC++ Redistributable?'
     Install-VCRedist
@@ -364,6 +380,17 @@ function Install-Duplicati {
         }
         return
     }
+
+    if ($OfflineMode) {
+        if (-not $isInstalled) {
+            Write-Error 'No local Duplicati MSI found, and offline mode is enabled. Failing.'
+            exit 1
+        }
+
+        Write-Host "Offline mode is enabled with no local MSI, keeping existing Duplicati version $instVer."
+        return
+    }
+
     # Remote?
     $json = Invoke-RestMethod -Uri $LatestJsonUrl
     $arch=switch($env:PROCESSOR_ARCHITECTURE){'ARM64'{'arm64'}'AMD64'{'x64'}default{'x86'}}
