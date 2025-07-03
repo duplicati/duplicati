@@ -355,25 +355,34 @@ function Install-Msi($Path,[string]$Args=''){
     $p=Start-Process msiexec.exe -ArgumentList "/i `"$Path`" $Args /qn /norestart" -Wait -PassThru
     if($p.ExitCode){throw "MSI exit code $($p.ExitCode)"}
 }
-function Get-LatestLocalMsi {
-    Get-ChildItem $ScriptDir -Filter "duplicati-*${Channel}*.msi" -ea SilentlyContinue |
+function Get-LatestLocalMsi($arch) {
+    Get-ChildItem $ScriptDir -Filter "duplicati-*${Channel}*-win-${arch}-gui.msi" -ea SilentlyContinue |
       ForEach-Object{[PSCustomObject]@{File=$_;Ver=Get-VersionFromString $_.Name}} |
       Sort-Object Ver -Descending|Select-Object -First 1
 }
 function Install-Duplicati {
+    $arch=switch($env:PROCESSOR_ARCHITECTURE){'ARM64'{'arm64'}'AMD64'{'x64'}default{'x86'}}
+    if ($arch -eq 'arm64' -and -not $KeepArm64) {
+        Write-Host "ARM64 architecture detected, using 'x64' MSI for VSS compatibility."
+        $arch = 'x64'
+    }
+
     $instVer=Get-InstalledDuplicatiVersion
-    if ($instVer -eq '0.0.0.0') {
-        Write-Host 'No Duplicati installation found.'
-    } else {
+    $isInstalled = $instVer -ne '0.0.0.0'
+    if ($isInstalled) {
         Write-Host "Found installed Duplicati version: $instVer"
+        $actionVerb = 'Update'
+    } else {
+        Write-Host 'No Duplicati installation found.'
+        $actionVerb = 'Install'
     }
     # Local file?
-    $pick=Get-LatestLocalMsi
+    $pick=Get-LatestLocalMsi($arch)
     if($pick){
         if($instVer -ge $pick.Ver){
             Write-Host "Local MSI v$($pick.Ver) is not newer - skipping."
         }else{
-            Confirm-Step "Install / update Duplicati ($pick.File.FullName)?"
+            Confirm-Step "$actionVerb Duplicati ($($pick.File))?"
             Stop-ServiceIfRunning $DupSvcName
             Install-Msi $pick.File.FullName $DuplicatiMsiProperties
             $instVer=$pick.Ver
@@ -393,11 +402,6 @@ function Install-Duplicati {
 
     # Remote?
     $json = Invoke-RestMethod -Uri $LatestJsonUrl
-    $arch=switch($env:PROCESSOR_ARCHITECTURE){'ARM64'{'arm64'}'AMD64'{'x64'}default{'x86'}}
-    if ($arch -eq 'arm64' -and -not $KeepArm64) {
-        Write-Host "ARM64 architecture detected, using 'x64' MSI for VSS compatibility."
-        $arch = 'x64'
-    }
 
     $key="win-$arch-gui.msi"
     if(-not $json.$key){throw "No '$key' in manifest"}
@@ -407,7 +411,7 @@ function Install-Duplicati {
         return
     }
 
-    Confirm-Step "Download and install / update Duplicati ($remVer)?"
+    Confirm-Step "Download and $actionVerb Duplicati ($remVer)?"
 
     $url=$json.$key.url
     $dest=Join-Path $env:TEMP ($url|Split-Path -Leaf)
