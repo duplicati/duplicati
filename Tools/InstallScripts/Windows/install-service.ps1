@@ -325,6 +325,15 @@ if (Test-VCRedistInstalled) {
 }
 
 #──────────────────────────  Duplicati installer  ──────────────────────
+function Stop-ServiceIfRunning($Name) {
+    $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+
+    if ($service -and $service.Status -eq 'Running') {
+        Write-Host "Stopping service $Name ..."
+        Stop-Service -Name $Name -Force -ErrorAction Stop
+        $service.WaitForStatus('Stopped', '00:00:30') | Out-Null        
+    }
+}
 function Install-Msi($Path,[string]$Args=''){
     Write-Host "Installing $(Split-Path $Path -Leaf)..."
     $p=Start-Process msiexec.exe -ArgumentList "/i `"$Path`" $Args /qn /norestart" -Wait -PassThru
@@ -349,6 +358,7 @@ function Install-Duplicati {
             Write-Host "Local MSI v$($pick.Ver) is not newer - skipping."
         }else{
             Confirm-Step "Install / update Duplicati ($pick.File.FullName)?"
+            Stop-ServiceIfRunning $DupSvcName
             Install-Msi $pick.File.FullName $DuplicatiMsiProperties
             $instVer=$pick.Ver
         }
@@ -377,6 +387,7 @@ function Install-Duplicati {
     Invoke-WebRequest $url -OutFile $dest
     if(-not (Test-FileHashMatch $dest $json.$key.sha256)){throw 'SHA-256 mismatch on downloaded MSI'}
     Write-Host 'Checksum OK'
+    Stop-ServiceIfRunning $DupSvcName
     Install-Msi $dest $DuplicatiMsiProperties
 }
 
