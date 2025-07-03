@@ -133,7 +133,7 @@ powershell.exe -ExecutionPolicy Bypass -File uninstall-service.ps1 [-RemoveData]
 | Parameter      | Description                                                                   |
 | -------------- | ----------------------------------------------------------------------------- |
 | `-RemoveData`  | Deletes all data in `\C:\\ProgramData\\Duplicati` (configuration, logs, etc). |
-| ` _RemoveCert` | Removes the TLS stored certificate and deletes `localhost.pfx` if present.    |
+| `-RemoveCert`  | Removes the TLS stored certificate and deletes `localhost.pfx` if present.    |
 | `-RemoveCreds` | Deletes all credentials stored in Credential Manager by the installer.        |
 
 #### What It Does
