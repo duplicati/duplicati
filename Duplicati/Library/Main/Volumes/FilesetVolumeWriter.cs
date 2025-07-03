@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
@@ -28,6 +28,7 @@ using Duplicati.Library.Main.Operation.Common;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using System.Data;
+using System.Threading;
 
 namespace Duplicati.Library.Main.Volumes
 {
@@ -82,17 +83,19 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
-        public void AddFile(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
+        public async Task AddFile(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
         {
-            AddFileEntry(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes);
+            await AddFileEntry(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes)
+                .ConfigureAwait(false);
         }
 
-        public void AddAlternateStream(string name, string filehash, long size, DateTime lastmodified, string metahash, string metablockhash, long metasize, string blockhash, long blocksize, IEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
+        public async Task AddAlternateStream(string name, string filehash, long size, DateTime lastmodified, string metahash, string metablockhash, long metasize, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
         {
-            AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes);
+            await AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes)
+                .ConfigureAwait(false);
         }
 
-        private void AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
+        private async Task AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
         {
             m_filecount++;
             m_writer.WriteStartObject();
@@ -111,15 +114,15 @@ namespace Duplicati.Library.Main.Volumes
 
             if (blocklisthashes != null)
             {
-                //Slightly awkward, but we avoid writing if there are no entries 
-                using (var en = blocklisthashes.GetEnumerator())
+                //Slightly awkward, but we avoid writing if there are no entries
+                await using (var en = blocklisthashes.GetAsyncEnumerator())
                 {
-                    if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
+                    if (await en.MoveNextAsync().ConfigureAwait(false) && !string.IsNullOrEmpty(en.Current))
                     {
                         m_writer.WritePropertyName("blocklists");
                         m_writer.WriteStartArray();
                         m_writer.WriteValue(en.Current);
-                        while (en.MoveNext())
+                        while (await en.MoveNextAsync().ConfigureAwait(false))
                             m_writer.WriteValue(en.Current);
                         m_writer.WriteEndArray();
                     }
@@ -234,24 +237,25 @@ namespace Duplicati.Library.Main.Volumes
         /// <param name="database">The database to check for clashes</param>
         /// <param name="options">The options to use for the filename</param>
         /// <param name="start">The starting time to probe from</param>
+        /// <param name="cancellationToken">The cancellation token to use for the operation</param>
         /// <param name="increment">The time to increment by each probe</param>
         /// <param name="maxTries">The maximum number of tries to probe</param>
         /// <returns>The first unused filename</returns>
-        internal static Task<DateTime> ProbeUnusedFilenameName(DatabaseCommon database, Options options, DateTime start, TimeSpan increment = default, int maxTries = 60)
-            => ProbeUnusedFilenameName(name => database.GetRemoteVolumeIDAsync(name), options, start, increment, maxTries);
+        internal static Task<DateTime> ProbeUnusedFilenameName(DatabaseCommon database, Options options, DateTime start, CancellationToken cancellationToken, TimeSpan increment = default, int maxTries = 60)
+            => ProbeUnusedFilenameName((name, CancellationToken) => database.GetRemoteVolumeIDAsync(name, cancellationToken), options, start, cancellationToken, increment, maxTries);
 
         /// <summary>
-        /// Probes for an unused filename, using the current time as a starting point
+        /// Probes for an unused filename, using the current time as a starting point.
         /// </summary>
-        /// <param name="database">The database to check for clashes</param>
-        /// <param name="options">The options to use for the filename</param>
-        /// <param name="transaction">The transaction to use</param>
-        /// <param name="start">The starting time to probe from</param>
-        /// <param name="increment">The time to increment by each probe</param>
-        /// <param name="maxTries">The maximum number of tries to probe</param>
-        /// <returns>The first unused filename</returns>
-        internal static DateTime ProbeUnusedFilenameName(LocalDatabase database, IDbTransaction transaction, Options options, DateTime start, TimeSpan increment = default, int maxTries = 60)
-            => ProbeUnusedFilenameName((name) => Task.FromResult(database.GetRemoteVolumeID(name, transaction)), options, start, increment, maxTries).Await();
+        /// <param name="database">The database to check for clashes.</param>
+        /// <param name="options">The options to use for the filename.</param>
+        /// <param name="start">The starting time to probe from.</param>
+        /// <param name="increment">The time to increment by each probe.</param>
+        /// <param name="maxTries">The maximum number of tries to probe.</param>
+        /// <returns>A task that when awaited returns the first unused filename.</returns>
+        internal static async Task<DateTime> ProbeUnusedFilenameName(LocalDatabase database, Options options, DateTime start, CancellationToken cancellationToken, TimeSpan increment = default, int maxTries = 60)
+            => await ProbeUnusedFilenameName(database.GetRemoteVolumeID, options, start, cancellationToken, increment, maxTries)
+                .ConfigureAwait(false);
 
         /// <summary>
         /// Probes for an unused filename, using the current time as a starting point
@@ -262,7 +266,7 @@ namespace Duplicati.Library.Main.Volumes
         /// <param name="increment">The time to increment by each probe</param>
         /// <param name="maxTries">The maximum number of tries to probe</param>
         /// <returns>The first unused filename</returns>
-        private static async Task<DateTime> ProbeUnusedFilenameName(Func<string, Task<long>> ProbeForId, Options options, DateTime start, TimeSpan increment = default, int maxTries = 60)
+        private static async Task<DateTime> ProbeUnusedFilenameName(Func<string, CancellationToken, Task<long>> ProbeForId, Options options, DateTime start, CancellationToken cancellationToken, TimeSpan increment = default, int maxTries = 60)
         {
             if (increment == default)
                 increment = TimeSpan.FromSeconds(1);
@@ -272,7 +276,7 @@ namespace Duplicati.Library.Main.Volumes
 
             while (s < maxTries)
             {
-                var id = await ProbeForId(GenerateFilename(RemoteVolumeType.Files, options, null, time)).ConfigureAwait(false);
+                var id = await ProbeForId(GenerateFilename(RemoteVolumeType.Files, options, null, time), cancellationToken).ConfigureAwait(false);
                 if (id < 0)
                     return time;
 
