@@ -61,6 +61,7 @@ Have a structure such as:
 ```
 DuplicatiInstaller/
 ├── install-service.ps1        # Main installer script
+├── uninstall-service.ps1      # Uninstall script
 ├── presets.ini                # Optional preset file for non-interactive values
 ├── newbackup.json             # Optional preset file for new backups
 ├── vc_redist.x64.exe          # Optional VC++ redist fallback
@@ -86,7 +87,7 @@ powershell.exe -ExecutionPolicy Bypass -File install-service.ps1 -NonInteractive
 5. Configure the uninstall command
 
 ```powershell
-powershell.exe -Command "Stop-Service duplicati; Start-Sleep 2; sc.exe delete duplicati"
+powershell.exe -ExecutionPolicy Bypass -File uninstall-service.ps1"
 ```
 
 6. Configure **Install Behavior**: System
@@ -116,3 +117,31 @@ powershell.exe -Command "Stop-Service duplicati; Start-Sleep 2; sc.exe delete du
    - Frequency: Once (or During Startup if you prefer).
    - Target: Select the required OU, Domain, or individual computers.
    - Deploy Now.
+
+## Uninstall Script
+
+The `uninstall-service.ps1` script fully removes a Duplicati installation, including optional cleanup steps.
+
+### Usage
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File uninstall-service.ps1 [-RemoveData] [-RemoveCert] [-RemoveCreds]
+```
+
+### Options
+
+| Parameter      | Description                                                                   |
+| -------------- | ----------------------------------------------------------------------------- |
+| `-RemoveData`  | Deletes all data in `\C:\\ProgramData\\Duplicati` (configuration, logs, etc). |
+| ` _RemoveCert` | Removes the TLS stored certificate and deletes `localhost.pfx` if present.    |
+| `-RemoveCreds` | Deletes all credentials stored in Credential Manager by the installer.        |
+
+#### What It Does
+
+1. Stops the Duplicati Windows Service (if running)
+2. Uninstalls Duplicati using the MSI product name
+3. Optionally removes:
+
+   - `C:\\ProgramData\\Duplicati` (with `-RemoveData`)
+   - TLS sertificate and key (with `-RemoveCert`)
+   - Stored secrets from Credential Manager (with `-RemoveCreds`)
