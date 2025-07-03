@@ -390,6 +390,7 @@ function Install-Duplicati {
     Write-Host 'Checksum OK'
     Stop-ServiceIfRunning $DupSvcName
     Install-Msi $dest $DuplicatiMsiProperties
+    Remove-Item -Path $dest -Force -ErrorAction SilentlyContinue
 }
 
 Install-Duplicati
