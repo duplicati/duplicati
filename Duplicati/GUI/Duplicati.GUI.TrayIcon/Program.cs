@@ -117,6 +117,10 @@ namespace Duplicati.GUI.TrayIcon
                 return 0;
             }
 
+            // Apply secret provider, if any, so password etc can be retrieved
+            Library.Main.SecretProviderHelper.ApplySecretProviderAsync([], [], options, TempFolder.SystemTempPath, null, CancellationToken.None)
+                .Await();
+
             options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
 
             HostedInstanceKeeper hosted = null;
@@ -248,7 +252,7 @@ No password provided, unable to connect to server, exiting");
                     try
                     {
                         ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
-                        
+
                         using (Connection = new HttpServerConnection(hosted.applicationSettings, serverURL, password, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options))
                         {
                             // Make sure we have the latest status, but don't care if it fails
@@ -288,11 +292,11 @@ No password provided, unable to connect to server, exiting");
                                     reSpawn = 100;
                                     tk.InvokeExit();
                                 };
-                                
+
                                 Connection.ConnectionClosed = shutdownEvent;
                                 if (hosted != null)
                                     hosted.InstanceShutdown = shutdownEvent;
-                                
+
                                 tk.Init(_args);
 
                                 // If the tray-icon quits, stop the server
@@ -306,7 +310,7 @@ No password provided, unable to connect to server, exiting");
 
                             }
                         }
-                        
+
                     }
                     catch (HttpRequestException ex)
                     {
