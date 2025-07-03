@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
@@ -321,10 +323,11 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void GetMinimalUniquePrefixEntries_ShouldReturnCorrectLinuxPrefixes()
+        public async Task GetMinimalUniquePrefixEntries_ShouldReturnCorrectLinuxPrefixes()
         {
             using var tempFile = new TempFile();
-            using var db = new LocalListDatabase(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "/folder1/",
                 "/folder1/sub1/",
@@ -333,7 +336,11 @@ namespace Duplicati.UnitTest
                 "/folder3/"
             ]);
 
-            var result = db.GetMinimalUniquePrefixEntries(1).Select(e => e.Path).ToList();
+            var result = await db
+                .GetMinimalUniquePrefixEntries(1, CancellationToken.None)
+                .Select(e => e.Path)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             Assert.That(result, Does.Contain("/folder1/"));
             Assert.That(result, Does.Contain("/folder2/"));
@@ -344,10 +351,11 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void GetMinimalUniquePrefixEntries_ShouldReturnCorrectWindowsDrivePrefixes()
+        public async Task GetMinimalUniquePrefixEntries_ShouldReturnCorrectWindowsDrivePrefixes()
         {
             using var tempFile = new TempFile();
-            using var db = new LocalListDatabase(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "C:\\folder1\\",
                 "C:\\folder1\\sub1\\",
@@ -355,7 +363,11 @@ namespace Duplicati.UnitTest
                 "D:\\otherfolder\\"
             ]);
 
-            var result = db.GetMinimalUniquePrefixEntries(1).Select(e => e.Path).ToList();
+            var result = await db
+                .GetMinimalUniquePrefixEntries(1, CancellationToken.None)
+                .Select(e => e.Path)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             Assert.That(result, Does.Contain("C:\\folder1\\"));
             Assert.That(result, Does.Contain("C:\\folder2\\"));
@@ -365,17 +377,22 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void GetMinimalUniquePrefixEntries_ShouldReturnCorrectWindowsUncPrefixes()
+        public async Task GetMinimalUniquePrefixEntries_ShouldReturnCorrectWindowsUncPrefixes()
         {
             using var tempFile = new TempFile();
-            using var db = new LocalListDatabase(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "\\\\server\\share\\folder\\",
                 "\\\\server\\share\\folder\\subfolder\\",
                 "\\\\server\\share\\otherfolder\\"
             ]);
 
-            var result = db.GetMinimalUniquePrefixEntries(1).Select(e => e.Path).ToList();
+            var result = await db
+                .GetMinimalUniquePrefixEntries(1, CancellationToken.None)
+                .Select(e => e.Path)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             Assert.That(result, Does.Contain("\\\\server\\share\\folder\\"));
             Assert.That(result, Does.Contain("\\\\server\\share\\otherfolder\\"));
@@ -384,10 +401,11 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void GetMinimalUniquePrefixEntries_ShouldHandleMixedWindowsDriveAndUncPaths()
+        public async Task GetMinimalUniquePrefixEntries_ShouldHandleMixedWindowsDriveAndUncPaths()
         {
             using var tempFile = new TempFile();
-            using var db = new LocalListDatabase(tempFile, 1);
+            using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
             SeedTestData(db, [
                 "C:\\data\\",
                 "C:\\data\\sub1\\",
@@ -398,7 +416,11 @@ namespace Duplicati.UnitTest
                 "\\\\server\\share\\pictures\\"
             ]);
 
-            var result = db.GetMinimalUniquePrefixEntries(1).Select(e => e.Path).ToList();
+            var result = await db
+                .GetMinimalUniquePrefixEntries(1, CancellationToken.None)
+                .Select(e => e.Path)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             Assert.That(result, Does.Contain("C:\\data\\"));
             Assert.That(result, Does.Contain("C:\\music\\"));
@@ -411,7 +433,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void GetMinimalUniquePrefixEntries_ShouldReturnExpectedMinimalRoots()
+        public async Task GetMinimalUniquePrefixEntries_ShouldReturnExpectedMinimalRoots()
         {
             // Arrange: Prepare prefixes (minimal unique) and contents
             var testPrefixes = new[]
@@ -430,10 +452,15 @@ namespace Duplicati.UnitTest
 
             // Act
             using var tempFile = new TempFile();
-            using var db = new LocalListDatabase(tempFile, 1);
+            await using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
             SeedTestData(db, testPrefixes);
 
-            var resultItems = db.GetMinimalUniquePrefixEntries(1).ToList();
+            var resultItems = await db
+                .GetMinimalUniquePrefixEntries(1, CancellationToken.None)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
             var result = resultItems.Select(e => e.Path).ToList();
 
             Assert.That(result, Does.Contain(@"C:\Downloads\testsource\AA\"));
