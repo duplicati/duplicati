@@ -723,11 +723,32 @@ $preload | ConvertTo-Json -Depth 4 | Set-Content $preloadPath -Encoding UTF8
 Write-Host "preload.json written to $preloadPath"
 
 # ────────── Write newbackup.json (one-time) ───────────────────────────
+function Expand-EnvJson {
+    param([string]$SourcePath)
+
+    $txt = Get-Content -LiteralPath $SourcePath -Raw
+
+    $pattern = '\$\{([A-Za-z0-9_]+)\}'   # Matches ${VAR}
+
+    $expanded = [regex]::Replace($txt, $pattern, {
+        param($m)
+        $var = $m.Groups[1].Value
+        $val = [System.Environment]::GetEnvironmentVariable($var)
+        if ([string]::IsNullOrEmpty($val)) { $m.Value } else { $val }
+    })
+
+    $out = Join-Path $env:TEMP ("expanded_{0}.json" -f ([guid]::NewGuid()))
+    Set-Content -LiteralPath $out -Value $expanded -Encoding UTF8
+    return $out
+}
+
 $newBackupPath      = Join-Path $ProgramFilesDup 'newbackup.json'
 $localNewBackupPath = Join-Path $ScriptDir       'newbackup.json'
 if (Test-Path $localNewBackupPath) {
-    Copy-Item -Path $localNewBackupPath -Destination $newBackupPath -Force
+    $tempNewBackupPath = Expand-EnvJson -SourcePath $localNewBackupPath
+    Copy-Item -Path $tempNewBackupPath -Destination $newBackupPath -Force
     Write-Host "Copied local newbackup.json to $newBackupPath (overwrote if present)."
+    Remove-Item -Path $tempNewBackupPath -Force -ErrorAction SilentlyContinue
 }
 
 function Add-DuplicatiTrayShortcut {
@@ -811,12 +832,97 @@ if ($runningAsSystem) {
         Write-Warning "Could not start or restart service '$DupSvcName' : $_"
     }
 
-    Write-Host "All done - open https://localhost:8200 to access the UI"    
 } else {
     Add-DuplicatiTrayShortcut
     Write-Host "Starting Duplicati Tray Icon in non-privileged user context..."
     Start-ProcessUnelevated -FilePath "$ProgramFilesDup\Duplicati.GUI.TrayIcon.exe"
+}
+
+#──────────────────────────  Configure initial backup if backup-template.json exist  ─────────────────────────
+$localBackupTemplate = Join-Path $ScriptDir 'backup-template.json'
+function Get-BackupNamesFromOutput {
+    param(
+        [Parameter(ValueFromPipeline)]
+        [AllowEmptyString()]
+        [string]$RawLine
+    )
+
+    process {
+        if (-not [string]::IsNullOrWhiteSpace($RawLine)) {
+            $parts = $RawLine -split ':', 2
+            if ($parts.Count -eq 2) {
+                ($parts[1]).Trim()
+            }
+        }
+    }
+}
+
+if (Test-Path $localBackupTemplate) {
+    $serverUtilExe = Join-Path $ProgramFilesDup 'Duplicati.CommandLine.ServerUtil.exe'
+    $dbPass = Read-Credential $DbCredKey
+    $cred = Read-Credential $AuthCredKey
+
+    if (-not (Test-Path $serverUtilExe)) {
+        Write-Error "Duplicati.ServerUtil.exe not found at $serverUtilExe. Cannot configure initial backup."    
+    } elseif (-not $cred) {
+        Write-Error "Due to a bug in ServerUtil, an authentication passphrase is required to configure the initial backup."
+    } elseif ($instVer -lte [Version]'2.1.0.118') {
+        Write-Error "Due to a bug in Duplicati.CommandLine.ServerUtil in this version, it is not possible to configure the initial backup."
+    } else {
+        Write-Host "Configuring initial backup from $localBackupTemplate ..."
+        $expandedTemplate = Expand-EnvJson -SourcePath $localBackupTemplate
+
+        # Run the server util to configure the backup
+        $dataFolder = if ($runningAsSystem) {
+            $ProgramDataDup
+        } else {
+            $AppDataLocalDup
+        }
+
+        $baseArgs = @(
+            "--secret-provider=wincred://",
+            '--secret-provider-pattern=!{}',
+            "--settings-encryption-key=!{$DbCredKey}",
+            '--hosturl=https://localhost:8200',
+            "--server-datafolder=$dataFolder"
+        )
+
+        if ($cred) { $baseArgs += "--password=!{$AuthCredKey}" }
+        $args = @('list-backups') + $baseArgs
+        Write-Host "Listing backups to check if the backup already exists ..."
+        $raw = & $serverUtilExe @args 2>$null 
+        $names = $raw | Get-BackupNamesFromOutput
+
+        $json  = Get-Content -LiteralPath $expandedTemplate -Raw | ConvertFrom-Json
+        $name  = $json.Backup.Name
+
+        if (-not $name) {
+            throw "JSON has no Backup.Name value."
+        }
+
+        if ($names -contains $name) {
+            Write-Host "Backup '$name' already exists - skipping configuration."
+        } else {
+            Write-Host "Adding backup '$name' ..."
+            $args = @(
+                'import',
+                $expandedTemplate,
+                '--import-metadata'
+            ) + $baseArgs 
+            & $serverUtilExe @args
+            Write-Host "Arguments used: $($args -join ' ')"
+            Write-Host "Backup '$name' configured successfully."
+        }
+
+        Remove-Item -Path $expandedTemplate -Force -ErrorAction SilentlyContinue
+    }
+} else {
+    Write-Host "No backup-template.json found in script directory, skipping initial backup configuration."
+}
+
+if ($runningAsSystem) {
+    Write-Host "All done - open https://localhost:8200 to access the UI"    
+} else {
     Write-Host "Duplicati Tray Icon started in user context, UI should open automatically."
     Write-Host "If it does not, open https://localhost:8200 in your browser."
 }
-
