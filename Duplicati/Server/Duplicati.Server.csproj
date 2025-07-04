@@ -31,7 +31,6 @@
     <ProjectReference Include="..\WebserverCore\Duplicati.WebserverCore.csproj" />
     <ProjectReference Include="Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
     <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj" />
-    <ProjectReference Include="..\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
     <ProjectReference Include="..\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
     <ProjectReference Include="..\Library\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj" />

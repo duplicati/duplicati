@@ -21,10 +21,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Snapshots.Windows;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -38,16 +42,23 @@ namespace Duplicati.Library.Snapshots
         /// The list of folders to create snapshots of
         /// </summary>
         private readonly IEnumerable<string> m_sources;
+        /// <summary>
+        /// The SeBackupPrivilege token, if used
+        /// </summary>
+        private readonly IDisposable m_seBackupPrivilege;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NoSnapshotWindows"/> class.
         /// </summary>
         /// <param name="sources">The list of entries to create snapshots of</param>
         /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
-        public NoSnapshotWindows(IEnumerable<string> sources, bool followSymlinks)
+        /// <param name="useSeBackup">A flag indicating if the SeBackupPrivilege should be used</param>
+        public NoSnapshotWindows(IEnumerable<string> sources, bool followSymlinks, bool useSeBackup)
             : base(followSymlinks)
         {
             m_sources = sources;
+            if (useSeBackup)
+                m_seBackupPrivilege = WindowsShimLoader.NewSeBackupPrivilegeScope();
         }
 
         /// <summary>
@@ -170,6 +181,22 @@ namespace Duplicati.Library.Snapshots
         public override string ConvertToSnapshotPath(string localPath) =>
             // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
             SystemIOWindows.RemoveExtendedDevicePathPrefix(localPath);
+
+        /// <inheritdoc />
+        public override Task<Stream> OpenReadAsync(string localPath, CancellationToken cancellationToken)
+        {
+            if (m_seBackupPrivilege != null)
+                return Task.FromResult(WindowsShimLoader.NewBackupDataStream(localPath));
+
+            return base.OpenReadAsync(localPath, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
+        {
+            m_seBackupPrivilege?.Dispose();
+            base.Dispose(disposing);
+        }
     }
 }
 

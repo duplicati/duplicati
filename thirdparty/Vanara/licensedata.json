@@ -1,0 +1,7 @@
+{
+  "name": "Vanara",
+  "description": "A set of .NET libraries for Windows implementing PInvoke calls to many native Windows APIs with supporting wrappers.",
+  "link": "https://github.com/dahall/Vanara",
+  "license": "MIT",
+  "notes": ""
+}

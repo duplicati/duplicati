@@ -39,4 +39,13 @@
     <ProjectReference Include="..\..\Tools\RemoteSynchronization\RemoteSynchronization.csproj" />
   </ItemGroup>
 
+  <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->
+  <Target Name="CopyWindowsModulesRuntime" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
+    <ItemGroup>
+      <_WinMods Include="..\Library\WindowsModules\bin\$(Configuration)\net8.0-windows7.0\**\*.dll" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_WinMods)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>  
+
 </Project>

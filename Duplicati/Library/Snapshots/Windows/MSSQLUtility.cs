@@ -126,21 +126,21 @@ namespace Duplicati.Library.Snapshots.Windows
                 try { arrInstalledInstances = (string[])installed; }
                 catch { }
 
-            if(Environment.Is64BitOperatingSystem && arrInstalledInstances == null)
+            if (Environment.Is64BitOperatingSystem && arrInstalledInstances == null)
             {
                 var installed32on64 = Microsoft.Win32.Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Microsoft SQL Server", "InstalledInstances", "");
                 if (installed32on64 is string on64)
                 {
                     if (!string.IsNullOrWhiteSpace(on64))
                         arrInstalledInstances = new string[] { on64 };
-                }         
+                }
                 else if (installed32on64 is string[] strings)
                     arrInstalledInstances = strings;
                 else if (installed32on64 != null)
                     try { arrInstalledInstances = (string[])installed32on64; }
                     catch { }
             }
-            
+
             IsMSSQLInstalled = arrInstalledInstances != null && arrInstalledInstances.Length > 0;
 
             if (!IsMSSQLInstalled)
@@ -151,7 +151,7 @@ namespace Duplicati.Library.Snapshots.Windows
         /// For all MS SQL databases it enumerate all associated paths using VSS data
         /// </summary>
         /// <returns>A collection of DBs and paths</returns>
-        public void QueryDBsInfo(SnapshotProvider provider)
+        public void QueryDBsInfo(WindowsSnapshotProvider provider)
         {
             if (!IsMSSQLInstalled)
                 return;
@@ -160,7 +160,7 @@ namespace Duplicati.Library.Snapshots.Windows
 
             using (var vssBackupComponents = new SnapshotManager(provider))
             {
-                var writerGUIDS = new [] { MSSQLWriterGuid };
+                var writerGUIDS = new[] { MSSQLWriterGuid };
                 try
                 {
                     vssBackupComponents.SetupWriters(writerGUIDS, null);
@@ -170,7 +170,7 @@ namespace Duplicati.Library.Snapshots.Windows
                     throw new Interface.UserInformationException("Microsoft SQL Server VSS Writer not found - cannot backup SQL databases.", "NoMsSqlVssWriter");
                 }
 
-                foreach (var o in  vssBackupComponents.ParseWriterMetaData(writerGUIDS))
+                foreach (var o in vssBackupComponents.ParseWriterMetaData(writerGUIDS))
                 {
                     m_DBs.Add(new MSSQLDB(o.Name, o.LogicalPath + "\\" + o.Name, o.Paths.ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1))
                                            .Distinct(Utility.Utility.ClientFilenameStringComparer)

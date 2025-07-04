@@ -57,7 +57,7 @@ public class MSSql : IEndpointV1
 
         try
         {
-            mssqlUtility.QueryDBsInfo(SnapshotProvider.AlphaVSS);
+            mssqlUtility.QueryDBsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
 
             if (string.IsNullOrEmpty(key))
             {

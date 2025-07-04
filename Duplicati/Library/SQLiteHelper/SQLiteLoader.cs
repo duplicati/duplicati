@@ -143,7 +143,7 @@ namespace Duplicati.Library.SQLiteHelper
             var customOptionsEnv = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS");
             if (!string.IsNullOrWhiteSpace(customOptionsEnv))
             {
-                foreach (var opt in customOptionsEnv.Split([';'], StringSplitOptions.RemoveEmptyEntries))
+                foreach (var opt in customOptionsEnv.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     var parts = opt.Split(new[] { '=' }, 2);
                     if (parts.Length == 2)

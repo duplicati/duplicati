@@ -64,14 +64,27 @@ public static partial class Command
         /// <param name="buildDir">The folder where builds should be placed</param>
         /// <param name="sourceProjects">The projects to build</param>
         /// <param name="windowsOnlyProjects">Projects that are only for the Windows targets</param>
+        /// <param name="ephemeralProjects">Projects that are only built for collecting outputs</param>
         /// <param name="buildTargets">The targets to build</param>
         /// <param name="releaseInfo">The release info to use for the build</param>
         /// <param name="keepBuilds">A flag that allows re-using existing builds</param>
+        /// <param name="rtcfg">The runtime configuration</param>
         /// <param name="useHostedBuilds">A flag that allows using hosted builds</param>
         /// <param name="disableCleanSource">A flag that allows skipping the clean source step</param>
-        /// <param name="rtcfg">The runtime configuration</param>
         /// <returns>A task that completes when the build is done</returns>
-        public static async Task BuildProjects(string baseDir, string buildDir, Dictionary<InterfaceType, IEnumerable<string>> sourceProjects, IEnumerable<string> windowsOnlyProjects, IEnumerable<PackageTarget> buildTargets, ReleaseInfo releaseInfo, bool keepBuilds, RuntimeConfig rtcfg, bool useHostedBuilds, bool disableCleanSource, bool allowAssemblyMismatch)
+        public static async Task BuildProjects(
+            string baseDir,
+            string buildDir,
+            Dictionary<InterfaceType, IEnumerable<string>> sourceProjects,
+            IEnumerable<string> windowsOnlyProjects,
+            IEnumerable<string> ephemeralProjects,
+            IEnumerable<PackageTarget> buildTargets,
+            ReleaseInfo releaseInfo,
+            bool keepBuilds,
+            RuntimeConfig rtcfg,
+            bool useHostedBuilds,
+            bool disableCleanSource,
+             bool allowAssemblyMismatch)
         {
             // For tracing, create a log folder and store all logs there
             var logFolder = Path.Combine(buildDir, "logs");
@@ -193,15 +206,14 @@ public static partial class Command
                             }
                             return c >= 0;
                         });
-                        // EnvHelper.CopyDirectory(buildfolder, tmpfolder, true);
                         Directory.Delete(buildfolder, true);
                     }
 
                     // Perform any post-build steps, cleaning and signing as needed
                     await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target, rtcfg, keepBuilds);
                     await Verify.VerifyTargetDirectory(tmpfolder, target);
-                    await Verify.VerifyExecutables(tmpfolder, actualBuildProjects, target);
-                    await Verify.VerifyDuplicatedVersionsAreMaxVersions(tmpfolder, verifyRootJson);
+                    await Verify.VerifyExecutables(tmpfolder, actualBuildProjects.Except(ephemeralProjects), target);
+                    await Verify.VerifyDuplicatedVersionsAreMaxVersions(tmpfolder, verifyRootJson, allowAssemblyMismatch);
 
                     if (incorrectAssemblyVersions.Count > 0)
                     {
@@ -209,7 +221,8 @@ public static partial class Command
                         foreach (var file in incorrectAssemblyVersions.Keys.Order())
                             Console.WriteLine($"  {file}: {string.Join(", ", incorrectAssemblyVersions[file].OrderByDescending(x => x))}");
 
-                        throw new InvalidOperationException($"Incorrect assembly versions found in {target.BuildTargetString}");
+                        if (!allowAssemblyMismatch)
+                            throw new InvalidOperationException($"Incorrect assembly versions found in {target.BuildTargetString}");
                     }
 
                     // Move the final build to the output folder

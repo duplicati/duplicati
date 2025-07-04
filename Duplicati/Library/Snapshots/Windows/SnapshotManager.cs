@@ -23,22 +23,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Versioning;
-using Alphaleonis.Win32.Vss;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Snapshots.Windows
 {
-    /// <summary>
-    /// Metadata from a writer instance
-    /// </summary>
-    public class WriterMetaData
-    {
-        public string Name { get; set; }
-        public string LogicalPath { get; set; }
-        public Guid Guid { get; set; }
-        public List<string> Paths { get; set; }
-    }
-
     /// <summary>
     /// The manager for the Windows snapshot
     /// </summary>
@@ -81,13 +70,9 @@ namespace Duplicati.Library.Snapshots.Windows
         /// Creates a new snapshot manager
         /// </summary>
         /// <param name="provider">The provider to use</param>
-        public SnapshotManager(SnapshotProvider provider)
+        public SnapshotManager(WindowsSnapshotProvider provider)
         {
-            _snapshotProvider = provider switch {
-                SnapshotProvider.AlphaVSS => AlphaVssBackup.Create(),
-                SnapshotProvider.Wmic => new WmicVssBackup(),
-                _ => throw new ArgumentException($"Invalid provider: {provider}")
-            };
+            _snapshotProvider = WindowsShimLoader.GetSnapshotProvider(provider);
         }
 
         /// <summary>
@@ -163,7 +148,7 @@ namespace Duplicati.Library.Snapshots.Windows
         /// <summary>
         /// Returns the map of snapshot path and logical path
         /// </summary>
-        public Dictionary<string, string> SnapshotDeviceAndVolumes 
+        public Dictionary<string, string> SnapshotDeviceAndVolumes
             => _volumeReverseMap;
 
         /// <summary>
@@ -219,9 +204,7 @@ namespace Duplicati.Library.Snapshots.Windows
                 if (!_volumes.ContainsKey(drive))
                 {
                     if (!_snapshotProvider.IsVolumeSupported(drive))
-                    {
-                        throw new VssVolumeNotSupportedException(drive);
-                    }
+                        throw new ArgumentException($"Drive not supported for snapshot: {drive}");
 
                     _volumes.Add(drive, _snapshotProvider.AddToSnapshotSet(drive));
                 }

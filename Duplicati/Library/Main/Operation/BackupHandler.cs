@@ -106,7 +106,25 @@ namespace Duplicati.Library.Main.Operation
                     Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message));
             }
 
-            return SnapshotUtility.CreateNoSnapshot(sources, options.IgnoreAdvisoryLocking, options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
+            var useSeBackup = false;
+            if (options.BackupReadStrategy != Options.OptimizationStrategy.Off)
+            {
+                if (!OperatingSystem.IsWindows() || !PermissionHelper.HasSeBackupPrivilege())
+                {
+                    if (options.BackupReadStrategy == Options.OptimizationStrategy.Required)
+                        throw new UserInformationException(Strings.Common.BackupReadNotAvailable, "BackupReadNotAvailable");
+                    else if (options.BackupReadStrategy == Options.OptimizationStrategy.On)
+                        Log.WriteWarningMessage(LOGTAG, "BackupReadNotAvailable", null, Strings.Common.BackupReadNotAvailable);
+                    else
+                        Log.WriteInformationMessage(LOGTAG, "BackupReadNotAvailable", Strings.Common.BackupReadNotAvailable);
+                }
+                else
+                {
+                    useSeBackup = true;
+                }
+            }
+
+            return SnapshotUtility.CreateNoSnapshot(sources, options.IgnoreAdvisoryLocking, options.SymlinkPolicy == Options.SymlinkStrategy.Follow, useSeBackup);
         }
 
         /// <summary>

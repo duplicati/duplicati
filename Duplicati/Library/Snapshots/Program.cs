@@ -108,7 +108,7 @@ Where <test-folder> is the folder where files will be locked/created etc");
 
                     Console.WriteLine("Creating snapshot for folder: {0}", args[0]);
                     Console.WriteLine("If this fails, try to run as " + ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) ? "root" : "Administrator"));
-                    using (ISnapshotService snapshot = SnapshotUtility.CreateSnapshot(new[] { args[0] }, options, false))
+                    using (var snapshot = SnapshotUtility.CreateSnapshot(new[] { args[0] }, options, false))
                     {
                         Console.WriteLine("Attempting to read locked file via snapshot");
                         try
