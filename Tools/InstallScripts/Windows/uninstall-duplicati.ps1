@@ -9,6 +9,7 @@
         -RemoveData      > Deletes C:\ProgramData\Duplicati and C:\Program Files\Duplicati 2 
         -RemoveCert      > Deletes localhost PFX and removes the cert from LocalMachine\My & Root  
         -RemoveCreds     > Deletes Credential-Manager keys  
+        -NonInteractive  > Runs without user interaction (no prompts)
     - Reboots are NOT forced (the MSI rarely needs one).
 
 .PARAMETER RemoveData
@@ -39,6 +40,7 @@ param(
     [switch]$RemoveCert,
     [switch]$RemoveCreds,
     [switch]$RequireSystemContext,
+    [switch]$NonInteractive,
 
     [string] $PresetPath = "$PSScriptRoot\presets.ini"  # default INI file
 )
