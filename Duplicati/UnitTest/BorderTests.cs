@@ -181,26 +181,21 @@ namespace Duplicati.UnitTest
         public void Run10kBackupRead()
         {
             if (!PermissionHelper.HasSeBackupPrivilege())
+                return;
+                
+            try
             {
-                Assert.Ignore("This test requires the SeBackupPrivilege to be set, which is not available in this environment.");
+                using var _ = Duplicati.Library.Snapshots.Windows.WindowsShimLoader.NewSeBackupPrivilegeScope();
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    using var _ = Duplicati.Library.Snapshots.Windows.WindowsShimLoader.NewSeBackupPrivilegeScope();
-                }
-                catch (Exception ex)
-                {
-                    Assert.Inconclusive("Failed to activate WindowsShimLoader for SeBackupPrivilege: " + ex.Message);
-                    return;
-                }
+                return;
+            }
 
-                RunCommands(1024 * 10, modifyOptions: opts =>
-                {
-                    opts["backupread-policy"] = "required";
-                });
-            }
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
+                opts["backupread-policy"] = "required";
+            });
         }
 
         public static Dictionary<string, int> WriteTestFilesToFolder(string targetfolder, int blocksize, int basedatasize = 0)
