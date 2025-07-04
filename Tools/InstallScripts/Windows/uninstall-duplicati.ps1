@@ -20,6 +20,9 @@
 .PARAMETER RemoveCreds
     Delete SYSTEM-scope Credential-Manager entries (Duplicati-*).
 
+.PARAMETER RequireSystemContext
+    If set, the script will exit with an error if not run in SYSTEM context.
+
 .EXAMPLE
     # Standard uninstall (leave data, cert and creds in place)
     powershell.exe -ExecutionPolicy Bypass -File uninstall-duplicati.ps1
@@ -34,27 +37,93 @@
 param(
     [switch]$RemoveData,
     [switch]$RemoveCert,
-    [switch]$RemoveCreds
+    [switch]$RemoveCreds,
+    [switch]$RequireSystemContext,
+
+    [string] $PresetPath = "$PSScriptRoot\presets.ini"  # default INI file
 )
 
+# ──────────────────────────  Load presets  ─────────────────────────────
+function Get-PresetValue ([string]$Key) {
+    if (-not (Test-Path $PresetPath)) { return $null }
+    foreach ($line in Get-Content $PresetPath) {
+        if ($line -match '^\s*[#;]') { continue }
+        if ($line -match '^\s*([^=]+?)\s*=\s*(.+?)\s*$') {
+            if ($Matches[1].Trim() -ieq $Key) { return $Matches[2].Trim() }
+        }
+    }
+    return $null
+}
+
+if (-not $RemoveData) {
+    $iniFlag = Get-PresetValue 'RemoveData'
+    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
+        $RemoveData = $true
+    }
+}
+
+if (-not $RemoveCert) {
+    $iniFlag = Get-PresetValue 'RemoveCert'
+    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
+        $RemoveCert = $true
+    }
+}
+
+if (-not $RemoveCreds) {
+    $iniFlag = Get-PresetValue 'RemoveCreds'
+    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
+        $RemoveCreds = $true
+    }
+}
+
+if (-not $RequireSystemContext) {
+    $iniFlag = Get-PresetValue 'RequireSystemContext'
+    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
+        $RequireSystemContext = $true
+    }
+}
+
 #──────────────────────────  Service guard  ──────────────────────────────
-$runningAsTarget = (
+$runningAsSystem = (
     [System.Security.Principal.WindowsIdentity]::GetCurrent().User -eq
     (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-18'))
 )
 
-if (-not $runningAsTarget) {
-    Write-Error "This installer must be run in SYSTEM context. Exiting."
+if (-not $runningAsSystem -and $RequireSystemContext) {
+    Write-Error "This uninstaller must be run in SYSTEM context. Exiting."
     exit 1
+} 
+
+if (-not $runningAsSystem) {
+    $principal = New-Object Security.Principal.WindowsPrincipal(
+        [Security.Principal.WindowsIdentity]::GetCurrent())
+
+    $IsAdmin = $principal.IsInRole(
+      [Security.Principal.WindowsBuiltInRole]::Administrator)
+
+    if (-not $IsAdmin) {
+        Write-Error "This installer must be run as Administrator or SYSTEM. Exiting."
+        exit 1
+    }
+
+    Write-Host "Running in user context, service will not be uninstalled."
+    Write-Host "All credentials will be removed from the current user's Credential Manager."
+    Write-Host "To uninstall the service, run this script in SYSTEM context."
 }
 
 $ErrorActionPreference = 'Stop'
 $DupSvcName        = 'Duplicati'
 $ProgramFilesDup   = "${env:ProgramFiles}\Duplicati 2"
 $ProgramDataDup    = 'C:\ProgramData\Duplicati'
-$PfxPath           = Join-Path $ProgramDataDup 'localhost.pfx'
 $CertFriendlyName  = 'Duplicati-Localhost'
 $CredPrefix        = 'Duplicati-'            # all keys start with this
+$AppDataLocalDup = Join-Path $env:LOCALAPPDATA 'Duplicati'
+
+if ($runningAsSystem) {
+    $PfxPath        = Join-Path $ProgramDataDup 'localhost.pfx'
+} else {
+    $PfxPath        = Join-Path $AppDataLocalDup 'localhost.pfx'
+}
 
 
 # ── helper: Handle Credentials without a Nuget Package ─────────────
@@ -147,23 +216,34 @@ function Remove-CertByMatch {
     if ($matches) {
         $store.RemoveRange($matches)
         Write-Host "Removed $($matches.Count) certificate(s) from LM\$StoreName"
+    } else {
+        Write-Host "No matching certificate(s) found in LM\$StoreName"
     }
     $store.Close()
 }
 
-
 # ───────────────── Stop & delete service ──────────────────────────────
-try {
-    $svc = Get-Service -Name $DupSvcName -ErrorAction Stop
-    if ($svc.Status -eq 'Running') {
-        Write-Host "Stopping service $DupSvcName ..."
-        Stop-Service -Name $DupSvcName -Force -ErrorAction Stop
-        $svc.WaitForStatus('Stopped','00:00:20')
+if ($runningAsSystem) {
+    try {
+        $svc = Get-Service -Name $DupSvcName -ErrorAction Stop
+        if ($svc.Status -eq 'Running') {
+            Write-Host "Stopping service $DupSvcName ..."
+            Stop-Service -Name $DupSvcName -Force -ErrorAction Stop
+            $svc.WaitForStatus('Stopped','00:00:20')
+        }
+        Write-Host "Removing service $DupSvcName ..."
+        sc.exe delete $DupSvcName | Out-Null
+    } catch {
+        Write-Host "Service '$DupSvcName' not found."
     }
-    Write-Host "Removing service $DupSvcName ..."
-    sc.exe delete $DupSvcName | Out-Null
-} catch {
-    Write-Host "Service '$DupSvcName' not found."
+} else {
+    $proc = Get-Process -Name 'Duplicati.GUI.TrayIcon' -ErrorAction SilentlyContinue
+    if ($proc) {
+        Write-Host "Found $($proc.Count) instance(s) of Duplicati.GUI.TrayIcon.exe - stopping..."
+        $proc | Stop-Process -Force
+    } else {
+        Write-Host "Duplicati.GUI.TrayIcon.exe is not running."
+    }
 }
 
 # ───────────────── Uninstall MSI package ──────────────────────────────
@@ -199,9 +279,20 @@ if ($productCode) {
     Write-Host 'Duplicati MSI not found - nothing to remove.'
 }
 
+if (-not $runningAsSystem) {
+    $startupAll = 'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup'
+    $linkPath   = Join-Path $startupAll 'Duplicati Tray.lnk'
+
+    if (Test-Path $linkPath) {
+        Write-Host "Removing startup link $linkPath ..."
+        Remove-Item $linkPath -Force -ErrorAction SilentlyContinue
+    } else {
+        Write-Host "Startup link not found: $linkPath"
+    }
+}
+
 # ───────────────── Optional: remove certificate/PFX ───────────────────
 if ($RemoveCert) {
-
     $thumb = $null
     if (Test-Path $PfxPath) {
         # read password from credential store
@@ -233,11 +324,20 @@ if ($RemoveCert) {
 
 # ───────────────── Optional: remove ProgramData ───────────────────────
 if ($RemoveData) {
-    if (Test-Path $ProgramDataDup -ea SilentlyContinue) {
-        Write-Host "Deleting $ProgramDataDup ..."
-        Remove-Item $ProgramDataDup -Recurse -Force -ErrorAction SilentlyContinue
+    if ($runningAsSystem) {    
+        if (Test-Path $ProgramDataDup -ea SilentlyContinue) {
+            Write-Host "Deleting $ProgramDataDup ..."
+            Remove-Item $ProgramDataDup -Recurse -Force -ErrorAction SilentlyContinue
+        } else {
+            Write-Host "ProgramData folder not found."
+        }
     } else {
-        Write-Host "ProgramData folder not found."
+        if (Test-Path $AppDataLocalDup -ea SilentlyContinue) {
+            Write-Host "Deleting $AppDataLocalDup ..."
+            Remove-Item $AppDataLocalDup -Recurse -Force -ErrorAction SilentlyContinue
+        } else {
+            Write-Host "AppData\Local\Duplicati folder not found."
+        }
     }
 }
 

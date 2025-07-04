@@ -2,15 +2,58 @@
 .SYNOPSIS
     One-touch bootstrap of Duplicati 2 Windows-service deployment.
 
-.NOTES
-    • Channel-aware (stable | beta | experimental | canary, default = stable)
-    • Idempotent (skips VC++ and Duplicati installs if already up-to-date)
-    • Stores secrets in Windows Credential Manager
-    • Generates preload.json using environment variables per
+.DESCRIPTION
+    - Installs the Duplicati Windows service
+    - Installs the VC++ Redistributable (if not already installed)
+    - Creates a TLS certificate for localhost and exports it to C:\ProgramData\Duplicati\localhost.pfx
+    - Stores secrets in Windows Credential Manager
+    - Generates preload.json using environment variables per
       https://docs.duplicati.com/detailed-descriptions/preload-settings
-    • Exports TLS cert to C:\ProgramData\Duplicati\localhost.pfx and
-      trusts it (adds to LocalMachine\Root)
-    • Finishes with “Duplicati.WindowsService.exe INSTALL”
+    - Exports TLS cert to C:\ProgramData\Duplicati\localhost.pfx and trusts it (adds to LocalMachine\Root)
+    - Finishes with “Duplicati.WindowsService.exe INSTALL”
+
+.PARAMETER Channel
+    The Duplicati update channel to use (default = stable).
+    Valid values: stable | beta | experimental | canary
+
+.PARAMETER NonInteractive
+    Run in non-interactive mode, using preset values from presets.ini.
+    If not set, the script will prompt for user input.
+
+.PARAMETER OverwriteAll
+    Overwrite existing configurations, including:
+    - Certificate password
+    - Database passphrase
+    - Web-UI auth passphrase
+
+.PARAMETER KeepArm64
+    Keep the ARM64 version of Duplicati if it is installed, even if x64 is available.
+    If not set, the script will prefer x64 for VSS compatibility.
+
+.PARAMETER OfflineMode
+    Run in offline mode, using local files only.
+    If not set, the script will download the latest Duplicati MSI and VC++ Redistributable,
+    if no local files are found.
+
+.PARAMETER RequireSystemContext
+    Require the script to be run in SYSTEM context.
+    If not set, the script will run in the the current user context.
+    If the current user is not SYSTEM, the service will not be installed.
+    If set, the script will exit with an error if not run in SYSTEM context.
+
+.EXAMPLE
+    # Standard install (interactive)
+    powershell.exe -ExecutionPolicy Bypass -File install-service.ps1
+
+.EXAMPLE
+    # Non-interactive install with preset values
+    powershell.exe -ExecutionPolicy Bypass -File install-service.ps1 `
+                   -NonInteractive -Channel beta
+.EXAMPLE
+    # Non-interactive install with preset values and overwrite
+    powershell.exe -ExecutionPolicy Bypass -File install-service.ps1 `
+                   -NonInteractive -Channel beta -OverwriteAll
+
 #>
 
 [CmdletBinding()]
@@ -22,6 +65,7 @@ param(
     [switch] $OverwriteAll,
     [switch] $KeepArm64,
     [switch] $OfflineMode,
+    [switch] $RequireSystemContext,
 
     # ── overrides / presets ───────────────────────────────────────
     [string] $AuthPassphrase,                           # optional CLI override
@@ -30,15 +74,73 @@ param(
     [string] $PresetPath = "$PSScriptRoot\presets.ini"  # default INI file
 )
 
+# ──────────────────────────  Load presets  ─────────────────────────────
+function Get-PresetValue ([string]$Key) {
+    if (-not (Test-Path $PresetPath)) { return $null }
+    foreach ($line in Get-Content $PresetPath) {
+        if ($line -match '^\s*[#;]') { continue }
+        if ($line -match '^\s*([^=]+?)\s*=\s*(.+?)\s*$') {
+            if ($Matches[1].Trim() -ieq $Key) { return $Matches[2].Trim() }
+        }
+    }
+    return $null
+}
+
+if (-not $OverwriteAll) {
+    $iniFlag = Get-PresetValue 'OverwriteAll'
+    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
+        $OverwriteAll = $true
+    }
+}
+
+if (-not $KeepArm64) {
+    $iniFlag = Get-PresetValue 'KeepArm64'
+    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
+        $KeepArm64 = $true
+    }
+}
+
+if (-not $OfflineMode) {
+    $iniFlag = Get-PresetValue 'OfflineMode'
+    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
+        $OfflineMode = $true
+    }
+}
+
+if (-not $RequireSystemContext) {
+    $iniFlag = Get-PresetValue 'RequireSystemContext'
+    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
+        $RequireSystemContext = $true
+    }
+}
+
 #──────────────────────────  Service guard  ──────────────────────────────
-$runningAsTarget = (
+$runningAsSystem = (
     [System.Security.Principal.WindowsIdentity]::GetCurrent().User -eq
     (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-18'))
 )
 
-if (-not $runningAsTarget) {
+if (-not $runningAsSystem -and $RequireSystemContext) {
     Write-Error "This installer must be run in SYSTEM context. Exiting."
     exit 1
+}
+
+if (-not $runningAsSystem)
+{
+    $principal = New-Object Security.Principal.WindowsPrincipal(
+        [Security.Principal.WindowsIdentity]::GetCurrent())
+
+    $IsAdmin = $principal.IsInRole(
+      [Security.Principal.WindowsBuiltInRole]::Administrator)
+
+    if (-not $IsAdmin) {
+        Write-Error "This installer must be run as Administrator or SYSTEM. Exiting."
+        exit 1
+    }
+
+    Write-Host "Running in user context, service will not be installed."
+    Write-Host "All credentials will be stored in the current user's Credential Manager."
+    Write-Host "To install the service, run this script in SYSTEM context."
 }
 
 # ── Normalise preset path (handles relative + UNC) ─────────────────────
@@ -65,7 +167,7 @@ $ProgramFilesDup = if ([Environment]::Is64BitOperatingSystem) {
 } else { "${env:ProgramFiles}\Duplicati 2" }
 
 $ProgramDataDup = 'C:\ProgramData\Duplicati'
-$PfxPath        = Join-Path $ProgramDataDup 'localhost.pfx'
+$AppDataLocalDup = Join-Path $env:LOCALAPPDATA 'Duplicati'
 
 $DuplicatiMsiProperties = 'FORSERVICE=true'
 $CredPrefix  = 'Duplicati-'
@@ -74,6 +176,13 @@ $DbCredKey   = "${CredPrefix}DatabasePassphrase"
 $AuthCredKey = "${CredPrefix}AuthPassphrase"
 
 $LatestJsonUrl = "https://updates.duplicati.com/$Channel/latest-v2.json"
+
+if ($runningAsSystem) {
+    $PfxPath        = Join-Path $ProgramDataDup 'localhost.pfx'
+} else {
+    $PfxPath        = Join-Path $AppDataLocalDup 'localhost.pfx'
+}
+
 
 # ── helper: Handle Credentials without a Nuget Package ─────────────
 if (-not ('InstallScript.CREDENTIAL' -as [type])) {
@@ -192,16 +301,6 @@ function SecureStringToPlain([SecureString]$ss) {
     try   { [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) }
     finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
 }
-function Get-PresetValue ([string]$Key) {
-    if (-not (Test-Path $PresetPath)) { return $null }
-    foreach ($line in Get-Content $PresetPath) {
-        if ($line -match '^\s*[#;]') { continue }
-        if ($line -match '^\s*([^=]+?)\s*=\s*(.+?)\s*$') {
-            if ($Matches[1].Trim() -ieq $Key) { return $Matches[2].Trim() }
-        }
-    }
-    return $null
-}
 function Test-FileHashMatch ($Path, $ExpectedBase64) {
     $actualHash = Get-FileHash -Path $Path -Algorithm SHA256
     $hex = $actualHash.Hash -replace '[^0-9A-Fa-f]', ''
@@ -244,27 +343,6 @@ function Get-InstalledDuplicatiVersion {
     return [Version]'0.0.0.0'
 }
 
-if (-not $OverwriteAll) {
-    $iniFlag = Get-PresetValue 'OverwriteAll'
-    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
-        $OverwriteAll = $true
-    }
-}
-
-if (-not $KeepArm64) {
-    $iniFlag = Get-PresetValue 'KeepArm64'
-    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
-        $KeepArm64 = $true
-    }
-}
-
-if (-not $OfflineMode) {
-    $iniFlag = Get-PresetValue 'OfflineMode'
-    if ($iniFlag -and $iniFlag.Trim().ToLower() -eq 'true') {
-        $OfflineMode = $true
-    }
-}
-
 # ────────── Ensure ProgramData\Duplicati with locked-down ACL ─────────
 function Ensure-ProgramDataFolder {
     if (-not (Test-Path $ProgramDataDup)) {
@@ -293,7 +371,43 @@ function Ensure-ProgramDataFolder {
     Set-Acl -Path $ProgramDataDup -AclObject $acl
 }
 
-Ensure-ProgramDataFolder   # call early (needed for PFX export)
+function Ensure-LocalAppDataFolder {
+    # Create folder if missing
+    if (-not (Test-Path $AppDataLocalDup)) {
+        New-Item -Path $AppDataLocalDup -ItemType Directory | Out-Null
+    }
+
+    # Build a brand-new ACL (nothing inherited)
+    $acl = New-Object System.Security.AccessControl.DirectorySecurity
+    $acl.SetAccessRuleProtection($true, $false)   # disable inheritance
+
+    # Full control for SYSTEM
+    $sidSystem = New-Object System.Security.Principal.SecurityIdentifier 'S-1-5-18'
+    $acl.AddAccessRule( [System.Security.AccessControl.FileSystemAccessRule]::new(
+        $sidSystem, 'FullControl', 'ContainerInherit, ObjectInherit', 'None', 'Allow'))
+
+    # Full control for Administrators
+    $sidAdmins = New-Object System.Security.Principal.SecurityIdentifier 'S-1-5-32-544'
+    $acl.AddAccessRule( [System.Security.AccessControl.FileSystemAccessRule]::new(
+        $sidAdmins, 'FullControl', 'ContainerInherit, ObjectInherit', 'None', 'Allow'))
+
+    # Full control for the current (interactive) user
+    $sidUser = [Security.Principal.WindowsIdentity]::GetCurrent().User
+    $acl.AddAccessRule( [System.Security.AccessControl.FileSystemAccessRule]::new(
+        $sidUser, 'FullControl', 'ContainerInherit, ObjectInherit', 'None', 'Allow'))
+
+    # Apply the ACL
+    Set-Acl -Path $AppDataLocalDup -AclObject $acl
+
+    Write-Host "Secured $AppDataLocalDup for user, Administrators, and SYSTEM."
+}
+
+# --- call it wherever you need the folder ready ---
+Ensure-LocalAppDataFolder
+
+if ($runningAsSystem) {
+    Ensure-ProgramDataFolder   # call early (needed for PFX export)
+}
 
 #──────────────────────────  VC++ redistributable  ─────────────────────
 function Test-VCRedistInstalled {
@@ -324,14 +438,16 @@ function Install-VCRedist {
     Start-Process $tmp -ArgumentList '/install /quiet /norestart' -Wait
 }
 
-if (Test-VCRedistInstalled) {
-    Write-Host 'VC++ Redistributable already installed.'
-} elseif ($OfflineMode -and -not (Local-VCRedistExists)) {
-    Write-Warning 'VC++ Redistributable not installed, offline mode is enabled and no local installer found.'
-    Write-Warning 'This will cause VSS snapshots to fail when running backups.'
-} else {
-    Confirm-Step 'Install / update VC++ Redistributable?'
-    Install-VCRedist
+if ($runningAsSystem) {
+    if (Test-VCRedistInstalled) {
+        Write-Host 'VC++ Redistributable already installed.'
+    } elseif ($OfflineMode -and -not (Local-VCRedistExists)) {
+        Write-Warning 'VC++ Redistributable not installed, offline mode is enabled and no local installer found.'
+        Write-Warning 'This will cause VSS snapshots to fail when running backups.'
+    } else {
+        Confirm-Step 'Install / update VC++ Redistributable?'
+        Install-VCRedist
+    }
 }
 
 #──────────────────────────  Duplicati installer  ──────────────────────
@@ -356,7 +472,8 @@ function Get-LatestLocalMsi($arch) {
 }
 function Install-Duplicati {
     $arch=switch($env:PROCESSOR_ARCHITECTURE){'ARM64'{'arm64'}'AMD64'{'x64'}default{'x86'}}
-    if ($arch -eq 'arm64' -and -not $KeepArm64) {
+    
+    if ($arch -eq 'arm64' -and -not $KeepArm64 -and $runningAsSystem) {
         Write-Host "ARM64 architecture detected, using 'x64' MSI for VSS compatibility."
         $arch = 'x64'
     }
@@ -486,21 +603,23 @@ Ensure-Credential $DbCredKey $dbPass -Force:$OverwriteAll
 $cred = Read-Credential $AuthCredKey
 if ($cred -and $cred) {
     $AuthPassphrase = $cred
-    Write-Host "Using existing SYSTEM credential for Web-UI passphrase."
+    Write-Host "Using existing credentials for Web-UI passphrase."
 }
 
 if (-not $AuthPassphrase) { $AuthPassphrase = Get-PresetValue 'AuthPassphrase' }
 if (-not $AuthPassphrase) {
     if (-not $NonInteractive) {
         $AuthPassphrase = SecureStringToPlain (
-            Read-Host 'Enter Web-UI auth passphrase' -AsSecureString)
+            Read-Host 'Enter Web-UI auth passphrase (leave blank for none)' -AsSecureString)
     }
 }
-Ensure-Credential $AuthCredKey $AuthPassphrase -Force:$OverwriteAll
+
+if ($AuthPassphrase) {
+    Ensure-Credential $AuthCredKey $AuthPassphrase -Force:$OverwriteAll
+}
 
 # --------- read preload.json for default values (if file exists) -----
 $preloadPath = Join-Path $ProgramFilesDup 'preload.json'
-Write-Host "Checking for existing preload.json, having $SendHttpJsonUrls and $RemoteControlRegisterUrl"
 if (-not $SendHttpJsonUrls -or -not $RemoteControlRegisterUrl) {
     if (Test-Path $preloadPath) {
         try {
@@ -548,13 +667,10 @@ $argsServer = @(
     '--secret-provider-pattern=!{}',
     "--settings-encryption-key=!{$DbCredKey}",
     "--webservice-sslcertificatefile=$PfxPath",
-    "--webservice-sslcertificatepassword=!{$CertCredKey}",
-    "--server-datafolder=$ProgramDataDup",
-    "--webservice-password=!{$AuthCredKey}"
+    "--webservice-sslcertificatepassword=!{$CertCredKey}"
 )
 
 $argsTray = @(
-    '--no-hosted-server=true',
     '--hosturl=https://localhost:8200/',
     '--secret-provider=wincred://',
     '--secret-provider-pattern=!{}'
@@ -562,9 +678,7 @@ $argsTray = @(
 
 $envServer = @{ }
 
-$dbServer = @{
-    '--snapshot-policy'  = 'required'
-}
+$dbServer = @{ }
 
 if ($RemoteControlRegisterUrl) {
     $argsServer['--register-remote-control'] = $RemoteControlRegisterUrl
@@ -572,13 +686,27 @@ if ($RemoteControlRegisterUrl) {
     $envServer['DUPLICATI_REMOTE_CONTROL_URL'] = $RemoteControlRegisterUrl
 }
 
-if ($AuthPassphrase) {
-     $argsServer += "--webservice-password=!{$AuthCredKey}"
-     $argsTray   += "--webservice-password=!{$AuthCredKey}"
-}
-
 if ($SendHttpJsonUrls) {
     $dbServer['--send-http-json-urls'] = $SendHttpJsonUrls
+}
+
+if ($runningAsSystem) {
+    $argsTray += '--no-hosted-server=true'
+    $argsServer += "--server-datafolder=$ProgramDataDup"
+    $dbServer['--snapshot-policy'] = 'required'
+    if ($AuthPassphrase) {
+        $argsServer += "--webservice-password=!{$AuthCredKey}"
+    }   
+} else {
+    $argsTray += @(
+        "--settings-encryption-key=!{$DbCredKey}",
+        "--webservice-sslcertificatefile=$PfxPath",
+        "--webservice-sslcertificatepassword=!{$CertCredKey}"
+    )
+
+    if ($AuthPassphrase) {
+        $argsTray   += "--webservice-password=!{$AuthCredKey}"
+   }
 }
 
 $preload = @{
@@ -602,38 +730,93 @@ if (Test-Path $localNewBackupPath) {
     Write-Host "Copied local newbackup.json to $newBackupPath (overwrote if present)."
 }
 
-#──────────────────────────  Service INSTALL  ─────────────────────────
-$svcExe=Join-Path $ProgramFilesDup 'Duplicati.WindowsService.exe'
-Write-Host 'Installing Duplicati Windows service ...'
-if (-not (Get-Service Duplicati -ErrorAction SilentlyContinue)) {
-    & $svcExe INSTALL
-}
+function Add-DuplicatiTrayShortcut {
+    param(
+        [string]$ExePath = "$env:ProgramFiles\Duplicati 2\Duplicati.GUI.TrayIcon.exe",
+        [string]$Args    = '',
+        [string]$LinkName = 'Duplicati Tray.lnk'
+    )
 
-# ---------- start or restart the service (PS-5.1 compatible) ----------
-try {
-    $service = Get-Service -Name $DupSvcName -ErrorAction Stop
+    # Shared Startup folder for every user
+    $startupAll = 'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup'
+    $linkPath   = Join-Path $startupAll $LinkName
 
-    if ($service.Status -eq 'Running') {
-        Write-Host "Service '$DupSvcName' is already running - restarting"
-        Restart-Service -Name $DupSvcName -Force -ErrorAction Stop
-
-        # get a fresh object and wait until it reports Running
-        $service = Get-Service -Name $DupSvcName
-        $service.WaitForStatus('Running', '00:00:15')
-
-        Write-Host "Service '$DupSvcName' restarted."
+    if (Test-Path $linkPath) {
+        Write-Host "Startup shortcut already exists at $linkPath"
+        return
     }
-    else {
-        Write-Host "Starting service '$DupSvcName'"
-        Start-Service -Name $DupSvcName -ErrorAction Stop
-        Start-Sleep -Seconds 5
-        $service = Get-Service -Name $DupSvcName
-        $service.WaitForStatus('Running', '00:00:15')
-        Write-Host "Service '$DupSvcName' is now running."
-    }
-}
-catch {
-    Write-Warning "Could not start or restart service '$DupSvcName' : $_"
+
+    $shell = New-Object -ComObject WScript.Shell
+    $lnk   = $shell.CreateShortcut($linkPath)
+    $lnk.TargetPath = $ExePath
+    $lnk.Arguments  = $Args
+    $lnk.WorkingDirectory = Split-Path $ExePath
+    $lnk.IconLocation     = "$ExePath,0"
+    $lnk.Save()
+
+    Write-Host "Created startup shortcut for all users:"
+    Write-Host "  $linkPath -> $ExePath $Args"
 }
 
-Write-Host "All done - open https://localhost:8200 to access the UI"
+function Start-ProcessUnelevated {
+    param(
+        [Parameter(Mandatory)][string]$FilePath,
+        [string]$Arguments  = '',
+        [string]$WorkingDirectory = (Split-Path $FilePath)
+    )
+
+    if (-not (Test-Path $FilePath)) {
+        throw "Executable not found: $FilePath"
+    }
+
+    $shell = New-Object -ComObject 'Shell.Application'
+    # 6th arg is window style (1 = normal, 0 = hidden, etc.)
+    $null  = $shell.ShellExecute($FilePath, $Arguments, $WorkingDirectory, 'open', 1)
+
+    Write-Host "Launched '$FilePath' unelevated."
+}
+
+if ($runningAsSystem) {
+    #──────────────────────────  Service INSTALL  ─────────────────────────
+    $svcExe=Join-Path $ProgramFilesDup 'Duplicati.WindowsService.exe'
+    Write-Host 'Installing Duplicati Windows service ...'
+    if (-not (Get-Service Duplicati -ErrorAction SilentlyContinue)) {
+        & $svcExe INSTALL
+    }
+
+    # ---------- start or restart the service (PS-5.1 compatible) ----------
+    try {
+        $service = Get-Service -Name $DupSvcName -ErrorAction Stop
+
+        if ($service.Status -eq 'Running') {
+            Write-Host "Service '$DupSvcName' is already running - restarting"
+            Restart-Service -Name $DupSvcName -Force -ErrorAction Stop
+
+            # get a fresh object and wait until it reports Running
+            $service = Get-Service -Name $DupSvcName
+            $service.WaitForStatus('Running', '00:00:15')
+
+            Write-Host "Service '$DupSvcName' restarted."
+        }
+        else {
+            Write-Host "Starting service '$DupSvcName'"
+            Start-Service -Name $DupSvcName -ErrorAction Stop
+            Start-Sleep -Seconds 5
+            $service = Get-Service -Name $DupSvcName
+            $service.WaitForStatus('Running', '00:00:15')
+            Write-Host "Service '$DupSvcName' is now running."
+        }
+    }
+    catch {
+        Write-Warning "Could not start or restart service '$DupSvcName' : $_"
+    }
+
+    Write-Host "All done - open https://localhost:8200 to access the UI"    
+} else {
+    Add-DuplicatiTrayShortcut
+    Write-Host "Starting Duplicati Tray Icon in non-privileged user context..."
+    Start-ProcessUnelevated -FilePath "$ProgramFilesDup\Duplicati.GUI.TrayIcon.exe"
+    Write-Host "Duplicati Tray Icon started in user context, UI should open automatically."
+    Write-Host "If it does not, open https://localhost:8200 in your browser."
+}
+
