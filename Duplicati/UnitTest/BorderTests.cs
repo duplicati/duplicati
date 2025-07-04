@@ -186,6 +186,16 @@ namespace Duplicati.UnitTest
             }
             else
             {
+                try
+                {
+                    using var _ = Duplicati.Library.Snapshots.Windows.WindowsShimLoader.NewSeBackupPrivilegeScope();
+                }
+                catch (Exception ex)
+                {
+                    Assert.Inconclusive("Failed to activate WindowsShimLoader for SeBackupPrivilege: " + ex.Message);
+                    return;
+                }
+
                 RunCommands(1024 * 10, modifyOptions: opts =>
                 {
                     opts["backupread-policy"] = "required";
