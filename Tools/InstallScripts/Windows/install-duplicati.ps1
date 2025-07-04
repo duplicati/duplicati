@@ -834,6 +834,15 @@ if ($runningAsSystem) {
 
 } else {
     Add-DuplicatiTrayShortcut
+    $proc = Get-Process -Name 'Duplicati.GUI.TrayIcon' -ErrorAction SilentlyContinue
+    if ($proc) {
+        Write-Host "Found $($proc.Count) instance(s) of Duplicati.GUI.TrayIcon.exe - stopping..."
+        $proc | Stop-Process -Force
+        Start-Sleep -Seconds 5 # Make sure it is gone and locks are released
+    } else {
+        Write-Host "Duplicati.GUI.TrayIcon.exe is not running."
+    }
+
     Write-Host "Starting Duplicati Tray Icon in non-privileged user context..."
     Start-ProcessUnelevated -FilePath "$ProgramFilesDup\Duplicati.GUI.TrayIcon.exe"
 }
@@ -866,7 +875,7 @@ if (Test-Path $localBackupTemplate) {
         Write-Error "Duplicati.ServerUtil.exe not found at $serverUtilExe. Cannot configure initial backup."    
     } elseif (-not $cred) {
         Write-Error "Due to a bug in ServerUtil, an authentication passphrase is required to configure the initial backup."
-    } elseif ($instVer -lte [Version]'2.1.0.118') {
+    } elseif ($instVer -le [Version]'2.1.0.118') {
         Write-Error "Due to a bug in Duplicati.CommandLine.ServerUtil in this version, it is not possible to configure the initial backup."
     } else {
         Write-Host "Configuring initial backup from $localBackupTemplate ..."
