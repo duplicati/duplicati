@@ -202,7 +202,13 @@ public class BackupListService(Connection connection) : IBackupListService
             Func<Dto.BackupAndScheduleOutputDto, object?>? selector = sort switch
             {
                 "name" => x => x.Backup.Name,
-                "id" => x => x.Backup.ID,
+                "id" => x =>
+                {
+                    if (long.TryParse(x.Backup.ID, out var id))
+                        return id;
+                    return -1;
+                }
+                ,
                 "lastrun" => x =>
                 {
                     if (x.Backup.Metadata == null)
