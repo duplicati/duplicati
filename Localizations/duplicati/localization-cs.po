@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-21 12:54+0200\n"
+"POT-Creation-Date: 2025-07-07 13:36+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>, 2025\n"
 "Language-Team: Czech (https://app.transifex.com/duplicati/teams/67655/cs/)\n"
@@ -45,8 +45,8 @@ msgstr "Prázdná heslová fráze není dovolena"
 msgid "Set thread level utilized for crypting"
 msgstr "Nastavit kolik vláken použít pro šifrování"
 
-#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:184
-#: Library/Main/Strings.cs:233
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:244
 #, csharp-format
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "Volba --{0} už není používána a byla označena jako zastaralá."
@@ -196,7 +196,7 @@ msgstr "Stornováno"
 
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
-#: Library/Backend/Jottacloud/Jottacloud.cs:314
+#: Library/Backend/Jottacloud/Jottacloud.cs:319
 #: Library/Backend/SMB/SMBShareConnection.cs:361
 msgid "The requested file does not exist"
 msgstr "Požadovaný soubor neexistuje"
@@ -299,24 +299,24 @@ msgstr "Následující USN je nulový"
 msgid "Backup configuration changed"
 msgstr "Nastavení zálohy změněno"
 
-#: Library/Backend/OpenStack/Strings.cs:29
+#: Library/Backend/OpenStack/Strings.cs:28
 msgid "OpenStack Simple Storage"
 msgstr "OpenStack Simple Storage"
 
-#: Library/Backend/OpenStack/Strings.cs:30
+#: Library/Backend/OpenStack/Strings.cs:29
 #, csharp-format
 msgid "Missing required option: {0}"
 msgstr "Chybějící vyžadovaná volba: {0}"
 
-#: Library/Backend/OpenStack/Strings.cs:33
+#: Library/Backend/OpenStack/Strings.cs:32
 msgid "The domain name of the user used to connect to the server."
 msgstr "Doménové jméno uživatele kterým se připojit k serveru."
 
-#: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/SMB/Strings.cs:30
+#: Library/Backend/OpenStack/Strings.cs:33 Library/Backend/SMB/Strings.cs:30
 msgid "Supply the domain used to connect to the server"
 msgstr "Zadejte doménu sloužící pro připojení k serveru"
 
-#: Library/Backend/OpenStack/Strings.cs:35 Library/Backend/S3/Strings.cs:34
+#: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/S3/Strings.cs:34
 #: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:95
 msgid ""
 "The username used to connect to the server. This may also be supplied as the"
@@ -325,7 +325,7 @@ msgstr ""
 "Uživatelské jméno sloužící pro připojení se k serveru. Je možné ho zadat "
 "také prostřednictvím proměnné prostředí „AUTH_USERNAME“."
 
-#: Library/Backend/OpenStack/Strings.cs:37
+#: Library/Backend/OpenStack/Strings.cs:36
 msgid ""
 "The Tenant Name is commonly the paying user account name. This option must "
 "be supplied when authenticating with a password, but is not required when "
@@ -335,7 +335,7 @@ msgstr ""
 "třeba, aby tato volba byla poskytnuta při ověřování heslem, ale není třeba "
 "při používání klíče k API."
 
-#: Library/Backend/OpenStack/Strings.cs:39
+#: Library/Backend/OpenStack/Strings.cs:38
 msgid ""
 "The API key can be used to connect without supplying a password and tenant "
 "ID with some providers."
@@ -344,7 +344,7 @@ msgstr ""
 "možné použít k připojení bez nutnosti zadávání hesla a identifikátoru "
 "nájemníka (tenant)."
 
-#: Library/Backend/OpenStack/Strings.cs:44
+#: Library/Backend/OpenStack/Strings.cs:43
 msgid "The keystone API version to use"
 msgstr "Verze API stavebního bloku kterou použít"
 
@@ -480,7 +480,7 @@ msgstr "Soubor nenalezen: {0}"
 msgid "Team drive ID"
 msgstr "Identifikátor Team drive"
 
-#: Library/Backend/GoogleServices/Strings.cs:53
+#: Library/Backend/GoogleServices/Strings.cs:56
 msgid "Google Cloud Storage configuration module"
 msgstr "Modul nastavení pro úložiště Google Cloud"
 
@@ -585,12 +585,12 @@ msgstr ""
 "připojování ověřen otisk serveru. Pomocí této předvolby lze ověřování otisku"
 " klíče stroje vypnout. Toto byste měli dělat jen při testování."
 
-#: Library/Backend/SSHv2/Strings.cs:64
+#: Library/Backend/SSHv2/Strings.cs:70
 #, csharp-format
 msgid "Unable to set folder to {0}, error message: {1}"
 msgstr "Nepodařilo se složku nastavit na {0}, chybová zpráva: {1}"
 
-#: Library/Backend/SSHv2/Strings.cs:65
+#: Library/Backend/SSHv2/Strings.cs:71
 #, csharp-format
 msgid ""
 "Validation of server fingerprint failed. Server returned fingerprint "
@@ -601,7 +601,7 @@ msgstr ""
 "Příčina této zprávy je buď nesprávné nastavení nebo útok typu „člověk "
 "uprostřed“ (Man-in-the-middle)!"
 
-#: Library/Backend/SSHv2/Strings.cs:66
+#: Library/Backend/SSHv2/Strings.cs:72
 #, csharp-format
 msgid ""
 "Please add --{1}=\"{0}\" to trust this host. Optionally you can use --{2} "
@@ -763,22 +763,6 @@ msgstr "Velikost stránek s výpisem souborů"
 msgid "The base URL to use for downloading files"
 msgstr "Základ URl adresy, který použít pro stahování souborů"
 
-#: Library/Backend/Sia/Strings.cs:26
-msgid "This backend can read and write data to Sia."
-msgstr "Tato podpůrná vrstva (backend) umožňuje čtení a zápis dat na Sia."
-
-#: Library/Backend/Sia/Strings.cs:27
-msgid "Sia Decentralized Cloud"
-msgstr "Decentralizovaný cloud Sia"
-
-#: Library/Backend/Sia/Strings.cs:29
-msgid "Backup path"
-msgstr "Popis umístění zálohy"
-
-#: Library/Backend/Sia/Strings.cs:31
-msgid "Sia password"
-msgstr "Heslo k Sia"
-
 #: Library/Backend/OneDrive/Strings.cs:26
 msgid ""
 "Size of individual fragments which are uploaded separately for large files. "
@@ -886,19 +870,19 @@ msgstr "Název účtu na úložišti"
 msgid "The access key"
 msgstr "Přístupový klíč"
 
-#: Library/Backend/Jottacloud/Strings.cs:27
+#: Library/Backend/Jottacloud/Strings.cs:29
 msgid "Jottacloud"
 msgstr "Jottacloud"
 
-#: Library/Backend/Jottacloud/Strings.cs:30
+#: Library/Backend/Jottacloud/Strings.cs:32
 msgid "Illegal mount point given."
 msgstr "Zadán neplatný přípojný bod."
 
-#: Library/Backend/Jottacloud/Strings.cs:31
+#: Library/Backend/Jottacloud/Strings.cs:33
 msgid "Failed to upload file"
 msgstr "Soubor se nepodařilo nahrát"
 
-#: Library/Backend/Jottacloud/Strings.cs:32
+#: Library/Backend/Jottacloud/Strings.cs:34
 #, csharp-format
 msgid ""
 "The backup device to use. Will be created if not already exists. You can "
@@ -911,7 +895,7 @@ msgstr ""
 "Když zadáte vlastní zařízení, měli byste také zadat přípojný bod, který pro "
 "něj použít pomocí předvolby „{0}“."
 
-#: Library/Backend/Jottacloud/Strings.cs:34
+#: Library/Backend/Jottacloud/Strings.cs:36
 #, csharp-format
 msgid ""
 "The mount point to use on the server. The default is \"Archive\" for using "
@@ -926,7 +910,7 @@ msgstr ""
 "pokud jste zadali vlastní zařízení pomocí volby „{0}“, můžete si přípojný "
 "bod nazvat dle libosti."
 
-#: Library/Backend/Jottacloud/Strings.cs:36
+#: Library/Backend/Jottacloud/Strings.cs:38
 msgid ""
 "Number of threads for restore operations. In some cases the download rate is"
 " limited to 18.5 Mbps per stream. Use multiple threads to increase "
@@ -936,7 +920,7 @@ msgstr ""
 "stahování omezena na 18,5  Mb/s pro každý z proudů. Propustnost zvýšíte "
 "právě použitím více vláken."
 
-#: Library/Backend/Jottacloud/Strings.cs:38
+#: Library/Backend/Jottacloud/Strings.cs:40
 msgid ""
 "The chunk size for simultaneous downloading. These chunks will be held in "
 "memory, so keep it as low as possible."
@@ -1061,6 +1045,16 @@ msgstr "Pověřovací token obdržený od {0}"
 msgid "The authorization code"
 msgstr "Pověřovací kód"
 
+#: Library/Backend/Dropbox/Strings.cs:32
+#: Library/Backend/OAuthHelper/Strings.cs:27
+#, csharp-format
+msgid ""
+"Failed to authorize using the OAuth service: {0}. If the problem persists, "
+"try generating a new authid token from: {1}"
+msgstr ""
+"Nepodařilo se ověřit pomocí služby OAuth: {0}. Pokud problém přetrvává, "
+"zkuste vytvořit nový authid token z: {1}"
+
 #: Library/Backend/WEBDAV/Strings.cs:27
 msgid "WebDAV"
 msgstr "WebDAV"
@@ -1143,15 +1137,6 @@ msgstr "„nádoba“ (bucket)"
 #: Library/Backend/Storj/Strings.cs:42
 msgid "Folder"
 msgstr "Složka"
-
-#: Library/Backend/OAuthHelper/Strings.cs:27
-#, csharp-format
-msgid ""
-"Failed to authorize using the OAuth service: {0}. If the problem persists, "
-"try generating a new authid token from: {1}"
-msgstr ""
-"Nepodařilo se ověřit pomocí služby OAuth: {0}. Pokud problém přetrvává, "
-"zkuste vytvořit nový authid token z: {1}"
 
 #: Library/Backend/OAuthHelper/Strings.cs:28
 #, csharp-format
@@ -1243,12 +1228,12 @@ msgstr ""
 " „*“ (hvězdička), jsou umožněny všechny názvy strojů a kontrola názvu stroje"
 " je vypnutá."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:253
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:264
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
 "Nastavte čas, po jehož uplynutí budou data protokolu smazána z databáze."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:254
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:265
 msgid "Clean up old log data"
 msgstr "Odstranit staré záznamy událostí"
 
@@ -1274,16 +1259,16 @@ msgstr ""
 "nastaveními. Tuto volbu je možné nastavit také pomocí proměnné prostředí "
 "{0}. Pomocí volby --{1} je možné pomíchání databáze vypnout."
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:89
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:96
 msgid "Temporary storage folder"
 msgstr "Složka pro dočasné ukládání"
 
-#: Library/RestAPI/Strings.cs:91 Library/RestAPI/Strings.cs:120
+#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:121
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server je spuštěn a očekává spojení na {0}, portu {1}"
 
-#: Library/RestAPI/Strings.cs:116
+#: Library/RestAPI/Strings.cs:117
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -1292,7 +1277,7 @@ msgstr ""
 "Nedaří se nalézt platné datum pro dané počáteční datum {0}, interval "
 "opakování {1} a dny, kdy je umožněno {2}"
 
-#: Library/RestAPI/Strings.cs:122
+#: Library/RestAPI/Strings.cs:123
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Nedaří se otevřít soket pro očekávání spojení, vyzkoušené porty: {0}"
@@ -1366,49 +1351,44 @@ msgid ""
 msgstr ""
 "Soubor {0} byl stažen a měl velikost {1}, ale byla očekávána velikost {2}"
 
-#: Library/Main/Strings.cs:32
+#: Library/Main/Strings.cs:33
 msgid "No source folders specified for backup"
 msgstr "Nebyly určeny zdrojové složky k zálohování"
 
-#: Library/Main/Strings.cs:34
+#: Library/Main/Strings.cs:35
 #, csharp-format
 msgid "Unauthorized to access source folder {0}, aborting backup"
 msgstr ""
 "Chybí oprávnění pro přístup do zdrojové složky {0}, přerušuje se zálohování"
 
-#: Library/Main/Strings.cs:35
+#: Library/Main/Strings.cs:36
 #, csharp-format
 msgid ""
 "The option --{0} is not supported because the module {1} is not currently "
 "loaded"
 msgstr "Volba --{0} není podporována protože modul {1} nyní není načtený"
 
-#: Library/Main/Strings.cs:36
+#: Library/Main/Strings.cs:37
 #, csharp-format
 msgid "The supplied option --{0} is not supported and will be ignored"
 msgstr "Zadaná předvolba --{0} není podporovaná a bude ignorována"
 
-#: Library/Main/Strings.cs:37
+#: Library/Main/Strings.cs:38
 #, csharp-format
 msgid "The operation {0} has started"
 msgstr "Operace {0} zahájena"
 
-#: Library/Main/Strings.cs:38
+#: Library/Main/Strings.cs:39
 #, csharp-format
 msgid "The operation {0} has completed"
 msgstr "Operace {0} dokončena"
 
-#: Library/Main/Strings.cs:39
-#, csharp-format
-msgid "The operation {0} has failed with error: {1}"
-msgstr "Operace {0} se nezdařila s chybou: {1}"
-
-#: Library/Main/Strings.cs:40
+#: Library/Main/Strings.cs:41
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Neplatný popis umístění: „{0}“ ({1})"
 
-#: Library/Main/Strings.cs:41
+#: Library/Main/Strings.cs:42
 #, csharp-format
 msgid ""
 "Failed to apply 'force-locale' setting. Please try to update .NET-Framework."
@@ -1417,12 +1397,12 @@ msgstr ""
 "Nepodařilo se použít nastavení „force-locale“. Zkuste aktualizovat .NET-"
 "Framework. Výjimka byla: „{0}“"
 
-#: Library/Main/Strings.cs:42
+#: Library/Main/Strings.cs:43
 #, csharp-format
 msgid "The source {0} uses an invalid volume name, aborting backup"
 msgstr "Zdroj {0} používá neplatný název svazku, záloha proto bude přerušena"
 
-#: Library/Main/Strings.cs:43
+#: Library/Main/Strings.cs:44
 #, csharp-format
 msgid ""
 "The source {0} is on volume {1}, which could not be found, aborting backup"
@@ -1430,7 +1410,7 @@ msgstr ""
 "Zdroj {0} se nachází na svazku {1}, který se nepodařilo nalézt, záloha proto"
 " bude přerušena"
 
-#: Library/Main/Strings.cs:50
+#: Library/Main/Strings.cs:53
 msgid ""
 "A string used to prefix the filenames of the remote volumes, can be used to "
 "store multiple backups in the same remote folder. The prefix cannot contain "
@@ -1442,19 +1422,19 @@ msgstr ""
 "předpona nemůže obsahovat spojovník (-), ale jinak může obsahovat všechny "
 "znaky, podporované vzdáleným úložištěm."
 
-#: Library/Main/Strings.cs:51
+#: Library/Main/Strings.cs:54
 msgid "Remote filename prefix"
 msgstr "předpona názvu vzdáleného souboru"
 
-#: Library/Main/Strings.cs:53
+#: Library/Main/Strings.cs:56
 msgid "Disable checks based on file time"
 msgstr "Zakázat kontroly založené na času souboru"
 
-#: Library/Main/Strings.cs:55
+#: Library/Main/Strings.cs:58
 msgid "Restore to another folder"
 msgstr "Obnovit do jiné složky"
 
-#: Library/Main/Strings.cs:56
+#: Library/Main/Strings.cs:59
 msgid ""
 "Allow system to enter sleep power modes for inactivity during backup/restore"
 " operations (Windows/OSX only)"
@@ -1462,7 +1442,7 @@ msgstr ""
 "Umožnit systému přejít do pohotovostního režimu při nečinnosti při "
 "zálohovacích/obnovovacích operacích (pouze MS Windows / macOS)"
 
-#: Library/Main/Strings.cs:58
+#: Library/Main/Strings.cs:61
 msgid ""
 "By setting this value you can limit how much bandwidth Duplicati consumes "
 "for downloads. Setting this limit can make the backups take longer, but will"
@@ -1472,11 +1452,11 @@ msgstr ""
 "Duplicati využít pro stahování. Nastavení může prodloužit trvání zálohování,"
 " ale bude méně obtěžující."
 
-#: Library/Main/Strings.cs:59
+#: Library/Main/Strings.cs:62
 msgid "Max number of kilobytes to download pr. second"
 msgstr "Největší počet kilobytů, které mají být za sekundu staženy"
 
-#: Library/Main/Strings.cs:60
+#: Library/Main/Strings.cs:63
 msgid ""
 "By setting this value you can limit how much bandwidth Duplicati consumes "
 "for uploads. Setting this limit can make the backups take longer, but will "
@@ -1486,11 +1466,11 @@ msgstr ""
 "Duplicati využít pro odesílání. Nastavení může prodloužit trvání zálohování,"
 " ale bude méně obtěžující."
 
-#: Library/Main/Strings.cs:61
+#: Library/Main/Strings.cs:64
 msgid "Max number of kilobytes to upload pr. second"
 msgstr "Největší počet kilobytů, které lze za sekundu nahrát"
 
-#: Library/Main/Strings.cs:62
+#: Library/Main/Strings.cs:69
 msgid ""
 "If you store the backups on a local disk, and prefer that they are kept "
 "unencrypted, you can turn of encryption completely by using this switch."
@@ -1498,11 +1478,11 @@ msgstr ""
 "Pokud uchováváte zálohy na místním datovém úložišti a chcete, aby nebyly "
 "zašifrované, můžete pomocí tohoto přepínače šifrování úplně vypnout."
 
-#: Library/Main/Strings.cs:63
+#: Library/Main/Strings.cs:70
 msgid "Disable encryption"
 msgstr "Vypnout šifrování"
 
-#: Library/Main/Strings.cs:64
+#: Library/Main/Strings.cs:71
 msgid ""
 "If an upload or download fails, Duplicati will retry a number of times "
 "before failing. Use this to handle unstable network connections better."
@@ -1511,11 +1491,11 @@ msgstr ""
 " a až pak teprve ohlásí neúspěch. Pomocí tohoto je možné lépe zvládnout "
 "nestabilní síťové připojení."
 
-#: Library/Main/Strings.cs:65
+#: Library/Main/Strings.cs:72
 msgid "Number of times to retry a failed transmission"
 msgstr "Počet pokusů obnovení chybného přenosu"
 
-#: Library/Main/Strings.cs:66
+#: Library/Main/Strings.cs:73
 msgid ""
 "Supply a passphrase that Duplicati will use to encrypt the backup volumes, "
 "making them unreadable without the passphrase. This variable can also be "
@@ -1525,19 +1505,19 @@ msgstr ""
 "zálohami, čímž budou bez této fráze nečitelné. Tuto proměnnou je možné zadat"
 " také pomocí proměnné prostředí PASSPHRASE."
 
-#: Library/Main/Strings.cs:67
+#: Library/Main/Strings.cs:74
 msgid "Passphrase used to encrypt backups"
 msgstr "Heslová fráze kterou jsou zálohy zašifrovány"
 
-#: Library/Main/Strings.cs:69
+#: Library/Main/Strings.cs:76
 msgid "The time to list/restore files"
 msgstr "Čas výpisu/obnovy souborů"
 
-#: Library/Main/Strings.cs:71
+#: Library/Main/Strings.cs:78
 msgid "The version to list/restore files"
 msgstr "Verze k výpisu/obnově souborů"
 
-#: Library/Main/Strings.cs:72
+#: Library/Main/Strings.cs:79
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
@@ -1545,11 +1525,11 @@ msgstr ""
 "Soubory jsou hledány pouze v nejnovějších zálohách. Pomocí této volby jsou "
 "zobrazené také všechny předchozí verze."
 
-#: Library/Main/Strings.cs:73
+#: Library/Main/Strings.cs:80
 msgid "Show all versions"
 msgstr "Zobrazit všechny verze"
 
-#: Library/Main/Strings.cs:74
+#: Library/Main/Strings.cs:81
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the largest common prefix path."
@@ -1557,11 +1537,11 @@ msgstr ""
 "Při hledání souborů jsou vráceny veškeré shody. Pomocí této předvolby je "
 "možné vracet pouze popis umístění největší společné předpony."
 
-#: Library/Main/Strings.cs:75
+#: Library/Main/Strings.cs:82
 msgid "Show largest prefix"
 msgstr "Ukázat největší předponu"
 
-#: Library/Main/Strings.cs:76
+#: Library/Main/Strings.cs:83
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
@@ -1569,11 +1549,11 @@ msgstr ""
 "Při hledání souborů jsou vráceny veškeré odpovídající soubory. Pomocí této "
 "předvolby je možné vracet pouze položky nalezené v zadané složce."
 
-#: Library/Main/Strings.cs:77
+#: Library/Main/Strings.cs:84
 msgid "Show folder contents"
 msgstr "Zobrazit obsah složky"
 
-#: Library/Main/Strings.cs:78
+#: Library/Main/Strings.cs:85
 msgid ""
 "After a failed transmission, Duplicati will wait a short period before "
 "attempting again. This is useful if the network drops out occasionally "
@@ -1582,21 +1562,15 @@ msgstr ""
 "Po nezdařilém přenosu, Duplicati krátkou chvilku počká než se pokusí znovu. "
 "Toto je užitečné pokud se občas objevují výpadky sítě při přenosu."
 
-#: Library/Main/Strings.cs:79
+#: Library/Main/Strings.cs:86
 msgid "Time to wait between retries"
 msgstr "Jak dlouho čekat mezi pokusy"
 
-#: Library/Main/Strings.cs:82
-msgid "Use this option to attach extra files to the newly uploaded filelists."
-msgstr ""
-"Pomocí této předvolby připojte další soubory k nově nahraným seznamům "
-"souborů."
-
-#: Library/Main/Strings.cs:83
+#: Library/Main/Strings.cs:90
 msgid "Set control files"
 msgstr "Nastavit řídící soubory"
 
-#: Library/Main/Strings.cs:86
+#: Library/Main/Strings.cs:93
 msgid ""
 "This option allows you to exclude files that are larger than the given "
 "value. Use this to prevent backups becoming extremely large."
@@ -1604,19 +1578,19 @@ msgstr ""
 "Pomocí této předvolby je možné vynechat soubory které jsou větší než zadaná "
 "hodnota. Tím je možné zabránit extrémnímu zvětšování záloh."
 
-#: Library/Main/Strings.cs:87
+#: Library/Main/Strings.cs:94
 msgid "Limit the size of files being backed up"
 msgstr "Omezit velikost zálohovaných souborů"
 
-#: Library/Main/Strings.cs:92
+#: Library/Main/Strings.cs:99
 msgid "Thread priority"
 msgstr "Priorita vlákna"
 
-#: Library/Main/Strings.cs:94
+#: Library/Main/Strings.cs:101
 msgid "Limit the size of the volumes"
 msgstr "Omezit velikost svazků"
 
-#: Library/Main/Strings.cs:101
+#: Library/Main/Strings.cs:108
 msgid ""
 "Duplicati supports pluggable compression modules. Use this option to select "
 "a module to use for compression. This is only applied when creating new "
@@ -1628,11 +1602,11 @@ msgstr ""
 "nových svazků – při čtení existujícího souboru je pro výběr kompresního "
 "modulu použit název souboru."
 
-#: Library/Main/Strings.cs:102
+#: Library/Main/Strings.cs:109
 msgid "Select what module to use for compression"
 msgstr "Vyberte který modul použít pro komprimaci"
 
-#: Library/Main/Strings.cs:103
+#: Library/Main/Strings.cs:110
 msgid ""
 "Duplicati supports pluggable encryption modules. Use this option to select a"
 " module to use for encryption. This is only applied when creating new "
@@ -1644,11 +1618,11 @@ msgstr ""
 "svazků – při čtení existujícího souboru je pro výběr šifrovacího modulu "
 "použit název souboru."
 
-#: Library/Main/Strings.cs:104
+#: Library/Main/Strings.cs:111
 msgid "Select what module to use for encryption"
 msgstr "Vyberte který modul použít pro šifrování"
 
-#: Library/Main/Strings.cs:109
+#: Library/Main/Strings.cs:116
 msgid ""
 "This setting controls the usage of snapshots, which allows Duplicati to "
 "backup files that are locked by other programs. If this is set to \"off\", "
@@ -1676,15 +1650,15 @@ msgstr ""
 "používá správu logických svazků (LVM) a vyžaduje práva správce systému "
 "(root)."
 
-#: Library/Main/Strings.cs:114
+#: Library/Main/Strings.cs:121
 msgid "The path where ready volumes are placed until uploaded"
 msgstr "Popis umístění ve kterém budou svazky umístěny dokud nebudou odeslány"
 
-#: Library/Main/Strings.cs:116
+#: Library/Main/Strings.cs:123
 msgid "The number of volumes to create ahead of time"
 msgstr "Množství svazků které vytvořit dopředu"
 
-#: Library/Main/Strings.cs:117
+#: Library/Main/Strings.cs:124
 msgid ""
 "When performing asynchronous uploads, the maximum number of concurrent "
 "uploads allowed. Set to zero to disable the limit."
@@ -1692,19 +1666,19 @@ msgstr ""
 "Maximální počet souběžných asymetrických nahrávání. Nastavte na nulu pro "
 "zrušení limitu."
 
-#: Library/Main/Strings.cs:118
+#: Library/Main/Strings.cs:125
 msgid "The number of concurrent uploads allowed"
 msgstr "Umožněný počet souběžných nahrávání"
 
-#: Library/Main/Strings.cs:122
+#: Library/Main/Strings.cs:129
 msgid "Log internal information to a file"
 msgstr "Zaznamenávat vnitřní informace do souboru"
 
-#: Library/Main/Strings.cs:124
+#: Library/Main/Strings.cs:131
 msgid "Log information level"
 msgstr "Úroveň podrobnosti záznamů událostí"
 
-#: Library/Main/Strings.cs:128
+#: Library/Main/Strings.cs:135
 msgid ""
 "If Duplicati detects that the target folder is missing, it will create it "
 "automatically. Activate this option to prevent automatic folder creation."
@@ -1712,7 +1686,7 @@ msgstr ""
 "Pokud Duplicati zjistí že cílová složka chybí, automaticky ji vytvoří. "
 "Pomocí této předvolby je možné zabránit automatickému vytváření složek."
 
-#: Library/Main/Strings.cs:130
+#: Library/Main/Strings.cs:137
 msgid ""
 "Use this option to exclude faulty writers from a snapshot. This is "
 "equivalent to the -wx flag of the vshadow.exe tool, except that it only "
@@ -1727,48 +1701,26 @@ msgstr ""
 "středníkem a je možné použít většinu podob GUID, včetně těch se složenými "
 "závorkami."
 
-#: Library/Main/Strings.cs:131
+#: Library/Main/Strings.cs:138
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr ""
 "Středníkem oddělovaný seznam guid idenfikátorů VSS zapisovačů které vynechat"
 " (pouze Windows)"
 
-#: Library/Main/Strings.cs:132
-msgid ""
-"This setting controls the usage of NTFS USN numbers, which allows Duplicati "
-"to obtain a list of files and folders much faster. If this is set to "
-"\"off\", Duplicati will not attempt to use USN. Setting this to \"auto\" "
-"makes Duplicati attempt to use USN, and fail silently if that was not "
-"allowed or supported. A setting of \"on\" will also make Duplicati attempt "
-"to use USN, but will produce a warning message in the log if it fails. "
-"Setting it to \"required\" will make Duplicati abort the backup if the USN "
-"usage fails. This feature is only supported on Windows and requires "
-"administrative privileges."
-msgstr ""
-"Toto nastavení řídí využití NTFS USN čísel, které Duplicati umožňuje získat "
-"seznam souborů a složek mnohem rychleji. Pokud je nastaveno na vypnuto, "
-"Duplicati se nebude snažit použít USN. Nastavení na auto způsobí, že "
-"Duplicati se pokusí použít USN a pokud to není podporováno nebo povoleno, "
-"nebude to hlásit. Nastavení na zapnuto způsobí, že Duplicati se pokusí "
-"použít USN, ale pokud se nezdaří, zaznamená to do událostí (log). Nastavení "
-"vyžadováno způsobí že Duplicati přeruší zálohování, pokud se USN nezdaří. "
-"Tato funkce je podporována pouze na systému Windows a vyžaduje práva správce"
-" systému."
-
-#: Library/Main/Strings.cs:139
+#: Library/Main/Strings.cs:148
 msgid "Verify uploads by listing contents"
 msgstr "Ověřovat nahrané soubory vypsáním jejich obsahu"
 
-#: Library/Main/Strings.cs:141
+#: Library/Main/Strings.cs:150
 msgid "Upload files synchronously"
 msgstr "Nahrávat soubory souběžně"
 
-#: Library/Main/Strings.cs:143
+#: Library/Main/Strings.cs:152
 msgid "Do not re-use connections"
 msgstr "Nerecyklovat spojení"
 
-#: Library/Main/Strings.cs:144
+#: Library/Main/Strings.cs:153
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
@@ -1778,23 +1730,23 @@ msgstr ""
 "ohlásí počet opakovaných pokusů. Zapnutím této předvolby budou při "
 "opětovných pokusech rovnou zobrazovány chybová hlášení."
 
-#: Library/Main/Strings.cs:145
+#: Library/Main/Strings.cs:154
 msgid "Show error messages when a retry is performed"
 msgstr "Při opakovaném pokusu zobrazit chybové hlášení"
 
-#: Library/Main/Strings.cs:147
+#: Library/Main/Strings.cs:156
 msgid "Upload empty backup files"
 msgstr "Nahrávat prázdné záložní soubory"
 
-#: Library/Main/Strings.cs:151
+#: Library/Main/Strings.cs:160
 msgid "Threshold for warning about low quota"
 msgstr "Práh varování před vyčerpáním kvóty"
 
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:164
 msgid "Symlink handling"
 msgstr "Zacházení se symbolickými odkazy (symlink)"
 
-#: Library/Main/Strings.cs:156
+#: Library/Main/Strings.cs:165
 #, csharp-format
 msgid ""
 "Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
@@ -1810,15 +1762,15 @@ msgstr ""
 "se. Volba „{2}“ bude ignorovat všechny pevné odkazy s více než jedním "
 "odkazem."
 
-#: Library/Main/Strings.cs:157
+#: Library/Main/Strings.cs:166
 msgid "Hardlink handling"
 msgstr "Zacházení se symbolickými odkazy (hardlink)"
 
-#: Library/Main/Strings.cs:159
+#: Library/Main/Strings.cs:168
 msgid "Exclude files by attribute"
 msgstr "Vynechávat soubory na základě atributů"
 
-#: Library/Main/Strings.cs:160
+#: Library/Main/Strings.cs:169
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -1830,19 +1782,19 @@ msgstr ""
 "které slouží k přístupu k obsahu zachyceného stavu. Toto obejití problému "
 "může zrychlit přístup k souborů pod systémem Windows XP."
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:170
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "Namapovat zachycené stavy jako disky (pouze Windows)"
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:172
 msgid "Name of the backup"
 msgstr "Název zálohy"
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:182
 msgid "Manage non-compressible file extensions"
 msgstr "Spravovat přípony souborů, které nelze komprimovat"
 
-#: Library/Main/Strings.cs:174
+#: Library/Main/Strings.cs:183
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -1854,31 +1806,31 @@ msgstr ""
 "seznamů souborů. Mějte na paměti, že po vytvoření souboru na protějšku už s "
 "touto hodnotou nelze hýbat."
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:184
 msgid "Block size used in hashing"
 msgstr "Velikost bloků pro kontrolní součty"
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:186
 msgid "List of files to examine for changes"
 msgstr "Seznam souborů u kterých zkoumat změny"
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:188
 msgid "Path to the local state database"
 msgstr "Umístění místní stavové databáze"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:190
 msgid "List of deleted files"
 msgstr "Seznam smazaných souborů"
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:192
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr "Snížit využití paměti zakázáním vyhledávání v paměti"
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:195
 msgid "Do not query backend at startup"
 msgstr "Při spuštění se backendu nedotazovat"
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:196
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -1892,7 +1844,7 @@ msgstr ""
 "databáze. Daní za to je že velké indexové soubory zabírají více místa na "
 "vzdáleném úložišti a přitom nemusí být nikdy použity."
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:198
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -1904,19 +1856,19 @@ msgstr ""
 "bude uvolněn. Tato hodnota je procento z každého ze svazků a celkového "
 "úložiště."
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:199
 msgid "The maximum wasted space in percent"
 msgstr "Maximum zbytečného místa v procentech"
 
-#: Library/Main/Strings.cs:194
+#: Library/Main/Strings.cs:203
 msgid "The hash algorithm used on blocks"
 msgstr "Hashovací algoritmus použitý na bloky"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:205
 msgid "The hash algorithm used on files"
 msgstr "Hashovací algoritmus použitý na soubory"
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:206
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -1928,11 +1880,11 @@ msgstr ""
 " Pomocí této předvolby toto automatické zkompaktňování vypnete a bude se dít"
 " pouze ručním spouštěním příkazu compact."
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:207
 msgid "Disable automatic compacting"
 msgstr "Zakázat automatické zmenšení"
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:208
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -1944,11 +1896,11 @@ msgstr ""
 "zajistí, že velké svazky které mohou mít pár bajtů ztraceného prostoru "
 "nejsou stahovány a přepisovány."
 
-#: Library/Main/Strings.cs:200
+#: Library/Main/Strings.cs:209
 msgid "Volume size threshold"
 msgstr "Velikost svazku může být nejvýše"
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:210
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
@@ -1958,11 +1910,11 @@ msgstr ""
 " vynutit seskupení malých souborů. Malé objemy budou vždy kombinovány když "
 "mohou zaplnit celý svazek."
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:211
 msgid "Maximum number of small volumes"
 msgstr "Malých svazků nejvýše"
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:212
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
@@ -1972,25 +1924,25 @@ msgstr ""
 " a hledat existující bloky. To je dost pomalá operace ale může snížit objem "
 "stahovaných dat."
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:213
 msgid "Use local file data when restoring"
 msgstr "Při obnově použít místní údaje o souborech"
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:218
 msgid "Keep a number of versions"
 msgstr "Uchovávat verzí nazpět"
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:219
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr ""
 "Tuto volbu použijte k nastavení časového období, po které mají být "
 "uchovávány zálohy."
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:220
 msgid "Keep all versions within a timespan"
 msgstr "Zachovat všechny verze v časovém období"
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:221
 msgid ""
 "Use this option to reduce the number of versions that are kept with "
 "increasing version age by deleting most of the old backups. The expected "
@@ -2010,25 +1962,25 @@ msgstr ""
 "tyto.“ Tato volba také podporuje použití „U“ pro označení neomezeného "
 "časového intervalu."
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:222
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr "Snížit počet verzí smazáním starých mezidobých záloh"
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:223
 msgid "Use this option to continue even if some source entries are missing."
 msgstr ""
 "Toto volbu použijte, pokud chcete pokračovat i v případě, že chybí některé "
 "zdrojové záznamy."
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:224
 msgid "Ignore missing source elements"
 msgstr "Ignorovat chybějící zdrojové prvky"
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:226
 msgid "Overwrite files when restoring"
 msgstr "Při obnovování přepsat soubory"
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:227
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
@@ -2036,11 +1988,11 @@ msgstr ""
 "Pomocí této předvolby zvyšte množství výstupu vytvářeného při spouštění "
 "volby. Obecně tato předvolba vytvoří řádek pro každý zpracovaný soubor."
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:228
 msgid "Output more progress information"
 msgstr "Vypisovat více informací o průběhu"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:230
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -2048,11 +2000,11 @@ msgstr ""
 "Pomocí této předvolby je možné zvýšit množství výstupu vytvářeného jako "
 "výsledek operace, včetně všech názvů souborů."
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:231
 msgid "Output full results"
 msgstr "Vypsat plné výsledky"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:232
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -2064,31 +2016,31 @@ msgstr ""
 "všech vzdálených souborů a může být použit pro ověření neporušenosti "
 "souborů."
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:233
 msgid "Determine if verification files are uploaded"
 msgstr "Určit, zda mají být nahrány ověřovací soubory"
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:235
 msgid "The number of samples to test after a backup"
 msgstr "Množství vzorků které otestovat po provedení zálohy"
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:237
 msgid "The percentage of samples to test after a backup"
 msgstr "Procento vzorků které po záloze vyzkoušet"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:243
 msgid "Size of the file read buffer"
 msgstr "Velikost vyrovnávací paměti čtení"
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:246
 msgid "Allow the passphrase to change"
 msgstr "Umožnit změnu heslové fráze"
 
-#: Library/Main/Strings.cs:237
+#: Library/Main/Strings.cs:248
 msgid "List only filesets"
 msgstr "Vypsat pouze sady souborů"
 
-#: Library/Main/Strings.cs:239
+#: Library/Main/Strings.cs:250
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -2098,7 +2050,7 @@ msgstr ""
 "souborů. Vypnutí ukládání metadat zrychlí operaci zálohování a obnovy, ale "
 "velikost záloh příliš neovlivní."
 
-#: Library/Main/Strings.cs:241
+#: Library/Main/Strings.cs:252
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
@@ -2107,11 +2059,11 @@ msgstr ""
 "bránit v přístupu k souborům. Pomocí této předvolby budou obnovena i "
 "přístupová práva."
 
-#: Library/Main/Strings.cs:242
+#: Library/Main/Strings.cs:253
 msgid "Restore file permissions"
 msgstr "Obnovit přístupová práva souboru"
 
-#: Library/Main/Strings.cs:243
+#: Library/Main/Strings.cs:254
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -2121,11 +2073,11 @@ msgstr ""
 "tak, že vše proběhlo úspěšně. Pomocí této předvolby kontrolu vypnete a "
 "vyhnete se tak čekání na toto ověření."
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:255
 msgid "Skip restored file check"
 msgstr "Přeskočit kontrolu obnoveného souboru"
 
-#: Library/Main/Strings.cs:245
+#: Library/Main/Strings.cs:256
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -2135,11 +2087,11 @@ msgstr ""
 "objem stahovaných dat. Pomocí této předvolby tuto optimalizaci přeskočíte a "
 "použijete pouze vzdálená data."
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:257
 msgid "Do not use local data"
 msgstr "Nepoužívat místní data"
 
-#: Library/Main/Strings.cs:251
+#: Library/Main/Strings.cs:262
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
@@ -2147,11 +2099,11 @@ msgstr ""
 "Pomocí této předvolby zvýšíte důkladnost ověřování kontrolováním otisku "
 "(hash) bloků načítaných ze svazku před vkládáním dat do obnovených souborů."
 
-#: Library/Main/Strings.cs:252
+#: Library/Main/Strings.cs:263
 msgid "Check block hashes"
 msgstr "Zkontrolovat hashe bloků"
 
-#: Library/Main/Strings.cs:255
+#: Library/Main/Strings.cs:266
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -2164,15 +2116,15 @@ msgstr ""
 "všechny informace. Výslednou databázi lze prohledávat, ale nelze ji použít "
 "pro obnovení dat."
 
-#: Library/Main/Strings.cs:256
+#: Library/Main/Strings.cs:267
 msgid "Repair database with paths"
 msgstr "Opravit databázi s cestami"
 
-#: Library/Main/Strings.cs:260
+#: Library/Main/Strings.cs:271
 msgid "Force the locale setting"
 msgstr "Vynutit místní a jazyková nastavení"
 
-#: Library/Main/Strings.cs:261
+#: Library/Main/Strings.cs:272
 msgid ""
 "By default, dates are displayed in the calendar format, meaning \"Today\" or"
 " \"Last Thursday\". By setting this option, only the actual dates are "
@@ -2182,13 +2134,13 @@ msgstr ""
 "„Dnes“ nebo „Minulý čtvrtek“. Nastavením této volby budou zobrazovány "
 "skutečné datumy, například „12. listopad 2018, 8:01“."
 
-#: Library/Main/Strings.cs:264
+#: Library/Main/Strings.cs:275
 msgid "Handle file communication with backend using threaded pipes"
 msgstr ""
 "Obsluhovat souborovou komunikaci s podpůrnou vrstvou (backend) pomocí "
 "vláknovaných rour (pipe)"
 
-#: Library/Main/Strings.cs:265
+#: Library/Main/Strings.cs:276
 msgid ""
 "Use this option to set the maximum number of threads used. Setting this "
 "value to zero or less will dynamically balance the number of active threads "
@@ -2198,22 +2150,22 @@ msgstr ""
 "vláken. Nastavení této hodnoty na nulu nebo méně bude dynamicky vyvažovat "
 "počet aktivních vláken tak, aby odpovídalo hardware."
 
-#: Library/Main/Strings.cs:266
+#: Library/Main/Strings.cs:277
 msgid "Limit number of concurrent threads"
 msgstr "Omezit počet souběžných vláken"
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:278
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr ""
 "Tuto volbu použijte pro nastavení počtu procesů které provádějí pořizování "
 "otisků dat."
 
-#: Library/Main/Strings.cs:268
+#: Library/Main/Strings.cs:279
 msgid "Specify the number of concurrent hashing processes"
 msgstr "Určete počet souběžných procesů vytváření otisků"
 
-#: Library/Main/Strings.cs:269
+#: Library/Main/Strings.cs:280
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
@@ -2221,11 +2173,11 @@ msgstr ""
 "Tuto volbu použijte pro nastavení počtu procesů které provádějí komprimaci "
 "výstupních dat."
 
-#: Library/Main/Strings.cs:270
+#: Library/Main/Strings.cs:281
 msgid "Specify the number of concurrent compression processes"
 msgstr "Určete počet souběžných procesů komprimace"
 
-#: Library/Main/Strings.cs:273
+#: Library/Main/Strings.cs:284
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
@@ -2235,11 +2187,11 @@ msgstr ""
 " souborů, který je sloučením minulé kompletní zálohy a obsahu který byl "
 "nahrán při nekompletní zálohovací relaci."
 
-#: Library/Main/Strings.cs:280
+#: Library/Main/Strings.cs:291
 msgid "Allow removing all filesets"
 msgstr "Povolit odstranění všech množin souborů"
 
-#: Library/Main/Strings.cs:281
+#: Library/Main/Strings.cs:292
 msgid ""
 "Some operations that manipulate the local database leave unused entries "
 "behind. These entries are not deleted from a hard drive until a VACUUM "
@@ -2254,11 +2206,11 @@ msgstr ""
 "vytvořit kopii všech platných položek v databázi. Nastavením tohoto umožní "
 "Duplicati provádět operaci VACUUM dle potřeby."
 
-#: Library/Main/Strings.cs:284
+#: Library/Main/Strings.cs:295
 msgid "Disable the read-ahead scanner"
 msgstr "Vypnout skener načítání dopředu"
 
-#: Library/Main/Strings.cs:285
+#: Library/Main/Strings.cs:296
 msgid ""
 "In backups with a large number of filesets, the verification can take up a "
 "large part of the backup time. If you disable the checks, make sure you run "
@@ -2268,19 +2220,19 @@ msgstr ""
 "zálohování. Pokud kontroly vypnete, nezapomeňte pravidelně spouštět příkazy "
 "check, abyste se ujistili, že vše funguje, jak má."
 
-#: Library/Main/Strings.cs:286
+#: Library/Main/Strings.cs:297
 msgid "Disable filelist consistency checks"
 msgstr "Vypnout kontroly konzistence seznamu souborů"
 
-#: Library/Main/Strings.cs:288
+#: Library/Main/Strings.cs:299
 msgid "Disable the backup when on battery power"
 msgstr "Nezálohovat při napájení z akumulátorů"
 
-#: Library/Main/Strings.cs:291
+#: Library/Main/Strings.cs:302
 msgid "Log file information level"
 msgstr "Stupeň podrobností záznamu událostí do souboru"
 
-#: Library/Main/Strings.cs:292
+#: Library/Main/Strings.cs:303
 #, csharp-format
 msgid ""
 "This option accepts filters that removes or includes messages regardless of "
@@ -2295,11 +2247,11 @@ msgstr ""
 "obsaženy, pokud nezačínají na „-“. Regulární výrazy jsou podporovány v "
 "hranatých závorkách. Příklad: „Path*{0}+*Mail*{0}-[.*DNS]“"
 
-#: Library/Main/Strings.cs:297
+#: Library/Main/Strings.cs:308
 msgid "Console information level"
 msgstr "Stupeň podrobnosti informací na konzoli"
 
-#: Library/Main/Strings.cs:308
+#: Library/Main/Strings.cs:319
 msgid ""
 "Use this option to set a filename, or list of filenames, that indicate "
 "exclusion of a folder which contains it. A common use would be to have a "
@@ -2311,11 +2263,11 @@ msgstr ""
 "nazvaný něco jako „.nezalohovat“ a umístění tohoto souboru do složek, které "
 "by neměly být zálohovány."
 
-#: Library/Main/Strings.cs:309
+#: Library/Main/Strings.cs:320
 msgid "List of filenames that exclude folders"
 msgstr "Seznam souborů ze kterého jsou vynechány složky"
 
-#: Library/Main/Strings.cs:315
+#: Library/Main/Strings.cs:326
 #, csharp-format
 msgid ""
 "To improve performance of the backups, frequent database queries are not "
@@ -2328,7 +2280,7 @@ msgstr ""
 " tuto volbu. Dále nezapomeňte pro vykazování dalších dat nastavit buď "
 "--{0}={2} nebo --{1}={2}"
 
-#: Library/Main/Strings.cs:366
+#: Library/Main/Strings.cs:375
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2337,18 +2289,18 @@ msgstr ""
 "Kryptografická knihovna nepodporuje znovupoužitelné transformace pro "
 "hashovací algoritmus {0}"
 
-#: Library/Main/Strings.cs:367
+#: Library/Main/Strings.cs:376
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 "Kryptografická knihovna nepodporuje tento algoritmus tvorby otisku (hash) "
 "{0}"
 
-#: Library/Main/Strings.cs:368
+#: Library/Main/Strings.cs:377
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Heslo existující zálohy nemůže být změněno"
 
-#: Library/Main/Strings.cs:369
+#: Library/Main/Strings.cs:378
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Zachycený stav se nepodařilo vytvořit: {0}"
@@ -2400,80 +2352,7 @@ msgstr ""
 msgid "Read passphrase from STDIN"
 msgstr "Načíst heslovou frázi ze standardního vstupu (STDIN)"
 
-#: Library/Modules/Builtin/Strings.cs:40
-msgid ""
-"This module exposes a number of properties that can be used to change the "
-"way http requests are issued"
-msgstr ""
-"Tento modul vystavuje mnoho vlastností které mohou být použity pro změnu "
-"způsobu, kterým jsou vydávány http požadavky"
-
-#: Library/Modules/Builtin/Strings.cs:41
-msgid "Configure http requests"
-msgstr "Nastavit http požadavky"
-
-#: Library/Modules/Builtin/Strings.cs:43
-#: Library/Modules/Builtin/Strings.cs:237 Library/Utility/Strings.cs:84
-msgid "Accept any server certificate"
-msgstr "Přijmout libovolný serverový certifikát"
-
 #: Library/Modules/Builtin/Strings.cs:45
-#: Library/Modules/Builtin/Strings.cs:239 Library/Utility/Strings.cs:86
-msgid "Optionally accept a known SSL certificate"
-msgstr "Volitelně přijmout známý SSL certifikát"
-
-#: Library/Modules/Builtin/Strings.cs:47
-msgid "Disable the expect header"
-msgstr "Zakázat expect hlavičku"
-
-#: Library/Modules/Builtin/Strings.cs:48
-msgid ""
-"By default the http requests use the RFC 896 nagling algorithm to support "
-"transfer of small packages more efficiently."
-msgstr ""
-"Ve výchozím stavu http požadavky používají algoritmus pro slučování "
-"odesílaných dat dle normy RFC 896 aby bylo přenášení malých balíčků "
-"efektivnější."
-
-#: Library/Modules/Builtin/Strings.cs:49
-msgid "Disable nagling"
-msgstr "Neseskupovat odesílaná data (nagle)"
-
-#: Library/Modules/Builtin/Strings.cs:51
-msgid "Alternate OAuth URL"
-msgstr "Alternativní OAuth URL adresa"
-
-#: Library/Modules/Builtin/Strings.cs:52
-msgid ""
-"This option changes the default SSL versions allowed. This is an advanced "
-"option and should only be used if you want to enhance security or work "
-"around an issue with a particular SSL protocol."
-msgstr ""
-"Tato předvolba mění výchozí umožněné verze SSL. Toto je pokročilá předvolba "
-"a měla by být použita pouze pokud chcete dále vylepšit zabezpečení nebo "
-"obejít problém s konkrétní verzí SSL protokolu."
-
-#: Library/Modules/Builtin/Strings.cs:56
-msgid ""
-"This option changes the default read-write timeout. Read-write timeouts are "
-"used to detect a stalled requests, and this option configures the maximum "
-"time between activity on a connection."
-msgstr ""
-"Tato předvolba mění výchozí časový limit pro čtení a zápis. Tyto limity "
-"slouží pro zjištění požadavků, které se zastavily a tato předvolba nastavuje"
-" nejvyšší přijatelnou dobu, která může uplynout mezi aktivitami při spojení."
-
-#: Library/Modules/Builtin/Strings.cs:58
-#, csharp-format
-msgid ""
-"This option sets the HTTP buffering. Setting this to \"{0}\" can cause "
-"memory leaks, but can also improve performance in some cases."
-msgstr ""
-"Tato předvolba nastavuje vyrovnávací paměť pro HTTP. Nastavení na „{0}“ může"
-" způsobit neuvolňování použité operační paměti ale také v některých "
-"případech zlepšit výkon."
-
-#: Library/Modules/Builtin/Strings.cs:63
 msgid ""
 "This module works internaly to parse source parameters to backup Hyper-V "
 "virtual machines"
@@ -2481,11 +2360,11 @@ msgstr ""
 "Tento modul funguje vnitřně pro zpracovávání (parse) zdrojových parametrů "
 "pro zálohování Hyper-V virtuálních strojů"
 
-#: Library/Modules/Builtin/Strings.cs:64
+#: Library/Modules/Builtin/Strings.cs:46
 msgid "Configure Hyper-V module"
 msgstr "Nastavit Hyper-V modul"
 
-#: Library/Modules/Builtin/Strings.cs:70
+#: Library/Modules/Builtin/Strings.cs:52
 msgid ""
 "This module works internaly to parse source parameters to backup Microsoft "
 "SQL Server databases"
@@ -2493,68 +2372,68 @@ msgstr ""
 "Tento modul funguje vnitřně pro zpracovávání (parse) zdrojových parametrů "
 "pro zálohování Microsoft SQL databází"
 
-#: Library/Modules/Builtin/Strings.cs:71
+#: Library/Modules/Builtin/Strings.cs:53
 msgid "Configure Microsoft SQL Server module"
 msgstr "Nastavit modul pro Microsoft SQL Server"
 
-#: Library/Modules/Builtin/Strings.cs:76
+#: Library/Modules/Builtin/Strings.cs:58
 msgid "Run script"
 msgstr "Spustit skript"
 
-#: Library/Modules/Builtin/Strings.cs:78
+#: Library/Modules/Builtin/Strings.cs:60
 msgid "Run a script on exit"
 msgstr "Spouštět skript při ukončování"
 
-#: Library/Modules/Builtin/Strings.cs:79
+#: Library/Modules/Builtin/Strings.cs:61
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "Skript „{0}“ skončil se stavem (exit code) {1}"
 
-#: Library/Modules/Builtin/Strings.cs:80
+#: Library/Modules/Builtin/Strings.cs:62
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}{2}"
 msgstr "Skript „{0}“ vrátil chybový kód {1}{2}"
 
-#: Library/Modules/Builtin/Strings.cs:82
+#: Library/Modules/Builtin/Strings.cs:64
 msgid "Run a required script on startup"
 msgstr "Při spuštění spustit vyžadovaný skript"
 
-#: Library/Modules/Builtin/Strings.cs:85
+#: Library/Modules/Builtin/Strings.cs:67
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
 msgstr "Chyba při vykonávání skriptu „{0}“: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:68
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
 msgstr "Vykonávání skriptu „{0}“ překročilo časový limit"
 
-#: Library/Modules/Builtin/Strings.cs:88
+#: Library/Modules/Builtin/Strings.cs:70
 msgid "Run a script on startup"
 msgstr "Spouštět skript při spouštení"
 
-#: Library/Modules/Builtin/Strings.cs:89
+#: Library/Modules/Builtin/Strings.cs:71
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Skript „{0}“ vrátil chybové zprávy: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:97
+#: Library/Modules/Builtin/Strings.cs:79
 msgid "This module can send email after an operation completes"
 msgstr "Tento modul může po ukončení operace zaslat e-mail"
 
-#: Library/Modules/Builtin/Strings.cs:98
+#: Library/Modules/Builtin/Strings.cs:80
 msgid "Send mail"
 msgstr "Odeslat e-mail"
 
-#: Library/Modules/Builtin/Strings.cs:109
+#: Library/Modules/Builtin/Strings.cs:91
 msgid "The message body"
 msgstr "Text zprávy"
 
-#: Library/Modules/Builtin/Strings.cs:111
+#: Library/Modules/Builtin/Strings.cs:93
 msgid "SMTP Password"
 msgstr "Heslo SMTP"
 
-#: Library/Modules/Builtin/Strings.cs:112
+#: Library/Modules/Builtin/Strings.cs:94
 msgid ""
 "This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.\n"
 "Example with 3 recipients: \n"
@@ -2566,26 +2445,26 @@ msgstr ""
 "\n"
 "Petr Novák <petr@example.com>, Jan Novák <jan@example.com>, admin@example.com"
 
-#: Library/Modules/Builtin/Strings.cs:116
+#: Library/Modules/Builtin/Strings.cs:98
 msgid "Email recipient(s)"
 msgstr "Příjemci e-mailu"
 
-#: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:105
 msgid "Email sender"
 msgstr "Odesilatel e-mailu"
 
-#: Library/Modules/Builtin/Strings.cs:126
-#: Library/Modules/Builtin/Strings.cs:164
-#: Library/Modules/Builtin/Strings.cs:198
-#: Library/Modules/Builtin/Strings.cs:227
+#: Library/Modules/Builtin/Strings.cs:108
+#: Library/Modules/Builtin/Strings.cs:148
+#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:211
 msgid "The messages to send"
 msgstr "Zprávy k odeslání"
 
-#: Library/Modules/Builtin/Strings.cs:131
+#: Library/Modules/Builtin/Strings.cs:113
 msgid "SMTP Url"
 msgstr "URL adresa SMTP"
 
-#: Library/Modules/Builtin/Strings.cs:132
+#: Library/Modules/Builtin/Strings.cs:114
 #, csharp-format
 msgid ""
 "This setting supplies the email subject. Values are replaced as described in"
@@ -2594,63 +2473,63 @@ msgstr ""
 "Toto nastavení dodává předmět e-mailu. Hodnoty jsou nahrazeny jak je popsáno"
 " v popisu pro --{0}."
 
-#: Library/Modules/Builtin/Strings.cs:133
+#: Library/Modules/Builtin/Strings.cs:115
 msgid "The email subject"
 msgstr "Předmět e-mailu"
 
-#: Library/Modules/Builtin/Strings.cs:135
+#: Library/Modules/Builtin/Strings.cs:117
 msgid "SMTP Username"
 msgstr "SMTP uživatelské jméno"
 
-#: Library/Modules/Builtin/Strings.cs:136
+#: Library/Modules/Builtin/Strings.cs:118
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr "Celá SMTP komunikace: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:137
+#: Library/Modules/Builtin/Strings.cs:119
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 "Nepodařilo se poslat e-mail prostřednictvím serveru: {0}, zpráva: {1}, "
 "opětovný pokus s {2}"
 
-#: Library/Modules/Builtin/Strings.cs:138
+#: Library/Modules/Builtin/Strings.cs:120
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "E-mail byl úspěšně odeslán prostřednictvím serveru: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:144
+#: Library/Modules/Builtin/Strings.cs:128
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
 "Tento modul poskytuje podporu pro zasílání stavových hlášení pomocí XMPP "
 "zpráv"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:129
 msgid "XMPP report module"
 msgstr "Modul hlášení prostřednictvím XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:147
+#: Library/Modules/Builtin/Strings.cs:131
 msgid "XMPP recipient email"
 msgstr "XMPP e-mail příjemce"
 
-#: Library/Modules/Builtin/Strings.cs:157
-#: Library/Modules/Builtin/Strings.cs:189
-#: Library/Modules/Builtin/Strings.cs:220
+#: Library/Modules/Builtin/Strings.cs:141
+#: Library/Modules/Builtin/Strings.cs:173
+#: Library/Modules/Builtin/Strings.cs:204
 msgid "The message template"
 msgstr "Šablona zprávy"
 
-#: Library/Modules/Builtin/Strings.cs:159
+#: Library/Modules/Builtin/Strings.cs:143
 msgid "The XMPP username"
 msgstr "Uživatelské jméno XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:161
+#: Library/Modules/Builtin/Strings.cs:145
 msgid "The XMPP password"
 msgstr "Heslo XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:196
-#: Library/Modules/Builtin/Strings.cs:225
+#: Library/Modules/Builtin/Strings.cs:146
+#: Library/Modules/Builtin/Strings.cs:180
+#: Library/Modules/Builtin/Strings.cs:209
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
@@ -2659,40 +2538,48 @@ msgstr ""
 "Je možné zadat něco z „{0}“, „{1}“, „{2}“, „{3}“. \n"
 "Je možné zadat vícero voleb oddělovaných čárkou, např. „{0},{1}“. Speciální hodnota „{4}“ je zkratka pro „{0},{1},{2},{3}“ a způsobí, že zpráva bude odeslána o všech zálohovacích operacích."
 
-#: Library/Modules/Builtin/Strings.cs:166
-#: Library/Modules/Builtin/Strings.cs:200
-#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:150
+#: Library/Modules/Builtin/Strings.cs:184
+#: Library/Modules/Builtin/Strings.cs:213
 msgid "Send messages for all operations"
 msgstr "Odeslat zprávy pro veškeré operace"
 
-#: Library/Modules/Builtin/Strings.cs:167
+#: Library/Modules/Builtin/Strings.cs:151
 msgid "Timeout occurred while logging in to jabber server"
 msgstr "Při přihlašování k Jabber serveru byl překročen časový limit"
 
-#: Library/Modules/Builtin/Strings.cs:207
+#: Library/Modules/Builtin/Strings.cs:191
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
 "Tento modul poskytuje podporu zasílání stavových hlášení pomocí HTTP zpráv"
 
-#: Library/Modules/Builtin/Strings.cs:208
+#: Library/Modules/Builtin/Strings.cs:192
 msgid "HTTP report module"
 msgstr "Modul HTTP hlášení"
 
-#: Library/Modules/Builtin/Strings.cs:222
+#: Library/Modules/Builtin/Strings.cs:206
 msgid "The name of the parameter to send the message as"
 msgstr "Název parametru který poslat jako zprávu"
 
-#: Library/Modules/Builtin/Strings.cs:248
+#: Library/Modules/Builtin/Strings.cs:221 Library/Utility/Strings.cs:84
+msgid "Accept any server certificate"
+msgstr "Přijmout libovolný serverový certifikát"
+
+#: Library/Modules/Builtin/Strings.cs:223 Library/Utility/Strings.cs:86
+msgid "Optionally accept a known SSL certificate"
+msgstr "Volitelně přijmout známý SSL certifikát"
+
+#: Library/Modules/Builtin/Strings.cs:232
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "Zprávu se nepodařilo odeslat: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:252
+#: Library/Modules/Builtin/Strings.cs:236
 msgid "Log message filter"
 msgstr "Filtr zpráv záznamu událostí"
 
-#: Library/Modules/Builtin/Strings.cs:253
+#: Library/Modules/Builtin/Strings.cs:237
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
@@ -2777,27 +2664,31 @@ msgstr ""
 "Řetězec {0} nepředstavuje známý název skupiny filtru. Platné hodnoty jsou: "
 "{1}"
 
-#: Library/Utility/Strings.cs:113
+#: Library/Utility/Strings.cs:106
+msgid "Alternate OAuth URL"
+msgstr "Alternativní OAuth URL adresa"
+
+#: Library/Utility/Strings.cs:115
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid integer"
 msgstr "Hodnota „{1}“ poskytnutá --{0} nepředstavuje platné kladné celé číslo"
 
-#: Library/Utility/Strings.cs:114
+#: Library/Utility/Strings.cs:116
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid path"
 msgstr "Hodnota „{1}“, zadaná pro --{0} nepředstavuje platný popis umístění"
 
-#: Library/Utility/Strings.cs:115
+#: Library/Utility/Strings.cs:117
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid size"
 msgstr "Hodnota „{1}“ zadaná --{0} nepředstavuje platnou velikost"
 
-#: Library/Utility/Strings.cs:116
+#: Library/Utility/Strings.cs:118
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid time"
 msgstr "Hodnota „{1}“, zadaná pro --{0} nepředstavuje platný čas"
 
-#: Library/Utility/Strings.cs:117
+#: Library/Utility/Strings.cs:119
 #, csharp-format
 msgid ""
 "The size \"{1}\" supplied to --{0} does not have a multiplier (b, kb, mb, "

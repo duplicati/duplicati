@@ -20,17 +20,17 @@ msgstr "- trieu una opció -"
 msgid "...loading..."
 msgstr "S'està carregant..."
 
-#: scripts/services/EditUriBuiltins.js:1241 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1207 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "ID d'accés d'AWS"
 
-#: scripts/services/EditUriBuiltins.js:1242 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1208 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "Clau d'accés d'AWS"
 
-#: scripts/services/EditUriBuiltins.js:158
+#: scripts/services/EditUriBuiltins.js:157
 msgid "AWS IAM Policy"
 msgstr "Política IAM d'AWS"
 
@@ -42,7 +42,7 @@ msgstr "Quant a"
 msgid "About {{appname}}"
 msgstr "Quant al {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1190
+#: scripts/services/EditUriBuiltins.js:1156
 msgid "Access Key"
 msgstr "Clau d'accés"
 
@@ -54,7 +54,7 @@ msgstr "S'ha denegat l'accés"
 msgid "Access to user interface"
 msgstr "Accés a la interfície d'usuari"
 
-#: scripts/services/EditUriBuiltins.js:1189 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1155 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Nom del compte"
@@ -87,8 +87,8 @@ msgstr "Afegeix una ruta"
 msgid "Added"
 msgstr "Afegits"
 
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
 msgid "Adjust bucket name?"
 msgstr "Voleu modificar el nom del contenidor?"
 
@@ -171,8 +171,8 @@ msgstr "Aplicacions"
 msgid "As Command-line"
 msgstr "Com a línia d'ordres"
 
-#: scripts/services/EditUriBuiltins.js:1147
-#: scripts/services/EditUriBuiltins.js:1157 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1113
+#: scripts/services/EditUriBuiltins.js:1123 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -202,11 +202,11 @@ msgstr "Contrasenya generada automàticament"
 msgid "B2 Application Key"
 msgstr "Clau d'aplicació de B2"
 
-#: scripts/services/EditUriBuiltins.js:1287
+#: scripts/services/EditUriBuiltins.js:1253
 msgid "B2 Cloud Storage Account ID"
 msgstr "ID del compte de B2 Cloud Storage"
 
-#: scripts/services/EditUriBuiltins.js:1288 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1254 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "Clau d'aplicació de B2 Cloud Storage"
 
@@ -255,14 +255,14 @@ msgstr "Valor per defecte del navegador"
 msgid "Bucket create location"
 msgstr "Ubicació de creació del contenidor"
 
-#: scripts/services/EditUriBuiltins.js:1200
-#: scripts/services/EditUriBuiltins.js:1240
-#: scripts/services/EditUriBuiltins.js:1286
-#: scripts/services/EditUriBuiltins.js:1300
-#: scripts/services/EditUriBuiltins.js:1363
-#: scripts/services/EditUriBuiltins.js:1369
-#: scripts/services/EditUriBuiltins.js:1425
-#: scripts/services/EditUriBuiltins.js:1437 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1166
+#: scripts/services/EditUriBuiltins.js:1206
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1266
+#: scripts/services/EditUriBuiltins.js:1313
+#: scripts/services/EditUriBuiltins.js:1319
+#: scripts/services/EditUriBuiltins.js:1375
+#: scripts/services/EditUriBuiltins.js:1387 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -311,9 +311,9 @@ msgstr "Canary"
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
-#: scripts/services/EditUriBuiltins.js:62 templates/delete.html:54
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
 msgid "Cancel"
@@ -404,7 +404,7 @@ msgstr "S'ha perdut la connexió"
 msgid "Connection worked!"
 msgstr "Ha funcionat la connexió!"
 
-#: scripts/services/EditUriBuiltins.js:1191 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1157 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "Nom del contenidor"
@@ -453,7 +453,7 @@ msgstr "Només fallades"
 msgid "Create folder?"
 msgstr "Voleu crear una carpeta?"
 
-#: scripts/services/EditUriBuiltins.js:141
+#: scripts/services/EditUriBuiltins.js:140
 msgid "Created new limited user"
 msgstr "S'ha creat un nou usuari limitat"
 
@@ -760,8 +760,8 @@ msgstr "Introduïu la ruta de destinació"
 #: scripts/controllers/RestoreController.js:423
 #: scripts/controllers/RestoreController.js:431
 #: scripts/controllers/RestoreController.js:90
-#: scripts/controllers/RestoreDirectController.js:106
-#: scripts/controllers/RestoreDirectController.js:72
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:142
 #: scripts/directives/backupEditUri.js:163
 #: scripts/directives/backupEditUri.js:197
@@ -871,8 +871,8 @@ msgstr "No s'ha pogut connectar:"
 #: scripts/controllers/RestoreController.js:332
 #: scripts/controllers/RestoreController.js:431
 #: scripts/controllers/RestoreController.js:90
-#: scripts/controllers/RestoreDirectController.js:106
-#: scripts/controllers/RestoreDirectController.js:72
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
 #: scripts/services/LogService.js:29
 msgid "Failed to connect: {{message}}"
 msgstr "No s'ha pogut connectar: {{message}}"
@@ -931,9 +931,8 @@ msgstr "Carpeta"
 #: templates/backends/cos.html:30 templates/backends/e2.html:16
 #: templates/backends/file.html:22 templates/backends/file.html:6
 #: templates/backends/jottacloud.html:2 templates/backends/mega.html:2
-#: templates/backends/s3.html:60 templates/backends/sia.html:6
-#: templates/backends/storj.html:41 templates/restore.html:105
-#: templates/restore.html:89
+#: templates/backends/s3.html:60 templates/backends/storj.html:41
+#: templates/restore.html:105 templates/restore.html:89
 msgid "Folder path"
 msgstr "Ruta de la carpeta"
 
@@ -974,7 +973,7 @@ msgstr "Genera"
 msgid "Generate IAM access policy"
 msgstr "Genera una política d'accés IAM"
 
-#: scripts/services/EditUriBuiltins.js:1180 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1146 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "Adreça electrònica del grup"
 
@@ -1090,17 +1089,13 @@ msgstr ""
 msgid "Information"
 msgstr "Informació"
 
-#: scripts/services/EditUriBuiltins.js:1344
-msgid "Invalid characters in path"
-msgstr "La ruta conté caràcters no vàlids"
-
 #: scripts/controllers/EditBackupController.js:292
 #: scripts/controllers/EditBackupController.js:299
 #: scripts/controllers/EditBackupController.js:309
 msgid "Invalid retention time"
 msgstr "El període de preservació no és vàlid"
 
-#: scripts/services/EditUriBuiltins.js:1115
+#: scripts/services/EditUriBuiltins.js:1081
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1182,7 +1177,7 @@ msgstr "Ruta de la base de dades local:"
 msgid "Local repository"
 msgstr "Dipòsit local"
 
-#: scripts/services/SystemInfo.js:87
+#: scripts/services/SystemInfo.js:86
 msgid "Local storage"
 msgstr "Emmagatzematge local"
 
@@ -1243,14 +1238,6 @@ msgstr "Base de dades SQL de Microsoft:"
 #: scripts/directives/sourceFolderPicker.js:607
 msgid "Microsoft SQL Databases"
 msgstr "Bases de dades SQL de Microsoft"
-
-#: templates/backends/sia.html:14
-msgid "Minimum redundancy"
-msgstr "Redundància mínima"
-
-#: scripts/services/EditUriBuiltins.js:1348
-msgid "Minimum redundancy is 1.0"
-msgstr "La redundància mínima és de 1.0"
 
 #: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
 #: templates/settings.html:90
@@ -1313,7 +1300,7 @@ msgstr "Nom"
 msgid "Never"
 msgstr "Mai"
 
-#: scripts/services/EditUriBuiltins.js:141
+#: scripts/services/EditUriBuiltins.js:140
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
@@ -1357,9 +1344,9 @@ msgstr "La pròxima vegada"
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "No"
 
@@ -1425,7 +1412,7 @@ msgstr ""
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/DialogService.js:28 scripts/services/DialogService.js:50
 #: scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:141 templates/restore.html:147
+#: scripts/services/EditUriBuiltins.js:140 templates/restore.html:147
 #: templates/settings.html:206
 msgid "OK"
 msgstr "D'acord"
@@ -1479,7 +1466,7 @@ msgstr "Opcions"
 msgid "Original location"
 msgstr "Ubicació original"
 
-#: scripts/services/SystemInfo.js:90
+#: scripts/services/SystemInfo.js:89
 msgid "Others"
 msgstr "Altres"
 
@@ -1519,7 +1506,7 @@ msgstr "Les contrasenyes no coincideixen"
 msgid "Passphrases do not match"
 msgstr "Les contrasenyes no coincideixen"
 
-#: scripts/services/EditUriBuiltins.js:1332 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1298 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -1528,8 +1515,8 @@ msgstr "Les contrasenyes no coincideixen"
 msgid "Password"
 msgstr "Contrasenya"
 
-#: scripts/services/EditUriBuiltins.js:1316
-#: scripts/services/EditUriBuiltins.js:1453
+#: scripts/services/EditUriBuiltins.js:1282
+#: scripts/services/EditUriBuiltins.js:1403
 msgid "Path"
 msgstr "Ruta"
 
@@ -1597,7 +1584,7 @@ msgstr "Progrés:"
 msgid "ProjectID is optional if the bucket exist"
 msgstr "La ProjectID és opcional si el contenidor existeix"
 
-#: scripts/services/SystemInfo.js:89
+#: scripts/services/SystemInfo.js:88
 msgid "Proprietary"
 msgstr "De propietat"
 
@@ -1629,11 +1616,11 @@ msgstr "Actualitza"
 msgid "Remote"
 msgstr "Remot"
 
-#: scripts/services/EditUriBuiltins.js:1391
+#: scripts/services/EditUriBuiltins.js:1341
 msgid "Remote Path"
 msgstr "Ruta remota"
 
-#: scripts/services/EditUriBuiltins.js:1390
+#: scripts/services/EditUriBuiltins.js:1340
 msgid "Remote Repository"
 msgstr "Dipòsit remot"
 
@@ -1787,8 +1774,7 @@ msgstr "Trieu un nivell de registre i vegeu els nous missatges al moment:"
 msgid "Select files"
 msgstr "Seleccioneu els fitxers"
 
-#: scripts/services/EditUriBuiltins.js:1340 templates/backends/pcloud.html:2
-#: templates/backends/s3.html:8 templates/backends/sia.html:2
+#: templates/backends/pcloud.html:2 templates/backends/s3.html:8
 #: templates/backends/smb.html:17
 msgid "Server"
 msgstr "Servidor"
@@ -1808,10 +1794,6 @@ msgstr "El servidor està pausat actualment,"
 #: scripts/controllers/HomeController.js:22
 msgid "Server is currently paused, do you want to resume now?"
 msgstr "El servidor està pausat actualment, voleu reprendre la tasca ara?"
-
-#: templates/backends/sia.html:10
-msgid "Server password"
-msgstr "Contrasenya del servidor"
 
 #: scripts/controllers/HomeController.js:22
 msgid "Server paused"
@@ -1841,10 +1823,6 @@ msgstr "Mostra el registre"
 #: templates/addoredit.html:135
 msgid "Show treeview"
 msgstr "Mostra la vista en arbre"
-
-#: templates/backends/sia.html:11
-msgid "Sia server password"
-msgstr "Contrasenya del servidor de Sia"
 
 #: templates/addoredit.html:326
 msgid "Smart backup retention"
@@ -1880,7 +1858,7 @@ msgstr ""
 "Compilacions específiques només per a desenvolupadors. No ho feu servir amb "
 "dades importants."
 
-#: scripts/services/SystemInfo.js:88
+#: scripts/services/SystemInfo.js:87
 msgid "Standard protocols"
 msgstr "Protocols estàndard"
 
@@ -1992,10 +1970,10 @@ msgstr "Fase de comprovació"
 msgid "Test connection"
 msgstr "Comprova la connexió"
 
-#: scripts/services/EditUriBuiltins.js:1296
-#: scripts/services/EditUriBuiltins.js:1312
-#: scripts/services/EditUriBuiltins.js:1433
-#: scripts/services/EditUriBuiltins.js:1449
+#: scripts/services/EditUriBuiltins.js:1262
+#: scripts/services/EditUriBuiltins.js:1278
+#: scripts/services/EditUriBuiltins.js:1383
+#: scripts/services/EditUriBuiltins.js:1399
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
@@ -2014,7 +1992,7 @@ msgstr ""
 "La còpia de seguretat era temporal i ja no existeix, per la qual cosa s'han "
 "perdut les dades del registre"
 
-#: scripts/services/EditUriBuiltins.js:1268
+#: scripts/services/EditUriBuiltins.js:1234
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 "El nom del contenidor ha d'estar en minúscules; voleu convertir-lo "
@@ -2102,14 +2080,14 @@ msgstr ""
 "La classe d'emmagatzematge afecta la disponibilitat i el preu dels fitxers "
 "emmagatzemats"
 
-#: scripts/controllers/RestoreDirectController.js:102
+#: scripts/controllers/RestoreDirectController.js:108
 msgid ""
 "The target folder contains encrypted files, please supply the passphrase"
 msgstr ""
 "La carpeta de destinació conté fitxers encriptats; introduïu-ne la "
 "contrasenya"
 
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:61
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
@@ -2257,7 +2235,7 @@ msgstr "Dades d'usuari"
 msgid "User domain name"
 msgstr "Nom de domini de l'usuari"
 
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:61
 msgid "User has too many permissions"
 msgstr "L'usuari té massa permisos"
 
@@ -2265,9 +2243,9 @@ msgstr "L'usuari té massa permisos"
 msgid "User interface settings"
 msgstr "Paràmetres de la interfície d'usuari"
 
-#: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1199
-#: scripts/services/EditUriBuiltins.js:1331 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1076
+#: scripts/services/EditUriBuiltins.js:1165
+#: scripts/services/EditUriBuiltins.js:1297 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -2360,9 +2338,9 @@ msgstr "Anys"
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "Sí"
 
@@ -2442,7 +2420,7 @@ msgstr ""
 msgid "You must choose at least one source folder"
 msgstr "Heu de triar com a mínim una carpeta d'origen"
 
-#: scripts/services/EditUriBuiltins.js:1210
+#: scripts/services/EditUriBuiltins.js:1176
 msgid "You must enter a domain name to use v3 API"
 msgstr "Heu d'introduir un nom de domini per fer servir l'API v3"
 
@@ -2454,7 +2432,7 @@ msgstr "Heu d'introduir un nom per a la còpia de seguretat"
 msgid "You must enter a passphrase or disable encryption"
 msgstr "Heu d'introduir una contrasenya o desactivar el xifratge"
 
-#: scripts/services/EditUriBuiltins.js:1207
+#: scripts/services/EditUriBuiltins.js:1173
 msgid "You must enter a password to use v3 API"
 msgstr "Heu d'introduir una contrasenya per fer servir l'API v3"
 
@@ -2463,7 +2441,7 @@ msgid "You must enter a positive number of backups to keep"
 msgstr ""
 "Heu d'introduir un nombre positiu de còpies de seguretat que voleu preservar"
 
-#: scripts/services/EditUriBuiltins.js:1213
+#: scripts/services/EditUriBuiltins.js:1179
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr "Heu d'introduir un nom d'inquilí (projecte) per fer servir l'API v3"
 
@@ -2489,11 +2467,11 @@ msgstr "Heu d'introduir el nom d'usuari"
 msgid "You must fill in {{field}}"
 msgstr "Heu d'introduir el camp «{{field}}»"
 
-#: scripts/services/EditUriBuiltins.js:1203
+#: scripts/services/EditUriBuiltins.js:1169
 msgid "You must select or fill in the AuthURI"
 msgstr "Heu de triar o introduir l'AuthURI"
 
-#: scripts/services/EditUriBuiltins.js:1245
+#: scripts/services/EditUriBuiltins.js:1211
 msgid "You must select or fill in the server"
 msgstr "Heu de triar o introduir el servidor"
 
@@ -2531,7 +2509,7 @@ msgstr "personalitzat"
 msgid "resume now"
 msgstr "reprèn ara"
 
-#: scripts/services/EditUriBuiltins.js:1180
+#: scripts/services/EditUriBuiltins.js:1146
 msgid "unless you are explicitly specifying --group-id"
 msgstr "excepte si especifiqueu explícitament el paràmetre --group-id"
 
