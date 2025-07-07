@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-21 12:54+0200\n"
+"POT-Creation-Date: 2025-07-07 13:36+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: axez85 <dr@davidaslan.se>, 2025\n"
 "Language-Team: Swedish (Sweden) (https://app.transifex.com/duplicati/teams/67655/sv_SE/)\n"
@@ -117,7 +117,7 @@ msgstr "Avbrutet"
 
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
-#: Library/Backend/Jottacloud/Jottacloud.cs:314
+#: Library/Backend/Jottacloud/Jottacloud.cs:319
 #: Library/Backend/SMB/SMBShareConnection.cs:361
 msgid "The requested file does not exist"
 msgstr "Den efterfrågade filen finns inte"
@@ -145,11 +145,11 @@ msgstr ""
 msgid "Backup configuration changed"
 msgstr "Konfigurationen för säkerhetskopian har ändrats"
 
-#: Library/Backend/OpenStack/Strings.cs:29
+#: Library/Backend/OpenStack/Strings.cs:28
 msgid "OpenStack Simple Storage"
 msgstr "OpenStack Simple Storage"
 
-#: Library/Backend/OpenStack/Strings.cs:30
+#: Library/Backend/OpenStack/Strings.cs:29
 #, csharp-format
 msgid "Missing required option: {0}"
 msgstr "Det obligatoriska alternativet saknas: {0}"
@@ -305,14 +305,6 @@ msgstr "B2 Cloud Storage Application Key"
 msgid "B2 Cloud Storage Account ID"
 msgstr "B2 Cloud Storage Account ID"
 
-#: Library/Backend/Sia/Strings.cs:29
-msgid "Backup path"
-msgstr "Sökväg för backup"
-
-#: Library/Backend/Sia/Strings.cs:31
-msgid "Sia password"
-msgstr "Sia-lösenord"
-
 #: Library/Backend/OneDrive/Strings.cs:40
 msgid "Microsoft OneDrive"
 msgstr "Microsoft OneDrive"
@@ -334,11 +326,11 @@ msgstr "Bucket namn"
 msgid "Azure blob"
 msgstr "Azure blob"
 
-#: Library/Backend/Jottacloud/Strings.cs:27
+#: Library/Backend/Jottacloud/Strings.cs:29
 msgid "Jottacloud"
 msgstr "Jottacloud"
 
-#: Library/Backend/Jottacloud/Strings.cs:31
+#: Library/Backend/Jottacloud/Strings.cs:33
 msgid "Failed to upload file"
 msgstr "Misslyckades att ladda upp fil"
 
@@ -476,19 +468,19 @@ msgstr ""
 "Porten som webbservern lyssnar på. Flera värden kan anges med ett komma "
 "emellan."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:253
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:264
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Ställ in tiden efter vilken loggdata ska rensas från databasen."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:254
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:265
 msgid "Clean up old log data"
 msgstr "Ta bort gammal data från loggarna"
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:89
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:96
 msgid "Temporary storage folder"
 msgstr "Mapp för temporär lagring"
 
-#: Library/RestAPI/Strings.cs:91 Library/RestAPI/Strings.cs:120
+#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:121
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Servern har startat och lyssnar på {0}, port {1}"
@@ -511,56 +503,56 @@ msgstr "säkerhetskopia"
 msgid "Unable to determine database format: {0}"
 msgstr "Kan inte avgöra databas-formatet: {0}"
 
-#: Library/Main/Strings.cs:32
+#: Library/Main/Strings.cs:33
 msgid "No source folders specified for backup"
 msgstr "Inga källmallar angivna för backup"
 
-#: Library/Main/Strings.cs:40
+#: Library/Main/Strings.cs:41
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Ogiltig sökväg: \"{0}\" ({1})"
 
-#: Library/Main/Strings.cs:55
+#: Library/Main/Strings.cs:58
 msgid "Restore to another folder"
 msgstr "Återställ till en annan mapp"
 
-#: Library/Main/Strings.cs:59
+#: Library/Main/Strings.cs:62
 msgid "Max number of kilobytes to download pr. second"
 msgstr "Maximalt antal kilobyte att ladda ned per sekund"
 
-#: Library/Main/Strings.cs:63
+#: Library/Main/Strings.cs:70
 msgid "Disable encryption"
 msgstr "Inaktivera kryptering"
 
-#: Library/Main/Strings.cs:67
+#: Library/Main/Strings.cs:74
 msgid "Passphrase used to encrypt backups"
 msgstr "Lösenordsfras för att kryptera säkerhetskopior"
 
-#: Library/Main/Strings.cs:73
+#: Library/Main/Strings.cs:80
 msgid "Show all versions"
 msgstr "Visa alla versioner"
 
-#: Library/Main/Strings.cs:77
+#: Library/Main/Strings.cs:84
 msgid "Show folder contents"
 msgstr "Vissa mappens innehåll"
 
-#: Library/Main/Strings.cs:79
+#: Library/Main/Strings.cs:86
 msgid "Time to wait between retries"
 msgstr "Tiden att vänta mellan varje försök"
 
-#: Library/Main/Strings.cs:94
+#: Library/Main/Strings.cs:101
 msgid "Limit the size of the volumes"
 msgstr "Begränsa storleken på volymerna"
 
-#: Library/Main/Strings.cs:102
+#: Library/Main/Strings.cs:109
 msgid "Select what module to use for compression"
 msgstr "Välj vilken modul som ska användas för komprimering"
 
-#: Library/Main/Strings.cs:104
+#: Library/Main/Strings.cs:111
 msgid "Select what module to use for encryption"
 msgstr "Välj vilken modul som ska användas för kryptering"
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:213
 msgid "Use local file data when restoring"
 msgstr "Använd lokala data vid återställning"
 
@@ -572,11 +564,11 @@ msgstr "Bekräfta krypteringslösenord"
 msgid "Enter encryption passphrase"
 msgstr "Ange krypteringslösenord"
 
-#: Library/Modules/Builtin/Strings.cs:98
+#: Library/Modules/Builtin/Strings.cs:80
 msgid "Send mail"
 msgstr "Skicka mail"
 
-#: Library/Modules/Builtin/Strings.cs:111
+#: Library/Modules/Builtin/Strings.cs:93
 msgid "SMTP Password"
 msgstr "SMTP Lösenord"
 

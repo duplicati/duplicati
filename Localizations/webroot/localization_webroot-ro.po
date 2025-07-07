@@ -21,17 +21,17 @@ msgstr "- alegeți o opțiune -"
 msgid "...loading..."
 msgstr "...se încarcă..."
 
-#: scripts/services/EditUriBuiltins.js:1241 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1207 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWS Access ID"
 
-#: scripts/services/EditUriBuiltins.js:1242 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1208 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWS Access Key"
 
-#: scripts/services/EditUriBuiltins.js:158
+#: scripts/services/EditUriBuiltins.js:157
 msgid "AWS IAM Policy"
 msgstr "Politica AWS IAM"
 
@@ -43,7 +43,7 @@ msgstr "Despre"
 msgid "About {{appname}}"
 msgstr "Despre {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1190
+#: scripts/services/EditUriBuiltins.js:1156
 msgid "Access Key"
 msgstr "Cheie de acces"
 
@@ -55,7 +55,7 @@ msgstr "Acces interzis"
 msgid "Access to user interface"
 msgstr "Accesul la interfața cu utilizatorul"
 
-#: scripts/services/EditUriBuiltins.js:1189 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1155 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Nume de cont"
@@ -88,8 +88,8 @@ msgstr "Adaugă calea"
 msgid "Added"
 msgstr "Adăugat"
 
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
 msgid "Adjust bucket name?"
 msgstr "Modificați numele găleții?"
 
@@ -172,8 +172,8 @@ msgstr "Aplicații"
 msgid "As Command-line"
 msgstr "Ca linie de comandă"
 
-#: scripts/services/EditUriBuiltins.js:1147
-#: scripts/services/EditUriBuiltins.js:1157 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1113
+#: scripts/services/EditUriBuiltins.js:1123 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -203,11 +203,11 @@ msgstr "Fraza de acces generată automat"
 msgid "B2 Application Key"
 msgstr "B2 cheie de aplicație"
 
-#: scripts/services/EditUriBuiltins.js:1287
+#: scripts/services/EditUriBuiltins.js:1253
 msgid "B2 Cloud Storage Account ID"
 msgstr "B2 ID-ul contului de stocare în cloud"
 
-#: scripts/services/EditUriBuiltins.js:1288 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1254 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "B2 Cheia aplicației de stocare cloud"
 
@@ -248,14 +248,14 @@ msgstr "Browser default"
 msgid "Bucket create location"
 msgstr "Locația unde va fi creată găleata"
 
-#: scripts/services/EditUriBuiltins.js:1200
-#: scripts/services/EditUriBuiltins.js:1240
-#: scripts/services/EditUriBuiltins.js:1286
-#: scripts/services/EditUriBuiltins.js:1300
-#: scripts/services/EditUriBuiltins.js:1363
-#: scripts/services/EditUriBuiltins.js:1369
-#: scripts/services/EditUriBuiltins.js:1425
-#: scripts/services/EditUriBuiltins.js:1437 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1166
+#: scripts/services/EditUriBuiltins.js:1206
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1266
+#: scripts/services/EditUriBuiltins.js:1313
+#: scripts/services/EditUriBuiltins.js:1319
+#: scripts/services/EditUriBuiltins.js:1375
+#: scripts/services/EditUriBuiltins.js:1387 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -313,9 +313,9 @@ msgstr "Canar"
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
-#: scripts/services/EditUriBuiltins.js:62 templates/delete.html:54
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
 msgid "Cancel"
@@ -442,7 +442,7 @@ msgstr "Conexiunea a fost pierdută"
 msgid "Connection worked!"
 msgstr "Conexiunea a funcționat!"
 
-#: scripts/services/EditUriBuiltins.js:1191 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1157 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "Numele containerului"
@@ -495,7 +495,7 @@ msgstr "Creează un raport de defecțiune"
 msgid "Create folder?"
 msgstr "Creează director?"
 
-#: scripts/services/EditUriBuiltins.js:141
+#: scripts/services/EditUriBuiltins.js:140
 msgid "Created new limited user"
 msgstr "S-a creat un nou utilizator cu drepturi limitate"
 
@@ -503,7 +503,7 @@ msgstr "S-a creat un nou utilizator cu drepturi limitate"
 msgid "Creating bug report …"
 msgstr "Se creează un raport de defecțiuni ..."
 
-#: scripts/services/EditUriBuiltins.js:127
+#: scripts/services/EditUriBuiltins.js:126
 msgid "Creating new user with limited access …"
 msgstr "Se creează un nou utilizator cu acces limitat ..."
 
@@ -842,8 +842,8 @@ msgstr "Introduceți calea de destinație"
 #: scripts/controllers/RestoreController.js:423
 #: scripts/controllers/RestoreController.js:431
 #: scripts/controllers/RestoreController.js:90
-#: scripts/controllers/RestoreDirectController.js:106
-#: scripts/controllers/RestoreDirectController.js:72
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:142
 #: scripts/directives/backupEditUri.js:163
 #: scripts/directives/backupEditUri.js:197
@@ -941,8 +941,8 @@ msgstr "Eroare de conexiune:"
 #: scripts/controllers/RestoreController.js:332
 #: scripts/controllers/RestoreController.js:431
 #: scripts/controllers/RestoreController.js:90
-#: scripts/controllers/RestoreDirectController.js:106
-#: scripts/controllers/RestoreDirectController.js:72
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
 #: scripts/services/LogService.js:29
 msgid "Failed to connect: {{message}}"
 msgstr "Nu s-a putut conecta: {{message}}"
@@ -996,9 +996,8 @@ msgstr "Pliant"
 #: templates/backends/cos.html:30 templates/backends/e2.html:16
 #: templates/backends/file.html:22 templates/backends/file.html:6
 #: templates/backends/jottacloud.html:2 templates/backends/mega.html:2
-#: templates/backends/s3.html:60 templates/backends/sia.html:6
-#: templates/backends/storj.html:41 templates/restore.html:105
-#: templates/restore.html:89
+#: templates/backends/s3.html:60 templates/backends/storj.html:41
+#: templates/restore.html:105 templates/restore.html:89
 msgid "Folder path"
 msgstr "Dosarul de cale"
 
@@ -1123,17 +1122,13 @@ msgstr "Includeți expresia regulată"
 msgid "Information"
 msgstr "informație"
 
-#: scripts/services/EditUriBuiltins.js:1344
-msgid "Invalid characters in path"
-msgstr "Caractere nevalide în cale"
-
 #: scripts/controllers/EditBackupController.js:292
 #: scripts/controllers/EditBackupController.js:299
 #: scripts/controllers/EditBackupController.js:309
 msgid "Invalid retention time"
 msgstr "Timp de retenție nevalid"
 
-#: scripts/services/EditUriBuiltins.js:1115
+#: scripts/services/EditUriBuiltins.js:1081
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1186,7 +1181,7 @@ msgstr "Încărcați date mai vechi"
 msgid "Local database path:"
 msgstr "Calea bazei de date locale:"
 
-#: scripts/services/SystemInfo.js:87
+#: scripts/services/SystemInfo.js:86
 msgid "Local storage"
 msgstr "Depozit local"
 
@@ -1248,14 +1243,6 @@ msgstr "Microsoft SQL Database:"
 msgid "Microsoft SQL Databases"
 msgstr "Baze de date Microsoft SQL"
 
-#: templates/backends/sia.html:14
-msgid "Minimum redundancy"
-msgstr "Redundanță minimă"
-
-#: scripts/services/EditUriBuiltins.js:1348
-msgid "Minimum redundancy is 1.0"
-msgstr "Redundanța minimă este de 1,0"
-
 #: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
 #: templates/settings.html:90
 msgid "Minutes"
@@ -1313,7 +1300,7 @@ msgstr "Nume"
 msgid "Never"
 msgstr "Nu"
 
-#: scripts/services/EditUriBuiltins.js:141
+#: scripts/services/EditUriBuiltins.js:140
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
@@ -1357,9 +1344,9 @@ msgstr "Data viitoare"
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "Nu"
 
@@ -1417,7 +1404,7 @@ msgstr "Nici unul / dezactivat"
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/DialogService.js:28 scripts/services/DialogService.js:50
 #: scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:141 templates/restore.html:147
+#: scripts/services/EditUriBuiltins.js:140 templates/restore.html:147
 #: templates/settings.html:206
 msgid "OK"
 msgstr "O.K"
@@ -1451,7 +1438,7 @@ msgstr "Opțiuni"
 msgid "Original location"
 msgstr "Locația originală"
 
-#: scripts/services/SystemInfo.js:90
+#: scripts/services/SystemInfo.js:89
 msgid "Others"
 msgstr "Alții"
 
@@ -1476,7 +1463,7 @@ msgstr "Fraza de acces a fost modificată"
 msgid "Passphrases are not matching"
 msgstr "Frazele de acces nu se potrivesc"
 
-#: scripts/services/EditUriBuiltins.js:1332 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1298 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -1539,7 +1526,7 @@ msgstr "Anterior"
 msgid "ProjectID is optional if the bucket exist"
 msgstr "ID-ul proiectului este opțional dacă există o cupă"
 
-#: scripts/services/SystemInfo.js:89
+#: scripts/services/SystemInfo.js:88
 msgid "Proprietary"
 msgstr "Proprietate"
 
@@ -1681,8 +1668,7 @@ msgstr "Selectați un nivel de jurnal și vedeți mesajele așa cum se întâmpl
 msgid "Select files"
 msgstr "Selectati fisierele"
 
-#: scripts/services/EditUriBuiltins.js:1340 templates/backends/pcloud.html:2
-#: templates/backends/s3.html:8 templates/backends/sia.html:2
+#: templates/backends/pcloud.html:2 templates/backends/s3.html:8
 #: templates/backends/smb.html:17
 msgid "Server"
 msgstr "Server"
@@ -1702,10 +1688,6 @@ msgstr "Serverul este în prezent întrerupt,"
 #: scripts/controllers/HomeController.js:22
 msgid "Server is currently paused, do you want to resume now?"
 msgstr "Serverul este în prezent întrerupt, doriți să îl reluați acum?"
-
-#: templates/backends/sia.html:10
-msgid "Server password"
-msgstr "Parola serverului"
 
 #: scripts/controllers/HomeController.js:22
 msgid "Server paused"
@@ -1736,10 +1718,6 @@ msgstr "Arată jurnal"
 msgid "Show treeview"
 msgstr "Afișați arborele"
 
-#: templates/backends/sia.html:11
-msgid "Sia server password"
-msgstr "Parola serverului Sia"
-
 #: templates/backends/openstack.html:45
 msgid ""
 "Some OpenStack providers allow an API key instead of a password and tenant "
@@ -1764,7 +1742,7 @@ msgstr "Sursă de directoare"
 msgid "Source:"
 msgstr "Sursă:"
 
-#: scripts/services/SystemInfo.js:88
+#: scripts/services/SystemInfo.js:87
 msgid "Standard protocols"
 msgstr "Protocoale standard"
 
@@ -1854,7 +1832,7 @@ msgstr "Fișiere temporare"
 msgid "Test connection"
 msgstr "Test de conexiune"
 
-#: scripts/services/EditUriBuiltins.js:1268
+#: scripts/services/EditUriBuiltins.js:1234
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 "Numele găleții ar trebui să fie toate literele mici, să se convertească "
@@ -1921,12 +1899,12 @@ msgid "The storage class affects the availability and price for a stored file"
 msgstr ""
 "Clasa de stocare afectează disponibilitatea și prețul unui fișier stocat"
 
-#: scripts/controllers/RestoreDirectController.js:102
+#: scripts/controllers/RestoreDirectController.js:108
 msgid ""
 "The target folder contains encrypted files, please supply the passphrase"
 msgstr "Dosarul țintă conține fișiere criptate, furnizați expresia de acces"
 
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:61
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
@@ -2040,7 +2018,7 @@ msgstr "Inutil"
 msgid "User data"
 msgstr "Datele utilizatorului"
 
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:61
 msgid "User has too many permissions"
 msgstr "Utilizatorul are prea multe permisiuni"
 
@@ -2048,9 +2026,9 @@ msgstr "Utilizatorul are prea multe permisiuni"
 msgid "User interface settings"
 msgstr "Setările interfeței utilizatorului"
 
-#: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1199
-#: scripts/services/EditUriBuiltins.js:1331 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1076
+#: scripts/services/EditUriBuiltins.js:1165
+#: scripts/services/EditUriBuiltins.js:1297 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -2135,9 +2113,9 @@ msgstr "Ani"
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "da"
 
@@ -2249,11 +2227,11 @@ msgstr "Trebuie să completați numele de utilizator"
 msgid "You must fill in {{field}}"
 msgstr "Trebuie să completați {{field}}"
 
-#: scripts/services/EditUriBuiltins.js:1203
+#: scripts/services/EditUriBuiltins.js:1169
 msgid "You must select or fill in the AuthURI"
 msgstr "Trebuie să selectați sau să completați AuthURI"
 
-#: scripts/services/EditUriBuiltins.js:1245
+#: scripts/services/EditUriBuiltins.js:1211
 msgid "You must select or fill in the server"
 msgstr "Trebuie să selectați sau să completați serverul"
 
