@@ -76,7 +76,7 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
         client.Timeout = Timeout.InfiniteTimeSpan;
         return client;
     }
-    
+
     public OAuthHelperHttpClient(string authid, string servicename, string oauthurl, HttpClient httpClient = null, string useragent = null)
         : base(httpClient ?? CreateHttpClientWithInfiniteTimeout())
     {
@@ -115,6 +115,9 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
                 HttpResponseMessage response = null;
                 try
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                        throw new OperationCanceledException("Operation was cancelled", cancellationToken);
+
                     using var request = await CreateRequestAsync(_OAuthUrl, HttpMethod.Get, false, cancellationToken).ConfigureAwait(false);
 
                     return await Utility.Utility.WithTimeout(AUTHENTICATION_TIMEOUT, cancellationToken, async ct =>
@@ -133,6 +136,9 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
                 }
                 catch (Exception ex)
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                        throw new OperationCanceledException("Operation was cancelled", ex, cancellationToken);
+
                     var clientError = false;
 
                     try
@@ -149,9 +155,10 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
                         // ignored
                     }
 
+                    string msg = null;
                     if (response != null && response.Headers.Contains("X-Reason"))
                     {
-                        var msg = response.Headers.GetValues("X-Reason").FirstOrDefault();
+                        msg = response.Headers.GetValues("X-Reason").FirstOrDefault();
 
                         if (string.IsNullOrWhiteSpace(msg))
                             msg = response.StatusCode.ToString();
@@ -174,10 +181,12 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
                     if (retries >= (clientError ? 1 : MAX_AUTHORIZATION_RETRIES))
                     {
                         await AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
+                        if (!string.IsNullOrWhiteSpace(msg))
+                            throw new Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", ex);
                         throw;
                     }
 
-                    Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, retries)), cancellationToken).ConfigureAwait(false);
                     retries++;
                 }
                 finally
