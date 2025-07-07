@@ -305,7 +305,7 @@ namespace Duplicati.Server
                         //If time is exceeded, run it now
                         if (start <= DateTime.UtcNow)
                         {
-                            var jobsToRun = new List<Server.Runner.IRunnerData>();
+                            var collectedJobs = new List<(DateTime When, Server.Runner.IRunnerData Job)>();
                             //TODO: Cache this to avoid frequent lookups
                             foreach (var id in m_dataConnection.GetBackupIDsForTags(sc.Tags).Distinct()
                                          .Select(x => x.ToString()))
@@ -355,7 +355,7 @@ namespace Duplicati.Server
                                             var job = Server.Runner.CreateTask(Serialization.DuplicatiOperation.Backup, entry, taskOptions);
                                             job.OnStarting = () => OnStartingWork(job);
                                             job.OnFinished = (_) => OnCompleted(job);
-                                            jobsToRun.Add(job);
+                                            collectedJobs.Add((start, job));
                                         }
                                     }
                                 }
@@ -375,6 +375,10 @@ namespace Duplicati.Server
                                     "Scheduler failed to find next date", ex);
                                 continue;
                             }
+
+                            var jobsToRun = collectedJobs.OrderBy(x => x.When)
+                                                 .Select(x => x.Job)
+                                                 .ToList();
 
                             var lastJob = jobsToRun.LastOrDefault();
                             if (lastJob != null)
