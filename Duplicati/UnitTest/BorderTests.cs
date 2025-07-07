@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -26,6 +26,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
 {
@@ -172,6 +173,28 @@ namespace Duplicati.UnitTest
             RunCommands(1024 * 10, modifyOptions: opts =>
             {
                 opts["disable-filetime-check"] = "true";
+            });
+        }
+
+        [Test]
+        [Category("Border")]
+        public void Run10kBackupRead()
+        {
+            if (!PermissionHelper.HasSeBackupPrivilege())
+                return;
+                
+            try
+            {
+                using var _ = Duplicati.Library.Snapshots.Windows.WindowsShimLoader.NewSeBackupPrivilegeScope();
+            }
+            catch (Exception ex)
+            {
+                return;
+            }
+
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
+                opts["backupread-policy"] = "required";
             });
         }
 

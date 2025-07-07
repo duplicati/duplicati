@@ -27,6 +27,7 @@ using System.IO;
 using System.Linq;
 using Alphaleonis.Win32.Vss;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Snapshots.Windows;
 
@@ -42,16 +43,15 @@ internal class AlphaVssBackup : ISnapshotProvider
     /// <summary>
     /// Creates a new snapshot implementation
     /// </summary>
-    /// <param name="components">The components to use</param>
-    private AlphaVssBackup(IVssBackupComponents components)
+    public AlphaVssBackup()
     {
-        _components = components;
+        _components = GetVssBackupComponents();
     }
 
     /// <inheritdoc/>
     public void EnableWriterClasses(Guid[] guids)
         => _components.EnableWriterClasses(guids);
-    
+
     /// <inheritdoc/>
     public void DisableWriterClasses(Guid[] guids)
         => _components.DisableWriterClasses(guids);
@@ -62,7 +62,7 @@ internal class AlphaVssBackup : ISnapshotProvider
     /// <inheritdoc/>
     public void FreeWriterMetadata()
         => _components.FreeWriterMetadata();
-    
+
     /// <inheritdoc/>
     public void VerifyWriters(Guid[] guids)
     {
@@ -100,7 +100,7 @@ internal class AlphaVssBackup : ISnapshotProvider
     /// <inheritdoc/>
     public bool IsVolumeSupported(string drive)
         => _components.IsVolumeSupported(drive);
-    
+
     /// <inheritdoc/>
     public Guid AddToSnapshotSet(string drive)
         => _components.AddToSnapshotSet(drive);
@@ -113,10 +113,6 @@ internal class AlphaVssBackup : ISnapshotProvider
     public void DeleteSnapshot(Guid shadowId, bool forceDelete)
         => _components.DeleteSnapshot(shadowId, forceDelete);
 
-    /// <inheritdoc/>
-    public static ISnapshotProvider Create()
-        => new AlphaVssBackup(GetVssBackupComponents());
-
     /// <summary>
     /// Creates a new AlphaVssBackupComponents instance and adds the context
     /// </summary>
@@ -124,7 +120,7 @@ internal class AlphaVssBackup : ISnapshotProvider
     private static IVssBackupComponents GetVssBackupComponents()
     {
         //Prepare the backup
-        IVssBackupComponents vssBackupComponents = CreateVssBackupComponents();
+        var vssBackupComponents = CreateVssBackupComponents();
         vssBackupComponents.InitializeForBackup(null);
         vssBackupComponents.SetContext(VssSnapshotContext.Backup);
         vssBackupComponents.SetBackupState(false, true, VssBackupType.Full, false);
@@ -162,7 +158,7 @@ internal class AlphaVssBackup : ISnapshotProvider
                     Paths = GetPathsFromComponent(component)
                 };
             }
-        }    
+        }
     }
 
     /// <summary>

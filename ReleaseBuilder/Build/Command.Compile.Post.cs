@@ -121,6 +121,7 @@ public static partial class Command
             "*.pdb",
             "*.mdb",
             "._*",
+            "Duplicati.WindowsModulesLoader.*",
             os == OSType.Windows ? "*.sh" : "*.bat",
             os == OSType.Windows ? "*.sh" : "*.ps1"
         ];
