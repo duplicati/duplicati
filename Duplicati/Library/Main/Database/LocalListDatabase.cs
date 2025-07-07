@@ -589,49 +589,39 @@ ORDER BY
         /// <returns>The entries that are unique roots</returns>
         public IList<IListFolderEntry> GetMinimalUniquePrefixEntries(long filesetId)
         {
-            var results = new List<IListFolderEntry>();
-
             using var cmd = m_connection.CreateCommand();
             cmd.SetCommandAndParameters(@"
-                WITH AllPaths AS (
-                    SELECT fl.""ID"" AS ""FileID"", 
-                        pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
-                        fl.""BlocksetID"", 
-                        b.""Length"", 
-                        fe.""Lastmodified""
-                    FROM ""FilesetEntry"" fe
-                    JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-                    JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
-                    LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
-                    WHERE fe.""FilesetID"" = @FilesetId
-                ),
-                RootCandidates AS (
-                    SELECT a1.*
-                    FROM AllPaths a1
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM AllPaths a2
-                        WHERE a2.""FullPath"" != a1.""FullPath""
-                        AND a1.""FullPath"" LIKE a2.""FullPath"" || '%'
-                    )
-                )
-                SELECT ""FullPath"", ""Length"",
-                    CASE WHEN ""BlocksetID"" = -100 THEN 1 ELSE 0 END AS ""IsDirectory"",
-                    CASE WHEN ""BlocksetID"" = -200 THEN 1 ELSE 0 END AS ""IsSymlink"",
-                    ""Lastmodified""
-                FROM RootCandidates
-                ORDER BY ""FullPath""
-            ");
-            cmd.SetParameterValue("@FilesetId", filesetId);
+                SELECT
+                    pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
+                    b.""Length"",
+                    CASE WHEN fl.""BlocksetID"" = -100 THEN 1 ELSE 0 END AS ""IsDirectory"",
+                    CASE WHEN fl.""BlocksetID"" = -200 THEN 1 ELSE 0 END AS ""IsSymlink"",
+                    fe.""Lastmodified""
+                FROM ""FilesetEntry"" fe
+                JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+                JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+                LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
+                WHERE fe.""FilesetID"" = @FilesetId
+                ORDER BY ""FullPath"";
+            ")
+                .SetParameterValue("@FilesetId", filesetId);
+
+            string? lastRoot = null;
+            var results = new List<IListFolderEntry>();
 
             foreach (var rd in cmd.ExecuteReaderEnumerable())
             {
                 var path = rd.ConvertValueToString(0) ?? string.Empty;
-                var size = rd.ConvertValueToInt64(1, -1);
-                var isDir = rd.GetInt32(2) != 0;
-                var isSymlink = rd.GetInt32(3) != 0;
-                var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
+                if (lastRoot == null || !path.StartsWith(lastRoot, StringComparison.Ordinal))
+                {
+                    lastRoot = path;
+                    var size = rd.ConvertValueToInt64(1, -1);
+                    var isDir = rd.GetInt32(2) != 0;
+                    var isSymlink = rd.GetInt32(3) != 0;
+                    var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
 
-                results.Add(new FolderEntry(path, size, isDir, isSymlink, lastModified));
+                    results.Add(new FolderEntry(path, size, isDir, isSymlink, lastModified));
+                }
             }
 
             return results;
