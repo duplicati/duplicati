@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -83,23 +85,23 @@ namespace Duplicati.GUI.TrayIcon
         private const string STATUS_WINDOW = "index.html";
         private const string SIGNIN_WINDOW = "signin.html";
 
-        private record BackgroundRequest(string Method, string Endpoint, string Body, TimeSpan? Timeout = null);
+        private record BackgroundRequest(string Method, string Endpoint, string? Body, TimeSpan? Timeout = null);
 
         private readonly string m_apiUri;
         private readonly string m_baseUri;
         private string m_password;
-        private string m_accesstoken;
+        private string? m_accesstoken;
         private bool m_isTryingWithPassword;
 
-        public Func<IServerStatus, Task> OnStatusUpdated;
-        public Action ConnectionClosed;
+        public Func<IServerStatus, Task>? OnStatusUpdated;
+        public Action? ConnectionClosed;
         private int _connectionClosedInvoked;
         public long m_lastNotificationId = -1;
         public DateTime m_firstNotificationTime;
 
         public delegate void NewNotificationDelegate(INotification notification);
 
-        public event NewNotificationDelegate OnNotification;
+        public event NewNotificationDelegate? OnNotification;
 
         private long m_lastEventId = 0;
         private long m_lastDataUpdateId = -1;
@@ -123,13 +125,14 @@ namespace Duplicati.GUI.TrayIcon
         private readonly IChannel<BackgroundRequest> m_workQueue =
             Channel.Create<BackgroundRequest>(name: "TrayIconRequestQueue");
 
-        private readonly IApplicationSettings _applicationSettings;
+        private readonly EventWaitHandle _applicationExitEvent;
 
-        public HttpServerConnection(IApplicationSettings applicationSettings, System.Uri server, string password,
+        public HttpServerConnection(IApplicationSettings? applicationSettings, System.Uri server, string password,
             Program.PasswordSource passwordSource, bool disableTrayIconLogin, string acceptedHostCertificate,
             Dictionary<string, string> options)
         {
-            _applicationSettings = applicationSettings;
+            _applicationExitEvent = applicationSettings?.ApplicationExitEvent
+                ?? new ManualResetEvent(false);
 
             m_baseUri = Util.AppendDirSeparator(server.ToString(), "/");
 
@@ -145,16 +148,18 @@ namespace Duplicati.GUI.TrayIcon
 
             var acceptedCertificates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (!string.IsNullOrWhiteSpace(acceptedHostCertificate))
-                acceptedCertificates.UnionWith(acceptedHostCertificate.Split(new char[] { ',', ';' },
+                acceptedCertificates.UnionWith(acceptedHostCertificate.Split([',', ';'],
                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
             HTTPCLIENT = new(new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback = acceptedCertificates switch
                 {
-                    { Count: 0 } => null,
+                    { Count: 0 } or null => null,
+
                     { } when acceptedCertificates.Contains("*") => HttpClientHandler
                         .DangerousAcceptAnyServerCertificateValidator,
+
                     _ => (sender, cert, chain, sslPolicyErrors) =>
                     {
                         if (sslPolicyErrors == SslPolicyErrors.None)
@@ -176,7 +181,7 @@ namespace Duplicati.GUI.TrayIcon
                     UserAgent =
                     {
                         new ProductInfoHeaderValue("Duplicati-TrayIcon-Monitor",
-                            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString())
+                            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0")
                     }
                 }
             };
@@ -259,7 +264,7 @@ namespace Duplicati.GUI.TrayIcon
             var errorCount = 0;
             var hasConnected = false;
 
-            while (!m_stopToken.IsCancellationRequested && !_applicationSettings.ApplicationExitEvent.WaitOne(0))
+            while (!m_stopToken.IsCancellationRequested && !_applicationExitEvent.WaitOne(0))
             {
                 try
                 {
@@ -272,7 +277,7 @@ namespace Duplicati.GUI.TrayIcon
                         {
                             // Wait for either cancellation or ManualResetEvent
                             WaitHandle.WaitAny(
-                                [m_stopToken.Token.WaitHandle, _applicationSettings.ApplicationExitEvent]);
+                                [m_stopToken.Token.WaitHandle, _applicationExitEvent]);
                         });
 
                         // Await the first task to complete (delay or wait handle)
@@ -281,7 +286,7 @@ namespace Duplicati.GUI.TrayIcon
                         // Check if cancellation was requested
                         m_stopToken.Token.ThrowIfCancellationRequested();
 
-                        if (_applicationSettings.ApplicationExitEvent.WaitOne(0))
+                        if (_applicationExitEvent.WaitOne(0))
                         {
                             return; // Exit the loop if ManualResetEvent is signaled
                         }
@@ -355,7 +360,7 @@ namespace Duplicati.GUI.TrayIcon
 
         private sealed record SigninResponse(string AccessToken);
 
-        private async Task<T> PerformRequestAsync<T>(string method, string urlfragment, string body, TimeSpan? timeout)
+        private async Task<T> PerformRequestAsync<T>(string method, string urlfragment, string? body, TimeSpan? timeout)
         {
             if (string.IsNullOrWhiteSpace(m_accesstoken) && !urlfragment.StartsWith("/auth/"))
                 await ObtainAccessTokenAsync().ConfigureAwait(false);
@@ -429,7 +434,7 @@ namespace Duplicati.GUI.TrayIcon
                     JsonSerializer.Serialize(new { SigninToken = token }), null).ConfigureAwait(false)).AccessToken;
         }
 
-        private async Task<T> PerformRequestInternalAsync<T>(string method, string endpoint, string body,
+        private async Task<T> PerformRequestInternalAsync<T>(string method, string endpoint, string? body,
             TimeSpan? timeout)
         {
             var request = new HttpRequestMessage(new HttpMethod(method), new Uri(m_apiUri + endpoint));
@@ -450,14 +455,14 @@ namespace Duplicati.GUI.TrayIcon
             var waitHandleTask = Task.Run(() =>
             {
                 // Wait for either cancellation or ManualResetEvent
-                WaitHandle.WaitAny([cts.Token.WaitHandle, _applicationSettings.ApplicationExitEvent]);
+                WaitHandle.WaitAny([cts.Token.WaitHandle, _applicationExitEvent]);
             });
 
             // Await the first task to complete (HTTP request or wait handle)
             await Task.WhenAny(sendTask, waitHandleTask).ConfigureAwait(false);
 
             // Check if cancellation was requested or ManualResetEvent was signaled
-            if (cts.Token.IsCancellationRequested || _applicationSettings.ApplicationExitEvent.WaitOne(0))
+            if (cts.Token.IsCancellationRequested || _applicationExitEvent.WaitOne(0))
             {
                 cts.Token.ThrowIfCancellationRequested(); // Throws OperationCanceledException if canceled
                 throw new OperationCanceledException(
@@ -472,15 +477,16 @@ namespace Duplicati.GUI.TrayIcon
                 return (T)(object)await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
 
             await using var stream = await response.Content.ReadAsStreamAsync(cts.Token).ConfigureAwait(false);
-            return await JsonSerializer.DeserializeAsync<T>(stream, serializerOptions, cts.Token).ConfigureAwait(false);
+            return await JsonSerializer.DeserializeAsync<T>(stream, serializerOptions, cts.Token).ConfigureAwait(false)
+                ?? throw new JsonException("Failed to deserialize response.");
         }
 
-        private void ExecuteAndNotify(string method, string urifragment, string body)
+        private void ExecuteAndNotify(string method, string urifragment, string? body)
         {
             m_workQueue.WriteNoWait(new BackgroundRequest(method, urifragment, body, null));
         }
 
-        public void Pause(string duration = null)
+        public void Pause(string? duration = null)
         {
             ExecuteAndNotify("POST",
                 $"/serverstate/pause{(string.IsNullOrWhiteSpace(duration) ? "" : $"?duration={duration}")}", null);
@@ -503,9 +509,9 @@ namespace Duplicati.GUI.TrayIcon
             => (await PerformRequestInternalAsync<SigninTokenResponse>("POST", "/auth/issuesignintoken",
                 JsonSerializer.Serialize(new { Password = password }), null).ConfigureAwait(false)).Token;
 
-        private async Task<string> ObtainSignInTokenAsync()
+        private async Task<string?> ObtainSignInTokenAsync()
         {
-            string signinjwt = null;
+            string? signinjwt = null;
 
             // If we host the server, issue the token from the service
             var sp = Server.Program.DuplicatiWebserver?.Provider;
@@ -527,7 +533,7 @@ namespace Duplicati.GUI.TrayIcon
                 var cfg = Program.databaseConnection.ApplicationSettings.JWTConfig;
                 if (!string.IsNullOrWhiteSpace(cfg))
                     signinjwt =
-                        new JWTTokenProvider(JsonSerializer.Deserialize<JWTConfig>(cfg)).CreateSigninToken("trayicon");
+                        new JWTTokenProvider(JsonSerializer.Deserialize<JWTConfig>(cfg) ?? throw new JsonException("Failed to deserialize JWT config")).CreateSigninToken("trayicon");
             }
 
             // If we know the password, issue a token from the API
@@ -539,7 +545,7 @@ namespace Duplicati.GUI.TrayIcon
 
         public async Task<string> GetStatusWindowURLAsync()
         {
-            string signinjwt = null;
+            string? signinjwt = null;
             if (!m_disableTrayIconLogin)
             {
                 try
