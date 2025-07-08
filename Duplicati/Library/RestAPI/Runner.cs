@@ -815,10 +815,7 @@ namespace Duplicati.Server
                     UpdateMetadataError(databaseConnection, notificationUpdateService, data.Backup, ex);
                 Library.UsageReporter.Reporter.Report(ex);
 
-                if (!fromQueue)
-                    throw;
-
-                return null;
+                throw;
             }
             finally
             {
