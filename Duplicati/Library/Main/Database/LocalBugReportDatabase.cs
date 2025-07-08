@@ -175,8 +175,10 @@ namespace Duplicati.Library.Main.Database
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
 
             cmd.SetTransaction(m_rtr);
+            await m_rtr.CommitAsync(restart: false, token: token).ConfigureAwait(false);
+
+            cmd.Transaction = null;
             await cmd.ExecuteNonQueryAsync("VACUUM", token).ConfigureAwait(false);
-            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
     }
 }
