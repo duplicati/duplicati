@@ -23,23 +23,23 @@ msgstr "- válasszon -"
 msgid "...loading..."
 msgstr "...töltés..."
 
-#: scripts/services/EditUriBuiltins.js:1367
+#: scripts/services/EditUriBuiltins.js:1317
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
 #: templates/backends/storj.html:22
 msgid "API key"
 msgstr "API kulcs"
 
-#: scripts/services/EditUriBuiltins.js:1241 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1207 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWS Access ID"
 
-#: scripts/services/EditUriBuiltins.js:1242 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1208 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWS Access Key"
 
-#: scripts/services/EditUriBuiltins.js:158
+#: scripts/services/EditUriBuiltins.js:157
 msgid "AWS IAM Policy"
 msgstr "AWS IAM Policy"
 
@@ -51,7 +51,7 @@ msgstr "Névjegy"
 msgid "About {{appname}}"
 msgstr "{{appname}} néjegye"
 
-#: scripts/services/EditUriBuiltins.js:1190
+#: scripts/services/EditUriBuiltins.js:1156
 msgid "Access Key"
 msgstr "Hozzáférési kulcs"
 
@@ -63,7 +63,7 @@ msgstr "Hozzáférés megtagadva"
 msgid "Access to user interface"
 msgstr "Hozzáférés a felhasználói felülethez"
 
-#: scripts/services/EditUriBuiltins.js:1189 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1155 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Fiók név"
@@ -236,14 +236,14 @@ msgstr "Böngésző alapértelmezett"
 msgid "Bucket create location"
 msgstr "Bucket létrehozásának helye"
 
-#: scripts/services/EditUriBuiltins.js:1200
-#: scripts/services/EditUriBuiltins.js:1240
-#: scripts/services/EditUriBuiltins.js:1286
-#: scripts/services/EditUriBuiltins.js:1300
-#: scripts/services/EditUriBuiltins.js:1363
-#: scripts/services/EditUriBuiltins.js:1369
-#: scripts/services/EditUriBuiltins.js:1425
-#: scripts/services/EditUriBuiltins.js:1437 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1166
+#: scripts/services/EditUriBuiltins.js:1206
+#: scripts/services/EditUriBuiltins.js:1252
+#: scripts/services/EditUriBuiltins.js:1266
+#: scripts/services/EditUriBuiltins.js:1313
+#: scripts/services/EditUriBuiltins.js:1319
+#: scripts/services/EditUriBuiltins.js:1375
+#: scripts/services/EditUriBuiltins.js:1387 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -307,9 +307,9 @@ msgstr "Gyorsítótás Fájlok"
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
-#: scripts/services/EditUriBuiltins.js:62 templates/delete.html:54
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
 msgid "Cancel"
@@ -430,7 +430,7 @@ msgstr "Csatlakozás megszakadt"
 msgid "Connection worked!"
 msgstr "Csatlakozás működik!"
 
-#: scripts/services/EditUriBuiltins.js:1191 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1157 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "Tároló neve"
@@ -483,7 +483,7 @@ msgstr "Hibajelentés készítés..."
 msgid "Create folder?"
 msgstr "Mappa készítés?"
 
-#: scripts/services/EditUriBuiltins.js:141
+#: scripts/services/EditUriBuiltins.js:140
 msgid "Created new limited user"
 msgstr "Új korlátozott felhasználó létrehozva"
 
@@ -491,7 +491,7 @@ msgstr "Új korlátozott felhasználó létrehozva"
 msgid "Creating bug report …"
 msgstr "Hibajelentés készítés..."
 
-#: scripts/services/EditUriBuiltins.js:127
+#: scripts/services/EditUriBuiltins.js:126
 msgid "Creating new user with limited access …"
 msgstr "Új felhasználó létrehozása korlátozott hozzáféréssel..."
 
@@ -831,8 +831,8 @@ msgstr "Cél útvonal megadása"
 #: scripts/controllers/RestoreController.js:423
 #: scripts/controllers/RestoreController.js:431
 #: scripts/controllers/RestoreController.js:90
-#: scripts/controllers/RestoreDirectController.js:106
-#: scripts/controllers/RestoreDirectController.js:72
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:142
 #: scripts/directives/backupEditUri.js:163
 #: scripts/directives/backupEditUri.js:197
@@ -950,8 +950,8 @@ msgstr "Nem sikerült csatlakozni:"
 #: scripts/controllers/RestoreController.js:332
 #: scripts/controllers/RestoreController.js:431
 #: scripts/controllers/RestoreController.js:90
-#: scripts/controllers/RestoreDirectController.js:106
-#: scripts/controllers/RestoreDirectController.js:72
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
 #: scripts/services/LogService.js:29
 msgid "Failed to connect: {{message}}"
 msgstr "Nem sikerült csatlakozni: {{message}}"
@@ -1015,9 +1015,8 @@ msgstr "Mappa"
 #: templates/backends/cos.html:30 templates/backends/e2.html:16
 #: templates/backends/file.html:22 templates/backends/file.html:6
 #: templates/backends/jottacloud.html:2 templates/backends/mega.html:2
-#: templates/backends/s3.html:60 templates/backends/sia.html:6
-#: templates/backends/storj.html:41 templates/restore.html:105
-#: templates/restore.html:89
+#: templates/backends/s3.html:60 templates/backends/storj.html:41
+#: templates/restore.html:105 templates/restore.html:89
 msgid "Folder path"
 msgstr "Mappa útvonal"
 
@@ -1054,7 +1053,7 @@ msgstr "Generál"
 msgid "Getting file versions …"
 msgstr "Fájl verziók lekérdezése..."
 
-#: scripts/services/EditUriBuiltins.js:1180 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1146 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "Csoport e-mail"
 
@@ -1145,10 +1144,6 @@ msgstr "Importálás..."
 msgid "Information"
 msgstr "Információ"
 
-#: scripts/services/EditUriBuiltins.js:1344
-msgid "Invalid characters in path"
-msgstr "Érvénytelen karakterek az útvonalban"
-
 #: scripts/controllers/EditBackupController.js:292
 #: scripts/controllers/EditBackupController.js:299
 #: scripts/controllers/EditBackupController.js:309
@@ -1196,7 +1191,7 @@ msgstr "Legújabb"
 msgid "Libraries"
 msgstr "Könyvtárak"
 
-#: scripts/controllers/RestoreDirectController.js:64
+#: scripts/controllers/RestoreDirectController.js:70
 msgid "Listing backup dates …"
 msgstr "Mentési dátumok felsorolása…"
 
@@ -1233,7 +1228,7 @@ msgstr "Helyi adatbázis útvonal:"
 msgid "Local repository"
 msgstr "Helyi tároló"
 
-#: scripts/services/SystemInfo.js:87
+#: scripts/services/SystemInfo.js:86
 msgid "Local storage"
 msgstr "Helyi tárhely"
 
@@ -1282,14 +1277,6 @@ msgstr "Microsoft SQL adatbázis:"
 #: scripts/directives/sourceFolderPicker.js:607
 msgid "Microsoft SQL Databases"
 msgstr "Microsoft SQL adatbázisok"
-
-#: templates/backends/sia.html:14
-msgid "Minimum redundancy"
-msgstr "Minimális redundancia"
-
-#: scripts/services/EditUriBuiltins.js:1348
-msgid "Minimum redundancy is 1.0"
-msgstr "A minimális redundancia 1.0"
 
 #: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
 #: templates/settings.html:90
@@ -1388,9 +1375,9 @@ msgstr "Következő dátum"
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "Nem"
 
@@ -1435,7 +1422,7 @@ msgstr "Semmi sem lesz törölve. A mentés minden változáskor növekedni fog.
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/DialogService.js:28 scripts/services/DialogService.js:50
 #: scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:141 templates/restore.html:147
+#: scripts/services/EditUriBuiltins.js:140 templates/restore.html:147
 #: templates/settings.html:206
 msgid "OK"
 msgstr "OK"
@@ -1477,7 +1464,7 @@ msgstr "Beállítások"
 msgid "Original location"
 msgstr "Eredeti hely"
 
-#: scripts/services/SystemInfo.js:90
+#: scripts/services/SystemInfo.js:89
 msgid "Others"
 msgstr "Egyebek"
 
@@ -1516,7 +1503,7 @@ msgstr "A jelszavak nem egyeznek meg"
 msgid "Passphrases do not match"
 msgstr "A jelszavak nem egyeznek"
 
-#: scripts/services/EditUriBuiltins.js:1332 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1298 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -1525,8 +1512,8 @@ msgstr "A jelszavak nem egyeznek"
 msgid "Password"
 msgstr "Jelszó"
 
-#: scripts/services/EditUriBuiltins.js:1316
-#: scripts/services/EditUriBuiltins.js:1453
+#: scripts/services/EditUriBuiltins.js:1282
+#: scripts/services/EditUriBuiltins.js:1403
 msgid "Path"
 msgstr "Útvonal"
 
@@ -1579,7 +1566,7 @@ msgstr "Előző"
 msgid "Progress:"
 msgstr "Folyamat:"
 
-#: scripts/services/SystemInfo.js:89
+#: scripts/services/SystemInfo.js:88
 msgid "Proprietary"
 msgstr "Tulajdonosi"
 
@@ -1627,11 +1614,11 @@ msgstr "Újratöltés"
 msgid "Remote"
 msgstr "Távoli"
 
-#: scripts/services/EditUriBuiltins.js:1391
+#: scripts/services/EditUriBuiltins.js:1341
 msgid "Remote Path"
 msgstr "Távoli útvonal"
 
-#: scripts/services/EditUriBuiltins.js:1390
+#: scripts/services/EditUriBuiltins.js:1340
 msgid "Remote Repository"
 msgstr "Távoli tároló"
 
@@ -1818,8 +1805,7 @@ msgstr "Másodperc"
 msgid "Select files"
 msgstr "Fájlok kiválasztása"
 
-#: scripts/services/EditUriBuiltins.js:1340 templates/backends/pcloud.html:2
-#: templates/backends/s3.html:8 templates/backends/sia.html:2
+#: templates/backends/pcloud.html:2 templates/backends/s3.html:8
 #: templates/backends/smb.html:17
 msgid "Server"
 msgstr "Kiszolgáló"
@@ -1839,10 +1825,6 @@ msgstr "A kiszolgáló jelenleg szünetel."
 #: scripts/controllers/HomeController.js:22
 msgid "Server is currently paused, do you want to resume now?"
 msgstr "A kiszolgáló jelenleg szünetel, szeretnéd folytatni?"
-
-#: templates/backends/sia.html:10
-msgid "Server password"
-msgstr "Szerver jelszó"
 
 #: scripts/controllers/HomeController.js:22
 msgid "Server paused"
@@ -1877,10 +1859,6 @@ msgstr "Mutasd a naplót ..."
 msgid "Show treeview"
 msgstr "Fa nézet megjelenítése"
 
-#: templates/backends/sia.html:11
-msgid "Sia server password"
-msgstr "Sia szerver jelszó"
-
 #: templates/addoredit.html:326
 msgid "Smart backup retention"
 msgstr "Intelligens mentés késleltetés"
@@ -1909,7 +1887,7 @@ msgstr "Forrás:"
 msgid "Specific builds for developers only. Not for use with important data."
 msgstr "Fejlesztőknek szánt kiadások. Fontos mentésére nem használható."
 
-#: scripts/services/SystemInfo.js:88
+#: scripts/services/SystemInfo.js:87
 msgid "Standard protocols"
 msgstr "Szabványos protokollok"
 
@@ -2034,7 +2012,7 @@ msgstr "Teszt fázis"
 msgid "Test connection"
 msgstr "Kapcsolat tesztelése"
 
-#: scripts/services/EditUriBuiltins.js:53
+#: scripts/services/EditUriBuiltins.js:52
 msgid "Testing permissions …"
 msgstr "Engedélyek tesztelése..."
 
@@ -2177,7 +2155,7 @@ msgstr "Felhasználói adat"
 msgid "User domain name"
 msgstr "Felhasználói domain név"
 
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:61
 msgid "User has too many permissions"
 msgstr "A felhasználónak túl sok engedélye van"
 
@@ -2185,9 +2163,9 @@ msgstr "A felhasználónak túl sok engedélye van"
 msgid "User interface settings"
 msgstr "Felhasználói felület beállítások"
 
-#: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1199
-#: scripts/services/EditUriBuiltins.js:1331 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1076
+#: scripts/services/EditUriBuiltins.js:1165
+#: scripts/services/EditUriBuiltins.js:1297 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -2305,9 +2283,9 @@ msgstr "Év"
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1268
-#: scripts/services/EditUriBuiltins.js:62
+#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "Igen"
 

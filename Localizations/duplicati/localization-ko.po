@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-21 12:54+0200\n"
+"POT-Creation-Date: 2025-07-07 13:36+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: joyfuI <jong970105@gmail.com>, 2025\n"
 "Language-Team: Korean (https://app.transifex.com/duplicati/teams/67655/ko/)\n"
@@ -140,7 +140,7 @@ msgstr "취소됨"
 
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
-#: Library/Backend/Jottacloud/Jottacloud.cs:314
+#: Library/Backend/Jottacloud/Jottacloud.cs:319
 #: Library/Backend/SMB/SMBShareConnection.cs:361
 msgid "The requested file does not exist"
 msgstr "요청한 파일이 없습니다"
@@ -214,29 +214,29 @@ msgstr "예기치 않은 경로 포멧이 나타났습니다."
 msgid "Unsupported USN journal version."
 msgstr "지원되지 않는 USN 저널 버전입니다."
 
-#: Library/Backend/OpenStack/Strings.cs:30
+#: Library/Backend/OpenStack/Strings.cs:29
 #, csharp-format
 msgid "Missing required option: {0}"
 msgstr "필수 옵션 누락: {0}"
 
-#: Library/Backend/OpenStack/Strings.cs:33
+#: Library/Backend/OpenStack/Strings.cs:32
 msgid "The domain name of the user used to connect to the server."
 msgstr "서버에 연결하는 데 사용되는 사용자의 도메인 이름입니다."
 
-#: Library/Backend/OpenStack/Strings.cs:35 Library/Backend/S3/Strings.cs:34
+#: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/S3/Strings.cs:34
 #: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:95
 msgid ""
 "The username used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_USERNAME\"."
 msgstr "서버에 연결하는 데 사용되는 사용자 이름입니다. 환경 변수 \"AUTH_USERNAME\"로 제공될 수도 있습니다."
 
-#: Library/Backend/OpenStack/Strings.cs:39
+#: Library/Backend/OpenStack/Strings.cs:38
 msgid ""
 "The API key can be used to connect without supplying a password and tenant "
 "ID with some providers."
 msgstr "API 키는 일부 공급자와 암호 및 테넌트 ID를 제공하지 않고 연결하는 데 사용할 수 있습니다."
 
-#: Library/Backend/OpenStack/Strings.cs:44
+#: Library/Backend/OpenStack/Strings.cs:43
 msgid "The keystone API version to use"
 msgstr "사용할 키스톤 API 버전"
 
@@ -365,12 +365,12 @@ msgstr ""
 "중간자 공격으로부터 보호하기 위해 서버 지문이 연결시 확인됩니다. 호스트 키 지문 확인을 비활성화하려면 이 옵션을 사용하십시오. 이 "
 "옵션은 테스트할때만 사용해야합니다."
 
-#: Library/Backend/SSHv2/Strings.cs:64
+#: Library/Backend/SSHv2/Strings.cs:70
 #, csharp-format
 msgid "Unable to set folder to {0}, error message: {1}"
 msgstr "{0} 폴더를 설정할 수 없음. 오류 메시지: {1}"
 
-#: Library/Backend/SSHv2/Strings.cs:65
+#: Library/Backend/SSHv2/Strings.cs:71
 #, csharp-format
 msgid ""
 "Validation of server fingerprint failed. Server returned fingerprint "
@@ -378,7 +378,7 @@ msgid ""
 "in-the-middle attack!"
 msgstr "서버 지문 확인에 실패했습니다. 서버가 \"{0}\"을 반환했습니다. 이 메시지의 원인은 올바른 구성이 아니거나 중간자 공격입니다!"
 
-#: Library/Backend/SSHv2/Strings.cs:66
+#: Library/Backend/SSHv2/Strings.cs:72
 #, csharp-format
 msgid ""
 "Please add --{1}=\"{0}\" to trust this host. Optionally you can use --{2} "
@@ -491,22 +491,6 @@ msgstr "파일 목록 페이지의 크기"
 msgid "The base URL to use for downloading files"
 msgstr "파일 다운로드에 사용할 기본 URL"
 
-#: Library/Backend/Sia/Strings.cs:26
-msgid "This backend can read and write data to Sia."
-msgstr "이 백엔드는 Sia에 데이터를 읽고 쓸 수 있습니다."
-
-#: Library/Backend/Sia/Strings.cs:27
-msgid "Sia Decentralized Cloud"
-msgstr "Sia 분산 클라우드"
-
-#: Library/Backend/Sia/Strings.cs:29
-msgid "Backup path"
-msgstr "백업 경로"
-
-#: Library/Backend/Sia/Strings.cs:31
-msgid "Sia password"
-msgstr "Sia 암호"
-
 #: Library/Backend/OneDrive/Strings.cs:41
 #, csharp-format
 msgid ""
@@ -575,19 +559,19 @@ msgstr "저장소 계정 이름"
 msgid "The access key"
 msgstr "액세스 키"
 
-#: Library/Backend/Jottacloud/Strings.cs:27
+#: Library/Backend/Jottacloud/Strings.cs:29
 msgid "Jottacloud"
 msgstr "Jottacloud"
 
-#: Library/Backend/Jottacloud/Strings.cs:30
+#: Library/Backend/Jottacloud/Strings.cs:32
 msgid "Illegal mount point given."
 msgstr "주어진 마운트 포인트가 잘못되었습니다."
 
-#: Library/Backend/Jottacloud/Strings.cs:31
+#: Library/Backend/Jottacloud/Strings.cs:33
 msgid "Failed to upload file"
 msgstr "파일을 업로드하지 못했습니다"
 
-#: Library/Backend/Jottacloud/Strings.cs:32
+#: Library/Backend/Jottacloud/Strings.cs:34
 #, csharp-format
 msgid ""
 "The backup device to use. Will be created if not already exists. You can "
@@ -598,7 +582,7 @@ msgstr ""
 "사용할 백업 장치입니다. 아직 존재하지 않으면 생성됩니다. Jottacloud 웹 인터페이스의 백업 패널에서 장치를 관리할 수 있습니다."
 " 사용자 지정 장치를 지정할 때 \"{0}\" 옵션을 사용하여 이 장치에서 사용할 마운트 지점을 지정해야 합니다."
 
-#: Library/Backend/Jottacloud/Strings.cs:34
+#: Library/Backend/Jottacloud/Strings.cs:36
 #, csharp-format
 msgid ""
 "The mount point to use on the server. The default is \"Archive\" for using "
@@ -611,7 +595,7 @@ msgstr ""
 "\"Sync\"로 설정하여 기본 제공 동기화 마운트 지점을 대신 사용하거나 \"{0}\" 옵션을 사용하여 사용자 지정 장치를 지정한 경우"
 " 원하는 대로 마운트 포인트의 이름을 자유롭게 지정할 수 있습니다."
 
-#: Library/Backend/Jottacloud/Strings.cs:36
+#: Library/Backend/Jottacloud/Strings.cs:38
 msgid ""
 "Number of threads for restore operations. In some cases the download rate is"
 " limited to 18.5 Mbps per stream. Use multiple threads to increase "
@@ -620,7 +604,7 @@ msgstr ""
 "복원 작업을위한 스레드 수 옵션. 경우에 따라 다운로드 속도가 스트림 당 18.5Mbps로 제한됩니다. 처리량을 늘리려면 여러 스레드를 "
 "사용하십시오."
 
-#: Library/Backend/Jottacloud/Strings.cs:38
+#: Library/Backend/Jottacloud/Strings.cs:40
 msgid ""
 "The chunk size for simultaneous downloading. These chunks will be held in "
 "memory, so keep it as low as possible."
@@ -709,6 +693,14 @@ msgstr "Dropbox"
 msgid "The authorization code"
 msgstr "인증 코드"
 
+#: Library/Backend/Dropbox/Strings.cs:32
+#: Library/Backend/OAuthHelper/Strings.cs:27
+#, csharp-format
+msgid ""
+"Failed to authorize using the OAuth service: {0}. If the problem persists, "
+"try generating a new authid token from: {1}"
+msgstr "OAuth 서비스를 사용하여 권한을 부여하지 못했습니다 : {0}. 문제가 지속되면 {1}에서 새 인증 토큰을 생성하십시오."
+
 #: Library/Backend/WEBDAV/Strings.cs:27
 msgid "WebDAV"
 msgstr "WebDAV"
@@ -745,13 +737,6 @@ msgstr "Tahoe-LAFS"
 #: Library/Backend/TahoeLAFS/Strings.cs:31
 msgid "Unsupported URL format, must start with \"uri/URI:DIR2:\""
 msgstr "지원되지 않는 URL , URL 은 \"uri / URI : DIR2 :\"로 시작해야합니다."
-
-#: Library/Backend/OAuthHelper/Strings.cs:27
-#, csharp-format
-msgid ""
-"Failed to authorize using the OAuth service: {0}. If the problem persists, "
-"try generating a new authid token from: {1}"
-msgstr "OAuth 서비스를 사용하여 권한을 부여하지 못했습니다 : {0}. 문제가 지속되면 {1}에서 새 인증 토큰을 생성하십시오."
 
 #: Library/Backend/OAuthHelper/Strings.cs:28
 #, csharp-format
@@ -839,11 +824,11 @@ msgstr ""
 "허용되는 호스트 이름은 세미콜론으로 구분됩니다. 호스트 이름이 \"*\"인 경우 모든 호스트 이름이 허용되며 호스트 이름 확인이 "
 "비활성화됩니다."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:253
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:264
 msgid "Set the time after which log data will be purged from the database."
 msgstr "데이터베이스에서 로그 데이터가 제거되는 시간을 설정하십시오."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:254
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:265
 msgid "Clean up old log data"
 msgstr "오래된 로그 데이터 정리"
 
@@ -857,7 +842,7 @@ msgstr ""
 "이 옵션은 로컬 설정 데이터베이스를 스크램블하는 데 사용되는 암호화 키를 설정합니다. 이 옵션은 환경 변수 {0}으로도 설정할 수 "
 "있습니다. -{1} 옵션을 사용하여 데이터베이스 스크램블링을 비활성화하십시오."
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:89
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:96
 msgid "Temporary storage folder"
 msgstr "임시 저장 폴더"
 
@@ -902,59 +887,54 @@ msgstr ""
 msgid "Hash mismatch on file \"{0}\", recorded hash: {1}, actual hash {2}"
 msgstr "파일 \"{0}\"의 해시 불일치. 기록 된 해시: {1}, 실제 해시: {2}"
 
-#: Library/Main/Strings.cs:32
+#: Library/Main/Strings.cs:33
 msgid "No source folders specified for backup"
 msgstr "백업에 지정된 원본 폴더가 없습니다."
 
-#: Library/Main/Strings.cs:34
+#: Library/Main/Strings.cs:35
 #, csharp-format
 msgid "Unauthorized to access source folder {0}, aborting backup"
 msgstr "{0} 원본 폴더에 액세스 권한이 없어 백업을 중단합니다."
 
-#: Library/Main/Strings.cs:35
+#: Library/Main/Strings.cs:36
 #, csharp-format
 msgid ""
 "The option --{0} is not supported because the module {1} is not currently "
 "loaded"
 msgstr "{1} 모듈이 현재 로드되지 않았으므로-{0} 옵션이 지원되지 않습니다"
 
-#: Library/Main/Strings.cs:36
+#: Library/Main/Strings.cs:37
 #, csharp-format
 msgid "The supplied option --{0} is not supported and will be ignored"
 msgstr "제공된 옵션-{0}이 (가) 지원되지 않으며 무시됩니다."
 
-#: Library/Main/Strings.cs:37
+#: Library/Main/Strings.cs:38
 #, csharp-format
 msgid "The operation {0} has started"
 msgstr "{0} 작업이 시작되었습니다"
 
-#: Library/Main/Strings.cs:38
+#: Library/Main/Strings.cs:39
 #, csharp-format
 msgid "The operation {0} has completed"
 msgstr "{0} 작업이 완료되었습니다"
 
-#: Library/Main/Strings.cs:39
-#, csharp-format
-msgid "The operation {0} has failed with error: {1}"
-msgstr "{0}작업이 오류{1} 로인해 실패했습니다."
-
-#: Library/Main/Strings.cs:40
+#: Library/Main/Strings.cs:41
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "잘못된 경로: \"{0}\"({1})"
 
-#: Library/Main/Strings.cs:42
+#: Library/Main/Strings.cs:43
 #, csharp-format
 msgid "The source {0} uses an invalid volume name, aborting backup"
 msgstr "{0} 원본이 잘못된 볼륨 이름을 사용하여 백업을 중단합니다."
 
-#: Library/Main/Strings.cs:43
+#: Library/Main/Strings.cs:44
 #, csharp-format
 msgid ""
 "The source {0} is on volume {1}, which could not be found, aborting backup"
 msgstr "{0} 원본을 볼륨 {1}에서 찾을 수 없어서 백업을 중단합니다."
 
-#: Library/Main/Strings.cs:50
+#: Library/Main/Strings.cs:53
 msgid ""
 "A string used to prefix the filenames of the remote volumes, can be used to "
 "store multiple backups in the same remote folder. The prefix cannot contain "
@@ -964,25 +944,25 @@ msgstr ""
 "원격 볼륨의 파일 이름을 접두어로 사용하는 문자열은 동일한 원격 폴더에 여러 백업을 저장하는 데 사용될 수 있습니다. 접두사는 하이픈 "
 "(-)을 포함 할 수 없지만 원격 저장소에서 허용하는 다른 모든 문자를 포함 할 수 있습니다."
 
-#: Library/Main/Strings.cs:53
+#: Library/Main/Strings.cs:56
 msgid "Disable checks based on file time"
 msgstr "파일 시간을 기준으로 검사 비활성화"
 
-#: Library/Main/Strings.cs:55
+#: Library/Main/Strings.cs:58
 msgid "Restore to another folder"
 msgstr "다른 폴더로 복원"
 
-#: Library/Main/Strings.cs:56
+#: Library/Main/Strings.cs:59
 msgid ""
 "Allow system to enter sleep power modes for inactivity during backup/restore"
 " operations (Windows/OSX only)"
 msgstr "백업/복원 작업 중에 시스템이 비활성 상태인 절전 모드로 들어갈 수 있도록 허용 (Windows/OSX 전용)"
 
-#: Library/Main/Strings.cs:63
+#: Library/Main/Strings.cs:70
 msgid "Disable encryption"
 msgstr "암호화 비활성화"
 
-#: Library/Main/Strings.cs:66
+#: Library/Main/Strings.cs:73
 msgid ""
 "Supply a passphrase that Duplicati will use to encrypt the backup volumes, "
 "making them unreadable without the passphrase. This variable can also be "
@@ -991,140 +971,140 @@ msgstr ""
 "Duplicati 가 백업 볼륨을 암호화하는 데 사용할 암호를 제공하여 암호 없이 접근할수 없도록하십시오. 이 변수는 환경 변수 "
 "PASSPHRASE를 통해 제공 될 수도 있습니다"
 
-#: Library/Main/Strings.cs:67
+#: Library/Main/Strings.cs:74
 msgid "Passphrase used to encrypt backups"
 msgstr "백업을 암호화하는 데 사용되는 암호"
 
-#: Library/Main/Strings.cs:72
+#: Library/Main/Strings.cs:79
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
 msgstr "파일을 검색 할 때 가장 최근 백업만 검색됩니다. 이 옵션을 사용하여 모든 이전 버전도 표시하십시오."
 
-#: Library/Main/Strings.cs:73
+#: Library/Main/Strings.cs:80
 msgid "Show all versions"
 msgstr "모든 버전 표시"
 
-#: Library/Main/Strings.cs:76
+#: Library/Main/Strings.cs:83
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
 msgstr "파일을 검색 할 때 일치하는 모든 파일이 반환됩니다. 필터로 지정된 폴더에있는 항목만 반환하려면 이 옵션을 사용하십시오."
 
-#: Library/Main/Strings.cs:77
+#: Library/Main/Strings.cs:84
 msgid "Show folder contents"
 msgstr "폴더 내용 표시"
 
-#: Library/Main/Strings.cs:83
+#: Library/Main/Strings.cs:90
 msgid "Set control files"
 msgstr "제어 파일 설정"
 
-#: Library/Main/Strings.cs:86
+#: Library/Main/Strings.cs:93
 msgid ""
 "This option allows you to exclude files that are larger than the given "
 "value. Use this to prevent backups becoming extremely large."
 msgstr ""
 "이 옵션을 사용하면 지정된 값보다 큰 파일을 제외할 수 있습니다. 백업용량이  매우 커지는 것을 방지하려면 이 옵션을 사용하십시오."
 
-#: Library/Main/Strings.cs:87
+#: Library/Main/Strings.cs:94
 msgid "Limit the size of files being backed up"
 msgstr "백업되는 파일 크기 제한"
 
-#: Library/Main/Strings.cs:92
+#: Library/Main/Strings.cs:99
 msgid "Thread priority"
 msgstr "스레드 우선 순위"
 
-#: Library/Main/Strings.cs:94
+#: Library/Main/Strings.cs:101
 msgid "Limit the size of the volumes"
 msgstr "볼륨의 크기를 제한"
 
-#: Library/Main/Strings.cs:102
+#: Library/Main/Strings.cs:109
 msgid "Select what module to use for compression"
 msgstr "압축에 사용할 모듈을 선택하십시오"
 
-#: Library/Main/Strings.cs:157
+#: Library/Main/Strings.cs:166
 msgid "Hardlink handling"
 msgstr "하드링크 처리"
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:172
 msgid "Name of the backup"
 msgstr "백업 이름"
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:184
 msgid "Block size used in hashing"
 msgstr "해싱에 사용되는 블록 크기"
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:186
 msgid "List of files to examine for changes"
 msgstr "변경 사항을 검사 할 파일 목록"
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:188
 msgid "Path to the local state database"
 msgstr "로컬 상태 데이터베이스의 경로"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:190
 msgid "List of deleted files"
 msgstr ""
 "삭제 된 파일 목록\n"
 " "
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:195
 msgid "Do not query backend at startup"
 msgstr "시작할 때 백엔드를 쿼리하지 마십시오"
 
-#: Library/Main/Strings.cs:194
+#: Library/Main/Strings.cs:203
 msgid "The hash algorithm used on blocks"
 msgstr "블록에 사용되는 해시 알고리즘"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:205
 msgid "The hash algorithm used on files"
 msgstr "파일에 사용 된 해시 알고리즘입니다"
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:207
 msgid "Disable automatic compacting"
 msgstr "자동 압축 비활성화"
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:211
 msgid "Maximum number of small volumes"
 msgstr "작은 볼륨의 최대 수"
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:213
 msgid "Use local file data when restoring"
 msgstr "복원시 로컬 파일 데이터 사용"
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:218
 msgid "Keep a number of versions"
 msgstr "여러 버전 유지"
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:219
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr "백업이 유지되는 시간을 설정하려면 이 옵션을 사용하십시오."
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:220
 msgid "Keep all versions within a timespan"
 msgstr "모든 버전을 기간 내에 유지"
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:222
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr "오래된 중간 백업을 삭제하여 버전 수를 줄입니다."
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:223
 msgid "Use this option to continue even if some source entries are missing."
 msgstr "일부 소스 항목이 누락 된 경우에도 이 옵션을 사용하여 계속하십시오."
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:224
 msgid "Ignore missing source elements"
 msgstr "누락 된 소스 요소 무시"
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:226
 msgid "Overwrite files when restoring"
 msgstr "복원시 파일 덮어 쓰기"
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:228
 msgid "Output more progress information"
 msgstr "더 많은 진행 정보 출력합니다"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:230
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -1132,86 +1112,86 @@ msgstr ""
 "모든 파일 이름을 포함하여 작업의 결과로 생성 된 출력량을 늘리려면\n"
 "이 옵션을 사용하십시오."
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:231
 msgid "Output full results"
 msgstr "전체 결과 출력"
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:233
 msgid "Determine if verification files are uploaded"
 msgstr "확인 파일이 업로드되었는지 확인"
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:235
 msgid "The number of samples to test after a backup"
 msgstr "백업 후 테스트 할 샘플 수"
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:237
 msgid "The percentage of samples to test after a backup"
 msgstr "백업 후 테스트 할 샘플의 비율"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:243
 msgid "Size of the file read buffer"
 msgstr "파일 읽기 버퍼의 크기"
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:246
 msgid "Allow the passphrase to change"
 msgstr "암호 변경 허용"
 
-#: Library/Main/Strings.cs:237
+#: Library/Main/Strings.cs:248
 msgid "List only filesets"
 msgstr "파일세트만 나열"
 
-#: Library/Main/Strings.cs:242
+#: Library/Main/Strings.cs:253
 msgid "Restore file permissions"
 msgstr "파일 권한 복원"
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:255
 msgid "Skip restored file check"
 msgstr "복원 된 파일 검사 건너 뛰기"
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:257
 msgid "Do not use local data"
 msgstr "로컬 데이터를 사용하지 마십시오"
 
-#: Library/Main/Strings.cs:252
+#: Library/Main/Strings.cs:263
 msgid "Check block hashes"
 msgstr "블록 해시 확인"
 
-#: Library/Main/Strings.cs:256
+#: Library/Main/Strings.cs:267
 msgid "Repair database with paths"
 msgstr "경로가 있는 데이터베이스 복구"
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:278
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr "데이터 해싱을 수행하는 프로세스 수를 설정하려면 이 옵션을 사용하십시오."
 
-#: Library/Main/Strings.cs:269
+#: Library/Main/Strings.cs:280
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
 msgstr "출력 데이터 압축을 수행하는 프로세스 수를 설정하려면 이 옵션을 사용하십시오."
 
-#: Library/Main/Strings.cs:280
+#: Library/Main/Strings.cs:291
 msgid "Allow removing all filesets"
 msgstr "모든 파일 세트 제거 허용"
 
-#: Library/Main/Strings.cs:284
+#: Library/Main/Strings.cs:295
 msgid "Disable the read-ahead scanner"
 msgstr "미리 읽기 스캐너 비활성화"
 
-#: Library/Main/Strings.cs:288
+#: Library/Main/Strings.cs:299
 msgid "Disable the backup when on battery power"
 msgstr "배터리 사용시 백업 비활성화"
 
-#: Library/Main/Strings.cs:291
+#: Library/Main/Strings.cs:302
 msgid "Log file information level"
 msgstr "로그 파일 정보 수준"
 
-#: Library/Main/Strings.cs:309
+#: Library/Main/Strings.cs:320
 msgid "List of filenames that exclude folders"
 msgstr "폴더를 제외한 파일 이름 목록"
 
-#: Library/Main/Strings.cs:368
+#: Library/Main/Strings.cs:377
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "기존 백업에 대해 암호를 변경할 수 없습니다"
 
@@ -1223,89 +1203,84 @@ msgstr "암호 프롬프트"
 msgid "Confirm encryption passphrase"
 msgstr "암호화된 암호 확인"
 
-#: Library/Modules/Builtin/Strings.cs:41
-msgid "Configure http requests"
-msgstr "http 요청 구성"
-
-#: Library/Modules/Builtin/Strings.cs:43
-#: Library/Modules/Builtin/Strings.cs:237 Library/Utility/Strings.cs:84
-msgid "Accept any server certificate"
-msgstr "모든 서버 인증서 수락"
-
-#: Library/Modules/Builtin/Strings.cs:64
+#: Library/Modules/Builtin/Strings.cs:46
 msgid "Configure Hyper-V module"
 msgstr "Hyper-V 모듈 구성"
 
-#: Library/Modules/Builtin/Strings.cs:71
+#: Library/Modules/Builtin/Strings.cs:53
 msgid "Configure Microsoft SQL Server module"
 msgstr "Microsoft SQL Server 모듈 구성"
 
-#: Library/Modules/Builtin/Strings.cs:76
+#: Library/Modules/Builtin/Strings.cs:58
 msgid "Run script"
 msgstr "스크립트 실행"
 
-#: Library/Modules/Builtin/Strings.cs:78
+#: Library/Modules/Builtin/Strings.cs:60
 msgid "Run a script on exit"
 msgstr "종료시 스크립트 실행"
 
-#: Library/Modules/Builtin/Strings.cs:82
+#: Library/Modules/Builtin/Strings.cs:64
 msgid "Run a required script on startup"
 msgstr "시작할 때 필요한 스크립트를 실행"
 
-#: Library/Modules/Builtin/Strings.cs:88
+#: Library/Modules/Builtin/Strings.cs:70
 msgid "Run a script on startup"
 msgstr "시작할 때 스크립트 실행"
 
-#: Library/Modules/Builtin/Strings.cs:98
+#: Library/Modules/Builtin/Strings.cs:80
 msgid "Send mail"
 msgstr "메일 보내기"
 
-#: Library/Modules/Builtin/Strings.cs:109
+#: Library/Modules/Builtin/Strings.cs:91
 msgid "The message body"
 msgstr "메시지 본문"
 
-#: Library/Modules/Builtin/Strings.cs:111
+#: Library/Modules/Builtin/Strings.cs:93
 msgid "SMTP Password"
 msgstr "SMTP 암호"
 
-#: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:105
 msgid "Email sender"
 msgstr "이메일 발신자"
 
-#: Library/Modules/Builtin/Strings.cs:126
-#: Library/Modules/Builtin/Strings.cs:164
-#: Library/Modules/Builtin/Strings.cs:198
-#: Library/Modules/Builtin/Strings.cs:227
+#: Library/Modules/Builtin/Strings.cs:108
+#: Library/Modules/Builtin/Strings.cs:148
+#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:211
 msgid "The messages to send"
 msgstr "보낼 메시지"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:129
 msgid "XMPP report module"
 msgstr "XMPP 보고서 모듈"
 
-#: Library/Modules/Builtin/Strings.cs:157
-#: Library/Modules/Builtin/Strings.cs:189
-#: Library/Modules/Builtin/Strings.cs:220
+#: Library/Modules/Builtin/Strings.cs:141
+#: Library/Modules/Builtin/Strings.cs:173
+#: Library/Modules/Builtin/Strings.cs:204
 msgid "The message template"
 msgstr "메시지 템플릿"
 
-#: Library/Modules/Builtin/Strings.cs:159
+#: Library/Modules/Builtin/Strings.cs:143
 msgid "The XMPP username"
 msgstr "XMPP 사용자 이름"
 
-#: Library/Modules/Builtin/Strings.cs:161
+#: Library/Modules/Builtin/Strings.cs:145
 msgid "The XMPP password"
 msgstr "XMPP 암호"
 
-#: Library/Modules/Builtin/Strings.cs:166
-#: Library/Modules/Builtin/Strings.cs:200
-#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:150
+#: Library/Modules/Builtin/Strings.cs:184
+#: Library/Modules/Builtin/Strings.cs:213
 msgid "Send messages for all operations"
 msgstr "모든 작업을 이메일로 보냅니다"
 
-#: Library/Modules/Builtin/Strings.cs:208
+#: Library/Modules/Builtin/Strings.cs:192
 msgid "HTTP report module"
 msgstr "HTTP 보고서 모듈"
+
+#: Library/Modules/Builtin/Strings.cs:221 Library/Utility/Strings.cs:84
+msgid "Accept any server certificate"
+msgstr "모든 서버 인증서 수락"
 
 #: Library/Utility/Strings.cs:55
 #, csharp-format
@@ -1316,22 +1291,22 @@ msgstr "{0} bytes"
 msgid "Cannot read and write on the same stream"
 msgstr "같은 스트림에서 읽고 쓸 수 없습니다"
 
-#: Library/Utility/Strings.cs:113
+#: Library/Utility/Strings.cs:115
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid integer"
 msgstr "-{0}에 제공된 \"{1}\"값이 유효한 integer 값이 아닙니다."
 
-#: Library/Utility/Strings.cs:114
+#: Library/Utility/Strings.cs:116
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid path"
 msgstr "-{0}에 대한 \"{1}\"값이 유효 경로를 표시합니다."
 
-#: Library/Utility/Strings.cs:115
+#: Library/Utility/Strings.cs:117
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid size"
 msgstr "-{0}에 제공된 \"{1}\"값이 유효한 크기를 나타내지 않습니다."
 
-#: Library/Utility/Strings.cs:117
+#: Library/Utility/Strings.cs:119
 #, csharp-format
 msgid ""
 "The size \"{1}\" supplied to --{0} does not have a multiplier (b, kb, mb, "

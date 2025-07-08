@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-21 12:54+0200\n"
+"POT-Creation-Date: 2025-07-07 13:36+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Sérgio Marques <smarquespt@gmail.com>, 2025\n"
 "Language-Team: Portuguese (https://app.transifex.com/duplicati/teams/67655/pt/)\n"
@@ -145,7 +145,7 @@ msgstr "Cancelado"
 
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
-#: Library/Backend/Jottacloud/Jottacloud.cs:314
+#: Library/Backend/Jottacloud/Jottacloud.cs:319
 #: Library/Backend/SMB/SMBShareConnection.cs:361
 msgid "The requested file does not exist"
 msgstr "O ficheiro requisitado não existe"
@@ -154,12 +154,12 @@ msgstr "O ficheiro requisitado não existe"
 msgid "USN is not supported on Linux"
 msgstr "USN não é suportado em sistemas Linux"
 
-#: Library/Backend/OpenStack/Strings.cs:30
+#: Library/Backend/OpenStack/Strings.cs:29
 #, csharp-format
 msgid "Missing required option: {0}"
 msgstr "Opção obrigatória em falta: {0}"
 
-#: Library/Backend/OpenStack/Strings.cs:33
+#: Library/Backend/OpenStack/Strings.cs:32
 msgid "The domain name of the user used to connect to the server."
 msgstr "O nome de domínio do utilizador usado para se conectar ao servidor."
 
@@ -298,14 +298,6 @@ msgstr "Chave da aplicação B2 Cloud Storage"
 msgid "B2 Cloud Storage Account ID"
 msgstr "ID da conta B2 Cloud Storage"
 
-#: Library/Backend/Sia/Strings.cs:29
-msgid "Backup path"
-msgstr "Caminho da cópia de segurança"
-
-#: Library/Backend/Sia/Strings.cs:31
-msgid "Sia password"
-msgstr "Palavra-passe Sia"
-
 #: Library/Backend/OneDrive/Strings.cs:40
 msgid "Microsoft OneDrive"
 msgstr "Microsoft OneDrive"
@@ -339,11 +331,11 @@ msgstr "Nome do 'bucket'"
 msgid "The access key"
 msgstr "Chave de acesso"
 
-#: Library/Backend/Jottacloud/Strings.cs:27
+#: Library/Backend/Jottacloud/Strings.cs:29
 msgid "Jottacloud"
 msgstr "Jottacloud"
 
-#: Library/Backend/Jottacloud/Strings.cs:31
+#: Library/Backend/Jottacloud/Strings.cs:33
 msgid "Failed to upload file"
 msgstr "Falha ao carregar o ficheiro"
 
@@ -510,13 +502,13 @@ msgstr ""
 "Os hostnames que são autorizados a ligar, separados por ponto-e-vírgula. Um "
 "'*' permite a ligação as todos e desactiva esta protecção."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:253
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:264
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
 "Definir o tempo depois do que os dados de registo serão eliminados da base "
 "de dados."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:254
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:265
 msgid "Clean up old log data"
 msgstr "Apagar dados de registo antigos"
 
@@ -543,16 +535,16 @@ msgstr ""
 "ambiente {0}. Utilizar a opção de linha de comando --{1} para desativar a "
 "encriptação da base de dados."
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:89
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:96
 msgid "Temporary storage folder"
 msgstr "Pasta temporária de armazenamento"
 
-#: Library/RestAPI/Strings.cs:91 Library/RestAPI/Strings.cs:120
+#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:121
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "O servidor foi iniciado e está a escutar em {0}, porta {1}"
 
-#: Library/RestAPI/Strings.cs:116
+#: Library/RestAPI/Strings.cs:117
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -561,7 +553,7 @@ msgstr ""
 "Não foi possível encontrar uma data válida, utilizando a data de início {0},"
 " o intervalo de repetição {1} e os dias permitidos {2}"
 
-#: Library/RestAPI/Strings.cs:122
+#: Library/RestAPI/Strings.cs:123
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Não foi possível abrir uma porta para escutar, tentou utilizar: {0}"
@@ -570,52 +562,52 @@ msgstr "Não foi possível abrir uma porta para escutar, tentou utilizar: {0}"
 msgid "backup"
 msgstr "cópia de segurança"
 
-#: Library/Main/Strings.cs:40
+#: Library/Main/Strings.cs:41
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Caminho inválido: \"{0}\" ({1})"
 
-#: Library/Main/Strings.cs:55
+#: Library/Main/Strings.cs:58
 msgid "Restore to another folder"
 msgstr "Restaurar para outra pasta"
 
-#: Library/Main/Strings.cs:63
+#: Library/Main/Strings.cs:70
 msgid "Disable encryption"
 msgstr "Desativar encriptação"
 
-#: Library/Main/Strings.cs:73
+#: Library/Main/Strings.cs:80
 msgid "Show all versions"
 msgstr "Mostrar todas as versões"
 
-#: Library/Main/Strings.cs:77
+#: Library/Main/Strings.cs:84
 msgid "Show folder contents"
 msgstr "Mostrar conteúdo da pasta"
 
-#: Library/Main/Strings.cs:92
+#: Library/Main/Strings.cs:99
 msgid "Thread priority"
 msgstr "Prioridade"
 
-#: Library/Main/Strings.cs:94
+#: Library/Main/Strings.cs:101
 msgid "Limit the size of the volumes"
 msgstr "Limitar o tamanho dos volumes"
 
-#: Library/Main/Strings.cs:143
+#: Library/Main/Strings.cs:152
 msgid "Do not re-use connections"
 msgstr "Não reutilizar ligações"
 
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:164
 msgid "Symlink handling"
 msgstr "Gestão de ligações simbólicas"
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:172
 msgid "Name of the backup"
 msgstr "Nome da cópia de segurança"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:190
 msgid "List of deleted files"
 msgstr "Lista de ficheiros eliminados"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:232
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -627,11 +619,11 @@ msgstr ""
 "hashes SHA256 de todos os ficheiros remotos e pode ser usado para verificar "
 "a integridade dos ficheiros."
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:246
 msgid "Allow the passphrase to change"
 msgstr "Permitir alteração da palavra-passe"
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:257
 msgid "Do not use local data"
 msgstr "Não utilizar dados locais"
 
@@ -647,26 +639,22 @@ msgstr "Digite a palavra-passe de encriptação"
 msgid "The passphrases do not match"
 msgstr "Disparidade de palavras-passe"
 
-#: Library/Modules/Builtin/Strings.cs:41
-msgid "Configure http requests"
-msgstr "Configurar pedidos HTTP"
-
-#: Library/Modules/Builtin/Strings.cs:109
+#: Library/Modules/Builtin/Strings.cs:91
 msgid "The message body"
 msgstr "Texto da mensagem"
 
-#: Library/Modules/Builtin/Strings.cs:111
+#: Library/Modules/Builtin/Strings.cs:93
 msgid "SMTP Password"
 msgstr "Palavra-passe SMTP"
 
-#: Library/Modules/Builtin/Strings.cs:126
-#: Library/Modules/Builtin/Strings.cs:164
-#: Library/Modules/Builtin/Strings.cs:198
-#: Library/Modules/Builtin/Strings.cs:227
+#: Library/Modules/Builtin/Strings.cs:108
+#: Library/Modules/Builtin/Strings.cs:148
+#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:211
 msgid "The messages to send"
 msgstr "Mensagem a enviar"
 
-#: Library/Modules/Builtin/Strings.cs:133
+#: Library/Modules/Builtin/Strings.cs:115
 msgid "The email subject"
 msgstr "Assunto do e-mail"
 
