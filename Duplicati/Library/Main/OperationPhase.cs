@@ -19,12 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-
 namespace Duplicati.Library.Main
 {
     public enum OperationPhase
     {
+        Starting_Operation,
         Backup_Begin,
         Backup_PreBackupVerify,
         Backup_PostBackupTest,
@@ -37,7 +36,7 @@ namespace Duplicati.Library.Main
         Backup_VerificationUpload,
         Backup_PostBackupVerify,
         Backup_Complete,
-        
+
         Restore_Begin,
         Restore_RecreateDatabase,
         Restore_PreRestoreVerify,
