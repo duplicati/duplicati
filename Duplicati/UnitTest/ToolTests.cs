@@ -177,6 +177,18 @@ namespace Duplicati.UnitTest
                     "--src-options", "somesrckey=somesrcvalue", "anothersrckey=anothersrcvalue",
                     "--dst-options", "somedstkey=somedstvalue", "anotherdstkey=anotherdstvalue"
                 ],
+                [
+                    "source", "destination", "--parse-arguments-only",
+                    "--global-options", "somekey=somevalue=with=extra=equals", "anotherkey=anothervalue",
+                    "--src-options", "somekey=somevalue=with=extra=equals", "anotherkey=anothervalue",
+                    "--dst-options", "somekey=somevalue=with=extra=equals", "anotherkey=anothervalue"
+                ],
+                [
+                    "source", "destination", "--parse-arguments-only",
+                    "--global-options", "somekey=\"some value with spaces\"", "anotherkey=anothervalue",
+                    "--src-options", "somekey=\"some value with spaces\"", "anotherkey=anothervalue",
+                    "--dst-options", "somekey=\"some value with spaces\"", "anotherkey=anothervalue"
+                ]
             };
 
             foreach (var args in testCases)
