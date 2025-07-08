@@ -143,7 +143,7 @@ destination will be verified before being overwritten (if they seemingly match).
         private static async Task<int> Run(Config config)
         {
             // Unpack and parse the multi token options
-            Dictionary<string, string> global_options = ParseOptions(config.GlobalOptions);
+            var global_options = ParseOptions(config.GlobalOptions);
 
             // Parse the log level
             var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(config.LogLevel, true, out var log_level_enum);
@@ -167,8 +167,8 @@ destination will be verified before being overwritten (if they seemingly match).
             // Start the logging scope
             using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
 
-            Dictionary<string, string> src_opts = ParseOptions(config.SrcOptions);
-            Dictionary<string, string> dst_opts = ParseOptions(config.DstOptions);
+            var src_opts = ParseOptions(config.SrcOptions);
+            var dst_opts = ParseOptions(config.DstOptions);
 
             // Merge the global options into the source and destination options. The global options will be overridden by the source and destination options.
             foreach (var x in global_options)
