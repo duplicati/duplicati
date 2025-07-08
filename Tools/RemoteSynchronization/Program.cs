@@ -171,11 +171,11 @@ destination will be verified before being overwritten (if they seemingly match).
 
             Dictionary<string, string> src_opts = config.SrcOptions
                 .Select(x => x.Split("="))
-                .ToDictionary(x => x[0], x => x[1]);
+                .ToDictionary(x => x[0], x => string.Join("=", x.Skip(1)));
 
             Dictionary<string, string> dst_opts = config.DstOptions
                 .Select(x => x.Split("="))
-                .ToDictionary(x => x[0], x => x[1]);
+                .ToDictionary(x => x[0], x => string.Join("=", x.Skip(1)));
 
             // Merge the global options into the source and destination options. The global options will be overridden by the source and destination options.
             foreach (var x in global_options)
