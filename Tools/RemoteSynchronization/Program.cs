@@ -143,9 +143,7 @@ destination will be verified before being overwritten (if they seemingly match).
         private static async Task<int> Run(Config config)
         {
             // Unpack and parse the multi token options
-            Dictionary<string, string> global_options = config.GlobalOptions
-                .Select(x => x.Split("="))
-                .ToDictionary(x => x[0], x => x[1]);
+            var global_options = ParseOptions(config.GlobalOptions);
 
             // Parse the log level
             var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(config.LogLevel, true, out var log_level_enum);
@@ -169,13 +167,8 @@ destination will be verified before being overwritten (if they seemingly match).
             // Start the logging scope
             using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
 
-            Dictionary<string, string> src_opts = config.SrcOptions
-                .Select(x => x.Split("="))
-                .ToDictionary(x => x[0], x => x[1]);
-
-            Dictionary<string, string> dst_opts = config.DstOptions
-                .Select(x => x.Split("="))
-                .ToDictionary(x => x[0], x => x[1]);
+            var src_opts = ParseOptions(config.SrcOptions);
+            var dst_opts = ParseOptions(config.DstOptions);
 
             // Merge the global options into the source and destination options. The global options will be overridden by the source and destination options.
             foreach (var x in global_options)
@@ -527,6 +520,34 @@ destination will be verified before being overwritten (if they seemingly match).
                 Arity = ArgumentArity.OneOrMore,
                 AllowMultipleArgumentsPerToken = true
             };
+        }
+
+        /// <summary>
+        /// Parses the options from a list of strings.
+        /// Each option should be in the format "key=value". If the value contains spaces,
+        /// it should be enclosed in quotes, e.g. "key=\"value with spaces\"".
+        /// </summary>
+        /// <param name="options">The list of string options to parse</param>
+        /// <returns>A dictionary with the parsed options, where the key is the option name and the value is the option value.</returns>
+        /// <exception cref="ArgumentException">If an option was not parsed correctly.</exception>
+        private static Dictionary<string, string> ParseOptions(IEnumerable<string> options)
+        {
+            var result = options
+                .Select(x => x.Split('='))
+                .ToDictionary(x => x[0], x => string.Join("=", x.Skip(1)));
+
+            // Double check that the options are valid by reconstructing them from the dictionary
+            foreach (var opt in result.Select(x => $"{x.Key}={x.Value}"))
+            {
+                if (!options.Contains(opt))
+                {
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", null,
+                        "The source option '{0}' is not valid. Please check the syntax.", opt);
+                    throw new ArgumentException($"The source option '{opt}' has not been parsed correctly.");
+                }
+            }
+
+            return result;
         }
 
         /// <summary>
