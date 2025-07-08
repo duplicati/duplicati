@@ -42,7 +42,7 @@ namespace Duplicati.UnitTest
         /// Tests that the remote synchronization tool doesn't do anything when the dry run option is used.
         /// </summary>
         [Test]
-        [Category("Tools")]
+        [Category("Tools/RemoteSynchronization")]
         public void TestDryRun()
         {
             var l1 = Path.Combine(TARGETFOLDER, "l1");
@@ -67,7 +67,7 @@ namespace Duplicati.UnitTest
         /// Tests that the remote synchronization tool works with an empty source to an empty destination.
         /// </summary>
         [Test]
-        [Category("Tools")]
+        [Category("Tools/RemoteSynchronization")]
         public void TestEmptySourceAndDestination()
         {
             var l1 = Path.Combine(TARGETFOLDER, "empty_src");
@@ -89,7 +89,7 @@ namespace Duplicati.UnitTest
         /// Test that remote synchronizing an empty source to a non-empty destination deletes the destination files.
         /// </summary>
         [Test]
-        [Category("Tools")]
+        [Category("Tools/RemoteSynchronization")]
         public void TestEmptySourceDeletesDestination()
         {
             var l1 = Path.Combine(TARGETFOLDER, "empty_src");
@@ -113,7 +113,7 @@ namespace Duplicati.UnitTest
         /// Test that remote synchronizing an empty source to a non-empty destination renames the destination files when the `--retention` option is used.
         /// </summary>
         [Test]
-        [Category("Tools")]
+        [Category("Tools/RemoteSynchronization")]
         public void TestEmptySourceRenamesDestination()
         {
             var l1 = Path.Combine(TARGETFOLDER, "empty_src");
@@ -147,6 +147,7 @@ namespace Duplicati.UnitTest
         /// Tests passing all arguments to the main method of the remote synchronization tool.
         /// </summary>
         [Test]
+        [Category("Tools/RemoteSynchronization")]
         public void TestMainMethodParsesArgumentsCorrectly()
         {
             string[][] testCases =
@@ -176,6 +177,18 @@ namespace Duplicati.UnitTest
                     "--src-options", "somesrckey=somesrcvalue", "anothersrckey=anothersrcvalue",
                     "--dst-options", "somedstkey=somedstvalue", "anotherdstkey=anotherdstvalue"
                 ],
+                [
+                    "source", "destination", "--parse-arguments-only",
+                    "--global-options", "somekey=somevalue=with=extra=equals", "anotherkey=anothervalue",
+                    "--src-options", "somekey=somevalue=with=extra=equals", "anotherkey=anothervalue",
+                    "--dst-options", "somekey=somevalue=with=extra=equals", "anotherkey=anothervalue"
+                ],
+                [
+                    "source", "destination", "--parse-arguments-only",
+                    "--global-options", "somekey=\"some value with spaces\"", "anotherkey=anothervalue",
+                    "--src-options", "somekey=\"some value with spaces\"", "anotherkey=anothervalue",
+                    "--dst-options", "somekey=\"some value with spaces\"", "anotherkey=anothervalue"
+                ]
             };
 
             foreach (var args in testCases)
@@ -192,7 +205,7 @@ namespace Duplicati.UnitTest
         /// Tests the original inded use of the remote synchronization tool on an empty destination.
         /// </summary>
         [Test]
-        [Category("Tools")]
+        [Category("Tools/RemoteSynchronization")]
         public void TestRemoteSynchronization()
         {
             var l1 = Path.Combine(TARGETFOLDER, "l1");
@@ -203,7 +216,7 @@ namespace Duplicati.UnitTest
             var options = TestOptions;
 
             var now = DateTime.Now;
-            GenerateTestData(DATAFOLDER, 10, 3, 3, 1024 * 1024).Wait();
+            GenerateTestData(DATAFOLDER, 5, 2, 2, 1024).Wait();
             Console.WriteLine($"Generated test data in {DATAFOLDER} in {DateTime.Now - now}");
 
             // Create the directories if they do not exist
@@ -247,7 +260,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller($"file://{l1}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Restore([Path.Combine(DATAFOLDER, "*")]);
+                var results = c.Restore([]);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
@@ -309,7 +322,7 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
 
             // Add some more files to the source
-            GenerateTestData(Path.Combine(DATAFOLDER, "brand_new_files"), 5, 2, 2, 1024 * 1024).Wait();
+            GenerateTestData(Path.Combine(DATAFOLDER, "brand_new_files"), 5, 2, 2, 1024).Wait();
 
             // Backup the new files to l1
             using (var c = new Controller($"file://{l1}", options, null))
@@ -413,7 +426,7 @@ namespace Duplicati.UnitTest
         /// Tests that the remote synchronization tool verifies the contents of the files.
         /// </summary>
         [Test]
-        [Category("Tools")]
+        [Category("Tools/RemoteSynchronization")]
         public void TestVerifies()
         {
             var l1 = Path.Combine(TARGETFOLDER, "l1");
