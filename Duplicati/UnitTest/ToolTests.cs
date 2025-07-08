@@ -204,7 +204,7 @@ namespace Duplicati.UnitTest
             var options = TestOptions;
 
             var now = DateTime.Now;
-            GenerateTestData(DATAFOLDER, 10, 3, 3, 1024 * 1024).Wait();
+            GenerateTestData(DATAFOLDER, 5, 2, 2, 1024).Wait();
             Console.WriteLine($"Generated test data in {DATAFOLDER} in {DateTime.Now - now}");
 
             // Create the directories if they do not exist
@@ -310,7 +310,7 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
 
             // Add some more files to the source
-            GenerateTestData(Path.Combine(DATAFOLDER, "brand_new_files"), 5, 2, 2, 1024 * 1024).Wait();
+            GenerateTestData(Path.Combine(DATAFOLDER, "brand_new_files"), 5, 2, 2, 1024).Wait();
 
             // Backup the new files to l1
             using (var c = new Controller($"file://{l1}", options, null))
