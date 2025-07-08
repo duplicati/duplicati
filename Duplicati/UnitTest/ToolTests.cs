@@ -248,7 +248,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller($"file://{l1}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Restore([Path.Combine(DATAFOLDER, "*")]);
+                var results = c.Restore([]);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
