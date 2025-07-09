@@ -66,10 +66,10 @@ namespace Duplicati.UnitTest
         private static string MakeMSSQLSource(string id) => string.Format(MSSQLPathTemplate, id);
 
         [Test]
-        public void Returns_empty_change_set_when_HyperV_not_installed()
+        public void Returns_empty_change_set_when_MSSQL_not_installed()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var paths = new[] { @"C:\data" };
             var filter = string.Empty;
@@ -86,10 +86,10 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void Removes_HyperV_writer_from_vss_exclude_list()
+        public void Removes_MSSQL_writer_from_vss_exclude_list()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var mssqlGuid = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
             var paths = new[] { string.Format(MSSQLPathTemplate, Guid.NewGuid()) };
@@ -112,7 +112,7 @@ namespace Duplicati.UnitTest
                             "The change-set must contain the corrected option.");
                 Assert.That(result["vss-exclude-writers"],
                             Does.Not.Contain(mssqlGuid.ToString()),
-                            "The Hyper-V writer GUID must have been stripped.");
+                            "The MS-SQL writer GUID must have been stripped.");
             });
         }
 
@@ -120,7 +120,7 @@ namespace Duplicati.UnitTest
         public void Adds_required_snapshot_policy_when_missing()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var guestId = Guid.NewGuid().ToString();
             var paths = new[] { MakeMSSQLSource(guestId) };
@@ -131,7 +131,7 @@ namespace Duplicati.UnitTest
             {
                 DBs = new List<MSSQLDB>
                 {
-                    new("TestVM", guestId, [@"C:\VMs\TestVM\TestVM.vhdx"])
+                    new("TestVM", guestId, [@"C:\VMs\TestVM\TestVM.dbfile"])
                 }
             };
 
@@ -151,10 +151,10 @@ namespace Duplicati.UnitTest
         public void Expands_guest_data_paths_into_source_list()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var guestId = Guid.NewGuid().ToString();
-            var guest = new MSSQLDB("TestVM", guestId, [@"C:\HyperV\TestVM\TestVM.vhdx", @"C:\HyperV\TestVM\State.bin"]);
+            var guest = new MSSQLDB("TestVM", guestId, [@"C:\MSSQL\TestVM\TestVM.dbfile", @"C:\MSSQL\TestVM\State.bin"]);
 
             var paths = new[] { MakeMSSQLSource(guestId) };
             var filter = string.Empty;
@@ -180,10 +180,10 @@ namespace Duplicati.UnitTest
         public void Respects_exclude_filter_expressions()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var guestId = Guid.NewGuid().ToString();
-            var data = @"C:\HyperV\TestVM\TestVM.vhdx";
+            var data = @"C:\MSSQL\TestVM\TestVM.dbfile";
 
             var guest = new MSSQLDB("TestVM", guestId, [data]);
 
@@ -204,17 +204,17 @@ namespace Duplicati.UnitTest
             module.RealParseSourcePaths(ref paths, ref filter, options, utility);
 
             Assert.That(paths, Does.Not.Contain(data),
-                        "The excluded VHDX must not make it into the final path list.");
+                        "The excluded dbfile must not make it into the final path list.");
         }
 
         [Test]
-        public void Respects_exclude_filter_expressions_hyperv()
+        public void Respects_exclude_filter_expressions_MSSQL()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var guestId = Guid.NewGuid().ToString();
-            var data = @$"C:{DS}HyperV{DS}TestVM{DS}TestVM.vhdx";
+            var data = @$"C:{DS}MSSQL{DS}TestVM{DS}TestVM.dbfile";
 
             var guest = new MSSQLDB("TestVM", guestId, [data]);
 
@@ -235,22 +235,22 @@ namespace Duplicati.UnitTest
             module.RealParseSourcePaths(ref paths, ref filter, options, utility);
 
             Assert.That(paths, Does.Not.Contain(data),
-                        "The excluded VHDX must not make it into the final path list.");
+                        "The excluded dbfile must not make it into the final path list.");
         }
 
         [Test]
-        public void HyperV_all_marker_includes_every_machine()
+        public void MSSQL_all_marker_includes_every_machine()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             // arrange
             var g1 = new MSSQLDB("Alpha", Guid.NewGuid().ToString(),
-                                     [@$"C:{DS}HyperV{DS}Alpha{DS}Alpha.vhdx"]);
+                                     [@$"C:{DS}MSSQL{DS}Alpha{DS}Alpha.dbfile"]);
             var g2 = new MSSQLDB("Beta", Guid.NewGuid().ToString(),
-                                     [@$"D:{DS}VMs{DS}Beta{DS}Disk1.vhdx", @$"D:{DS}VMs{DS}Beta{DS}State.bin"]);
+                                     [@$"D:{DS}DBs{DS}Beta{DS}Disk1.dbfile", @$"D:{DS}DBs{DS}Beta{DS}State.bin"]);
 
-            var paths = new[] { "%HYPERV%" };              // <-- only the ALL-marker
+            var paths = new[] { "%MSSQL%" };              // <-- only the ALL-marker
             var filter = string.Empty;
             var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             { ["snapshot-policy"] = "required" };
@@ -270,14 +270,14 @@ namespace Duplicati.UnitTest
         public void All_marker_but_single_guest_excluded()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var gKeep = new MSSQLDB("KeepMe", Guid.NewGuid().ToString(),
-                                        [@$"C:{DS}VMs{DS}KeepMe{DS}KeepMe.vhdx"]);
+                                        [@$"C:{DS}DBs{DS}KeepMe{DS}KeepMe.dbfile"]);
             var gDrop = new MSSQLDB("DropMe", Guid.NewGuid().ToString(),
-                                        [@$"C:{DS}VMs{DS}DropMe{DS}DropMe.vhdx"]);
+                                        [@$"C:{DS}DBs{DS}DropMe{DS}DropMe.dbfile"]);
 
-            var paths = new[] { "%HYPERV%" };
+            var paths = new[] { "%MSSQL%" };
             var filter = $"-{MakeMSSQLSource(gDrop.ID)}";
             var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             { ["snapshot-policy"] = "required" };
@@ -296,14 +296,14 @@ namespace Duplicati.UnitTest
         public void All_marker_but_single_file_excluded()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var g = new MSSQLDB("VM", Guid.NewGuid().ToString(),
-                                    [@$"C:{DS}VMs{DS}VM{DS}Disk.vhdx",
-                                     @$"C:{DS}VMs{DS}VM{DS}State.bin"]);
+                                    [@$"C:{DS}DBs{DS}VM{DS}Disk.dbfile",
+                                     @$"C:{DS}DBs{DS}VM{DS}State.bin"]);
 
             var cutFile = g.DataPaths[1];
-            var paths = new[] { "%HYPERV%" };
+            var paths = new[] { "%MSSQL%" };
             var filter = $"-{MakeMSSQLSource(g.ID)}{DS}{cutFile}";
             var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             { ["snapshot-policy"] = "required" };
@@ -322,14 +322,14 @@ namespace Duplicati.UnitTest
         public void Include_then_exclude_results_in_inclusion()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var g = new MSSQLDB("VM", Guid.NewGuid().ToString(),
-                                    [@$"C:{DS}VMs{DS}VM{DS}disk.vhdx"]);
+                                    [@$"C:{DS}DBs{DS}VM{DS}disk.dbfile"]);
 
             var include = MakeMSSQLSource(g.ID);
             var filter = $"{include}{PS}-{include}";
-            var paths = new[] { "%HYPERV%" };
+            var paths = new[] { "%MSSQL%" };
             var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             { ["snapshot-policy"] = "required" };
 
@@ -347,14 +347,14 @@ namespace Duplicati.UnitTest
         public void Exclude_then_include_results_in_exclusion()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var g = new MSSQLDB("VM", Guid.NewGuid().ToString(),
-                                    [@$"C:{DS}VMs{DS}VM{DS}disk.vhdx"]);
+                                    [@$"C:{DS}DBs{DS}VM{DS}disk.dbfile"]);
 
             var include = MakeMSSQLSource(g.ID);
             var filter = $"-{include}{PS}{include}";
-            var paths = new[] { "%HYPERV%" };
+            var paths = new[] { "%MSSQL%" };
             var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             { ["snapshot-policy"] = "required" };
 
@@ -372,12 +372,12 @@ namespace Duplicati.UnitTest
         public void Direct_guest_source_path_includes_that_guest_only()
         {
             if (!OperatingSystem.IsWindows())
-                return; // Hyper-V is only available on Windows
+                return; // MS-SQL is only available on Windows
 
             var gWanted = new MSSQLDB("Wanted", Guid.NewGuid().ToString(),
-                                          [@$"E:{DS}VMs{DS}Wanted{DS}disk.vhdx"]);
+                                          [@$"E:{DS}DBs{DS}Wanted{DS}disk.dbfile"]);
             var gOther = new MSSQLDB("Skip", Guid.NewGuid().ToString(),
-                                          [@$"E:{DS}VMs{DS}Skip{DS}disk.vhdx"]);
+                                          [@$"E:{DS}DBs{DS}Skip{DS}disk.dbfile"]);
 
             var paths = new[] { MakeMSSQLSource(gWanted.ID) };  // ← only that guest
             var filter = string.Empty;
