@@ -182,12 +182,12 @@ namespace Duplicati.UnitTest
         {
             if (!PermissionHelper.HasSeBackupPrivilege())
                 return;
-                
+
             try
             {
                 using var _ = Duplicati.Library.Snapshots.Windows.WindowsShimLoader.NewSeBackupPrivilegeScope();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return;
             }
