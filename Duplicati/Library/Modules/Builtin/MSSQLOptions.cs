@@ -36,7 +36,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<MSSQLOptions>();
 
-        private const string m_MSSQLPathDBRegExp = @"\%MSSQL\%\\(?<id>^\\+)(?<path>\\.*)";
+        private const string m_MSSQLPathDBRegExp = @"\%MSSQL\%\\(?<id>[^\\]+)(\\(?<path>.*))?";
         private const string m_MSSQLPathAllMarker = @"%MSSQL%";
 
         #region IGenericModule Members
