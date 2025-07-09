@@ -18,52 +18,59 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System.Runtime.Versioning;
 using System.Security.Principal;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Snapshots.Windows;
-using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
-using Microsoft.AspNetCore.Mvc;
 
-namespace Duplicati.WebserverCore.Endpoints.V1;
+namespace Duplicati.WebserverCore.Endpoints.V1.FilesystemPlugins;
 
-public class MSSql : IEndpointV1
+public class MSSQL : IFilesystemPlugin
 {
-    public static void Map(RouteGroupBuilder group)
-    {
-        group.MapGet("/mssql", () => Execute(null)).RequireAuthorization();
-        group.MapGet("/mssql/{key}", ([FromRoute] string key) => Execute(key)).RequireAuthorization();
-    }
+    private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<MSSQL>();
+    public string RootName => "%MSSQL%";
 
-    private static IEnumerable<Dto.TreeNodeDto> Execute(string? key)
+    public IEnumerable<Dto.TreeNodeDto> GetEntries(string[] pathSegments)
     {
         if (!OperatingSystem.IsWindows())
             return [];
 
-        return ExecuteOnWindows(key);
-    }
-
-    // Make sure the JIT does not attempt to inline this call and thus load
-    // referenced types from System.Management here
-    [SupportedOSPlatform("windows")]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-    private static IEnumerable<Dto.TreeNodeDto> ExecuteOnWindows(string? key)
-    {
         var mssqlUtility = new MSSQLUtility();
-
         if (!mssqlUtility.IsMSSQLInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
             return [];
 
         try
         {
-            mssqlUtility.QueryDBsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
-
-            if (string.IsNullOrEmpty(key))
+            if (pathSegments == null || pathSegments.Length == 0)
             {
+                mssqlUtility.QueryDBsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+                if (!mssqlUtility.DBs.Any())
+                    return [];
+
+                return [new Dto.TreeNodeDto()
+                {
+                    id = Util.AppendDirSeparator(RootName),
+                    text = "Microsoft SQL Databases",
+                    cls = "mssql",
+                    iconCls = "x-tree-icon-mssql",
+                    check = false,
+                    temporary = false,
+                    leaf = false,
+                    systemFile = false,
+                    hidden = false,
+                    symlink = false,
+                    fileSize = -1,
+                    resolvedpath = null
+                }];
+            }
+            else if (pathSegments.Length == 1)
+            {
+                mssqlUtility.QueryDBsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+
                 return mssqlUtility.DBs.Select(x => new Dto.TreeNodeDto()
                 {
-                    id = x.ID.ToString(),
+                    id = Util.AppendDirSeparator(string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x.ID.ToString()))),
                     text = x.Name,
                     cls = "hyperv",
                     iconCls = "x-tree-icon-mssql",
@@ -79,15 +86,16 @@ public class MSSql : IEndpointV1
             }
             else
             {
-                var foundDBs = mssqlUtility.DBs.FindAll(x => x.ID.Equals(key, StringComparison.OrdinalIgnoreCase));
+                var databaseId = pathSegments[1];
+                var foundDBs = mssqlUtility.DBs.FindAll(x => x.ID.Equals(databaseId, StringComparison.OrdinalIgnoreCase));
 
                 if (foundDBs.Count != 1)
-                    throw new NotFoundException($"Cannot find DB with ID {key}.");
+                    throw new NotFoundException($"Cannot find DB with ID {databaseId}.");
 
                 return foundDBs[0].DataPaths.Select(x => new Dto.TreeNodeDto()
                 {
                     text = x,
-                    id = x,
+                    id = string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x)),
                     cls = "folder",
                     iconCls = "x-tree-icon-mssqldb",
                     check = false,
@@ -97,13 +105,15 @@ public class MSSql : IEndpointV1
                     temporary = false,
                     symlink = false,
                     fileSize = -1,
-                    resolvedpath = null
+                    resolvedpath = x
                 }).ToList();
             }
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed to enumerate Microsoft SQL Server databases: {ex.Message}", ex);
+            Library.Logging.Log.WriteWarningMessage(LOGTAG, "MSSQLEnumerationFailed", ex, "Failed to enumerate MSSQL databases: {0}", ex.Message);
         }
+
+        return [];
     }
 }
