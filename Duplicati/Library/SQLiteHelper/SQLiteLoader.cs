@@ -140,7 +140,7 @@ namespace Duplicati.Library.SQLiteHelper
                 { "shared_cache", "true" } //
             };
             // Override the default options with any custom options set in the environment variable.
-            var customOptionsEnv = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS");
+            var customOptionsEnv = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI") ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(customOptionsEnv))
             {
                 foreach (var opt in customOptionsEnv.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
