@@ -1075,10 +1075,10 @@ namespace Duplicati.Library.Main
                 {
                     if (unauthorized)
                     {
-                        throw new IOException(Strings.Controller.SourceUnauthorizedError(inputsource));
+                        throw new UserInformationException(Strings.Controller.SourceUnauthorizedError(inputsource), "SourceUnauthorized");
                     }
 
-                    throw new IOException(Strings.Controller.SourceIsMissingError(inputsource));
+                    throw new UserInformationException(Strings.Controller.SourceIsMissingError(inputsource), "SourceIsMissing");
                 }
             }
 
