@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Crashlog;
+using Duplicati.Library.Main.Database;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
@@ -72,11 +73,8 @@ public class LogData : IEndpointV1
         cmd.CommandText = $"SELECT * FROM \"{tablename}\"";
         if (!string.IsNullOrEmpty(pagingfield) && offset != null)
         {
-            var p = cmd.CreateParameter();
-            p.Value = offset.Value;
-            cmd.Parameters.Add(p);
-
-            cmd.CommandText += $" WHERE \"{pagingfield}\" < ?";
+            cmd.AddNamedParameter("Offset", offset.Value);
+            cmd.CommandText += $" WHERE \"{pagingfield}\" < @Offset";
         }
 
         if (!string.IsNullOrEmpty(pagingfield))
