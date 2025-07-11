@@ -61,25 +61,25 @@ namespace Duplicati.GUI.TrayIcon
 
         internal Task RunOnUIThread(Action action)
         {
-          if (_disposed != 0)
-              return Task.CompletedTask;
+            if (_disposed != 0)
+                return Task.CompletedTask;
 
-          return actionDelayer.ExecuteAction(() =>
-            {
-                try
-                {
-                    if (_disposed != 0 )
-                    {
-                        return;
-                    }
-                    RunOnUIThreadInternal(action);
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteErrorMessage(LOGTAG, "AvaloniaRunOnUIThreadFailed", ex, "Failed to run action on UI thread");
-                    throw;
-                }
-            });
+            return actionDelayer.ExecuteAction(() =>
+              {
+                  try
+                  {
+                      if (_disposed != 0)
+                      {
+                          return;
+                      }
+                      RunOnUIThreadInternal(action);
+                  }
+                  catch (Exception ex)
+                  {
+                      Log.WriteErrorMessage(LOGTAG, "AvaloniaRunOnUIThreadFailed", ex, "Failed to run action on UI thread");
+                      throw;
+                  }
+              });
         }
 
         private void RunOnUIThreadInternal(Action action)
@@ -89,7 +89,7 @@ namespace Duplicati.GUI.TrayIcon
                 return;
 
             if (_disposed != 0)
-                return ;
+                return;
 
             if (Dispatcher.UIThread.CheckAccess())
                 action();
@@ -340,7 +340,7 @@ namespace Duplicati.GUI.TrayIcon
         private void UpdateIcon()
         {
             if (nativeMenuItem == null)
-                    return;
+                return;
 
             nativeMenuItem.Icon = this.Icon switch
             {
@@ -410,6 +410,7 @@ namespace Duplicati.GUI.TrayIcon
             if (this.trayIcon == null)
                 return;
 
+            MacOSProperties.SetIsTemplateIcon(this.trayIcon, true);
             switch (icon)
             {
                 case TrayIcons.IdleError:
@@ -482,7 +483,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             catch (Exception ex)
             {
-                 Console.WriteLine($"AVALALONIA desktop.Shutdown() failed because of {ex}");
+                Console.WriteLine($"AVALALONIA desktop.Shutdown() failed because of {ex}");
             }
 
         }
