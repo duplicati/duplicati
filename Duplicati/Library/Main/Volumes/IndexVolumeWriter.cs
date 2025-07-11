@@ -42,6 +42,7 @@ namespace Duplicati.Library.Main.Volumes
         public long VolumeCount { get { return m_volumes; } }
         public long BlockCount { get { return m_blocks; } }
         public long Blocklists { get { return m_blocklists; } }
+        public bool IsVolumeActive => m_writer != null && m_streamwriter != null;
 
         public IndexVolumeWriter(Options options)
             : base(options)
