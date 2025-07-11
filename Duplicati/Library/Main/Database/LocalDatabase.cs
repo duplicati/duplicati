@@ -2046,11 +2046,12 @@ namespace Duplicati.Library.Main.Database
         public async IAsyncEnumerable<IBlock> GetBlocks(long volumeid, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = await m_connection.CreateCommandAsync(@"
-                SELECT DISTINCT
-                    ""Hash"",
-                    ""Size""
-                FROM ""Block""
-                WHERE ""VolumeID"" = @VolumeId
+                WITH AllBlocks AS (
+                    SELECT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = @VolumeId
+                    UNION ALL
+                    SELECT ""Hash"", ""Size"" FROM ""DeletedBlock"" WHERE ""VolumeID"" = @VolumeId
+                )
+                SELECT DISTINCT ""Hash"", ""Size"" FROM AllBlocks
             ", token)
                 .ConfigureAwait(false);
 
