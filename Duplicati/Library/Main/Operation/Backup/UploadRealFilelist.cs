@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -39,7 +39,7 @@ internal static class UploadRealFilelist
 
         // Update the reported source and backend changes
         using (new Logging.Timer(LOGTAG, "UpdateChangeStatistics", "UpdateChangeStatistics"))
-            await db.UpdateChangeStatisticsAsync(result);
+            await db.UpdateChangeStatisticsAsync(result, taskreader.ProgressToken).ConfigureAwait(false);
 
         var changeCount =
             result.AddedFiles + result.ModifiedFiles + result.DeletedFiles +
@@ -58,16 +58,16 @@ internal static class UploadRealFilelist
                 // We ignore the stop signal, but not the pause and terminate
                 await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
-                await db.WriteFilesetAsync(filesetvolume, filesetid).ConfigureAwait(false);
+                await db.WriteFilesetAsync(filesetvolume, filesetid, taskreader.ProgressToken).ConfigureAwait(false);
                 filesetvolume.Close();
 
                 // We ignore the stop signal, but not the pause and terminate
                 await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
-                await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null).ConfigureAwait(false);
-                await db.CommitTransactionAsync("CommitUpdateRemoteVolume").ConfigureAwait(false);
+                await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, false, default, null, taskreader.ProgressToken).ConfigureAwait(false);
+                await db.CommitTransactionAsync("CommitUpdateRemoteVolume", true, taskreader.ProgressToken).ConfigureAwait(false);
 
-                await backendManager.PutAsync(filesetvolume, null, null, false, () => db.FlushBackendMessagesAndCommitAsync(backendManager), taskreader.ProgressToken).ConfigureAwait(false);
+                await backendManager.PutAsync(filesetvolume, null, null, false, () => db.FlushBackendMessagesAndCommitAsync(backendManager, taskreader.ProgressToken), taskreader.ProgressToken).ConfigureAwait(false);
             }
         }
         else
@@ -75,14 +75,14 @@ internal static class UploadRealFilelist
             if (result.TimestampChangedFiles != 0)
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "DetectedTimestampChanges", "Detected timestamp changes, but no data needs to be uploaded, pushing timestamp changes to the latest fileset");
-                await db.PushTimestampChangesToPreviousVersionAsync(filesetid).ConfigureAwait(false);
+                await db.PushTimestampChangesToPreviousVersionAsync(filesetid, taskreader.ProgressToken).ConfigureAwait(false);
             }
 
             Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingLeftoverTempFile", "removing temp files, as no data needs to be uploaded");
-            await db.RemoveRemoteVolumeAsync(filesetvolume.RemoteFilename);
+            await db.RemoveRemoteVolumeAsync(filesetvolume.RemoteFilename, taskreader.ProgressToken).ConfigureAwait(false);
         }
 
-        await db.CommitTransactionAsync("CommitUpdateRemoteVolume");
+        await db.CommitTransactionAsync("CommitUpdateRemoteVolume", true, taskreader.ProgressToken).ConfigureAwait(false);
     }
 }
 

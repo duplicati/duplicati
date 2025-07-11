@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.Text.RegularExpressions;
 
@@ -56,7 +56,6 @@ public static partial class Command
 
                 case OSType.Linux:
                     await ReplaceLibMonoUnix(baseDir, buildDir, target.Arch);
-                    await ReplaceSQLiteInterop(baseDir, buildDir, target.Arch);
                     break;
 
                 default:
@@ -122,6 +121,7 @@ public static partial class Command
             "*.pdb",
             "*.mdb",
             "._*",
+            "Duplicati.WindowsModulesLoader.*",
             os == OSType.Windows ? "*.sh" : "*.bat",
             os == OSType.Windows ? "*.sh" : "*.ps1"
         ];
@@ -272,28 +272,6 @@ public static partial class Command
 
             var sourceFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "linux-arm-binary", "libMono.Unix.so");
             var targetFile = Path.Combine(buildDir, "libMono.Unix.so");
-            if (!File.Exists(targetFile))
-                throw new Exception($"Expected file \"{targetFile}\" not found, has build changed?");
-
-            File.Copy(sourceFile, targetFile, overwrite: true);
-
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Replaces the library SQLiteInterop.dll with a version that is built against GLIBC_2.33 for ARM7
-        /// </summary>
-        /// <param name="baseDir">The base directory</param>
-        /// <param name="buildDir">The build directory</param>
-        /// <param name="arch">The architecture to build for</param>
-        /// <returns>An awaitable task</returns>
-        static Task ReplaceSQLiteInterop(string baseDir, string buildDir, ArchType arch)
-        {
-            if (arch != ArchType.Arm7)
-                return Task.CompletedTask;
-
-            var sourceFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "linux-arm-binary", "SQLite.Interop.dll");
-            var targetFile = Path.Combine(buildDir, "SQLite.Interop.dll");
             if (!File.Exists(targetFile))
                 throw new Exception($"Expected file \"{targetFile}\" not found, has build changed?");
 

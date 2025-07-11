@@ -1,3 +1,108 @@
+2025-07-07 - 2.1.0.122_canary_2025-07-07
+==========
+This release is a canary release intended to be used for testing.
+This version is nearly identical to 2.1.0.121 which has a startup crash.
+
+# Major changes in this version
+
+This version introduces a new SQLite library, a new VSS provider, and some minor bugfixes.
+
+## SQLite update
+This version has changed the SQLite library from the previous System.Data.SQLite library to using `Microsoft.Data.Sqlite`.
+This update was quite invasive, as the new SQLite library does not support positional arguments in SQL queries, which was used extensively in the Duplicati codebase.
+With the update we see measurable speedups across all queries, and we are producing an article that describes our findings.
+The update also bumps the SQLite library to use the latest available version and makes all SQLite queries async and cancelable, making the stop commands more responsive.
+
+## New VSS provider supprt
+The AlphaVSS library that is used for creating VSS snapshots is no longer being maintained.
+This version now defaults to using the Vanara API layer to call the Windows VSS API and create snapshots.
+Like before, this still requires the VC++ Redist to be installed.
+For now, it is still possible to use AlphaVSS by setting `--snapshot-provider=AlphaVSS`.
+Note that neither works on ARM64 as Windows is lacking libraries and tools for native ARM64 snapshots, only `--snapshot-provider=WMIC` works on ARM64.
+
+## Bugfixing for ngclient
+A number of reported compatibility issues with ngax has been fixed in this version.
+
+## Detailed list of changes:
+- Commandline UI expands environment variables
+- The `file://` backend is no longer throttle exempt by default
+- Fixed issue with TrayIcon not outputting help text in all cases
+- No longer retains SeBackupPrivilege after testing for permissions
+- Refresh token lifetime can now be configured
+- Fixed multiple issues with kill signals not stopping the process
+- Secret provider now correctly applied for all TrayIcon arguments
+- Updated SQLite library to use `Microsoft.Data.Sqlite` packages instead
+- Default VSS provider is now Vanara
+- Hide options that are not supported on the current OS
+- Fixed backup schedule order after multiple missed backups
+- Fixed an issue with Google Drive backend not creating folders
+- Updated all localization, thanks to all translators
+
+### Updated in 2.1.0.122
+- Fixed numeric Id sorting
+- Updated texts for disabling index recreate
+- Fixed a crash on startup in 2.1.0.121
+- Fixed an issue with restore listing speed
+
+## Ngclient changes:
+- Fixed issue with `--` option prefixes not being matched
+- Updated all localization, thanks to all translators
+- Fixed issue with en-GB not using 24h time format
+- Fixed issue with editor for GCS not having a path field
+- Fixed issue with editor for B2 introducing extra `/` characters
+- Fixed supporting -s postfix for backends for backwards compatibility
+- Fixed case-insensitive support for boolean and enumeration options
+- Custom arguments is now a two-line input
+
+2025-07-07 - 2.1.0.121_canary_2025-07-07
+==========
+This release is a canary release intended to be used for testing.
+
+# Major changes in this version
+
+This version introduces a new SQLite library, a new VSS provider, and some minor bugfixes.
+
+## SQLite update
+This version has changed the SQLite library from the previous System.Data.SQLite library to using `Microsoft.Data.Sqlite`.
+This update was quite invasive, as the new SQLite library does not support positional arguments in SQL queries, which was used extensively in the Duplicati codebase.
+With the update we see measurable speedups across all queries, and we are producing an article that describes our findings.
+The update also bumps the SQLite library to use the latest available version and makes all SQLite queries async and cancelable, making the stop commands more responsive.
+
+## New VSS provider supprt
+The AlphaVSS library that is used for creating VSS snapshots is no longer being maintained.
+This version now defaults to using the Vanara API layer to call the Windows VSS API and create snapshots.
+Like before, this still requires the VC++ Redist to be installed.
+For now, it is still possible to use AlphaVSS by setting `--snapshot-provider=AlphaVSS`.
+Note that neither works on ARM64 as Windows is lacking libraries and tools for native ARM64 snapshots, only `--snapshot-provider=WMIC` works on ARM64.
+
+## Bugfixing for ngclient
+A number of reported compatibility issues with ngax has been fixed in this version.
+
+## Detailed list of changes:
+- Commandline UI expands environment variables
+- The `file://` backend is no longer throttle exempt by default
+- Fixed issue with TrayIcon not outputting help text in all cases
+- No longer retains SeBackupPrivilege after testing for permissions
+- Refresh token lifetime can now be configured
+- Fixed multiple issues with kill signals not stopping the process
+- Secret provider now correctly applied for all TrayIcon arguments
+- Updated SQLite library to use `Microsoft.Data.Sqlite` packages instead
+- Default VSS provider is now Vanara
+- Hide options that are not supported on the current OS
+- Fixed backup schedule order after multiple missed backups
+- Fixed an issue with Google Drive backend not creating folders
+- Updated all localization, thanks to all translators
+
+## Ngclient changes:
+- Fixed issue with `--` option prefixes not being matched
+- Updated all localization, thanks to all translators
+- Fixed issue with en-GB not using 24h time format
+- Fixed issue with editor for GCS not having a path field
+- Fixed issue with editor for B2 introducing extra `/` characters
+- Fixed supporting -s postfix for backends for backwards compatibility
+- Fixed case-insensitive support for boolean and enumeration options
+- Custom arguments is now a two-line input
+
 2025-06-24 - 2.1.0.120_canary_2025-06-24
 ==========
 This release is a canary release intended to be used for testing.

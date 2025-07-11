@@ -363,6 +363,7 @@ namespace Duplicati.Server
             private Library.Main.IBackendProgress? m_backendProgress;
             private Library.Main.IOperationProgress? m_operationProgress;
             private readonly object m_lock = new object();
+            internal TaskCompletionSource<Library.Main.OperationPhase> m_phaseChangeTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
             public MessageSink(long taskId, string? backupId)
             {
@@ -416,6 +417,8 @@ namespace Duplicati.Server
                 }
             }
 
+            public Task PhaseChangedAsync { get { return m_phaseChangeTcs.Task; } }
+
             #region IMessageSink implementation
             public void BackendEvent(Duplicati.Library.Main.BackendActionType action, Duplicati.Library.Main.BackendEventType type, string path, long size)
             {
@@ -439,7 +442,20 @@ namespace Duplicati.Server
             public void SetOperationProgress(Library.Main.IOperationProgress progress)
             {
                 lock (m_lock)
+                {
+                    if (m_operationProgress != null)
+                        m_operationProgress.PhaseChanged -= OperationProgress_PhaseChanged;
                     m_operationProgress = progress;
+
+                    if (m_operationProgress != null)
+                        m_operationProgress.PhaseChanged += OperationProgress_PhaseChanged;
+                }
+            }
+
+            private void OperationProgress_PhaseChanged(Library.Main.OperationPhase phase, Library.Main.OperationPhase previousPhase)
+            {
+                var prev = Interlocked.Exchange(ref m_phaseChangeTcs, new TaskCompletionSource<Library.Main.OperationPhase>(TaskCreationOptions.RunContinuationsAsynchronously));
+                prev.TrySetResult(phase);
             }
 
             public void WriteMessage(Library.Logging.LogEntry entry)
@@ -566,7 +582,7 @@ namespace Duplicati.Server
                     {
                         while (!cts.IsCancellationRequested)
                         {
-                            await Task.Delay(1000, cts.Token);
+                            await Task.WhenAny(sink.PhaseChangedAsync, Task.Delay(1000, cts.Token));
                             if (!cts.IsCancellationRequested)
                                 eventPollNotify.SignalProgressUpdate(sink.Copy);
                         }
@@ -613,7 +629,7 @@ namespace Duplicati.Server
                     {
                         while (!cts.IsCancellationRequested)
                         {
-                            await Task.Delay(1000, cts.Token);
+                            await Task.WhenAny(sink.PhaseChangedAsync, Task.Delay(1000, cts.Token));
                             if (!cts.IsCancellationRequested)
                                 eventPollNotify.SignalProgressUpdate(sink.Copy);
                         }
@@ -815,10 +831,7 @@ namespace Duplicati.Server
                     UpdateMetadataError(databaseConnection, notificationUpdateService, data.Backup, ex);
                 Library.UsageReporter.Reporter.Report(ex);
 
-                if (!fromQueue)
-                    throw;
-
-                return null;
+                throw;
             }
             finally
             {

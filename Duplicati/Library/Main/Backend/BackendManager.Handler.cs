@@ -483,7 +483,7 @@ partial class BackendManager
                 // Stop processing tasks if the operation failed and is not being waited for
                 // Delete operations can be retried later, so we don't stop processing
                 if (!op.WaitForComplete && op is not DeleteOperation)
-                    throw lastException;
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(lastException).Throw();
             }
         }
 

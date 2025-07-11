@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -252,9 +252,9 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new ListRemoteResults(), async (result, backendManager) =>
             {
-                using (var tf = File.Exists(m_options.Dbpath) ? null : new TempFile())
-                using (var db = new LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache))
-                    result.SetResult(await backendManager.ListAsync(CancellationToken.None).ConfigureAwait(false));
+                using var tf = File.Exists(m_options.Dbpath) ? null : new TempFile();
+                await using var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? m_options.Dbpath, "list-remote", true, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                result.SetResult(await backendManager.ListAsync(CancellationToken.None).ConfigureAwait(false));
             });
         }
 
@@ -277,12 +277,15 @@ namespace Duplicati.Library.Main
                     // and uses the same prefix (see issues #2678, #3845, and #4244).
                     if (File.Exists(m_options.Dbpath))
                     {
-                        using (LocalDatabase db = new LocalDatabase(m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache))
-                        {
-                            var dbRemoteVolumes = db.GetRemoteVolumes();
-                            var dbRemoteFiles = dbRemoteVolumes.Select(x => x.Name).ToHashSet();
-                            list = list.Where(x => dbRemoteFiles.Contains(x.File.Name)).ToList();
-                        }
+                        await using LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "list-remote", true, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                        var dbRemoteVolumes = db.GetRemoteVolumes(result.TaskControl.ProgressToken);
+                        var dbRemoteFiles = await dbRemoteVolumes
+                            .Select(x => x.Name)
+                            .ToHashSetAsync(cancellationToken: result.TaskControl.ProgressToken)
+                            .ConfigureAwait(false);
+                        list = list.Where(x =>
+                            dbRemoteFiles.Contains(x.File.Name)
+                        ).ToList();
                     }
 
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Deleting);
@@ -517,10 +520,10 @@ namespace Duplicati.Library.Main
                             // This would also allow us to control the unclean shutdown flag,
                             // by toggling this on start and completion of transfers in the manager,
                             // instead of relying on the operations to correctly toggle the flag
-                            if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.NoLocalDb)
+                            if (File.Exists(m_options.Dbpath) && !m_options.NoLocalDb)
                             {
-                                using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache))
-                                    backend.StopRunnerAndFlushMessages(db, null).Await();
+                                using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).Await();
+                                backend.StopRunnerAndFlushMessages(db).Await();
                             }
                             else
                             {
@@ -533,29 +536,27 @@ namespace Duplicati.Library.Main
                         resultSetter.EndTime = DateTime.UtcNow;
                     resultSetter.Interrupted = false;
 
-                    if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                    if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                     {
-                        using (var db = new LocalDatabase(m_options.Dbpath, null, true, m_options.SqlitePageCache))
-                        {
-                            db.WriteResults(result);
-                            db.PurgeLogData(m_options.LogRetention);
-                            db.PurgeDeletedVolumes(DateTime.UtcNow);
+                        using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).Await();
+                        db.WriteResults(result, CancellationToken.None).Await();
+                        db.PurgeLogData(m_options.LogRetention, CancellationToken.None).Await();
+                        db.PurgeDeletedVolumes(DateTime.UtcNow, CancellationToken.None).Await();
 
-                            // Vacuum is done AFTER the results are written to the database
-                            // This means that the information about the vacuum is not stored in the database,
-                            // but will be reported in the log output and messages sent with any of the reporting modules
-                            if (m_options.AutoVacuum && result is IResultsWithVacuum vacuumResults && result is BasicResults basicResults)
+                        // Vacuum is done AFTER the results are written to the database
+                        // This means that the information about the vacuum is not stored in the database,
+                        // but will be reported in the log output and messages sent with any of the reporting modules
+                        if (m_options.AutoVacuum && result is IResultsWithVacuum vacuumResults && result is BasicResults basicResults)
+                        {
+                            try
                             {
-                                try
-                                {
-                                    vacuumResults.VacuumResults = new VacuumResults(basicResults);
-                                    new Operation.VacuumHandler(m_options, (VacuumResults)vacuumResults.VacuumResults)
-                                        .RunAsync().Await();
-                                }
-                                catch (Exception ex)
-                                {
-                                    Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToVacuum", ex, "Failed to vacuum database");
-                                }
+                                vacuumResults.VacuumResults = new VacuumResults(basicResults);
+                                new Operation.VacuumHandler(m_options, (VacuumResults)vacuumResults.VacuumResults)
+                                    .RunAsync().Await();
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToVacuum", ex, "Failed to vacuum database");
                             }
                         }
                     }
@@ -578,9 +579,9 @@ namespace Duplicati.Library.Main
                     try
                     {
                         // No operation was started in database, so write logs to new operation
-                        if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
-                            using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache))
-                                db.WriteResults(result);
+                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                            using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).Await())
+                                db.WriteResults(result, CancellationToken.None).Await();
                     }
                     catch (Exception we)
                     {
@@ -603,9 +604,9 @@ namespace Duplicati.Library.Main
 
                         resultSetter.Fatal = true;
                         // Write logs to previous operation if database exists
-                        if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
-                            using (var db = new LocalDatabase(m_options.Dbpath, null, true, m_options.SqlitePageCache))
-                                db.WriteResults(result);
+                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                            using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).Await())
+                                db.WriteResults(result, CancellationToken.None).Await();
                     }
                     catch (Exception we)
                     {
@@ -756,7 +757,7 @@ namespace Duplicati.Library.Main
         private async Task ApplySecretProvider(CancellationToken cancellationToken)
         {
             var args = new[] { new Library.Utility.Uri(m_backendUrl) };
-            await SecretProviderHelper.ApplySecretProviderAsync([], args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken);
+            await SecretProviderHelper.ApplySecretProviderAsync([], args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken).ConfigureAwait(false);
             // Write back the backend argument, if it was modified by the secret provider
             m_backendUrl = args[0].ToString();
         }
@@ -1074,10 +1075,10 @@ namespace Duplicati.Library.Main
                 {
                     if (unauthorized)
                     {
-                        throw new IOException(Strings.Controller.SourceUnauthorizedError(inputsource));
+                        throw new UserInformationException(Strings.Controller.SourceUnauthorizedError(inputsource), "SourceUnauthorized");
                     }
 
-                    throw new IOException(Strings.Controller.SourceIsMissingError(inputsource));
+                    throw new UserInformationException(Strings.Controller.SourceIsMissingError(inputsource), "SourceIsMissing");
                 }
             }
 

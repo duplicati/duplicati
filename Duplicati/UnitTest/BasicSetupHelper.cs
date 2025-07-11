@@ -193,6 +193,8 @@ namespace Duplicati.UnitTest
                 opts["blocksize"] = "10kb";
                 opts["backup-test-samples"] = "0";
                 opts["unittest-mode"] = "true";
+                if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+                    opts["snapshot-policy"] = "Off";
 
                 return opts;
             }
