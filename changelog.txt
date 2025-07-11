@@ -1,3 +1,31 @@
+2025-07-11 - 2.1.0.124_canary_2025-07-11
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+
+This is primarily a bugfix release for some minor issues that were reported on 2.1.0.123.
+
+## Detailed list of changes:
+- Fixed wrong SQLite environment variable name
+- Don't show stack if stopping a backup due to missing sources
+- Update logic for probing for an access method in ServerUtil
+- Fixed ngax not supporting `--use-ssl`
+- Use template icons on macOS
+- Fixed an error when loading log data
+- Avoid floods of notifications
+- Corrected encode/decode of URLs
+- Fixed issue with recreated index files not reporting deleted blocks
+
+## ngclient changes
+- Fixed SMB editor handling paths incorrectly
+- Fixed source editor not inserting empty paths
+- Fixed an issue with selecting paths with a space
+- Fixed some dialogs not updating UI after clicking cancelable
+- Removed an extra leading slash for Windows destination paths
+- Recalculate file existing on database move
+- Show correct date and format in logs
+
 2025-07-09 - 2.1.0.123_canary_2025-07-09
 ==========
 This release is a canary release intended to be used for testing.
