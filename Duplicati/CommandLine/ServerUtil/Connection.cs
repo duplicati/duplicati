@@ -193,57 +193,61 @@ public class Connection
         }
 
         // If we can read the server database, try to create a signin token
-        try
+        // But don't try to look at the database if the password is already set.
+        if (string.IsNullOrWhiteSpace(settings.Password))
         {
-            var opts = new Dictionary<string, string>();
-            if (settings.Key != null)
-                opts["settings-encryption-key"] = settings.Key.Key;
-            if (File.Exists(Path.Combine(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), DataFolderManager.SERVER_DATABASE_FILENAME)))
+            try
             {
-                string? cfg = null;
-                using (var connection = Server.Program.GetDatabaseConnection(new ApplicationSettings(), opts, true))
+                var opts = new Dictionary<string, string>();
+                if (settings.Key != null)
+                    opts["settings-encryption-key"] = settings.Key.Key;
+                if (File.Exists(Path.Combine(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), DataFolderManager.SERVER_DATABASE_FILENAME)))
                 {
-                    cfg = connection.ApplicationSettings.JWTConfig;
-                    if (settings.HostUrl.Scheme == "https" && connection.ApplicationSettings.ServerSSLCertificate != null && trustedCertificateHashes.Count == 0)
+                    string? cfg = null;
+                    using (var connection = Server.Program.GetDatabaseConnection(new ApplicationSettings(), opts, true, false))
                     {
-                        var selfSignedCertHash = connection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
-                        if (!string.IsNullOrWhiteSpace(selfSignedCertHash))
-                            trustedCertificateHashes.Add(selfSignedCertHash);
+                        cfg = connection.ApplicationSettings.JWTConfig;
+                        if (settings.HostUrl.Scheme == "https" && connection.ApplicationSettings.ServerSSLCertificate != null && trustedCertificateHashes.Count == 0)
+                        {
+                            var selfSignedCertHash = connection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
+                            if (!string.IsNullOrWhiteSpace(selfSignedCertHash))
+                                trustedCertificateHashes.Add(selfSignedCertHash);
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(cfg))
+                    {
+                        var signinjwt = new JWTTokenProvider(
+                            JsonSerializer.Deserialize<JWTConfig>(cfg)
+                                ?? throw new InvalidOperationException("Failed to deserialize JWTConfig")
+                        ).CreateSigninToken("server-cli");
+
+                        var responseTask = client.PostAsync("auth/signin", JsonContent.Create(new { SigninToken = signinjwt, RememberMe = obtainRefreshToken }));
+                        var (accessToken, refreshToken) = await ParseAuthResponse(responseTask);
+                        if (string.IsNullOrWhiteSpace(accessToken))
+                            throw new InvalidOperationException("Failed to get access token");
+
+                        if (!string.IsNullOrWhiteSpace(refreshToken))
+                            (settings with { RefreshToken = refreshToken }).Save(console);
+
+                        return CreateConnectionWithClient(client, accessToken);
                     }
                 }
-
-                if (!string.IsNullOrWhiteSpace(cfg))
+                else if (!string.IsNullOrWhiteSpace(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)))
                 {
-                    var signinjwt = new JWTTokenProvider(
-                        JsonSerializer.Deserialize<JWTConfig>(cfg)
-                            ?? throw new InvalidOperationException("Failed to deserialize JWTConfig")
-                    ).CreateSigninToken("server-cli");
-
-                    var responseTask = client.PostAsync("auth/signin", JsonContent.Create(new { SigninToken = signinjwt, RememberMe = obtainRefreshToken }));
-                    var (accessToken, refreshToken) = await ParseAuthResponse(responseTask);
-                    if (string.IsNullOrWhiteSpace(accessToken))
-                        throw new InvalidOperationException("Failed to get access token");
-
-                    if (!string.IsNullOrWhiteSpace(refreshToken))
-                        (settings with { RefreshToken = refreshToken }).Save(console);
-
-                    return CreateConnectionWithClient(client, accessToken);
+                    if (console != null)
+                        console.AppendConsoleMessage($"No database found in {DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)}");
+                    else
+                        Console.WriteLine($"No database found in {DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)}");
                 }
             }
-            else if (!string.IsNullOrWhiteSpace(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)))
+            catch (Exception ex)
             {
                 if (console != null)
-                    console.AppendConsoleMessage($"No database found in {DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)}");
+                    console.AppendConsoleMessage($"Failed to obtain a signin token: {ex.Message}");
                 else
-                    Console.WriteLine($"No database found in {DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)}");
+                    Console.WriteLine($"Failed to obtain a signin token: {ex.Message}");
             }
-        }
-        catch (Exception ex)
-        {
-            if (console != null)
-                console.AppendConsoleMessage($"Failed to obtain a signin token: {ex.Message}");
-            else
-                Console.WriteLine($"Failed to obtain a signin token: {ex.Message}");
         }
 
         // Otherwise, we need a password to log in
