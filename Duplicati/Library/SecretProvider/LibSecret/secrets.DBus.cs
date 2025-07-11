@@ -51,7 +51,7 @@ namespace secrets.DBus
         private const string __Interface = "org.freedesktop.impl.portal.Secret";
         public Secret(secretsService service, ObjectPath path) : base(service, path)
         { }
-        public Task<(uint Response, Dictionary<string, VariantValue> Results)> RetrieveSecretAsync(ObjectPath handle, string appId, System.Runtime.InteropServices.SafeHandle fd, Dictionary<string, Variant> options)
+        public Task<(uint Response, Dictionary<string, VariantValue> Results)> RetrieveSecretAsync(ObjectPath handle, string appId, System.Runtime.InteropServices.SafeHandle fd, Dictionary<string, VariantValue> options)
         {
             return this.Connection.CallMethodAsync(CreateMessage(), (Message m, object? s) => ReadMessage_uaesv(m, (secretsObject)s!), this);
             MessageBuffer CreateMessage()
@@ -187,7 +187,7 @@ namespace secrets.DBus
                 return writer.CreateMessage();
             }
         }
-        public Task<ObjectPath> CreateWithMasterPasswordAsync(Dictionary<string, Variant> attributes, (ObjectPath, byte[], byte[], string) master)
+        public Task<ObjectPath> CreateWithMasterPasswordAsync(Dictionary<string, VariantValue> attributes, (ObjectPath, byte[], byte[], string) master)
         {
             return this.Connection.CallMethodAsync(CreateMessage(), (Message m, object? s) => ReadMessage_o(m, (secretsObject)s!), this);
             MessageBuffer CreateMessage()
@@ -231,7 +231,7 @@ namespace secrets.DBus
         private const string __Interface = "org.freedesktop.Secret.Service";
         public Service(secretsService service, ObjectPath path) : base(service, path)
         { }
-        public Task<(VariantValue Output, ObjectPath Result)> OpenSessionAsync(string algorithm, Variant input)
+        public Task<(VariantValue Output, ObjectPath Result)> OpenSessionAsync(string algorithm, VariantValue input)
         {
             return this.Connection.CallMethodAsync(CreateMessage(), (Message m, object? s) => ReadMessage_vo(m, (secretsObject)s!), this);
             MessageBuffer CreateMessage()
@@ -248,7 +248,7 @@ namespace secrets.DBus
                 return writer.CreateMessage();
             }
         }
-        public Task<(ObjectPath Collection, ObjectPath Prompt)> CreateCollectionAsync(Dictionary<string, Variant> properties, string @alias)
+        public Task<(ObjectPath Collection, ObjectPath Prompt)> CreateCollectionAsync(Dictionary<string, VariantValue> properties, string @alias)
         {
             return this.Connection.CallMethodAsync(CreateMessage(), (Message m, object? s) => ReadMessage_oo(m, (secretsObject)s!), this);
             MessageBuffer CreateMessage()
@@ -558,7 +558,7 @@ namespace secrets.DBus
                 return writer.CreateMessage();
             }
         }
-        public Task<(ObjectPath Item, ObjectPath Prompt)> CreateItemAsync(Dictionary<string, Variant> properties, (ObjectPath, byte[], byte[], string) secret, bool replace)
+        public Task<(ObjectPath Item, ObjectPath Prompt)> CreateItemAsync(Dictionary<string, VariantValue> properties, (ObjectPath, byte[], byte[], string) secret, bool replace)
         {
             return this.Connection.CallMethodAsync(CreateMessage(), (Message m, object? s) => ReadMessage_oo(m, (secretsObject)s!), this);
             MessageBuffer CreateMessage()
