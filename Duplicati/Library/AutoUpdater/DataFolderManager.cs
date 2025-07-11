@@ -25,6 +25,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.AutoUpdater;
@@ -95,9 +96,9 @@ public static class DataFolderManager
     {
         // Trigger portable mode, if the flag is set
         PORTABLE_MODE = ParseBoolSlim(ExtractOptionSlim(PORTABLE_MODE_OPTION));
-        
+
         string dataFolder = string.Empty;
-        
+
         // The environment variable is a legacy setting
         var envOverride = Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME);
 
@@ -142,17 +143,23 @@ public static class DataFolderManager
                     Logging.Log.WriteWarningMessage(LOGTAG, "FailedToSetPermissions", ex, "Failed to set permissions for {0}: {1}", dataFolder, ex.Message);
                 }
         }
-        else
+        else if (mode == AccessMode.ReadWritePermissionSet)
         {
-            Directory.CreateDirectory(dataFolder);
             try
             {
-                if (mode == AccessMode.ReadWritePermissionSet)
+                Directory.CreateDirectory(dataFolder);
+                try
+                {
                     SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolder);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "FailedToSetPermissions", ex, "Failed to set permissions for {0}: {1}", dataFolder, ex.Message);
+                }
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(LOGTAG, "FailedToSetPermissions", ex, "Failed to set permissions for {0}: {1}", dataFolder, ex.Message);
+                throw new UserInformationException($"Failed to create data folder {dataFolder}", "FailedToCreateDataFolder", ex);
             }
         }
 
@@ -167,7 +174,7 @@ public static class DataFolderManager
 
         if (mode == AccessMode.ReadWritePermissionSet && !File.Exists(Path.Combine(dataFolder, MACHINE_FILE)))
             File.WriteAllText(Path.Combine(dataFolder, MACHINE_FILE), AutoUpdateSettings.UpdateMachineFileText(InstallID));
-        
+
         return dataFolder;
     }
 
@@ -227,7 +234,7 @@ public static class DataFolderManager
                && !value.Equals("no", StringComparison.OrdinalIgnoreCase)
                && !value.Equals("off", StringComparison.OrdinalIgnoreCase);
     }
-    
+
     /// <summary>
     /// The unique machine installation ID
     /// </summary>

@@ -109,7 +109,7 @@ namespace Duplicati.UnitTest
             }
 
             byte[] jsonByteArray;
-            using (var con = Program.GetDatabaseConnection(new ApplicationSettings(), advancedOptions, true))
+            using (var con = Program.GetDatabaseConnection(new ApplicationSettings(), advancedOptions, true, false))
                 jsonByteArray = BackupImportExportHandler.ExportToJSON(con, backup, null);
 
             // The username should not have the '%40' converted to '@' since the import code
