@@ -588,6 +588,9 @@ public static partial class Command
         // Prevent the system from going to sleep during the build
         using var _ = new KeepAliveAssertion();
 
+        // Preload AWS S3 so the assembly is loaded before we delete the bin folders
+        var __ = typeof(Amazon.S3.AmazonS3Client);
+
         if (rtcfg.UseGithubUpload && !input.GitStashPush)
         {
             Console.WriteLine("Github upload requested, but pushing the tag is disabled");
