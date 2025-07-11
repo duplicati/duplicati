@@ -1032,18 +1032,25 @@ namespace Duplicati.Server
                         null,
                         null,
                         null,
-                        (n, a) =>
-                        {
-                            var existing = a.FirstOrDefault(x => x.BackupID == backup.ID);
-                            if (existing == null)
-                                return n;
-
-                            if (existing.Type == NotificationType.Error)
-                                return existing;
-
-                            return n;
-                        }
+                        (n, a) => n
                     );
+                }
+                else
+                {
+                    var notificationIds = databaseConnection.GetNotifications()
+                        .Where(n => n.BackupID == backup.ID)
+                        .Select(x => x.ID)
+                        .ToList();
+
+                    foreach (var id in notificationIds)
+                        try
+                        {
+                            databaseConnection.DismissNotification(id);
+                        }
+                        catch (Exception ex)
+                        {
+                            databaseConnection.LogError(backup.ID, "Failed to dismiss notification", ex);
+                        }
                 }
             }
             else if (result.ParsedResult != ParsedResultType.Success)
