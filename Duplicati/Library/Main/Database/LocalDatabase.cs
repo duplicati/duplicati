@@ -1037,7 +1037,13 @@ ON
         public IEnumerable<IBlock> GetBlocks(long volumeid, IDbTransaction? transaction = null)
         {
             using var cmd = m_connection.CreateCommand(transaction)
-                .SetCommandAndParameters(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = @VolumeId")
+                .SetCommandAndParameters(@"
+                WITH AllBlocks AS (
+                    SELECT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = @VolumeId
+                    UNION ALL
+                    SELECT ""Hash"", ""Size"" FROM ""DeletedBlock"" WHERE ""VolumeID"" = @VolumeId
+                )
+                SELECT DISTINCT ""Hash"", ""Size"" FROM AllBlocks")
                 .SetParameterValue("@VolumeId", volumeid);
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
