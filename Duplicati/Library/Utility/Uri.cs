@@ -156,6 +156,8 @@ namespace Duplicati.Library.Utility
                 if (path.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
                     path = path.Substring("file://".Length);
 
+                path = UrlDecode(path);
+
                 if (path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) < 0)
                     try
                     {
@@ -176,9 +178,9 @@ namespace Duplicati.Library.Utility
             }
 
             this.Scheme = m.Groups["scheme"].Value;
-            var h = m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "";
+            var h = UrlDecode(m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "");
 
-            var p = m.Groups["path"].Success ? m.Groups["path"].Value : "";
+            var p = UrlDecode(m.Groups["path"].Success ? m.Groups["path"].Value : "");
             if (m.Groups["hostname"].Success && p.StartsWith("/", StringComparison.Ordinal))
                 p = p.Substring(1);
 
@@ -270,7 +272,7 @@ namespace Duplicati.Library.Utility
 
             if (!string.IsNullOrEmpty(host))
             {
-                s += host;
+                s += UrlPathEncode(host);
                 if (port != -1)
                     s += ":" + port.ToString();
             }
@@ -279,7 +281,7 @@ namespace Duplicati.Library.Utility
             {
                 if (!string.IsNullOrEmpty(host))
                     s += "/";
-                s += path;
+                s += string.Join('/', path.Split('/').Select(x => UrlPathEncode(x)));
             }
             if (!string.IsNullOrEmpty(query))
                 s += "?" + query;
@@ -361,6 +363,9 @@ namespace Duplicati.Library.Utility
         /// <param name="encoding">The encoding to use</param>
         public static string UrlPathEncode(string value, System.Text.Encoding encoding = null)
         {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
             return UrlEncode(value, encoding, "%20");
         }
 
