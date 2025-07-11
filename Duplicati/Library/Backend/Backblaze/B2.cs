@@ -175,8 +175,7 @@ public class B2 : IStreamingBackend
         _prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
         // For B2 we do not use a leading slash
-        while (_prefix.StartsWith("/", StringComparison.Ordinal))
-            _prefix = _prefix.Substring(1);
+        _prefix = _prefix.TrimStart('/');
 
         _urlencodedPrefix = string.Join("/", _prefix.Split(new[] { '/' }).Select(x => Utility.Uri.UrlPathEncode(x)));
 
