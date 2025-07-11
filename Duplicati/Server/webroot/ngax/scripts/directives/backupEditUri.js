@@ -232,6 +232,8 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                 if (scope.Backend.Options[n].Name == 'use-ssl')
                     scope.SupportsSSL = true;
 
+            console.log('Backend changed to: ' + scope.Backend.Key, scope.SupportsSSL);
+
             scope.TemplateUrl = EditUriBackendConfig.templates[scope.Backend.Key];
             if (scope.TemplateUrl == null)
                 scope.TemplateUrl = EditUriBackendConfig.defaulttemplate;
@@ -266,16 +268,15 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
 
                     if (hasssl) {
                         scope.Backend = bk;
-                        parts['--use-ssl'] = true;
+                        parts['--use-ssl'] = 'true';
                         break;
                     }
                 }
             }
 
-
             scope.Username = parts['--auth-username'];
             scope.Password = parts['--auth-password'];
-            scope.UseSSL = parts['--use-ssl'];
+            scope.UseSSL = AppUtils.parseBoolString(parts['--use-ssl']);
             scope.Port = parts['server-port'];
             scope.Server = parts['server-name'];
             scope.Path = parts['server-path'];

@@ -26,9 +26,8 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
         var opts = {};
         self.merge_in_advanced_options(scope, opts, true);
 
-        var url = AppUtils.format('{0}{1}://{2}{3}/{4}{5}',
+        var url = AppUtils.format('{0}://{1}{2}/{3}{4}',
             scope.Backend.Key,
-            (scope.SupportsSSL && scope.UseSSL) ? 's' : '',
             scope.Server || '',
             (scope.Port || '') == '' ? '' : ':' + scope.Port,
             scope.Path || '',
@@ -50,6 +49,8 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
             dict['auth-username'] = scope.Username;
         if (includeUserPassword && scope.Password != null && scope.Password != '')
             dict['auth-password'] = scope.Password;
+        if (scope.UseSSL)
+            dict['use-ssl'] = 'true';
 
         if (!AppUtils.parse_extra_options(scope.AdvancedOptions, dict))
             return false;
