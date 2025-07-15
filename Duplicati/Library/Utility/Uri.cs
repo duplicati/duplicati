@@ -200,7 +200,7 @@ namespace Duplicati.Library.Utility
             }
 
             // Support correctly encoded file:///C:\test
-            if (h.Length == 0 && Scheme == "file" && WINDOWS_PATH.IsMatch(p) && p.StartsWith("/", StringComparison.Ordinal))
+            if ((h == null || h.Length == 0) && Scheme == "file" && WINDOWS_PATH.IsMatch(p) && p.StartsWith("/", StringComparison.Ordinal))
                 p = p.Substring(1);
 
             this.Host = h;
