@@ -49,6 +49,11 @@ namespace Duplicati.Library.Utility
         private static readonly System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:\?/]+)(\:(?<password>[^@\:\?/]*))?\@))?((?<hostname>(?:[^\[/\?\:][^/\?\:]*)|(?:\[[^\]]+\]))(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
 
         /// <summary>
+        /// Detects a Windows path
+        /// </summary>
+        private static readonly System.Text.RegularExpressions.Regex WINDOWS_PATH = new System.Text.RegularExpressions.Regex(@"^/?[a-zA-Z]:[\\/]");
+
+        /// <summary>
         /// The URL scheme, e.g. http
         /// </summary>
         public readonly string Scheme;
@@ -194,6 +199,10 @@ namespace Duplicati.Library.Utility
                 h = null;
             }
 
+            // Support correctly encoded file:///C:\test
+            if (h.Length == 0 && Scheme == "file" && WINDOWS_PATH.IsMatch(p) && p.StartsWith("/", StringComparison.Ordinal))
+                p = p.Substring(1);
+
             this.Host = h;
             this.Path = p;
 
@@ -279,8 +288,10 @@ namespace Duplicati.Library.Utility
 
             if (!string.IsNullOrEmpty(path))
             {
-                if (!string.IsNullOrEmpty(host))
+                // Append the leading `/` to the Windows path for file:///c:\test
+                if (!string.IsNullOrEmpty(host) || (WINDOWS_PATH.IsMatch(path) && !path.StartsWith("/")))
                     s += "/";
+
                 s += string.Join('/', path.Split('/').Select(x => UrlPathEncode(x)));
             }
             if (!string.IsNullOrEmpty(query))
