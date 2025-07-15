@@ -24,6 +24,8 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 
+#nullable enable
+
 namespace Duplicati.Library.Utility
 {
     // TODO: This class should be deleted.
@@ -60,12 +62,12 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The server name, e.g. www.example.com
         /// </summary>
-        public readonly string Host;
+        public readonly string? Host;
         /// <summary>
         /// The server path, e.g. index.html.
         /// Note that the path does NOT have a leading /.
         /// </summary>
-        public readonly string Path;
+        public readonly string? Path;
         /// <summary>
         /// The server port, e.g. 80, is -1 if using the default port
         /// </summary>
@@ -73,15 +75,15 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The querystring, e.g. ?id=1
         /// </summary>
-        public readonly string Query;
+        public readonly string? Query;
         /// <summary>
         /// The username, if any
         /// </summary>
-        public readonly string Username;
+        public readonly string? Username;
         /// <summary>
         /// The password, if any
         /// </summary>
-        public readonly string Password;
+        public readonly string? Password;
 
         /// <summary>
         /// The original URI.
@@ -91,7 +93,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Cache for the query parameters.
         /// </summary>
-        private NameValueCollection m_queryParams;
+        private NameValueCollection? m_queryParams;
 
         /// <summary>
         /// Gets the parameters in the query string
@@ -122,7 +124,7 @@ namespace Duplicati.Library.Utility
             get
             {
                 if (string.IsNullOrEmpty(Path))
-                    return Host;
+                    return Host ?? "";
                 else if (string.IsNullOrEmpty(Host))
                     return Path;
                 else
@@ -225,7 +227,7 @@ namespace Duplicati.Library.Utility
         /// <param name="username">The username</param>
         /// <param name="password">The password</param>
         /// <param name="port">The port</param>
-        public Uri(string scheme, string host, string path = null, string query = null, string username = null, string password = null, int port = -1)
+        public Uri(string scheme, string? host, string? path = null, string? query = null, string? username = null, string? password = null, int port = -1)
         {
             m_queryParams = null;
             Scheme = scheme;
@@ -267,7 +269,7 @@ namespace Duplicati.Library.Utility
         /// <param name="username">The username</param>
         /// <param name="password">The password</param>
         /// <param name="port">The port</param>
-        private static string AsString(string scheme, string host, string path, string query, string username, string password, int port)
+        private static string AsString(string scheme, string? host, string? path, string? query, string? username, string? password, int port)
         {
             var s = scheme + "://";
             if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
@@ -372,7 +374,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The encoded URL</returns>
         /// <param name="value">The URL fragment to encode</param>
         /// <param name="encoding">The encoding to use</param>
-        public static string UrlPathEncode(string value, System.Text.Encoding encoding = null)
+        public static string UrlPathEncode(string value, System.Text.Encoding? encoding = null)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
@@ -386,7 +388,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The encoded URL</returns>
         /// <param name="value">The URL fragment to encode</param>
         /// <param name="encoding">The encoding to use</param>
-        public static string UrlEncode(string value, System.Text.Encoding encoding = null, string spacevalue = "+")
+        public static string UrlEncode(string value, System.Text.Encoding? encoding = null, string spacevalue = "+")
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
@@ -430,7 +432,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The decoded URL</returns>
         /// <param name="value">The URL fragment to decode</param>
         /// <param name="encoding">The encoding to use</param>
-        public static string UrlDecode(string value, System.Text.Encoding encoding = null)
+        public static string UrlDecode(string value, System.Text.Encoding? encoding = null)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
@@ -553,7 +555,7 @@ namespace Duplicati.Library.Utility
         /// <param name="url">Base URL, containing schema, host, port.</param>
         /// <param name="path">Base path.</param>
         /// <param name="query">A collection of name value pairs to be translated into a query string.</param>
-        public static string UriBuilder(string url, string path, NameValueCollection query)
+        public static string UriBuilder(string url, string path, NameValueCollection? query)
         {
             var builder = new UriBuilder(url)
             {
@@ -569,7 +571,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The path.</returns>
         /// <param name="url">URL.</param>
-        public static string ExtractPath(string url)
+        public static string? ExtractPath(string url)
         {
             return new Uri(url).Path;
         }
