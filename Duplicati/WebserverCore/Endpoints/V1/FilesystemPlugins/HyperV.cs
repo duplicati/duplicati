@@ -18,51 +18,59 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System.Runtime.Versioning;
+
 using System.Security.Principal;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Snapshots.Windows;
-using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
-using Microsoft.AspNetCore.Mvc;
 
-namespace Duplicati.WebserverCore.Endpoints.V1;
+namespace Duplicati.WebserverCore.Endpoints.V1.FilesystemPlugins;
 
-public class HyperV : IEndpointV1
+public class Hyperv : IFilesystemPlugin
 {
-    public static void Map(RouteGroupBuilder group)
-    {
-        group.MapGet("/hyperv", () => Execute(null)).RequireAuthorization();
-        group.MapGet("/hyperv/{key}", ([FromRoute] string key) => Execute(key)).RequireAuthorization();
-    }
-
-    private static IEnumerable<Dto.TreeNodeDto> Execute(string? key)
+    private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Hyperv>();
+    public string RootName => "%HYPERV%";
+    public IEnumerable<Dto.TreeNodeDto> GetEntries(string[] pathSegments)
     {
         if (!OperatingSystem.IsWindows())
             return [];
 
-        return ExecuteOnWindows(key);
-    }
-
-    // Make sure the JIT does not attempt to inline this call and thus load
-    // referenced types from System.Management here
-    [SupportedOSPlatform("windows")]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-    private static IEnumerable<Dto.TreeNodeDto> ExecuteOnWindows(string? key)
-    {
         var hypervUtility = new HyperVUtility();
-
         if (!hypervUtility.IsHyperVInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
             return [];
 
         try
         {
-            if (string.IsNullOrEmpty(key))
+            if (pathSegments == null || pathSegments.Length == 0)
+            {
+                hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+                if (!hypervUtility.Guests.Any())
+                    return [];
+
+                return [new Dto.TreeNodeDto()
+                {
+                    id =  Util.AppendDirSeparator(RootName),
+                    text = "Hyper-V Machines",
+                    cls = "hyperv",
+                    iconCls = "x-tree-icon-hyperv",
+                    check = false,
+                    temporary = false,
+                    leaf = false,
+                    systemFile = false,
+                    hidden = false,
+                    symlink = false,
+                    fileSize = -1,
+                    resolvedpath = null
+                }];
+
+            }
+            else if (pathSegments.Length == 1)
             {
                 hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
                 return hypervUtility.Guests.Select(x => new Dto.TreeNodeDto()
                 {
-                    id = x.ID.ToString(),
+                    id = Util.AppendDirSeparator(string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x.ID.ToString()))),
                     text = x.Name,
                     cls = "hyperv",
                     iconCls = "x-tree-icon-hyperv",
@@ -78,15 +86,16 @@ public class HyperV : IEndpointV1
             }
             else
             {
+                var machineId = new Guid(pathSegments[1]);
                 hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER, true);
-                var foundVMs = hypervUtility.Guests.FindAll(x => x.ID.Equals(new Guid(key)));
+                var foundVMs = hypervUtility.Guests.FindAll(x => x.ID.Equals(machineId));
 
                 if (foundVMs.Count != 1)
-                    throw new NotFoundException(string.Format($"Cannot find VM with ID {key}"));
+                    throw new NotFoundException(string.Format($"Cannot find VM with ID {machineId}"));
                 return foundVMs[0].DataPaths.Select(x => new Dto.TreeNodeDto()
                 {
                     text = x,
-                    id = x,
+                    id = string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x)),
                     cls = "folder",
                     iconCls = "x-tree-icon-hypervmachine",
                     check = false,
@@ -96,13 +105,15 @@ public class HyperV : IEndpointV1
                     temporary = false,
                     symlink = false,
                     fileSize = -1,
-                    resolvedpath = null
+                    resolvedpath = x
                 }).ToList();
             }
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed to enumerate Hyper-V virtual machines: {ex.Message}", ex);
+            Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "HyperVEnumerationFailed", ex, "Failed to enumerate Hyper-V virtual machines: {0}", ex.Message);
         }
+
+        return [];
     }
 }
