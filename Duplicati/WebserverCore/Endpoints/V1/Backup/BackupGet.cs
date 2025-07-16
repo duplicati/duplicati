@@ -33,7 +33,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1.Backup;
 
 public class BackupGet : IEndpointV1
 {
-    private record GetBackupResultDto(Dto.ScheduleDto? Schedule, Dto.BackupDto Backup, Dictionary<string, string> DisplayNames);
+    public record GetBackupResultDto(Dto.ScheduleDto? Schedule, Dto.BackupDto Backup, Dictionary<string, string> DisplayNames);
 
     public static void Map(RouteGroupBuilder group)
     {
