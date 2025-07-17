@@ -1,3 +1,107 @@
+2025-07-17 - 2.1.1.0_experimental_2025-07-17
+==========
+This release is an experimental release inteded to be used for testing.
+
+The intention is to adjust any issues uncovered with this version, and eventually get a new stable release.
+
+# About this release
+
+This is the first experimental release since the stable release went out, and we are super excited to reach this milestone!
+
+The most visual change for this version is the use of the new user interface, but there is also a massive list of fixes and improvements in this version. Below is a summary of some of the larger changes.
+
+## New user interface
+The new user interface is rewritten from scratch and has the same general structure as the previous one, but we made some things more user friendly. The UI is fully functional, but we continue to improve on it.
+
+Should you find a function that is missing, we have included buttons to switch back-n-forth between the two user interfaces.
+
+## New backends
+We added support for using the cloud services pCloud, Filen and Filejump.
+
+We also added support for connections with SMB.
+The new SMB backend can connect directly to a Windows share without needing to mount the folder or install SMB support, and it works on Windows, Linux and macOS.
+
+## New restore flow
+The new restore flow is enabled by default and you should not notice anything other than faster restores. In case there is an issue with this, it is possible to set the option `--restore-legacy=true` to fall back to the previous restore flow.
+
+## New signing keys
+The packages are now signed by Duplicati Inc, and the Windows packages are signed with EV certificates.
+
+## Remote source support
+With this version it is now possible to make backups of local and some remote data.
+
+In this version, S3, IDrive, SSH and CIFS sources are supported.
+The UI does not yet support editing this nicely, but you can enter a path in the special format to "mount" the remote source.
+
+For the commandline (and manual text entry in the UI) enter sources such as:
+```
+// Linux/MacOS
+@/mnt/s3-data|s3://example?auth-username=...
+
+// Windows
+@X:\server1|smb://server/share?auth-username=...
+```
+
+This will cause the backups to fetch data from the remote sources.
+We will add an editor to the UI to allow browsing the remote sources, similar to the local files.
+
+## Archive attributes support
+For AWS S3 and Azure Blob Storage, Duplicati will now respect the archive attributes and not attempt to read and verify files that have been moved to cold storage.
+
+## Database updates
+This version updates the format of the local database to version 17.
+
+To assist in downgrades there is now a bundled `CommandLine.DatabaseTool.exe` / `duplicati-database-tool` that can downgrade databases with minimal data loss. For a downgrade from this version to 2.1.0.5 this will only drop a few indexes and not cause any data loss. Be sure to run the database tool *before* downgrading the install.
+
+# Throttle updated
+For backups that throttle the transfer speeds, the new throttle logic uses a shared limit for the backup, where previous versions would apply the throttle for each individual stream.
+
+## Removed backends
+The Sia backend has been removed due to an incompatible hardfork.
+
+The Mega backend has been marked as unmaintained due to lack of a supported library.
+For now, the Mega library still works, but you should migrate away from it. The new Mega S4 storage might be an option.
+
+## Updates to all backends
+All backends are updated to handle timeouts in a granular manner.
+
+This means the option `--http-operations-timeout` is no longer present, but instead there are now `--read-write-timeout`, `--list-timeout`, and `-short-timeout`. These have sensible defaults but are open for tweaking.
+
+The option `--allowed-ssl-versions` is only present for the FTP backend, all other backends use the operating system to figure out what version to use.
+
+## New datafolder default location
+For Duplicati running as a service there are now changes for the default folder location.
+If you are not running Duplicati as a service/daemon, this change has no effect.
+
+**Windows**: Avoid storing data in `C:\Windows\System32\config\systemprofile\AppData\Local\Duplicati` and prefer `{CommonProgramData}\Duplicati`, usually resolving to `C:\ProgramData\Duplicati`. 
+
+This change is to counter an issue where Windows will wipe the `C:\Windows` folder on major updates, and destroy the backup configuration in the process. If your service stores data under `C:\Windows` you will see a warning in the user interface on startup.
+
+**Linux**: Avoid storing data in `/Duplicati` and prefer `/var/lib/Duplicati`.
+This was caused by the update to .NET8 where the data folder was not resolved correctly and returned `/`, which is not the ideal place for storing data.
+
+If you are using `--server-datafolder` or `DUPLICATI_HOME`, this has no effect on the database, but may cause your machineid and installid to change.
+
+The `machineid.txt` and `installid.txt` would previously be stored in the local app data folder, even when using portable mode or choosing a specific data folder.
+
+This has been fixed, so the files will now follow the database.
+If you are using the Duplicati console or otherwise depend on these values, you need to move them into the folder where the database is stored.
+
+This update also sets permissions on the data folder and the databases to prevent unauthorized access from local accounts.
+To opt out of setting permissions on each startup, place a file named `insecure-permissions.txt` inside the data folder.
+
+## Other large changes
+- New file and folder enumeration logic
+- Timeouts logic on all backend operations
+- Improved database validation and repair logic
+- ServerUtil can output JSON for script integration
+- Improved support for having Duplicati behind a proxy
+- Updated throttle logic, all streams share the throttle
+- Improved repair logic
+- VSS is automatically on if running on Windows with sufficient privileges
+- Improved backend test function
+- Ability to suppress warnings
+
 2025-06-24 - 2.1.0.120_canary_2025-06-24
 ==========
 This release is a canary release intended to be used for testing.
