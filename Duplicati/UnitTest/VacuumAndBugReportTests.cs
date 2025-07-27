@@ -62,11 +62,15 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("CreateBugReport")]
-        public void CreateBugReportZip()
+        public void CreateBugReportZip([Values(true, false)] bool vacuum)
         {
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "file.txt"), new byte[] { 1 });
 
-            var opts = new Dictionary<string, string>(TestOptions);
+            var opts = new Dictionary<string, string>(TestOptions).Expand(new
+            {
+                auto_vacuum = vacuum,
+            });
+
             using (var c = new Controller("file://" + TARGETFOLDER, opts, null))
             {
                 var backup = c.Backup(new[] { DATAFOLDER });
