@@ -41,6 +41,7 @@ namespace Duplicati.Library.Main.Operation
                 await Database.LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "Vacuum", false, null, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
+            await db.Transaction.CommitAsync("Vacuum", false, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db.Vacuum(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             m_result.EndTime = DateTime.UtcNow;
         }
