@@ -59,7 +59,7 @@ We use GitHub for bug tracking. Please search existing issues before creating a 
 ## Contributing Translations
 
 Want to help translate Duplicati? Contributions are welcome on Transifex:
-<https://www.transifex.com/duplicati/duplicati/dashboard/>.
+<https://explore.transifex.com/duplicati/duplicati/>.
 
 ## Contributing Code
 
