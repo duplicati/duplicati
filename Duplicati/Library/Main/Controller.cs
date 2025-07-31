@@ -924,7 +924,7 @@ namespace Duplicati.Library.Main
             }
 
             var scheme = Library.Utility.Utility.GuessScheme(m_backendUrl);
-            if (DynamicLoader.BackendLoader.GetSupportedCommands(m_backendUrl) == null)
+            if (DynamicLoader.BackendLoader.GetSupportedCommands(m_backendUrl) == null && !string.Equals( m_backendUrl, "dummy://", StringComparison.OrdinalIgnoreCase) )
             {
                 // If the backend is HTTP or HTTPS, give a custom error message
                 if (string.Equals(scheme, "http", StringComparison.OrdinalIgnoreCase) || string.Equals(scheme, "https", StringComparison.OrdinalIgnoreCase))
