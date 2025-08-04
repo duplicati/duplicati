@@ -260,14 +260,14 @@ namespace Duplicati.CommandLine.BackendTester
                         ? (int)TimeSpan.FromSeconds(secondsRetry).TotalMilliseconds
                         : (int)TimeSpan.FromSeconds(60).TotalMilliseconds;
 
-                Console.WriteLine($"{LogTimeStamp}Read Write Timeout set to {(readWriteTimeout == Timeout.Infinite ? "infinite" : readWriteTimeout + " ms")}");
-
                 // Allow overriding the timeout for the backend here, even if timeouts are disabled
                 if (options.TryGetValue("read-write-timeout", out var readWriteTimeoutString))
                     readWriteTimeout = (int)Timeparser.ParseTimeSpan(readWriteTimeoutString).TotalMilliseconds;
 
                 if (readWriteTimeout <= 0)
                     readWriteTimeout = Timeout.Infinite;
+
+                Console.WriteLine($"{LogTimeStamp}Read Write Timeout set to {(readWriteTimeout == Timeout.Infinite ? "infinite" : readWriteTimeout + " ms")}");
 
                 if (options.ContainsKey("number-of-files"))
                     number_of_files = int.Parse(options["number-of-files"]);
