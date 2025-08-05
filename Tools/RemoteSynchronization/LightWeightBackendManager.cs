@@ -29,6 +29,8 @@ namespace RemoteSynchronization
             return RetryWithDelay(
                 $"Delete {remotename}",
                 () => _streamingBackend.DeleteAsync(remotename, token),
+                null,
+                false,
                 token
             );
         }
@@ -62,9 +64,13 @@ namespace RemoteSynchronization
         {
             return RetryWithDelay(
                 $"Get {remotename}",
-                () => _streamingBackend
-                    .GetAsync(remotename, stream, token)
-                    .ContinueWith(_ => _anyDownloaded = true, token),
+                async () =>
+                {
+                    await _streamingBackend.GetAsync(remotename, stream, token).ConfigureAwait(false);
+                    _anyDownloaded = true;
+                },
+                stream,
+                true,
                 token
             );
         }
@@ -114,9 +120,13 @@ namespace RemoteSynchronization
         {
             return RetryWithDelay(
                 $"Put {remotename}",
-                () => _streamingBackend
-                    .PutAsync(remotename, stream, token)
-                    .ContinueWith(_ => _anyUploaded = true, token),
+                async () =>
+                {
+                    await _streamingBackend.PutAsync(remotename, stream, token).ConfigureAwait(false);
+                    _anyUploaded = true;
+                },
+                stream,
+                false,
                 token
             );
         }
@@ -140,28 +150,28 @@ namespace RemoteSynchronization
                             _anyUploaded = true;
                             _anyDownloaded = true;
                         },
+                        null,
+                        false,
                         token
                     ),
                 IRenameEnabledBackend ireb =>
                     RetryWithDelay(
                         $"Rename {oldname} to {newname}",
-                        () => ireb
-                            .RenameAsync(oldname, newname, token)
-                            .ContinueWith(
-                                _ =>
-                                {
-                                    _anyUploaded = true;
-                                    _anyDownloaded = true;
-                                },
-                                token
-                            ),
+                        async () =>
+                        {
+                            await ireb.RenameAsync(oldname, newname, token).ConfigureAwait(false);
+                            _anyUploaded = true;
+                            _anyDownloaded = true;
+                        },
+                        null,
+                        false,
                         token
                     ),
                 _ => throw new InvalidOperationException("Backend does not support renaming."),
             };
         }
 
-        private async Task RetryWithDelay(string operationName, Func<Task> action, CancellationToken token)
+        private async Task RetryWithDelay(string operationName, Func<Task> action, Stream? stream, bool resetStream, CancellationToken token)
         {
             while (true)
             {
@@ -171,13 +181,18 @@ namespace RemoteSynchronization
 
                 try
                 {
-                    await action().ConfigureAwait(false);
+                    await action();
                     return; // Exit the loop if the action succeeds.
                 }
                 catch (Exception ex)
                 {
                     Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", ex, "Error during operation: {0}", operationName);
                     Dispose(); // Dispose current backend and streaming backend.
+
+                    // Reset the stream, as it's in a potentially faulty state.
+                    stream?.Seek(0, SeekOrigin.Begin);
+                    if (resetStream)
+                        stream?.SetLength(0);
 
                     // Try to see if we can recover from the error.
                     await TryRecoverFromException(ex, token).ConfigureAwait(false);
