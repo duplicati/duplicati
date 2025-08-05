@@ -9,6 +9,21 @@ using Duplicati.Library.Utility;
 
 namespace RemoteSynchronization
 {
+    /// <summary>
+    /// A lightweight backend manager that handles remote synchronization operations.
+    /// This class is designed to manage backend operations such as Get, Put, Delete, Rename, and List asynchronously.
+    /// It supports retrying operations with a specified delay and can automatically create folders if they do not exist.
+    /// The class implements IDisposable to ensure proper resource management.
+    /// It uses a streaming backend for efficient file operations and handles exceptions gracefully to allow for retries and recovery.
+    /// A retry incurs a new instantiation of the backend.
+    /// It is designed to mimic the behavior of Duplicati.Library.Main.Backend.BackendManager.
+    /// </summary>
+    /// <param name="backendUrl">The backend URL string.</param>
+    /// <param name="options">A dictionary of options to pass to the backend.</param>
+    /// <param name="maxRetries">The maximum number of retries for failed operations.</param>
+    /// <param name="retryDelay">The delay between retries, in milliseconds.</param>
+    /// <param name="autoCreateFolders">Whether to automatically create folders if they do not exist.</param>
+    /// <param name="retryWithExponentialBackoff">Whether to use exponential backoff for retries.</param>
     public class LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false) : IDisposable
     {
         private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Program>();
@@ -24,9 +39,12 @@ namespace RemoteSynchronization
         private int _retryDelay = retryDelay;
         private IStreamingBackend? _streamingBackend = null;
 
-        //TODO Du skal have lavet docstrings
-        //TODO Du skal tjekke at alle parametrene er korrekte i det originale program
-
+        /// <summary>
+        /// Deletes a file from the remote backend.
+        /// </summary>
+        /// <param name="remotename">The name of the remote file to delete.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous delete operation.</returns>
         public Task DeleteAsync(string remotename, CancellationToken token)
         {
             return RetryWithDelay(
@@ -38,6 +56,11 @@ namespace RemoteSynchronization
             );
         }
 
+        /// <summary>
+        /// Gets the display name of the backend.
+        /// This property initializes the backend if it has not been instantiated yet.
+        /// </summary>
+        /// <returns>The display name of the backend.</returns>
         public string DisplayName
         {
             get
@@ -48,6 +71,9 @@ namespace RemoteSynchronization
             }
         }
 
+        /// <summary>
+        /// Disposes of the backend and streaming backend resources.
+        /// </summary>
         public void Dispose()
         {
             try
@@ -63,6 +89,14 @@ namespace RemoteSynchronization
             }
         }
 
+        /// <summary>
+        /// Gets a file from the remote backend and writes it to the specified stream.
+        /// This method retries the operation with a delay if it fails.
+        /// </summary>
+        /// <param name="remotename">The name of the remote file to get.</param>
+        /// <param name="stream">The stream to write the file to.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous get operation.</returns>
         public Task GetAsync(string remotename, Stream stream, CancellationToken token)
         {
             return RetryWithDelay(
@@ -78,6 +112,13 @@ namespace RemoteSynchronization
             );
         }
 
+        /// <summary>
+        /// Instantiates the backend if it has not been instantiated yet.
+        /// If the backend is already instantiated, it simply returns.
+        /// If the maximum number of retries has been reached, it throws an InvalidOperationException.
+        /// This method is called internally to ensure that the backend is ready for operations.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">If the maximum number of instantiations has been reached.</exception>
         private void Instantiate()
         {
             if (_backend != null)
@@ -98,6 +139,11 @@ namespace RemoteSynchronization
             }
         }
 
+        /// <summary>
+        /// Lists the files in the remote backend asynchronously.
+        /// </summary>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>An asynchronous enumerable of file entries.</returns>
         public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken token)
         {
             while (true)
@@ -119,6 +165,13 @@ namespace RemoteSynchronization
 
         }
 
+        /// <summary>
+        /// Puts a file to the remote backend from the specified stream.
+        /// </summary>
+        /// <param name="remotename">The name of the remote file to put.</param>
+        /// <param name="stream">The stream containing the file data to put.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous put operation.</returns>
         public Task PutAsync(string remotename, Stream stream, CancellationToken token)
         {
             return RetryWithDelay(
@@ -134,6 +187,15 @@ namespace RemoteSynchronization
             );
         }
 
+        /// <summary>
+        /// Renames a file in the remote backend.
+        /// If the backend supports renaming, it uses the RenameAsync method.
+        /// If the backend does not support renaming, it downloads the file, renames it, and deletes the old one.
+        /// </summary>
+        /// <param name="oldname">The current name of the remote file.</param>
+        /// <param name="newname">The new name for the remote file.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous rename operation.</returns>
         public Task RenameAsync(string oldname, string newname, CancellationToken token)
         {
             Instantiate();
@@ -174,6 +236,20 @@ namespace RemoteSynchronization
             };
         }
 
+        /// <summary>
+        /// Retries an operation with a delay if it fails.
+        /// This method will instantiate the backend if it has not been instantiated yet.
+        /// If the operation fails, it will log the error, dispose of the current backend and streaming backend,
+        /// reset the stream if specified, and attempt to recover from the exception.
+        /// If recovery is not possible, it will wait for the specified retry delay before retrying the operation.
+        /// The retry delay can be increased exponentially if specified.
+        /// </summary>
+        /// <param name="operationName">The name of the operation being retried, used for logging.</param>
+        /// <param name="action">The action to perform.</param>
+        /// <param name="stream">The stream to use for the operation. Used when resetting the stream during recovery.</param>
+        /// <param name="resetStream">Whether to reset the stream if the operation fails.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private async Task RetryWithDelay(string operationName, Func<Task> action, Stream? stream, bool resetStream, CancellationToken token)
         {
             while (true)
@@ -203,6 +279,11 @@ namespace RemoteSynchronization
             }
         }
 
+        /// <summary>
+        /// Attempts to create a folder in the remote backend.
+        /// </summary>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result is true if the folder was created successfully, false otherwise.</returns>
         private async Task<bool> TryCreateFolder(CancellationToken token)
         {
             try
@@ -224,6 +305,17 @@ namespace RemoteSynchronization
             }
         }
 
+        /// <summary>
+        /// Attempts to recover from an exception that occurred during a backend operation.
+        /// This method checks for specific types of exceptions, such as DNS resolution failures or folder missing exceptions.
+        /// If a DNS failure is detected, it attempts to refresh the DNS name by re-instantiating the backend and resolving DNS names.
+        /// If the exception is a folder missing exception and auto-creation of folders is enabled, it attempts to create the folder.
+        /// If recovery is not possible, it waits for the specified retry delay.
+        /// The retry delay will be doubled if exponential backoff is enabled.
+        /// </summary>
+        /// <param name="ex">The exception that occurred during the operation.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous recovery operation.</returns>
         private async Task TryRecoverFromException(Exception ex, CancellationToken token)
         {
             // Copied from Duplicati.Library.Main.Backend.BackendManager.Handler.

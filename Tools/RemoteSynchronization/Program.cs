@@ -552,8 +552,8 @@ destination will be verified before being overwritten (if they seemingly match).
         /// The files to delete are the files that are found in the destination but not found in the source.
         /// The files to verify are the files that are found in both the source and the destination, and that have the same size and modification date.
         /// </summary>
-        /// <param name="b_src">The source backend.</param>
-        /// <param name="b_dst">The destination backend.</param>
+        /// <param name="b_src">The source lightweight backend manager.</param>
+        /// <param name="b_dst">The destination lightweight backend manager.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
         private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileLists(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, Config config, CancellationToken cancelToken)
@@ -638,7 +638,7 @@ destination will be verified before being overwritten (if they seemingly match).
         /// Renames the files in a backend.
         /// The renaming is done by deleting the file and re-uploading it with a new name.
         /// </summary>
-        /// <param name="b">The backend to rename the files in.</param>
+        /// <param name="bm">The lightweight backend manager to issue rename operations to.</param>
         /// <param name="files">The files to rename.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <returns>The number of successful renames.</returns>
@@ -704,8 +704,8 @@ destination will be verified before being overwritten (if they seemingly match).
         /// Verifies the files in the destination backend.
         /// The verification is done by downloading the files from the destination backend and comparing them to the source files.
         /// </summary>
-        /// <param name="b_src">The source backend.</param>
-        /// <param name="b_dst">The destination backend.</param>
+        /// <param name="b_src">The source lightweight backend manager.</param>
+        /// <param name="b_dst">The destination lightweight backend manager.</param>
         /// <param name="files">The files to verify.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <returns>A list of the files that failed verification.</returns>
