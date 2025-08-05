@@ -1906,10 +1906,10 @@ namespace Duplicati.Library.Main.Database
         {
             using var cmd = m_connection.CreateCommand(@"
                 SELECT COUNT(*)
-                FROM Metadataset
-                JOIN Blockset
-                    ON Metadataset.BlocksetID = Blockset.ID
-                WHERE Blockset.Length = 0
+                FROM ""Metadataset""
+                JOIN ""Blockset""
+                    ON ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
+                WHERE ""Blockset"".""Length"" = 0
             ")
                 .SetTransaction(m_rtr);
 
@@ -1935,14 +1935,13 @@ namespace Duplicati.Library.Main.Database
 
             try
             {
-                // TODO quotes
                 await cmd.SetCommandAndParameters(@$"
                     CREATE TEMP TABLE ""{tablename}"" AS
                     SELECT
                         ""m"".""ID"" AS ""MetadataID"",
                         ""m"".""BlocksetID""
-                    FROM Metadataset ""m""
-                    JOIN Blockset ""b""
+                    FROM ""Metadataset"" ""m""
+                    JOIN ""Blockset"" ""b""
                         ON ""m"".""BlocksetID"" = ""b"".""ID""
                     WHERE
                         ""b"".""Length"" = 0
@@ -1973,7 +1972,7 @@ namespace Duplicati.Library.Main.Database
                 // Step 3: Delete obsolete Metadataset entries
                 await cmd.SetCommandAndParameters(@$"
                     DELETE FROM ""Metadataset""
-                    WHERE ID IN (
+                    WHERE ""ID"" IN (
                         SELECT ""MetadataID""
                         FROM ""{tablename}""
                     )
@@ -1985,7 +1984,7 @@ namespace Duplicati.Library.Main.Database
                 await cmd.SetCommandAndParameters(@$"
                     DELETE FROM ""Blockset""
                     WHERE
-                        ID IN (
+                        ""ID"" IN (
                             SELECT ""BlocksetID""
                             FROM ""{tablename}""
                         )
