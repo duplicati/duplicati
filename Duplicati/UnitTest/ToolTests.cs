@@ -427,9 +427,11 @@ namespace Duplicati.UnitTest
         [TestCase(true, false, "0")] // Fail first transfer on source.
         [TestCase(true, false, "1,3")] // Fail middle transfers on source.
         [TestCase(true, false, "4")] // Fail last transfer on source.
+        [TestCase(true, false, "0,1,2,3,4")] // Fail all transfers on source.
         [TestCase(false, true, "0")] // Fail first transfer on destination.
         [TestCase(false, true, "1,3")] // Fail middle transfers on destination.
         [TestCase(false, true, "4")] // Fail last transfer on destination.
+        [TestCase(false, true, "0,1,2,3,4")] // Fail all transfers on destination.
         public void TestRemoteSynchronizationWithFaultyBackend(bool failSource, bool failDest, string failIndices)
         {
             var l1 = Path.Combine(TARGETFOLDER, "l1");
@@ -471,9 +473,17 @@ namespace Duplicati.UnitTest
             var async_call = RemoteSynchronization.Program.Main(args);
             var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
 
-            // Expect nonzero return code if any backend fails
-            Assert.AreEqual(0, return_code, "Expected success.");
-            Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal.");
+            // Expect nonzero return code if any backend fails less than the number of retries
+            if (failIndices == "0,1,2,3,4")
+            {
+                Assert.AreNotEqual(0, return_code, "Expected failure due to all transfers failing.");
+                Assert.IsFalse(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories should not be equal due to failures.");
+            }
+            else
+            {
+                Assert.AreEqual(0, return_code, "Expected success.");
+                Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal.");
+            }
         }
 
         /// <summary>
