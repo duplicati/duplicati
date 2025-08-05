@@ -186,23 +186,11 @@ destination will be verified before being overwritten (if they seemingly match).
                 return 0;
             }
 
-            // Load the backends
-            static Exception throw_message(string target)
-            {
-                var message = $"The {target} backend does not support streaming operations.";
-                var ex = new Exception(message);
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", ex, message);
-                return ex;
-            }
-
-            using var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(config.Src, src_opts);
-            var b1s = b1 as IStreamingBackend ?? throw throw_message("source");
-
-            using var b2 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(config.Dst, dst_opts);
-            var b2s = b2 as IStreamingBackend ?? throw throw_message("destination");
+            using var b1m = new LightWeightBackendManager(config.Src, src_opts);
+            using var b2m = new LightWeightBackendManager(config.Dst, dst_opts);
 
             // Prepare the operations
-            var (to_copy, to_delete, to_verify) = await PrepareFileLists(b1s, b2s, config, CancellationToken.None);
+            var (to_copy, to_delete, to_verify) = await PrepareFileLists(b1m, b2m, config, CancellationToken.None);
 
             // Verify the files if requested. If the files are not verified, they will be deleted and copied again.
             long verified = 0, failed_verify = 0;
@@ -220,7 +208,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     }
                 }
 
-                var not_verified = await VerifyAsync(b1s, b2s, to_verify, config);
+                var not_verified = await VerifyAsync(b1m, b2m, to_verify, config);
                 failed_verify = not_verified.Count();
                 verified = to_verify.Count() - failed_verify;
 
@@ -237,7 +225,7 @@ destination will be verified before being overwritten (if they seemingly match).
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                 "The remote synchronization plan is to {0} {1} files from {2}, then copy {3} files from {4} to {2}.",
                 config.Retention ? "rename" : "delete",
-                to_delete.Count(), b2s.DisplayName, to_copy.Count(), b1s.DisplayName);
+                to_delete.Count(), b2m.DisplayName, to_copy.Count(), b1m.DisplayName);
 
             // As this is a potentially destructive operation, ask for confirmation
             if (!config.Confirm)
@@ -261,21 +249,21 @@ destination will be verified before being overwritten (if they seemingly match).
             long renamed = 0, deleted = 0;
             if (config.Retention)
             {
-                renamed = await RenameAsync(b2, to_delete, config);
+                renamed = await RenameAsync(b2m, to_delete, config);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                    "Renamed {0} files in {1}", renamed, b2s.DisplayName);
+                    "Renamed {0} files in {1}", renamed, b2m.DisplayName);
             }
             else
             {
-                deleted = await DeleteAsync(b2s, to_delete, config);
+                deleted = await DeleteAsync(b2m, to_delete, config);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                    "Deleted {0} files from {1}", deleted, b2s.DisplayName);
+                    "Deleted {0} files from {1}", deleted, b2m.DisplayName);
             }
 
             // Copy the files
-            var (copied, copy_errors) = await CopyAsync(b1s, b2s, to_copy, config);
+            var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config);
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                "Copied {0} files from {1} to {2}", copied, b1s, b2s);
+                "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
 
             // If there are still errors, retry a few times
             if (copy_errors.Any())
@@ -290,9 +278,9 @@ destination will be verified before being overwritten (if they seemingly match).
                     for (int i = 0; i < config.Retry; i++)
                     {
                         await Task.Delay(5000); // Wait 5 seconds before retrying
-                        (copied, copy_errors) = await CopyAsync(b1s, b2s, copy_errors, config);
+                        (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config);
                         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                            "Copied {0} files from {1} to {2}", copied, b1s, b2s);
+                            "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
                         if (!copy_errors.Any())
                             break;
                     }
@@ -310,20 +298,20 @@ destination will be verified before being overwritten (if they seemingly match).
             if (verified > 0)
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                     "Verified {0} files in {1} that didn't need to be copied",
-                    verified, b2s.DisplayName);
+                    verified, b2m.DisplayName);
             if (failed_verify > 0)
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                     "Failed to verify {0} files in {1}, which were then attempted to be copied",
-                    failed_verify, b2s.DisplayName);
+                    failed_verify, b2m.DisplayName);
             if (copied > 0)
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                    "Copied {0} files from {1} to {2}", copied, b1s.DisplayName, b2s.DisplayName);
+                    "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
             if (deleted > 0)
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                    "Deleted {0} files from {1}", deleted, b2s.DisplayName);
+                    "Deleted {0} files from {1}", deleted, b2m.DisplayName);
             if (renamed > 0)
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                    "Renamed {0} files in {1}", renamed, b2s.DisplayName);
+                    "Renamed {0} files in {1}", renamed, b2m.DisplayName);
 
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                 "Remote synchronization completed successfully");
@@ -346,7 +334,7 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="files">The files that will be copied.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <returns>A tuple holding the number of succesful copies and a List of the files that failed.</returns>
-        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files, Config config)
+        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config)
         {
             long successful_copies = 0;
             List<IFileEntry> errors = [];
@@ -464,7 +452,7 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="files">The files to delete.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <returns>The number of successful deletions.</returns>
-        private static async Task<long> DeleteAsync(IStreamingBackend b, IEnumerable<IFileEntry> files, Config config)
+        private static async Task<long> DeleteAsync(LightWeightBackendManager b, IEnumerable<IFileEntry> files, Config config)
         {
             long successful_deletes = 0;
             long i = 0, n = files.Count();
@@ -560,7 +548,7 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="b_dst">The destination backend.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
-        private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst, Config config, CancellationToken cancelToken)
+        private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileLists(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, Config config, CancellationToken cancelToken)
         {
             IEnumerable<IFileEntry> files_src, files_dst;
 
@@ -646,142 +634,62 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="files">The files to rename.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <returns>The number of successful renames.</returns>
-        private static async Task<long> RenameAsync(IBackend b, IEnumerable<IFileEntry> files, Config config)
+        private static async Task<long> RenameAsync(LightWeightBackendManager bm, IEnumerable<IFileEntry> files, Config config)
         {
             long successful_renames = 0;
             string prefix = $"{System.DateTime.UtcNow:yyyyMMddHHmmss}.old";
             using var downloaded = new MemoryStream();
             long i = 0, n = files.Count();
 
-            switch (b)
+            var sw = new System.Diagnostics.Stopwatch();
+
+            foreach (var f in files)
             {
-                case IStreamingBackend sb:
+                if (config.Progress)
+                    Console.Write($"\rRenaming: {i}/{n}");
+
+                Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+                    "Renaming {0} to {1}.{0} by calling Rename on {2}",
+                    f.Name, prefix, bm.DisplayName);
+
+                try
+                {
+                    if (config.DryRun)
                     {
-                        var sw_get_src = new System.Diagnostics.Stopwatch();
-                        var sw_put_dst = new System.Diagnostics.Stopwatch();
-                        var sw_del_src = new System.Diagnostics.Stopwatch();
-
-                        foreach (var f in files)
-                        {
-                            if (config.Progress)
-                                Console.Write($"\rRenaming: {i}/{n}");
-
-                            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
-                                "Renaming {0} to {1}.{0} by deleting and re-uploading {2} bytes to {3}",
-                                f.Name, prefix,
-                                Duplicati.Library.Utility.Utility.FormatSizeString(downloaded.Length),
-                                sb.DisplayName);
-
-                            try
-                            {
-                                sw_get_src.Start();
-                                await sb.GetAsync(f.Name, downloaded, CancellationToken.None);
-                                sw_get_src.Stop();
-
-                                if (config.DryRun)
-                                {
-                                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
-                                        "Would rename {0} to {1}.{0} by deleting and re-uploading {2} bytes to {3}",
-                                        f.Name, prefix,
-                                        Duplicati.Library.Utility.Utility.FormatSizeString(downloaded.Length),
-                                        sb.DisplayName);
-                                }
-                                else
-                                {
-                                    sw_put_dst.Start();
-                                    await sb.PutAsync($"{prefix}.{f.Name}", downloaded, CancellationToken.None);
-                                    sw_put_dst.Stop();
-                                    sw_del_src.Start();
-                                    await sb.DeleteAsync(f.Name, CancellationToken.None);
-                                    sw_del_src.Stop();
-                                }
-                                successful_renames++;
-                            }
-                            catch (Exception e)
-                            {
-                                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e,
-                                    "Error renaming {0}: {1}", f.Name, e.Message);
-                            }
-                            finally
-                            {
-                                // Reset the stream
-                                downloaded.SetLength(0);
-
-                                // Stop any running timers
-                                sw_get_src.Stop();
-                                sw_put_dst.Stop();
-                                sw_del_src.Stop();
-                            }
-
-                            i++;
-                        }
-
-                        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
-                            "Rename | Get source: {0} ms, Put destination: {1} ms, Delete source: {2} ms",
-                            TimeSpan.FromMilliseconds(sw_get_src.ElapsedMilliseconds),
-                            TimeSpan.FromMilliseconds(sw_put_dst.ElapsedMilliseconds),
-                            TimeSpan.FromMilliseconds(sw_del_src.ElapsedMilliseconds));
-
-                        if (config.Progress)
-                            Console.WriteLine($"\rRenaming: {n}/{n}");
-
-                        return successful_renames;
+                        Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
+                            "Would rename {0} to {1}.{0} by calling Rename on {2}",
+                            f.Name, prefix, bm.DisplayName);
                     }
-                case IRenameEnabledBackend rb:
+                    else
                     {
-                        var sw = new System.Diagnostics.Stopwatch();
-
-                        foreach (var f in files)
-                        {
-                            if (config.Progress)
-                                Console.Write($"\rRenaming: {i}/{n}");
-
-                            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
-                                "Renaming {0} to {1}.{0} by calling Rename on {2}",
-                                f.Name, prefix, rb.DisplayName);
-
-                            try
-                            {
-                                if (config.DryRun)
-                                {
-                                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
-                                        "Would rename {0} to {1}.{0} by calling Rename on {2}",
-                                        f.Name, prefix, rb.DisplayName);
-                                }
-                                else
-                                {
-                                    sw.Start();
-                                    await rb.RenameAsync(f.Name, $"{prefix}.{f.Name}", CancellationToken.None);
-                                    sw.Stop();
-                                }
-                                successful_renames++;
-                            }
-                            catch (Exception e)
-                            {
-                                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e,
-                                    "Error renaming {0}: {1}", f.Name, e.Message);
-                            }
-                            finally
-                            {
-                                // Ensure the timer is stopped
-                                sw.Stop();
-                            }
-
-                            i++;
-                        }
-
-                        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
-                            "Rename: {0} ms",
-                            TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
-
-                        if (config.Progress)
-                            Console.WriteLine($"\rRenaming: {n}/{n}");
-
-                        return successful_renames;
+                        sw.Start();
+                        await bm.RenameAsync(f.Name, $"{prefix}.{f.Name}", CancellationToken.None);
+                        sw.Stop();
                     }
-                default:
-                    throw new NotSupportedException("The backend does not support renaming");
+                    successful_renames++;
+                }
+                catch (Exception e)
+                {
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e,
+                        "Error renaming {0}: {1}", f.Name, e.Message);
+                }
+                finally
+                {
+                    // Ensure the timer is stopped
+                    sw.Stop();
+                }
+
+                i++;
             }
+
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                "Rename: {0} ms",
+                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
+
+            if (config.Progress)
+                Console.WriteLine($"\rRenaming: {n}/{n}");
+
+            return successful_renames;
         }
 
         /// <summary>
@@ -793,7 +701,7 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="files">The files to verify.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <returns>A list of the files that failed verification.</returns>
-        private static async Task<IEnumerable<IFileEntry>> VerifyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files, Config config)
+        private static async Task<IEnumerable<IFileEntry>> VerifyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config)
         {
             var errors = new List<IFileEntry>();
             using var s_src = new MemoryStream();
