@@ -20,15 +20,18 @@ namespace RemoteSynchronization
         private readonly string _backendUrl = backendUrl;
         private int _instantiations = 0;
         private readonly int _maxRetries = maxRetries;
-        private Dictionary<string, string> _options = options;
+        private readonly Dictionary<string, string> _options = options;
         private int _retryDelay = retryDelay;
         private IStreamingBackend? _streamingBackend = null;
+
+        //TODO Du skal have lavet docstrings
+        //TODO Du skal tjekke at alle parametrene er korrekte i det originale program
 
         public Task DeleteAsync(string remotename, CancellationToken token)
         {
             return RetryWithDelay(
                 $"Delete {remotename}",
-                () => _streamingBackend.DeleteAsync(remotename, token),
+                () => _streamingBackend!.DeleteAsync(remotename, token),
                 null,
                 false,
                 token
@@ -41,7 +44,7 @@ namespace RemoteSynchronization
             {
                 Instantiate();
 
-                return _streamingBackend.DisplayName;
+                return _streamingBackend!.DisplayName;
             }
         }
 
@@ -66,7 +69,7 @@ namespace RemoteSynchronization
                 $"Get {remotename}",
                 async () =>
                 {
-                    await _streamingBackend.GetAsync(remotename, stream, token).ConfigureAwait(false);
+                    await _streamingBackend!.GetAsync(remotename, stream, token).ConfigureAwait(false);
                     _anyDownloaded = true;
                 },
                 stream,
@@ -103,7 +106,7 @@ namespace RemoteSynchronization
 
                 try
                 {
-                    return _streamingBackend.ListAsync(token);
+                    return _streamingBackend!.ListAsync(token);
                 }
                 catch (Exception ex)
                 {
@@ -122,7 +125,7 @@ namespace RemoteSynchronization
                 $"Put {remotename}",
                 async () =>
                 {
-                    await _streamingBackend.PutAsync(remotename, stream, token).ConfigureAwait(false);
+                    await _streamingBackend!.PutAsync(remotename, stream, token).ConfigureAwait(false);
                     _anyUploaded = true;
                 },
                 stream,
@@ -207,7 +210,7 @@ namespace RemoteSynchronization
                 Instantiate();
 
                 // Attempt to create the folder
-                await _backend.CreateFolderAsync(token).ConfigureAwait(false);
+                await _backend!.CreateFolderAsync(token).ConfigureAwait(false);
 
                 return true; // Folder creation succeeded
             }
@@ -239,7 +242,7 @@ namespace RemoteSynchronization
                 {
                     Instantiate();
 
-                    foreach (var name in await _backend.GetDNSNamesAsync(token).ConfigureAwait(false) ?? [])
+                    foreach (var name in await _backend!.GetDNSNamesAsync(token).ConfigureAwait(false) ?? [])
                         if (!string.IsNullOrWhiteSpace(name))
                             System.Net.Dns.GetHostEntry(name);
                 }
