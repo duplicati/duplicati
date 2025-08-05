@@ -422,6 +422,60 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
         }
 
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        [TestCase(true, false, "0")] // Fail first transfer on source.
+        [TestCase(true, false, "1,3")] // Fail middle transfers on source.
+        [TestCase(true, false, "4")] // Fail last transfer on source.
+        [TestCase(false, true, "0")] // Fail first transfer on destination.
+        [TestCase(false, true, "1,3")] // Fail middle transfers on destination.
+        [TestCase(false, true, "4")] // Fail last transfer on destination.
+        public void TestRemoteSynchronizationWithFaultyBackend(bool failSource, bool failDest, string failIndices)
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "l1");
+            var l2 = Path.Combine(TARGETFOLDER, "l2");
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            int backendCount = 0;
+            var failIdxs = failIndices.Split(',').Select(int.Parse).ToList();
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
+            {
+                if (action == DeterministicErrorBackend.BackendAction.GetBefore || action == DeterministicErrorBackend.BackendAction.PutBefore)
+                {
+                    var currentIdx = backendCount;
+                    if (failIdxs.Count > 0 && currentIdx == failIdxs.First())
+                    {
+                        failIdxs.RemoveAt(0);
+                        return true; // Simulate failure
+                    }
+                    else
+                    {
+                        backendCount++;
+                    }
+                }
+
+                return false; // No failure
+            };
+
+            GenerateTestData(l1, 5, 0, 0, 1024).Wait();
+
+            // Setup backend URLs with failure injection
+            var protocol = new DeterministicErrorBackend().ProtocolKey;
+            string srcUrl = failSource ? $"{protocol}://{l1}" : $"file://{l1}";
+            string dstUrl = failDest ? $"{protocol}://{l2}" : $"file://{l2}";
+
+            var args = new string[] { srcUrl, dstUrl, "--confirm" };
+
+            var async_call = RemoteSynchronization.Program.Main(args);
+            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+
+            // Expect nonzero return code if any backend fails
+            Assert.AreEqual(0, return_code, "Expected success.");
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal.");
+        }
+
         /// <summary>
         /// Tests that the remote synchronization tool verifies the contents of the files.
         /// </summary>
