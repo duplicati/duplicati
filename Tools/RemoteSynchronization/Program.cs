@@ -189,7 +189,7 @@ destination will be verified before being overwritten (if they seemingly match).
             // Check if we only had to parse the arguments
             if (config.ParseArgumentsOnly)
             {
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Arguments parsed successfully; exiting.");
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Arguments parsed successfully; {0}; exiting.", config);
                 return 0;
             }
 
