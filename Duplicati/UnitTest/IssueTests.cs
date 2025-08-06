@@ -21,6 +21,7 @@
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
+using Microsoft.Data.Sqlite;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -482,6 +483,79 @@ namespace Duplicati.UnitTest
             var restored_dir_info = new DirectoryInfo(restored_dir);
             Assert.That(original_dir_info.CreationTime, Is.EqualTo(restored_dir_info.CreationTime), "Creation time should be equal");
             Assert.That(original_dir_info.LastWriteTime, Is.EqualTo(restored_dir_info.LastWriteTime), "Last write time should be equal");
+        }
+
+
+        [Test]
+        [Category("Test"), Category("Bug")]
+        public void IssueXHashNullInTest()
+        {
+            // Reproduction of the issue outlined in https://forum.duplicati.com/t/value-cannot-be-null-parameter-hash-cannot-be-null/20958
+            // This test is to ensure that a null hash in the database does not cause issues during backup and repair operations.
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["full-remote-verification"] = "true"
+            };
+            testopts.Remove("backup-test-samples");
+
+            // Create some test files
+            Directory.CreateDirectory(DATAFOLDER);
+            string f = Path.Combine(DATAFOLDER, "some_file");
+            TestUtils.WriteTestFile($"{f}_0.txt", 1024);
+
+            // Backup the files
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
+
+            // Set one of the hashes in the database to null
+            {
+                using var con = new SqliteConnection($"Data source={DBFILE};Pooling=false");
+                con.Open();
+                using var cmd = con.CreateCommand();
+                using var transaction = con.BeginTransaction();
+                cmd.Transaction = transaction;
+                cmd.CommandText = @"UPDATE Remotevolume SET Hash = NULL WHERE Name LIKE '%.dblock.%'";
+                cmd.ExecuteNonQuery();
+                transaction.Commit();
+            }
+
+            // Add another file and perform the backup again.
+            // This would fail prior to the fix.
+            TestUtils.WriteTestFile($"{f}_1.txt", 1024);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
+
+            // Delete and recreate the database to ensure the null hash is not present anymore
+            File.Delete(DBFILE);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                TestUtils.AssertResults(repairResults);
+            }
+
+            // Double check that the null hash is not present anymore
+            {
+                using var con = new SqliteConnection($"Data source={DBFILE};Pooling=false");
+                con.Open();
+                using var cmd = con.CreateCommand();
+                cmd.CommandText = @"SELECT COUNT(*) FROM Remotevolume WHERE Hash IS NULL";
+                var count = (long)cmd.ExecuteScalar();
+                Assert.That(count, Is.EqualTo(0), "There should be no null hashes in the database.");
+            }
+
+            // Perform a final test backup to ensure everything is working correctly
+            TestUtils.WriteTestFile($"{f}_2.txt", 1024);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
         }
 
 
