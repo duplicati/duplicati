@@ -153,6 +153,10 @@ namespace Duplicati.UnitTest
             string[][] testCases =
             {
                 ["source", "destination", "--parse-arguments-only"],
+                ["source", "destination", "--parse-arguments-only", "--auto-create-folders"],
+                ["source", "destination", "--parse-arguments-only", "--backend-retries", "5"],
+                ["source", "destination", "--parse-arguments-only", "--backend-retry-delay", "1000"],
+                ["source", "destination", "--parse-arguments-only", "--backend-retry-with-exponential-backoff"],
                 ["source", "destination", "--parse-arguments-only", "--dry-run"],
                 ["source", "destination", "--parse-arguments-only", "--force"],
                 ["source", "destination", "--parse-arguments-only", "--dry-run", "--force"],
@@ -468,7 +472,12 @@ namespace Duplicati.UnitTest
             string srcUrl = failSource ? $"{protocol}://{l1}" : $"file://{l1}";
             string dstUrl = failDest ? $"{protocol}://{l2}" : $"file://{l2}";
 
-            var args = new string[] { srcUrl, dstUrl, "--confirm" };
+            var args = new string[] {
+                srcUrl, dstUrl,
+                "--confirm",
+                "--backend-retries", "5",
+                "--backend-retry-delay", "10"
+            };
 
             var async_call = RemoteSynchronization.Program.Main(args);
             var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
