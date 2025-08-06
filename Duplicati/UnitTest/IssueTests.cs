@@ -488,7 +488,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Test"), Category("Bug")]
-        public void IssueXHashNullInTest()
+        public void Issue6459HashNullInTest()
         {
             // Reproduction of the issue outlined in https://forum.duplicati.com/t/value-cannot-be-null-parameter-hash-cannot-be-null/20958
             // This test is to ensure that a null hash in the database does not cause issues during backup and repair operations.
