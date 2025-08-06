@@ -111,7 +111,7 @@ destination will be verified before being overwritten (if they seemingly match).
                 arg_src,
                 arg_dst,
 
-                new Option<bool>(aliases: ["--auto-create-folders", "-a"], description: "Automatically create folders in the destination backend if they do not exist", getDefaultValue: () => true),
+                new Option<bool>(aliases: ["--auto-create-folders"], description: "Automatically create folders in the destination backend if they do not exist", getDefaultValue: () => true),
                 new Option<int>(aliases: ["--backend-retries"], description: "Number of times to recreate a backend on backend errors", getDefaultValue: () => 3) { Arity = ArgumentArity.ExactlyOne },
                 new Option<int>(aliases: ["--backend-retry-delay"], description: "Delay in milliseconds between backend retries", getDefaultValue: () => 1000) { Arity = ArgumentArity.ExactlyOne },
                 new Option<bool>(aliases: ["--backend-retry-with-exponential-backoff"], description: "Use exponential backoff for backend retries, multiplying the delay by two for each failure.", getDefaultValue: () => true),
