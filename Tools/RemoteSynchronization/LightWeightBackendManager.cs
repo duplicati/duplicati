@@ -266,7 +266,7 @@ namespace RemoteSynchronization
 
                 try
                 {
-                    await action();
+                    await action().ConfigureAwait(false);
                     return; // Exit the loop if the action succeeds.
                 }
                 catch (Exception ex)

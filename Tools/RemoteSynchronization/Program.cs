@@ -138,7 +138,7 @@ destination will be verified before being overwritten (if they seemingly match).
                 return Run(config_with_args, token);
             });
 
-            return await root_cmd.InvokeAsync(args);
+            return await root_cmd.InvokeAsync(args).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -197,7 +197,7 @@ destination will be verified before being overwritten (if they seemingly match).
             using var b2m = new LightWeightBackendManager(config.Dst, dst_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff);
 
             // Prepare the operations
-            var (to_copy, to_delete, to_verify) = await PrepareFileLists(b1m, b2m, config, CancellationToken.None);
+            var (to_copy, to_delete, to_verify) = await PrepareFileLists(b1m, b2m, config, token).ConfigureAwait(false);
 
             // Verify the files if requested. If the files are not verified, they will be deleted and copied again.
             long verified = 0, failed_verify = 0;
@@ -215,7 +215,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     }
                 }
 
-                var not_verified = await VerifyAsync(b1m, b2m, to_verify, config, token);
+                var not_verified = await VerifyAsync(b1m, b2m, to_verify, config, token).ConfigureAwait(false);
                 failed_verify = not_verified.Count();
                 verified = to_verify.Count() - failed_verify;
 
@@ -256,19 +256,19 @@ destination will be verified before being overwritten (if they seemingly match).
             long renamed = 0, deleted = 0;
             if (config.Retention)
             {
-                renamed = await RenameAsync(b2m, to_delete, config, token);
+                renamed = await RenameAsync(b2m, to_delete, config, token).ConfigureAwait(false);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                     "Renamed {0} files in {1}", renamed, b2m.DisplayName);
             }
             else
             {
-                deleted = await DeleteAsync(b2m, to_delete, config, token);
+                deleted = await DeleteAsync(b2m, to_delete, config, token).ConfigureAwait(false);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                     "Deleted {0} files from {1}", deleted, b2m.DisplayName);
             }
 
             // Copy the files
-            var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, token);
+            var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, token).ConfigureAwait(false);
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                 "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
 
@@ -284,8 +284,8 @@ destination will be verified before being overwritten (if they seemingly match).
                         config.Retry, copy_errors.Count());
                     for (int i = 0; i < config.Retry; i++)
                     {
-                        await Task.Delay(5000); // Wait 5 seconds before retrying
-                        (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config, token);
+                        await Task.Delay(5000).ConfigureAwait(false); // Wait 5 seconds before retrying
+                        (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config, token).ConfigureAwait(false);
                         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                             "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
                         if (!copy_errors.Any())
@@ -365,7 +365,7 @@ destination will be verified before being overwritten (if they seemingly match).
                 try
                 {
                     sw_get_src.Start();
-                    await b_src.GetAsync(f.Name, s_src, token);
+                    await b_src.GetAsync(f.Name, s_src, token).ConfigureAwait(false);
                     s_src.Position = 0;
                     sw_get_src.Stop();
                     if (config.DryRun)
@@ -378,7 +378,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     else
                     {
                         sw_put_dst.Start();
-                        await b_dst.PutAsync(f.Name, s_src, token);
+                        await b_dst.PutAsync(f.Name, s_src, token).ConfigureAwait(false);
                         s_src.Position = 0;
                         sw_put_dst.Stop();
                         if (config.VerifyGetAfterPut)
@@ -393,7 +393,7 @@ destination will be verified before being overwritten (if they seemingly match).
                             using var s_dst = Duplicati.Library.Utility.TempFileStream.Create();
 
                             sw_get_dst.Start();
-                            await b_dst.GetAsync(f.Name, s_dst, token);
+                            await b_dst.GetAsync(f.Name, s_dst, token).ConfigureAwait(false);
                             s_dst.Position = 0;
                             sw_get_dst.Stop();
 
@@ -407,7 +407,7 @@ destination will be verified before being overwritten (if they seemingly match).
                             using var hasher = HashFactory.CreateHasher("SHA256");
                             var dsthash = Convert.ToBase64String(hasher.ComputeHash(s_dst));
 
-                            if (await srchashtask != dsthash)
+                            if (await srchashtask.ConfigureAwait(false) != dsthash)
                             {
                                 err_string = (err_string is null ? "" : err_string + " ") + "The contents of the files do not match.";
                             }
@@ -486,7 +486,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     }
                     else
                     {
-                        await b.DeleteAsync(f.Name, token);
+                        await b.DeleteAsync(f.Name, token).ConfigureAwait(false);
                     }
                     successful_deletes++;
                 }
@@ -674,7 +674,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     else
                     {
                         sw.Start();
-                        await bm.RenameAsync(f.Name, $"{prefix}.{f.Name}", token);
+                        await bm.RenameAsync(f.Name, $"{prefix}.{f.Name}", token).ConfigureAwait(false);
                         sw.Stop();
                     }
                     successful_renames++;
@@ -739,7 +739,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     sw_get.Start();
                     var fs = b_src.GetAsync(f.Name, s_src, token);
                     var ds = b_dst.GetAsync(f.Name, s_dst, token);
-                    await Task.WhenAll(fs, ds);
+                    await Task.WhenAll(fs, ds).ConfigureAwait(false);
                     sw_get.Stop();
 
                     // Compare the contents
