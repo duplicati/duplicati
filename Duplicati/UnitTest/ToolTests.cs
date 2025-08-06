@@ -140,8 +140,16 @@ namespace Duplicati.UnitTest
             foreach (var (name, contents) in filelist.Zip(files))
             {
                 var filename = Path.GetFileName(name);
-                var newcontents = File.ReadAllBytes(newfilelist.FirstOrDefault(x => x.EndsWith(filename)));
-                Assert.AreEqual(contents, newcontents, "File contents are not equal");
+                var newfilename = newfilelist.FirstOrDefault(x => x.EndsWith(filename));
+                if (newfilename == null)
+                {
+                    Assert.Fail($"File {filename} was not renamed in the destination directory.");
+                }
+                else
+                {
+                    var newcontents = File.ReadAllBytes(newfilename);
+                    Assert.AreEqual(contents, newcontents, "File contents are not equal");
+                }
             }
         }
 
