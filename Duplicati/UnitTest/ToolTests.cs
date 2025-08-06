@@ -29,6 +29,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
+#nullable enable
+
 namespace Duplicati.UnitTest
 {
 
@@ -438,6 +440,8 @@ namespace Duplicati.UnitTest
         [TestCase(false, true, "0,1,2,3,4")] // Fail all transfers on destination.
         public void TestRemoteSynchronizationWithFaultyBackend(bool failSource, bool failDest, string failIndices)
         {
+            var expect_to_fail = failIndices == "0,1,2,3,4";
+
             var l1 = Path.Combine(TARGETFOLDER, "l1");
             var l2 = Path.Combine(TARGETFOLDER, "l2");
             Directory.CreateDirectory(l1);
@@ -479,14 +483,32 @@ namespace Duplicati.UnitTest
                 "--backend-retry-delay", "10"
             };
 
+            // Redirect standard error to a buffer if we expect to fail. If it doesn't fail, we can omit it.
+            var originalError = Console.Error;
+            StringWriter? errorBuffer = null;
+            if (expect_to_fail)
+            {
+                errorBuffer = new StringWriter();
+                Console.SetError(errorBuffer);
+            }
+
             var async_call = RemoteSynchronization.Program.Main(args);
             var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
 
             // Expect nonzero return code if any backend fails less than the number of retries
-            if (failIndices == "0,1,2,3,4")
+            if (expect_to_fail)
             {
-                Assert.AreNotEqual(0, return_code, "Expected failure due to all transfers failing.");
-                Assert.IsFalse(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories should not be equal due to failures.");
+                try
+                {
+                    Assert.AreNotEqual(0, return_code, "Expected failure due to all transfers failing.");
+                    Assert.IsFalse(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories should not be equal due to failures.");
+                }
+                catch
+                {
+                    Console.SetError(originalError); // Restore standard error
+                    Console.Error.WriteLine(errorBuffer?.ToString());
+                    throw;
+                }
             }
             else
             {
