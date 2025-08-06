@@ -130,7 +130,13 @@ namespace RemoteSynchronization
             if (_instantiations < _maxRetries)
             {
                 _backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(_backendUrl, _options);
-                _streamingBackend = _backend as IStreamingBackend ?? throw new InvalidOperationException("Backend does not support streaming operations.");
+                _streamingBackend = _backend as IStreamingBackend;
+                if (_streamingBackend == null)
+                {
+                    _backend.Dispose();
+                    _backend = null;
+                    throw new InvalidOperationException("Backend does not support streaming operations.");
+                }
                 _instantiations++;
             }
             else
