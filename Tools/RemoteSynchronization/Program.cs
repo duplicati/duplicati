@@ -131,11 +131,11 @@ destination will be verified before being overwritten (if they seemingly match).
                 new Option<bool>(aliases: ["--verify-get-after-put"], description: "Verify the files after uploading them to ensure that they were uploaded correctly", getDefaultValue: () => false),
             };
 
-            root_cmd.Handler = CommandHandler.Create((string backend_src, string backend_dst, Config config) =>
+            root_cmd.Handler = CommandHandler.Create((string backend_src, string backend_dst, Config config, CancellationToken token) =>
             {
                 var config_with_args = config with { Dst = backend_dst, Src = backend_src };
 
-                return Run(config_with_args);
+                return Run(config_with_args, token);
             });
 
             return await root_cmd.InvokeAsync(args);
@@ -144,11 +144,10 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <summary>
         /// The main logic of the tool.
         /// </summary>
-        /// <param name="src">The connection string for the source backend.</param>
-        /// <param name="dst">The connection string for the destination backend.</param>
-        /// <param name="options">Various options for the tool</param>
+        /// <param name="config">The parsed configuration for the tool.</param>
+        /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <returns>The return code for the main entry; 0 on success.</returns>
-        private static async Task<int> Run(Config config)
+        private static async Task<int> Run(Config config, CancellationToken token)
         {
             // Unpack and parse the multi token options
             var global_options = ParseOptions(config.GlobalOptions);
@@ -216,7 +215,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     }
                 }
 
-                var not_verified = await VerifyAsync(b1m, b2m, to_verify, config);
+                var not_verified = await VerifyAsync(b1m, b2m, to_verify, config, token);
                 failed_verify = not_verified.Count();
                 verified = to_verify.Count() - failed_verify;
 
@@ -257,19 +256,19 @@ destination will be verified before being overwritten (if they seemingly match).
             long renamed = 0, deleted = 0;
             if (config.Retention)
             {
-                renamed = await RenameAsync(b2m, to_delete, config);
+                renamed = await RenameAsync(b2m, to_delete, config, token);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                     "Renamed {0} files in {1}", renamed, b2m.DisplayName);
             }
             else
             {
-                deleted = await DeleteAsync(b2m, to_delete, config);
+                deleted = await DeleteAsync(b2m, to_delete, config, token);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                     "Deleted {0} files from {1}", deleted, b2m.DisplayName);
             }
 
             // Copy the files
-            var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config);
+            var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, token);
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                 "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
 
@@ -286,7 +285,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     for (int i = 0; i < config.Retry; i++)
                     {
                         await Task.Delay(5000); // Wait 5 seconds before retrying
-                        (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config);
+                        (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config, token);
                         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                             "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
                         if (!copy_errors.Any())
@@ -341,8 +340,9 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="b_dst">The destination backend.</param>
         /// <param name="files">The files that will be copied.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
+        /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <returns>A tuple holding the number of succesful copies and a List of the files that failed.</returns>
-        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config)
+        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config, CancellationToken token)
         {
             long successful_copies = 0;
             List<IFileEntry> errors = [];
@@ -365,7 +365,7 @@ destination will be verified before being overwritten (if they seemingly match).
                 try
                 {
                     sw_get_src.Start();
-                    await b_src.GetAsync(f.Name, s_src, CancellationToken.None);
+                    await b_src.GetAsync(f.Name, s_src, token);
                     s_src.Position = 0;
                     sw_get_src.Stop();
                     if (config.DryRun)
@@ -378,7 +378,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     else
                     {
                         sw_put_dst.Start();
-                        await b_dst.PutAsync(f.Name, s_src, CancellationToken.None);
+                        await b_dst.PutAsync(f.Name, s_src, token);
                         s_src.Position = 0;
                         sw_put_dst.Stop();
                         if (config.VerifyGetAfterPut)
@@ -393,7 +393,7 @@ destination will be verified before being overwritten (if they seemingly match).
                             using var s_dst = Duplicati.Library.Utility.TempFileStream.Create();
 
                             sw_get_dst.Start();
-                            await b_dst.GetAsync(f.Name, s_dst, CancellationToken.None);
+                            await b_dst.GetAsync(f.Name, s_dst, token);
                             s_dst.Position = 0;
                             sw_get_dst.Stop();
 
@@ -459,8 +459,9 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="b">The backend to delete the files from.</param>
         /// <param name="files">The files to delete.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
+        /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <returns>The number of successful deletions.</returns>
-        private static async Task<long> DeleteAsync(LightWeightBackendManager b, IEnumerable<IFileEntry> files, Config config)
+        private static async Task<long> DeleteAsync(LightWeightBackendManager b, IEnumerable<IFileEntry> files, Config config, CancellationToken token)
         {
             long successful_deletes = 0;
             long i = 0, n = files.Count();
@@ -485,7 +486,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     }
                     else
                     {
-                        await b.DeleteAsync(f.Name, CancellationToken.None);
+                        await b.DeleteAsync(f.Name, token);
                     }
                     successful_deletes++;
                 }
@@ -555,16 +556,17 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="b_src">The source lightweight backend manager.</param>
         /// <param name="b_dst">The destination lightweight backend manager.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
+        /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
-        private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileLists(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, Config config, CancellationToken cancelToken)
+        private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileLists(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, Config config, CancellationToken token)
         {
             IEnumerable<IFileEntry> files_src, files_dst;
 
             using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | List source"))
-                files_src = await b_src.ListAsync(cancelToken).ToListAsync(cancelToken).ConfigureAwait(false);
+                files_src = await b_src.ListAsync(token).ToListAsync(token).ConfigureAwait(false);
 
             using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | List destination"))
-                files_dst = await b_dst.ListAsync(cancelToken).ToListAsync(cancelToken).ConfigureAwait(false);
+                files_dst = await b_dst.ListAsync(token).ToListAsync(token).ConfigureAwait(false);
 
             // Shortcut for force
             if (config.Force)
@@ -641,8 +643,9 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="bm">The lightweight backend manager to issue rename operations to.</param>
         /// <param name="files">The files to rename.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
+        /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <returns>The number of successful renames.</returns>
-        private static async Task<long> RenameAsync(LightWeightBackendManager bm, IEnumerable<IFileEntry> files, Config config)
+        private static async Task<long> RenameAsync(LightWeightBackendManager bm, IEnumerable<IFileEntry> files, Config config, CancellationToken token)
         {
             long successful_renames = 0;
             string prefix = $"{System.DateTime.UtcNow:yyyyMMddHHmmss}.old";
@@ -671,7 +674,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     else
                     {
                         sw.Start();
-                        await bm.RenameAsync(f.Name, $"{prefix}.{f.Name}", CancellationToken.None);
+                        await bm.RenameAsync(f.Name, $"{prefix}.{f.Name}", token);
                         sw.Stop();
                     }
                     successful_renames++;
@@ -708,8 +711,9 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="b_dst">The destination lightweight backend manager.</param>
         /// <param name="files">The files to verify.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
+        /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <returns>A list of the files that failed verification.</returns>
-        private static async Task<IEnumerable<IFileEntry>> VerifyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config)
+        private static async Task<IEnumerable<IFileEntry>> VerifyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config, CancellationToken token)
         {
             var errors = new List<IFileEntry>();
             using var s_src = new MemoryStream();
@@ -733,8 +737,8 @@ destination will be verified before being overwritten (if they seemingly match).
                 {
                     // Get both files
                     sw_get.Start();
-                    var fs = b_src.GetAsync(f.Name, s_src, CancellationToken.None);
-                    var ds = b_dst.GetAsync(f.Name, s_dst, CancellationToken.None);
+                    var fs = b_src.GetAsync(f.Name, s_src, token);
+                    var ds = b_dst.GetAsync(f.Name, s_dst, token);
                     await Task.WhenAll(fs, ds);
                     sw_get.Stop();
 
