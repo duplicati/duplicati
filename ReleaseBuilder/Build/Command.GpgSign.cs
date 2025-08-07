@@ -96,7 +96,7 @@ public static partial class Command
         {
             using var ms = new MemoryStream();
             using var fs = File.OpenRead(rtcfg.Configuration.ConfigFiles.GpgKeyfile);
-            SharpAESCrypt.SharpAESCrypt.Decrypt(rtcfg.KeyfilePassword, fs, ms);
+            SharpAESCrypt.AESCrypt.Decrypt(rtcfg.KeyfilePassword, fs, ms);
             var parts = System.Text.Encoding.UTF8.GetString(ms.ToArray()).Split('\n', 2, StringSplitOptions.RemoveEmptyEntries);
             return (parts[0], parts[1]);
         }
