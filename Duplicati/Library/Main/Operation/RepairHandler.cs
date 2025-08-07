@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main.Operation
 
                     var missingDblocks = tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Blocks);
                     if (!m_options.RebuildMissingDblockFiles && missingDblocks.Count() > 0)
-                        throw new UserInformationException($"The backup storage destination is missing data files. You can either enable `--rebuild-missing-dblock-files` or run the purge command to remove these files. The following files are missing: {string.Join(", ", missingDblocks.Select(x => x.Name))}", "MissingDblockFiles");
+                        throw new UserInformationException($"The backup storage destination is missing data files. You can either enable `--rebuild-missing-dblock-files` or run the purge-broken-files command to remove these files. The following files are missing: {string.Join(", ", missingDblocks.Select(x => x.Name))}", "MissingDblockFiles");
 
                     var anyDlistUploads = false;
                     foreach (var (filesetId, timestamp, isfull) in missingRemoteFilesets)
