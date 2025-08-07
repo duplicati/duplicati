@@ -1801,6 +1801,26 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="stream">The stream to wrap</param>
         /// <param name="timeout">The timeout to observe</param>
+        /// <param name="onReadComplete">An action to invoke when the read operation completes</param>
+        /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
+        /// <returns>The wrapped stream</returns>
+        public static Stream ObserveReadTimeout(this Stream stream, TimeSpan timeout, Action onReadComplete, bool disposeBaseStream = true)
+        {
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream));
+
+            return new CompletionEventStream(ObserveReadTimeout(stream, timeout, disposeBaseStream))
+            {
+                OnCompletion = onReadComplete
+            };
+
+        }
+
+        /// <summary>
+        /// Wraps the stream in a timeout observing stream
+        /// </summary>
+        /// <param name="stream">The stream to wrap</param>
+        /// <param name="timeout">The timeout to observe</param>
         /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
         /// <returns>The wrapped stream</returns>
         public static Stream ObserveReadTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream = true)
