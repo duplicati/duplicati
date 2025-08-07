@@ -33,10 +33,11 @@ namespace RemoteSynchronization
         private bool _anyDownloaded = false;
         private bool _anyUploaded = false;
         private readonly string _backendUrl = backendUrl;
-        private int _instantiations = 0;
+        //private int _instantiations = 0;
         private readonly int _maxRetries = maxRetries;
         private readonly Dictionary<string, string> _options = options;
         private int _retryDelay = retryDelay;
+        private int _currentRetryDelay = retryDelay;
         private IStreamingBackend? _streamingBackend = null;
 
         /// <summary>
@@ -250,6 +251,7 @@ namespace RemoteSynchronization
         private async Task RetryWithDelay(string operationName, Func<Task> action, Stream? stream, bool resetStream, CancellationToken token)
         {
             int instantiations = 0;
+            _currentRetryDelay = _retryDelay; // Reset the current retry delay to the initial value
 
             do
             {
@@ -355,10 +357,10 @@ namespace RemoteSynchronization
             // Finally, if we did not recover, wait the specified delay before retrying.
             if (!recovered && _retryDelay > 0)
             {
-                if (retryWithExponentialBackoff)
-                    _retryDelay <<= 1; // Double the delay for exponential backoff
+                await Task.Delay(_currentRetryDelay, token).ConfigureAwait(false);
 
-                await Task.Delay(_retryDelay, token).ConfigureAwait(false);
+                if (retryWithExponentialBackoff)
+                    _currentRetryDelay <<= 1; // Double the delay for exponential backoff
             }
         }
 
