@@ -266,7 +266,7 @@ namespace Duplicati.Server
                     }
 
                     terminated = true;
-                    applicationSettings.ApplicationExitEvent.Set();
+                    applicationSettings.SignalApplicationExit();
                 });
 
                 var stopCounter = 0;
@@ -288,7 +288,7 @@ namespace Duplicati.Server
                 };
 
                 ServerStartedEvent.Set();
-                applicationSettings.ApplicationExitEvent.WaitOne();
+                applicationSettings.ApplicationExit.WaitHandle.WaitOne();
             }
             catch (SingleInstance.MultipleInstanceException mex)
             {
@@ -891,7 +891,7 @@ namespace Duplicati.Server
                 {
                     // TODO: All calls to ApplicationExitEvent and TrayIcon->Quit
                     // should check if we are running something
-                    applicationSettings.ApplicationExitEvent.Set();
+                    applicationSettings.SignalApplicationExit();
                 }
                 else
                 {
