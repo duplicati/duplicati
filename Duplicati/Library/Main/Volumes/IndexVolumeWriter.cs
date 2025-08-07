@@ -43,6 +43,7 @@ namespace Duplicati.Library.Main.Volumes
         public long BlockCount { get { return m_blocks; } }
         public long Blocklists { get { return m_blocklists; } }
         public bool IsVolumeActive => m_writer != null && m_streamwriter != null;
+        public bool IsReadyForFinish = true;
 
         public IndexVolumeWriter(Options options)
             : base(options)
@@ -77,6 +78,9 @@ namespace Duplicati.Library.Main.Volumes
 
         public void FinishVolume(string volumehash, long volumesize)
         {
+            if (!IsReadyForFinish)
+                throw new InvalidOperationException("Index volume is not ready for finish");
+
             m_writer.WriteEndArray();
             m_writer.WritePropertyName("volumehash");
             m_writer.WriteValue(volumehash);

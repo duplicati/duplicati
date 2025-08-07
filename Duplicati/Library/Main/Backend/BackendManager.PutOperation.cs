@@ -232,7 +232,7 @@ partial class BackendManager
                     OnDbUpdate = OnDbUpdate
                 };
 
-
+                OriginalIndexFile.IsReadyForFinish = true;
                 OriginalIndexFile.FinishVolume(hash, size);
                 if (IndexVolumeFinishedCallback != null)
                     await IndexVolumeFinishedCallback();

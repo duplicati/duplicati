@@ -251,6 +251,8 @@ internal partial class BackendManager : IBackendManager
         volume.Close();
         if (indexVolume != null && !indexVolume.IsVolumeActive)
             throw new InvalidOperationException("Index volume is not active, cannot upload index volume");
+        if (indexVolume != null)
+            indexVolume.IsReadyForFinish = false; // Prevent the index volume from being manipulated after this point
 
         var op = new PutOperation(volume.RemoteFilename, context, waitForComplete, cancelToken)
         {
