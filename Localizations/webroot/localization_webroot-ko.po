@@ -30,7 +30,7 @@ msgstr "정보"
 msgid "About {{appname}}"
 msgstr "{{appname}} 정보"
 
-#: scripts/services/EditUriBuiltins.js:1156
+#: scripts/services/EditUriBuiltins.js:1153
 msgid "Access Key"
 msgstr "접근 키"
 
@@ -42,7 +42,7 @@ msgstr "접근 불가"
 msgid "Access to user interface"
 msgstr "액세스 설정"
 
-#: scripts/services/EditUriBuiltins.js:1155 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "계정 이름"
@@ -75,8 +75,8 @@ msgstr "경로 추가"
 msgid "Added"
 msgstr "추가됨"
 
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 msgid "Adjust bucket name?"
 msgstr "버켓 이름을 적용 하시겠습니까?"
 
@@ -117,8 +117,8 @@ msgstr "허용된 요일"
 msgid "Anonymous usage reports"
 msgstr "익명 사용 보고서"
 
-#: scripts/services/EditUriBuiltins.js:1113
-#: scripts/services/EditUriBuiltins.js:1123 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1110
+#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -157,14 +157,14 @@ msgstr "Beta"
 msgid "Browse"
 msgstr "찾아보기"
 
-#: scripts/services/EditUriBuiltins.js:1166
-#: scripts/services/EditUriBuiltins.js:1206
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1266
-#: scripts/services/EditUriBuiltins.js:1313
-#: scripts/services/EditUriBuiltins.js:1319
-#: scripts/services/EditUriBuiltins.js:1375
-#: scripts/services/EditUriBuiltins.js:1387 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1163
+#: scripts/services/EditUriBuiltins.js:1203
+#: scripts/services/EditUriBuiltins.js:1249
+#: scripts/services/EditUriBuiltins.js:1263
+#: scripts/services/EditUriBuiltins.js:1310
+#: scripts/services/EditUriBuiltins.js:1316
+#: scripts/services/EditUriBuiltins.js:1372
+#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -216,8 +216,8 @@ msgstr "Canary"
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
@@ -885,9 +885,9 @@ msgstr "시작"
 #: scripts/directives/backupEditUri.js:130
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
-#: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "아니오"
@@ -975,7 +975,7 @@ msgstr "암호"
 msgid "Passphrase (if encrypted)"
 msgstr "암호 (암호화된 경우)"
 
-#: scripts/services/EditUriBuiltins.js:1298 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -1364,9 +1364,9 @@ msgstr "사용자 데이터"
 msgid "User interface settings"
 msgstr "인터페이스 설정"
 
-#: scripts/services/EditUriBuiltins.js:1076
-#: scripts/services/EditUriBuiltins.js:1165
-#: scripts/services/EditUriBuiltins.js:1297 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1074
+#: scripts/services/EditUriBuiltins.js:1162
+#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -1447,9 +1447,9 @@ msgstr "년"
 #: scripts/directives/backupEditUri.js:130
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
-#: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "예"
@@ -1478,20 +1478,20 @@ msgstr "현재 사용 중: {{appname}} {{version}}"
 msgid "You must enter a name for the backup"
 msgstr "백업 이름을 입력해야 합니다"
 
-#: scripts/services/EditUriBackendConfig.js:122
+#: scripts/services/EditUriBackendConfig.js:123
 msgid "You must fill in the password"
 msgstr "암호를 입력해야 합니다"
 
-#: scripts/services/EditUriBackendConfig.js:99
+#: scripts/services/EditUriBackendConfig.js:100
 msgid "You must fill in the server name or address"
 msgstr "서버 이름 또는 주소를 채워야합니다."
 
-#: scripts/services/EditUriBackendConfig.js:120
-#: scripts/services/EditUriBackendConfig.js:129
+#: scripts/services/EditUriBackendConfig.js:121
+#: scripts/services/EditUriBackendConfig.js:130
 msgid "You must fill in the username"
 msgstr "사용자 이름을 채워야합니다."
 
-#: scripts/services/EditUriBackendConfig.js:106
+#: scripts/services/EditUriBackendConfig.js:107
 msgid "You must specify a path"
 msgstr "경로를 지정해야 합니다."
 

@@ -418,7 +418,7 @@ public class OpenStackStorage : IStreamingBackend
                 yield break;
 
             // Prepare next listing entry
-            url = plainurl + $"&marker={Uri.UrlEncode(items.Last().name)}";
+            url = plainurl + $"&marker={Uri.UrlEncode(items.Last().name ?? "")}";
         }
     }
 

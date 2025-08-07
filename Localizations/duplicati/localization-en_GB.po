@@ -4,17 +4,17 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
 # Translators:
-# Andi Chandler <andi@gowling.com>, 2025
 # Matt Dawson <matthewd102@hotmail.com>, 2025
+# Andi Chandler <andi@gowling.com>, 2025
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 13:36+0200\n"
+"POT-Creation-Date: 2025-08-07 15:56+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Matt Dawson <matthewd102@hotmail.com>, 2025\n"
+"Last-Translator: Andi Chandler <andi@gowling.com>, 2025\n"
 "Language-Team: English (United Kingdom) (https://app.transifex.com/duplicati/teams/67655/en_GB/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -206,9 +206,17 @@ msgstr "String"
 msgid "Timespan"
 msgstr "Timespan"
 
+#: Library/Interface/Strings.cs:41
+msgid "DateTime"
+msgstr "DateTime"
+
 #: Library/Interface/Strings.cs:42
 msgid "Password"
 msgstr "Password"
+
+#: Library/Interface/Strings.cs:43
+msgid "Decimal"
+msgstr "Decimal"
 
 #: Library/Interface/Strings.cs:44
 msgid "Unknown"
@@ -437,6 +445,10 @@ msgstr "The keystone API version to use. Valid values are 'v2' and 'v3'."
 msgid "The keystone API version to use"
 msgstr "The keystone API version to use"
 
+#: Library/Backend/OpenStack/Strings.cs:45
+msgid "Supply the prefered region for endpoints"
+msgstr "Supply the prefered region for endpoints"
+
 #: Library/Backend/OpenStack/Strings.cs:49
 msgid "Expose OpenStack configuration as a web module"
 msgstr "Expose OpenStack configuration as a web module"
@@ -496,6 +508,10 @@ msgstr ""
 #: Library/Backend/FTP/Strings.cs:37
 msgid "Log FTP PRIVATE info to console"
 msgstr "Log FTP PRIVATE info to console"
+
+#: Library/Backend/FTP/Strings.cs:38
+msgid "Log diagnostics information"
+msgstr "Log diagnostics information"
 
 #: Library/Backend/FTP/Strings.cs:40
 #, csharp-format

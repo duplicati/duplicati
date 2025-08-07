@@ -49,7 +49,12 @@ public interface IApplicationSettings
     /// <summary>
     /// The application exit event
     /// </summary>
-    ManualResetEvent ApplicationExitEvent { get; }
+    CancellationToken ApplicationExit { get; }
+
+    /// <summary>
+    /// Signal the application exit event to notify that the application is exiting
+    /// </summary>
+    void SignalApplicationExit();
 
     /// <summary>
     /// The shared secret provider from the server invocation
