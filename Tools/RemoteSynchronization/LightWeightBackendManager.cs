@@ -141,26 +141,25 @@ namespace RemoteSynchronization
         /// Lists the files in the remote backend asynchronously.
         /// </summary>
         /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <returns>An asynchronous enumerable of file entries.</returns>
-        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken token)
+        /// <returns>A list of the file entries on the remote backend.</returns>
+        public async Task<List<IFileEntry>> ListAsync(CancellationToken token)
         {
-            while (true)
-            {
-                Instantiate();
-
-                try
+            // TODO It would be more graceful if this method returned an
+            // IAsyncEnumerable instead, capturing failures along the way,
+            // Followed by retrying / resuming the listing from where it
+            // crashed. Current "workaround" is to build the entire list before
+            // returning it.
+            List<IFileEntry> entries = [];
+            await RetryWithDelay("List", async () =>
                 {
-                    return _streamingBackend!.ListAsync(token);
-                }
-                catch (Exception ex)
-                {
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", ex, "Error during operation: List", null);
-                    Dispose(); // Dispose current backend and streaming backend
+                    entries = await _streamingBackend!.ListAsync(token).ToListAsync().ConfigureAwait(false);
+                },
+                null,
+                false,
+                token)
+                .ConfigureAwait(false);
 
-                    TryRecoverFromException(ex, token).Await();
-                }
-            }
-
+            return entries;
         }
 
         /// <summary>

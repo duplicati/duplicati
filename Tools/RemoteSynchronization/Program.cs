@@ -563,10 +563,10 @@ destination will be verified before being overwritten (if they seemingly match).
             IEnumerable<IFileEntry> files_src, files_dst;
 
             using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | List source"))
-                files_src = await b_src.ListAsync(token).ToListAsync(token).ConfigureAwait(false);
+                files_src = await b_src.ListAsync(token).ConfigureAwait(false);
 
             using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | List destination"))
-                files_dst = await b_dst.ListAsync(token).ToListAsync(token).ConfigureAwait(false);
+                files_dst = await b_dst.ListAsync(token).ConfigureAwait(false);
 
             // Shortcut for force
             if (config.Force)
