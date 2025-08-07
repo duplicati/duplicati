@@ -85,22 +85,22 @@ msgstr ""
 "<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>Gebruik gebruikersnaam en wachtwoord voor authenticatie</span>\n"
 "        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>Gebruik API-token voor authenticatie (aanbevolen)</span>"
 
-#: scripts/services/EditUriBuiltins.js:1063
+#: scripts/services/EditUriBuiltins.js:1061
 msgid "API Token"
 msgstr "API-Token"
 
-#: scripts/services/EditUriBuiltins.js:1317
+#: scripts/services/EditUriBuiltins.js:1314
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
 #: templates/backends/storj.html:22
 msgid "API key"
 msgstr "API sleutel"
 
-#: scripts/services/EditUriBuiltins.js:1207 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWS Toegangs ID"
 
-#: scripts/services/EditUriBuiltins.js:1208 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWS Toegangssleutel"
@@ -117,7 +117,7 @@ msgstr "Over"
 msgid "About {{appname}}"
 msgstr "Over {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1156
+#: scripts/services/EditUriBuiltins.js:1153
 msgid "Access Key"
 msgstr "Toegangssleutel"
 
@@ -145,7 +145,7 @@ msgstr "Toegangssleutel"
 msgid "Access to user interface"
 msgstr "Toegang tot gebruikersomgeving"
 
-#: scripts/services/EditUriBuiltins.js:1155 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Accountnaam"
@@ -178,8 +178,8 @@ msgstr "Voeg pad toe"
 msgid "Added"
 msgstr "Toegevoegd"
 
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 msgid "Adjust bucket name?"
 msgstr "Bucket naam aanpassen?"
 
@@ -280,8 +280,8 @@ msgstr ""
 msgid "As Command-line"
 msgstr "Als Opdrachtregel"
 
-#: scripts/services/EditUriBuiltins.js:1113
-#: scripts/services/EditUriBuiltins.js:1123 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1110
+#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -295,7 +295,7 @@ msgstr "AuthID"
 msgid "Authentication Domain"
 msgstr "Authenticatie Domein"
 
-#: scripts/services/EditUriBuiltins.js:1308 templates/backends/storj.html:2
+#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
 msgid "Authentication method"
 msgstr "Authenticatiemethode"
 
@@ -331,7 +331,7 @@ msgstr "B2 Applicatie ID"
 msgid "B2 Application Key"
 msgstr "B2 Applicatiesleutel"
 
-#: scripts/services/EditUriBuiltins.js:1253
+#: scripts/services/EditUriBuiltins.js:1250
 msgid "B2 Cloud Storage Account ID"
 msgstr "B2 Cloud Storage Account ID"
 
@@ -339,7 +339,7 @@ msgstr "B2 Cloud Storage Account ID"
 msgid "B2 Cloud Storage Application ID"
 msgstr "B2 Cloud Storage Applicatie ID"
 
-#: scripts/services/EditUriBuiltins.js:1254 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1251 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "B2 Cloud Storage Applicatiesleutel"
 
@@ -408,14 +408,14 @@ msgstr "Browser standaard"
 msgid "Bucket create location"
 msgstr "Bucket aanmaaklocatie"
 
-#: scripts/services/EditUriBuiltins.js:1166
-#: scripts/services/EditUriBuiltins.js:1206
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1266
-#: scripts/services/EditUriBuiltins.js:1313
-#: scripts/services/EditUriBuiltins.js:1319
-#: scripts/services/EditUriBuiltins.js:1375
-#: scripts/services/EditUriBuiltins.js:1387 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1163
+#: scripts/services/EditUriBuiltins.js:1203
+#: scripts/services/EditUriBuiltins.js:1249
+#: scripts/services/EditUriBuiltins.js:1263
+#: scripts/services/EditUriBuiltins.js:1310
+#: scripts/services/EditUriBuiltins.js:1316
+#: scripts/services/EditUriBuiltins.js:1372
+#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -424,7 +424,7 @@ msgstr "Bucket aanmaaklocatie"
 msgid "Bucket name"
 msgstr "Bucketnaam"
 
-#: scripts/services/EditUriBuiltins.js:1331
+#: scripts/services/EditUriBuiltins.js:1328
 msgid ""
 "Bucket name can only be between 3 and 63 characters long and contain only "
 "lower-case characters, numbers, periods and dashes"
@@ -528,8 +528,8 @@ msgstr "Canary"
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
@@ -688,7 +688,7 @@ msgstr "Bevestig nieuw wachtwoord"
 msgid "Confirm passphrase"
 msgstr "Bevestig wachtwoordzin"
 
-#: scripts/services/EditUriBackendConfig.js:73
+#: scripts/services/EditUriBackendConfig.js:74
 msgid "Confirmation required"
 msgstr "Bevestiging vereist"
 
@@ -721,7 +721,7 @@ msgstr "Verbinding verbroken"
 msgid "Connection worked!"
 msgstr "Verbinding werkt!"
 
-#: scripts/services/EditUriBuiltins.js:1157 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "Containernaam"
@@ -831,7 +831,7 @@ msgstr "Huidige versie is {{versionname}} ({{versionnumber}})"
 msgid "Custom S3 endpoint"
 msgstr "Aangepaste S3 endpoint"
 
-#: scripts/services/EditUriBuiltins.js:1323 templates/backends/storj.html:18
+#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
 msgid "Custom Satellite"
 msgstr "Aangepaste Satellite"
 
@@ -1185,7 +1185,7 @@ msgstr ""
 "Coderingsmodules: <p style=\"display: inline\" ng-repeat=\"item in "
 "sysinfo.EncryptionModules\">{{item.Key}} </p>"
 
-#: scripts/services/EditUriBuiltins.js:1318 templates/backends/storj.html:25
+#: scripts/services/EditUriBuiltins.js:1315 templates/backends/storj.html:25
 #: templates/backends/storj.html:26
 msgid "Encryption passphrase"
 msgstr "Encryptie wachtwoordzin"
@@ -1545,7 +1545,7 @@ msgstr "Genereer IAM toegangsbeleid"
 msgid "Getting file versions …"
 msgstr "Bestandsversies ophalen ..."
 
-#: scripts/services/EditUriBuiltins.js:1146 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "Groep e-mail"
 
@@ -1612,11 +1612,11 @@ msgstr "ID:"
 msgid "IDrive Sync directory path"
 msgstr "IDrive Sync directory-pad"
 
-#: scripts/services/EditUriBuiltins.js:1373 templates/backends/e2.html:3
+#: scripts/services/EditUriBuiltins.js:1370 templates/backends/e2.html:3
 msgid "IDrive e2 Access Key ID"
 msgstr "IDrive e2 Toegangssleutel-ID"
 
-#: scripts/services/EditUriBuiltins.js:1374 templates/backends/e2.html:7
+#: scripts/services/EditUriBuiltins.js:1371 templates/backends/e2.html:7
 msgid "IDrive e2 Access Key Secret"
 msgstr "IDrive e2 Toegangssleutel-geheim"
 
@@ -1665,7 +1665,7 @@ msgstr ""
 "href=\"{{item.DownloadLink}}\" target=\"_blank\">klik met rechts en kies "
 "&quot;Opslaan als ...&quot;</a>."
 
-#: scripts/services/EditUriBackendConfig.js:113
+#: scripts/services/EditUriBackendConfig.js:114
 msgid ""
 "If you do not enter a path, all files will be stored in the login folder.\n"
 "Are you sure this is what you want?"
@@ -1754,7 +1754,7 @@ msgstr "Onderbroken, geen statistieken verzameld"
 msgid "Invalid retention time"
 msgstr "Ongeldige retentietijd"
 
-#: scripts/services/EditUriBuiltins.js:1081
+#: scripts/services/EditUriBuiltins.js:1079
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1992,7 +1992,7 @@ msgstr "Maandag"
 msgid "Months"
 msgstr "Maanden"
 
-#: scripts/services/EditUriBackendConfig.js:136
+#: scripts/services/EditUriBackendConfig.js:137
 msgid ""
 "Most servers require a username, so you will likely need to enter one.\n"
 "Are you sure want to continue without a username?"
@@ -2109,9 +2109,9 @@ msgstr "Volgende keer"
 #: scripts/directives/backupEditUri.js:130
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
-#: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "Nee"
@@ -2247,7 +2247,7 @@ msgstr "OpenStack Object Storage / Swift"
 msgid "Opened"
 msgstr "Geopend"
 
-#: scripts/services/EditUriBuiltins.js:1182
+#: scripts/services/EditUriBuiltins.js:1179
 msgid "Openstack API key are not supported in v3 keystone API"
 msgstr "Openstack API Sleutels worden niet ondersteund in v3 keystone API"
 
@@ -2344,7 +2344,7 @@ msgstr "Wachtwoordzinnen komen niet overeen"
 msgid "Passphrases do not match"
 msgstr "Wachtwoordzinnen komen niet overeen"
 
-#: scripts/services/EditUriBuiltins.js:1298 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -2357,8 +2357,8 @@ msgstr "Wachtwoord"
 msgid "Patching files with local blocks …"
 msgstr "Bestanden bijwerken met lokale blokken ..."
 
-#: scripts/services/EditUriBuiltins.js:1282
-#: scripts/services/EditUriBuiltins.js:1403
+#: scripts/services/EditUriBuiltins.js:1279
+#: scripts/services/EditUriBuiltins.js:1400
 msgid "Path"
 msgstr "Pad"
 
@@ -2508,11 +2508,11 @@ msgstr "Andere code"
 msgid "Remote"
 msgstr "Remote"
 
-#: scripts/services/EditUriBuiltins.js:1341
+#: scripts/services/EditUriBuiltins.js:1338
 msgid "Remote Path"
 msgstr "Remote Pad"
 
-#: scripts/services/EditUriBuiltins.js:1340
+#: scripts/services/EditUriBuiltins.js:1337
 msgid "Remote Repository"
 msgstr "Remote Opslagplaats"
 
@@ -2794,7 +2794,7 @@ msgstr "Instellingen"
 msgid "Share Name"
 msgstr "Naam gedeelde map"
 
-#: scripts/services/EditUriBuiltins.js:1044 templates/backends/smb.html:24
+#: scripts/services/EditUriBuiltins.js:1042 templates/backends/smb.html:24
 msgid "Share name"
 msgstr "Naam gedeelde map"
 
@@ -3051,10 +3051,10 @@ msgstr "Testen van de permissies ..."
 msgid "Testing …"
 msgstr "Testen ..."
 
-#: scripts/services/EditUriBuiltins.js:1262
-#: scripts/services/EditUriBuiltins.js:1278
-#: scripts/services/EditUriBuiltins.js:1383
-#: scripts/services/EditUriBuiltins.js:1399
+#: scripts/services/EditUriBuiltins.js:1259
+#: scripts/services/EditUriBuiltins.js:1275
+#: scripts/services/EditUriBuiltins.js:1380
+#: scripts/services/EditUriBuiltins.js:1396
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
@@ -3073,7 +3073,7 @@ msgstr ""
 "De back-up was tijdelijk en bestaat niet meer, waardoor de log-gegevens "
 "verloren zijn gegaan"
 
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:1231
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 "De bucket-naam hoort in kleine letters te zijn, automatisch converteren?"
@@ -3107,7 +3107,7 @@ msgstr "Het donkere thema (door Michal)"
 msgid "The default blue on white theme (by Alex)"
 msgstr "Het standaard blauw op wit thema (door Alex)"
 
-#: scripts/services/EditUriBuiltins.js:1327
+#: scripts/services/EditUriBuiltins.js:1324
 msgid "The encryption passphrases do not match"
 msgstr "De coderings-wachtwoordzinnen komen niet overeen"
 
@@ -3259,7 +3259,7 @@ msgstr ""
 "Om te exporteren zonder een wachtwoordzin, deselecteer het \"Versleutel "
 "bestand\" vakje"
 
-#: scripts/services/EditUriBuiltins.js:1218
+#: scripts/services/EditUriBuiltins.js:1215
 msgid ""
 "To prevent bucket naming conflicts, it is recommended to prepend your "
 "account ID to the bucket name. Prepend automatically?"
@@ -3422,9 +3422,9 @@ msgstr "Gebruiker heeft teveel permissies"
 msgid "User interface settings"
 msgstr "Gebruikersomgeving-instellingen"
 
-#: scripts/services/EditUriBuiltins.js:1076
-#: scripts/services/EditUriBuiltins.js:1165
-#: scripts/services/EditUriBuiltins.js:1297 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1074
+#: scripts/services/EditUriBuiltins.js:1162
+#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -3570,9 +3570,9 @@ msgstr "Jaren"
 #: scripts/directives/backupEditUri.js:130
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
-#: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "Ja"
@@ -3673,7 +3673,7 @@ msgstr ""
 msgid "You must choose at least one source folder"
 msgstr "U moet tenminste één bronmap kiezen"
 
-#: scripts/services/EditUriBuiltins.js:1176
+#: scripts/services/EditUriBuiltins.js:1173
 msgid "You must enter a domain name to use v3 API"
 msgstr "Een domeinnaam moet worden opgegeven om v3 API te gebruiken"
 
@@ -3685,7 +3685,7 @@ msgstr "U moet een naam ingeven voor de back-up"
 msgid "You must enter a passphrase or disable encryption"
 msgstr "U moet een wachtwoordzin ingeven of versleuteling uitschakelen"
 
-#: scripts/services/EditUriBuiltins.js:1173
+#: scripts/services/EditUriBuiltins.js:1170
 msgid "You must enter a password to use v3 API"
 msgstr "Een wachtwoord moet worden opgegeven om v3 API te gebruiken"
 
@@ -3694,13 +3694,13 @@ msgid "You must enter a positive number of backups to keep"
 msgstr ""
 "U moet een positief getal opgeven voor de hoeveelheid te bewaren back-ups"
 
-#: scripts/services/EditUriBuiltins.js:1179
+#: scripts/services/EditUriBuiltins.js:1176
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr ""
 "Een tenant (ofwel project) naam moet worden opgegeven om v3 API te gebruiken"
 " "
 
-#: scripts/services/EditUriBuiltins.js:1193
+#: scripts/services/EditUriBuiltins.js:1190
 msgid "You must enter a tenant name if you do not provide an API key"
 msgstr "U moet een tenant naam ingeven als u de API sleutel niet verstrekt"
 
@@ -3714,44 +3714,44 @@ msgstr ""
 msgid "You must enter a valid retention policy string"
 msgstr "Er moet een geldige waarde voor retentiebeleid worden opgegeven"
 
-#: scripts/services/EditUriBuiltins.js:1190
+#: scripts/services/EditUriBuiltins.js:1187
 msgid "You must enter either a password or an API key"
 msgstr "U moet òf een wachtwoord, òf een API sleutel ingeven"
 
-#: scripts/services/EditUriBuiltins.js:1197
+#: scripts/services/EditUriBuiltins.js:1194
 msgid "You must enter either a password or an API key, not both"
 msgstr "U moet òf een wachtwoord, òf een API sleutel ingeven, niet beide"
 
-#: scripts/services/EditUriBackendConfig.js:122
+#: scripts/services/EditUriBackendConfig.js:123
 msgid "You must fill in the password"
 msgstr "U moet het wachtwoord invullen"
 
-#: scripts/services/EditUriBackendConfig.js:99
+#: scripts/services/EditUriBackendConfig.js:100
 msgid "You must fill in the server name or address"
 msgstr "U moet de servernaam of -adres invullen"
 
-#: scripts/services/EditUriBackendConfig.js:120
-#: scripts/services/EditUriBackendConfig.js:129
+#: scripts/services/EditUriBackendConfig.js:121
+#: scripts/services/EditUriBackendConfig.js:130
 msgid "You must fill in the username"
 msgstr "U moet de gebruikersnaam invullen"
 
-#: scripts/services/EditUriBackendConfig.js:85
+#: scripts/services/EditUriBackendConfig.js:86
 msgid "You must fill in {{field}}"
 msgstr "U moet {{field}} invullen"
 
-#: scripts/services/EditUriBuiltins.js:1169
+#: scripts/services/EditUriBuiltins.js:1166
 msgid "You must select or fill in the AuthURI"
 msgstr "U moet de AuthURI selecteren of invullen"
 
-#: scripts/services/EditUriBuiltins.js:1211
+#: scripts/services/EditUriBuiltins.js:1208
 msgid "You must select or fill in the server"
 msgstr "U moet de server selecteren of invullen"
 
-#: scripts/services/EditUriBackendConfig.js:106
+#: scripts/services/EditUriBackendConfig.js:107
 msgid "You must specify a path"
 msgstr "U moet een pad opgeven"
 
-#: scripts/services/EditUriBackendConfig.js:92
+#: scripts/services/EditUriBackendConfig.js:93
 msgid "You should fill in {{field}} {{reason}}"
 msgstr "U moet {{field}} {{reason}} invullen"
 
@@ -3777,23 +3777,23 @@ msgstr "byte"
 msgid "byte/s"
 msgstr "byte/s"
 
-#: scripts/services/EditUriBuiltins.js:1349
+#: scripts/services/EditUriBuiltins.js:1346
 msgid "cos_app_id"
 msgstr "cos_app_id"
 
-#: scripts/services/EditUriBuiltins.js:1353
+#: scripts/services/EditUriBuiltins.js:1350
 msgid "cos_bucket"
 msgstr "cos_bucket"
 
-#: scripts/services/EditUriBuiltins.js:1352
+#: scripts/services/EditUriBuiltins.js:1349
 msgid "cos_region"
 msgstr "cos_region"
 
-#: scripts/services/EditUriBuiltins.js:1350
+#: scripts/services/EditUriBuiltins.js:1347
 msgid "cos_secret_id"
 msgstr "cos_secret_id"
 
-#: scripts/services/EditUriBuiltins.js:1351
+#: scripts/services/EditUriBuiltins.js:1348
 msgid "cos_secret_key"
 msgstr "cos_secret_key"
 
@@ -3811,23 +3811,23 @@ msgstr "mislukt"
 msgid "local repository, leave empty for local"
 msgstr "lokale opslagplaats, laat leeg voor local"
 
-#: scripts/services/EditUriBuiltins.js:1362
+#: scripts/services/EditUriBuiltins.js:1359
 msgid "oss_access_key_id"
 msgstr "oss_access_key_id"
 
-#: scripts/services/EditUriBuiltins.js:1363
+#: scripts/services/EditUriBuiltins.js:1360
 msgid "oss_access_key_secret"
 msgstr "oss_access_key_secret"
 
-#: scripts/services/EditUriBuiltins.js:1365
+#: scripts/services/EditUriBuiltins.js:1362
 msgid "oss_bucket_name"
 msgstr "oss_bucket_name"
 
-#: scripts/services/EditUriBuiltins.js:1361
+#: scripts/services/EditUriBuiltins.js:1358
 msgid "oss_endpoint"
 msgstr "oss_endpoint"
 
-#: scripts/services/EditUriBuiltins.js:1364
+#: scripts/services/EditUriBuiltins.js:1361
 msgid "oss_region"
 msgstr "oss_region"
 
@@ -3851,11 +3851,11 @@ msgstr "externe opslagplaats, bijv. remote"
 msgid "resume now"
 msgstr "nu hervatten"
 
-#: scripts/services/EditUriBuiltins.js:1312
+#: scripts/services/EditUriBuiltins.js:1309
 msgid "storj_shared_access"
 msgstr "storj_shared_access"
 
-#: scripts/services/EditUriBuiltins.js:1146
+#: scripts/services/EditUriBuiltins.js:1143
 msgid "unless you are explicitly specifying --group-id"
 msgstr "tenzij u expliciet --group-id opgeeft"
 

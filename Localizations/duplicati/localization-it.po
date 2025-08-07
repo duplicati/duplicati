@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 13:36+0200\n"
+"POT-Creation-Date: 2025-08-07 15:56+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2025\n"
 "Language-Team: Italian (https://app.transifex.com/duplicati/teams/67655/it/)\n"
@@ -238,6 +238,10 @@ msgstr "Arco di tempo"
 #: Library/Interface/Strings.cs:42
 msgid "Password"
 msgstr "Password"
+
+#: Library/Interface/Strings.cs:43
+msgid "Decimal"
+msgstr "Decimale"
 
 #: Library/Interface/Strings.cs:44
 msgid "Unknown"
@@ -795,9 +799,17 @@ msgstr "L'operazione da eseguire"
 msgid "Select the operation to perform"
 msgstr "Seleziona l'operazione da eseguire"
 
+#: Library/Backend/S3/Strings.cs:77
+msgid "The username to use"
+msgstr "Il nome utente da utilizzare"
+
 #: Library/Backend/S3/Strings.cs:78
 msgid "The Amazon Access Key ID"
 msgstr "L'ID chiave di accesso Amazon"
+
+#: Library/Backend/S3/Strings.cs:79
+msgid "The password to use"
+msgstr "La password da utilizzare"
 
 #: Library/Backend/S3/Strings.cs:80
 msgid "The Amazon Secret Key"
@@ -866,6 +878,14 @@ msgstr "Chiave pubblica SSH da aggiungere"
 #: Library/Backend/SSHv2/Strings.cs:47
 msgid "SFTP (SSH)"
 msgstr "SFTP (SSH)"
+
+#: Library/Backend/SSHv2/Strings.cs:48
+msgid "A username is required"
+msgstr "È richiesto un nome utente"
+
+#: Library/Backend/SSHv2/Strings.cs:49
+msgid "A password is required if not using a keyfile"
+msgstr "È richiesta una password se non si utilizza un file chiave"
 
 #: Library/Backend/SSHv2/Strings.cs:52
 msgid ""
@@ -1211,6 +1231,10 @@ msgstr "Regione"
 msgid "Endpoint"
 msgstr "Endpoint"
 
+#: Library/Backend/Filejump/Strings.cs:28
+msgid "Filejump"
+msgstr "Filejump"
+
 #: Library/Backend/AzureBlob/Strings.cs:29
 msgid "Azure blob"
 msgstr "Azure blob"
@@ -1239,9 +1263,21 @@ msgstr "Il token SAS"
 msgid "No Azure access key or SAS token given"
 msgstr "Nessuna chiave di accesso ad Azure o token SAS fornito"
 
+#: Library/Backend/Filen/Strings.cs:27
+msgid "Filen.io"
+msgstr "Filen.io"
+
+#: Library/Backend/Filen/Strings.cs:30
+msgid "Move to trash"
+msgstr "Sposta nel cestino"
+
 #: Library/Backend/TencentCOS/Strings.cs:30
 msgid "Account ID"
 msgstr "ID Account"
+
+#: Library/Backend/TencentCOS/Strings.cs:32
+msgid "Secret ID"
+msgstr "ID segreto"
 
 #: Library/Backend/TencentCOS/Strings.cs:34
 msgid "Secret Key"
@@ -1439,6 +1475,34 @@ msgstr ""
 #: Library/Backend/SharePoint/Strings.cs:50
 msgid "Microsoft OneDrive for Business"
 msgstr "Microsoft OneDrive per Aziende"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:101
+msgid "Failed to connect to server"
+msgstr "Impossibile connettersi al server"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:108
+msgid "Failed to authenticate to server"
+msgstr "Impossibile autenticarsi al server"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:118
+msgid "Failed to connect to share"
+msgstr "Impossibile connettersi alla condivisione"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:155
+msgid "Failed to delete file on DeleteAsync"
+msgstr "Impossibile eliminare il file su DeleteAsync"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:158
+msgid "Failed to close file on DeleteAsync"
+msgstr "Impossibile chiudere il file su DeleteAsync"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:207
+msgid "Failed to create directory"
+msgstr "Impossibile creare la cartella"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:260
+msgid "Failed to open directory"
+msgstr "Impossibile aprire la cartella"
 
 #: Library/Backend/Dropbox/Strings.cs:28
 msgid "Dropbox"
@@ -1794,9 +1858,36 @@ msgstr "Cartella archiviazione temporanea"
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server avviato e in ascolto su {0}, porta {1}"
 
+#: Library/RestAPI/Strings.cs:96
+msgid "Server has stopped"
+msgstr "Il server si è fermato"
+
+#: Library/RestAPI/Strings.cs:98
+msgid "Require database encryption"
+msgstr "Richiesta la crittografia del database"
+
+#: Library/RestAPI/Strings.cs:103
+#, csharp-format
+msgid "The timezone {0} is not valid"
+msgstr "Il fuso orario {0} non è valido"
+
+#: Library/RestAPI/Strings.cs:104
+msgid "Set the encryption key for the settings database"
+msgstr "Imposta la chiave di crittografia per il database delle impostazioni."
+
+#: Library/RestAPI/Strings.cs:106
+#, csharp-format
+msgid "Invalid pause/resume state: {0}"
+msgstr "Stato di pausa/ripresa non valido: {0}"
+
 #: Library/RestAPI/Strings.cs:107
 msgid "Register for remote control"
 msgstr "Registrazione per il controllo remoto"
+
+#: Library/RestAPI/Strings.cs:113
+#, csharp-format
+msgid "The server registration failed: {0}"
+msgstr "La registrazione del server non è riuscita: {0}"
 
 #: Library/RestAPI/Strings.cs:117
 #, csharp-format
@@ -1824,6 +1915,10 @@ msgstr ""
 "Impossibile caricare processo tipo {0} assembly {1}, messaggio di errore: "
 "{2}"
 
+#: Library/Compression/Strings.cs:27
+msgid "ZIP compression"
+msgstr "Compressione ZIP"
+
 #: Library/Compression/Strings.cs:29
 msgid ""
 "This option controls the compression level used. A setting of zero gives no "
@@ -1832,6 +1927,14 @@ msgstr ""
 "Questa opzione controlla il livello di compressione utilizzato. Impostando a"
 " zero non si ha nessuna compressione e impostando a 9 si ha la compressione "
 "massima."
+
+#: Library/Compression/Strings.cs:30
+msgid "Set the ZIP compression level"
+msgstr "Imposta il livello di compressione ZIP"
+
+#: Library/Compression/Strings.cs:32
+msgid "Set the ZIP compression method"
+msgstr "Imposta il metodo di compressione ZIP"
 
 #: Library/SQLiteHelper/Strings.cs:24
 msgid "backup"
@@ -2298,6 +2401,10 @@ msgstr "Mostra messaggi di errore quando è eseguito un tentativo"
 #: Library/Main/Strings.cs:156
 msgid "Upload empty backup files"
 msgstr "Carica file di backup vuoti"
+
+#: Library/Main/Strings.cs:158
+msgid "Limit storage use"
+msgstr "Limita uso archiviazione"
 
 #: Library/Main/Strings.cs:160
 msgid "Threshold for warning about low quota"
@@ -3269,6 +3376,26 @@ msgstr "Nell'Uri manca il nome dell'host: {0}"
 #, csharp-format
 msgid "{0} bytes"
 msgstr "{0} bytes"
+
+#: Library/Utility/Strings.cs:56
+#, csharp-format
+msgid "{0:N} GiB"
+msgstr "{0:N} GiB"
+
+#: Library/Utility/Strings.cs:57
+#, csharp-format
+msgid "{0:N} KiB"
+msgstr "{0:N} KiB"
+
+#: Library/Utility/Strings.cs:58
+#, csharp-format
+msgid "{0:N} MiB"
+msgstr "{0:N} MiB"
+
+#: Library/Utility/Strings.cs:59
+#, csharp-format
+msgid "{0:N} TiB"
+msgstr "{0:N} TiB"
 
 #: Library/Utility/Strings.cs:60
 #, csharp-format
