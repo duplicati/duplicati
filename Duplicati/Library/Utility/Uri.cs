@@ -24,6 +24,8 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 
+#nullable enable
+
 namespace Duplicati.Library.Utility
 {
     // TODO: This class should be deleted.
@@ -49,13 +51,18 @@ namespace Duplicati.Library.Utility
         private static readonly System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:\?/]+)(\:(?<password>[^@\:\?/]*))?\@))?((?<hostname>(?:[^\[/\?\:][^/\?\:]*)|(?:\[[^\]]+\]))(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
 
         /// <summary>
+        /// Detects a Windows path
+        /// </summary>
+        private static readonly System.Text.RegularExpressions.Regex WINDOWS_PATH = new System.Text.RegularExpressions.Regex(@"^/?[a-zA-Z]:[\\/]");
+
+        /// <summary>
         /// The URL scheme, e.g. http
         /// </summary>
         public readonly string Scheme;
         /// <summary>
         /// The server name, e.g. www.example.com
         /// </summary>
-        public readonly string Host;
+        public readonly string? Host;
         /// <summary>
         /// The server path, e.g. index.html.
         /// Note that the path does NOT have a leading /.
@@ -68,15 +75,15 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The querystring, e.g. ?id=1
         /// </summary>
-        public readonly string Query;
+        public readonly string? Query;
         /// <summary>
         /// The username, if any
         /// </summary>
-        public readonly string Username;
+        public readonly string? Username;
         /// <summary>
         /// The password, if any
         /// </summary>
-        public readonly string Password;
+        public readonly string? Password;
 
         /// <summary>
         /// The original URI.
@@ -86,7 +93,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Cache for the query parameters.
         /// </summary>
-        private NameValueCollection m_queryParams;
+        private NameValueCollection? m_queryParams;
 
         /// <summary>
         /// Gets the parameters in the query string
@@ -117,7 +124,7 @@ namespace Duplicati.Library.Utility
             get
             {
                 if (string.IsNullOrEmpty(Path))
-                    return Host;
+                    return Host ?? "";
                 else if (string.IsNullOrEmpty(Host))
                     return Path;
                 else
@@ -156,6 +163,8 @@ namespace Duplicati.Library.Utility
                 if (path.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
                     path = path.Substring("file://".Length);
 
+                path = UrlDecode(path);
+
                 if (path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) < 0)
                     try
                     {
@@ -176,9 +185,9 @@ namespace Duplicati.Library.Utility
             }
 
             this.Scheme = m.Groups["scheme"].Value;
-            var h = m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "";
+            var h = UrlDecode(m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "");
 
-            var p = m.Groups["path"].Success ? m.Groups["path"].Value : "";
+            var p = UrlDecode(m.Groups["path"].Success ? m.Groups["path"].Value : "");
             if (m.Groups["hostname"].Success && p.StartsWith("/", StringComparison.Ordinal))
                 p = p.Substring(1);
 
@@ -191,6 +200,10 @@ namespace Duplicati.Library.Utility
                 p = System.IO.Path.GetFullPath(p);
                 h = null;
             }
+
+            // Support correctly encoded file:///C:\test
+            if ((h == null || h.Length == 0) && Scheme == "file" && WINDOWS_PATH.IsMatch(p) && p.StartsWith("/", StringComparison.Ordinal))
+                p = p.Substring(1);
 
             this.Host = h;
             this.Path = p;
@@ -214,12 +227,12 @@ namespace Duplicati.Library.Utility
         /// <param name="username">The username</param>
         /// <param name="password">The password</param>
         /// <param name="port">The port</param>
-        public Uri(string scheme, string host, string path = null, string query = null, string username = null, string password = null, int port = -1)
+        public Uri(string scheme, string? host, string? path = null, string? query = null, string? username = null, string? password = null, int port = -1)
         {
             m_queryParams = null;
             Scheme = scheme;
             Host = host;
-            Path = path;
+            Path = path ?? "";
             Query = query;
             Username = username;
             Password = password;
@@ -256,7 +269,7 @@ namespace Duplicati.Library.Utility
         /// <param name="username">The username</param>
         /// <param name="password">The password</param>
         /// <param name="port">The port</param>
-        private static string AsString(string scheme, string host, string path, string query, string username, string password, int port)
+        private static string AsString(string scheme, string? host, string? path, string? query, string? username, string? password, int port)
         {
             var s = scheme + "://";
             if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
@@ -270,16 +283,18 @@ namespace Duplicati.Library.Utility
 
             if (!string.IsNullOrEmpty(host))
             {
-                s += host;
+                s += UrlPathEncode(host);
                 if (port != -1)
                     s += ":" + port.ToString();
             }
 
             if (!string.IsNullOrEmpty(path))
             {
-                if (!string.IsNullOrEmpty(host))
+                // Append the leading `/` to the Windows path for file:///c:\test
+                if (!string.IsNullOrEmpty(host) || (WINDOWS_PATH.IsMatch(path) && !path.StartsWith("/")))
                     s += "/";
-                s += path;
+
+                s += string.Join('/', path.Split('/').Select(x => UrlPathEncode(x)));
             }
             if (!string.IsNullOrEmpty(query))
                 s += "?" + query;
@@ -312,7 +327,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>A new instance</returns>
         /// <param name="path">The new path to use</param>
-        public Uri SetPath(string path)
+        public Uri SetPath(string? path)
         {
             return new Uri(Scheme, Host, path, Query, Username, Password, Port);
         }
@@ -322,7 +337,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>A new instance</returns>
         /// <param name="query">The new query to use</param>
-        public Uri SetQuery(string query)
+        public Uri SetQuery(string? query)
         {
             return new Uri(Scheme, Host, Path, query, Username, Password, Port);
         }
@@ -333,7 +348,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A new instance</returns>
         /// <param name="username">The new username to use</param>
         /// <param name="password">The new password to use</param>
-        public Uri SetCredentials(string username, string password)
+        public Uri SetCredentials(string? username, string? password)
         {
             return new Uri(Scheme, Host, Path, Query, username, password, Port);
         }
@@ -351,7 +366,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches %20 type values in a querystring
         /// </summary>
-        private static readonly System.Text.RegularExpressions.Regex RE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[^0-9a-zA-Z\-_]", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex RE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[^0-9a-zA-Z\-_.]", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
         /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
@@ -359,8 +374,11 @@ namespace Duplicati.Library.Utility
         /// <returns>The encoded URL</returns>
         /// <param name="value">The URL fragment to encode</param>
         /// <param name="encoding">The encoding to use</param>
-        public static string UrlPathEncode(string value, System.Text.Encoding encoding = null)
+        public static string UrlPathEncode(string value, System.Text.Encoding? encoding = null)
         {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
             return UrlEncode(value, encoding, "%20");
         }
 
@@ -370,7 +388,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The encoded URL</returns>
         /// <param name="value">The URL fragment to encode</param>
         /// <param name="encoding">The encoding to use</param>
-        public static string UrlEncode(string value, System.Text.Encoding encoding = null, string spacevalue = "+")
+        public static string UrlEncode(string value, System.Text.Encoding? encoding = null, string spacevalue = "+")
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
@@ -414,7 +432,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The decoded URL</returns>
         /// <param name="value">The URL fragment to decode</param>
         /// <param name="encoding">The encoding to use</param>
-        public static string UrlDecode(string value, System.Text.Encoding encoding = null)
+        public static string UrlDecode(string value, System.Text.Encoding? encoding = null)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
@@ -537,7 +555,7 @@ namespace Duplicati.Library.Utility
         /// <param name="url">Base URL, containing schema, host, port.</param>
         /// <param name="path">Base path.</param>
         /// <param name="query">A collection of name value pairs to be translated into a query string.</param>
-        public static string UriBuilder(string url, string path, NameValueCollection query)
+        public static string UriBuilder(string url, string path, NameValueCollection? query)
         {
             var builder = new UriBuilder(url)
             {
@@ -553,7 +571,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The path.</returns>
         /// <param name="url">URL.</param>
-        public static string ExtractPath(string url)
+        public static string? ExtractPath(string url)
         {
             return new Uri(url).Path;
         }

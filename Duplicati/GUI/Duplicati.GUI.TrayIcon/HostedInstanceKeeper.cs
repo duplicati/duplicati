@@ -31,11 +31,11 @@ namespace Duplicati.GUI.TrayIcon
     /// </summary>
     internal class HostedInstanceKeeper : IDisposable
     {
-        private readonly System.Threading.Thread m_runner;
+        private readonly Thread m_runner;
         private Exception m_runnerException = null;
         public Action InstanceShutdown;
         private int _InstanceShutdownInvoked = 0;
-          
+
         public readonly IApplicationSettings applicationSettings;
 
         public HostedInstanceKeeper(IApplicationSettings applicationSettings, string[] args)
@@ -56,7 +56,7 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     m_runnerException = ex;
                     Server.Program.ServerStartedEvent?.Set();
-                    applicationSettings.ApplicationExitEvent?.Set();
+                    applicationSettings.SignalApplicationExit();
                 }
                 finally
                 {
@@ -94,7 +94,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             try
             {
-                applicationSettings.ApplicationExitEvent.Set();
+                applicationSettings.SignalApplicationExit();
                 if (!m_runner.Join(TimeSpan.FromSeconds(10)))
                 {
                     m_runner.Interrupt();

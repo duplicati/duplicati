@@ -197,7 +197,7 @@ namespace Duplicati.Server
             ISchedulerService scheduler = null;
             try
             {
-                var connection = GetDatabaseConnection(applicationSettings, commandlineOptions, silentConsole);
+                var connection = GetDatabaseConnection(applicationSettings, commandlineOptions, silentConsole, true);
 
                 if (!connection.ApplicationSettings.FixedInvalidBackupId)
                     connection.FixInvalidBackupId();
@@ -266,7 +266,7 @@ namespace Duplicati.Server
                     }
 
                     terminated = true;
-                    applicationSettings.ApplicationExitEvent.Set();
+                    applicationSettings.SignalApplicationExit();
                 });
 
                 var stopCounter = 0;
@@ -288,7 +288,7 @@ namespace Duplicati.Server
                 };
 
                 ServerStartedEvent.Set();
-                applicationSettings.ApplicationExitEvent.WaitOne();
+                applicationSettings.ApplicationExit.WaitHandle.WaitOne();
             }
             catch (SingleInstance.MultipleInstanceException mex)
             {
@@ -736,7 +736,7 @@ namespace Duplicati.Server
             throw new Exception("Server invoked with --help");
         }
 
-        public static Connection GetDatabaseConnection(IApplicationSettings applicationSettings, Dictionary<string, string> commandlineOptions, bool silentConsole)
+        public static Connection GetDatabaseConnection(IApplicationSettings applicationSettings, Dictionary<string, string> commandlineOptions, bool silentConsole, bool changeDbEncryption)
         {
             // Emit a warning if the database is stored in the Windows folder
             if (Util.IsPathUnderWindowsFolder(applicationSettings.DataFolder))
@@ -786,28 +786,25 @@ namespace Duplicati.Server
             if (requireDbEncryptionKey && !(hasValidEncryptionKey || disableDbEncryption))
                 throw new UserInformationException(Strings.Program.DatabaseEncryptionKeyRequired(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION), "RequireDbEncryptionKey");
 
-            if (!hasValidEncryptionKey)
+            var hasEncryptedFields = false;
+            try
             {
-                try
-                {
-                    var hasEncryptedFields = false;
-                    using (var cmd = con.CreateCommand(@$"SELECT ""Value"" FROM ""Option"" WHERE ""Name"" = @Name AND ""BackupID"" = @BackupId"))
-                        hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd
-                            .SetParameterValue("@Name", Database.ServerSettings.CONST.ENCRYPTED_FIELDS)
-                            .SetParameterValue("@BackupId", Connection.SERVER_SETTINGS_ID).ExecuteScalar()?.ToString(), false);
+                using (var cmd = con.CreateCommand(@$"SELECT ""Value"" FROM ""Option"" WHERE ""Name"" = @Name AND ""BackupID"" = @BackupId"))
+                    hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd
+                        .SetParameterValue("@Name", Database.ServerSettings.CONST.ENCRYPTED_FIELDS)
+                        .SetParameterValue("@BackupId", Connection.SERVER_SETTINGS_ID).ExecuteScalar()?.ToString(), false);
 
-                    if (hasEncryptedFields)
-                    {
-                        Log.WriteWarningMessage(LOGTAG, "EncryptionKeyMissing", null, Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
-                        if (!silentConsole)
-                            Console.WriteLine(Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
-                    }
-                }
-                catch
+                if (hasEncryptedFields && !hasValidEncryptionKey)
                 {
-                    // Ignore errors here, as we are just checking for a potential issue
-                    // Only negative effect is that we do not show a potentially helpful warning
+                    Log.WriteWarningMessage(LOGTAG, "EncryptionKeyMissing", null, Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
+                    if (!silentConsole)
+                        Console.WriteLine(Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
                 }
+            }
+            catch
+            {
+                // Ignore errors here, as we are just checking for a potential issue
+                // Only negative effect is that we do not show a potentially helpful warning
             }
 
             if (!hasValidEncryptionKey && !disableDbEncryption)
@@ -825,6 +822,11 @@ namespace Duplicati.Server
                 if (!silentConsole)
                     Console.WriteLine(Strings.Program.BlacklistedEncryptionKey(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION));
             }
+
+            // If the database is not encrypted, and we are not changing the encryption
+            // don't pass the key, as that would cause the database to be encrypted
+            if (!hasEncryptedFields && !changeDbEncryption && hasValidEncryptionKey)
+                encKey = null;
 
             return new Connection(con, disableDbEncryption, encKey, applicationSettings.DataFolder, applicationSettings.StartOrStopUsageReporter);
         }
@@ -889,7 +891,7 @@ namespace Duplicati.Server
                 {
                     // TODO: All calls to ApplicationExitEvent and TrayIcon->Quit
                     // should check if we are running something
-                    applicationSettings.ApplicationExitEvent.Set();
+                    applicationSettings.SignalApplicationExit();
                 }
                 else
                 {
@@ -954,7 +956,7 @@ namespace Duplicati.Server
             new CommandLineArgument(PING_PONG_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
             new CommandLineArgument(DISABLE_UPDATE_CHECK_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisableupdatecheckShort, Strings.Program.DisableupdatecheckLong),
             new CommandLineArgument(LOG_RETENTION_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
-            new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)), DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)),
+            new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DataFolderManager.DATAFOLDER_ENV_NAME), DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)),
             new CommandLineArgument(DISABLE_DB_ENCRYPTION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledbencryptionShort, Strings.Program.DisabledbencryptionLong),
             new CommandLineArgument(REQUIRE_DB_ENCRYPTION_KEY_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.RequiredbencryptionShort, Strings.Program.RequiredbencryptionLong),
             new CommandLineArgument(SETTINGS_ENCRYPTION_KEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Program.SettingsencryptionkeyShort, Strings.Program.SettingsencryptionkeyLong(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME)),

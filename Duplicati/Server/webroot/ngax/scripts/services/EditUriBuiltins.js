@@ -668,9 +668,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         
         EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
-        var url = AppUtils.format('{0}{1}://{2}/{3}{4}',
+        var url = AppUtils.format('{0}://{1}/{2}{3}',
             scope.Backend.Key,
-            scope.UseSSL ? 's' : '',
             scope.Server || '',
             scope.Path || '',
             AppUtils.encodeDictAsUrl(opts)
@@ -697,9 +696,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
         EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
-        var url = AppUtils.format('{0}{1}://{2}{3}',
+        var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,
-            (scope.SupportsSSL && scope.UseSSL) ? 's' : '',
             scope.Path || '',
             AppUtils.encodeDictAsUrl(opts)
         );
@@ -1104,7 +1102,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             });
     };
 
-    EditUriBackendConfig.validaters['webdav'] = EditUriBackendConfig.validaters['webdav'];
     EditUriBackendConfig.validaters['tahoe'] = EditUriBackendConfig.validaters['ssh'];
 
     EditUriBackendConfig.validaters['pcloud'] = function (scope, continuation) {

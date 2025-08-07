@@ -192,7 +192,7 @@ namespace Duplicati.GUI.TrayIcon
                 if (File.Exists(Path.Combine(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ReadWritePermissionSet), DataFolderManager.SERVER_DATABASE_FILENAME)))
                 {
                     passwordSource = PasswordSource.Database;
-                    databaseConnection = Server.Program.GetDatabaseConnection(new ApplicationSettings(), options, true);
+                    databaseConnection = Server.Program.GetDatabaseConnection(new ApplicationSettings(), options, true, false);
 
                     if (databaseConnection != null)
                     {
