@@ -134,7 +134,7 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend
 
         var uri = new Utility.Uri(url);
         uri.RequireHost();
-        _DnsName = uri.Host;
+        _DnsName = uri.Host ?? "";
 
         var input = uri.Path.TrimEnd('/');
         var slashIndex = input.IndexOf('/');  // Find first slash to separate server and share if present.
@@ -165,7 +165,7 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend
 
         _timeouts = TimeoutOptionsHelper.Parse(options);
         _connectionParameters = new SMBConnectionParameters(
-            uri.Host,
+            _DnsName,
             transportType,
             slashIndex >= 0 ? input[..slashIndex] : input,
             slashIndex >= 0 ? input[(slashIndex + 1)..] : "",

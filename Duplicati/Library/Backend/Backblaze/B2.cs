@@ -165,7 +165,7 @@ public class B2 : IStreamingBackend
     {
         var uri = new Utility.Uri(url);
 
-        _bucketName = uri.Host;
+        _bucketName = uri.Host ?? "";
         _prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
         // For B2 we do not use a leading slash
@@ -310,11 +310,10 @@ public class B2 : IStreamingBackend
             await RebuildFileCache(cancelToken).ConfigureAwait(false);
 
         var uploadUrlData = await GetUploadUrlDataAsync(cancelToken).ConfigureAwait(false);
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrlData.UploadUrl);
-            using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, () => timeoutCts.CancelAfter(_timeouts.ShortTimeout));
+            using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
 
             request.Headers.TryAddWithoutValidation("Authorization", uploadUrlData.AuthorizationToken);
             request.Headers.Add("X-Bz-Content-Sha1", sha1);
@@ -324,8 +323,8 @@ public class B2 : IStreamingBackend
             request.Content.Headers.Add("Content-Type", "application/octet-stream");
             request.Content.Headers.Add("Content-Length", timeoutStream.Length.ToString());
 
-            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeoutCts.Token).ConfigureAwait(false);
-            var rdata = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => response.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false);
+            var response = await _httpClient.UploadStream(request, cancelToken).ConfigureAwait(false);
+            var rdata = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
 
             UploadFileResponse fileinfo;
             using (var tr = new StreamReader(rdata))
@@ -356,10 +355,6 @@ public class B2 : IStreamingBackend
             var code = (int)B2AuthHelper.GetExceptionStatusCode(ex);
             if (code is >= 500 and <= 599)
                 _uploadUrl = null;
-
-            // Translate to a timeout exception if the timeout was triggered
-            if ((ex is TaskCanceledException || ex is OperationCanceledException) && !cancelToken.IsCancellationRequested && timeoutCts.IsCancellationRequested)
-                throw new TimeoutException(Strings.B2.UploadTimeoutError, ex);
 
             throw;
         }

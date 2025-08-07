@@ -123,7 +123,7 @@ namespace Duplicati.Library.Backend.TencentCOS
 
         public COS(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url?.Trim());
+            var uri = new Utility.Uri(url?.Trim() ?? "");
             var prefix = uri.HostAndPath?.Trim()?.Trim('/')?.Trim('\\');
             var auth = AuthOptionsHelper.ParseWithAlias(options, uri, COS_SECRET_ID, COS_SECRET_KEY)
                 .RequireCredentials();

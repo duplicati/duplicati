@@ -209,7 +209,7 @@ namespace Duplicati.Library.Backend
             var uri = new Utility.Uri(url);
             uri.RequireHost();
 
-            m_bucket = uri.Host;
+            m_bucket = uri.Host ?? "";
             m_prefix = uri.Path;
             var timeout = TimeoutOptionsHelper.Parse(options);
 

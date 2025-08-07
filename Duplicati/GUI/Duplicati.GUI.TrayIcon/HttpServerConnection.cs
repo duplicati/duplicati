@@ -148,7 +148,7 @@ namespace Duplicati.GUI.TrayIcon
 
             var acceptedCertificates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (!string.IsNullOrWhiteSpace(acceptedHostCertificate))
-                acceptedCertificates.UnionWith(acceptedHostCertificate.Split([',', ';'],
+                acceptedCertificates.UnionWith(acceptedHostCertificate.Split(new char[] { ',', ';' },
                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
             HTTPCLIENT = new(new HttpClientHandler
