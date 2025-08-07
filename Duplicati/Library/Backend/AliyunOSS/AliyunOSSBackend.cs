@@ -56,7 +56,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
         {
             _timeouts = TimeoutOptionsHelper.Parse(options);
 
-            var uri = new Utility.Uri(url?.Trim());
+            var uri = new Utility.Uri(url?.Trim() ?? "");
             var prefix = uri.HostAndPath?.TrimPath();
 
             var auth = AuthOptionsHelper.ParseWithAlias(options, uri, OSS_ACCESS_KEY_ID, OSS_ACCESS_KEY_SECRET)

@@ -62,7 +62,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         {
             var uri = new Utility.Uri(url);
 
-            m_bucket = uri.Host;
+            m_bucket = uri.Host ?? "";
             m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
             // For GCS we do not use a leading slash
