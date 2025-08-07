@@ -36,6 +36,7 @@ namespace Duplicati.CommandLine.ServerUtil;
 /// </summary>
 /// <param name="Password">The commandline password</param>
 /// <param name="RefreshToken">The saved refresh token</param>
+/// <param name="RefreshNonce">The saved refresh nonce</param>
 /// <param name="HostUrl">The host url to connect to</param>
 /// <param name="SettingsFile">The settings file where data is loaded/saved</param>
 /// <param name="Insecure">Whether to disable TLS/SSL certificate trust check</param>
@@ -46,6 +47,7 @@ namespace Duplicati.CommandLine.ServerUtil;
 public sealed record Settings(
     string? Password,
     string? RefreshToken,
+    string? RefreshNonce,
     Uri HostUrl,
     string SettingsFile,
     bool Insecure,
@@ -63,6 +65,7 @@ public sealed record Settings(
     /// <param name="ServerDatafolder">The server datafolder, if any</param>
     private sealed record PersistedSettings(
         string? RefreshToken,
+        string? RefreshNonce,
         Uri HostUrl,
         string? ServerDatafolder
     );
@@ -127,6 +130,7 @@ public sealed record Settings(
         return new Settings(
             password,
             persistedSettings?.RefreshToken,
+            persistedSettings?.RefreshNonce,
             hostUrl,
             settingsFile,
             insecure,
@@ -179,7 +183,7 @@ public sealed record Settings(
 
         File.WriteAllText(SettingsFile, JsonSerializer.Serialize(LoadSettings(SettingsFile, thisKey)
             .Where(x => x.HostUrl != HostUrl)
-            .Append(new PersistedSettings(RefreshToken, HostUrl, DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ReadWritePermissionSet)))
+            .Append(new PersistedSettings(RefreshToken, RefreshNonce, HostUrl, DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ReadWritePermissionSet)))
             .Select(x => x with
             {
                 RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken) || thisKey == null
@@ -197,7 +201,7 @@ public sealed record Settings(
     {
         return Connection.Connect(this);
     }
-    
+
     /// <summary>
     /// Gets a connection to the server
     /// </summary>

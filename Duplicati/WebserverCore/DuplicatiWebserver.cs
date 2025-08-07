@@ -198,6 +198,9 @@ public class DuplicatiWebserver
         if (settings.TokenLifetimeInMinutes > 0)
             jwtConfig = jwtConfig with { RefreshTokenDurationInMinutes = settings.TokenLifetimeInMinutes };
 
+        if (jwtConfig.PbkdfConfig == null)
+            jwtConfig = jwtConfig with { PbkdfConfig = Server.PbkdfConfig.Default };
+
         if (EnableSwagger)
         {
             // Swagger is picking up JSON settings from controllers, even though we do not use controllers

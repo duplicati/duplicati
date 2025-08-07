@@ -174,13 +174,13 @@ public class Connection
         {
             if (!string.IsNullOrWhiteSpace(settings.RefreshToken))
             {
-                var (accessToken, refreshToken) = await LoginWithRefreshToken(client, settings.RefreshToken);
+                var (accessToken, refreshToken, refreshNonce) = await LoginWithRefreshToken(client, settings.RefreshToken, settings.RefreshNonce);
                 if (string.IsNullOrWhiteSpace(accessToken))
                     throw new InvalidOperationException("Failed to get access token");
                 if (string.IsNullOrWhiteSpace(refreshToken))
                     throw new InvalidOperationException("Failed to get refresh token");
 
-                (settings with { RefreshToken = refreshToken }).Save(console);
+                (settings with { RefreshToken = refreshToken, RefreshNonce = refreshNonce }).Save(console);
                 return CreateConnectionWithClient(client, accessToken);
             }
         }
@@ -223,12 +223,12 @@ public class Connection
                         ).CreateSigninToken("server-cli");
 
                         var responseTask = client.PostAsync("auth/signin", JsonContent.Create(new { SigninToken = signinjwt, RememberMe = obtainRefreshToken }));
-                        var (accessToken, refreshToken) = await ParseAuthResponse(responseTask);
+                        var (accessToken, refreshToken, refreshNonce) = await ParseAuthResponse(responseTask);
                         if (string.IsNullOrWhiteSpace(accessToken))
                             throw new InvalidOperationException("Failed to get access token");
 
                         if (!string.IsNullOrWhiteSpace(refreshToken))
-                            (settings with { RefreshToken = refreshToken }).Save(console);
+                            (settings with { RefreshToken = refreshToken, RefreshNonce = refreshNonce }).Save(console);
 
                         return CreateConnectionWithClient(client, accessToken);
                     }
@@ -260,12 +260,12 @@ public class Connection
             if (string.IsNullOrWhiteSpace(settings.Password))
                 throw new UserReportedException("Password is required");
 
-            var (accessToken, refreshToken) = await LoginWithPassword(client, settings.Password, obtainRefreshToken);
+            var (accessToken, refreshToken, refreshNonce) = await LoginWithPassword(client, settings.Password, obtainRefreshToken);
             if (string.IsNullOrWhiteSpace(accessToken))
                 throw new InvalidOperationException("Failed to get access token");
 
             if (!string.IsNullOrWhiteSpace(refreshToken))
-                (settings with { RefreshToken = refreshToken }).Save(console);
+                (settings with { RefreshToken = refreshToken, RefreshNonce = refreshNonce }).Save(console);
 
             return CreateConnectionWithClient(client, accessToken);
         }
@@ -295,7 +295,7 @@ public class Connection
     /// <param name="password">The password to use</param>
     /// <param name="obtainRefreshToken">Whether to obtain a refresh token</param>
     /// <returns>The access and refresh tokens</returns>
-    private static Task<(string AccessToken, string? RefreshToken)> LoginWithPassword(HttpClient client, string password, bool obtainRefreshToken)
+    private static Task<(string AccessToken, string? RefreshToken, string? RefreshNonce)> LoginWithPassword(HttpClient client, string password, bool obtainRefreshToken)
         => ParseAuthResponse(
             client.PostAsync("auth/login", JsonContent.Create(new { Password = password, RememberMe = obtainRefreshToken }))
         );
@@ -305,12 +305,15 @@ public class Connection
     /// </summary>
     /// <param name="client">The HTTP client</param>
     /// <param name="refreshToken">The refresh token to use</param>
-    /// <returns>The access and refresh tokens</returns>
-    private static Task<(string AccessToken, string? RefreshToken)> LoginWithRefreshToken(HttpClient client, string refreshToken)
-        => ParseAuthResponse(client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh")
+    /// <returns>The access token, refresh tokens, and nonce</returns>
+    private static Task<(string AccessToken, string? RefreshToken, string? RefreshNonce)> LoginWithRefreshToken(HttpClient client, string refreshToken, string? nonce)
+    {
+        return ParseAuthResponse(client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh")
         {
-            Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={refreshToken}" } }
+            Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={refreshToken}" } },
+            Content = string.IsNullOrWhiteSpace(nonce) ? null : JsonContent.Create(new { Nonce = nonce })
         }));
+    }
 
 
     /// <summary>
@@ -318,7 +321,7 @@ public class Connection
     /// </summary>
     /// <param name="response">The response to parse</param>
     /// <returns>The access and refresh tokens</returns>
-    private static async Task<(string AccessToken, string? RefreshToken)> ParseAuthResponse(Task<HttpResponseMessage> responseTask)
+    private static async Task<(string AccessToken, string? RefreshToken, string? RefreshNonce)> ParseAuthResponse(Task<HttpResponseMessage> responseTask)
     {
         var response = await responseTask;
         await EnsureSuccessStatusCodeWithParsing(response);
@@ -328,10 +331,12 @@ public class Connection
         if (!json.TryGetValue("AccessToken", out var accessToken))
             throw new InvalidOperationException("Failed to get access token");
 
+        json.TryGetValue("RefreshNonce", out var refreshNonce);
+
         response.Headers.TryGetValues("Set-Cookie", out var cookies);
         var refreshToken = cookies?.SelectMany(c => c.Split(';')).FirstOrDefault(c => c.StartsWith("RefreshToken_"))?.Split('=', 2)[1];
 
-        return (accessToken, refreshToken);
+        return (accessToken, refreshToken, refreshNonce);
     }
 
     /// <summary>
@@ -561,7 +566,7 @@ public class Connection
     /// <returns>The token</returns>
     public async Task<string> CreateForeverToken()
     {
-        var (accessToken, _) = await ParseAuthResponse(client.PostAsync("auth/issue-forever-token", null));
+        var (accessToken, _, _) = await ParseAuthResponse(client.PostAsync("auth/issue-forever-token", null));
         return accessToken;
     }
 

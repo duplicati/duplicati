@@ -99,10 +99,16 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         } else {
             var deferred = $q.defer();
             self.access_token_promise = deferred.promise;
-            $http.post(self.apiurl + '/auth/refresh')
+
+            const storedNonce = localStorage.getItem('v1:persist:duplicati:refreshNonce');
+            const body = storedNonce ? { Nonce: storedNonce } : undefined;
+
+            $http.post(self.apiurl + '/auth/refresh', body)
                 .then(function (response) {
                     self.access_token = response.data.AccessToken;
                     self.access_token_promise = null;
+                    if (response.data.RefreshNonce)
+                        localStorage.setItem('v1:persist:duplicati:refreshNonce', response.data.RefreshNonce);
                     deferred.resolve(self.access_token);
                 }, function (response) {
                     // Failed to get a new token, clear the old one

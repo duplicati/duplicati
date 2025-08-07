@@ -331,63 +331,6 @@ namespace Duplicati.Server.Database
         }
 
         /// <summary>
-        /// This class is used to store the PBKDF configuration parameters
-        /// </summary>        
-        private record PbkdfConfig(string Algorithm, int Version, string Salt, int Iterations, string HashAlorithm, string Hash)
-        {
-            /// <summary>
-            /// The version to embed in the configuration
-            /// </summary>
-            private const int _Version = 1;
-            /// <summary>
-            /// The algorithm to use
-            /// </summary>
-            private const string _Algorithm = "PBKDF2";
-            /// <summary>
-            /// The hash algorithm to use
-            /// </summary>
-            private const string _HashAlorithm = "SHA256";
-            /// <summary>
-            /// The number of iterations to use
-            /// </summary>
-            private const int _Iterations = 10000;
-            /// <summary>
-            /// The size of the hash
-            /// </summary>
-            private const int _HashSize = 32;
-
-            /// <summary>
-            /// Creates a new PBKDF2 configuration with a random salt
-            /// </summary>
-            /// <param name="password">The password to hash</param>
-            public static PbkdfConfig CreatePBKDF2(string password)
-            {
-                var prng = RandomNumberGenerator.Create();
-                var buf = new byte[_HashSize];
-                prng.GetBytes(buf);
-
-                var salt = Convert.ToBase64String(buf);
-                var pbkdf2 = new Rfc2898DeriveBytes(password, buf, _Iterations, new HashAlgorithmName(_HashAlorithm));
-                var pwd = Convert.ToBase64String(pbkdf2.GetBytes(_HashSize));
-
-                return new PbkdfConfig(_Algorithm, _Version, salt, _Iterations, _HashAlorithm, pwd);
-            }
-
-            /// <summary>
-            /// Verifies a password against a PBKDF2 configuration
-            /// </summary>
-            /// <param name="password">The password to verify</param>
-            /// <returns>True if the password matches the configuration</returns>
-            public bool VerifyPassword(string password)
-            {
-                var pbkdf2 = new Rfc2898DeriveBytes(password, Convert.FromBase64String(Salt), Iterations, new HashAlgorithmName(HashAlorithm));
-                var pwd = Convert.ToBase64String(pbkdf2.GetBytes(_HashSize));
-
-                return pwd == Hash;
-            }
-        }
-
-        /// <summary>
         /// Verifies a password against the stored PBKDF configuration
         /// </summary>
         public bool VerifyWebserverPassword(string password)

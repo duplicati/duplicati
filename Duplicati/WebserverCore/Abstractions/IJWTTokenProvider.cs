@@ -90,8 +90,9 @@ public interface IJWTTokenProvider
     /// <param name="userId">The user ID the token is for.</param>
     /// <param name="tokenFamilyId">The token family ID the token is for.</param>
     /// <param name="counter">The counter of the token family the token is for.</param>
-    /// <returns>The JWT token.</returns>
-    string CreateRefreshToken(string userId, string tokenFamilyId, int counter);
+    /// <param name="shortLived">Whether the token should be short-lived.</param>
+    /// <returns>The JWT token and the nonce.</returns>
+    (string RefreshToken, string? Nonce) CreateRefreshToken(string userId, string tokenFamilyId, int counter, bool shortLived);
 
     /// <summary>
     /// Reads a JWT token that only works for a single operation.
@@ -117,8 +118,9 @@ public interface IJWTTokenProvider
     /// Reads a JWT token that can be used to refresh an access token.
     /// </summary>
     /// <param name="token">The JWT token.</param>
+    /// <param name="nonce">The nonce used to validate the token.</param>
     /// <returns>The parsed and validated refresh token.</returns>
-    RefreshToken ReadRefreshToken(string token);
+    RefreshToken ReadRefreshToken(string token, string? nonce);
 
     /// <summary>
     /// Gets the family ID from a JWT token with no family counter.
