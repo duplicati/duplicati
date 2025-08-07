@@ -110,7 +110,7 @@ public class OpenStackStorage : IStreamingBackend
     {
         var uri = new Uri(url);
 
-        m_container = uri.Host;
+        m_container = uri.Host ?? "";
         m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
         _timeouts = TimeoutOptionsHelper.Parse(options);
 

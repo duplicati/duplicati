@@ -165,7 +165,7 @@ public class B2 : IStreamingBackend
     {
         var uri = new Utility.Uri(url);
 
-        _bucketName = uri.Host;
+        _bucketName = uri.Host ?? "";
         _prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
         // For B2 we do not use a leading slash

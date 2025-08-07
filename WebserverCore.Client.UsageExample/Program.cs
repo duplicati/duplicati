@@ -71,7 +71,7 @@ class Program
         {
             // Issue a signin token
             var signinTokenResult = await client.IssueSigninTokenV1Async(
-                new IssueSigninTokenInputDto( Environment.GetEnvironmentVariable("TEST_PASSWORD") ) { }, CancellationToken.None);
+                new IssueSigninTokenInputDto(Environment.GetEnvironmentVariable("TEST_PASSWORD")!) { }, CancellationToken.None);
             Console.WriteLine($"✓ Signin token issued: {signinTokenResult.Token[..10]}...");
 
             // Issue a single operation token
@@ -85,7 +85,7 @@ class Program
                 var foreverToken = await client.IssueForeverTokenV1Async(CancellationToken.None);
                 Console.WriteLine($"✓ Forever token issued: {foreverToken.Token[..10]}...");
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // expected here if foreever tokens are disabled
             }
@@ -137,7 +137,7 @@ class Program
 
                 // Export as command line
                 var cmdlineExport = await client.ExportCommandlineV1Async(backup.Backup.ID, CancellationToken.None);
-                Console.WriteLine($"    ✓ Command line exported: {cmdlineExport.Command[..50]}...");
+                Console.WriteLine($"    ✓ Command line exported: {cmdlineExport!.Command![..50]}...");
 
                 // Export arguments only
                 var argsExport = await client.ExportArgsOnlyV1Async(backup.Backup.ID, CancellationToken.None);
@@ -351,12 +351,12 @@ class Program
 
             // Export backup configuration
             var exportToken = await client.IssueTokenV1Async("export", CancellationToken.None);
-            var exportedConfig = await client.ExportBackupV1Async(firstBackup.Backup.ID,true, "random", exportToken.Token, CancellationToken.None);
+            var exportedConfig = await client.ExportBackupV1Async(firstBackup.Backup.ID, true, "random", exportToken.Token, CancellationToken.None);
             Console.WriteLine($"✓ Exported backup configuration: {exportedConfig}");
 
             // Export as command line
             var cmdlineExport = await client.ExportCommandlineV1Async(firstBackup.Backup.ID, CancellationToken.None);
-            Console.WriteLine($"✓ Exported command line: {cmdlineExport.Command.Length} characters");
+            Console.WriteLine($"✓ Exported command line: {cmdlineExport!.Command![..50]}...");
 
             // Export arguments only
             var argsExport = await client.ExportArgsOnlyV1Async(firstBackup.Backup.ID, CancellationToken.None);
@@ -581,7 +581,7 @@ class Program
                 BackupId = firstBackup.Backup.ID
             };
             var filesetsResponse = await client.ListFilesetsV2Async(filesetsRequest, CancellationToken.None);
-            Console.WriteLine($"✓ V2 Filesets: {filesetsResponse.Data.ToArray().Length} items");
+            Console.WriteLine($"✓ V2 Filesets: {filesetsResponse!.Data!.ToArray().Length} items");
 
             // List folder content with pagination
             var folderRequest = new ListFolderContentRequestDto
@@ -593,7 +593,7 @@ class Program
                 Page = null
             };
             var folderResponse = await client.ListFolderContentV2Async(folderRequest, CancellationToken.None);
-            Console.WriteLine($"✓ V2 Folder Content: {folderResponse.Data.ToArray().Length} items,");
+            Console.WriteLine($"✓ V2 Folder Content: {folderResponse!.Data!.ToArray().Length} items,");
 
             // Search entries
             var searchRequest = new SearchEntriesRequestDto
@@ -606,7 +606,7 @@ class Program
                 Page = 0
             };
             var searchResponse = await client.SearchEntriesV2Async(searchRequest, CancellationToken.None);
-            Console.WriteLine($"✓ V2 Search Results: {searchResponse.Data.ToArray().Length} items");
+            Console.WriteLine($"✓ V2 Search Results: {searchResponse!.Data!.ToArray().Length} items");
 
             // Test destination (commented out as it requires valid destination configuration)
             /*
