@@ -290,23 +290,22 @@ namespace RemoteSynchronization
         /// <returns>A task that represents the asynchronous operation. The task result is true if the folder was created successfully, false otherwise.</returns>
         private async Task<bool> TryCreateFolder(CancellationToken token)
         {
-            try
-            {
-                Instantiate();
+            bool created = false;
+            await RetryWithDelay("CreateFolder", async () =>
+                {
+                    try
+                    {
+                        await _backend!.CreateFolderAsync(token).ConfigureAwait(false);
+                        created = true; // Folder creation succeeded
+                    }
+                    catch
+                    {
+                        created = false; // Folder creation failed
+                    }
+                },
+                null, false, token);
 
-                // Attempt to create the folder
-                await _backend!.CreateFolderAsync(token).ConfigureAwait(false);
-
-                return true; // Folder creation succeeded
-            }
-            catch (Exception ex)
-            {
-                Dispose();
-
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", ex, "Failed to create folder", null);
-
-                return false; // Folder creation failed
-            }
+            return created;
         }
 
         /// <summary>
