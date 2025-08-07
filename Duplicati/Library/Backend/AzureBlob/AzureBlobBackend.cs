@@ -88,7 +88,7 @@ namespace Duplicati.Library.Backend.AzureBlob
             var uri = new Utility.Uri(url);
             uri.RequireHost();
 
-            var containerName = uri.Host.ToLowerInvariant();
+            var containerName = (uri.Host ?? "").ToLowerInvariant();
 
             var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AZURE_ACCOUNT_NAME_OPTION, AZURE_ACCESS_KEY_OPTION);
             var timeouts = TimeoutOptionsHelper.Parse(options);

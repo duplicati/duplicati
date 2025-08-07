@@ -51,7 +51,7 @@ public static partial class Command
     /// <summary>
     /// Projects that only makes sense for Windows
     /// </summary>
-    private static readonly IReadOnlySet<string> WindowsOnlyProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "Duplicati.WindowsService.csproj" };
+    private static readonly IReadOnlySet<string> WindowsOnlyProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "Duplicati.WindowsService.csproj", "Duplicati.WindowsModulesLoader.csproj" };
 
     /// <summary>
     /// Projects the pull in GUI dependencies
@@ -64,11 +64,22 @@ public static partial class Command
     private static readonly IReadOnlySet<string> AgentOnlyProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "Duplicati.Agent.csproj" };
 
     /// <summary>
+    /// Projects that are built for support reasons but where ouput is not used in the final build
+    /// </summary>
+    private static readonly IReadOnlySet<string> EphemeralProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "Duplicati.WindowsModulesLoader.csproj" };
+
+    /// <summary>
+    /// Projects that are always excluded from builds
+    /// </summary>
+    private static readonly IReadOnlySet<string> ExcludedProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { };
+
+    /// <summary>
     /// The projects that are part of the agent builds
     /// </summary>
     private static readonly IReadOnlySet<string> AgentProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) {
         "Duplicati.Agent.csproj",
         "Duplicati.Service.csproj",
+        "Duplicati.WindowsModulesLoader.csproj",
         "Duplicati.WindowsService.csproj"
     };
 
@@ -465,6 +476,7 @@ public static partial class Command
 
         var sourceProjects = Directory.EnumerateDirectories(Path.Combine(baseDir, "Executables", "net8"), "*", SearchOption.TopDirectoryOnly)
             .SelectMany(x => Directory.EnumerateFiles(x, "*.csproj", SearchOption.TopDirectoryOnly))
+            .Where(x => !ExcludedProjects.Contains(Path.GetFileName(x)))
             .ToList();
 
         var primaryGUI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryGUIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find tray icon executable");
@@ -473,6 +485,7 @@ public static partial class Command
         var windowsOnly = sourceProjects.Where(x => WindowsOnlyProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var guiOnlyProjects = sourceProjects.Where(x => GUIOnlyProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var agentOnlyProjects = sourceProjects.Where(x => AgentOnlyProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var ephemeralProjects = sourceProjects.Where(x => EphemeralProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         // Put primary at the end
         sourceProjects.Remove(primaryGUI);
@@ -575,6 +588,10 @@ public static partial class Command
         // Prevent the system from going to sleep during the build
         using var _ = new KeepAliveAssertion();
 
+        // Preload assemblies before we delete the bin folders
+        var __ = typeof(Amazon.S3.AmazonS3Client);
+        var ___ = Duplicati.Library.Utility.Utility.FormatSizeString(0);
+
         if (rtcfg.UseGithubUpload && !input.GitStashPush)
         {
             Console.WriteLine("Github upload requested, but pushing the tag is disabled");
@@ -620,7 +637,19 @@ public static partial class Command
             }
         };
 
-        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceBuildMap, windowsOnly, buildTargets, releaseInfo, input.KeepBuilds, rtcfg, input.UseHostedBuilds, input.DisableCleanSource, input.AllowAssemblyMismatch);
+        await Compile.BuildProjects(
+            baseDir,
+            input.BuildPath.FullName,
+            sourceBuildMap,
+            windowsOnly,
+            ephemeralProjects,
+            buildTargets,
+            releaseInfo,
+            input.KeepBuilds,
+            rtcfg,
+            input.UseHostedBuilds,
+            input.DisableCleanSource,
+            input.AllowAssemblyMismatch);
 
         if (input.CompileOnly)
         {

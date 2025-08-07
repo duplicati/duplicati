@@ -31,6 +31,9 @@ using System.Threading;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Library.SQLiteHelper;
 using System.Diagnostics.CodeAnalysis;
+using Duplicati.Library.Snapshots;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Main
 {
@@ -97,7 +100,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The backends where throttling is disabled by default
         /// </summary>
-        private const string DEFAULT_THROTTLE_DISABLED_BACKENDS = "file";
+        private const string DEFAULT_THROTTLE_DISABLED_BACKENDS = "";
 
         /// <summary>
         /// The default retry delay
@@ -120,6 +123,11 @@ namespace Duplicati.Library.Main
         private static readonly OptimizationStrategy DEFAULT_SNAPSHOT_POLICY = PermissionHelper.HasSeBackupPrivilege()
             ? OptimizationStrategy.Auto
             : OptimizationStrategy.Off;
+
+        /// <summary>
+        /// The default policy for BackupRead
+        /// </summary>
+        private static readonly OptimizationStrategy DEFAULT_BACKUPREAD_POLICY = OptimizationStrategy.Off;
 
         /// <summary>
         /// The default number of compressor instances
@@ -175,11 +183,6 @@ namespace Duplicati.Library.Main
         /// The default value for the size of the channel buffers during restore
         /// </summary>
         private static readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = Environment.ProcessorCount;
-
-        /// <summary>
-        /// The default value for the size of the SQLite page cache
-        /// </summary>
-        private static readonly string DEFAULT_SQLITE_PAGE_CACHE_SIZE = MemoryInfo.GetTotalMemoryString(0.01, SQLiteLoader.MINIMUM_SQLITE_PAGE_CACHE_SIZE); // 1% of the total memory
 
         /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
@@ -343,6 +346,29 @@ namespace Duplicati.Library.Main
         public static string DefaultBackupName => System.IO.Path.GetFileNameWithoutExtension(Library.Utility.Utility.getEntryAssembly().Location);
 
         /// <summary>
+        /// Gets the options that are conditional based on the operating system
+        /// </summary>
+        /// <returns>An enumerable of command line arguments</returns>
+        private IEnumerable<ICommandLineArgument> GetOSConditionalCommands()
+        {
+            var items = new List<ICommandLineArgument>();
+            if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+                yield return new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, DEFAULT_SNAPSHOT_POLICY.ToString(), null, Enum.GetNames(typeof(OptimizationStrategy)));
+
+            if (OperatingSystem.IsWindows())
+            {
+                yield return new CommandLineArgument("snapshot-provider", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotproviderShort, Strings.Options.SnapshotproviderLong, WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_PROVIDER.ToString(), null, Enum.GetNames(typeof(Snapshots.WindowsSnapshotProvider)));
+                yield return new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong, "{e8132975-6f93-4464-a53e-1050253ae220}");
+                yield return new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false");
+                yield return new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy)));
+                yield return new CommandLineArgument("backupread-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BackupreadpolicyShort, Strings.Options.BackupreadpolicyLong, DEFAULT_BACKUPREAD_POLICY.ToString(), null, Enum.GetNames(typeof(OptimizationStrategy)));
+            }
+
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+                yield return new CommandLineArgument("ignore-advisory-locking", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreadvisorylockingShort, Strings.Options.IgnoreadvisorylockingLong, "false");
+        }
+
+        /// <summary>
         /// Gets all supported commands
         /// </summary>
         public IList<ICommandLineArgument> SupportedCommands =>
@@ -390,17 +416,10 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0kb"),
             new CommandLineArgument("throttle-download", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottledownloadShort, Strings.Options.ThrottledownloadLong, "0kb"),
             new CommandLineArgument("throttle-disabled", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablethrottleShort, Strings.Options.DisablethrottleLong, "false"),
-            new CommandLineArgument("throttle-disabled-backends", CommandLineArgument.ArgumentType.String, Strings.Options.DisablethrottlebackendsShort, Strings.Options.DisablethrottlebackendsLong("disable-throttle"), DEFAULT_THROTTLE_DISABLED_BACKENDS),
+            new CommandLineArgument("throttle-disabled-backends", CommandLineArgument.ArgumentType.String, Strings.Options.DisablethrottlebackendsShort, Strings.Options.DisablethrottlebackendsLong("throttle-disabled"), DEFAULT_THROTTLE_DISABLED_BACKENDS),
             new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
 
             new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
-
-            new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, DEFAULT_SNAPSHOT_POLICY.ToString(), null, Enum.GetNames(typeof(OptimizationStrategy))),
-            new CommandLineArgument("snapshot-provider", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotproviderShort, Strings.Options.SnapshotproviderLong, OperatingSystem.IsWindows() ? Snapshots.SnapshotProvider.AlphaVSS.ToString() : Snapshots.SnapshotProvider.LVM.ToString(), null, (OperatingSystem.IsWindows() ? [Snapshots.SnapshotProvider.AlphaVSS, Snapshots.SnapshotProvider.Wmic] : new [] { Snapshots.SnapshotProvider.LVM }).Select(x => x.ToString()).ToArray()),
-            new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong, "{e8132975-6f93-4464-a53e-1050253ae220}"),
-            new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false"),
-            new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy))),
-            new CommandLineArgument("ignore-advisory-locking", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreadvisorylockingShort, Strings.Options.IgnoreadvisorylockingLong, "false"),
 
             new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
             new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
@@ -535,8 +554,9 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, DEFAULT_RESTORE_VOLUME_DOWNLOADERS.ToString()),
             new CommandLineArgument("restore-channel-buffer-size", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreChannelBufferSizeShort, Strings.Options.RestoreChannelBufferSizeLong, DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE.ToString()),
             new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
-            new CommandLineArgument("sqlite-page-cache", CommandLineArgument.ArgumentType.Size, Strings.Options.SqlitePageCacheShort, Strings.Options.SqlitePageCacheLong(SQLiteLoader.MINIMUM_SQLITE_PAGE_CACHE_SIZE), DEFAULT_SQLITE_PAGE_CACHE_SIZE),
             new CommandLineArgument("ignore-update-if-version-exists", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreUpdateIfVersionExistsShort, Strings.Options.IgnoreUpdateIfVersionExistsLong, "false"),
+
+            .. GetOSConditionalCommands()
         ];
 
         /// <summary>
@@ -934,11 +954,14 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the snapshot strategy to use
         /// </summary>
-        public Snapshots.SnapshotProvider SnapShotProvider
-            => GetEnum("snapshot-provider",
-                    OperatingSystem.IsWindows()
-                        ? Snapshots.SnapshotProvider.AlphaVSS
-                        : Snapshots.SnapshotProvider.LVM);
+        [SupportedOSPlatform("windows")]
+        public WindowsSnapshotProvider SnapShotProvider
+            => GetEnum("snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_PROVIDER);
+
+        /// <summary>
+        /// Gets the BackupRead strategy to use
+        /// </summary>
+        public OptimizationStrategy BackupReadStrategy => GetEnum("backupread-policy", DEFAULT_BACKUPREAD_POLICY);
 
         /// <summary>
         /// Gets a flag indicating if advisory locking should be ignored
@@ -1699,19 +1722,6 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool InternalProfiling => GetBool("internal-profiling");
 
-        /// <summary>
-        /// Gets the size of file-blocks
-        /// </summary>
-        public long SqlitePageCache
-        {
-            get
-            {
-                var pagesize = GetSize("sqlite-page-cache", "kb", DEFAULT_SQLITE_PAGE_CACHE_SIZE);
-                return pagesize <= SQLiteLoader.MINIMUM_SQLITE_PAGE_CACHE_SIZE
-                    ? 0
-                    : pagesize;
-            }
-        }
         /// <summary>
         /// Ignores the update if the version already exists in the database.
         /// </summary>

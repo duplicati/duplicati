@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -40,6 +41,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="options">A set of commandline options</param>
         /// <param name="followSymlinks">Whether to follow symlinks</param>
         /// <returns>The ISnapshotService implementation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         public static ISnapshotService CreateSnapshot(IEnumerable<string> paths, Dictionary<string, string> options, bool followSymlinks)
         {
             if (OperatingSystem.IsLinux())
@@ -62,13 +64,15 @@ namespace Duplicati.Library.Snapshots
         /// <param name="paths">The list of paths to create snapshots of</param>
         /// <param name="ignoreAdvisoryLocking">Flag to ignore advisory locking</param>
         /// <param name="followSymlinks">Whether to follow symlinks</param>
+        /// <param name="useSeBackup">Whether to use SeBackupPrivilege on Windows</param>
         /// <returns>The ISnapshotService implementation</returns>
-        public static ISnapshotService CreateNoSnapshot(IEnumerable<string> paths, bool ignoreAdvisoryLocking, bool followSymlinks)
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public static ISnapshotService CreateNoSnapshot(IEnumerable<string> paths, bool ignoreAdvisoryLocking, bool followSymlinks, bool useSeBackup)
         {
             if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
                 return new NoSnapshotLinux(paths, ignoreAdvisoryLocking, followSymlinks);
             else if (OperatingSystem.IsWindows())
-                return new NoSnapshotWindows(paths, followSymlinks);
+                return new NoSnapshotWindows(paths, followSymlinks, useSeBackup);
             else
                 throw new NotSupportedException("Unsupported Operating System");
 

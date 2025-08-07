@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.Threading.Tasks;
 using Duplicati.CommandLine.DatabaseTool;
@@ -35,7 +35,7 @@ namespace Duplicati.UnitTest
         public async Task TestLocalDbMethods()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile, 0);
+            using var db = SQLiteLoader.LoadConnection(dbfile);
             using var cmd = db.CreateCommand();
             cmd.CommandText = LocalSchemaV12;
             cmd.ExecuteNonQuery();
@@ -55,7 +55,7 @@ namespace Duplicati.UnitTest
         public async Task TestServerDbMethods()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile, 0);
+            using var db = SQLiteLoader.LoadConnection(dbfile);
             using var cmd = db.CreateCommand();
             cmd.CommandText = ServerSchemaV6;
             cmd.ExecuteNonQuery();
@@ -142,8 +142,8 @@ CREATE TABLE ""Notification"" (
     ""ID"" INTEGER PRIMARY KEY,
     ""Type"" TEXT NOT NULL,
     ""Title"" TEXT NOT NULL,
-    ""Message"" TEXT NOT NULL, 
-    ""Exception"" TEXT NOT NULL, 
+    ""Message"" TEXT NOT NULL,
+    ""Exception"" TEXT NOT NULL,
     ""BackupID"" TEXT NULL,
     ""Action"" TEXT NOT NULL,
     ""Timestamp"" INTEGER NOT NULL,
@@ -153,15 +153,15 @@ CREATE TABLE ""Notification"" (
 );
 
 CREATE TABLE ""UIStorage"" (
-    ""Scheme"" TEXT NOT NULL, 
-    ""Key"" TEXT NOT NULL, 
+    ""Scheme"" TEXT NOT NULL,
+    ""Key"" TEXT NOT NULL,
     ""Value"" TEXT NOT NULL
 );
 
 CREATE TABLE ""TempFile"" (
     ""ID"" INTEGER PRIMARY KEY,
-    ""Origin"" TEXT NOT NULL, 
-    ""Path"" TEXT NOT NULL, 
+    ""Origin"" TEXT NOT NULL,
+    ""Path"" TEXT NOT NULL,
     ""Timestamp"" INTEGER NOT NULL,
     ""Expires"" INTEGER NOT NULL
 );
@@ -251,7 +251,7 @@ CREATE TABLE ""Blockset"" (
 );
 
 CREATE UNIQUE INDEX ""BlocksetFullHash"" ON ""Blockset"" (""FullHash"", ""Length"");
-  
+
 CREATE TABLE ""BlocksetEntry"" (
 	""BlocksetID"" INTEGER NOT NULL,
 	""Index"" INTEGER NOT NULL,
@@ -326,11 +326,11 @@ CREATE TABLE ""Configuration"" (
 
 CREATE TABLE ""ChangeJournalData"" (
     ""ID"" INTEGER PRIMARY KEY,
-    ""FilesetID"" INTEGER NOT NULL,       
-    ""VolumeName"" TEXT NOT NULL,         
-    ""JournalID"" INTEGER NOT NULL,       
-    ""NextUsn"" INTEGER NOT NULL,         
-    ""ConfigHash"" TEXT NOT NULL  
+    ""FilesetID"" INTEGER NOT NULL,
+    ""VolumeName"" TEXT NOT NULL,
+    ""JournalID"" INTEGER NOT NULL,
+    ""NextUsn"" INTEGER NOT NULL,
+    ""ConfigHash"" TEXT NOT NULL
 );
 
 INSERT INTO ""Version"" (""Version"") VALUES (12);

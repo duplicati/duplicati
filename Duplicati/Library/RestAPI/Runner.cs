@@ -363,6 +363,7 @@ namespace Duplicati.Server
             private Library.Main.IBackendProgress? m_backendProgress;
             private Library.Main.IOperationProgress? m_operationProgress;
             private readonly object m_lock = new object();
+            internal TaskCompletionSource<Library.Main.OperationPhase> m_phaseChangeTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
             public MessageSink(long taskId, string? backupId)
             {
@@ -416,6 +417,8 @@ namespace Duplicati.Server
                 }
             }
 
+            public Task PhaseChangedAsync { get { return m_phaseChangeTcs.Task; } }
+
             #region IMessageSink implementation
             public void BackendEvent(Duplicati.Library.Main.BackendActionType action, Duplicati.Library.Main.BackendEventType type, string path, long size)
             {
@@ -439,7 +442,20 @@ namespace Duplicati.Server
             public void SetOperationProgress(Library.Main.IOperationProgress progress)
             {
                 lock (m_lock)
+                {
+                    if (m_operationProgress != null)
+                        m_operationProgress.PhaseChanged -= OperationProgress_PhaseChanged;
                     m_operationProgress = progress;
+
+                    if (m_operationProgress != null)
+                        m_operationProgress.PhaseChanged += OperationProgress_PhaseChanged;
+                }
+            }
+
+            private void OperationProgress_PhaseChanged(Library.Main.OperationPhase phase, Library.Main.OperationPhase previousPhase)
+            {
+                var prev = Interlocked.Exchange(ref m_phaseChangeTcs, new TaskCompletionSource<Library.Main.OperationPhase>(TaskCreationOptions.RunContinuationsAsynchronously));
+                prev.TrySetResult(phase);
             }
 
             public void WriteMessage(Library.Logging.LogEntry entry)
@@ -566,7 +582,7 @@ namespace Duplicati.Server
                     {
                         while (!cts.IsCancellationRequested)
                         {
-                            await Task.Delay(1000, cts.Token);
+                            await Task.WhenAny(sink.PhaseChangedAsync, Task.Delay(1000, cts.Token));
                             if (!cts.IsCancellationRequested)
                                 eventPollNotify.SignalProgressUpdate(sink.Copy);
                         }
@@ -613,7 +629,7 @@ namespace Duplicati.Server
                     {
                         while (!cts.IsCancellationRequested)
                         {
-                            await Task.Delay(1000, cts.Token);
+                            await Task.WhenAny(sink.PhaseChangedAsync, Task.Delay(1000, cts.Token));
                             if (!cts.IsCancellationRequested)
                                 eventPollNotify.SignalProgressUpdate(sink.Copy);
                         }
@@ -671,11 +687,10 @@ namespace Duplicati.Server
                         case DuplicatiOperation.Backup:
                             {
                                 var filter = ApplyFilter(backup, GetCommonFilter(databaseConnection));
-                                var sources =
-                                    (from n in backup.Sources
-                                     let p = SpecialFolders.ExpandEnvironmentVariables(n)
-                                     where !string.IsNullOrWhiteSpace(p)
-                                     select p).ToArray();
+                                var sources = backup.Sources
+                                    .Select(n => SpecialFolders.ExpandEnvironmentVariables(n))
+                                    .WhereNotNullOrWhiteSpace()
+                                    .ToArray();
 
                                 var r = controller.Backup(sources, filter);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
@@ -816,10 +831,7 @@ namespace Duplicati.Server
                     UpdateMetadataError(databaseConnection, notificationUpdateService, data.Backup, ex);
                 Library.UsageReporter.Reporter.Report(ex);
 
-                if (!fromQueue)
-                    throw;
-
-                return null;
+                throw;
             }
             finally
             {
@@ -1020,18 +1032,25 @@ namespace Duplicati.Server
                         null,
                         null,
                         null,
-                        (n, a) =>
-                        {
-                            var existing = a.FirstOrDefault(x => x.BackupID == backup.ID);
-                            if (existing == null)
-                                return n;
-
-                            if (existing.Type == NotificationType.Error)
-                                return existing;
-
-                            return n;
-                        }
+                        (n, a) => n
                     );
+                }
+                else
+                {
+                    var notificationIds = databaseConnection.GetNotifications()
+                        .Where(n => n.BackupID == backup.ID)
+                        .Select(x => x.ID)
+                        .ToList();
+
+                    foreach (var id in notificationIds)
+                        try
+                        {
+                            databaseConnection.DismissNotification(id);
+                        }
+                        catch (Exception ex)
+                        {
+                            databaseConnection.LogError(backup.ID, "Failed to dismiss notification", ex);
+                        }
                 }
             }
             else if (result.ParsedResult != ParsedResultType.Success)

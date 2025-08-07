@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
@@ -24,6 +24,7 @@ using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.DatabaseTool.Commands;
 
@@ -50,7 +51,7 @@ public static class Downgrade
         }
         .WithHandler(CommandHandler.Create<string[], DirectoryInfo, int, int, bool, bool>((databases, serverdatafolder, serverversion, localversion, nobackups, includeuntrackeddatabases) =>
             {
-                databases = Helper.FindAllDatabases(databases, serverdatafolder.FullName, includeuntrackeddatabases);
+                databases = Helper.FindAllDatabases(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
                 if (databases.Length == 0)
                 {
                     Console.WriteLine("No databases found to downgrade");
@@ -100,7 +101,7 @@ public static class Downgrade
                     bool isserverdb;
                     try
                     {
-                        (version, isserverdb) = Helper.ExamineDatabase(db);
+                        (version, isserverdb) = Helper.ExamineDatabase(db).Await();
                     }
                     catch (Exception ex)
                     {
@@ -112,7 +113,8 @@ public static class Downgrade
                     ApplyDowngrade(db, version,
                         isserverdb ? serverversion : localversion,
                         isserverdb ? serverVersions : localVersions,
-                    nobackups);
+                    nobackups)
+                        .Await();
                 }
             }));
 
@@ -132,7 +134,8 @@ public static class Downgrade
     /// <param name="targetversion">The target database version</param>
     /// <param name="scripts">The downgrade scripts</param>
     /// <param name="nobackups">Flag to disable backups</param>
-    private static void ApplyDowngrade(string db, int dbversion, int targetversion, IEnumerable<DowngradeScript> scripts, bool nobackups)
+    /// <returns>A task that completes when the downgrade is done.</returns>
+    private static async Task ApplyDowngrade(string db, int dbversion, int targetversion, IEnumerable<DowngradeScript> scripts, bool nobackups)
     {
         if (dbversion > targetversion)
         {
@@ -158,21 +161,27 @@ public static class Downgrade
             if (!nobackups)
                 Helper.CreateFileBackup(db);
 
-            using var con = SQLiteLoader.LoadConnection(db, 0);
-            using var tr = con.BeginTransaction();
-            using var cmd = con.CreateCommand(tr);
+            await using var con = await SQLiteLoader.LoadConnectionAsync(db)
+                .ConfigureAwait(false);
+            await using var tr = con.BeginTransaction();
+            await using var cmd = con.CreateCommand(tr);
             foreach (var script in downgradeScripts)
             {
                 Console.WriteLine($"Applying downgrade script {script.Filename} ...");
                 try
                 {
                     cmd.SetCommandAndParameters(script.Content);
-                    var r = cmd.ExecuteScalar();
+                    var r = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
                     if (r != null)
                         throw new UserInformationException($"{r}", "DowngradeScriptFailure");
-                    cmd.SetCommandAndParameters("UPDATE Version SET Version = @Version")
-                        .SetParameterValue("@Version", script.Version - 1);
-                    cmd.ExecuteNonQuery();
+
+                    await cmd.SetCommandAndParameters(@"
+                        UPDATE ""Version""
+                        SET ""Version"" = @Version
+                    ")
+                        .SetParameterValue("@Version", script.Version - 1)
+                        .ExecuteNonQueryAsync()
+                        .ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -180,7 +189,7 @@ public static class Downgrade
                 }
             }
 
-            tr.Commit();
+            await tr.CommitAsync().ConfigureAwait(false);
             Console.WriteLine($"Downgraded {db} to version {targetversion}");
         }
         else if (dbversion == targetversion)

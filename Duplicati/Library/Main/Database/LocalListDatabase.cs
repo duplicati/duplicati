@@ -1,99 +1,268 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 #nullable enable
 
 using System;
-using System.Data;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
+using Microsoft.Data.Sqlite;
+using System.Threading;
+using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Main.Database
 {
+    /// <summary>
+    /// A local database that stores file lists and filesets.
+    /// </summary>
     internal class LocalListDatabase : LocalDatabase
     {
-        public LocalListDatabase(string path, long pagecachesize)
-            : base(path, "List", false, pagecachesize)
+        /// <summary>
+        /// Creates a new instance of the LocalListDatabase.
+        /// </summary>
+        /// <param name="path">The path to the database file.</param>
+        /// <param name="dbnew">An optional existing database instance to use. Used to mimic constructor chaining.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains a new instance of LocalListDatabase.</returns>
+        public static async Task<LocalListDatabase> CreateAsync(string path, LocalListDatabase? dbnew, CancellationToken token)
         {
-            ShouldCloseConnection = true;
+            dbnew ??= new LocalListDatabase();
+
+            dbnew = (LocalListDatabase)
+                await CreateLocalDatabaseAsync(path, "List", false, dbnew, token)
+                    .ConfigureAwait(false);
+            dbnew.ShouldCloseConnection = true;
+
+            return dbnew;
         }
 
+        /// <summary>
+        /// Interface for file versions.
+        /// </summary>
         public interface IFileversion
         {
+            /// <summary>
+            /// Gets the path of the file, or null if not available.
+            /// </summary>
             string? Path { get; }
-            IEnumerable<long> Sizes { get; }
+            /// <summary>
+            /// Asynchronously retrieves the sizes of the file versions.
+            /// </summary>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
+            /// <returns>An asynchronous enumerable of file sizes.</returns>
+            IAsyncEnumerable<long> Sizes(CancellationToken token);
         }
 
+        /// <summary>
+        /// Interface for filesets.
+        /// </summary>
         public interface IFileset
         {
+            /// <summary>
+            /// Gets the version of the fileset.
+            /// </summary>
             long Version { get; }
+            /// <summary>
+            /// Gets or sets a value indicating whether the fileset is a full backup.
+            /// </summary>
             int IsFullBackup { get; set; }
+            /// <summary>
+            /// Gets the timestamp of the fileset.
+            /// </summary>
             DateTime Time { get; }
+            /// <summary>
+            /// Gets the count of files in the fileset.
+            /// </summary>
             long FileCount { get; }
+            /// <summary>
+            /// Gets the total sizes of files in the fileset.
+            /// </summary>
             long FileSizes { get; }
         }
 
-        public interface IFileSets : IDisposable
+        /// <summary>
+        /// Interface for managing file sets in the local database.
+        /// </summary>
+        public interface IFileSets : IDisposable, IAsyncDisposable
         {
-            IEnumerable<IFileset> Sets { get; }
-            IEnumerable<IFileset> QuickSets { get; }
-            IEnumerable<IFileversion> SelectFiles(IFilter filter);
-            IEnumerable<IFileversion> GetLargestPrefix(IFilter filter);
-            IEnumerable<IFileversion> SelectFolderContents(IFilter filter);
-            void TakeFirst();
+            /// <summary>
+            /// Gets all of the filesets in the database as an asynchronous enumerable, including file count and total size.
+            /// </summary>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
+            /// <returns>An asynchronous enumerable of filesets.</returns>
+            IAsyncEnumerable<IFileset> Sets(CancellationToken token);
+            /// <summary>
+            /// Gets all of the filesets in the database as an asynchronous enumerable, omitting file count and total size.
+            /// </summary>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
+            /// <returns>An asynchronous enumerable of filesets.</returns>
+            IAsyncEnumerable<IFileset> QuickSets(CancellationToken token);
+            /// <summary>
+            /// Gets the files in the filesets that match the provided filter as an asynchronous enumerable.
+            /// </summary>
+            /// <param name="filter">The filter to apply to the files.</param>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
+            /// <returns>An asynchronous enumerable of file versions representing the selected files.</returns>
+            IAsyncEnumerable<IFileversion> SelectFiles(IFilter filter, CancellationToken token);
+            /// <summary>
+            /// Gets the largest prefix of files in the filesets that match the provided filter as an asynchronous enumerable.
+            /// </summary>
+            /// <param name="filter">The filter to apply to the files.</param>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
+            /// <returns>An asynchronous enumerable of file versions representing the largest prefix.</returns>
+            IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter, CancellationToken token);
+            /// <summary>
+            /// Selects the contents of a folder in the filesets that match the provided filter as an asynchronous enumerable.
+            /// </summary>
+            /// <param name="filter">The filter to apply to the folder contents.</param>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
+            /// <returns>An asynchronous enumerable of file versions representing the folder contents.</returns>
+            IAsyncEnumerable<IFileversion> SelectFolderContents(IFilter filter, CancellationToken token);
+            /// <summary>
+            /// Deletes all filesets except the most recent one.
+            /// </summary>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
+            /// <returns>A task that completes when the filesets have been deleted.</returns>
+            Task TakeFirst(CancellationToken token);
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="FileSets"/> class implementing the <see cref="IFileSets"> interface.
+        /// </summary>
         private class FileSets : IFileSets
         {
-            private readonly IDbConnection m_connection;
-            private string m_tablename;
-            private readonly KeyValuePair<long, DateTime>[] m_filesets;
+            /// <summary>
+            /// The database instance to execute commands against.
+            /// </summary>
+            private LocalDatabase m_db = null!;
+            /// <summary>
+            /// The name of the temporary table used to store filesets.
+            /// </summary>
+            private string m_tablename = null!;
+            /// <summary>
+            /// An array of key-value pairs representing filesets, where the key is the fileset ID and the value is the timestamp.
+            /// </summary>
+            private KeyValuePair<long, DateTime>[] m_filesets = [];
 
+            /// <summary>
+            /// Private constructor to prevent instantiation without using CreateAsync.
+            /// </summary>
+            [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
             public FileSets(LocalListDatabase owner, DateTime time, long[] versions)
             {
-                m_connection = owner.m_connection;
-                m_filesets = owner.FilesetTimes.ToArray();
-                m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
+                throw new NotSupportedException("Use CreateAsync instead.");
+            }
+
+            /// <summary>
+            /// Private constructor to prevent instantiation without using CreateAsync.
+            /// </summary>
+            private FileSets() { }
+
+            /// <summary>
+            /// Asynchronously creates a new instance of the <see cref="FileSets"/> class.
+            /// </summary>
+            /// <param name="owner">The owner database instance.</param>
+            /// <param name="time">The time to filter filesets by.</param>
+            /// <param name="versions">An array of versions to filter filesets by.</param>
+            /// <param name="token">A cancellation token to cancel the operation.</param>
+            /// <returns>A task that when awaited contains a new instance of <see cref="FileSets"/>.</returns>
+            public static async Task<FileSets> CreateAsync(LocalListDatabase owner, DateTime time, long[] versions, CancellationToken token)
+            {
+                var fs = new FileSets
+                {
+                    m_db = owner,
+                    m_filesets = await owner
+                        .FilesetTimes(token)
+                        .ToArrayAsync(cancellationToken: token)
+                        .ConfigureAwait(false),
+                    m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())
+                };
+                var tmp = await owner.GetFilelistWhereClause(time, versions, fs.m_filesets, false, token)
+                    .ConfigureAwait(false);
                 var query = tmp.Item1;
                 var args = tmp.Item2;
 
-                using (var cmd = m_connection.CreateCommand())
+                await using (var cmd = fs.m_db.Connection.CreateCommand())
                 {
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tablename}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""IsFullBackup"" AS ""IsFullBackup"" , ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" {query}"), args);
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tablename}_FilesetIDTimestampIndex"" ON ""{m_tablename}"" (""FilesetID"", ""Timestamp"" DESC)"));
+                    await cmd.ExecuteNonQueryAsync($@"
+                        CREATE TEMPORARY TABLE ""{fs.m_tablename}"" AS
+                        SELECT DISTINCT
+                            ""ID"" AS ""FilesetID"",
+                            ""IsFullBackup"" AS ""IsFullBackup"",
+                            ""Timestamp"" AS ""Timestamp""
+                        FROM ""Fileset"" {query}
+                    ", args, token)
+                        .ConfigureAwait(false);
+
+                    await cmd.ExecuteNonQueryAsync($@"
+                        CREATE INDEX ""{fs.m_tablename}_FilesetIDTimestampIndex""
+                        ON ""{fs.m_tablename}"" (
+                            ""FilesetID"",
+                            ""Timestamp"" DESC
+                        )
+                    ", token)
+                        .ConfigureAwait(false);
                 }
+
+                return fs;
             }
 
+            /// <summary>
+            /// Internal class representing a fileset.
+            /// </summary>
             private class Fileset : IFileset
             {
+                /// <summary>
+                /// The backup version this fileset is part of.
+                /// </summary>
                 public long Version { get; private set; }
+                /// <summary>
+                /// Indicates whether this fileset is a full backup (1) or a partial backup (0).
+                /// </summary>
                 public int IsFullBackup { get; set; }
+                /// <summary>
+                /// The timestamp of the fileset, indicating when it was created.
+                /// </summary>
                 public DateTime Time { get; private set; }
+                /// <summary>
+                /// The count of files in this fileset.
+                /// </summary>
                 public long FileCount { get; private set; }
+                /// <summary>
+                /// The total sizes of files in this fileset.
+                /// </summary>
                 public long FileSizes { get; private set; }
 
+                /// <summary>
+                /// Initializes a new instance of the <see cref="Fileset"/> class.
+                /// </summary>
+                /// <param name="version">The backup version of the fileset.</param>
+                /// <param name="isFullBackup">Indicates whether this fileset is a full backup (1) or a partial backup (0).</param>
+                /// <param name="time">The timestamp of the fileset, indicating when it was created.</param>
+                /// <param name="filecount">The count of files in this fileset.</param>
+                /// <param name="filesizes">The total sizes of files in this fileset.</param>
                 public Fileset(long version, int isFullBackup, DateTime time, long filecount, long filesizes)
                 {
                     Version = version;
@@ -104,130 +273,232 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
+            /// <summary>
+            /// Implementation of the <see cref="IFileversion"/>  interface.
+            /// </summary>
             private class Fileversion : IFileversion
             {
-                private readonly IDataReader m_reader;
+                /// <summary>
+                /// The SqliteDataReader used to read file version data.
+                /// </summary>
+                private readonly SqliteDataReader m_reader;
+                /// <summary>
+                /// The path of the file, or null if not available.
+                /// </summary>
                 public string? Path { get; private set; }
+                /// <summary>
+                /// Indicates whether there are more file versions to read.
+                /// </summary>
                 public bool More { get; private set; }
 
-                public Fileversion(IDataReader reader)
+                /// <summary>
+                /// Initializes a new instance of the <see cref="Fileversion"/> class.
+                /// </summary>
+                /// <param name="reader">The SqliteDataReader used to read file version data.</param>
+                public Fileversion(SqliteDataReader reader)
                 {
                     m_reader = reader;
                     Path = reader.ConvertValueToString(0);
                     More = true;
                 }
 
-                public IEnumerable<long> Sizes
+                /// <inheritdoc />
+                public async IAsyncEnumerable<long> Sizes([EnumeratorCancellation] CancellationToken token)
                 {
-                    get
+                    while (More && Path == m_reader.ConvertValueToString(0))
                     {
-                        while (More && Path == m_reader.ConvertValueToString(0))
-                        {
-                            yield return m_reader.ConvertValueToInt64(1, -1);
-                            More = m_reader.Read();
-                        }
+                        yield return m_reader.ConvertValueToInt64(1, -1);
+                        More = await m_reader.ReadAsync(token).ConfigureAwait(false);
                     }
                 }
             }
 
+            /// <summary>
+            /// Internal class representing a fixed file version with no sizes.
+            /// </summary>
             private class FileversionFixed : IFileversion
             {
+                /// <inheritdoc/>
                 public string? Path { get; internal set; }
-                public IEnumerable<long> Sizes { get { return new long[0]; } }
+                /// <inheritdoc/>
+                public IAsyncEnumerable<long> Sizes(CancellationToken token) => AsyncEnumerable.Empty<long>();
             }
 
-            public IEnumerable<IFileversion> GetLargestPrefix(IFilter filter)
+            /// <inheritdoc />
+            public IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter, CancellationToken token)
             {
-                return GetLargestPrefix(filter, null);
+                return GetLargestPrefix(filter, null, token);
             }
 
-            private IEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string? prefixrule)
+            /// <summary>
+            /// Recursively finds the largest prefix of files in the filesets that match the provided filter.
+            /// </summary>
+            /// <param name="filter"> The filter to apply to the files.</param>
+            /// <param name="prefixrule">The prefix rule to apply, or null if no prefix rule is specified.</param>
+            /// <param name="token"> A cancellation token to cancel the operation.</param>
+            /// <returns>An asynchronous enumerable of file versions representing the largest prefix.</returns>
+            private async IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string? prefixrule, [EnumeratorCancellation] CancellationToken token)
             {
-                using (var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
-                using (var cmd = m_connection.CreateCommand())
+                await using var tmpnames = await FilteredFilenameTable
+                    .CreateFilteredFilenameTableAsync(m_db, filter, token)
+                    .ConfigureAwait(false);
+                await using var cmd = m_db.Connection.CreateCommand();
+                //First we trim the filelist to exclude filenames not found in any of the filesets
+                await cmd.ExecuteNonQueryAsync($@"
+                        DELETE FROM ""{tmpnames.Tablename}""
+                        WHERE ""Path"" NOT IN (
+                            SELECT DISTINCT ""Path""
+                            FROM
+                                ""File"",
+                                ""FilesetEntry""
+                            WHERE
+                                ""FilesetEntry"".""FileID"" = ""File"".""ID""
+                                AND ""FilesetEntry"".""FilesetID"" IN (
+                                    SELECT ""FilesetID""
+                                    FROM ""{m_tablename}""
+                                )
+                        )
+                    ", token)
+                    .ConfigureAwait(false);
+
+                //If we have a prefix rule, apply it
+                if (!string.IsNullOrWhiteSpace(prefixrule))
+                    await cmd.SetCommandAndParameters($@"
+                            DELETE FROM ""{tmpnames.Tablename}""
+                            WHERE SUBSTR(""Path"", 1, {prefixrule.Length}) != @Rule
+                        ")
+                        .SetParameterValue("@Rule", prefixrule)
+                        .ExecuteNonQueryAsync(token)
+                        .ConfigureAwait(false);
+
+                // Then we recursively find the largest prefix
+                var v0 = await cmd.ExecuteScalarAsync($@"
+                        SELECT ""Path""
+                        FROM ""{tmpnames.Tablename}""
+                        ORDER BY LENGTH(""Path"") DESC
+                        LIMIT 1
+                    ", token)
+                    .ConfigureAwait(false);
+
+                var maxpath = "";
+                if (v0 != null)
+                    maxpath = v0.ToString() ?? "";
+
+                var dirsep = Util.GuessDirSeparator(maxpath);
+
+                var filecount = await cmd.ExecuteScalarInt64Async($@"
+                        SELECT COUNT(*)
+                        FROM ""{tmpnames.Tablename}""
+                    ", 0, token)
+                    .ConfigureAwait(false);
+
+                var foundfiles = -1L;
+
+                //TODO: Handle FS case-sensitive?
+                await cmd.SetCommandAndParameters($@"
+                        SELECT COUNT(*)
+                        FROM ""{tmpnames.Tablename}""
+                        WHERE SUBSTR(""Path"", 1, @PrefixLength) = @Prefix
+                    ")
+                    .PrepareAsync(token)
+                    .ConfigureAwait(false);
+
+                while (filecount != foundfiles && maxpath.Length > 0)
                 {
-                    //First we trim the filelist to exclude filenames not found in any of the filesets
-                    cmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) "));
+                    var mp = Util.AppendDirSeparator(maxpath, dirsep);
+                    foundfiles = await cmd
+                        .SetParameterValue("@PrefixLength", mp.Length)
+                        .SetParameterValue("@Prefix", mp)
+                        .ExecuteScalarInt64Async(0, token)
+                        .ConfigureAwait(false);
 
-                    //If we have a prefix rule, apply it
-                    if (!string.IsNullOrWhiteSpace(prefixrule))
-                        cmd.SetCommandAndParameters(FormatInvariant($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, {prefixrule.Length}) != @Rule"))
-                            .SetParameterValue("@Rule", prefixrule)
-                            .ExecuteNonQuery();
-
-                    // Then we recursively find the largest prefix
-                    var v0 = cmd.ExecuteScalar(FormatInvariant($@"SELECT ""Path"" FROM ""{tmpnames.Tablename}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"));
-                    var maxpath = "";
-                    if (v0 != null)
-                        maxpath = v0.ToString() ?? "";
-
-                    var dirsep = Util.GuessDirSeparator(maxpath);
-
-                    var filecount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"""), 0);
-                    var foundfiles = -1L;
-
-                    //TODO: Handle FS case-sensitive?
-                    cmd.SetCommandAndParameters(FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, @PrefixLength) = @Prefix"));
-
-                    while (filecount != foundfiles && maxpath.Length > 0)
+                    if (filecount != foundfiles)
                     {
-                        var mp = Util.AppendDirSeparator(maxpath, dirsep);
-                        foundfiles = cmd.SetParameterValue("@PrefixLength", mp.Length)
-                            .SetParameterValue("@Prefix", mp)
-                            .ExecuteScalarInt64(0);
+                        var oldlen = maxpath.Length;
+                        var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
 
-                        if (filecount != foundfiles)
-                        {
-                            var oldlen = maxpath.Length;
-                            var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
-
-                            maxpath = maxpath.Substring(0, lix + 1);
-                            if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen || maxpath == "\\\\")
-                                maxpath = "";
-                        }
+                        maxpath = maxpath.Substring(0, lix + 1);
+                        if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen || maxpath == "\\\\")
+                            maxpath = "";
                     }
-
-                    // Special handling for Windows and multi-drive/UNC backups as they do not have a single common root
-                    if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
-                    {
-                        var paths = cmd.ExecuteReaderEnumerable(FormatInvariant($@"SELECT Path FROM ""{tmpnames.Tablename}""")).Select(x => x.ConvertValueToString(0) ?? "").ToArray();
-                        var roots = paths.Select(x => x.Substring(0, 1)).Distinct().Where(x => x != "\\").ToArray();
-
-                        //unc path like \\server.domain\
-                        var regexUNCPrefix = new System.Text.RegularExpressions.Regex(@"^\\\\.*?\\");
-                        var rootsUNC = paths.Select(x => regexUNCPrefix.Match(x)).Where(x => x.Success).Select(x => x.Value).Distinct().ToArray();
-
-                        return roots.Concat(rootsUNC).Select(x => GetLargestPrefix(filter, x).First()).Distinct().ToArray();
-                    }
-
-                    return [new FileversionFixed { Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep) }];
                 }
+
+                // Special handling for Windows and multi-drive/UNC backups as they do not have a single common root
+                if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
+                {
+                    var paths = cmd.ExecuteReaderEnumerableAsync($@"
+                            SELECT ""Path""
+                            FROM ""{tmpnames.Tablename}""
+                        ", token)
+                        .Select(x => x.ConvertValueToString(0) ?? "");
+
+                    var roots = paths
+                        .Select(x => x.Substring(0, 1))
+                        .Distinct()
+                        .Where(x => x != "\\");
+
+                    //unc path like \\server.domain\
+                    var regexUNCPrefix = new System.Text.RegularExpressions.Regex(@"^\\\\.*?\\");
+                    var rootsUNC = paths
+                        .Select(x => regexUNCPrefix.Match(x))
+                        .Where(x => x.Success)
+                        .Select(x => x.Value)
+                        .Distinct();
+
+                    var result = roots
+                        .Concat(rootsUNC)
+                        .Select(x => GetLargestPrefix(filter, x, token)
+                            .FirstAsync())
+                        .Distinct();
+
+                    await foreach (var el in result.ConfigureAwait(false))
+                        yield return await el;
+                }
+
+                yield return new FileversionFixed
+                {
+                    Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep)
+                };
             }
 
-            private IEnumerable<string> SelectFolderEntries(IDbCommand cmd, string prefix, string table)
+            /// <summary>
+            /// Asynchronously retrieves all folder entries from the specified table that match the given prefix.
+            /// </summary>
+            /// <param name="cmd">The SqliteCommand to execute.</param>
+            /// <param name="prefix">The prefix to filter folder entries by.</param>
+            /// <param name="table">The name of the table to query.</param>
+            /// <param name="token"> A cancellation token to cancel the operation.</param>
+            /// <returns>An asynchronous enumerable of folder entries.</returns>
+            private static async IAsyncEnumerable<string> SelectFolderEntries(SqliteCommand cmd, string prefix, string table, [EnumeratorCancellation] CancellationToken token)
             {
                 if (!string.IsNullOrEmpty(prefix))
                     prefix = Util.AppendDirSeparator(prefix, Util.GuessDirSeparator(prefix));
 
                 var ppl = prefix.Length;
-                using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT DISTINCT ""Path"" FROM ""{table}"" ")))
-                    while (rd.Read())
-                    {
-                        var s = rd.ConvertValueToString(0) ?? "";
-                        if (!s.StartsWith(prefix, StringComparison.Ordinal))
-                            continue;
+                cmd.SetCommandAndParameters($@"
+                    SELECT DISTINCT ""Path""
+                    FROM ""{table}""
+                ");
+                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                while (await rd.ReadAsync(token).ConfigureAwait(false))
+                {
+                    var s = rd.ConvertValueToString(0) ?? "";
+                    if (!s.StartsWith(prefix, StringComparison.Ordinal))
+                        continue;
 
-                        var dirsep = Util.GuessDirSeparator(s);
+                    var dirsep = Util.GuessDirSeparator(s);
 
-                        s = s.Substring(ppl);
-                        var ix = s.IndexOf(dirsep, StringComparison.Ordinal);
-                        if (ix > 0 && ix != s.Length - 1)
-                            s = s.Substring(0, ix + 1);
-                        yield return prefix + s;
-                    }
+                    s = s.Substring(ppl);
+                    var ix = s.IndexOf(dirsep, StringComparison.Ordinal);
+                    if (ix > 0 && ix != s.Length - 1)
+                        s = s.Substring(0, ix + 1);
+
+                    yield return prefix + s;
+                }
             }
 
-            public IEnumerable<IFileversion> SelectFolderContents(IFilter filter)
+            /// <inheritdoc />
+            public async IAsyncEnumerable<IFileversion> SelectFolderContents(IFilter filter, [EnumeratorCancellation] CancellationToken token)
             {
                 var tbname = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 try
@@ -235,7 +506,9 @@ namespace Duplicati.Library.Main.Database
                     string pathprefix;
                     if (filter == null || filter.Empty)
                         pathprefix = "";
-                    else if (filter as FilterExpression == null || ((FilterExpression)filter).Type != FilterType.Simple || ((FilterExpression)filter).GetSimpleList().Length != 1)
+                    else if (filter as FilterExpression == null
+                            || ((FilterExpression)filter).Type != FilterType.Simple
+                            || ((FilterExpression)filter).GetSimpleList().Length != 1)
                         throw new ArgumentException("Filter for list-folder-contents must be a path prefix with no wildcards", nameof(filter));
                     else
                         pathprefix = ((FilterExpression)filter).GetSimpleList().First();
@@ -245,67 +518,145 @@ namespace Duplicati.Library.Main.Database
                     if (pathprefix.Length > 0 || dirsep == "/")
                         pathprefix = Util.AppendDirSeparator(pathprefix, dirsep);
 
-                    using (var tmpnames = new FilteredFilenameTable(m_connection, new FilterExpression(new string[] { pathprefix + "*" }, true), null))
-                    using (var cmd = m_connection.CreateCommand())
+                    await using var tmpnames = await FilteredFilenameTable
+                        .CreateFilteredFilenameTableAsync(m_db, new FilterExpression(new string[] { pathprefix + "*" }, true), token)
+                        .ConfigureAwait(false);
+                    await using var cmd = m_db.Connection.CreateCommand();
+                    //First we trim the filelist to exclude filenames not found in any of the filesets
+                    await cmd.ExecuteNonQueryAsync($@"
+                            DELETE FROM ""{tmpnames.Tablename}""
+                            WHERE ""Path"" NOT IN (
+                                SELECT DISTINCT ""Path""
+                                FROM
+                                    ""File"",
+                                    ""FilesetEntry""
+                                WHERE
+                                    ""FilesetEntry"".""FileID"" = ""File"".""ID""
+                                    AND ""FilesetEntry"".""FilesetID"" IN (
+                                        SELECT ""FilesetID""
+                                        FROM ""{m_tablename}""
+                                    )
+                            )
+                        ", token)
+                        .ConfigureAwait(false);
+
+                    // If we had instr support this would work:
+                    /*var distinctPaths = @"SELECT DISTINCT :1 || " +
+                        @"CASE(INSTR(SUBSTR(""Path"", :2), '/')) " +
+                        @"WHEN 0 THEN SUBSTR(""Path"", :2) " +
+                        @"ELSE SUBSTR(""Path"", :2,  INSTR(SUBSTR(path, :2), '/')) " +
+                        @"END AS ""Path"", ""FilesetID"" " +
+                        @" FROM (" + cartesianPathFileset + @")";*/
+
+                    // Instead we manually iterate the paths
+                    await cmd.ExecuteNonQueryAsync($@"
+                            CREATE TEMPORARY TABLE ""{tbname}"" (
+                                ""Path"" TEXT NOT NULL
+                            )
+                        ", token)
+                        .ConfigureAwait(false);
+
+                    await using (var c2 = m_db.Connection.CreateCommand())
                     {
-                        //First we trim the filelist to exclude filenames not found in any of the filesets
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) "));
+                        c2.SetCommandAndParameters($@"
+                                INSERT INTO ""{tbname}"" (""Path"")
+                                VALUES (@Path)
+                            ");
 
-                        // If we had instr support this would work:
-                        /*var distinctPaths = @"SELECT DISTINCT :1 || " +
-                            @"CASE(INSTR(SUBSTR(""Path"", :2), '/')) " +
-                            @"WHEN 0 THEN SUBSTR(""Path"", :2) " +
-                            @"ELSE SUBSTR(""Path"", :2,  INSTR(SUBSTR(path, :2), '/')) " +
-                            @"END AS ""Path"", ""FilesetID"" " +
-                            @" FROM (" + cartesianPathFileset + @")";*/
+                        await foreach (var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename, token).Distinct().ConfigureAwait(false))
+                            await c2
+                                .SetParameterValue("@Path", n)
+                                .ExecuteNonQueryAsync(token)
+                                .ConfigureAwait(false);
 
-                        // Instead we manually iterate the paths
-                        cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tbname}"" (""Path"" TEXT NOT NULL)"));
+                        await c2.ExecuteNonQueryAsync($@"
+                                CREATE INDEX ""{tbname}_PathIndex""
+                                ON ""{tbname}"" (""Path"")
+                            ", token)
+                            .ConfigureAwait(false);
+                    }
 
-                        using (var c2 = m_connection.CreateCommand())
+                    //Then we select the matching results
+                    var filesets = $@"
+                            SELECT
+                                ""FilesetID"",
+                                ""Timestamp""
+                            FROM ""{m_tablename}""
+                            ORDER BY ""Timestamp"" DESC
+                        ";
+
+                    var cartesianPathFileset = $@"
+                            SELECT
+                                ""A"".""Path"",
+                                ""B"".""FilesetID""
+                            FROM
+                                ""{tbname}"" ""A"",
+                                ({filesets}) ""B""
+                            ORDER BY
+                                ""A"".""Path"" ASC,
+                                ""B"".""Timestamp"" DESC
+                        ";
+
+                    var filesWithSizes = $@"
+                            SELECT
+                                ""Length"",
+                                ""FilesetEntry"".""FilesetID"",
+                                ""File"".""Path""
+                            FROM
+                                ""Blockset"",
+                                ""FilesetEntry"",
+                                ""File""
+                            WHERE
+                                ""File"".""BlocksetID"" = ""Blockset"".""ID""
+                                AND ""FilesetEntry"".""FileID"" = ""File"".""ID""
+                                AND FilesetEntry.""FilesetID"" IN (
+                                    SELECT DISTINCT ""FilesetID""
+                                    FROM ""{m_tablename}""
+                                )
+                        ";
+
+                    var query = @$"
+                            SELECT
+                                ""C"".""Path"",
+                                ""D"".""Length"",
+                                ""C"".""FilesetID""
+                            FROM ({cartesianPathFileset}) ""C""
+                            LEFT OUTER JOIN ({filesWithSizes}) ""D""
+                                ON ""C"".""FilesetID"" = ""D"".""FilesetID""
+                                AND ""C"".""Path"" = ""D"".""Path""
+                        ";
+
+                    await using var rd = await cmd
+                        .ExecuteReaderAsync(query, token)
+                        .ConfigureAwait(false);
+
+                    if (await rd.ReadAsync(token).ConfigureAwait(false))
+                    {
+                        bool more;
+                        do
                         {
-                            c2.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{tbname}"" (""Path"") VALUES (@Path)"));
-                            foreach (var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename).Distinct())
-                                c2.SetParameterValue("@Path", n)
-                                    .ExecuteNonQuery();
-
-                            c2.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{tbname}_PathIndex"" ON ""{tbname}"" (""Path"")"));
-                        }
-
-                        //Then we select the matching results
-                        var filesets = FormatInvariant($@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC");
-                        var cartesianPathFileset = FormatInvariant($@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{tbname}"" A, ({filesets}) B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC");
-
-                        var filesWithSizes = FormatInvariant($@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") ");
-                        var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
-
-                        using (var rd = cmd.ExecuteReader(query))
-                            if (rd.Read())
+                            var f = new Fileversion(rd);
+                            if (!(string.IsNullOrWhiteSpace(f.Path) || f.Path == pathprefix))
                             {
-                                bool more;
-                                do
-                                {
-                                    var f = new Fileversion(rd);
-                                    if (!(string.IsNullOrWhiteSpace(f.Path) || f.Path == pathprefix))
-                                    {
-                                        yield return f;
-                                        more = f.More;
-                                    }
-                                    else
-                                    {
-                                        more = rd.Read();
-                                    }
-
-                                } while (more);
+                                yield return f;
+                                more = f.More;
                             }
+                            else
+                            {
+                                more = await rd.ReadAsync(token)
+                                    .ConfigureAwait(false);
+                            }
+
+                        } while (more);
                     }
                 }
                 finally
                 {
                     try
                     {
-                        using (var c = m_connection.CreateCommand())
-                            c.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tbname}"""));
+                        await using var c = m_db.Connection.CreateCommand();
+                        await c.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tbname}""", token)
+                            .ConfigureAwait(false);
                     }
                     catch
                     {
@@ -313,157 +664,288 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            public IEnumerable<IFileversion> SelectFiles(IFilter filter)
+            /// <inheritdoc />
+            public async IAsyncEnumerable<IFileversion> SelectFiles(IFilter filter, [EnumeratorCancellation] CancellationToken token)
             {
-                using (var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
-                using (var cmd = m_connection.CreateCommand())
-                {
-                    //First we trim the filelist to exclude filenames not found in any of the filesets
-                    cmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) "));
+                await using var tmpnames = await FilteredFilenameTable
+                    .CreateFilteredFilenameTableAsync(m_db, filter, token)
+                    .ConfigureAwait(false);
+                await using var cmd = m_db.Connection.CreateCommand();
+                //First we trim the filelist to exclude filenames not found in any of the filesets
+                await cmd.ExecuteNonQueryAsync($@"
+                        DELETE FROM ""{tmpnames.Tablename}""
+                        WHERE ""Path"" NOT IN (
+                            SELECT DISTINCT ""Path""
+                            FROM
+                                ""File"",
+                                ""FilesetEntry""
+                            WHERE
+                                ""FilesetEntry"".""FileID"" = ""File"".""ID""
+                                AND ""FilesetEntry"".""FilesetID"" IN (
+                                    SELECT ""FilesetID""
+                                    FROM ""{m_tablename}""
+                                )
+                        )
+                    ", token)
+                    .ConfigureAwait(false);
 
-                    //Then we select the matching results
-                    var filesets = FormatInvariant($@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC");
-                    var cartesianPathFileset = FormatInvariant($@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{tmpnames.Tablename}"" A, ({filesets}) B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC");
-                    var filesWithSizes = FormatInvariant($@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID""  AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") ");
-                    var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
-                    using (var rd = cmd.ExecuteReader(query))
-                        if (rd.Read())
-                        {
-                            bool more;
-                            do
-                            {
-                                var f = new Fileversion(rd);
-                                yield return f;
-                                more = f.More;
-                            } while (more);
-                        }
+                //Then we select the matching results
+                var filesets = $@"
+                        SELECT
+                            ""FilesetID"",
+                            ""Timestamp""
+                        FROM ""{m_tablename}""
+                        ORDER BY ""Timestamp"" DESC
+                    ";
+
+                var cartesianPathFileset = $@"
+                        SELECT
+                            ""A"".""Path"",
+                            ""B"".""FilesetID""
+                        FROM
+                            ""{tmpnames.Tablename}"" ""A"",
+                            ({filesets}) ""B""
+                        ORDER BY
+                            ""A"".""Path"" ASC,
+                            ""B"".""Timestamp"" DESC
+                    ";
+
+                var filesWithSizes = $@"
+                        SELECT
+                            ""Length"",
+                            ""FilesetEntry"".""FilesetID"",
+                            ""File"".""Path""
+                        FROM
+                            ""Blockset"",
+                            ""FilesetEntry"",
+                            ""File""
+                        WHERE
+                            ""File"".""BlocksetID"" = ""Blockset"".""ID""
+                            AND ""FilesetEntry"".""FileID"" = ""File"".""ID""
+                            AND FilesetEntry.""FilesetID"" IN (
+                                SELECT DISTINCT ""FilesetID""
+                                FROM ""{m_tablename}""
+                            )
+                    ";
+
+                var query = @$"
+                        SELECT
+                            ""C"".""Path"",
+                            ""D"".""Length"",
+                            ""C"".""FilesetID""
+                        FROM ({cartesianPathFileset}) ""C""
+                        LEFT OUTER JOIN ({filesWithSizes}) ""D""
+                            ON ""C"".""FilesetID"" = ""D"".""FilesetID""
+                            AND ""C"".""Path"" = ""D"".""Path""
+                    ";
+
+                await using var rd = await cmd.ExecuteReaderAsync(query, token)
+                    .ConfigureAwait(false);
+                if (await rd.ReadAsync(token).ConfigureAwait(false))
+                {
+                    bool more;
+                    do
+                    {
+                        var f = new Fileversion(rd);
+                        yield return f;
+                        more = f.More;
+                    } while (more);
                 }
             }
 
-            public void TakeFirst()
+            /// <inheritdoc />
+            public async Task TakeFirst(CancellationToken token)
             {
-                using (var cmd = m_connection.CreateCommand())
-                    cmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{m_tablename}"" WHERE ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC LIMIT 1 )"));
-            }
-
-            public IEnumerable<IFileset> QuickSets
-            {
-                get
-                {
-                    var dict = new Dictionary<long, long>();
-                    for (var i = 0; i < m_filesets.Length; i++)
-                        dict[m_filesets[i].Key] = i;
-
-                    using (var cmd = m_connection.CreateCommand())
-                    using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
-                        while (rd.Read())
-                        {
-                            var id = rd.ConvertValueToInt64(0);
-                            var backupType = rd.GetInt32(1);
-                            var e = dict[id];
-                            yield return new Fileset(e, backupType, m_filesets[e].Value, -1L, -1L);
-                        }
-                }
-            }
-
-            public IEnumerable<IFileset> Sets
-            {
-                get
-                {
-                    var dict = new Dictionary<long, long>();
-                    for (var i = 0; i < m_filesets.Length; i++)
-                        dict[m_filesets[i].Key] = i;
-
-                    var summation = FormatInvariant(
-                        $@"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""A"".""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") GROUP BY ""A"".""FilesetID"" ");
-
-                    using (var cmd = m_connection.CreateCommand())
-                    using (var rd = cmd.ExecuteReader(FormatInvariant(
-                        $@"SELECT DISTINCT ""A"".""FilesetID"", ""A"".""IsFullBackup"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{m_tablename}"" A LEFT OUTER JOIN ( {summation} ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC "))
+                await using var cmd = m_db.Connection.CreateCommand();
+                await cmd.ExecuteNonQueryAsync($@"
+                    DELETE FROM ""{m_tablename}""
+                    WHERE ""FilesetID"" NOT IN (
+                        SELECT ""FilesetID""
+                        FROM ""{m_tablename}""
+                        ORDER BY ""Timestamp"" DESC
+                        LIMIT 1
                     )
-                        while (rd.Read())
-                        {
-                            var id = rd.ConvertValueToInt64(0);
-                            var isFullBackup = rd.GetInt32(1);
-                            var e = dict[id];
-                            var filecount = rd.ConvertValueToInt64(2, -1L);
-                            var filesizes = rd.ConvertValueToInt64(3, -1L);
+                ", token)
+                    .ConfigureAwait(false);
+            }
 
-                            yield return new Fileset(e, isFullBackup, m_filesets[e].Value, filecount, filesizes);
-                        }
+            /// <inheritdoc />
+            public async IAsyncEnumerable<IFileset> QuickSets([EnumeratorCancellation] CancellationToken token)
+            {
+                var dict = new Dictionary<long, long>();
+                for (var i = 0; i < m_filesets.Length; i++)
+                    dict[m_filesets[i].Key] = i;
+
+                await using var cmd = m_db.Connection.CreateCommand();
+                await using var rd = await cmd.ExecuteReaderAsync(@"
+                    SELECT DISTINCT
+                        ""ID"",
+                        ""IsFullBackup""
+                    FROM ""Fileset""
+                    ORDER BY ""Timestamp"" DESC
+                ", token)
+                    .ConfigureAwait(false);
+                while (await rd.ReadAsync(token).ConfigureAwait(false))
+                {
+                    var id = rd.ConvertValueToInt64(0);
+                    var backupType = rd.GetInt32(1);
+                    var e = dict[id];
+
+                    yield return new Fileset(
+                        e,
+                        backupType,
+                        m_filesets[e].Value,
+                        -1L,
+                        -1L
+                    );
+                }
+            }
+
+            /// <inheritdoc />
+            public async IAsyncEnumerable<IFileset> Sets([EnumeratorCancellation] CancellationToken token)
+            {
+                var dict = new Dictionary<long, long>();
+                for (var i = 0; i < m_filesets.Length; i++)
+                    dict[m_filesets[i].Key] = i;
+
+                var summation = $@"
+                    SELECT
+                        ""A"".""FilesetID"" AS ""FilesetID"",
+                        COUNT(*) AS ""FileCount"",
+                        SUM(""C"".""Length"") AS ""FileSizes""
+                    FROM
+                        ""FilesetEntry"" ""A"",
+                        ""File"" ""B"",
+                        ""Blockset"" ""C""
+                    WHERE
+                        ""A"".""FileID"" = ""B"".""ID""
+                        AND ""B"".""BlocksetID"" = ""C"".""ID""
+                        AND ""A"".""FilesetID"" IN (
+                            SELECT DISTINCT ""FilesetID""
+                            FROM ""{m_tablename}"")
+                            GROUP BY ""A"".""FilesetID""
+                ";
+
+                await using var cmd = m_db.Connection.CreateCommand(m_db.Transaction);
+                await using var rd = await cmd.ExecuteReaderAsync($@"
+                    SELECT DISTINCT
+                        ""A"".""FilesetID"",
+                        ""A"".""IsFullBackup"",
+                        ""B"".""FileCount"",
+                        ""B"".""FileSizes""
+                    FROM ""{m_tablename}"" ""A""
+                    LEFT OUTER JOIN ( {summation} ) ""B""
+                        ON ""A"".""FilesetID"" = ""B"".""FilesetID""
+                    ORDER BY ""A"".""Timestamp"" DESC
+                ", token)
+                    .ConfigureAwait(false);
+
+                while (await rd.ReadAsync(token).ConfigureAwait(false))
+                {
+                    var id = rd.ConvertValueToInt64(0);
+                    var isFullBackup = rd.GetInt32(1);
+                    var e = dict[id];
+                    var filecount = rd.ConvertValueToInt64(2, -1L);
+                    var filesizes = rd.ConvertValueToInt64(3, -1L);
+
+                    yield return new Fileset(
+                        e,
+                        isFullBackup,
+                        m_filesets[e].Value,
+                        filecount,
+                        filesizes
+                    );
                 }
             }
 
             public void Dispose()
             {
+                DisposeAsync().AsTask().Await();
+            }
+
+            public async ValueTask DisposeAsync()
+            {
                 if (m_tablename != null)
                 {
                     try
                     {
-                        using (var cmd = m_connection.CreateCommand())
-                            cmd.ExecuteNonQuery(FormatInvariant(@$"DROP TABLE IF EXISTS ""{m_tablename}"" "));
+                        await using var cmd = m_db.Connection.CreateCommand();
+                        await cmd
+                            .ExecuteNonQueryAsync(@$"DROP TABLE IF EXISTS ""{m_tablename}"" ", default)
+                            .ConfigureAwait(false);
                     }
                     catch { }
                     finally { m_tablename = null!; }
                 }
-
             }
         }
 
-        public IFileSets SelectFileSets(DateTime time, long[] versions)
+        /// <summary>
+        /// Creates a new instance of <see cref="FileSets"/> with the specified time and versions.
+        /// </summary>
+        /// <param name="time">The time to filter filesets by.</param>
+        /// <param name="versions">An array of versions to filter filesets by.</param>
+        /// <returns>A task that when awaited returns a new instance of <see cref="FileSets"/>.</returns>
+        public async Task<IFileSets> SelectFileSets(DateTime time, long[] versions, CancellationToken token)
         {
-            return new FileSets(this, time, versions);
+            return await FileSets.CreateAsync(this, time, versions, token)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Represents a fileset entry in the list fileset results.
         /// </summary>
-        /// <param name="Version">The fileset version
+        /// <param name="Version">The fileset version.</param>
         /// <param name="ID">The fileset ID</param>
-        /// <param name="IsFullBackup">Flag indicating if the backup is a full backup or synthetic backup</param>
-        /// <param name="Time">The timestamp of the fileset</param>
-        /// <param name="FileCount">The number of files in the fileset</param>
-        /// <param name="FileSizes">>The total size of files in the fileset</param>
+        /// <param name="IsFullBackup">Flag indicating if the backup is a full backup or synthetic backup.</param>
+        /// <param name="Time">The timestamp of the fileset.</param>
+        /// <param name="FileCount">The number of files in the fileset.</param>
+        /// <param name="FileSizes">>The total size of files in the fileset.</param>
         private sealed record FilesetEntry(long Version, long ID, bool? IsFullBackup, DateTime Time, long? FileCount, long? FileSizes) : IListFilesetResultFileset;
 
         /// <summary>
-        /// Lists all filesets with summary data
+        /// Lists all filesets with summary data.
         /// </summary>
-        /// <returns>A collection of fileset entries</returns>
-        public IEnumerable<IListFilesetResultFileset> ListFilesetsExtended()
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>An asynchronous enumerable of fileset entries.</returns>
+        public async IAsyncEnumerable<IListFilesetResultFileset> ListFilesetsExtended([EnumeratorCancellation] CancellationToken token)
         {
             const string query = @"
-SELECT 
-    f.""ID"" AS ""FilesetID"",
-    f.""Timestamp"",
-    f.""IsFullBackup"",
-    COUNT(fe.""FileID"") AS ""NumberOfFiles"",
-    COALESCE(SUM(b.""Length""), 0) AS ""TotalFileSize""
-FROM 
-    ""Fileset"" f
-LEFT JOIN 
-    ""FilesetEntry"" fe ON f.""ID"" = fe.""FilesetID""
-LEFT JOIN 
-    ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-LEFT JOIN 
-    ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
-GROUP BY 
-    f.""ID""
-ORDER BY 
-    f.""Timestamp"" DESC;
-";
+                SELECT
+                    ""f"".""ID"" AS ""FilesetID"",
+                    ""f"".""Timestamp"",
+                    ""f"".""IsFullBackup"",
+                    COUNT(""fe"".""FileID"") AS ""NumberOfFiles"",
+                    COALESCE(SUM(""b"".""Length""), 0) AS ""TotalFileSize""
+                FROM ""Fileset"" ""f""
+                LEFT JOIN ""FilesetEntry"" ""fe""
+                    ON ""f"".""ID"" = ""fe"".""FilesetID""
+                LEFT JOIN ""FileLookup"" ""fl""
+                    ON ""fe"".""FileID"" = ""fl"".""ID""
+                LEFT JOIN ""Blockset"" ""b""
+                    ON ""fl"".""BlocksetID"" = ""b"".""ID""
+                GROUP BY ""f"".""ID""
+                ORDER BY ""f"".""Timestamp"" DESC;
+            ";
 
             var version = 0L;
-            using (var cmd = m_connection.CreateCommand(query))
-                foreach (var rd in cmd.ExecuteReaderEnumerable())
-                {
-                    var id = rd.ConvertValueToInt64(0);
-                    var time = ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
-                    var isFullBackup = rd.GetInt32(2) == BackupType.FULL_BACKUP;
-                    var filecount = rd.ConvertValueToInt64(3, -1L);
-                    var filesizes = rd.ConvertValueToInt64(4, -1L);
-                    yield return new FilesetEntry(version++, id, isFullBackup, time, filecount, filesizes);
-                }
+            await using var cmd = m_connection.CreateCommand(query);
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
+            {
+                var id = rd.ConvertValueToInt64(0);
+                var time = ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
+                var isFullBackup = rd.GetInt32(2) == BackupType.FULL_BACKUP;
+                var filecount = rd.ConvertValueToInt64(3, -1L);
+                var filesizes = rd.ConvertValueToInt64(4, -1L);
+
+                yield return new FilesetEntry(
+                    version++, id,
+                    isFullBackup,
+                    time,
+                    filecount,
+                    filesizes
+                );
+            }
         }
 
         /// <summary>
@@ -483,44 +965,61 @@ ORDER BY
         /// <param name="filesetid">The fileset ID to filter the folder entries.</param>
         /// <param name="offset">The offset for pagination.</param>
         /// <param name="limit">>The limit for pagination.</param>
-        /// <returns>A paginated result set of folder entries.</returns>
-        public IPaginatedResults<IListFolderEntry> ListFolder(IEnumerable<long> prefixIds, long filesetid, long offset, long limit)
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns a paginated result set of folder entries.</returns>
+        public async Task<IPaginatedResults<IListFolderEntry>> ListFolder(IEnumerable<long> prefixIds, long filesetid, long offset, long limit, CancellationToken token)
         {
             if (offset != 0 && limit <= 0)
                 throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
             if (limit <= 0)
                 limit = long.MaxValue;
 
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             if (prefixIds.Count() == 0)
                 return new PaginatedResults<IListFolderEntry>(0, (int)limit, 0, 0, Enumerable.Empty<IListFolderEntry>());
 
             // Then query the matching files
             cmd.SetCommandAndParameters($@"
-        SELECT 
-            pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
-            b.""Length"",
-            (CASE WHEN fl.""BlocksetID"" = @FolderBlocksetId THEN 1 ELSE 0 END) AS ""IsDirectory"",
-            (CASE WHEN fl.""BlocksetID"" = @SymlinkBlocksetId THEN 1 ELSE 0 END) AS ""IsSymlink"",
-            fe.""Lastmodified""
-        FROM ""FilesetEntry"" fe
-        INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-        INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
-        LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
-        WHERE fe.""FilesetID"" = @filesetid AND fl.""PrefixID"" IN (@PrefixIds)
-        ORDER BY pp.""Prefix"" ASC, fl.""Path"" ASC
-        LIMIT @limit OFFSET @offset
-    ")
+                SELECT
+                    ""pp"".""Prefix"" || ""fl"".""Path"" AS ""FullPath"",
+                    ""b"".""Length"",
+                    (CASE
+                        WHEN ""fl"".""BlocksetID"" = @FolderBlocksetId
+                        THEN 1
+                        ELSE 0
+                    END) AS ""IsDirectory"",
+                    (CASE
+                        WHEN ""fl"".""BlocksetID"" = @SymlinkBlocksetId
+                        THEN 1
+                        ELSE 0
+                    END) AS ""IsSymlink"",
+                    ""fe"".""Lastmodified""
+                FROM ""FilesetEntry"" ""fe""
+                INNER JOIN ""FileLookup"" ""fl""
+                    ON ""fe"".""FileID"" = ""fl"".""ID""
+                INNER JOIN ""PathPrefix"" ""pp""
+                    ON ""fl"".""PrefixID"" = ""pp"".""ID""
+                LEFT JOIN ""Blockset"" ""b""
+                    ON ""fl"".""BlocksetID"" = ""b"".""ID""
+                WHERE
+                    ""fe"".""FilesetID"" = @filesetid
+                    AND ""fl"".""PrefixID"" IN (@PrefixIds)
+                ORDER BY
+                    ""pp"".""Prefix"" ASC,
+                    ""fl"".""Path"" ASC
+                LIMIT @limit
+                OFFSET @offset
+            ")
                 .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
                 .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-                .ExpandInClauseParameter("@PrefixIds", prefixIds)
+                .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
                 .SetParameterValue("@filesetid", filesetid)
                 .SetParameterValue("@limit", limit)
                 .SetParameterValue("@offset", offset);
 
             var results = new List<IListFolderEntry>();
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
             {
                 var path = rd.ConvertValueToString(0) ?? string.Empty;
                 var size = rd.ConvertValueToInt64(-1);
@@ -528,7 +1027,13 @@ ORDER BY
                 var isSymlink = rd.GetInt32(3) != 0;
                 var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
 
-                results.Add(new FolderEntry(path, size, isDir, isSymlink, lastModified));
+                results.Add(new FolderEntry(
+                    path,
+                    size,
+                    isDir,
+                    isSymlink,
+                    lastModified
+                ));
             }
 
             long totalCount;
@@ -545,16 +1050,19 @@ ORDER BY
             else
             {
                 // Get the total count of files for the given fileset and prefix IDs
-                totalCount = cmd.SetCommandAndParameters($@"
+                totalCount = await cmd.SetCommandAndParameters($@"
                     SELECT COUNT(*)
-                    FROM FilesetEntry fe
-                    INNER JOIN FileLookup fl ON fe.FileID = fl.ID
-                    WHERE fe.FilesetID = @filesetid
-                    AND fl.PrefixID IN (@PrefixIds)
+                    FROM ""FilesetEntry"" ""fe""
+                    INNER JOIN ""FileLookup"" ""fl""
+                        ON ""fe"".""FileID"" = ""fl"".""ID""
+                    WHERE
+                        ""fe"".""FilesetID"" = @filesetid
+                        AND ""fl"".""PrefixID"" IN (@PrefixIds)
                 ")
-                .ExpandInClauseParameter("@PrefixIds", prefixIds)
-                .SetParameterValue("@filesetid", filesetid)
-                .ExecuteScalarInt64(0);
+                    .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
+                    .SetParameterValue("@filesetid", filesetid)
+                    .ExecuteScalarInt64Async(0, token)
+                    .ConfigureAwait(false);
             }
 
             // Return paginated results
@@ -562,195 +1070,74 @@ ORDER BY
             return new PaginatedResults<IListFolderEntry>((int)(offset / limit), (int)intLimit, (int)((totalCount + limit - 1) / limit), totalCount, results);
         }
 
-        /// <summary>
-        /// Lists the folder entries for a given fileset and prefix IDs.
-        /// </summary>
-        /// <param name="prefixIds">The prefix IDs to return entries for.</param>
-        /// <param name="offset">The offset for pagination.</param>
-        /// <param name="limit">>The limit for pagination.</param>
-        /// <returns>A paginated result set of folder entries.</returns>
-        public IPaginatedResults<IListFolderEntry> ListFilesetEntries(IEnumerable<long> prefixIds, long filesetid, long offset, long limit)
-        {
-            if (offset != 0 && limit <= 0)
-                throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
-            if (limit <= 0)
-                limit = long.MaxValue;
-
-            using var cmd = m_connection.CreateCommand();
-
-            if (!prefixIds.Any())
-                return new PaginatedResults<IListFolderEntry>(0, (int)limit, 0, 0, Enumerable.Empty<IListFolderEntry>());
-
-            // Fetch entries
-            cmd.SetCommandAndParameters(@"
-        SELECT 
-            pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
-            b.""Length"",
-            CASE WHEN fl.""BlocksetID"" = @FolderBlocksetId THEN 1 ELSE 0 END AS ""IsDirectory"",
-            CASE WHEN fl.""BlocksetID"" = @SymlinkBlocksetId THEN 1 ELSE 0 END AS ""IsSymlink"",
-            fe.""Lastmodified""
-        FROM ""FilesetEntry"" fe
-        INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-        INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
-        LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
-        WHERE fe.""FilesetId"" = @FilesetId
-          AND fl.""PrefixId"" IN (@PrefixIds)
-        ORDER BY pp.""Prefix"" ASC, fl.""Path"" ASC
-        LIMIT @limit OFFSET @offset
-    ")
-            .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
-            .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-            .SetParameterValue("@FilesetId", filesetid)
-            .ExpandInClauseParameter("@PrefixIds", prefixIds)
-            .SetParameterValue("@limit", limit)
-            .SetParameterValue("@offset", offset);
-
-            var results = new List<IListFolderEntry>();
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
-            {
-                var path = rd.ConvertValueToString(0) ?? string.Empty;
-                var size = rd.ConvertValueToInt64(-1);
-                var isDir = rd.GetInt32(2) != 0;
-                var isSymlink = rd.GetInt32(3) != 0;
-                var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
-
-                results.Add(new FolderEntry(path, size, isDir, isSymlink, lastModified));
-            }
-
-            long totalCount;
-            if (offset != 0)
-            {
-                // Only calculate the total for the first query
-                totalCount = -1;
-            }
-            else if (results.Count <= limit)
-            {
-                // If we have all results, we already know the total
-                totalCount = results.Count;
-            }
-            else
-            {
-                totalCount = cmd.SetCommandAndParameters(@"
-                    SELECT COUNT(*)
-                    FROM ""FilesetEntry"" fe
-                    INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-                    WHERE fe.""FilesetId"" = @FilesetId
-                    AND fl.""PrefixId"" IN (@PrefixIds)
-                ")
-                .SetParameterValue("@FilesetId", filesetid)
-                .ExpandInClauseParameter("@PrefixIds", prefixIds)
-                .ExecuteScalarInt64(0);
-            }
-
-            var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
-            return new PaginatedResults<IListFolderEntry>((int)(offset / limit), intLimit, (int)((totalCount + limit - 1) / limit), totalCount, results);
-        }
 
         /// <summary>
         /// Gets the prefix IDs for a given set of folder-prefixes.
         /// </summary>
         /// <param name="prefixes">The prefixes to get the IDs for.</param>
-        /// <returns>>A list of prefix IDs.</returns>
-        public IEnumerable<long> GetPrefixIds(IEnumerable<string> prefixes)
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>An asynchronous enumerable of prefix IDs.</returns>
+        public async IAsyncEnumerable<long> GetPrefixIds(IEnumerable<string> prefixes, [EnumeratorCancellation] CancellationToken token)
         {
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             // Map folders to prefix IDs
-            cmd.SetCommandAndParameters($@"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" IN (@Prefixes)")
+            cmd.SetCommandAndParameters($@"
+                SELECT ""ID""
+                FROM ""PathPrefix""
+                WHERE ""Prefix"" IN (@Prefixes)
+            ")
                 .ExpandInClauseParameter("@Prefixes", prefixes);
 
-            return cmd.ExecuteReaderEnumerable()
-                .Select(x => x.ConvertValueToInt64(0))
-                .ToList();
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
+            {
+                yield return rd.ConvertValueToInt64(0);
+            }
         }
 
         /// <summary>
-        /// Gathers root prefixes from the fileset entries.
+        /// Gets the minimal unique prefix entries for a given fileset ID.
+        /// This returns the roots of all unique paths in the fileset.
         /// </summary>
-        /// <param name="filesetid">The filesetId to get the prefixes for</param>
-        /// <returns>A list of root prefixes</returns>
-        public IEnumerable<long> GetRootPrefixes(long filesetid)
+        /// <param name="filesetId">The fileset id.</param>
+        /// <param name="token"> A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns a list of the entries that are unique roots.</returns>
+        public async IAsyncEnumerable<IListFolderEntry> GetMinimalUniquePrefixEntries(long filesetId, [EnumeratorCancellation] CancellationToken token)
         {
-            using var cmd = m_connection.CreateCommand();
-
+            await using var cmd = m_connection.CreateCommand();
             cmd.SetCommandAndParameters(@"
-        WITH Prefixes AS (
-            SELECT DISTINCT fl.""PrefixID"", pp.""Prefix""
-            FROM ""FilesetEntry"" fe
-            INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-            INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
-            WHERE fe.""FilesetID"" = @filesetid
-        )
-        SELECT p1.""PrefixID""
-        FROM Prefixes p1
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM Prefixes p2
-            WHERE p2.""PrefixID"" != p1.""PrefixID""
-            AND p1.""Prefix"" LIKE p2.""Prefix"" || '%'
-            AND LENGTH(p1.""Prefix"") > LENGTH(p2.""Prefix"")
-        )
-        ORDER BY p1.""Prefix"" ASC
-    ")
-            .SetParameterValue("@filesetid", filesetid);
+                SELECT
+                    pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
+                    b.""Length"",
+                    CASE WHEN fl.""BlocksetID"" = -100 THEN 1 ELSE 0 END AS ""IsDirectory"",
+                    CASE WHEN fl.""BlocksetID"" = -200 THEN 1 ELSE 0 END AS ""IsSymlink"",
+                    fe.""Lastmodified""
+                FROM ""FilesetEntry"" fe
+                JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+                JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+                LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
+                WHERE fe.""FilesetID"" = @FilesetId
+                ORDER BY ""FullPath"";
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@FilesetId", filesetId);
 
-            return cmd.ExecuteReaderEnumerable()
-                .Select(x => x.ConvertValueToInt64(0, -1))
-                .Where(x => x != -1)
-                .ToList();
-        }
+            string? lastRoot = null;
 
-        /// <summary>
-        /// Gathers all prefixes and their parent prefix IDs from the fileset entries.
-        /// </summary>
-        /// <param name="filesetid">The filesetId to get the prefixes for</param>
-        /// <returns>A list of (PrefixID, ParentPrefixID) pairs</returns>
-        public IEnumerable<(long PrefixId, long ParentPrefixId)> GetRootPrefixesWithParents(long filesetid)
-        {
-            using var cmd = m_connection.CreateCommand();
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token))
+            {
+                var path = rd.ConvertValueToString(0) ?? string.Empty;
+                if (lastRoot == null || !path.StartsWith(lastRoot, StringComparison.Ordinal))
+                {
+                    lastRoot = path;
+                    var size = rd.ConvertValueToInt64(1, -1);
+                    var isDir = rd.GetInt32(2) != 0;
+                    var isSymlink = rd.GetInt32(3) != 0;
+                    var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
 
-            var dirSeparator = Util.GuessDirSeparator(cmd.SetCommandAndParameters(@"SELECT ""Prefix"" FROM ""PathPrefix"" LIMIT 1")
-                .ExecuteScalar()?.ToString());
-
-            cmd.SetCommandAndParameters(@"
-        WITH Prefixes AS (
-            SELECT DISTINCT fl.""PrefixID"", pp.""Prefix""
-            FROM ""FilesetEntry"" fe
-            INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-            INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
-            WHERE fe.""FilesetID"" = @filesetid
-        ),
-        PrefixParents AS (
-            SELECT
-                child.""PrefixID"" AS ChildPrefixID,
-                parent.""PrefixID"" AS ParentPrefixID,
-                LENGTH(parent.""Prefix"") AS ParentLength
-            FROM Prefixes child
-            JOIN Prefixes parent
-              ON LENGTH(child.""Prefix"") > LENGTH(parent.""Prefix"")
-             AND SUBSTR(child.""Prefix"", 1, LENGTH(parent.""Prefix"")) = parent.""Prefix""
-             AND (SUBSTR(child.""Prefix"", LENGTH(parent.""Prefix"") + 1, 1) = @dirSeparator)
-        )
-        SELECT
-            child.""PrefixID"",
-            (
-                SELECT ParentPrefixID
-                FROM PrefixParents pp
-                WHERE pp.ChildPrefixID = child.""PrefixID""
-                ORDER BY pp.ParentLength DESC
-                LIMIT 1
-            ) AS ParentPrefixID
-        FROM Prefixes child
-        ORDER BY child.""Prefix"" ASC
-    ")
-            .SetParameterValue("@dirSeparator", dirSeparator)
-            .SetParameterValue("@filesetid", filesetid);
-
-            return cmd.ExecuteReaderEnumerable()
-                .Select(x => (
-                    PrefixId: x.ConvertValueToInt64(0, -1),
-                    ParentPrefixId: x.ConvertValueToInt64(1, -1)
-                ));
+                    yield return new FolderEntry(path, size, isDir, isSymlink, lastModified);
+                }
+            }
         }
 
         /// <summary>
@@ -760,8 +1147,9 @@ ORDER BY
         /// <param name="filesetIds">Optional fileset IDs to restrict the search to.</param>
         /// <param name="offset">Pagination offset.</param>
         /// <param name="limit">Pagination limit.</param>
-        /// <returns>All matching file versions ordered by path and then version time.</returns>
-        public IPaginatedResults<IListFileVersion> ListFileVersions(IEnumerable<string> paths, long[]? filesetIds, long offset, long limit)
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns all matching file versions ordered by path and then version time.</returns>
+        public async Task<IPaginatedResults<IListFileVersion>> ListFileVersions(IEnumerable<string> paths, long[]? filesetIds, long offset, long limit, CancellationToken token)
         {
             if (paths == null || !paths.Any())
                 return new PaginatedResults<IListFileVersion>(0, (int)(limit > 0 ? limit : long.MaxValue), 0, 0, Enumerable.Empty<IListFileVersion>());
@@ -771,35 +1159,56 @@ ORDER BY
             if (limit <= 0)
                 limit = long.MaxValue;
 
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             var countWhere = "WHERE fl.\"Path\" IN (@Paths)";
             if (filesetIds != null && filesetIds.Length > 0)
                 countWhere += " AND fe.\"FilesetID\" IN (@FilesetIds)";
 
-            cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC");
+            cmd.SetCommandAndParameters(@"
+                SELECT ""ID""
+                FROM ""Fileset""
+                ORDER BY ""Timestamp"" DESC
+            ");
 
-            var versionMap = cmd.ExecuteReaderEnumerable()
+            var versionMap = await cmd
+                .ExecuteReaderEnumerableAsync(token)
                 .Select((x, i) => (Version: i, FilesetId: x.ConvertValueToInt64(0)))
-                .ToDictionary(x => x.FilesetId, x => x.Version);
+                .ToDictionaryAsync(x => x.FilesetId, x => x.Version, cancellationToken: token)
+                .ConfigureAwait(false);
 
             // Then fetch the actual data
-            var fetchSql = @"
-        SELECT 
-            fe.""FilesetID"",
-            f.""Timestamp"",
-            fl.""Path"",
-            COALESCE(b.""Length"", 0) AS ""Size"",
-            CASE WHEN fl.""BlocksetID"" = @FolderBlocksetId THEN 1 ELSE 0 END AS ""IsDirectory"",
-            CASE WHEN fl.""BlocksetID"" = @SymlinkBlocksetId THEN 1 ELSE 0 END AS ""IsSymlink"",
-            fe.""Lastmodified""
-        FROM ""FilesetEntry"" fe
-        INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-        INNER JOIN ""Fileset"" f ON fe.""FilesetID"" = f.""ID""
-        LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
-    " + countWhere + @"
-        ORDER BY fl.""Path"" ASC, f.""Timestamp"" ASC
-        LIMIT @limit OFFSET @offset";
+            var fetchSql = @$"
+                SELECT
+                    ""fe"".""FilesetID"",
+                    ""f"".""Timestamp"",
+                    ""fl"".""Path"",
+                    COALESCE(""b"".""Length"", 0) AS ""Size"",
+                    CASE
+                        WHEN ""fl"".""BlocksetID"" = @FolderBlocksetId
+                        THEN 1
+                        ELSE 0
+                    END AS ""IsDirectory"",
+                    CASE
+                        WHEN ""fl"".""BlocksetID"" = @SymlinkBlocksetId
+                        THEN 1
+                        ELSE 0
+                    END AS ""IsSymlink"",
+                    ""fe"".""Lastmodified""
+                FROM ""FilesetEntry"" ""fe""
+                INNER JOIN ""FileLookup"" ""fl""
+                    ON ""fe"".""FileID"" = ""fl"".""ID""
+                INNER JOIN ""Fileset"" ""f""
+                    ON ""fe"".""FilesetID"" = ""f"".""ID""
+                LEFT JOIN ""Blockset"" ""b""
+                    ON ""fl"".""BlocksetID"" = ""b"".""ID""
+                {countWhere}
+                ORDER BY
+                    ""fl"".""Path"" ASC,
+                    ""f"".""Timestamp"" ASC
+                LIMIT @limit
+                OFFSET @offset
+            ";
 
             cmd.SetCommandAndParameters(fetchSql)
                .ExpandInClauseParameter("@Paths", paths)
@@ -809,10 +1218,10 @@ ORDER BY
                .SetParameterValue("@offset", offset);
 
             if (filesetIds != null && filesetIds.Length > 0)
-                cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+                cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
 
             var results = new List<IListFileVersion>();
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
             {
                 var version = versionMap[rd.ConvertValueToInt64(0, -1)];
                 var time = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
@@ -822,7 +1231,15 @@ ORDER BY
                 var isSymlink = rd.GetInt32(5) != 0;
                 var lastModified = new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc);
 
-                results.Add(new ListFileVersion(version, time, path, size, isDirectory, isSymlink, lastModified));
+                results.Add(new ListFileVersion(
+                    version,
+                    time,
+                    path,
+                    size,
+                    isDirectory,
+                    isSymlink,
+                    lastModified
+                ));
             }
 
             long totalCount;
@@ -841,17 +1258,19 @@ ORDER BY
                 // Get total count
                 var countSql = @"
                     SELECT COUNT(*)
-                    FROM ""FilesetEntry"" fe
-                    INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+                    FROM ""FilesetEntry"" ""fe""
+                    INNER JOIN ""FileLookup"" ""fl""
+                        ON ""fe"".""FileID"" = ""fl"".""ID""
                 ";
 
                 cmd.SetCommandAndParameters(countSql + "\n" + countWhere)
                    .ExpandInClauseParameter("@Paths", paths);
 
                 if (filesetIds != null && filesetIds.Length > 0)
-                    cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+                    cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
 
-                totalCount = cmd.ExecuteScalarInt64(0);
+                totalCount = await cmd.ExecuteScalarInt64Async(0, token)
+                    .ConfigureAwait(false);
             }
 
             var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
@@ -874,15 +1293,16 @@ ORDER BY
         /// <param name="filesetIds">Optional fileset IDs to restrict the search to.</param>
         /// <param name="offset">The offset for pagination.</param>
         /// <param name="limit">The limit for pagination.</param>
-        /// <returns>All matching file versions ordered by path and then version time.</returns>
-        public IPaginatedResults<ISearchFileVersion> SearchEntries(IEnumerable<string>? pathprefixes, IFilter filter, long[]? filesetIds, long offset, long limit)
+        /// <param name="token"> A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns all matching file versions ordered by path and then version time.</returns>
+        public async Task<IPaginatedResults<ISearchFileVersion>> SearchEntries(IEnumerable<string>? pathprefixes, IFilter filter, long[]? filesetIds, long offset, long limit, CancellationToken token)
         {
             if (offset != 0 && limit <= 0)
                 throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
             if (limit <= 0)
                 limit = long.MaxValue;
 
-            using var cmd = m_connection.CreateCommand();
+            await using var cmd = m_connection.CreateCommand();
 
             // Analyze the filter to determine the default behavior
             FilterExpression.AnalyzeFilters(filter, out var includes, out var excludes);
@@ -934,9 +1354,15 @@ ORDER BY
                         var propName = $"@Part{filterProps.Count}";
                         filterProps[propName] = part;
                         if (caseSensitive)
-                            caseWhenParts.Add($@"WHEN instr(LOWER(pp.""Prefix"" || fl.""Path""), LOWER({propName})) > 0 THEN {(filterExpression.Result ? 0 : 1)}");
+                            caseWhenParts.Add($@"
+                                WHEN instr(LOWER(pp.""Prefix"" || fl.""Path""), LOWER({propName})) > 0
+                                THEN {(filterExpression.Result ? 0 : 1)}
+                            ");
                         else
-                            caseWhenParts.Add($@"WHEN instr(pp.""Prefix"" || fl.""Path"", {propName}) > 0 THEN {(filterExpression.Result ? 0 : 1)}");
+                            caseWhenParts.Add($@"
+                                WHEN instr(pp.""Prefix"" || fl.""Path"", {propName}) > 0
+                                THEN {(filterExpression.Result ? 0 : 1)}
+                            ");
                     }
                 }
                 else if (filterExpression.Type == FilterType.Wildcard)
@@ -947,9 +1373,15 @@ ORDER BY
                         var propName = $"@Part{filterProps.Count}";
                         filterProps[propName] = part;
                         if (caseSensitive)
-                            caseWhenParts.Add($@"WHEN LOWER(pp.""Prefix"" || fl.""Path"") GLOB LOWER({propName}) THEN {(filterExpression.Result ? 0 : 1)}");
+                            caseWhenParts.Add($@"
+                                WHEN LOWER(pp.""Prefix"" || fl.""Path"") GLOB LOWER({propName})
+                                THEN {(filterExpression.Result ? 0 : 1)}
+                            ");
                         else
-                            caseWhenParts.Add($@"WHEN pp.""Prefix"" || fl.""Path"" GLOB {propName} THEN {(filterExpression.Result ? 0 : 1)}");
+                            caseWhenParts.Add($@"
+                                WHEN pp.""Prefix"" || fl.""Path"" GLOB {propName}
+                                THEN {(filterExpression.Result ? 0 : 1)}
+                            ");
                     }
                 }
                 else
@@ -968,13 +1400,15 @@ ORDER BY
 
             if (caseWhenParts.Any())
             {
-                whereClauses.Add($@"COALESCE(
-            CASE
-                {string.Join("\n                ", caseWhenParts)}
-                ELSE NULL
-            END,
-            @DefaultBehavior
-        ) = 0");
+                whereClauses.Add($@"
+                    COALESCE(
+                        CASE
+                            {string.Join("\n                ", caseWhenParts)}
+                            ELSE NULL
+                        END,
+                        @DefaultBehavior
+                    ) = 0
+                ");
             }
             else
             {
@@ -988,31 +1422,53 @@ ORDER BY
 
             var whereClause = string.Join("\n  AND ", whereClauses);
 
-            cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC");
+            cmd.SetCommandAndParameters(@"
+                SELECT ""ID""
+                FROM ""Fileset""
+                ORDER BY ""Timestamp"" DESC
+            ");
 
-            var versionMap = cmd.ExecuteReaderEnumerable()
+            var versionMap = await cmd
+                .ExecuteReaderEnumerableAsync(token)
                 .Select((x, i) => (Version: i, FilesetId: x.ConvertValueToInt64(0)))
-                .ToDictionary(x => x.FilesetId, x => x.Version);
+                .ToDictionaryAsync(x => x.FilesetId, x => x.Version, cancellationToken: token)
+                .ConfigureAwait(false);
 
             // Fetch results
             var fetchSql = $@"
-        SELECT 
-            fe.""FilesetID"",
-            f.""Timestamp"",
-            pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
-            COALESCE(b.""Length"", 0) AS ""Size"",
-            CASE WHEN fl.""BlocksetID"" = @FolderBlocksetId THEN 1 ELSE 0 END AS ""IsDirectory"",
-            CASE WHEN fl.""BlocksetID"" = @SymlinkBlocksetId THEN 1 ELSE 0 END AS ""IsSymlink"",
-            fe.""Lastmodified""
-        FROM ""FilesetEntry"" fe
-        INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-        INNER JOIN ""Fileset"" f ON fe.""FilesetID"" = f.""ID""
-        LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
-        INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
-        WHERE {whereClause}
-        ORDER BY pp.""Prefix"" ASC, fl.""Path"" ASC, f.""Timestamp"" ASC
-        LIMIT @limit OFFSET @offset
-    ";
+                SELECT
+                    ""fe"".""FilesetID"",
+                    ""f"".""Timestamp"",
+                    ""pp"".""Prefix"" || ""fl"".""Path"" AS ""FullPath"",
+                    COALESCE(""b"".""Length"", 0) AS ""Size"",
+                    CASE
+                        WHEN ""fl"".""BlocksetID"" = @FolderBlocksetId
+                        THEN 1
+                        ELSE 0
+                    END AS ""IsDirectory"",
+                    CASE
+                        WHEN ""fl"".""BlocksetID"" = @SymlinkBlocksetId
+                        THEN 1
+                        ELSE 0
+                    END AS ""IsSymlink"",
+                    ""fe"".""Lastmodified""
+                FROM ""FilesetEntry"" ""fe""
+                INNER JOIN ""FileLookup"" ""fl""
+                    ON ""fe"".""FileID"" = ""fl"".""ID""
+                INNER JOIN ""Fileset"" ""f""
+                    ON ""fe"".""FilesetID"" = ""f"".""ID""
+                LEFT JOIN ""Blockset"" ""b""
+                    ON ""fl"".""BlocksetID"" = ""b"".""ID""
+                INNER JOIN ""PathPrefix"" ""pp""
+                    ON ""fl"".""PrefixID"" = ""pp"".""ID""
+                WHERE {whereClause}
+                ORDER BY
+                    ""pp"".""Prefix"" ASC,
+                    ""fl"".""Path"" ASC,
+                    ""f"".""Timestamp"" ASC
+                LIMIT @limit
+                OFFSET @offset
+            ";
 
             cmd.SetCommandAndParameters(fetchSql)
                .SetParameterValues(filterProps)
@@ -1026,10 +1482,10 @@ ORDER BY
                 cmd.ExpandInClauseParameter("@PathPrefixes", pathprefixes);
 
             if (filesetIds != null && filesetIds.Length > 0)
-                cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+                cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
 
             var results = new List<ISearchFileVersion>();
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
             {
                 var version = versionMap[rd.ConvertValueToInt64(0, -1)];
                 var time = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
@@ -1060,9 +1516,11 @@ ORDER BY
                 // Calculate the total
                 var countSql = $@"
                     SELECT COUNT(*)
-                    FROM ""FilesetEntry"" fe
-                    INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-                    INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+                    FROM ""FilesetEntry"" ""fe""
+                    INNER JOIN ""FileLookup"" ""fl""
+                        ON ""fe"".""FileID"" = ""fl"".""ID""
+                    INNER JOIN ""PathPrefix"" ""pp""
+                        ON ""fl"".""PrefixID"" = ""pp"".""ID""
                     WHERE {whereClause}
                 ";
 
@@ -1074,9 +1532,10 @@ ORDER BY
                     cmd.ExpandInClauseParameter("@PathPrefixes", pathprefixes);
 
                 if (filesetIds != null && filesetIds.Length > 0)
-                    cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+                    cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
 
-                totalCount = cmd.ExecuteScalarInt64(0);
+                totalCount = await cmd.ExecuteScalarInt64Async(0, token)
+                    .ConfigureAwait(false);
             }
 
             var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
@@ -1092,4 +1551,3 @@ ORDER BY
         }
     }
 }
-

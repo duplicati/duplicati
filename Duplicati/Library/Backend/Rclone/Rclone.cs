@@ -74,7 +74,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(local_repo))
                 local_repo = "local";
             if (string.IsNullOrWhiteSpace(remote_repo))
-                remote_repo = uri.Host;
+                remote_repo = uri.Host ?? "";
             if (string.IsNullOrWhiteSpace(remote_path))
                 remote_path = uri.Path;
             if (string.IsNullOrWhiteSpace(rclone_executable))

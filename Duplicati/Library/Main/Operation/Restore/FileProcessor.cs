@@ -53,6 +53,8 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// The number of file processors that are still restoring files. It is set by the <see cref="RestoreHandler"/>.
         /// </summary>
         public static int file_processors_restoring_files;
+        public static object file_processor_continue_lock = new object();
+        public static TaskCompletionSource file_processor_continue = new();
 
         /// <summary>
         /// Runs the file processor process that restores the files that need to be restored.
@@ -110,11 +112,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                             // Check if there are other FileProcessor's still restoring files
                             if (!decremented)
                             {
-                                await RendezvousBeforeProcessingFolderMetadata();
+                                if (file_processors_restoring_files <= 0 && !file_processor_continue.Task.IsCompleted)
+                                    file_processor_continue.SetResult();
+                                else
+                                    await RendezvousBeforeProcessingFolderMetadata()
+                                        .ConfigureAwait(false);
                                 decremented = true;
                             }
 
-                            await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp);
+                            await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken)
+                                .ConfigureAwait(false);
 
                             continue;
                         }
@@ -122,7 +129,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Get information about the blocks for the file
                         // TODO rather than keeping all of the blocks in memory, we could do a single pass over the blocks using a cursor, only keeping the relevant block requests in memory. Maybe even only a single block request at a time.
                         sw_block?.Start();
-                        var blocks = db.GetBlocksFromFile(file.BlocksetID).ToArray();
+                        var blocks = await db
+                            .GetBlocksFromFile(file.BlocksetID, results.TaskControl.ProgressToken)
+                            .ToArrayAsync()
+                            .ConfigureAwait(false);
                         sw_block?.Stop();
 
                         sw_work_verify_target?.Start();
@@ -362,12 +372,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     else
                                     {
                                         // Not a missing block, so read from the file
-                                        sw_work_read?.Start();
-                                        var read = await fs?.ReadAsync(buffer, 0, buffer.Length);
-                                        sw_work_read?.Stop();
-                                        sw_work_hash?.Start();
-                                        filehasher.TransformBlock(buffer, 0, read, buffer, 0);
-                                        sw_work_hash?.Stop();
+                                        if (fs != null)
+                                        {
+                                            sw_work_read?.Start();
+                                            var read = await fs
+                                                .ReadAsync(buffer, 0, buffer.Length)
+                                                .ConfigureAwait(false);
+                                            sw_work_read?.Stop();
+                                            sw_work_hash?.Start();
+                                            filehasher.TransformBlock(buffer, 0, read, buffer, 0);
+                                            sw_work_hash?.Stop();
+                                        }
                                     }
                                 }
 
@@ -420,7 +435,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (!options.SkipMetadata)
                         {
-                            empty_file_or_symlink |= await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp).ConfigureAwait(false);
+                            empty_file_or_symlink |= await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken).ConfigureAwait(false);
                             sw_work_meta?.Stop();
                         }
 
@@ -459,7 +474,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 finally
                 {
                     if (!decremented)
-                        Interlocked.Decrement(ref file_processors_restoring_files);
+                        lock (file_processor_continue_lock)
+                        {
+                            file_processors_restoring_files--;
+                            if (file_processors_restoring_files <= 0 && !file_processor_continue.Task.IsCompleted)
+                                file_processor_continue.SetResult();
+                        }
 
                     block_request.Retire();
                     block_response.Retire();
@@ -554,11 +574,18 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <returns>An awaitable task that completes once all of the FileProcessor's have rendezvoused.</returns>
         private static async Task RendezvousBeforeProcessingFolderMetadata()
         {
-            Interlocked.Decrement(ref file_processors_restoring_files);
-
-            while (file_processors_restoring_files > 0)
+            var should_wait = false;
+            lock (file_processor_continue_lock)
             {
-                await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+                file_processors_restoring_files--;
+                if (file_processors_restoring_files <= 0 && !file_processor_continue.Task.IsCompleted)
+                    file_processor_continue.SetResult();
+                should_wait = file_processors_restoring_files > 0;
+            }
+
+            if (should_wait)
+            {
+                await file_processor_continue.Task.ConfigureAwait(false);
             }
         }
 
@@ -574,15 +601,22 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="sw_work">The stopwatch for internal profiling of the general processing.</param>
         /// <param name="sw_req">The stopwatch for internal profiling of the block requests.</param>
         /// <param name="sw_resp">The stopwatch for internal profiling of the block responses.</param>
-        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<Task<byte[]>> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
+        /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+        /// <returns>An awaitable `Task`, which returns `true` if the metadata was restored successfully, `false` otherwise.</returns>
+        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<Task<byte[]>> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp, CancellationToken cancellationToken)
         {
             sw_meta?.Start();
-            var blocks = db.GetMetadataBlocksFromFile(file.ID);
+            // Since each FileProcessor should have its own connection, it's ok
+            // to keep the lock associated with the read transaction for a long
+            // time, as the other processes should still be able to read.
+            // Therefore, we don't need to read the entire result set into
+            // memory.
+            var blocks = db.GetMetadataBlocksFromFile(file.ID, cancellationToken);
             sw_meta?.Stop();
 
             using var ms = new MemoryStream();
 
-            foreach (var block in blocks)
+            await foreach (var block in blocks.ConfigureAwait(false))
             {
                 sw_work?.Stop();
                 sw_req?.Start();
@@ -768,7 +802,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 int j = 0;
                 for (long i = 0; i < total_blocks; i++)
                 {
-                    int read;
+                    int read = 0;
                     if (j < blocks.Count && blocks[j].BlockOffset == i)
                     {
                         // The current block is a missing block
@@ -797,18 +831,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 if (!options.Dryrun)
                                 {
-                                    try
+                                    if (f_target != null)
                                     {
-                                        f_target?.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
-                                        await f_target?.WriteAsync(buffer, 0, read);
-                                    }
-                                    catch (Exception)
-                                    {
-                                        lock (results)
+                                        try
                                         {
-                                            results.BrokenLocalFiles.Add(file.TargetPath);
+                                            f_target.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
+                                            await f_target
+                                                .WriteAsync(buffer, 0, read)
+                                                .ConfigureAwait(false);
                                         }
-                                        throw;
+                                        catch (Exception)
+                                        {
+                                            lock (results)
+                                            {
+                                                results.BrokenLocalFiles.Add(file.TargetPath);
+                                            }
+                                            throw;
+                                        }
                                     }
                                 }
                                 bytes_read += read;
@@ -841,18 +880,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                     else
                     {
                         // The current block is not a missing block - read from the target file.
-                        try
+                        if (f_target != null)
                         {
-                            f_target?.Seek(i * options.Blocksize, SeekOrigin.Begin);
-                            read = await f_target?.ReadAsync(buffer, 0, options.Blocksize);
-                        }
-                        catch (Exception)
-                        {
-                            lock (results)
+                            try
                             {
-                                results.BrokenLocalFiles.Add(file.TargetPath);
+                                f_target.Seek(i * options.Blocksize, SeekOrigin.Begin);
+                                read = await f_target
+                                    .ReadAsync(buffer, 0, options.Blocksize)
+                                    .ConfigureAwait(false);
                             }
-                            throw;
+                            catch (Exception)
+                            {
+                                lock (results)
+                                {
+                                    results.BrokenLocalFiles.Add(file.TargetPath);
+                                }
+                                throw;
+                            }
                         }
                     }
                     filehasher.TransformBlock(buffer, 0, read, buffer, 0);

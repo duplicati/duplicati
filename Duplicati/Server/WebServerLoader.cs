@@ -107,6 +107,11 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_PRE_AUTH_TOKENS = "webservice-pre-auth-tokens";
 
     /// <summary>
+    /// Option for setting the webservice token duration
+    /// </summary>
+    public const string OPTION_WEBSERVICE_TOKENDURATION = "webservice-token-duration";
+
+    /// <summary>
     /// The default path to the web root
     /// </summary>
     public const string DEFAULT_OPTION_WEBROOT = "webroot";
@@ -120,6 +125,11 @@ public static class WebServerLoader
     /// The default listening port
     /// </summary>
     public const int DEFAULT_OPTION_PORT = 8200;
+
+    /// <summary>
+    /// The default token duration for JWT tokens
+    /// </summary>
+    public const string DEFAULT_OPTION_TOKENDURATION = "30D";
 
     /// <summary>
     /// Option for setting if to use HTTPS
@@ -160,6 +170,7 @@ public static class WebServerLoader
     /// <param name="Certificate">SSL certificate, if any</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
+    /// <param name="TokenLifetimeInMinutes">The lifetime of refresh tokens in minutes</param>
     /// <param name="SPAPaths">The paths to serve as SPAs</param>
     /// <param name="CorsOrigins">The origins to allow for CORS</param>
     public record ParsedWebserverSettings(
@@ -169,6 +180,7 @@ public static class WebServerLoader
         X509Certificate2Collection? Certificate,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
+        int TokenLifetimeInMinutes,
         IEnumerable<string> SPAPaths,
         IEnumerable<string> CorsOrigins,
         IReadOnlySet<string> PreAuthTokens
@@ -257,6 +269,9 @@ public static class WebServerLoader
         if (string.IsNullOrWhiteSpace(spaPathsString))
             spaPathsString = DEFAULT_OPTION_SPAPATHS;
 
+        var duration = Utility.ParseTimespanOption(options, OPTION_WEBSERVICE_TOKENDURATION, DEFAULT_OPTION_TOKENDURATION);
+        var tokenLifetimeInMinutes = (int)Math.Ceiling(duration.TotalMinutes);
+
         var settings = new ParsedWebserverSettings(
             webroot,
             -1,
@@ -264,6 +279,7 @@ public static class WebServerLoader
             connection.ApplicationSettings.UseHTTPS ? connection.ApplicationSettings.ServerSSLCertificate : null,
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
             Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),
+            tokenLifetimeInMinutes,
             spaPathsString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
             options.GetValueOrDefault(OPTION_WEBSERVICE_CORS_ORIGINS)?.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>(),
             preAuthTokens

@@ -1,33 +1,35 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using Duplicati.Library.Interface;
 using System.Collections.Generic;
-using Duplicati.Library.Main.Database;
-using Duplicati.Library.Logging;
 using System.Linq;
-using Newtonsoft.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation.Common;
+using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main
 {
@@ -179,7 +181,7 @@ namespace Duplicati.Library.Main
 
         protected readonly BasicResults m_parent;
         protected System.Threading.Thread m_callerThread;
-        protected readonly object m_lock = new object();
+        protected readonly SemaphoreSlim m_lock = new(1, 1);
         protected readonly Queue<DbMessage> m_dbqueue;
 
         public virtual ParsedResultType ParsedResult
@@ -258,19 +260,32 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public void FlushLog(LocalDatabase db)
+        /// <summary>
+        /// Flushes the log messages to the database.
+        /// </summary>
+        /// <param name="db">The database to flush the log messages to.</param>
+        /// <param name="token">The cancellation token to use.</param>
+        /// <returns>A task that completes when the log messages have been flushed.</returns>
+        public async Task FlushLog(LocalDatabase db, CancellationToken token)
         {
             if (m_parent != null)
-                m_parent.FlushLog(db);
+                await m_parent.FlushLog(db, token).ConfigureAwait(false);
             else
             {
-                lock (m_lock)
+                await m_lock.WaitAsync(token).ConfigureAwait(false);
+                try
                 {
                     while (m_dbqueue.Count > 0)
                     {
                         var el = m_dbqueue.Dequeue();
-                        db.LogMessage(el.Type, el.Message, el.Exception, null);
+                        await db
+                            .LogMessage(el.Type, el.Message, el.Exception, token)
+                            .ConfigureAwait(false);
                     }
+                }
+                finally
+                {
+                    m_lock.Release();
                 }
             }
         }
@@ -876,6 +891,13 @@ namespace Duplicati.Library.Main
             var res = new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(volume, changes);
             m_verifications.Add(res);
             return res;
+        }
+
+        public void RemoveResult(string volume)
+        {
+            var item = m_verifications.FirstOrDefault(x => x.Key == volume);
+            if (item.Key == volume)
+                m_verifications.Remove(item);
         }
     }
 

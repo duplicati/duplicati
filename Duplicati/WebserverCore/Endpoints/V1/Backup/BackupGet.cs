@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -33,7 +33,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1.Backup;
 
 public class BackupGet : IEndpointV1
 {
-    private record GetBackupResultDto(Dto.ScheduleDto? Schedule, Dto.BackupDto Backup, Dictionary<string, string> DisplayNames);
+    public record GetBackupResultDto(Dto.ScheduleDto? Schedule, Dto.BackupDto Backup, Dictionary<string, string> DisplayNames);
 
     public static void Map(RouteGroupBuilder group)
     {
@@ -179,7 +179,7 @@ public class BackupGet : IEndpointV1
         if (!File.Exists(bk.DBPath))
             return new List<Dictionary<string, object>>();
 
-        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath, 0))
+        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath))
         using (var cmd = con.CreateCommand())
             return LogData.DumpTable(cmd, "LogData", "ID", offset, pagesize);
     }
@@ -189,7 +189,7 @@ public class BackupGet : IEndpointV1
         if (!File.Exists(bk.DBPath))
             return new List<Dictionary<string, object>>();
 
-        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath, 0))
+        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath))
         using (var cmd = con.CreateCommand())
         {
             var dt = LogData.DumpTable(cmd, "RemoteOperation", "ID", offset, pagesize);

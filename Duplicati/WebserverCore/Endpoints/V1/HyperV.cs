@@ -59,7 +59,7 @@ public class HyperV : IEndpointV1
         {
             if (string.IsNullOrEmpty(key))
             {
-                hypervUtility.QueryHyperVGuestsInfo(SnapshotProvider.AlphaVSS);
+                hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
                 return hypervUtility.Guests.Select(x => new Dto.TreeNodeDto()
                 {
                     id = x.ID.ToString(),
@@ -78,7 +78,7 @@ public class HyperV : IEndpointV1
             }
             else
             {
-                hypervUtility.QueryHyperVGuestsInfo(SnapshotProvider.AlphaVSS, true);
+                hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER, true);
                 var foundVMs = hypervUtility.Guests.FindAll(x => x.ID.Equals(new Guid(key)));
 
                 if (foundVMs.Count != 1)

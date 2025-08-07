@@ -124,6 +124,10 @@ public static class PermissionHelper
         /// Constant for privilege enabled attribute.
         /// </summary>
         const int SE_PRIVILEGE_ENABLED = 0x00000002;
+        /// <summary>
+        /// The TOKEN_INFORMATION_CLASS.TokenPrivileges value
+        /// </summary>
+        const int TOKEN_INFORMATION_TOKEN_PRIVILEGES = 3;
 
         /// <summary>
         /// Structure that contains a locally unique identifier (LUID).
@@ -244,7 +248,7 @@ public static class PermissionHelper
             ref TOKEN_PRIVILEGES NewState,
             int BufferLength,
             IntPtr PreviousState,
-            IntPtr ReturnLength
+            out uint ReturnLength
         );
 
         /// <summary>
@@ -253,6 +257,15 @@ public static class PermissionHelper
         /// <returns>The last-error code value.</returns>
         [DllImport("kernel32.dll")]
         static extern uint GetLastError();
+
+        /// <summary>
+        /// Closes an open object handle.
+        /// </summary>
+        /// <param name="hObject">The handle to the object to be closed.</param>
+        /// <returns><c>true</c> if the function succeeds; otherwise, <c>false</c>.</returns>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool CloseHandle(IntPtr hObject);
 
         /// <summary>
         /// Flag tracking if backup privilege is enabled
@@ -272,37 +285,59 @@ public static class PermissionHelper
             if (_isPrivilegeEnabled.HasValue)
                 return _isPrivilegeEnabled.Value;
 
+            _isPrivilegeEnabled = false;
+
+            // Open the primary token for this process
+            if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, out var hTok))
+                return false;
+
             try
             {
-                _isPrivilegeEnabled = false;
-                if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, out IntPtr tokenHandle))
+                // Translate the textual privilege name (e.g. "SeBackupPrivilege") to a LUID
+                if (!LookupPrivilegeValue(null, privilegeName, out var luid))
                     return false;
 
-                if (!LookupPrivilegeValue(null, privilegeName, out LUID luid))
-                    return false;
-
+                // Build TOKEN_PRIVILEGES {1 entry, SE_PRIVILEGE_ENABLED}
                 var tp = new TOKEN_PRIVILEGES
                 {
                     PrivilegeCount = 1,
-                    Privileges = new LUID_AND_ATTRIBUTES()
+                    Privileges = new LUID_AND_ATTRIBUTES
                     {
                         Luid = luid,
                         Attributes = SE_PRIVILEGE_ENABLED
                     }
                 };
 
-                if (!AdjustTokenPrivileges(tokenHandle, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero))
-                    return false;
+                // Query the size of the current privileges set
+                GetTokenInformation(hTok, TOKEN_INFORMATION_TOKEN_PRIVILEGES, IntPtr.Zero, 0, out int requiredLen);
 
-                _isPrivilegeEnabled = (GetLastError() == 0); // If not zero, then the privilege wasn't assigned (e.g., ERROR_NOT_ALL_ASSIGNED)
+                // Allocate a buffer of the requested size
+                var prevStatePtr = Marshal.AllocHGlobal(requiredLen);
+
+                try
+                {
+                    // Enable the privilege, capturing the previous state
+                    if (!AdjustTokenPrivileges(hTok, false, ref tp, requiredLen, prevStatePtr, out var _))
+                        return false;
+
+                    // If GetLastError() == ERROR_SUCCESS (0), the privilege is now enabled
+                    _isPrivilegeEnabled = Marshal.GetLastWin32Error() == 0;
+
+                    // Restore the original state
+                    var oldState = Marshal.PtrToStructure<TOKEN_PRIVILEGES>(prevStatePtr);
+                    AdjustTokenPrivileges(hTok, false, ref oldState, 0, IntPtr.Zero, out var _);
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(prevStatePtr);
+                }
+
                 return _isPrivilegeEnabled.Value;
             }
-            catch (Exception)
+            finally
             {
-                // Ignore this error     
+                CloseHandle(hTok);
             }
-
-            return _isPrivilegeEnabled ?? false;
         }
 
         /// <summary>

@@ -1,34 +1,33 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System.Net;
+using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
+using Duplicati.Library.Backend.Backblaze.Model;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Reflection;
-using Duplicati.Library.Backend.Backblaze.Model;
-using FileEntry = Duplicati.Library.Common.IO.FileEntry;
-using System.Runtime.CompilerServices;
 using Duplicati.Library.Utility.Options;
+using FileEntry = Duplicati.Library.Common.IO.FileEntry;
 
 namespace Duplicati.Library.Backend.Backblaze;
 
@@ -71,11 +70,6 @@ public class B2 : IStreamingBackend
     /// The default number of files to retrieve per API request
     /// </summary>
     private const int DEFAULT_PAGE_SIZE = 500;
-
-    /// <summary>
-    /// Recommended chunk size as per Backblaze B2 documentation (100MB)
-    /// </summary>
-    private const int B2_RECOMMENDED_CHUNK_SIZE = 100 * 1024 * 1024;
 
     /// <summary>
     /// Default retry-after time in seconds for B2 API requests
@@ -171,12 +165,11 @@ public class B2 : IStreamingBackend
     {
         var uri = new Utility.Uri(url);
 
-        _bucketName = uri.Host;
+        _bucketName = uri.Host ?? "";
         _prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
         // For B2 we do not use a leading slash
-        while (_prefix.StartsWith("/", StringComparison.Ordinal))
-            _prefix = _prefix.Substring(1);
+        _prefix = _prefix.TrimStart('/');
 
         _urlencodedPrefix = string.Join("/", _prefix.Split(new[] { '/' }).Select(x => Utility.Uri.UrlPathEncode(x)));
 
@@ -325,7 +318,7 @@ public class B2 : IStreamingBackend
             request.Headers.TryAddWithoutValidation("Authorization", uploadUrlData.AuthorizationToken);
             request.Headers.Add("X-Bz-Content-Sha1", sha1);
             request.Headers.Add("X-Bz-File-Name", _urlencodedPrefix + Utility.Uri.UrlPathEncode(remotename));
-            request.Content = new StreamContent(timeoutStream, B2_RECOMMENDED_CHUNK_SIZE);
+            request.Content = new StreamContent(timeoutStream);
 
             request.Content.Headers.Add("Content-Type", "application/octet-stream");
             request.Content.Headers.Add("Content-Length", timeoutStream.Length.ToString());

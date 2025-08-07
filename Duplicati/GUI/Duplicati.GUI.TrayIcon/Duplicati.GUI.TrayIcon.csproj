@@ -21,11 +21,11 @@
     <TrimmableAssembly Include="Avalonia.Themes.Default" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.1" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.1" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.1" />
+    <PackageReference Include="Avalonia" Version="11.3.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.3" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.1" />
+    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.3" />
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
@@ -45,7 +45,6 @@
     <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj" />
     <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\..\Library\Main\Duplicati.Library.Main.csproj" />
-    <ProjectReference Include="..\..\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
     <ProjectReference Include="..\..\License\Duplicati.License.csproj" />
     <ProjectReference Include="..\..\Library\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />

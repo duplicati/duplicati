@@ -24,7 +24,6 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
-using Newtonsoft.Json;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -487,13 +486,11 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 parents = [new GoogleDriveParentReference { id = parent }]
             };
 
-            var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(folder));
-
             return Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
             async ct =>
             {
                 using var req = await m_oauth.CreateRequestAsync(WebApi.GoogleDrive.CreateFolderUrl(m_teamDriveID), HttpMethod.Post, ct).ConfigureAwait(false);
-                req.Content = JsonContent.Create(data);
+                req.Content = JsonContent.Create(folder);
 
                 using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                 return await resp.Content.ReadFromJsonAsync<GoogleDriveFolderItem>(ct).ConfigureAwait(false)

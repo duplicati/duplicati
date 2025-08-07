@@ -112,7 +112,7 @@ namespace Duplicati.Library.Backend
                     m_path = "/" + m_path;
             }
 
-            m_server = uri.Host;
+            m_server = uri.Host ?? "";
 
             if (uri.Port > 0)
                 m_port = uri.Port;

@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -100,7 +100,7 @@ namespace Duplicati.GUI.TrayIcon
             if (OperatingSystem.IsWindows() && !Utility.ParseBoolOption(options, DETACHED_PROCESS))
                 Win32.AttachConsole(Win32.ATTACH_PARENT_PROCESS);
 
-            if (HelpOptionExtensions.IsArgumentAnyHelpString(args))
+            if (HelpOptionExtensions.IsArgumentAnyHelpString(_args))
             {
                 Console.WriteLine("Supported commandline arguments:");
                 Console.WriteLine();
@@ -116,6 +116,10 @@ namespace Duplicati.GUI.TrayIcon
 
                 return 0;
             }
+
+            // Apply secret provider, if any, so password etc can be retrieved
+            Library.Main.SecretProviderHelper.ApplySecretProviderAsync([], [], options, TempFolder.SystemTempPath, null, CancellationToken.None)
+                .Await();
 
             options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
 
@@ -146,8 +150,10 @@ namespace Duplicati.GUI.TrayIcon
                 try
                 {
                     // Tell the hosted server it was started by the TrayIcon
-                    var applicationSettings = new ApplicationSettings();
-                    applicationSettings.Origin = "Tray icon";
+                    var applicationSettings = new ApplicationSettings
+                    {
+                        Origin = "Tray icon"
+                    };
                     passwordSource = PasswordSource.HostedServer;
                     // Ignore TrayIcon specific settings
                     foreach (var c in BasicSupportedCommands.Select(x => x.Name))
@@ -165,7 +171,7 @@ namespace Duplicati.GUI.TrayIcon
                         throw;
                 }
 
-                // We have a hosted server, if this is the first run, 
+                // We have a hosted server, if this is the first run,
                 // we should open the main page
                 var connection = Server.Program.DuplicatiWebserver.Provider.GetRequiredService<Connection>();
                 openui = connection.ApplicationSettings.IsFirstRun || connection.ApplicationSettings.ServerPortChanged;
@@ -186,7 +192,7 @@ namespace Duplicati.GUI.TrayIcon
                 if (File.Exists(Path.Combine(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ReadWritePermissionSet), DataFolderManager.SERVER_DATABASE_FILENAME)))
                 {
                     passwordSource = PasswordSource.Database;
-                    databaseConnection = Server.Program.GetDatabaseConnection(new ApplicationSettings(), options, true);
+                    databaseConnection = Server.Program.GetDatabaseConnection(new ApplicationSettings(), options, true, false);
 
                     if (databaseConnection != null)
                     {
@@ -246,17 +252,17 @@ No password provided, unable to connect to server, exiting");
                     try
                     {
                         ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
-                        using (Connection = new HttpServerConnection(serverURL, password, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options))
+
+                        using (Connection = new HttpServerConnection(hosted?.applicationSettings, serverURL, password, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options))
                         {
                             // Make sure we have the latest status, but don't care if it fails
                             Connection.UpdateStatus().FireAndForget();
 
                             using (var tk = RunTrayIcon())
                             {
-                                if (hosted != null && Server.Program.ApplicationInstance != null)
+                                if (Server.Program.ApplicationInstance != null)
                                     Server.Program.ApplicationInstance.SecondInstanceDetected +=
-                                        new SingleInstance.SecondInstanceDelegate(
-                                            x => tk.ShowStatusWindow());
+                                        x => tk.ShowStatusWindow();
 
                                 // TODO: If we change to hosted browser this should be a callback
                                 if (openui)
@@ -281,7 +287,7 @@ No password provided, unable to connect to server, exiting");
                                 // If the server shuts down, shut down the tray-icon as well
                                 Action shutdownEvent = () =>
                                 {
-                                    // Make sure we do not start again after 
+                                    // Make sure we do not start again after
                                     // a controlled exit
                                     reSpawn = 100;
                                     tk.InvokeExit();
@@ -304,6 +310,7 @@ No password provided, unable to connect to server, exiting");
 
                             }
                         }
+
                     }
                     catch (HttpRequestException ex)
                     {

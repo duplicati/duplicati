@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -40,6 +41,22 @@ namespace Duplicati.Library.Snapshots
     [SupportedOSPlatform("windows")]
     public sealed class WindowsSnapshot : SnapshotBase
     {
+        /// <summary>
+        /// The default snapshot provider
+        /// </summary>
+        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_PROVIDER =
+            RuntimeInformation.ProcessArchitecture == Architecture.Arm
+            || RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+            || RuntimeInformation.ProcessArchitecture == Architecture.Armv6
+            ? WindowsSnapshotProvider.Wmic
+            : WindowsSnapshotProvider.Vanara;
+
+        /// <summary>
+        /// The default snapshot query provider
+        /// </summary>
+        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER =
+            WindowsSnapshotProvider.Vanara;
+
         /// <summary>
         /// The tag used for logging messages
         /// </summary>
@@ -73,7 +90,7 @@ namespace Duplicati.Library.Snapshots
             _sourceEntries = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix).ToList();
             try
             {
-                var provider = Utility.Utility.ParseEnumOption(options.AsReadOnly(), "snapshot-provider", SnapshotProvider.AlphaVSS);
+                var provider = Utility.Utility.ParseEnumOption(options.AsReadOnly(), "snapshot-provider", DEFAULT_WINDOWS_SNAPSHOT_PROVIDER);
                 _snapshotManager = new SnapshotManager(provider);
 
                 // Default to exclude the System State writer
