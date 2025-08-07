@@ -127,21 +127,13 @@ namespace RemoteSynchronization
                 return;
             }
 
-            if (_instantiations < _maxRetries)
+            _backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(_backendUrl, _options);
+            _streamingBackend = _backend as IStreamingBackend;
+            if (_streamingBackend == null)
             {
-                _backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(_backendUrl, _options);
-                _streamingBackend = _backend as IStreamingBackend;
-                if (_streamingBackend == null)
-                {
-                    _backend.Dispose();
-                    _backend = null;
-                    throw new InvalidOperationException("Backend does not support streaming operations.");
-                }
-                _instantiations++;
-            }
-            else
-            {
-                throw new InvalidOperationException("Maximum number of backend instantiations reached.");
+                _backend.Dispose();
+                _backend = null;
+                throw new InvalidOperationException("Backend does not support streaming operations.");
             }
         }
 
@@ -258,11 +250,14 @@ namespace RemoteSynchronization
         /// <returns>A task representing the asynchronous operation.</returns>
         private async Task RetryWithDelay(string operationName, Func<Task> action, Stream? stream, bool resetStream, CancellationToken token)
         {
-            while (true)
+            int instantiations = 0;
+
+            do
             {
                 // This will throw an exception if we've reached the max
                 // number of retries.
                 Instantiate();
+                instantiations++;
 
                 try
                 {
@@ -282,7 +277,10 @@ namespace RemoteSynchronization
                     // Try to see if we can recover from the error.
                     await TryRecoverFromException(ex, token).ConfigureAwait(false);
                 }
-            }
+            } while (instantiations < _maxRetries);
+
+            // If we reach here, it means all retries failed.
+            throw new InvalidOperationException($"Operation '{operationName}' failed after {instantiations} attempts.");
         }
 
         /// <summary>
