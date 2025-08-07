@@ -2,23 +2,23 @@
 
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
 
-_Amazon S3, IDrive e2, OneDrive, Google Drive, Rackspace Cloud Files, Backblaze (B2), Swift / OpenStack, WebDAV, SSH (SFTP), FTP, and more!_
+_Amazon S3, IDrive e2, OneDrive, Google Drive, Backblaze (B2), Swift / OpenStack, WebDAV, SSH (SFTP), FTP, and more!_
 
-Duplicati is licensed under the MIT license and available for Windows, OSX and Linux (.NET 8+ required).
+Duplicati is licensed under the MIT license and available for Windows, OSX and Linux.
 
 ## Available tags
 
-- `beta` - the most recent beta release
-- `experimental` - the most recent experimental release
-- `canary` - the most recent canary release
-- `latest` - an alias for `beta`
-- specific versions like `2.0.2.1_beta_2017-08-01`
+-   `latest` - the most recent stable release
+-   `beta` - the most recent beta release
+-   `experimental` - the most recent experimental release
+-   `canary` - the most recent canary release
+-   specific versions like `2.0.2.1_beta_2017-08-01`
 
 Images for the following OS/architecture combinations are available using Docker's multi-arch support:
 
-- `linux/amd64`
-- `linux/arm/v7` - 32-bit ARMv7 devices like the Raspberry Pi 2
-- `linux/arm64` - 64-bit ARMv8 devices like the Raspberry Pi 4 (when running a 64-bit OS)
+-   `linux/amd64`
+-   `linux/arm/v7` - 32-bit ARMv7 devices like the Raspberry Pi 2
+-   `linux/arm64` - 64-bit ARMv8 devices like the Raspberry Pi 4 (when running a 64-bit OS)
 
 ## How to use this image
 
@@ -37,21 +37,39 @@ There are two ways to fix this issue:
 1. Set up the enviroment variable `DUPLICATI__WEBSERVICE_PASSWORD=<password>` to change the password on restarts.
 2. Find the signin link in the Docker logs. Opening the link will allow you to log in, and you can change the password from there.
 
-If you use the second option, the changed password is persisted, and you will not use the signin link afterwards.
+If you use the first option, you can start once with the new password, and then remove it from the Docker config. The password will be persisted in the data folder and does not need to be in the config after starting once. If you keep the environment variable in Docker, a container restart will reset the password, even if you changed it from within Duplicati.
+
+If you use the second option, the changed password is persisted, and you will not use the signin link afterwards. Note that this option only works if there is no previous password set.
 
 ### Preserving configuration
 
-All configuration is stored in `/data` inside the container, so you can mount a volume at that path to preserve the configuration:
+All configuration is stored in `/data` inside the container, so you need to mount a volume at that path to preserve the configuration. Note that the name `data` refers to Duplicati's _settings data_, not the data that you want to back up.
 
 ```console
-$ docker run --name=duplicati -v duplicati-data:/data duplicati/duplicati
+$ docker run --name=duplicati -v /host/duplicati-data:/data duplicati/duplicati
 ```
 
 This allows you to delete and recreate the container without losing your configuration:
 
 ```console
 $ docker rm duplicati
-$ docker run --name=duplicati -v duplicati-data:/data duplicati/duplicati
+$ docker run --name=duplicati -v /host/duplicati-data:/data duplicati/duplicati
+```
+
+### Using a different UID/GID
+
+By default, Duplicati will run as the root user. While this can be a security issue, it is often required to grant Duplicati access to system files, such as the `/etc` folder. If you would like to use a different user to run Duplicati, you can supply the `UID` and `GID` values as environment variables. As an example, if you would like to run as the current user, you can supply:
+
+```console
+docker run --name=duplicati -e UID=$(id -u) -e GID=$(id -g) -v /host/duplicati-data:/data duplicati/duplicati
+```
+
+When running with a different UID/GID the data folder will be `chown`'ed by that user on the host system.
+
+The UID/GID settings are also applied when invoking a different command, such as:
+
+```
+docker run --rm -e UID=$(id -u) -e GID=$(id -g) duplicati/duplicati duplicati-cli help
 ```
 
 ### Using Duplicati CLI
@@ -66,6 +84,8 @@ See duplicati-cli help <topic> for more information.
 $ docker run --rm -v /home:/backup/home duplicati/duplicati duplicati-cli backup ssh://user@host /backup/home
 ```
 
+Note: All commands passed to the container are executed through a wrapper script (`run-as-user.sh`) such that a custom UID/GID can be set via environment variables.
+
 ### Specifying server arguments
 
 To launch the Duplicati server with additional arguments, run the `duplicati-server` command:
@@ -76,7 +96,7 @@ $ docker run duplicati/duplicati duplicati-server --log-level=debug
 
 ### Supplying environment variables
 
-All commandline arguments can also be provided as as environment variables, if both an environment variable and a commandline argument is supplied for the same setting, the commandline arguments are used.
+All commandline arguments can also be provided as environment variables, if both an environment variable and a commandline argument is supplied for the same setting, the commandline arguments are used.
 
 The commandline arguments are mapped to environment variables by prefixing with `DUPLICATI__` and transforming `-` to `_`.
 For example, the commandline argument `--webservice-password` can be provided with the environment variable `DUPLICATI__WEBSERVICE_PASSWORD`.
@@ -87,16 +107,12 @@ Duplicati has a number of security features that are configured differently for 
 
 The features that are disabled are:
 
-- `DUPLICATI__WEBSERVICE_INTERFACE=any`: This setting disables locking communication only to a single adapter, as the Docker network interface is expected to be guarded in other ways with explicit routing.
-
-- `DUPLICATI__DISABLE_DB_ENCRYPTION=true`: This setting disables encrypting data in the database, which should be stored on the host system.
-
-This setting is added to avoid encrypting the database with the default key, which is derived from the physical machine serial number. When moving Docker containers, the serial number could change, making the database inaccesible. Overriding this setting with `false` will cause the container to use the machine serial number to derive an encryption key.
+-   `DUPLICATI__WEBSERVICE_INTERFACE=any`: This setting disables locking communication only to a single adapter, as the Docker network interface is expected to be guarded in other ways with explicit routing.
 
 To increase security, the following steps are recommended:
 
-- Set `DUPLICATI__WEBSERVICE_ALLOWED_HOSTNAMES=<hostname1>;<hostname2>`
-  This will enable using desired hostnames instead of IP addresses only. The hostname `*` will disable the protection, but is not recommended.
+-   Set `DUPLICATI__WEBSERVICE_ALLOWED_HOSTNAMES=<hostname1>;<hostname2>`
+    This will enable using desired hostnames instead of IP addresses only. The hostname `*` will disable the protection, but is not recommended.
 
-- Set `DUPLICATI__DISABLE_DB_ENCRYPTION=false` and `SETTINGS_ENCRYPTION_KEY=<key>`:
-  This will enable database encryption using the supplied key and reduce the risk of leaking credentials from the database. Note that the `SETTINGS_ENCRYPTION_KEY` is not the password used to connect to the UI.
+-   Set `SETTINGS_ENCRYPTION_KEY=<key>`:
+    This will enable database encryption using the supplied key and reduce the risk of leaking credentials from the database. Note that the `SETTINGS_ENCRYPTION_KEY` is not the password used to connect to the UI.

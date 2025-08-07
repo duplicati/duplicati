@@ -1,23 +1,31 @@
 FROM debian:latest
 
-RUN apt update && apt install tini
-ENTRYPOINT [ "/usr/bin/tini", "--" ]
+RUN apt update -y && \
+    apt install -y libssl3 ca-certificates libicu72 rclone gnupg tini
 
-RUN apt update -y && apt install -y libssl3 ca-certificates gnupg libicu72 rclone
+ENTRYPOINT [ "/usr/bin/tini", "--", "/run-as-user.sh" ]
 
 ENV XDG_CONFIG_HOME=/data
 VOLUME /data
 
+# Pass Duplicati version/channel as build arguments (not used by Duplicati itself)
 ARG CHANNEL=
 ARG VERSION=
 ENV DUPLICATI_CHANNEL=${CHANNEL}
 ENV DUPLICATI_VERSION=${VERSION}
 
+# Configure web interface and port
 ENV DUPLICATI__WEBSERVICE_PORT=8200
 ENV DUPLICATI__WEBSERVICE_INTERFACE=any
 
+# Copy in the Duplicati binaries for the target architecture
 ARG TARGETARCH
 COPY ./${TARGETARCH} /opt/duplicati
+COPY run-as-user.sh /run-as-user.sh
+RUN chmod +x /run-as-user.sh
+
+# Set the PATH to include the Duplicati binaries
+ENV PATH="/opt/duplicati:${PATH}"
 
 EXPOSE 8200
-CMD ["/opt/duplicati/duplicati-server"]
+CMD ["duplicati-server"]
