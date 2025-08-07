@@ -339,7 +339,7 @@ namespace Duplicati.Library.Backend
                     throw;
                 }
 
-                isTruncated = listResponse.IsTruncated;
+                isTruncated = listResponse.IsTruncated ?? false;
                 filename = listResponse.NextContinuationToken;
 
                 foreach (var obj in listResponse.CommonPrefixes)
@@ -366,9 +366,9 @@ namespace Duplicati.Library.Backend
 
                     yield return new FileEntry(
                         obj.Key.Substring(prefix.Length),
-                        obj.Size,
-                        obj.LastModified,
-                        obj.LastModified
+                        obj.Size ?? -1,
+                        obj.LastModified ?? default,
+                        obj.LastModified ?? default
                     )
                     {
                         IsFolder = obj.Key.EndsWith("/"),
