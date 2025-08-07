@@ -125,14 +125,14 @@ namespace Duplicati.GUI.TrayIcon
         private readonly IChannel<BackgroundRequest> m_workQueue =
             Channel.Create<BackgroundRequest>(name: "TrayIconRequestQueue");
 
-        private readonly EventWaitHandle _applicationExitEvent;
+        private readonly CancellationToken _applicationExitEvent;
 
         public HttpServerConnection(IApplicationSettings? applicationSettings, System.Uri server, string password,
             Program.PasswordSource passwordSource, bool disableTrayIconLogin, string acceptedHostCertificate,
             Dictionary<string, string> options)
         {
-            _applicationExitEvent = applicationSettings?.ApplicationExitEvent
-                ?? new ManualResetEvent(false);
+            _applicationExitEvent = applicationSettings?.ApplicationExit
+                ?? CancellationToken.None;
 
             m_baseUri = Util.AppendDirSeparator(server.ToString(), "/");
 
@@ -264,32 +264,16 @@ namespace Duplicati.GUI.TrayIcon
             var errorCount = 0;
             var hasConnected = false;
 
-            while (!m_stopToken.IsCancellationRequested && !_applicationExitEvent.WaitOne(0))
+            while (!m_stopToken.IsCancellationRequested && !_applicationExitEvent.IsCancellationRequested)
             {
                 try
                 {
                     var waitTime = TimeSpan.FromSeconds(Math.Min(10, errorCount * 2)) - (DateTime.Now - started);
                     if (waitTime.TotalSeconds > 0)
                     {
-                        // Wait for either the delay, cancellation, or ManualResetEvent
-                        var delayTask = Task.Delay(waitTime, m_stopToken.Token);
-                        var waitHandleTask = Task.Run(() =>
-                        {
-                            // Wait for either cancellation or ManualResetEvent
-                            WaitHandle.WaitAny(
-                                [m_stopToken.Token.WaitHandle, _applicationExitEvent]);
-                        });
-
-                        // Await the first task to complete (delay or wait handle)
-                        await Task.WhenAny(delayTask, waitHandleTask).ConfigureAwait(false);
-
-                        // Check if cancellation was requested
-                        m_stopToken.Token.ThrowIfCancellationRequested();
-
-                        if (_applicationExitEvent.WaitOne(0))
-                        {
-                            return; // Exit the loop if ManualResetEvent is signaled
-                        }
+                        // Wait for the specified time or until stop or exit is requested
+                        using var cts = CancellationTokenSource.CreateLinkedTokenSource(m_stopToken.Token, _applicationExitEvent);
+                        await Task.Delay(waitTime, cts.Token).ConfigureAwait(false);
                     }
 
                     started = DateTime.Now;
@@ -297,7 +281,7 @@ namespace Duplicati.GUI.TrayIcon
                     errorCount = 0;
                     hasConnected = true;
                 }
-                catch (Exception ex) when (ex.IsRetiredException() || m_stopToken.IsCancellationRequested)
+                catch (Exception ex) when (ex.IsRetiredException() || m_stopToken.IsCancellationRequested || _applicationExitEvent.IsCancellationRequested)
                 {
                     Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconPollRequestError", ex,
                         "Failed to get response");
@@ -445,32 +429,12 @@ namespace Duplicati.GUI.TrayIcon
                 request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
             // Set up response timeout, use 100s which is the .NET default
-            using var cts = new CancellationTokenSource();
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(m_stopToken.Token, _applicationExitEvent);
             cts.CancelAfter(timeout.HasValue
                 ? timeout.Value + TimeSpan.FromSeconds(5)
                 : TimeSpan.FromSeconds(100));
 
-            // Combine CancellationToken and ManualResetEvent
-            var sendTask = HTTPCLIENT.SendAsync(request, cts.Token);
-            var waitHandleTask = Task.Run(() =>
-            {
-                // Wait for either cancellation or ManualResetEvent
-                WaitHandle.WaitAny([cts.Token.WaitHandle, _applicationExitEvent]);
-            });
-
-            // Await the first task to complete (HTTP request or wait handle)
-            await Task.WhenAny(sendTask, waitHandleTask).ConfigureAwait(false);
-
-            // Check if cancellation was requested or ManualResetEvent was signaled
-            if (cts.Token.IsCancellationRequested || _applicationExitEvent.WaitOne(0))
-            {
-                cts.Token.ThrowIfCancellationRequested(); // Throws OperationCanceledException if canceled
-                throw new OperationCanceledException(
-                    "Operation canceled due to ServerSettings.ExitResetEvent being signaled.");
-            }
-
-            // Get the response from the completed sendTask
-            var response = await sendTask.ConfigureAwait(false);
+            var response = await HTTPCLIENT.SendAsync(request, cts.Token).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             if (typeof(T) == typeof(string))

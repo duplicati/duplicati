@@ -12,7 +12,7 @@ public class ApplicationSettings : IApplicationSettings
     /// <summary>
     /// The application exit event
     /// </summary>
-    private readonly ManualResetEvent _applicationExitEvent = new ManualResetEvent(false);
+    private readonly CancellationTokenSource _applicationExitEvent = new();
     /// <summary>
     /// The folder where Duplicati data is stored
     /// </summary>
@@ -39,7 +39,10 @@ public class ApplicationSettings : IApplicationSettings
     public string Origin { get; set; } = "Server";
 
     /// <inheritdoc />
-    public ManualResetEvent ApplicationExitEvent => _applicationExitEvent;
+    public CancellationToken ApplicationExit => _applicationExitEvent.Token;
+
+    /// <inheritdoc />
+    public void SignalApplicationExit() => _applicationExitEvent.Cancel();
 
     /// <inheritdoc />
     public ISecretProvider? SecretProvider { get; set; }

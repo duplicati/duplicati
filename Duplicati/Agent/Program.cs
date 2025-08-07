@@ -369,7 +369,7 @@ public static class Program
     {
         cancellationToken.Register(() =>
         {
-            applicationSettings.ApplicationExitEvent.Set();
+            applicationSettings.SignalApplicationExit();
         });
 
         var lastRestart = DateTime.Now;
