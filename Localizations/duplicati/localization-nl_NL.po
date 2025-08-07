@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 13:36+0200\n"
+"POT-Creation-Date: 2025-08-07 15:56+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Kees Zaaijer, 2025\n"
 "Language-Team: Dutch (Netherlands) (https://app.transifex.com/duplicati/teams/67655/nl_NL/)\n"
@@ -910,6 +910,18 @@ msgstr ""
 msgid "Team drive ID"
 msgstr "Team Drive ID"
 
+#: Library/Backend/GoogleServices/Strings.cs:49
+msgid "The list response was not valid."
+msgstr "Het antwoord op 'Lijst opvragen' was ongeldig."
+
+#: Library/Backend/GoogleServices/Strings.cs:50
+msgid "The about response was not valid."
+msgstr "Het antwoord op 'Over' was ongeldig"
+
+#: Library/Backend/GoogleServices/Strings.cs:51
+msgid "The create folder response was not valid."
+msgstr "Het antwoord op 'Map aanmaken' was ongeldig."
+
 #: Library/Backend/GoogleServices/Strings.cs:56
 msgid "Google Cloud Storage configuration module"
 msgstr "Google Cloud Storage configuratiemodule"
@@ -1276,6 +1288,16 @@ msgstr ""
 msgid "Use a SSH private key to authenticate"
 msgstr "Gebruik een SSH sleutelbestand om te authentiseren"
 
+#: Library/Backend/SSHv2/Strings.cs:56
+msgid ""
+"An url-encoded SSH private key. If the key is encrypted, the password "
+"supplied is used to decrypt it. If the private key is specified, the "
+"password is not used to authenticate."
+msgstr ""
+"Een url-gecodeerde SSH-privésleutel. Als de sleutel is gecodeerd, wordt het "
+"opgegeven wachtwoord gebruikt om het te decoderen. Als de privé-sleutel is "
+"opgegeven, wordt het wachtwoord niet gebruikt voor authenticatie."
+
 #: Library/Backend/SSHv2/Strings.cs:58
 msgid ""
 "Use this option to manage the internal timeout for SSH operations. If the "
@@ -1305,6 +1327,30 @@ msgstr ""
 #: Library/Backend/SSHv2/Strings.cs:61
 msgid "Set a keepalive value"
 msgstr "Stel de keepalive-waarde in"
+
+#: Library/Backend/SSHv2/Strings.cs:62
+msgid "Disable ssh-agent authentication"
+msgstr "SSH-agent-authenticatie uitschakelen"
+
+#: Library/Backend/SSHv2/Strings.cs:64
+msgid ""
+"On macOS, the ssh-agent is used, and an attempt is made to use the keychain "
+"to load private key passphrases. If the private key itself is stored in the "
+"keychain, it will not be available."
+msgstr ""
+"Op macOS wordt de ssh-agent gebruikt en wordt geprobeerd de sleutelhanger te"
+" gebruiken om wachtwoordzinnen voor privésleutels te laden. Als de "
+"privésleutel zelf in de sleutelhanger is opgeslagen, is deze niet "
+"beschikbaar."
+
+#: Library/Backend/SSHv2/Strings.cs:67
+msgid ""
+"Prevent using ssh-agent for authentication. When not set and no password or "
+"keyfile is supplied, the agent will be used. {MacOSAgentNotes}"
+msgstr ""
+"Voorkom het gebruik van ssh-agent voor authenticatie. Indien niet ingesteld "
+"en er geen wachtwoord of sleutelbestand is opgegeven, wordt de agent "
+"gebruikt. {MacOSAgentNotes}"
 
 #: Library/Backend/SSHv2/Strings.cs:68
 msgid "Treat source path as relative to the initial path"
@@ -2693,6 +2739,18 @@ msgstr "Dump de PROPFIND respons"
 msgid "Digest authentication requires a username to be set"
 msgstr "Voor Digest-authenticatie moet een gebruikersnaam worden ingesteld"
 
+#: Library/Backend/WEBDAV/Strings.cs:40
+msgid "Use extended PROPFIND body"
+msgstr "Gebruik uitgebreide PROPFIND-body"
+
+#: Library/Backend/WEBDAV/Strings.cs:41
+msgid ""
+"Use an extended PROPFIND body to request listings of files and folders. This"
+" is required for some servers"
+msgstr ""
+"Gebruik een uitgebreide PROPFIND-body om lijsten met bestanden en mappen op "
+"te vragen. Dit is vereist voor sommige servers."
+
 #: Library/Backend/pCloud/Strings.cs:28
 msgid ""
 "This backend can read and write data to pCloud with native API. Allowed "
@@ -3729,6 +3787,29 @@ msgstr ""
 " elke aanvraag zo in te stellen dat deze het volgende bevat: Authenticatie: "
 "PreAuth <token>"
 
+#: Library/RestAPI/Strings.cs:81
+msgid ""
+"Disable the API extensions reported by the server. This will not disable the"
+" functionality, but will not report the extensions in the API responses. Use"
+" this option to degrade the server to a more basic API."
+msgstr ""
+"Schakel de API-extensies uit die door de server worden gerapporteerd. Dit "
+"schakelt de functionaliteit niet uit, maar rapporteert de extensies niet in "
+"de API-reacties. Gebruik deze optie om de server te degraderen tot een "
+"eenvoudigere API."
+
+#: Library/RestAPI/Strings.cs:82
+msgid ""
+"The duration of the refresh tokens issued by the server. This value "
+"indicates how much time can pass without activity before the user is asked "
+"to log in again. The value must be greater than zero and is capped at 30 "
+"days."
+msgstr ""
+"De duur van de door de server uitgegeven verversingstokens. Deze waarde "
+"geeft aan hoeveel tijd er mag verstrijken zonder activiteit voordat de "
+"gebruiker opnieuw wordt gevraagd in te loggen. De waarde moet groter zijn "
+"dan nul en is beperkt tot 30 dagen."
+
 #: Library/RestAPI/Strings.cs:83
 msgid "Use this option to disable database encryption of sensitive fields"
 msgstr ""
@@ -4096,6 +4177,81 @@ msgstr ""
 "Fout: {1}\n"
 "Database NIET geüpgraded."
 
+#: Library/Main/Operation/TestHandler.cs:54
+#, csharp-format
+msgid "Database file does not exist: {0}"
+msgstr "Databasebestand bestaat niet: {0}"
+
+#: Library/Main/Operation/TestHandler.cs:113
+#, csharp-format
+msgid "Index file {0} has extra blocks"
+msgstr "Indexbestand {0} heeft extra blocks"
+
+#: Library/Main/Operation/TestHandler.cs:139
+#: Library/Main/Operation/TestHandler.cs:213
+#, csharp-format
+msgid "Successfully captured hash and size for {0}, would update database"
+msgstr ""
+"Met succes hash en grootte vastgelegd voor {0}, database zou kunnen worden "
+"bijgewerkt"
+
+#: Library/Main/Operation/TestHandler.cs:143
+#: Library/Main/Operation/TestHandler.cs:217
+#, csharp-format
+msgid "Successfully captured hash and size for {0}, updating database"
+msgstr ""
+"Met succes hash en grootte vastgelegd voor {0}, database wordt bijgewerkt"
+
+#: Library/Main/Operation/TestHandler.cs:160
+#: Library/Main/Operation/TestHandler.cs:239
+#, csharp-format
+msgid "Failed to process file {0}"
+msgstr "Het verwerken van bestand {0} is mislukt"
+
+#: Library/Main/Operation/TestHandler.cs:173
+#, csharp-format
+msgid "Found {0} faulty index files, repairing now"
+msgstr "{0} defecte indexbestanden gevonden, aan het repareren"
+
+#: Library/Main/Operation/TestHandler.cs:177
+#, csharp-format
+msgid "Found {0} faulty index files, remove the option {1} to repair them"
+msgstr ""
+"Er zijn {0} defecte indexbestanden gevonden, verwijder de optie {1} om ze te"
+" repareren"
+
+#: Library/Main/Operation/TestHandler.cs:197
+#, csharp-format
+msgid "No hash or size recorded for {0}, performing full verification"
+msgstr ""
+"Geen hash of grootte geregistreerd voor {0}, volledige verificatie wordt "
+"uitgevoerd"
+
+#: Library/Main/Operation/TestHandler.cs:255
+#, csharp-format
+msgid "Successfully verified {0} remote files"
+msgstr "{0} externe bestanden succesvol geverifieerd"
+
+#: Library/Main/Operation/TestHandler.cs:259
+#, csharp-format
+msgid "Verified {0} remote files with {1} problem(s)"
+msgstr "{0} externe bestande geverifieerd met {1} probl(e)em(en)"
+
+#: Library/Main/Operation/TestHandler.cs:404
+#, csharp-format
+msgid "Unexpected file type {0} for {1}"
+msgstr "Onverwacht bestandstype {0} voor {1}"
+
+#: Library/Main/Operation/TestHandler.cs:429
+#, csharp-format
+msgid "Would replace faulty index file {0} with {1}"
+msgstr "Defect indexbestand {0} zou vervangen worden door {1}"
+
+#: Library/Main/Operation/TestHandler.cs:444
+#, csharp-format
+msgid "Failed to replace faulty index file {0}"
+msgstr "Vervangen van defect indexbestand {0} is mislukt"
+
 #: Library/Main/Strings.cs:28
 #, csharp-format
 msgid "Hash mismatch on file \"{0}\", recorded hash: {1}, actual hash {2}"
@@ -4123,6 +4279,15 @@ msgid ""
 "The option --{0} exists more than once. Please report this to the developers"
 msgstr ""
 "De optie --{0} bestaat meer dan één keer. Geef dit door aan de ontwikkelaars"
+
+#: Library/Main/Strings.cs:32
+#, csharp-format
+msgid ""
+"The option --{0} is a boolean option with a default value of true. Please "
+"report this to the developers"
+msgstr ""
+"De optie --{0} is een Booleaanse optie met een standaardwaarde van true. "
+"Meld dit alstublieft aan de ontwikkelaars."
 
 #: Library/Main/Strings.cs:33
 msgid "No source folders specified for backup"
@@ -4171,6 +4336,11 @@ msgstr "De bewerking {0} is gestart"
 msgid "The operation {0} has completed"
 msgstr "De bewerking {0} is afgerond"
 
+#: Library/Main/Strings.cs:40
+#, csharp-format
+msgid "The operation {0} has failed"
+msgstr "De bewerking {0} is mislukt"
+
 #: Library/Main/Strings.cs:41
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
@@ -4198,6 +4368,24 @@ msgid ""
 msgstr ""
 "De bron {0} is op volume {1}, die niet kon worden gevonden, back-up wordt "
 "afgebroken"
+
+#: Library/Main/Strings.cs:45
+#, csharp-format
+msgid ""
+"The backend url cannot start with {0} or {1}. If you intend to use a webdav "
+"backend, please use a url starting with {2}"
+msgstr ""
+"De backend-url mag niet beginnen met {0} of {1}. Als u een webdav-backend "
+"wilt gebruiken, gebruik dan een URL die begint met {2}."
+
+#: Library/Main/Strings.cs:46
+#, csharp-format
+msgid ""
+"The backend protocol {0} is not supported. Please use one of the following "
+"protocols: {1}"
+msgstr ""
+"Het backendprotocol {0} wordt niet ondersteund. Gebruik een van de volgende "
+"protocollen: {1}"
 
 #: Library/Main/Strings.cs:51
 msgid ""
@@ -4300,6 +4488,39 @@ msgstr ""
 #: Library/Main/Strings.cs:64
 msgid "Max number of kilobytes to upload pr. second"
 msgstr "Maximale hoeveelheid kilobytes per seconde voor uploads"
+
+#: Library/Main/Strings.cs:65
+msgid ""
+"Disable the throttling of upload and download speeds for this task. If there"
+" is a throttle set, it will be ignored when running this task."
+msgstr ""
+"Schakel de beperking van upload- en downloadsnelheden voor deze taak uit. "
+"Als er een beperking is ingesteld, wordt deze genegeerd bij het uitvoeren "
+"van deze taak."
+
+#: Library/Main/Strings.cs:66
+msgid "Disable throttling"
+msgstr "Snelheidsbeperking uitschakelen"
+
+#: Library/Main/Strings.cs:67
+#, csharp-format
+msgid ""
+"Disable the throttling of upload and download speeds for specific backends. "
+"If there is a throttle set, it will be ignored when running this task, if "
+"the backend is one of the specified backends. Multiple backends can be "
+"specified with a comma separator. This option has no effect if there is no "
+"throttle or if --{0} is set"
+msgstr ""
+"Schakel de beperking van upload- en downloadsnelheden voor specifieke "
+"backends uit. Als er een beperking is ingesteld, wordt deze genegeerd bij "
+"het uitvoeren van deze taak, mits de backend een van de opgegeven backends "
+"is. Meerdere backends kunnen worden opgegeven met een komma als "
+"scheidingsteken. Deze optie heeft geen effect als er geen beperking is "
+"ingesteld of als --{0} is ingesteld."
+
+#: Library/Main/Strings.cs:68
+msgid "Disable throttling for specific backends"
+msgstr "Snelheidsbeperking uitschakelen voor specifieke backends"
 
 #: Library/Main/Strings.cs:69
 msgid ""
@@ -4437,6 +4658,18 @@ msgstr ""
 #: Library/Main/Strings.cs:88
 msgid "Exponential backoff for backend errors"
 msgstr "Exponentiële wachttijd-verhoging  bij backend-fouten"
+
+#: Library/Main/Strings.cs:89
+#, csharp-format
+msgid ""
+"Use this option to attach extra files to the newly uploaded filelists. The "
+"argument is a path to the file to include. Multiple files can be supplied "
+"using the path separator (\"{0}\")"
+msgstr ""
+"Gebruik deze optie om extra bestanden toe te voegen aan de nieuw geüploade "
+"bestandslijsten. Het argument is een pad naar het op te nemen bestand. "
+"Meerdere bestanden kunnen worden opgegeven met behulp van het "
+"padscheidingsteken (\"{0}\")."
 
 #: Library/Main/Strings.cs:90
 msgid "Set control files"
@@ -4630,6 +4863,20 @@ msgstr ""
 msgid "Control the use of disk snapshots"
 msgstr "Bepaal het gebruik van schijf-momentopnames"
 
+#: Library/Main/Strings.cs:118
+msgid ""
+"The snapshot provider implementation for Windows. The Vanara version is the "
+"default and supports all features and integrates directly with Windows on "
+"all versions and architectures. The WMIC based snapshot is slightly more "
+"portable but has less features. The AlphaVSS is the legacy provider and "
+"requires VC++ Redist installed."
+msgstr ""
+"De implementatie van de snapshotprovider voor Windows. De Vanara-versie is "
+"de standaardversie, ondersteunt alle functies en integreert direct met "
+"Windows op alle versies en architecturen. De WMIC-gebaseerde snapshot is "
+"iets draagbaarder, maar heeft minder functies. AlphaVSS is de legacy-"
+"provider en vereist de installatie van VC++ Redist."
+
 #: Library/Main/Strings.cs:119
 msgid "The snapshot provider implementation to use"
 msgstr "De snapshotprovider-implementatie die gebruikt moet worden"
@@ -4769,9 +5016,59 @@ msgstr ""
 "Een door puntkomma's gescheiden lijst met guid's van VSS writers die "
 "uitgesloten moeten worden (alleen Windows)"
 
+#: Library/Main/Strings.cs:139
+msgid ""
+"This setting controls the usage of NTFS USN numbers, which allows Duplicati "
+"to obtain a list of files and folders much faster. If this is set to "
+"\"off\", Duplicati will not attempt to use USN. Setting this to \"auto\" "
+"makes Duplicati attempt to use USN, and fail silently if that was not "
+"allowed or supported. A setting of \"on\" will also make Duplicati attempt "
+"to use USN, but will produce a warning message in the log if it fails. "
+"Setting it to \"required\" will make Duplicati abort the backup if the USN "
+"usage fails. This feature requires administrative privileges."
+msgstr ""
+"Deze instelling regelt het gebruik van NTFS USN-nummers, waardoor Duplicati "
+"veel sneller een lijst met bestanden en mappen kan verkrijgen. Als deze "
+"optie is ingesteld op \"uit\", probeert Duplicati geen USN te gebruiken. Als"
+" u deze optie instelt op \"auto\", probeert Duplicati USN te gebruiken en "
+"mislukt dit stilzwijgend als dit niet is toegestaan of ondersteund. Met de "
+"instelling \"aan\" probeert Duplicati ook USN te gebruiken, maar verschijnt "
+"er een waarschuwing in het logboek als dit mislukt. Als u deze optie instelt"
+" op \"vereist\", wordt de back-up door Duplicati afgebroken als het USN-"
+"gebruik mislukt. Deze functie vereist beheerdersrechten."
+
 #: Library/Main/Strings.cs:140
 msgid "Control the use of NTFS Update Sequence Numbers"
 msgstr "Bepaal het gebruik van NTFS Update Sequence Numbers"
+
+#: Library/Main/Strings.cs:141
+msgid ""
+"When reading files, Duplicati can use the Windows BackupRead API to read "
+"files that are locked by other applications. This is useful for files that "
+"are in use, but requires administrative privileges. If this option is "
+"enabled, Duplicati will use the BackupRead API to read files if not "
+"snapshots are used. Setting this to \"auto\" will attempt to use it, but "
+"fail silently if there are insufficient permissions. Setting it to \"on\" "
+"wil also attempt to use BackupRead, but produces a warning if it is not "
+"possible. Setting it to \"required\" will make Duplicati abort the backup if"
+" it fails. This feature requires administrative privileges."
+msgstr ""
+"Bij het lezen van bestanden kan Duplicati de Windows BackupRead API "
+"gebruiken om bestanden te lezen die door andere applicaties zijn "
+"vergrendeld. Dit is handig voor bestanden die in gebruik zijn, maar waarvoor"
+" beheerdersrechten vereist zijn. Als deze optie is ingeschakeld, gebruikt "
+"Duplicati de BackupRead API om bestanden te lezen als er geen snapshots "
+"worden gebruikt. Als u deze optie instelt op \"auto\", probeert Duplicati de"
+" API te gebruiken, maar mislukt dit zonder waarschuwing als er onvoldoende "
+"rechten zijn. Als u deze optie instelt op \"on\", probeert Duplicati ook "
+"BackupRead te gebruiken, maar genereert een waarschuwing als dit niet "
+"mogelijk is. Als u deze optie instelt op \"required\", wordt de back-up door"
+" Duplicati afgebroken als dit mislukt. Deze functie vereist "
+"beheerdersrechten."
+
+#: Library/Main/Strings.cs:142
+msgid "Use BackupRead API to read files"
+msgstr "Gebruik BackupRead API voor het lezen van bestanden"
 
 #: Library/Main/Strings.cs:143
 msgid "Ignore advisory locking"
@@ -6401,6 +6698,14 @@ msgstr ""
 msgid "Failed to create a snapshot: {0}"
 msgstr "Het maken van een momentopname is mislukt: {0}"
 
+#: Library/Main/Strings.cs:379
+msgid ""
+"Failed to activate BackupRead as the current process does not have "
+"sufficient permissions"
+msgstr ""
+"BackupRead activeren is mislukt omdat het huidige proces niet over voldoende"
+" machtigingen beschikt"
+
 #: Library/Main/Strings.cs:384
 #, csharp-format
 msgid "The encryption module {0} was not found"
@@ -6453,6 +6758,18 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:36
 msgid "Read passphrase from STDIN"
 msgstr "Lees wachtwoordzin vanaf STDIN"
+
+#: Library/Modules/Builtin/Strings.cs:40
+msgid ""
+"This module exposes a number of common properties that can be used to change"
+" the way backends are configured"
+msgstr ""
+"Deze module geeft inzicht in een aantal algemene eigenschappen die gebruikt "
+"kunnen worden om de manier waarop backends geconfigureerd zijn te veranderen"
+
+#: Library/Modules/Builtin/Strings.cs:41
+msgid "Configure backend options"
+msgstr "Configureer backendopties"
 
 #: Library/Modules/Builtin/Strings.cs:45
 msgid ""
@@ -6800,6 +7117,24 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:208
 msgid "Extra parameters for the message sent"
 msgstr "Extra parameters voor het te verzenden bericht"
+
+#: Library/Modules/Builtin/Strings.cs:123
+#, csharp-format
+msgid ""
+"The recipient \"{0}\" is not a valid email address. Please use the format "
+"\"Name <user@example.com>\" or just \"user@example.com\""
+msgstr ""
+"De ontvanger \"{0}\" is geen geldig e-mailadres. Gebruik de notatie \"Naam "
+"<user@example.com>\" of gewoon \"user@example.com\"."
+
+#: Library/Modules/Builtin/Strings.cs:124
+#, csharp-format
+msgid ""
+"No recipients specified. Please use the option --{0} to specify the "
+"recipients."
+msgstr ""
+"Geen ontvangers opgegeven. Gebruik de optie --{0} om de ontvangers op te "
+"geven."
 
 #: Library/Modules/Builtin/Strings.cs:128
 msgid ""
@@ -7367,6 +7702,11 @@ msgstr "Fout bij het verwijderen van bestand: {0}, fout: {1}"
 #, csharp-format
 msgid "Error reading file: {0}, error: {1}"
 msgstr "Fout bij het lezen van bestand: {0}, fout: {1}"
+
+#: Library/Utility/Strings.cs:127
+#, csharp-format
+msgid "Error listing content: {0}"
+msgstr "Fout bij het weergeven van inhoud: {0}"
 
 #: Library/Utility/FilterGroups.cs:191
 #, csharp-format
