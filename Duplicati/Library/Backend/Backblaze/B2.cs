@@ -325,13 +325,9 @@ public class B2 : IStreamingBackend
             request.Content.Headers.Add("Content-Length", timeoutStream.Length.ToString());
 
             var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, timeoutCts.Token).ConfigureAwait(false);
-            var rdata = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-
-            UploadFileResponse fileinfo;
-            using (var tr = new StreamReader(rdata))
-            await using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
-                fileinfo = new Newtonsoft.Json.JsonSerializer().Deserialize<UploadFileResponse>(jr)
-                    ?? throw new Exception("Failed to parse response");
+            var rdata = await response.Content.ReadAsStringAsync(cancelToken).ConfigureAwait(false);
+            var fileinfo = Newtonsoft.Json.JsonConvert.DeserializeObject<UploadFileResponse>(rdata)
+                ?? throw new Exception("Failed to parse response");
 
             // Delete old versions
             if (_filecache!.ContainsKey(remotename))
