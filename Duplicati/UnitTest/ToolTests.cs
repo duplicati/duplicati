@@ -487,8 +487,9 @@ namespace Duplicati.UnitTest
             var args = new string[] {
                 srcUrl, dstUrl,
                 "--confirm",
-                "--backend-retries", "5",
-                "--backend-retry-delay", "10"
+                "--backend-retries", expect_to_fail ? "0" : "5",
+                "--backend-retry-delay", "10",
+                "--retry", "0" // This test only tests the LightWeightBackendManager's retry logic.
             };
 
             // Redirect standard error to a buffer if we expect to fail. If it doesn't fail, we can omit it.
