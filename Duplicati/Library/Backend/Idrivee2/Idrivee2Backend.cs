@@ -58,7 +58,7 @@ namespace Duplicati.Library.Backend
             client.Timeout = Timeout.InfiniteTimeSpan;
             return client;
         });
-        
+
         /// <summary>
         /// The timeout options
         /// </summary>
@@ -86,7 +86,7 @@ namespace Duplicati.Library.Backend
         public Idrivee2Backend(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
-            _bucket = uri.Host;
+            _bucket = uri.Host ?? "";
             _prefix = uri.Path;
             _prefix = _prefix.Trim();
             if (_prefix.Length != 0)

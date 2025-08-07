@@ -67,7 +67,7 @@ namespace Duplicati.Library.Utility
         /// The server path, e.g. index.html.
         /// Note that the path does NOT have a leading /.
         /// </summary>
-        public readonly string? Path;
+        public readonly string Path;
         /// <summary>
         /// The server port, e.g. 80, is -1 if using the default port
         /// </summary>
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Utility
             m_queryParams = null;
             Scheme = scheme;
             Host = host;
-            Path = path;
+            Path = path ?? "";
             Query = query;
             Username = username;
             Password = password;
@@ -327,7 +327,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>A new instance</returns>
         /// <param name="path">The new path to use</param>
-        public Uri SetPath(string path)
+        public Uri SetPath(string? path)
         {
             return new Uri(Scheme, Host, path, Query, Username, Password, Port);
         }
@@ -337,7 +337,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>A new instance</returns>
         /// <param name="query">The new query to use</param>
-        public Uri SetQuery(string query)
+        public Uri SetQuery(string? query)
         {
             return new Uri(Scheme, Host, Path, query, Username, Password, Port);
         }
@@ -348,7 +348,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A new instance</returns>
         /// <param name="username">The new username to use</param>
         /// <param name="password">The new password to use</param>
-        public Uri SetCredentials(string username, string password)
+        public Uri SetCredentials(string? username, string? password)
         {
             return new Uri(Scheme, Host, Path, Query, username, password, Port);
         }

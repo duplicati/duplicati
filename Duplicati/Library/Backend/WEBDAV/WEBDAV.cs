@@ -142,7 +142,7 @@ namespace Duplicati.Library.Backend
         {
             var u = new Utility.Uri(url);
             u.RequireHost();
-            m_dnsName = u.Host;
+            m_dnsName = u.Host ?? "";
             var auth = AuthOptionsHelper.Parse(options, u);
             if (auth.HasUsername)
             {
