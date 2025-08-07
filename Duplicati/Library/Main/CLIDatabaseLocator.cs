@@ -129,7 +129,7 @@ namespace Duplicati.Library.Main
                     ?? new List<BackendEntry>();
 
             var uri = new Library.Utility.Uri(backend);
-            var server = uri.Host;
+            var server = uri.Host ?? "";
             var path = uri.Path;
             var type = uri.Scheme;
             var port = uri.Port;

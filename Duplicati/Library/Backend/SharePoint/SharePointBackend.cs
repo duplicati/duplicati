@@ -655,6 +655,8 @@ namespace Duplicati.Library.Backend
             var ctx = await GetSpClientContextAsync(useNewContext, cancelToken).ConfigureAwait(false);
             try
             {
+                if (string.IsNullOrWhiteSpace(m_spWebUrl))
+                    throw new HttpRequestException(Strings.SharePoint.NoSharePointWebFoundError(m_orgUrl.ToString()));
                 var pathLengthToWeb = new Utility.Uri(m_spWebUrl).Path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Length;
 
                 var folderNames = m_serverRelPath.Substring(0, m_serverRelPath.Length - 1).Split('/');

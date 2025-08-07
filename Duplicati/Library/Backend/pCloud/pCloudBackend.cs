@@ -128,22 +128,22 @@ public class pCloudBackend : IStreamingBackend
     {
         var uri = new Utility.Uri(url);
         uri.RequireHost();
-        _DnsName = uri.Host;
+        _DnsName = uri.Host ?? "";
 
         _Token = AuthIdOptionsHelper.Parse(options)
             .RequireCredentials(TOKEN_URL)
             .AuthId!;
 
-        if (!PCLOUD_SERVERS.ContainsValue(uri.Host))
+        if (!PCLOUD_SERVERS.ContainsValue(_DnsName))
             throw new UserInformationException(Strings.pCloudBackend.InvalidServerSpecified,
                 "InvalidpCloudServerSpecified");
 
-        if (string.IsNullOrWhiteSpace(uri.Host))
+        if (string.IsNullOrWhiteSpace(_DnsName))
             throw new UserInformationException(Strings.pCloudBackend.NoServerSpecified, "NopCloudServerSpecified");
 
         // Ensure that the path is in the correct format, without starting or tailing slashes
         _Path = uri.Path.TrimStart(PATH_SEPARATORS).TrimEnd(PATH_SEPARATORS).Trim();
-        _ServerUrl = uri.Host;
+        _ServerUrl = _DnsName;
         _Timeouts = TimeoutOptionsHelper.Parse(options);
 
         var httpHandler = new HttpClientHandler();
