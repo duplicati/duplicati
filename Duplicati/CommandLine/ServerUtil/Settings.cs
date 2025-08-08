@@ -142,6 +142,25 @@ public sealed record Settings(
     }
 
     /// <summary>
+    /// Reloads the persisted settings from the settings file
+    /// </summary>
+    /// <returns>The settings instance with the reloaded persisted settings</returns>
+    public Settings ReloadPersistedSettings()
+    {
+        var persistedSettings = LoadSettings(this.SettingsFile, this.Key)
+            .FirstOrDefault(x => x.HostUrl == this.HostUrl);
+
+        if (persistedSettings == null)
+            return this;
+
+        return this with
+        {
+            RefreshToken = persistedSettings.RefreshToken,
+            RefreshNonce = persistedSettings.RefreshNonce,
+        };
+    }
+
+    /// <summary>
     /// Replaces secrets inside arguments and options
     /// </summary>
     /// <param name="args">The arguments to replace</param>
