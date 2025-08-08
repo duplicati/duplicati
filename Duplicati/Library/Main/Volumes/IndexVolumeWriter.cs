@@ -46,13 +46,14 @@ namespace Duplicati.Library.Main.Volumes
         public bool IsVolumeActive => m_writer != null && m_streamwriter != null;
         public bool IsDisposed = false;
         public bool IsReadyForFinish = true;
+        public string CallerId = string.Empty;
 
         private readonly List<string> m_calls = new List<string>();
 
         public IndexVolumeWriter(Options options)
             : base(options)
         {
-            m_calls.Add($"Created IndexVolumeWriter - {new StackTrace(true)}");
+            m_calls.Add($"Created IndexVolumeWriter - {CallerId} - {new StackTrace(true)}");
         }
 
         public override RemoteVolumeType FileType { get { return RemoteVolumeType.Index; } }
@@ -60,7 +61,7 @@ namespace Duplicati.Library.Main.Volumes
         public void StartVolume(string filename)
         {
 
-            m_calls.Add($"StartVolume {filename} - {new StackTrace(true)}");
+            m_calls.Add($"StartVolume {filename} - {CallerId} - {new StackTrace(true)}");
             if (m_writer != null || m_streamwriter != null)
                 throw new InvalidOperationException("Previous volume not finished, call FinishVolume before starting a new volume");
 
@@ -94,7 +95,7 @@ namespace Duplicati.Library.Main.Volumes
             if (m_writer == null || m_streamwriter == null)
                 throw new InvalidOperationException($"No volume started, call StartVolume before finishing a volume: {(m_writer == null ? "m_writer is null" : "-")}, {(m_streamwriter == null ? "m_streamwriter is null" : "-")}, calls = {Environment.NewLine}{string.Join(Environment.NewLine, m_calls)}");
 
-            m_calls.Add($"FinishVolume {volumehash} - {new StackTrace(true)}");
+            m_calls.Add($"FinishVolume {volumehash} - {CallerId} - {new StackTrace(true)}");
 
             m_writer.WriteEndArray();
             m_writer.WritePropertyName("volumehash");

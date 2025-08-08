@@ -104,6 +104,8 @@ partial class BackendManager
         /// </summary>
         public static Func<Task> OnDbUpdateDefault = () => Task.CompletedTask;
 
+        private readonly Guid instanceId = Guid.NewGuid();
+
         /// <summary>
         /// Creates a new put operation
         /// </summary>
@@ -233,6 +235,7 @@ partial class BackendManager
                 };
 
                 OriginalIndexFile.IsReadyForFinish = true;
+                OriginalIndexFile.CallerId = instanceId;
                 OriginalIndexFile.FinishVolume(hash, size);
                 if (IndexVolumeFinishedCallback != null)
                     await IndexVolumeFinishedCallback();
