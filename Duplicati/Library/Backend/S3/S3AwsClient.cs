@@ -358,7 +358,7 @@ namespace Duplicati.Library.Backend
                     { IsFolder = true };
                 }
 
-                foreach (var obj in listResponse.S3Objects.Where(obj => alreadyReturned.Add(obj.Key)))
+                foreach (var obj in (listResponse.S3Objects ?? []).Where(obj => alreadyReturned.Add(obj.Key)))
                 {
                     // Skip self-prefix, this discards the folder modification date :/
                     if (obj.Key == prefix || !obj.Key.StartsWith(prefix))
