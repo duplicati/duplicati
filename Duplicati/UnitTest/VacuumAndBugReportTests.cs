@@ -55,6 +55,25 @@ namespace Duplicati.UnitTest
                 TestUtils.AssertResults(res);
                 Assert.AreEqual(OperationMode.Vacuum, ((dynamic)res).MainOperation);
             }
+
+            // Windows sometimes keeps the file handle open for a while after vacuuming
+            if (OperatingSystem.IsWindows())
+            {
+                for (var i = 0; i < 10; i++)
+                {
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    try
+                    {
+                        File.Delete(DBFILE);
+                        break;
+                    }
+                    catch (Exception)
+                    {
+                        Thread.Sleep(1000);
+                    }
+                }
+            }
         }
 
         [Test]
