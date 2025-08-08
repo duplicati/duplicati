@@ -247,7 +247,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     else if (vol_count == 0)
                     {
                         m_volumecount.Remove(blockRequest.VolumeID);
-                        blockRequest.CacheDecrEvict = true;
+                        blockRequest.RequestType = BlockRequestType.CacheEvict;
                         emit_evict = true;
                     }
                     else // vol_count < 0
@@ -511,22 +511,26 @@ namespace Duplicati.Library.Main.Operation.Restore
                             sw_req?.Start();
                             var block_request = await req.ReadAsync().ConfigureAwait(false);
                             sw_req?.Stop();
-                            if (block_request.CacheDecrEvict)
+                            switch (block_request.RequestType)
                             {
-                                sw_cache?.Start();
-                                // Target file already had the block.
-                                await cache.CheckCounts(block_request).ConfigureAwait(false);
-                                sw_cache?.Stop();
-                            }
-                            else
-                            {
-                                sw_get?.Start();
-                                var datatask = cache.Get(block_request);
-                                sw_get?.Stop();
+                                case BlockRequestType.Download:
+                                    sw_get?.Start();
+                                    var datatask = cache.Get(block_request);
+                                    sw_get?.Stop();
 
-                                sw_resp?.Start();
-                                await res.WriteAsync(datatask).ConfigureAwait(false);
-                                sw_resp?.Stop();
+                                    sw_resp?.Start();
+                                    await res.WriteAsync(datatask).ConfigureAwait(false);
+                                    sw_resp?.Stop();
+                                    break;
+                                case BlockRequestType.CacheEvict:
+                                    sw_cache?.Start();
+                                    // Target file already had the block.
+                                    await cache.CheckCounts(block_request).ConfigureAwait(false);
+                                    sw_cache?.Stop();
+                                    break;
+                                case BlockRequestType.DecompressAck:
+                                default:
+                                    throw new InvalidOperationException($"Unexpected block request type: {block_request.RequestType}");
                             }
                         }
                     }

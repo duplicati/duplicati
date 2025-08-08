@@ -23,6 +23,16 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
 
     /// <summary>
+    /// Represents the type of block request.
+    /// </summary>
+    public enum BlockRequestType
+    {
+        Download, // Request to download a block
+        CacheEvict, // Request to evict a block from cache
+        DecompressAck // Acknowledgment for decompression completion
+    }
+
+    /// <summary>
     /// Represents a block request that the `VolumeDownloader` process will use to download a block from the backend.
     /// </summary>
     /// <param name="blockID">The block ID in the database.</param>
@@ -31,14 +41,14 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// <param name="blockSize">The size of the block.</param>
     /// <param name="volumeID">The ID of the volume in which the block is stored remotely.</param>
     /// <param name="cacheDecrEvict">Flag indicating that this block request should either decrement the block counter for BlockID (for BlockManager) or evict the VolumeID (for VolumeDownloader).</param>
-    public class BlockRequest(long blockID, long blockOffset, string blockHash, long blockSize, long volumeID, bool cacheDecrEvict)
+    public class BlockRequest(long blockID, long blockOffset, string blockHash, long blockSize, long volumeID, BlockRequestType requestType)
     { // Total = 77 bytes
         public long BlockID { get; } = blockID;
         public long BlockOffset { get; } = blockOffset;
         public string BlockHash { get; } = blockHash;
         public long BlockSize { get; } = blockSize;
         public long VolumeID { get; } = volumeID;
-        public bool CacheDecrEvict { get; set; } = cacheDecrEvict;
+        public BlockRequestType RequestType { get; set; } = requestType;
     }
 
     /// <summary>

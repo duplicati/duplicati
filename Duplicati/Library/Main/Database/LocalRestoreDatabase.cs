@@ -2172,7 +2172,7 @@ namespace Duplicati.Library.Main.Database
                         reader.ConvertValueToString(1),
                         reader.ConvertValueToInt64(2),
                         reader.ConvertValueToInt64(3),
-                        false
+                        BlockRequestType.Download
                     );
             }
             finally
@@ -2223,7 +2223,7 @@ namespace Duplicati.Library.Main.Database
                         reader.ConvertValueToString(1),
                         reader.ConvertValueToInt64(2),
                         reader.ConvertValueToInt64(3),
-                        false
+                        BlockRequestType.Download
                     );
                 }
             }
