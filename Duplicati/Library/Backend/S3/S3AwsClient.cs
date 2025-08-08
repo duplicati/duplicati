@@ -342,7 +342,7 @@ namespace Duplicati.Library.Backend
                 isTruncated = listResponse.IsTruncated ?? false;
                 filename = listResponse.NextContinuationToken;
 
-                foreach (var obj in listResponse.CommonPrefixes)
+                foreach (var obj in listResponse.CommonPrefixes ?? [])
                 {
                     if (obj == prefix || !obj.StartsWith(prefix))
                         continue;
