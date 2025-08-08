@@ -28,12 +28,12 @@
         d.setTime(d.getTime() + 90 * 24 * 60 * 60 * 1000);
 
         document.cookie =
-          "default-theme=" +
+          "default-client=" +
           theme +
           "; expires=" +
           d.toUTCString() +
           "; path=/";
-        updateToCurrentTheme();
+        updateToCurrentClient();
         return false;
       }
 
