@@ -191,7 +191,7 @@ namespace Duplicati.Library.SQLiteHelper
             if (connection.State != ConnectionState.Open)
             {
                 if (string.IsNullOrEmpty(connection.ConnectionString))
-                    connection.ConnectionString = "Data Source=" + sourcefile;
+                    connection.ConnectionString = $"Data Source={sourcefile};Pooling=false";
 
                 connection.Open();
             }

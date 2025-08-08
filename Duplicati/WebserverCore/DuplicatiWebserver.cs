@@ -408,10 +408,7 @@ public class DuplicatiWebserver
         var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 
         // Register SIGTERM handler
-        lifetime.ApplicationStopping.Register(() =>
-        {
-            applicationSettings.ApplicationExitEvent.Set();
-        });
+        lifetime.ApplicationStopping.Register(() => applicationSettings.SignalApplicationExit());
 
         return new DuplicatiWebserver()
         {

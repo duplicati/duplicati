@@ -23,18 +23,18 @@ msgstr "- válasszon -"
 msgid "...loading..."
 msgstr "...töltés..."
 
-#: scripts/services/EditUriBuiltins.js:1317
+#: scripts/services/EditUriBuiltins.js:1314
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
 #: templates/backends/storj.html:22
 msgid "API key"
 msgstr "API kulcs"
 
-#: scripts/services/EditUriBuiltins.js:1207 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWS Access ID"
 
-#: scripts/services/EditUriBuiltins.js:1208 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWS Access Key"
@@ -51,7 +51,7 @@ msgstr "Névjegy"
 msgid "About {{appname}}"
 msgstr "{{appname}} néjegye"
 
-#: scripts/services/EditUriBuiltins.js:1156
+#: scripts/services/EditUriBuiltins.js:1153
 msgid "Access Key"
 msgstr "Hozzáférési kulcs"
 
@@ -63,7 +63,7 @@ msgstr "Hozzáférés megtagadva"
 msgid "Access to user interface"
 msgstr "Hozzáférés a felhasználói felülethez"
 
-#: scripts/services/EditUriBuiltins.js:1155 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Fiók név"
@@ -236,14 +236,14 @@ msgstr "Böngésző alapértelmezett"
 msgid "Bucket create location"
 msgstr "Bucket létrehozásának helye"
 
-#: scripts/services/EditUriBuiltins.js:1166
-#: scripts/services/EditUriBuiltins.js:1206
-#: scripts/services/EditUriBuiltins.js:1252
-#: scripts/services/EditUriBuiltins.js:1266
-#: scripts/services/EditUriBuiltins.js:1313
-#: scripts/services/EditUriBuiltins.js:1319
-#: scripts/services/EditUriBuiltins.js:1375
-#: scripts/services/EditUriBuiltins.js:1387 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1163
+#: scripts/services/EditUriBuiltins.js:1203
+#: scripts/services/EditUriBuiltins.js:1249
+#: scripts/services/EditUriBuiltins.js:1263
+#: scripts/services/EditUriBuiltins.js:1310
+#: scripts/services/EditUriBuiltins.js:1316
+#: scripts/services/EditUriBuiltins.js:1372
+#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -307,8 +307,8 @@ msgstr "Gyorsítótás Fájlok"
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
@@ -405,7 +405,7 @@ msgstr "Titkosítási jelszó megerősítése"
 msgid "Confirm passphrase"
 msgstr "Jelmondat megerősítés"
 
-#: scripts/services/EditUriBackendConfig.js:73
+#: scripts/services/EditUriBackendConfig.js:74
 msgid "Confirmation required"
 msgstr "Megerősítés szükséges"
 
@@ -430,7 +430,7 @@ msgstr "Csatlakozás megszakadt"
 msgid "Connection worked!"
 msgstr "Csatlakozás működik!"
 
-#: scripts/services/EditUriBuiltins.js:1157 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "Tároló neve"
@@ -1053,7 +1053,7 @@ msgstr "Generál"
 msgid "Getting file versions …"
 msgstr "Fájl verziók lekérdezése..."
 
-#: scripts/services/EditUriBuiltins.js:1146 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "Csoport e-mail"
 
@@ -1112,7 +1112,7 @@ msgstr ""
 "Ha legalább egy újabb biztonsági másolatot talál, az összes ezen időpontnál "
 "régebbi biztonsági másolatot törli."
 
-#: scripts/services/EditUriBackendConfig.js:113
+#: scripts/services/EditUriBackendConfig.js:114
 msgid ""
 "If you do not enter a path, all files will be stored in the login folder.\n"
 "Are you sure this is what you want?"
@@ -1374,9 +1374,9 @@ msgstr "Következő dátum"
 #: scripts/directives/backupEditUri.js:130
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
-#: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "Nem"
@@ -1503,7 +1503,7 @@ msgstr "A jelszavak nem egyeznek meg"
 msgid "Passphrases do not match"
 msgstr "A jelszavak nem egyeznek"
 
-#: scripts/services/EditUriBuiltins.js:1298 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -1512,8 +1512,8 @@ msgstr "A jelszavak nem egyeznek"
 msgid "Password"
 msgstr "Jelszó"
 
-#: scripts/services/EditUriBuiltins.js:1282
-#: scripts/services/EditUriBuiltins.js:1403
+#: scripts/services/EditUriBuiltins.js:1279
+#: scripts/services/EditUriBuiltins.js:1400
 msgid "Path"
 msgstr "Útvonal"
 
@@ -1614,11 +1614,11 @@ msgstr "Újratöltés"
 msgid "Remote"
 msgstr "Távoli"
 
-#: scripts/services/EditUriBuiltins.js:1341
+#: scripts/services/EditUriBuiltins.js:1338
 msgid "Remote Path"
 msgstr "Távoli útvonal"
 
-#: scripts/services/EditUriBuiltins.js:1340
+#: scripts/services/EditUriBuiltins.js:1337
 msgid "Remote Repository"
 msgstr "Távoli tároló"
 
@@ -2163,9 +2163,9 @@ msgstr "A felhasználónak túl sok engedélye van"
 msgid "User interface settings"
 msgstr "Felhasználói felület beállítások"
 
-#: scripts/services/EditUriBuiltins.js:1076
-#: scripts/services/EditUriBuiltins.js:1165
-#: scripts/services/EditUriBuiltins.js:1297 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1074
+#: scripts/services/EditUriBuiltins.js:1162
+#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -2282,9 +2282,9 @@ msgstr "Év"
 #: scripts/directives/backupEditUri.js:130
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
-#: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1218
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "Igen"
@@ -2309,24 +2309,24 @@ msgstr "Igen, kérlek tedd tönkre a mentésemet!"
 msgid "Yesterday"
 msgstr "Tegnap"
 
-#: scripts/services/EditUriBackendConfig.js:122
+#: scripts/services/EditUriBackendConfig.js:123
 msgid "You must fill in the password"
 msgstr "Ki kell töltened a jelszót"
 
-#: scripts/services/EditUriBackendConfig.js:99
+#: scripts/services/EditUriBackendConfig.js:100
 msgid "You must fill in the server name or address"
 msgstr "Ki kell töltened a szerver nevét vagy a címét"
 
-#: scripts/services/EditUriBackendConfig.js:120
-#: scripts/services/EditUriBackendConfig.js:129
+#: scripts/services/EditUriBackendConfig.js:121
+#: scripts/services/EditUriBackendConfig.js:130
 msgid "You must fill in the username"
 msgstr "Ki kell töltened a felhasználónevet"
 
-#: scripts/services/EditUriBackendConfig.js:85
+#: scripts/services/EditUriBackendConfig.js:86
 msgid "You must fill in {{field}}"
 msgstr "Ez ki kell töltened: {{field}}"
 
-#: scripts/services/EditUriBackendConfig.js:106
+#: scripts/services/EditUriBackendConfig.js:107
 msgid "You must specify a path"
 msgstr "Meg kell adnod egy útvonalat"
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 13:36+0200\n"
+"POT-Creation-Date: 2025-08-07 15:56+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4662,13 +4662,13 @@ msgstr ""
 
 #: Library/Main/Strings.cs:240
 msgid ""
-"Use this option to replace index files that are missing content during the "
-"testing phase. This takes slightly longer, but will prevent very slow "
-"database recreates"
+"Use this option to prevent automatic replacement of index files that are "
+"missing content during the testing phase. Creating repaired index files "
+"takes slightly longer, but will prevent very slow database recreates"
 msgstr ""
 
 #: Library/Main/Strings.cs:241
-msgid "Replace defective index files"
+msgid "Don't fix defective index files"
 msgstr ""
 
 #: Library/Main/Strings.cs:242

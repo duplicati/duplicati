@@ -9,17 +9,17 @@
 # Waldemar Stoczkowski, 2024
 # marekjedrzejewski <marekjedrzejewski@users.noreply.github.com>, 2024
 # Jakub, 2024
-# Mariusz Wierzbicki <engineer@post.pl>, 2024
 # Slawomir Ciunczyk <s.ciunczyk@ciunczyk.com>, 2025
+# Mariusz Wierzbicki <engineer@post.pl>, 2025
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 13:36+0200\n"
+"POT-Creation-Date: 2025-08-07 15:56+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Slawomir Ciunczyk <s.ciunczyk@ciunczyk.com>, 2025\n"
+"Last-Translator: Mariusz Wierzbicki <engineer@post.pl>, 2025\n"
 "Language-Team: Polish (https://app.transifex.com/duplicati/teams/67655/pl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -32,8 +32,8 @@ msgid ""
 "This module encrypts all files in the same way that AESCrypt does, using 256"
 " bit AES encryption."
 msgstr ""
-"Ten moduł szyfruje wszystkie pliki w taki sam sposób, jak robi to AESCrypt, "
-"używając 256-bitowego szyfrowania AES."
+"Ten moduł szyfruje wszystkie pliki w taki sam sposób, jak AESCrypt, używając"
+" 256-bitowego szyfrowania AES."
 
 #: Library/Encryption/Strings.cs:29
 msgid "AES-256 encryption, built in"
@@ -173,6 +173,18 @@ msgstr ""
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Błąd podczas wywoływania GnuPG, program się nie kończy"
 
+#: Library/Encryption/Strings.cs:65
+msgid "Key must be at least 8 characters long"
+msgstr "Klucz musi składać się z co najmniej 8 znaków"
+
+#: Library/Encryption/Strings.cs:66
+msgid "Key must not be empty"
+msgstr "Klucz nie może być pusty"
+
+#: Library/Encryption/Strings.cs:67
+msgid "Refusing to encrypt with blacklisted key"
+msgstr "Odmowa szyfrowania kluczem z czarnej listy"
+
 #: Library/Interface/Strings.cs:26
 msgid "aliases"
 msgstr "aliasy"
@@ -221,9 +233,17 @@ msgstr "Łańcuch"
 msgid "Timespan"
 msgstr "Przedział czasowy"
 
+#: Library/Interface/Strings.cs:41
+msgid "DateTime"
+msgstr "DataCzas"
+
 #: Library/Interface/Strings.cs:42
 msgid "Password"
 msgstr "Hasło"
+
+#: Library/Interface/Strings.cs:43
+msgid "Decimal"
+msgstr "Dziesiętny"
 
 #: Library/Interface/Strings.cs:44
 msgid "Unknown"
@@ -247,6 +267,10 @@ msgid ""
 msgstr ""
 "Klucz szyfrowania użyty do zaszyfrowania ustawień docelowych nie pasuje do "
 "klucza bieżącego"
+
+#: Library/Interface/Strings.cs:52
+msgid "Encryption key is missing."
+msgstr "Brak klucza szyfrowania."
 
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
@@ -357,6 +381,14 @@ msgstr "Następny USN wynosi zero"
 msgid "Backup configuration changed"
 msgstr "Zmieniono konfigurację kopii zapasowej"
 
+#: Library/Backend/OpenStack/Strings.cs:27
+msgid ""
+"This backend can read and write data to Swift (OpenStack Object Storage). "
+"Allowed format is \"openstack://container/folder\"."
+msgstr ""
+"Ten backend może odczytywać i zapisywać dane w Swift (OpenStack Object "
+"Storage). Dozwolony format to „openstack://container/folder”."
+
 #: Library/Backend/OpenStack/Strings.cs:28
 msgid "OpenStack Simple Storage"
 msgstr "OpenStack Simple Storage"
@@ -366,9 +398,29 @@ msgstr "OpenStack Simple Storage"
 msgid "Missing required option: {0}"
 msgstr "Brakuje wymaganej opcji: {0}"
 
+#: Library/Backend/OpenStack/Strings.cs:30
+#, csharp-format
+msgid ""
+"The password used to connect to the server. This may also be supplied as the"
+" environment variable \"AUTH_PASSWORD\". If the password is supplied, --{0} "
+"must also be set."
+msgstr ""
+"Hasło używane do łączenia się z serwerem. Może być również podane jako "
+"zmienna środowiskowa \"AUTH_PASSWORD\". Jeśli hasło jest podane, --{0} musi "
+"być również ustawione."
+
+#: Library/Backend/OpenStack/Strings.cs:31 Library/Backend/S3/Strings.cs:33
+#: Library/Backend/Mega/Strings.cs:27 Library/Utility/Strings.cs:94
+msgid "Supply the password used to connect to the server"
+msgstr "Podaj hasło używane do łączenia się z serwerem"
+
 #: Library/Backend/OpenStack/Strings.cs:32
 msgid "The domain name of the user used to connect to the server."
 msgstr "Nazwa domeny użytkownika używana do łączenia się z serwerem."
+
+#: Library/Backend/OpenStack/Strings.cs:33 Library/Backend/SMB/Strings.cs:30
+msgid "Supply the domain used to connect to the server"
+msgstr "Podaj domenę używaną do łączenia się z serwerem"
 
 #: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/S3/Strings.cs:34
 #: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:95
@@ -378,6 +430,11 @@ msgid ""
 msgstr ""
 "Nazwa użytkownika używana do łączenia się z serwerem. Może to być również "
 "podane jako zmienna środowiskowa „AUTH_USERNAME”."
+
+#: Library/Backend/OpenStack/Strings.cs:35 Library/Backend/S3/Strings.cs:35
+#: Library/Backend/Mega/Strings.cs:29 Library/Utility/Strings.cs:96
+msgid "Supply the username used to connect to the server"
+msgstr "Podaj nazwę użytkownika używaną do łączenia się z serwerem"
 
 #: Library/Backend/OpenStack/Strings.cs:36
 msgid ""
@@ -389,6 +446,10 @@ msgstr ""
 " być podana podczas uwierzytelniania przy użyciu hasła, ale nie jest "
 "wymagana podczas korzystania z klucza interfejsu API."
 
+#: Library/Backend/OpenStack/Strings.cs:37
+msgid "Supply the Tenant Name used to connect to the server"
+msgstr "Podaj nazwę klienta używaną do połączenia z serwerem"
+
 #: Library/Backend/OpenStack/Strings.cs:38
 msgid ""
 "The API key can be used to connect without supplying a password and tenant "
@@ -396,6 +457,21 @@ msgid ""
 msgstr ""
 "Klucz API może być użyty do łączenia się bez konieczności podawania ID i "
 "hasła u niektórych dostawców usług"
+
+#: Library/Backend/OpenStack/Strings.cs:39
+msgid "Supply the API key used to connect to the server"
+msgstr "Podaj klucz API używany do łączenia się z serwerem."
+
+#: Library/Backend/OpenStack/Strings.cs:40
+#, csharp-format
+msgid ""
+"The authentication URL is used to authenticate the user and find the storage"
+" service. The URL commonly ends with \"/v2.0\" for v2 and \"/v3\" for v3. "
+"Known providers are: {0}{1}"
+msgstr ""
+"Adres URL uwierzytelniania służy do uwierzytelniania użytkownika i "
+"znajdowania usługi przechowywania. Adres URL zwykle kończy się na \"/v2.0\" "
+"dla v2 i \"/v3\" dla v3. Znani dostawcy to: {0}{1}"
 
 #: Library/Backend/OpenStack/Strings.cs:41
 msgid "Supply the authentication URL"
@@ -409,6 +485,25 @@ msgstr "Wersja Keystone API do użycia. Prawidłowe wartości to „v2” i „v
 msgid "The keystone API version to use"
 msgstr "Wersja keystone API do użycia"
 
+#: Library/Backend/OpenStack/Strings.cs:44
+msgid ""
+"By default, the first reported endpoint will be used for file transfers. To "
+"select a specific region, provide the region name. If no such region is "
+"supported, the default (first reported) endpoint is used."
+msgstr ""
+"Domyślnie do transferu plików wykorzystywany jest pierwszy zarejestrowany "
+"punkt końcowy. Aby skorzystać z konkretnego regionu, należy podać jego "
+"nazwę. Jeśli wskazany region nie jest obsługiwany, używany jest domyślny "
+"(pierwszy zarejestrowany) punkt końcowy."
+
+#: Library/Backend/OpenStack/Strings.cs:45
+msgid "Supply the prefered region for endpoints"
+msgstr "Podaj preferowany region dla punktów końcowych."
+
+#: Library/Backend/OpenStack/Strings.cs:49
+msgid "Expose OpenStack configuration as a web module"
+msgstr "Udostępnij konfigurację OpenStack jako moduł webowy."
+
 #: Library/Backend/OpenStack/Strings.cs:50
 msgid "OpenStack configuration module"
 msgstr "Moduł konfiguracji OpenStack"
@@ -418,6 +513,12 @@ msgstr "Moduł konfiguracji OpenStack"
 #: Library/Backend/S3/Strings.cs:68 Library/Backend/Storj/StorjConfig.cs:48
 msgid "Provide different config values"
 msgstr "Podaj różne wartości konfiguracji"
+
+#: Library/Backend/OpenStack/Strings.cs:52
+#: Library/Backend/GoogleServices/Strings.cs:58
+#: Library/Backend/S3/Strings.cs:67 Library/Backend/Storj/StorjConfig.cs:48
+msgid "The config to get"
+msgstr "Konfiguracja do pobrania"
 
 #: Library/Backend/FTP/Strings.cs:30
 msgid ""
@@ -429,6 +530,16 @@ msgstr ""
 "Dozwolone formaty to \"ftp://nazwa_hosta/folder\" i "
 "\"ftp://nazwa_użytkownika:hasło@nazwa_hosta/folder\""
 
+#: Library/Backend/FTP/Strings.cs:31
+msgid ""
+"This backend can read and write data to an FTP based backend. Allowed "
+"formats are \"aftp://hostname/folder\" and "
+"\"aftp://username:password@hostname/folder\"."
+msgstr ""
+"Ten backend może odczytywać i zapisywać dane do backendu opartego na FTP. "
+"Dozwolone formaty to: „aftp://hostname/folder” oraz "
+"„aftp://username:password@hostname/folder”."
+
 #: Library/Backend/FTP/Strings.cs:32
 msgid "FTP"
 msgstr "FTP"
@@ -437,10 +548,55 @@ msgstr "FTP"
 msgid "Alternative FTP"
 msgstr "Alternatywny FTP"
 
+#: Library/Backend/FTP/Strings.cs:34
+msgid ""
+"Use this option to log FTP dialog to terminal console for debugging "
+"purposes."
+msgstr ""
+"Użyj tej opcji, aby logować dialog FTP w konsoli terminala do celów "
+"debugowania."
+
+#: Library/Backend/FTP/Strings.cs:35
+msgid "Log FTP dialog to terminal console"
+msgstr "Loguj dialog FTP w konsoli terminala"
+
+#: Library/Backend/FTP/Strings.cs:36
+msgid ""
+"Use this option to log FTP PRIVATE info (username, password) to console for "
+"debugging purposes (DO NOT POST THIS TO THE INTERNET!)"
+msgstr ""
+"Użyj tej opcji, aby logować prywatne informacje FTP (nazwę użytkownika, "
+"hasło) do konsoli w celach debugowania (NIE UDOSTĘPNIAJ TEGO W INTERNECIE!)."
+
+#: Library/Backend/FTP/Strings.cs:37
+msgid "Log FTP PRIVATE info to console"
+msgstr "Loguj prywatne informacje FTP do konsoli"
+
+#: Library/Backend/FTP/Strings.cs:38
+msgid "Log diagnostics information"
+msgstr "Rejestruj informacje diagnostyczne"
+
+#: Library/Backend/FTP/Strings.cs:39
+msgid ""
+"Use this option to log diagnostics information to the log output. This can "
+"be useful for debugging purposes."
+msgstr ""
+"Włącz tę opcję, aby zapisywać informacje diagnostyczne w logach. Może to być"
+" przydatne w celach debugowania."
+
 #: Library/Backend/FTP/Strings.cs:40
 #, csharp-format
 msgid "The folder {0} was not found. Message: {1}"
 msgstr "Katalog {0} nie został znaleziony. Komunikat: {1}"
+
+#: Library/Backend/FTP/Strings.cs:41
+#, csharp-format
+msgid ""
+"The file {0} was uploaded but not found afterwards. The file listing "
+"returned {1}"
+msgstr ""
+"Plik {0} został przesłany, lecz następnie nie został znaleziony. Lista "
+"plików zwróciła {1}."
 
 #: Library/Backend/FTP/Strings.cs:42
 #, csharp-format
@@ -516,9 +672,154 @@ msgstr ""
 msgid "Add a delay after uploading a file"
 msgstr "Dodaj opóźnienie po przesłaniu pliku"
 
+#: Library/Backend/FTP/Strings.cs:53
+msgid ""
+"Use this option to communicate using Secure Socket Layer (SSL) over ftp "
+"(ftps)."
+msgstr ""
+"Użyj tej opcję, aby korzystać z bezpiecznej komunikacji SSL w protokole FTP "
+"(FTPS)."
+
+#: Library/Backend/FTP/Strings.cs:54
+msgid "Instruct Duplicati to use an SSL (ftps) connection"
+msgstr "Poleć Duplicati, aby korzystał z połączenia SSL (FTPS)."
+
+#: Library/Backend/FTP/Strings.cs:55
+#, csharp-format
+msgid ""
+"Activate this option to make the FTP connection in active mode. Even if the "
+"option --{0} is also set, the connection will be made in active mode."
+msgstr ""
+"Aktywuj tę opcję, aby nawiązać połączenie FTP w trybie aktywnym. Nawet jeśli"
+" ustawiona jest również opcja --{0}, połączenie zostanie nawiązane w trybie "
+"aktywnym."
+
+#: Library/Backend/FTP/Strings.cs:56 Library/Backend/FTP/Strings.cs:58
+msgid "Toggle the FTP connections method"
+msgstr "Przełącz metodę połączenia FTP"
+
+#: Library/Backend/FTP/Strings.cs:57
+#, csharp-format
+msgid ""
+"Activate this option to make the FTP connection in passive mode, which works"
+" better with some firewalls. If the option --{0} is set, this option is "
+"ignored."
+msgstr ""
+"Aktywuj tę opcję, aby nawiązać połączenie FTP w trybie pasywnym, który "
+"działa lepiej z niektórymi zaporami sieciowymi. Jeśli ustawiona jest opcja "
+"--{0}, ta opcja zostanie zignorowana."
+
+#: Library/Backend/FTP/Strings.cs:59
+msgid ""
+"The option ftp-passive is deprecated, use ftp-data-connection-type instead."
+msgstr ""
+"Opcja ftp-passive jest przestarzała, zamiast niej użyj ftp-data-connection-"
+"type."
+
+#: Library/Backend/FTP/Strings.cs:60
+msgid "ftp-regular is deprecated, use ftp-data-connection-type instead."
+msgstr ""
+"ftp-regular jest przestarzałe, zamiast tego użyj ftp-data-connection-type."
+
+#: Library/Backend/FTP/Strings.cs:61
+msgid "use-ssl is deprecated, use ftp-ssl-protocols instead."
+msgstr "use-ssl jest przestarzałe, zamiast tego użyj ftp-ssl-protocols."
+
+#: Library/Backend/FTP/Strings.cs:62
+#, csharp-format
+msgid "The file {0} was not found. Message: {1}"
+msgstr "The file {0} was not found. Wiadomość: {1}"
+
+#: Library/Backend/FTP/Strings.cs:63
+msgid "Treat the url path as absolute"
+msgstr "Traktuj ścieżkę URL jako bezwzględną"
+
+#: Library/Backend/FTP/Strings.cs:64
+msgid ""
+"Use this option to interpret the url path as an absolute path. This option "
+"only has an effect if the initial starting folder in the FTP server is not "
+"the (virtual) root folder. If not set, the path in the url is treated as "
+"relative to the initial login folder."
+msgstr ""
+"Użyj tej opcji, aby potraktować ścieżkę URL jako ścieżkę bezwzględną. Opcja "
+"ta ma znaczenie tylko wtedy, gdy początkowy folder startowy na serwerze FTP "
+"nie jest (wirtualnym) folderem głównym. Jeśli opcja nie jest ustawiona, "
+"ścieżka w URL-u jest traktowana jako względna względem początkowego folderu "
+"logowania."
+
+#: Library/Backend/FTP/Strings.cs:65
+msgid "Treat the url path as relative"
+msgstr "Traktuj ścieżkę URL jako względną"
+
+#: Library/Backend/FTP/Strings.cs:66
+msgid ""
+"Use this option to interpret the url path as a path that is relative to the "
+"initial login folder. This option only has an effect if the initial starting"
+" folder in the FTP server is not the (virtual) root folder. If not set, the "
+"path in the url is treated as absolute, ignoring the initial login folder."
+msgstr ""
+"Użyj tej opcji, aby potraktować ścieżkę URL jako ścieżkę względną względem "
+"początkowego folderu logowania. Opcja ta ma znaczenie tylko wtedy, gdy "
+"początkowy folder startowy na serwerze FTP nie jest (wirtualnym) folderem "
+"głównym. Jeśli opcja nie jest ustawiona, ścieżka w URL-u jest traktowana "
+"jako bezwzględna, z pominięciem początkowego folderu logowania."
+
+#: Library/Backend/FTP/Strings.cs:67
+msgid "Use CWD instead of absolute paths"
+msgstr "Używaj polecenia CWD zamiast ścieżek bezwzględnych"
+
+#: Library/Backend/FTP/Strings.cs:68
+msgid ""
+"Use this option to start the connection with a CWD command instead of an "
+"absolute path. This can be useful if the FTP server does not support "
+"absolute paths."
+msgstr ""
+"Użyj tej opcji, aby rozpocząć połączenie od polecenia CWD zamiast ścieżki "
+"bezwzględnej. Może to być przydatne, jeśli serwer FTP nie obsługuje ścieżek "
+"bezwzględnych."
+
+#: Library/Backend/FTP/Strings.cs:69
+#, csharp-format
+msgid "Error creating folder {0}, gave folder: {1}"
+msgstr "Błąd podczas tworzenia folderu {0}, podano folder: {1}"
+
+#: Library/Backend/FTP/Strings.cs:70 Library/Utility/Strings.cs:126
+#, csharp-format
+msgid "Error writing file: {0}, error: {1}"
+msgstr "Błąd podczas zapisu pliku: {0}, błąd: {1}"
+
+#: Library/Backend/FTP/Strings.cs:71
+msgid "Ignore PureFTPd limit warnings"
+msgstr "Ignoruj ostrzeżenia o limitach PureFTPd"
+
+#: Library/Backend/FTP/Strings.cs:72
+#, csharp-format
+msgid ""
+"PureFTPd is known to truncate file listings. If server has been configured "
+"to a higher limit or do not expect to store more than 10000 files you can "
+"suppress errors and warnings with {0}"
+msgstr ""
+"Jest wiadome, że PureFTPd obcina listy plików. Jeśli serwer został "
+"skonfigurowany na wyższy limit lub nie planujesz przechowywać więcej niż "
+"10 000 plików, możesz wyłączyć błędy i ostrzeżenia za pomocą opcji {0}."
+
+#: Library/Backend/GoogleServices/Strings.cs:28
+msgid ""
+"This backend can read and write data to Google Cloud Storage. Allowed format"
+" is \"gcs://bucket/folder\"."
+msgstr ""
+"To backend może odczytywać i zapisywać dane w Google Cloud Storage. "
+"Dozwolony format to „gcs://zaspbnik/folder”."
+
 #: Library/Backend/GoogleServices/Strings.cs:29
 msgid "Google Cloud Storage"
 msgstr "Google Cloud Storage"
+
+#: Library/Backend/GoogleServices/Strings.cs:30
+#, csharp-format
+msgid "You must supply a project ID with --{0} for creating a bucket."
+msgstr ""
+"Musisz podać identyfikator projektu za pomocą --{0}, aby utworzyć zasobnik."
 
 #: Library/Backend/GoogleServices/Strings.cs:31
 #, csharp-format
@@ -529,6 +830,10 @@ msgstr ""
 "Ta opcja jest używana tylko podczas tworzenia nowych zasobników. Użyj tej opcji, aby zmienić region, w którym przechowywane są dane. Opłaty różnią się w zależności od lokalizacji zasobnika. Znane lokalizacje zasobników:\n"
 "{0}"
 
+#: Library/Backend/GoogleServices/Strings.cs:33
+msgid "Specify location option for creating a bucket"
+msgstr "Określ opcję lokalizacji przy tworzeniu zasobnika."
+
 #: Library/Backend/GoogleServices/Strings.cs:34
 #, csharp-format
 msgid ""
@@ -538,9 +843,41 @@ msgstr ""
 "Ta opcja jest używana tylko podczas tworzenia nowych zasobników. Użyj tej opcji, aby zmienić typ pamięci zasobnika. Opłaty i funkcjonalność różnią się w zależności od klasy przechowywania zasobnika pamięci. Znane klasy pamięci:\n"
 "{0}"
 
+#: Library/Backend/GoogleServices/Strings.cs:36
+msgid "Specify storage class for creating a bucket"
+msgstr "Określ klasę przechowywania przy tworzeniu zasobnika."
+
+#: Library/Backend/GoogleServices/Strings.cs:37
+msgid ""
+"This option is only used when creating new buckets. Use this option to "
+"supply the project ID that the bucket is attached to. The project determines"
+" where usage charges are applied."
+msgstr ""
+"Ta opcja jest używana tylko podczas tworzenia nowych zasobników. Użyj jej, "
+"aby podać identyfikator projektu, do którego będzie przypisany zasobnik. "
+"Projekt określa, gdzie zostaną naliczone opłaty za użycie."
+
+#: Library/Backend/GoogleServices/Strings.cs:38
+msgid "Specify project for creating a bucket"
+msgstr "Określ projekt do utworzenia zasobnika"
+
+#: Library/Backend/GoogleServices/Strings.cs:43
+msgid ""
+"This backend can read and write data to Google Drive. Allowed format is "
+"\"googledrive://folder/subfolder\"."
+msgstr ""
+"Ten backend może odczytywać i zapisywać dane na Dysku Google. Dozwolony "
+"format to \"googledrive://folder/podfolder”."
+
 #: Library/Backend/GoogleServices/Strings.cs:44
 msgid "Google Drive"
 msgstr "Google Drive"
+
+#: Library/Backend/GoogleServices/Strings.cs:45
+#, csharp-format
+msgid "There is more than one item named \"{0}\" in the folder \"{1}\"."
+msgstr ""
+"W folderze „{1}” znajduje się więcej niż jeden element o nazwie „{0}”."
 
 #: Library/Backend/GoogleServices/Strings.cs:46
 #: Library/Backend/File/Strings.cs:40 Library/Compression/Strings.cs:38
@@ -548,9 +885,21 @@ msgstr "Google Drive"
 msgid "File not found: {0}"
 msgstr "Nie znaleziono pliku: {0}"
 
+#: Library/Backend/GoogleServices/Strings.cs:47
+msgid ""
+"This option sets the team drive to use. Leaving it empty uses the personal "
+"drive."
+msgstr ""
+"Ta opcja ustawia dysk zespołu, który ma być używany. Pozostawienie pustego "
+"pola spowoduje użycie dysku osobistego."
+
 #: Library/Backend/GoogleServices/Strings.cs:48
 msgid "Team drive ID"
 msgstr "Identyfikator zespołu dysku"
+
+#: Library/Backend/GoogleServices/Strings.cs:49
+msgid "The list response was not valid."
+msgstr "Odpowiedź z listą była nieprawidłowa."
 
 #: Library/Backend/S3/Strings.cs:27
 msgid "S3 compatible"
@@ -558,7 +907,7 @@ msgstr "Kompatybilny z S3"
 
 #: Library/Backend/S3/Strings.cs:29
 msgid "AWS Secret Access Key"
-msgstr "Klucz Dostępu AWS"
+msgstr "Poufny klucz dostępu AWS"
 
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
 #: Library/Utility/Strings.cs:93
@@ -924,10 +1273,24 @@ msgstr ""
 "Używane identyfikatory grup powodujących konflikt: podane {0}, ale "
 "znalezione {1}"
 
+#: Library/Backend/AliyunOSS/Strings.cs:30
+#: Library/Backend/Idrivee2/Strings.cs:31
+msgid "Access Key ID"
+msgstr "ID Klucza Dostępu"
+
+#: Library/Backend/AliyunOSS/Strings.cs:32
+#: Library/Backend/Idrivee2/Strings.cs:29
+msgid "Access Key Secret"
+msgstr "Tajny klucz dostępu"
+
 #: Library/Backend/AliyunOSS/Strings.cs:34
 #: Library/Backend/TencentCOS/Strings.cs:36
 msgid "Bucket name"
 msgstr "Nazwa zasobnika"
+
+#: Library/Backend/AliyunOSS/Strings.cs:36
+msgid "Region"
+msgstr "Region"
 
 #: Library/Backend/AzureBlob/Strings.cs:29
 msgid "Azure blob"
@@ -1384,6 +1747,10 @@ msgstr "Folder Tymczasowy"
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Serwer został uruchomiony i nasłuchuje {0}, port {1}"
+
+#: Library/RestAPI/Strings.cs:107
+msgid "Register for remote control"
+msgstr "Rejestracja do zdalnego sterowania"
 
 #: Library/RestAPI/Strings.cs:117
 #, csharp-format
