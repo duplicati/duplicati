@@ -164,6 +164,57 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
+        public void RestoreVolumeCache([Values("0b", "1mb", "5mb", "1gb")] string cache_size, [Values("0", "1", null)] string? channel_size)
+        {
+            var opts = TestOptions;
+            opts["dblock-size"] = "1mb";
+            opts["blocksize"] = "1kb";
+            opts["restore-volume-cache-max"] = cache_size;
+            if (channel_size != null)
+                opts["restore-channel-buffer-size"] = channel_size;
+            opts["restore-legacy"] = "false";
+            opts["restore-file-processors"] = "4";
+            opts["restore-volume-decryptors"] = "4";
+            opts["restore-volume-decompressors"] = "4";
+            opts["restore-volume-downloaders"] = "4";
+            opts["restore-path"] = RESTOREFOLDER;
+
+            // Write a bunch of files
+            Random rng = new Random();
+            byte[] data = new byte[1024];
+            for (int i = 0; i < 1000; i++)
+            {
+                rng.NextBytes(data);
+                var filePath = Path.Combine(this.DATAFOLDER, $"file{i}");
+                File.WriteAllBytes(filePath, data);
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, opts, null))
+                TestUtils.AssertResults(c.Backup([this.DATAFOLDER]));
+
+            // Start a 30 second timeout
+            var timeout_task = System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(30));
+
+            var restore_task = System.Threading.Tasks.Task.Run(() =>
+            {
+                using var c = new Controller("file://" + this.TARGETFOLDER, opts, null);
+                TestUtils.AssertResults(c.Restore(["*"]));
+            });
+
+            System.Threading.Tasks.Task.WhenAny(timeout_task, restore_task).ContinueWith(t =>
+            {
+                if (t.Result == timeout_task)
+                    Assert.Fail("Restore timed out");
+                else if (t.Result == restore_task)
+                    // Throw any exceptions it might have
+                    t.Result.GetAwaiter().GetResult();
+            });
+
+            TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restoring with different volume cache sizes");
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
         public void RestoreWithoutLocalData([Values("true", "false")] string noLocalDb, [Values("true", "false")] string patchWithLocalBlocks)
         {
             var file1Path = Path.Combine(this.DATAFOLDER, "file1");
