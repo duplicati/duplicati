@@ -224,7 +224,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     // Check if downloading another volume would exceed cache limits.
                                                     if ((cache.Count + in_flight_downloads.Count) >= cache_max)
                                                     {
-                                                        Logging.Log.WriteWarningMessage(LOGTAG, "VolumeRequest", null, "Evicting volume");
+                                                        Logging.Log.WriteVerboseMessage(LOGTAG, "VolumeRequest", null, "Evicting volume");
                                                         // TODO switch based of the eviction strategy.
                                                         // fifo / lifo based on both when they were downloaded and when they were used
                                                         // random
