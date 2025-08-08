@@ -133,6 +133,10 @@ namespace Duplicati.Library.Main.Strings
         public static string LogLevelDeprecated(string option1, string option2) { return LC.L("Use the options --{0} and --{1} instead.", option1, option2); }
         public static string SuppresswarningsLong { get { return LC.L(@"Suppress warnings and log them as information instead. Use this if you need to silence specific warnings. This option accepts a comma separated list of warning IDs."); } }
         public static string SuppresswarningsShort { get { return LC.L(@"Suppress specific warnings"); } }
+        public static string LoghttprequestsLong { get { return LC.L(@"Enable logging of HTTP request diagnostics. Messages are logged at the {0} level, so make sure the log outputs at that level.", Logging.LogMessageType.Verbose); } }
+        public static string LoghttprequestsShort { get { return LC.L(@"Log HTTP requests"); } }
+        public static string LogsocketdataLong { get { return LC.L(@"Enable logging of socket data. A value of 0 logs only event messages, a positive value includes that many bytes of data. Use -1 to disable. Messages are logged at the {0} level, so make sure the log outputs at that level.", Logging.LogMessageType.Verbose); } }
+        public static string LogsocketdataShort { get { return LC.L(@"Log socket data"); } }
         public static string DisableautocreatefolderLong { get { return LC.L(@"If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation."); } }
         public static string DisableautocreatefolderShort { get { return LC.L(@"Disable automatic folder creation"); } }
         public static string VssexcludewritersLong { get { return LC.L(@"Use this option to exclude faulty writers from a snapshot. This is equivalent to the -wx flag of the vshadow.exe tool, except that it only accepts writer class GUIDs, and not component names or instance GUIDs. Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs are allowed, including with and without curly braces."); } }
