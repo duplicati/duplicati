@@ -43,6 +43,7 @@ namespace Duplicati.Library.Main.Volumes
         public long BlockCount { get { return m_blocks; } }
         public long Blocklists { get { return m_blocklists; } }
         public bool IsVolumeActive => m_writer != null && m_streamwriter != null;
+        public bool IsDisposed = false;
         public bool IsReadyForFinish = true;
 
         public IndexVolumeWriter(Options options)
@@ -80,6 +81,12 @@ namespace Duplicati.Library.Main.Volumes
         {
             if (!IsReadyForFinish)
                 throw new InvalidOperationException("Index volume is not ready for finish");
+
+            if (IsDisposed)
+                throw new ObjectDisposedException("IndexVolumeWriter", "Cannot finish a disposed IndexVolumeWriter");
+
+            if (m_writer == null || m_streamwriter == null)
+                throw new InvalidOperationException($"No volume started, call StartVolume before finishing a volume: {(m_writer == null ? "m_writer is null" : "-")}, {(m_streamwriter == null ? "m_streamwriter is null" : "-")}");
 
             m_writer.WriteEndArray();
             m_writer.WritePropertyName("volumehash");
@@ -154,6 +161,7 @@ namespace Duplicati.Library.Main.Volumes
         {
             if (m_writer != null || m_streamwriter != null)
                 throw new InvalidOperationException("Attempted to dispose an index volume that was being written");
+            IsDisposed = true;
             base.Dispose();
         }
 
