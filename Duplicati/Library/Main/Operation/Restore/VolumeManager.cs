@@ -28,6 +28,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
+#nullable enable
+
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
@@ -53,11 +55,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// The first task that is reading from the channels.
             /// </summary>
-            private Task<object> t1;
+            private Task<object>? t1;
             /// <summary>
             /// The second task that is reading from the channels.
             /// </summary>
-            private Task<object> t2;
+            private Task<object>? t2;
 
             /// <summary>
             /// Reads from either of the two channels asynchronously.
@@ -117,12 +119,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                     // Dictionary to keep track of volumes that are actively being accessed. Used for cache eviction.
                     Dictionary<long, long> in_flight_decompressing = [];
 
-                    Stopwatch sw_cache_set = options.InternalProfiling ? new() : null;
-                    Stopwatch sw_cache_evict = options.InternalProfiling ? new() : null;
-                    Stopwatch sw_query = options.InternalProfiling ? new() : null;
-                    Stopwatch sw_backend = options.InternalProfiling ? new() : null;
-                    Stopwatch sw_request = options.InternalProfiling ? new() : null;
-                    Stopwatch sw_wakeup = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_cache_set = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_cache_evict = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_query = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_backend = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_request = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_wakeup = options.InternalProfiling ? new() : null;
 
                     async Task flush_ack_channel()
                     {
@@ -190,7 +192,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             {
                                                 Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Got a request for block {0} from volume {1}", request.BlockID, request.VolumeID);
                                                 sw_request?.Start();
-                                                if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader reader))
+                                                if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader? reader))
                                                 {
                                                     cache_last_touched.Remove(request.VolumeID);
                                                     cache_last_touched.Add(request.VolumeID);
@@ -283,7 +285,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"CacheSet: {sw_cache_set.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict.ElapsedMilliseconds}ms, Query: {sw_query.ElapsedMilliseconds}ms, Backend: {sw_backend.ElapsedMilliseconds}ms, Request: {sw_request.ElapsedMilliseconds}ms, Wakeup: {sw_wakeup.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"CacheSet: {sw_cache_set?.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict?.ElapsedMilliseconds}ms, Query: {sw_query?.ElapsedMilliseconds}ms, Backend: {sw_backend?.ElapsedMilliseconds}ms, Request: {sw_request?.ElapsedMilliseconds}ms, Wakeup: {sw_wakeup?.ElapsedMilliseconds}ms");
                         }
                     }
                     catch (Exception ex)
