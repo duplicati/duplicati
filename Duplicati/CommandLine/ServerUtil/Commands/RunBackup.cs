@@ -108,7 +108,7 @@ public static class RunBackup
                 {
                     // See if we can get a new connection (re-connect)
                     onPoll("Re-authenticating...");
-                    connection = await settings.GetConnection(output);
+                    connection = await settings.ReloadPersistedSettings().GetConnection(output);
                     retry = true;
                 }
                 catch (Exception)

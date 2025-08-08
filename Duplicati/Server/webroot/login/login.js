@@ -15,6 +15,8 @@ $(document).ready(function() {
             data: JSON.stringify({'Password': $('#login-password').val(), 'RememberMe': true })
         })
         .done(function(data) {
+            if (data.RefreshNonce)
+                localStorage.setItem('v1:persist:duplicati:refreshNonce', data.RefreshNonce);
             window.location = './';
         })
         .fail(function(data) {

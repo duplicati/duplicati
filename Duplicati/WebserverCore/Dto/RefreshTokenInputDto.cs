@@ -20,4 +20,8 @@
 // DEALINGS IN THE SOFTWARE.
 namespace Duplicati.WebserverCore.Dto;
 
-public record AccessTokenOutputDto(string AccessToken, string? RefreshNonce);
+/// <summary>
+/// Represents the input for a refresh token operation.
+/// </summary>
+/// <param name="Nonce">The nonce associated with the refresh token.</param>
+public sealed record RefreshTokenInputDto(string Nonce);

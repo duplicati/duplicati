@@ -21,6 +21,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -35,17 +36,20 @@ public record JWTConfig
     public required string SigningKey { get; init; }
     public int AccessTokenDurationInMinutes { get; init; } = 15;
     public int RefreshTokenDurationInMinutes { get; init; } = 60 * 24 * 30;
+    public int RefreshTokenShortLivedDurationInMinutes { get; init; } = 60 * 2;
     public int SigninTokenDurationInMinutes { get; init; } = 5;
     public int SingleOperationTokenDurationInMinutes { get; init; } = 1;
     public int MaxRefreshTokenDrift { get; init; } = 1;
     public int MaxRefreshTokenDriftSeconds { get; init; } = 30;
+    public bool RequireRefreshNonce { get; init; } = true;
     public SymmetricSecurityKey SymmetricSecurityKey() => new(Encoding.UTF8.GetBytes(SigningKey));
+    public PbkdfConfig PbkdfConfig { get; init; } = PbkdfConfig.Default;
 
     public static JWTConfig Create() => new()
     {
         Authority = "https://duplicati",
         Audience = "https://duplicati",
-        SigningKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32))
+        SigningKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)),
     };
 }
 
@@ -67,27 +71,40 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
         ], DateTime.Now, expires: DateTime.Now.AddMinutes(jWTConfig.SigninTokenDurationInMinutes));
 
     public string CreateAccessToken(string userId, string tokenFamilyId, TimeSpan? expiration = null)
-    => GenerateToken([
+        => GenerateToken([
             new Claim(Claims.Type, TokenType.AccessToken.ToString()),
             new Claim(Claims.UserId, userId),
             new Claim(Claims.Family, tokenFamilyId)
         ], DateTime.Now, expires: DateTime.Now.AddMinutes(Math.Min(jWTConfig.AccessTokenDurationInMinutes, expiration?.TotalMinutes ?? jWTConfig.AccessTokenDurationInMinutes)));
 
     public string CreateForeverToken()
-    => GenerateToken([
+        => GenerateToken([
             new Claim(Claims.Type, TokenType.AccessToken.ToString()),
             new Claim(Claims.UserId, ForeverTokenUserId),
             new Claim(Claims.Family, TemporaryFamilyId)
         ], DateTime.Now, expires: DateTime.Now.AddYears(10));
 
-    public string CreateRefreshToken(string userId, string tokenFamilyId, int counter)
-        => GenerateToken([
+    public (string RefreshToken, string? Nonce) CreateRefreshToken(string userId, string tokenFamilyId, int counter, bool shortLived)
+    {
+        var claims = new List<Claim>
+        {
             new Claim(Claims.Type, TokenType.RefreshToken.ToString()),
             new Claim(Claims.UserId, userId),
             new Claim(Claims.Family, tokenFamilyId),
             new Claim(Claims.Counter, counter.ToString()),
-            new Claim(Claims.IssuedAt, (DateTime.UnixEpoch - DateTime.UtcNow).TotalSeconds.ToString())
-        ], DateTime.Now, expires: DateTime.Now.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
+            new Claim(Claims.IssuedAt, (DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds.ToString())
+        };
+
+        string? nonce = null;
+        if (shortLived || jWTConfig.RequireRefreshNonce)
+        {
+            nonce = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+            claims.Add(new Claim(Claims.Nonce, jWTConfig.PbkdfConfig.WithPassword(nonce).Hash));
+        }
+
+        var refreshToken = GenerateToken(claims, DateTime.Now, expires: DateTime.Now.AddMinutes(shortLived ? jWTConfig.RefreshTokenShortLivedDurationInMinutes : jWTConfig.RefreshTokenDurationInMinutes));
+        return (refreshToken, nonce);
+    }
 
     private string GenerateToken(IEnumerable<Claim> claims, DateTime notBefore, DateTime expires)
     {
@@ -131,9 +148,19 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
         );
     }
 
-    public IJWTTokenProvider.RefreshToken ReadRefreshToken(string token)
+    public IJWTTokenProvider.RefreshToken ReadRefreshToken(string token, string? nonce)
     {
+        // We rely on the fact that the caller cannot remove or modify the nonce after creation.
+        // If the token was created without a nonce, it will be accepted even with a mismatched nonce.
         var jwtToken = ParseAndValidateToken(token, TokenType.RefreshToken);
+        var validateNonce = jwtToken.Claims.FirstOrDefault(c => c.Type == Claims.Nonce);
+        if (validateNonce != null)
+        {
+            var nonceClaim = validateNonce.Value;
+            var pbkdf = jWTConfig.PbkdfConfig.WithHash(nonceClaim);
+            if (!pbkdf.VerifyPassword(nonce ?? ""))
+                throw new SecurityTokenValidationException("Refresh nonce does not match the expected value");
+        }
 
         return new IJWTTokenProvider.RefreshToken(
             jwtToken.ValidFrom,
@@ -223,6 +250,7 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
         public const string Counter = "cnt";
         public const string IssuedAt = "iat";
         public const string Operation = "sop";
+        public const string Nonce = "nce";
     }
 
 }

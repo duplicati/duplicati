@@ -29,10 +29,10 @@ public interface ILoginProvider
     /// Performs a login with a signin token.
     /// </summary>
     /// <param name="signinTokenString">The signin token.</param>
-    /// <param name="issueRefreshToken">Whether to issue a refresh token.</param>
+    /// <param name="shortLived">Whether to issue a short-lived refresh token.</param>
     /// <param name="ct">The cancellation token.</param>
-    /// <returns>The access and refresh tokens.</returns>
-    Task<(string AccessToken, string? RefreshToken)> PerformLoginWithSigninToken(string signinTokenString, bool issueRefreshToken, CancellationToken ct);
+    /// <returns>The access token, refresh token, and nonce.</returns>
+    Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithSigninToken(string signinTokenString, bool shortLived, CancellationToken ct);
 
     /// <summary>
     /// Performs a login with a refresh token.
@@ -40,24 +40,25 @@ public interface ILoginProvider
     /// <param name="refreshTokenString">The refresh token.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>The access and refresh tokens.</returns>
-    Task<(string AccessToken, string RefreshToken)> PerformLoginWithRefreshToken(string refreshTokenString, CancellationToken ct);
+    Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithRefreshToken(string refreshTokenString, string? nonce, CancellationToken ct);
 
     /// <summary>
     /// Performs a login with a password.
     /// </summary>
     /// <param name="password">The password.</param>
-    /// <param name="issueRefreshToken">Whether to issue a refresh token.</param>
+    /// <param name="shortLived">Whether to issue a short-lived refresh token.</param>
     /// <param name="ct">The cancellation token.</param>
-    /// <returns>The access and refresh tokens.</returns>
-    Task<(string AccessToken, string? RefreshToken)> PerformLoginWithPassword(string password, bool issueRefreshToken, CancellationToken ct);
+    /// <returns>The access token, refresh token, and nonce.</returns>
+    Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithPassword(string password, bool shortLived, CancellationToken ct);
 
     /// <summary>
     /// Performs a logout with a refresh token.
     /// </summary>
     /// <param name="refreshTokenString">The refresh token.</param>
+    /// <param name="nonce">The nonce associated with the refresh token.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>The task.</returns>
-    Task PerformLogoutWithRefreshToken(string refreshTokenString, CancellationToken ct);
+    Task PerformLogoutWithRefreshToken(string refreshTokenString, string? nonce, CancellationToken ct);
 
     /// <summary>
     /// Performs a complete logout for a user.
