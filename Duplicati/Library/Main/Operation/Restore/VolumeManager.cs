@@ -43,13 +43,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeManager>();
 
         /// <summary>
-        /// Helper class to read from either of three channels, in a prioritized manner, where channel1 is consumed first.
+        /// Helper class to read from either of two channels.
         /// This is a workaround for the fact that CoCoL seems to deadlock on ReadFroAnyAsync
         /// </summary>
         /// <param name="channel1">The first channel to read from.</param>
         /// <param name="channel2">The second channel to read from.</param>
-        /// <param name="channel3">The third channel to read from.</param>
-        private sealed class ReadFromEitherPrioritized(IReadChannel<object> channel1, IReadChannel<object> channel2, IReadChannel<object> channel3)
+        private sealed class ReadFromEither(IReadChannel<object> channel1, IReadChannel<object> channel2)
         {
             /// <summary>
             /// The first task that is reading from the channels.
@@ -59,10 +58,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The second task that is reading from the channels.
             /// </summary>
             private Task<object> t2;
-            /// <summary>
-            /// The third task that is reading from the channels.
-            /// </summary>
-            private Task<object> t3;
 
             /// <summary>
             /// Reads from either of the two channels asynchronously.
@@ -76,30 +71,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // This is safe here, because the shutdown only happens on failure termination
                 t1 ??= channel1.ReadAsync();
                 t2 ??= channel2.ReadAsync();
-                t3 ??= channel3.ReadAsync();
 
-                // Wait for any of the tasks to complete.
-                await Task.WhenAny(t1, t2, t3).ConfigureAwait(false);
-
-                // Check the channels in priority
-                // If t1 is completed, we process it first
-                if (t1.IsCompletedSuccessfully)
+                var r = await Task.WhenAny(t1, t2).ConfigureAwait(false);
+                if (r == t1)
                 {
-                    var result = await t1.ConfigureAwait(false);
                     t1 = null;
-                    return result;
+                    return await r.ConfigureAwait(false);
                 }
-                else if (t2.IsCompletedSuccessfully)
+                else
                 {
-                    var result = await t2.ConfigureAwait(false);
                     t2 = null;
-                    return result;
-                }
-                else // t3.IsCompletedSuccessfully
-                {
-                    var result = await t3.ConfigureAwait(false);
-                    t3 = null;
-                    return result;
+                    return await r.ConfigureAwait(false);
                 }
             }
         }
@@ -142,11 +124,35 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Stopwatch sw_request = options.InternalProfiling ? new() : null;
                     Stopwatch sw_wakeup = options.InternalProfiling ? new() : null;
 
-                    var rfa = new ReadFromEitherPrioritized(self.DecompressAck, self.VolumeResponse, self.VolumeRequest);
+                    async Task flush_ack_channel()
+                    {
+                        // Check if we need to flush the ack channel
+                        while (true)
+                        {
+                            var (has_read, ack_msg) = await self.DecompressAck.TryReadAsync().ConfigureAwait(false);
+                            var ack_request = ack_msg as BlockRequest;
+                            if (!has_read)
+                                break;
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for block {0} from volume {1}", ack_request.BlockID, ack_request.VolumeID);
+                            if (in_flight_decompressing.TryGetValue(ack_request.VolumeID, out var dcount))
+                            {
+                                if (dcount <= 1)
+                                    in_flight_decompressing.Remove(ack_request.VolumeID);
+                                else
+                                    in_flight_decompressing[ack_request.VolumeID] = dcount - 1;
+                            }
+                            else
+                                Logging.Log.WriteWarningMessage(LOGTAG, "VolumeRequest", null, "Decompression acknowledgment for block {0} from volume {1} not found", ack_request.BlockID, ack_request.VolumeID);
+                        }
+                    }
+
+
+                    var rfa = new ReadFromEither(self.VolumeResponse, self.VolumeRequest);
                     try
                     {
                         while (true)
                         {
+                            await flush_ack_channel().ConfigureAwait(false);
                             // TODO: CoCol ReadFromAnyAsync deadlocks, so we use a workaround
                             var msg = await rfa.ReadFromEitherAsync().ConfigureAwait(false);
                             switch (msg)
@@ -251,6 +257,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         sw_wakeup?.Start();
                                         foreach (var request in in_flight_downloads[volume_id])
                                         {
+                                            // Ensure ACK channel is empty to avoid deadlock
+                                            await flush_ack_channel().ConfigureAwait(false);
+
                                             // Request the decompressions
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, volume_id);
                                             await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
