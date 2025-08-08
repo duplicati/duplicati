@@ -34,7 +34,7 @@ public static class EncryptionHelper
     {
         using var ms = new MemoryStream();
         using var fs = File.OpenRead(passwordfile);
-        SharpAESCrypt.SharpAESCrypt.Decrypt(password, fs, ms);
+        SharpAESCrypt.AESCrypt.Decrypt(password, fs, ms);
 
         return Encoding.UTF8.GetString(ms.ToArray());
     }

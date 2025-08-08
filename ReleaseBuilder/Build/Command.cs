@@ -1027,14 +1027,14 @@ public static partial class Command
         {
             using var ms = new MemoryStream();
             using var fs = File.OpenRead(keyfile);
-            SharpAESCrypt.SharpAESCrypt.Decrypt(password, fs, ms);
+            SharpAESCrypt.AESCrypt.Decrypt(password, fs, ms);
 
             var rsa = RSA.Create();
             rsa.FromXmlString(System.Text.Encoding.UTF8.GetString(ms.ToArray()));
 
             return rsa;
         }
-        catch (SharpAESCrypt.SharpAESCrypt.WrongPasswordException)
+        catch (SharpAESCrypt.WrongPasswordException)
         {
             if (!askForNewPassword)
                 throw;

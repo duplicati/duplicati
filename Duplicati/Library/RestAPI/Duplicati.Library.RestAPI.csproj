@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="9.0.6" />
   </ItemGroup>
 
   <ItemGroup>
