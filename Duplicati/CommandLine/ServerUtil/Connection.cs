@@ -44,14 +44,32 @@ public class Connection
         string ID,
         string Name,
         string Description,
-        Dictionary<string, string>? Metadata
+        Dictionary<string, string>? Metadata,
+        BackupSchedule? Schedule
+    );
+
+    /// <summary>
+    /// The schedule attached to a backup
+    /// </summary>
+    /// <param name="Time">The time when the backup runs</param>
+    /// <param name="Repeat">The </param>
+    /// <param name="LastRun"></param>
+    /// <param name="Rule"></param>
+    /// <param name="AllowedDays"></param>
+    public sealed record BackupSchedule(
+        string? Time,
+        string? Repeat,
+        string? LastRun,
+        string? Rule,
+        string[]? AllowedDays
     );
 
     /// <summary>
     /// The response backup data returned from the server
     /// </summary>
     /// <param name="Backup">The backup details</param>
-    private sealed record ResponseBackupEntry(ResponseBackupEntry.ResponseBackupDetailsEntry Backup)
+    /// <param name="Schedule">The schedule of the backup</param>
+    private sealed record ResponseBackupEntry(ResponseBackupEntry.ResponseBackupDetailsEntry Backup, BackupSchedule? Schedule)
     {
         /// <summary>
         /// The response backup details entry
@@ -74,7 +92,7 @@ public class Connection
         /// </summary>
         /// <returns>The backup entry</returns>
         public BackupEntry ToBackupEntry()
-            => new BackupEntry(Backup.ID, Backup.Name, Backup.Description ?? "", Backup.Metadata);
+            => new BackupEntry(Backup.ID, Backup.Name, Backup.Description ?? "", Backup.Metadata, Schedule);
     }
 
     /// <summary>

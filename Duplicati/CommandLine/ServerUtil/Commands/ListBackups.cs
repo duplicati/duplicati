@@ -21,6 +21,7 @@
 
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
+using System.Globalization;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
@@ -28,7 +29,13 @@ public static class ListBackups
 {
     public static Command Create() =>
         new Command("list-backups", "List all backups")
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
+        {
+            new Option<bool>("--detailed", "Show detailed information about each backup")
+            {
+                IsRequired = false
+            },
+        }
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, bool>(async (settings, output, detailed) =>
         {
             var bks = await (await settings.GetConnection(output)).ListBackups();
 
@@ -40,9 +47,53 @@ public static class ListBackups
                     output.AppendConsoleMessage($"{bk.ID}: {bk.Name}");
                     if (!string.IsNullOrEmpty(bk.Description))
                         output.AppendConsoleMessage($"  {bk.Description}");
+
+                    if (detailed)
+                    {
+                        void WriteDetail(string label, string key, Func<string, string>? formatter = null)
+                        {
+                            var value = bk.Metadata?.GetValueOrDefault(key);
+                            if (string.IsNullOrWhiteSpace(value))
+                                return;
+                            if (formatter != null)
+                                value = formatter(value);
+
+                            if (string.IsNullOrWhiteSpace(value))
+                                return;
+
+                            output.AppendConsoleMessage($"  {label}: {value}");
+                        }
+
+                        WriteDetail("Last backup", "LastBackupDate", s => Library.Utility.Utility.TryDeserializeDateTime(s, out var dt) ? dt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : s);
+                        if (!string.IsNullOrWhiteSpace(bk.Schedule?.Time))
+                        {
+                            var timestring = DateTime.TryParseExact(bk.Schedule.Time, "yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var scheduleDt)
+                                ? scheduleDt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
+                                : bk.Schedule.Time;
+                            output.AppendConsoleMessage($"  Schedule: {bk.Schedule.Repeat} at {timestring}");
+                        }
+
+                        WriteDetail("Last duration", "LastBackupDuration", s => TimeSpan.TryParse(s, CultureInfo.InvariantCulture, out var ts) ? ts.ToString() : s);
+                        WriteDetail("Source files size", "SourceFilesSize", s => Library.Utility.Utility.FormatSizeString(long.Parse(s)));
+                        WriteDetail("Target files size", "TargetFilesSize", s => Library.Utility.Utility.FormatSizeString(long.Parse(s)));
+                        WriteDetail("Versions", "BackupListCount");
+
+                        Library.Utility.Utility.TryDeserializeDateTime(bk.Metadata?.GetValueOrDefault("LastErrorDate") ?? "", out var lastErrorDt);
+                        Library.Utility.Utility.TryDeserializeDateTime(bk.Metadata?.GetValueOrDefault("LastBackupDate") ?? "", out var lastBackupDt);
+                        var lastErrorMessage = bk.Metadata?.GetValueOrDefault("LastErrorMessage") ?? "";
+                        if (lastErrorDt > lastBackupDt && !string.IsNullOrWhiteSpace(lastErrorMessage))
+                            output.AppendConsoleMessage($"  Last error: {lastErrorDt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} - {lastErrorMessage}");
+                    }
                     output.AppendConsoleMessage(string.Empty);
                 }
-                output.AppendCustomObject("Backups", backupEntries.Select(id => new { Id = id.ID, Name = id.Name }).ToArray());
+
+                output.AppendCustomObject("Backups", backupEntries.Select(id => new
+                {
+                    Id = id.ID,
+                    Name = id.Name,
+                    Metadata = id.Metadata,
+                    Schedule = id.Schedule
+                }).ToArray());
             }
             else
                 output.AppendConsoleMessage("No backups found");
