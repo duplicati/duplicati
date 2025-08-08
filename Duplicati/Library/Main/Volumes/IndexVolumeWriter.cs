@@ -24,6 +24,7 @@ using System.IO;
 using Newtonsoft.Json;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using System.Diagnostics;
 
 namespace Duplicati.Library.Main.Volumes
 {
@@ -46,15 +47,20 @@ namespace Duplicati.Library.Main.Volumes
         public bool IsDisposed = false;
         public bool IsReadyForFinish = true;
 
+        private readonly List<string> m_calls = new List<string>();
+
         public IndexVolumeWriter(Options options)
             : base(options)
         {
+            m_calls.Add($"Created IndexVolumeWriter - {new StackTrace(true)}");
         }
 
         public override RemoteVolumeType FileType { get { return RemoteVolumeType.Index; } }
 
         public void StartVolume(string filename)
         {
+
+            m_calls.Add($"StartVolume {filename} - {new StackTrace(true)}");
             if (m_writer != null || m_streamwriter != null)
                 throw new InvalidOperationException("Previous volume not finished, call FinishVolume before starting a new volume");
 
@@ -86,7 +92,9 @@ namespace Duplicati.Library.Main.Volumes
                 throw new ObjectDisposedException("IndexVolumeWriter", "Cannot finish a disposed IndexVolumeWriter");
 
             if (m_writer == null || m_streamwriter == null)
-                throw new InvalidOperationException($"No volume started, call StartVolume before finishing a volume: {(m_writer == null ? "m_writer is null" : "-")}, {(m_streamwriter == null ? "m_streamwriter is null" : "-")}");
+                throw new InvalidOperationException($"No volume started, call StartVolume before finishing a volume: {(m_writer == null ? "m_writer is null" : "-")}, {(m_streamwriter == null ? "m_streamwriter is null" : "-")}, calls = {Environment.NewLine}{string.Join(Environment.NewLine, m_calls)}");
+
+            m_calls.Add($"FinishVolume {volumehash} - {new StackTrace(true)}");
 
             m_writer.WriteEndArray();
             m_writer.WritePropertyName("volumehash");
@@ -144,6 +152,8 @@ namespace Duplicati.Library.Main.Volumes
 
         public void CopyFrom(IndexVolumeReader rd, Func<string, string> filename_mapping)
         {
+            m_calls.Add($"CopyFrom - {new StackTrace(true)}");
+
             foreach (var n in rd.Volumes)
             {
                 this.StartVolume(filename_mapping(n.Filename));
@@ -159,6 +169,7 @@ namespace Duplicati.Library.Main.Volumes
 
         public override void Dispose()
         {
+            m_calls.Add($"Dispose - {new StackTrace(true)}");
             if (m_writer != null || m_streamwriter != null)
                 throw new InvalidOperationException("Attempted to dispose an index volume that was being written");
             IsDisposed = true;
