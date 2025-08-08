@@ -8,6 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Force version of dependency in Artalk.Xmpp, sync with Duplicati.Server.csproj -->
+    <PackageReference Include="System.Drawing.Common" Version="9.0.6" />
+
     <PackageReference Include="Artalk.Xmpp" Version="1.0.5" />
     <PackageReference Include="DnsClient" Version="1.8.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

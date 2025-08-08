@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="9.0.6" />
+    <!-- Force version for compatibility with WindowsService.csproj -->
+    <PackageReference Include="System.Diagnostics.EventLog" Version="9.0.6" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.6" />
     <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
