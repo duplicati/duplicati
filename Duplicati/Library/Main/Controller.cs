@@ -924,7 +924,7 @@ namespace Duplicati.Library.Main
             }
 
             var scheme = Library.Utility.Utility.GuessScheme(m_backendUrl);
-            if (DynamicLoader.BackendLoader.GetSupportedCommands(m_backendUrl) == null && !string.Equals( m_backendUrl, "dummy://", StringComparison.OrdinalIgnoreCase) )
+            if (DynamicLoader.BackendLoader.GetSupportedCommands(m_backendUrl) == null && !string.Equals(m_backendUrl, "dummy://", StringComparison.OrdinalIgnoreCase))
             {
                 // If the backend is HTTP or HTTPS, give a custom error message
                 if (string.Equals(scheme, "http", StringComparison.OrdinalIgnoreCase) || string.Equals(scheme, "https", StringComparison.OrdinalIgnoreCase))
@@ -1013,9 +1013,9 @@ namespace Duplicati.Library.Main
                     expandedSources.Add(inputsource);
                 }
 
-                bool foundAnyPaths = false;
-                bool unauthorized = false;
-                foreach (string expandedSource in expandedSources)
+                var foundAnyPaths = false;
+                var unauthorized = false;
+                foreach (var expandedSource in expandedSources)
                 {
                     string source;
                     try
@@ -1028,6 +1028,9 @@ namespace Duplicati.Library.Main
                             // in the backup being recorded without files from the source
                             // Eventually, this could lead to retention deletion,
                             // causing the last backup with the data from the source to be deleted
+
+                            // TODO: We do not honor the PreventEmptySource option here,
+                            // as we do not know if the source is empty or not
                             foundAnyPaths = true;
                             sources.Add(expandedSource);
                             continue;
@@ -1049,7 +1052,20 @@ namespace Duplicati.Library.Main
                         foundAnyPaths = true;
 
                         if (!fi.Exists)
+                        {
+                            // If the directory exists, but is empty, and we are not allowed to have empty sources, throw an error
+                            try
+                            {
+                                if (!m_options.AllowEmptySource && di.Exists && !di.EnumerateFileSystemInfos().Any())
+                                    throw new UserInformationException(Strings.Controller.SourceFolderEmptyError(inputsource, "allow-empty-source"), "SourceFolderEmpty");
+                            }
+                            catch (UnauthorizedAccessException ex)
+                            {
+                                throw new UserInformationException(Strings.Controller.SourceUnauthorizedError(inputsource), "SourceUnauthorized", ex);
+                            }
+
                             source = Util.AppendDirSeparator(source);
+                        }
 
                         sources.Add(source);
                     }
@@ -1074,9 +1090,7 @@ namespace Duplicati.Library.Main
                 if (!foundAnyPaths && !m_options.AllowMissingSource)
                 {
                     if (unauthorized)
-                    {
                         throw new UserInformationException(Strings.Controller.SourceUnauthorizedError(inputsource), "SourceUnauthorized");
-                    }
 
                     throw new UserInformationException(Strings.Controller.SourceIsMissingError(inputsource), "SourceIsMissing");
                 }

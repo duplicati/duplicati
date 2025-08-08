@@ -39,6 +39,7 @@ namespace Duplicati.Library.Main.Strings
         public static string CompletedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has completed", operationname); }
         public static string FailedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has failed", operationname); }
         public static string InvalidPathError(string path, string message) { return LC.L(@"Invalid path: ""{0}"" ({1})", path, message); }
+        public static string SourceFolderEmptyError(string foldername, string optionname) { return LC.L(@"The source folder {0} is empty, aborting backup. If this is expected, consider using the --{1} option.", foldername, optionname); }
         public static string FailedForceLocaleError(string exMsg) { return LC.L(@"Failed to apply 'force-locale' setting. Please try to update .NET-Framework. Exception was: ""{0}"" ", exMsg); }
         public static string SourceVolumeNameInvalidError(string filename) { return LC.L(@"The source {0} uses an invalid volume name, aborting backup", filename); }
         public static string SourceVolumeNameNotFoundError(string filename, Guid volumeGuid) { return LC.L(@"The source {0} is on volume {1}, which could not be found, aborting backup", filename, volumeGuid); }
@@ -222,6 +223,8 @@ namespace Duplicati.Library.Main.Strings
         public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
         public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing."); } }
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
+        public static string AllowemptysourceLong { get { return LC.L(@"Use this option to allow backups to run if one or more source folders are empty. Usually an empty source folder is an indication that something like a USB drive is not mounted correctly. This check only works for filesystem source paths."); } }
+        public static string AllowemptysourceShort { get { return LC.L(@"Allow backups to run if source folders are empty"); } }
         public static string OverwriteLong { get { return LC.L(@"Use this option to overwrite target files when restoring. If this option is not set, the files will be restored with a timestamp and a number appended."); } }
         public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
         public static string VerboseLong { get { return LC.L(@"Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed."); } }

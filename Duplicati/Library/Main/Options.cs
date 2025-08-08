@@ -389,6 +389,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("list-sets-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListsetsonlyShort, Strings.Options.ListsetsonlyLong, "false"),
             new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
             new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
+            new CommandLineArgument("allow-empty-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowemptysourceShort, Strings.Options.AllowemptysourceLong, "false"),
 
             new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
             new CommandLineArgument("check-filetime-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CheckfiletimeonlyShort, Strings.Options.CheckfiletimeonlyLong, "false"),
@@ -1347,6 +1348,10 @@ namespace Duplicati.Library.Main
         /// Gets a flag indicating if missing source elements should be ignored
         /// </summary>
         public bool AllowMissingSource => GetBool("allow-missing-source");
+        /// <summary>
+        /// Gets a flag indicating if empty source elements should cause backups to fail
+        /// </summary>
+        public bool AllowEmptySource => GetBool("allow-empty-source");
 
         /// <summary>
         /// Gets a value indicating if a verification file should be uploaded after changing the remote store
