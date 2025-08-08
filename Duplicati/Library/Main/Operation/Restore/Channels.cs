@@ -53,12 +53,18 @@ namespace Duplicati.Library.Main.Operation.Restore
         public readonly IChannel<(long, string, TempFile)> DecryptRequest = ChannelManager.CreateChannel<(long, string, TempFile)>(buffersize: BufferSize);
 
         /// <summary>
+        /// Channel between <see cref="BlockManager"/> and <see cref="VolumeManager"/> to keep track of volumes that are actively being read.
+        /// </summary>
+        public readonly IChannel<object> DecompressionAck = ChannelManager.CreateChannel<object>(buffersize: BufferSize);
+
+        /// <summary>
         /// Channel between <see cref="VolumeManager"/> and <see cref="VolumeDecompressor"/>
         /// </summary>
         public readonly IChannel<(BlockRequest, BlockVolumeReader)> DecompressionRequest = ChannelManager.CreateChannel<(BlockRequest, BlockVolumeReader)>(buffersize: BufferSize);
 
         /// <summary>
-        /// Channel between <see cref="VolumeManager"/> and <see cref="BlockManager"/> holding the decompressed blocks.
+        /// Channel between <see cref="VolumeDecompressor"/> and <see cref="BlockManager"/> holding the decompressed blocks.
+        /// </summary>
         public readonly IChannel<(BlockRequest, byte[])> DecompressedBlock = ChannelManager.CreateChannel<(BlockRequest, byte[])>(buffersize: BufferSize);
 
         /// <summary>

@@ -332,17 +332,17 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="blockRequest">The block request related to the value.</param>
             /// <param name="value">The byte[] buffer holding the block data.</param>
-            public void Set(BlockRequest blockRequest, byte[] value)
+            public void Set(long blockID, byte[] value)
             {
-                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockRequest.BlockID);
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockID);
 
                 sw_set_set?.Start();
-                m_block_cache.Set(blockRequest.BlockID, value);
+                m_block_cache.Set(blockID, value);
                 sw_set_set?.Stop();
 
                 // Notify any waiters that the block is available.
                 sw_set_wake_get?.Start();
-                if (m_waiters.TryRemove(blockRequest.BlockID, out var tcs))
+                if (m_waiters.TryRemove(blockID, out var tcs))
                 {
                     sw_set_wake_get?.Stop();
                     sw_set_wake_set?.Start();
@@ -447,6 +447,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             new
             {
                 Input = channels.DecompressedBlock.AsRead(),
+                Ack = channels.DecompressionAck.AsWrite(),
                 Output = channels.VolumeRequest.AsWrite()
             },
             async self =>
@@ -460,6 +461,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 var volume_consumer = Task.Run(async () =>
                 {
                     Stopwatch sw_read = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_ack = options.InternalProfiling ? new() : null;
                     Stopwatch sw_set = options.InternalProfiling ? new() : null;
                     try
                     {
@@ -469,8 +471,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             var (block_request, data) = await self.Input.ReadAsync().ConfigureAwait(false);
                             sw_read?.Stop();
 
+                            sw_ack?.Start();
+                            block_request.RequestType = BlockRequestType.DecompressAck;
+                            await self.Ack.WriteAsync(block_request).ConfigureAwait(false);
+                            sw_ack?.Stop();
+
                             sw_set?.Start();
-                            cache.Set(block_request, data);
+                            cache.Set(block_request.BlockID, data);
                             sw_set?.Stop();
                         }
                     }

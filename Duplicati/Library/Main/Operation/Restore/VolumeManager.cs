@@ -99,13 +99,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                     VolumeRequest = channels.VolumeRequest.AsRead(),
                     VolumeResponse = channels.VolumeResponse.AsRead(),
                     DecompressRequest = channels.DecompressionRequest.AsWrite(),
+                    DecompressAck = channels.DecompressionAck.AsRead(),
                     DownloadRequest = channels.DownloadRequest.AsWrite(),
                 },
                 async self =>
                 {
+                    // The maximum number of volumes to have in cache at once.
+                    long cache_max = options.RestoreVolumeCacheMax / options.VolumeSize;
+                    // Cache of volume readers.
                     Dictionary<long, BlockVolumeReader> cache = [];
+                    // List of which volume was accessed last. Used for cache eviction.
+                    List<long> cache_last_touched = [];
+                    // Cache of volumes.
                     Dictionary<long, TempFile> tmpfiles = [];
-                    Dictionary<long, List<BlockRequest>> in_flight = [];
+                    // Dictionary to keep track of active downloads. Used for grouping requests to the same volume.
+                    Dictionary<long, List<BlockRequest>> in_flight_downloads = [];
+                    // Dictionary to keep track of volumes that are actively being accessed. Used for cache eviction.
+                    Dictionary<long, long> in_flight_decompressing = [];
 
                     Stopwatch sw_cache_set = options.InternalProfiling ? new() : null;
                     Stopwatch sw_cache_evict = options.InternalProfiling ? new() : null;
@@ -114,7 +124,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Stopwatch sw_request = options.InternalProfiling ? new() : null;
                     Stopwatch sw_wakeup = options.InternalProfiling ? new() : null;
 
-                    var rfa = new ReadFromEither(self.VolumeRequest, self.VolumeResponse);
+                    var rfa = new ReadFromEitherPrioritized(self.DecompressAck, self.VolumeResponse, self.VolumeRequest);
                     try
                     {
                         while (true)
@@ -124,55 +134,114 @@ namespace Duplicati.Library.Main.Operation.Restore
                             switch (msg)
                             {
                                 case BlockRequest request:
+                                    switch (request.RequestType)
                                     {
-                                        if (request.CacheDecrEvict)
-                                        {
-                                            sw_cache_evict?.Start();
-                                            cache.Remove(request.VolumeID, out var reader);
-                                            reader?.Dispose();
-                                            tmpfiles.Remove(request.VolumeID, out var tmpfile);
-                                            tmpfile?.Dispose();
-                                            sw_cache_evict?.Stop();
-                                        }
-                                        else
-                                        {
-                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, request.VolumeID);
-                                            sw_request?.Start();
-                                            if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader reader))
+                                        case BlockRequestType.CacheEvict:
                                             {
-                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
-                                                await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Evicting volume {0} from cache by request", request.VolumeID);
+                                                sw_cache_evict?.Start();
+                                                cache.Remove(request.VolumeID, out var reader);
+                                                cache_last_touched.Remove(request.VolumeID);
+                                                reader?.Dispose();
+                                                tmpfiles.Remove(request.VolumeID, out var tmpfile);
+                                                tmpfile?.Dispose();
+                                                sw_cache_evict?.Stop();
                                             }
-                                            else
+                                            break;
+                                        case BlockRequestType.DecompressAck:
                                             {
-                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} not found in cache, requesting volume {1}", request.BlockID, request.VolumeID);
-                                                if (in_flight.TryGetValue(request.VolumeID, out var waiters))
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for block {0} from volume {1}", request.BlockID, request.VolumeID);
+                                                if (in_flight_decompressing.TryGetValue(request.VolumeID, out var count))
                                                 {
-                                                    waiters.Add(request);
+                                                    if (count <= 1)
+                                                        in_flight_decompressing.Remove(request.VolumeID);
+                                                    else
+                                                        in_flight_decompressing[request.VolumeID] = count - 1;
+                                                }
+                                                else
+                                                    Logging.Log.WriteWarningMessage(LOGTAG, "VolumeRequest", null, "Decompression acknowledgment for block {0} from volume {1} not found", request.BlockID, request.VolumeID);
+                                            }
+                                            break;
+                                        case BlockRequestType.Download:
+                                            {
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, request.VolumeID);
+                                                sw_request?.Start();
+                                                if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader reader))
+                                                {
+                                                    cache_last_touched.Remove(request.VolumeID);
+                                                    cache_last_touched.Add(request.VolumeID);
+                                                    Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
+                                                    await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
+                                                    Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, request.VolumeID);
+                                                    if (in_flight_decompressing.TryGetValue(request.VolumeID, out var count))
+                                                        in_flight_decompressing[request.VolumeID] = count + 1;
+                                                    else
+                                                        in_flight_decompressing[request.VolumeID] = 1;
                                                 }
                                                 else
                                                 {
-                                                    await self.DownloadRequest.WriteAsync(request.VolumeID).ConfigureAwait(false);
-                                                    in_flight[request.VolumeID] = [request];
+                                                    // Check if downloading another volume would exceed cache limits.
+                                                    if ((cache.Count + in_flight_downloads.Count) >= cache_max)
+                                                    {
+                                                        Logging.Log.WriteWarningMessage(LOGTAG, "VolumeRequest", null, "Evicting volume");
+                                                        // TODO switch based of the eviction strategy.
+                                                        // fifo / lifo based on both when they were downloaded and when they were used
+                                                        // random
+                                                        // Heuristic based of accesses and recency
+                                                        // Cache would overflow if we request another; we have to evict something, or store the request for later.
+
+                                                        // LRU
+                                                        for (int i = 0; i < cache_last_touched.Count; i++)
+                                                        {
+                                                            var volume_id = cache_last_touched[i];
+                                                            if (!(in_flight_decompressing.TryGetValue(volume_id, out var count) && count > 0))
+                                                            {
+                                                                // Entry can be safely evicted
+                                                                cache.Remove(volume_id);
+                                                                cache_last_touched.RemoveAt(i);
+                                                                tmpfiles.Remove(volume_id);
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+
+                                                    Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} not found in cache, requesting volume {1}", request.BlockID, request.VolumeID);
+                                                    if (in_flight_downloads.TryGetValue(request.VolumeID, out var waiters))
+                                                    {
+                                                        waiters.Add(request);
+                                                    }
+                                                    else
+                                                    {
+                                                        await self.DownloadRequest.WriteAsync(request.VolumeID).ConfigureAwait(false);
+                                                        in_flight_downloads[request.VolumeID] = [request];
+                                                    }
                                                 }
+                                                sw_request?.Stop();
                                             }
-                                            sw_request?.Stop();
-                                        }
-                                        break;
+                                            break;
+                                        default:
+                                            throw new InvalidOperationException($"Unexpected request type: {request.RequestType}");
                                     }
+                                    break;
                                 case (long volume_id, TempFile tmpfile, BlockVolumeReader reader):
                                     {
                                         sw_cache_set?.Start();
                                         cache[volume_id] = reader;
+                                        cache_last_touched.Add(volume_id);
                                         tmpfiles[volume_id] = tmpfile;
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
-                                        foreach (var request in in_flight[volume_id])
+                                        foreach (var request in in_flight_downloads[volume_id])
                                         {
+                                            // Request the decompressions
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, volume_id);
                                             await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
+                                            if (in_flight_decompressing.TryGetValue(request.VolumeID, out var count))
+                                                in_flight_decompressing[request.VolumeID] = count + 1;
+                                            else
+                                                in_flight_decompressing[request.VolumeID] = 1;
                                         }
-                                        in_flight.Remove(volume_id);
+                                        in_flight_downloads.Remove(volume_id);
                                         sw_wakeup?.Stop();
                                         break;
                                     }
