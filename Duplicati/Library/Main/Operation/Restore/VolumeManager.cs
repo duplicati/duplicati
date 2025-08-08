@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             break;
                                         case BlockRequestType.Download:
                                             {
-                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, request.VolumeID);
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Got a request for block {0} from volume {1}", request.BlockID, request.VolumeID);
                                                 sw_request?.Start();
                                                 if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader reader))
                                                 {
@@ -196,7 +196,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     cache_last_touched.Add(request.VolumeID);
                                                     Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
                                                     await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
-                                                    Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, request.VolumeID);
+                                                    Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting decompression of block {0} from cached volume {1}", request.BlockID, request.VolumeID);
                                                     if (in_flight_decompressing.TryGetValue(request.VolumeID, out var count))
                                                         in_flight_decompressing[request.VolumeID] = count + 1;
                                                     else
@@ -261,7 +261,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             await flush_ack_channel().ConfigureAwait(false);
 
                                             // Request the decompressions
-                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, volume_id);
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from newly cached volume {1}", request.BlockID, volume_id);
                                             await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
                                             if (in_flight_decompressing.TryGetValue(request.VolumeID, out var count))
                                                 in_flight_decompressing[request.VolumeID] = count + 1;
