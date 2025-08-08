@@ -255,8 +255,8 @@ public static partial class Command
         /// </summary>
         private static Dictionary<string, Version> ManuallyFixedVersions = new Dictionary<string, Version>
         {
-            // Using v3.3 for assembly, but 3.7 in nuget
-            { "AWSSDK.Core", new Version(3, 3, 0, 0) },
+            // Using v4.0 for assembly, but 4.0.6.4 in nuget
+            { "AWSSDK.Core", new Version(4, 0, 0, 0) },
 
             // Using the Framework version, not the package version
             { "Microsoft.CSharp", new Version(8, 0, 0, 0) },
@@ -270,7 +270,14 @@ public static partial class Command
             { "SQLitePCLRaw.core", new Version(2, 1, 10, 2445) },
 
             // Using v9.0 for assembly, but 9.0.2 in nuget
-            { "System.IO.Pipelines", new Version(9, 0, 0, 0) }
+            { "System.IO.Pipelines", new Version(9, 0, 0, 0) },
+
+            // Using v9.0 for assembly, but 9.0.6 in nuget
+            { "Microsoft.Win32.SystemEvents.dll", new Version(9, 0, 0, 0) },
+            { "System.Drawing.Common.dll", new Version(9, 0, 0, 0) },
+
+            // Using v6.0.0.1 for assembly, but 6.0.1 in nuget
+            { "System.Memory.Data.dll", new Version(6, 0, 0, 1) }
         };
 
         /// <summary>
