@@ -487,7 +487,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read.ElapsedMilliseconds}ms, Ack: {sw_ack.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
                         }
 
                         // Cancel any remaining readers - although there shouldn't be any.
