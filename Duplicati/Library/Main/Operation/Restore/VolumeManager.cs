@@ -126,25 +126,52 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Stopwatch? sw_request = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_wakeup = options.InternalProfiling ? new() : null;
 
+                    void handle_evict(long volume_id)
+                    {
+                        sw_cache_evict?.Start();
+                        cache.Remove(volume_id, out var reader);
+                        cache_last_touched.Remove(volume_id);
+                        reader?.Dispose();
+                        tmpfiles.Remove(volume_id, out var tmpfile);
+                        tmpfile?.Dispose();
+                        sw_cache_evict?.Stop();
+                    }
+
+                    void handle_ack(long block_id, long volume_id)
+                    {
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for block {0} from volume {1}", block_id, volume_id);
+                        if (in_flight_decompressing.TryGetValue(volume_id, out var dcount))
+                        {
+                            if (dcount <= 1)
+                            {
+                                in_flight_decompressing.Remove(volume_id);
+                                if (cache_max == 0)
+                                {
+                                    handle_evict(volume_id);
+                                }
+                            }
+                            else
+                                in_flight_decompressing[volume_id] = dcount - 1;
+                        }
+                        else
+                            Logging.Log.WriteWarningMessage(LOGTAG, "VolumeRequest", null, "Decompression acknowledgment for block {0} from volume {1} not found", block_id, volume_id);
+                    }
+
                     async Task flush_ack_channel()
                     {
                         // Check if we need to flush the ack channel
                         while (true)
                         {
                             var (has_read, ack_msg) = await self.DecompressAck.TryReadAsync().ConfigureAwait(false);
-                            var ack_request = ack_msg as BlockRequest;
                             if (!has_read)
                                 break;
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for block {0} from volume {1}", ack_request.BlockID, ack_request.VolumeID);
-                            if (in_flight_decompressing.TryGetValue(ack_request.VolumeID, out var dcount))
+                            if (ack_msg is not BlockRequest ack_request)
                             {
-                                if (dcount <= 1)
-                                    in_flight_decompressing.Remove(ack_request.VolumeID);
-                                else
-                                    in_flight_decompressing[ack_request.VolumeID] = dcount - 1;
+                                Logging.Log.WriteErrorMessage(LOGTAG, "VolumeRequest", null, "Unexpected message type in ack channel: {0}", ack_msg?.GetType().Name);
+                                break;
                             }
-                            else
-                                Logging.Log.WriteWarningMessage(LOGTAG, "VolumeRequest", null, "Decompression acknowledgment for block {0} from volume {1} not found", ack_request.BlockID, ack_request.VolumeID);
+
+                            handle_ack(ack_request.BlockID, ack_request.VolumeID);
                         }
                     }
 
@@ -164,28 +191,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         case BlockRequestType.CacheEvict:
                                             {
-                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Evicting volume {0} from cache by request", request.VolumeID);
-                                                sw_cache_evict?.Start();
-                                                cache.Remove(request.VolumeID, out var reader);
-                                                cache_last_touched.Remove(request.VolumeID);
-                                                reader?.Dispose();
-                                                tmpfiles.Remove(request.VolumeID, out var tmpfile);
-                                                tmpfile?.Dispose();
-                                                sw_cache_evict?.Stop();
+                                                if (cache_max > 0)
+                                                {
+                                                    Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Evicting volume {0} from cache by request", request.VolumeID);
+                                                    handle_evict(request.VolumeID);
+                                                }
                                             }
                                             break;
                                         case BlockRequestType.DecompressAck:
                                             {
-                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for block {0} from volume {1}", request.BlockID, request.VolumeID);
-                                                if (in_flight_decompressing.TryGetValue(request.VolumeID, out var count))
-                                                {
-                                                    if (count <= 1)
-                                                        in_flight_decompressing.Remove(request.VolumeID);
-                                                    else
-                                                        in_flight_decompressing[request.VolumeID] = count - 1;
-                                                }
-                                                else
-                                                    Logging.Log.WriteWarningMessage(LOGTAG, "VolumeRequest", null, "Decompression acknowledgment for block {0} from volume {1} not found", request.BlockID, request.VolumeID);
+                                                handle_ack(request.BlockID, request.VolumeID);
                                             }
                                             break;
                                         case BlockRequestType.Download:
@@ -223,9 +238,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                             if (!(in_flight_decompressing.TryGetValue(volume_id, out var count) && count > 0))
                                                             {
                                                                 // Entry can be safely evicted
-                                                                cache.Remove(volume_id);
-                                                                cache_last_touched.RemoveAt(i);
-                                                                tmpfiles.Remove(volume_id);
+                                                                handle_evict(volume_id);
                                                                 break;
                                                             }
                                                         }
