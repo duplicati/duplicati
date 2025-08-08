@@ -12,12 +12,18 @@ $(document).ready(function() {
             return;
 
         processing = true;
+        const storedNonce = localStorage.getItem('v1:persist:duplicati:refreshNonce');
+        const body = storedNonce ? { Nonce: storedNonce } : undefined;
 
         $.ajax({
             url: './api/v1/auth/refresh',
-            type: 'POST'
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(body)
         })
         .done(function(data) {
+            if (data.RefreshNonce)
+                localStorage.setItem('v1:persist:duplicati:refreshNonce', data.RefreshNonce);
             window.location = './';
         })
         .fail(function(data) {
@@ -54,6 +60,8 @@ $(document).ready(function() {
             data: JSON.stringify({'SigninToken': $('#signin-token').val(), 'RememberMe': true })
         })
         .done(function(data) {
+            if (data.RefreshNonce)
+                localStorage.setItem('v1:persist:duplicati:refreshNonce', data.RefreshNonce);
             window.location = './';
         })
         .fail(function(data) {

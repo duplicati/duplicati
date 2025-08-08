@@ -40,16 +40,16 @@ public partial class Auth : IEndpointV1
 
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapPost("auth/refresh", async ([FromServices] ILoginProvider loginProvider, [FromServices] JWTConfig jWTConfig, [FromServices] IHttpContextAccessor httpContextAccessor, CancellationToken ct) =>
+        group.MapPost("auth/refresh", async ([FromServices] ILoginProvider loginProvider, [FromServices] JWTConfig jWTConfig, [FromServices] IHttpContextAccessor httpContextAccessor, [FromBody] Dto.RefreshTokenInputDto? input, CancellationToken ct) =>
         {
             var cookieName = GetCookieName(httpContextAccessor);
             if (httpContextAccessor.HttpContext!.Request.Cookies.TryGetValue(cookieName, out var refreshTokenString))
             {
                 try
                 {
-                    var result = await loginProvider.PerformLoginWithRefreshToken(refreshTokenString, ct);
+                    var result = await loginProvider.PerformLoginWithRefreshToken(refreshTokenString, input?.Nonce ?? "", ct);
                     AddCookie(httpContextAccessor.HttpContext, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
-                    return new Dto.AccessTokenOutputDto(result.AccessToken);
+                    return new Dto.AccessTokenOutputDto(result.AccessToken, result.Nonce);
                 }
                 catch (Exception ex)
                 {
@@ -70,10 +70,10 @@ public partial class Auth : IEndpointV1
             var cookieName = GetCookieName(httpContextAccessor);
             try
             {
-                var result = await loginProvider.PerformLoginWithSigninToken(input.SigninToken, input.RememberMe ?? false, ct);
+                var result = await loginProvider.PerformLoginWithSigninToken(input.SigninToken, !(input.RememberMe ?? false), ct);
                 if (!string.IsNullOrWhiteSpace(result.RefreshToken))
                     AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
-                return new Dto.AccessTokenOutputDto(result.AccessToken);
+                return new Dto.AccessTokenOutputDto(result.AccessToken, result.Nonce);
             }
             catch (Exception ex)
             {
@@ -92,10 +92,10 @@ public partial class Auth : IEndpointV1
             var cookieName = GetCookieName(httpContextAccessor);
             try
             {
-                var result = await loginProvider.PerformLoginWithPassword(input.Password, input.RememberMe ?? false, ct);
+                var result = await loginProvider.PerformLoginWithPassword(input.Password, !(input.RememberMe ?? false), ct);
                 if (!string.IsNullOrWhiteSpace(result.RefreshToken))
                     AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
-                return new Dto.AccessTokenOutputDto(result.AccessToken);
+                return new Dto.AccessTokenOutputDto(result.AccessToken, result.Nonce);
             }
             catch (Exception ex)
             {
@@ -117,8 +117,8 @@ public partial class Auth : IEndpointV1
             return new Dto.SigninTokenOutputDto(signinToken);
         });
 
-        group.MapPost("auth/refresh/logout", ([FromServices] ILoginProvider loginProvider, [FromServices] IHttpContextAccessor httpContextAccessor) =>
-            PerformLogout(loginProvider, httpContextAccessor));
+        group.MapPost("auth/refresh/logout", ([FromServices] ILoginProvider loginProvider, [FromServices] IHttpContextAccessor httpContextAccessor, [FromBody] Dto.RefreshTokenInputDto? input) =>
+            PerformLogout(loginProvider, httpContextAccessor, input));
 
         group.MapPost("auth/issuetoken/{operation}", ([FromServices] Connection connection, [FromServices] IJWTTokenProvider tokenProvider, [FromRoute] string operation) =>
         {
@@ -143,7 +143,7 @@ public partial class Auth : IEndpointV1
             if (!res.Value)
                 throw new UnauthorizedException("Cannot generate multiple forever tokens, restart the server to generate a new one");
 
-            return new Dto.AccessTokenOutputDto(tokenProvider.CreateForeverToken());
+            return new Dto.AccessTokenOutputDto(tokenProvider.CreateForeverToken(), null);
         }).RequireAuthorization();
     }
 
@@ -159,14 +159,14 @@ public partial class Auth : IEndpointV1
             Domain = context.Request.Host.Host
         });
 
-    private static object PerformLogout(ILoginProvider loginProvider, IHttpContextAccessor httpContextAccessor)
+    private static object PerformLogout(ILoginProvider loginProvider, IHttpContextAccessor httpContextAccessor, Dto.RefreshTokenInputDto? input)
     {
         var cookieName = GetCookieName(httpContextAccessor);
         if (httpContextAccessor.HttpContext!.Request.Cookies.TryGetValue(cookieName, out var refreshTokenString))
         {
             try
             {
-                loginProvider.PerformLogoutWithRefreshToken(refreshTokenString, CancellationToken.None);
+                loginProvider.PerformLogoutWithRefreshToken(refreshTokenString, input?.Nonce, CancellationToken.None);
             }
             catch
             {

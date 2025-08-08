@@ -38,7 +38,7 @@ public class DuplicatiServerClient : IDisposable
     private readonly string _baseUrl;
     private readonly JsonSerializerOptions _jsonOptions;
     private bool _disposed;
-    private readonly  bool _selfOwnedHttpClient;
+    private readonly bool _selfOwnedHttpClient;
     private readonly SemaphoreSlim _tokenRefreshSemaphore = new(1, 1);
     private readonly ServerCredentialType _credentialType;
     private readonly string _credential;
@@ -306,11 +306,12 @@ public class DuplicatiServerClient : IDisposable
     /// <summary>
     /// Refreshes the access token using the refresh token (V1).
     /// </summary>
+    /// <param name="nonce">The nonce to include in the refresh request. Optional, can be null.</param>
     /// <param name="cancellationToken">The cancellation token. Optional, defaults to <see cref="CancellationToken.None"/>.</param>
     /// <returns>The new access token output.</returns>
-    public async Task<AccessTokenOutputDto> RefreshTokenV1Async(CancellationToken cancellationToken = default)
+    public async Task<AccessTokenOutputDto> RefreshTokenV1Async(string? nonce, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<AccessTokenOutputDto>("/api/v1/auth/refresh", null, cancellationToken, false).ConfigureAwait(false);
+        return await PostAsync<AccessTokenOutputDto>("/api/v1/auth/refresh", string.IsNullOrWhiteSpace(nonce) ? null : new { Nonce = nonce }, cancellationToken, false).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -348,11 +349,12 @@ public class DuplicatiServerClient : IDisposable
     /// <summary>
     /// Logs out and invalidates the refresh token (V1).
     /// </summary>
+    /// <param name="nonce">The nonce to include in the logout request.</param>
     /// <param name="cancellationToken">The cancellation token. Optional, defaults to <see cref="CancellationToken.None"/>.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task LogoutV1Async(CancellationToken cancellationToken = default)
+    public async Task LogoutV1Async(string? nonce, CancellationToken cancellationToken = default)
     {
-        await PostAsync<object>("/api/v1/auth/refresh/logout", null, cancellationToken).ConfigureAwait(false);
+        await PostAsync<object>("/api/v1/auth/refresh/logout", string.IsNullOrWhiteSpace(nonce) ? null : new { Nonce = nonce }, cancellationToken).ConfigureAwait(false);
     }
 
     // V1 Backup Management Methods
