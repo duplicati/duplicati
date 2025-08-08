@@ -1218,6 +1218,9 @@ public static partial class Command
                 await PackageSupport.SetPermissionFlags(tgfolder, rtcfg);
             }
 
+            // Copy in the run-as-user.sh script
+            File.Copy(Path.Combine(resourcesDir, "run-as-user.sh"), Path.Combine(tmpbuild, "run-as-user.sh"), true);
+
             var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString(), $"{rtcfg.ReleaseInfo.Version}-{rtcfg.ReleaseInfo.Channel}" };
             if (rtcfg.ReleaseInfo.Channel == ReleaseChannel.Stable)
                 tags.Add("latest");
