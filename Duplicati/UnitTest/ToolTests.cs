@@ -29,6 +29,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
+#nullable enable
+
 namespace Duplicati.UnitTest
 {
 
@@ -138,8 +140,16 @@ namespace Duplicati.UnitTest
             foreach (var (name, contents) in filelist.Zip(files))
             {
                 var filename = Path.GetFileName(name);
-                var newcontents = File.ReadAllBytes(newfilelist.FirstOrDefault(x => x.EndsWith(filename)));
-                Assert.AreEqual(contents, newcontents, "File contents are not equal");
+                var newfilename = newfilelist.FirstOrDefault(x => x.EndsWith(filename));
+                if (newfilename == null)
+                {
+                    Assert.Fail($"File {filename} was not renamed in the destination directory.");
+                }
+                else
+                {
+                    var newcontents = File.ReadAllBytes(newfilename);
+                    Assert.AreEqual(contents, newcontents, "File contents are not equal");
+                }
             }
         }
 
@@ -153,6 +163,10 @@ namespace Duplicati.UnitTest
             string[][] testCases =
             {
                 ["source", "destination", "--parse-arguments-only"],
+                ["source", "destination", "--parse-arguments-only", "--auto-create-folders"],
+                ["source", "destination", "--parse-arguments-only", "--backend-retries", "5"],
+                ["source", "destination", "--parse-arguments-only", "--backend-retry-delay", "1000"],
+                ["source", "destination", "--parse-arguments-only", "--backend-retry-with-exponential-backoff"],
                 ["source", "destination", "--parse-arguments-only", "--dry-run"],
                 ["source", "destination", "--parse-arguments-only", "--force"],
                 ["source", "destination", "--parse-arguments-only", "--dry-run", "--force"],
@@ -420,6 +434,96 @@ namespace Duplicati.UnitTest
             }
 
             Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
+        }
+
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        [TestCase(true, false, "0")] // Fail first transfer on source.
+        [TestCase(true, false, "1,3")] // Fail middle transfers on source.
+        [TestCase(true, false, "4")] // Fail last transfer on source.
+        [TestCase(true, false, "0,1,2,3,4")] // Fail all transfers on source.
+        [TestCase(false, true, "0")] // Fail first transfer on destination.
+        [TestCase(false, true, "1,3")] // Fail middle transfers on destination.
+        [TestCase(false, true, "4")] // Fail last transfer on destination.
+        [TestCase(false, true, "0,1,2,3,4")] // Fail all transfers on destination.
+        public void TestRemoteSynchronizationWithFaultyBackend(bool failSource, bool failDest, string failIndices)
+        {
+            var expect_to_fail = failIndices == "0,1,2,3,4";
+
+            var l1 = Path.Combine(TARGETFOLDER, "l1");
+            var l2 = Path.Combine(TARGETFOLDER, "l2");
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            int backendCount = 0;
+            var failIdxs = failIndices.Split(',').Select(int.Parse).ToList();
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
+            {
+                if (action == DeterministicErrorBackend.BackendAction.GetBefore || action == DeterministicErrorBackend.BackendAction.PutBefore)
+                {
+                    var currentIdx = backendCount;
+                    if (failIdxs.Count > 0 && currentIdx == failIdxs.First())
+                    {
+                        failIdxs.RemoveAt(0);
+                        return true; // Simulate failure
+                    }
+                    else
+                    {
+                        backendCount++;
+                    }
+                }
+
+                return false; // No failure
+            };
+
+            GenerateTestData(l1, 5, 0, 0, 1024).Wait();
+
+            // Setup backend URLs with failure injection
+            var protocol = new DeterministicErrorBackend().ProtocolKey;
+            string srcUrl = failSource ? $"{protocol}://{l1}" : $"file://{l1}";
+            string dstUrl = failDest ? $"{protocol}://{l2}" : $"file://{l2}";
+
+            var args = new string[] {
+                srcUrl, dstUrl,
+                "--confirm",
+                "--backend-retries", expect_to_fail ? "0" : "5",
+                "--backend-retry-delay", "10",
+                "--retry", "0" // This test only tests the LightWeightBackendManager's retry logic.
+            };
+
+            // Redirect standard error to a buffer if we expect to fail. If it doesn't fail, we can omit it.
+            var originalError = Console.Error;
+            StringWriter? errorBuffer = null;
+            if (expect_to_fail)
+            {
+                errorBuffer = new StringWriter();
+                Console.SetError(errorBuffer);
+            }
+
+            var async_call = RemoteSynchronization.Program.Main(args);
+            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+
+            // Expect nonzero return code if any backend fails less than the number of retries
+            if (expect_to_fail)
+            {
+                try
+                {
+                    Assert.AreNotEqual(0, return_code, "Expected failure due to all transfers failing.");
+                    Assert.IsFalse(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories should not be equal due to failures.");
+                }
+                catch
+                {
+                    Console.SetError(originalError); // Restore standard error
+                    Console.Error.WriteLine(errorBuffer?.ToString());
+                    throw;
+                }
+            }
+            else
+            {
+                Assert.AreEqual(0, return_code, "Expected success.");
+                Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal.");
+            }
         }
 
         /// <summary>
