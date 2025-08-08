@@ -247,7 +247,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     else if (vol_count == 0)
                     {
                         m_volumecount.Remove(blockRequest.VolumeID);
-                        blockRequest.CacheDecrEvict = true;
+                        blockRequest.RequestType = BlockRequestType.CacheEvict;
                         emit_evict = true;
                     }
                     else // vol_count < 0
@@ -332,17 +332,17 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="blockRequest">The block request related to the value.</param>
             /// <param name="value">The byte[] buffer holding the block data.</param>
-            public void Set(BlockRequest blockRequest, byte[] value)
+            public void Set(long blockID, byte[] value)
             {
-                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockRequest.BlockID);
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockID);
 
                 sw_set_set?.Start();
-                m_block_cache.Set(blockRequest.BlockID, value);
+                m_block_cache.Set(blockID, value);
                 sw_set_set?.Stop();
 
                 // Notify any waiters that the block is available.
                 sw_set_wake_get?.Start();
-                if (m_waiters.TryRemove(blockRequest.BlockID, out var tcs))
+                if (m_waiters.TryRemove(blockID, out var tcs))
                 {
                     sw_set_wake_get?.Stop();
                     sw_set_wake_set?.Start();
@@ -447,6 +447,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             new
             {
                 Input = channels.DecompressedBlock.AsRead(),
+                Ack = channels.DecompressionAck.AsWrite(),
                 Output = channels.VolumeRequest.AsWrite()
             },
             async self =>
@@ -460,6 +461,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 var volume_consumer = Task.Run(async () =>
                 {
                     Stopwatch sw_read = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_ack = options.InternalProfiling ? new() : null;
                     Stopwatch sw_set = options.InternalProfiling ? new() : null;
                     try
                     {
@@ -469,8 +471,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             var (block_request, data) = await self.Input.ReadAsync().ConfigureAwait(false);
                             sw_read?.Stop();
 
+                            sw_ack?.Start();
+                            block_request.RequestType = BlockRequestType.DecompressAck;
+                            await self.Ack.WriteAsync(block_request).ConfigureAwait(false);
+                            sw_ack?.Stop();
+
                             sw_set?.Start();
-                            cache.Set(block_request, data);
+                            cache.Set(block_request.BlockID, data);
                             sw_set?.Stop();
                         }
                     }
@@ -480,7 +487,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read.ElapsedMilliseconds}ms, Ack: {sw_ack.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
                         }
 
                         // Cancel any remaining readers - although there shouldn't be any.
@@ -511,22 +518,26 @@ namespace Duplicati.Library.Main.Operation.Restore
                             sw_req?.Start();
                             var block_request = await req.ReadAsync().ConfigureAwait(false);
                             sw_req?.Stop();
-                            if (block_request.CacheDecrEvict)
+                            switch (block_request.RequestType)
                             {
-                                sw_cache?.Start();
-                                // Target file already had the block.
-                                await cache.CheckCounts(block_request).ConfigureAwait(false);
-                                sw_cache?.Stop();
-                            }
-                            else
-                            {
-                                sw_get?.Start();
-                                var datatask = cache.Get(block_request);
-                                sw_get?.Stop();
+                                case BlockRequestType.Download:
+                                    sw_get?.Start();
+                                    var datatask = cache.Get(block_request);
+                                    sw_get?.Stop();
 
-                                sw_resp?.Start();
-                                await res.WriteAsync(datatask).ConfigureAwait(false);
-                                sw_resp?.Stop();
+                                    sw_resp?.Start();
+                                    await res.WriteAsync(datatask).ConfigureAwait(false);
+                                    sw_resp?.Stop();
+                                    break;
+                                case BlockRequestType.CacheEvict:
+                                    sw_cache?.Start();
+                                    // Target file already had the block.
+                                    await cache.CheckCounts(block_request).ConfigureAwait(false);
+                                    sw_cache?.Stop();
+                                    break;
+                                case BlockRequestType.DecompressAck:
+                                default:
+                                    throw new InvalidOperationException($"Unexpected block request type: {block_request.RequestType}");
                             }
                         }
                     }

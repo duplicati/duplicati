@@ -175,7 +175,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 else
                                 {
                                     verified_blocks.Clear();
-                                    missing_blocks = [.. blocks.Select(x => { x.CacheDecrEvict = false; return x; })];
+                                    missing_blocks = [.. blocks.Select(x => { x.RequestType = BlockRequestType.Download; return x; })];
                                 }
                                 file = new_file;
                             }
@@ -194,7 +194,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     block.BlockHash,
                                     block.BlockSize,
                                     block.VolumeID,
-                                    true
+                                    BlockRequestType.CacheEvict
                                 )
                             ).ConfigureAwait(false);
                             sw_req?.Stop();
@@ -239,7 +239,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             blocks[0].BlockHash,
                                             blocks[0].BlockSize,
                                             blocks[0].VolumeID,
-                                            true
+                                            BlockRequestType.CacheEvict
                                         )
                                     ).ConfigureAwait(false);
                                 }
@@ -298,7 +298,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             missing_blocks[i].BlockHash,
                                             missing_blocks[i].BlockSize,
                                             missing_blocks[i].VolumeID,
-                                            false
+                                            BlockRequestType.Download
                                         )
                                     ).ConfigureAwait(false);
                                 }
@@ -330,7 +330,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     missing_blocks[j + burst].BlockHash,
                                                     missing_blocks[j + burst].BlockSize,
                                                     missing_blocks[j + burst].VolumeID,
-                                                    false
+                                                    BlockRequestType.Download
                                                 )
                                             ).ConfigureAwait(false);
                                         }
@@ -364,7 +364,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 blocks[i].BlockHash,
                                                 blocks[i].BlockSize,
                                                 blocks[i].VolumeID,
-                                                true
+                                                BlockRequestType.CacheEvict
                                             )
                                         ).ConfigureAwait(false);
                                         sw_req?.Stop();
@@ -627,7 +627,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         block.BlockHash,
                         block.BlockSize,
                         block.VolumeID,
-                        false
+                        BlockRequestType.Download
                     )
                 ).ConfigureAwait(false);
                 sw_req?.Stop();
@@ -648,7 +648,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         block.BlockHash,
                         block.BlockSize,
                         block.VolumeID,
-                        true
+                        BlockRequestType.CacheEvict
                     )
                 ).ConfigureAwait(false);
                 sw_req?.Stop();
@@ -859,7 +859,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         blocks[j].BlockHash,
                                         blocks[j].BlockSize,
                                         blocks[j].VolumeID,
-                                        true
+                                        BlockRequestType.CacheEvict
                                     )
                                 ).ConfigureAwait(false);
                                 verified_blocks.Add(blocks[j]);
