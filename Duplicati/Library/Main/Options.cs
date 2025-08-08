@@ -423,6 +423,9 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("log-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)), Strings.Options.LogLevelDeprecated("log-file-log-level", "console-log-level")),
             new CommandLineArgument("suppress-warnings", CommandLineArgument.ArgumentType.String, Strings.Options.SuppresswarningsShort, Strings.Options.SuppresswarningsLong),
 
+            new CommandLineArgument("log-http-requests", CommandLineArgument.ArgumentType.Boolean, Strings.Options.LoghttprequestsShort, Strings.Options.LoghttprequestsLong, "false"),
+            new CommandLineArgument("log-socket-data", CommandLineArgument.ArgumentType.Integer, Strings.Options.LogsocketdataShort, Strings.Options.LogsocketdataLong, "-1"),
+
             new CommandLineArgument("profile-all-database-queries", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ProfilealldatabasequeriesShort, Strings.Options.ProfilealldatabasequeriesLong, "false"),
 
             new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsLong, "false"),
@@ -1016,6 +1019,16 @@ namespace Duplicati.Library.Main
         /// </summary>
         public HashSet<string>? SuppressWarningsFilter
             => m_options.GetValueOrDefault("suppress-warnings")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// A value indicating if HTTP requests should be logged
+        /// </summary>
+        public bool LogHttpRequests => GetBool("log-http-requests");
+
+        /// <summary>
+        /// Gets the number of bytes of socket data to include in logs, -1 disables logging
+        /// </summary>
+        public int LogSocketData => GetInt("log-socket-data", -1);
 
         /// <summary>
         /// Gets the filter used for log-file messages.

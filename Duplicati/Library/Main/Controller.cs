@@ -483,6 +483,9 @@ namespace Duplicati.Library.Main
             {
                 logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);
                 result.MessageSink = m_messageSink;
+                using var httpListener = m_options.LogHttpRequests || m_options.LogSocketData >= 0
+                    ? new NetworkTrafficLogger(m_options.LogHttpRequests, m_options.LogSocketData)
+                    : null;
 
                 try
                 {
