@@ -43,12 +43,13 @@ namespace Duplicati.Library.Main.Operation.Restore
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeManager>();
 
         /// <summary>
-        /// Helper class to read from either of two channels.
+        /// Helper class to read from either of three channels, in a prioritized manner, where channel1 is consumed first.
         /// This is a workaround for the fact that CoCoL seems to deadlock on ReadFroAnyAsync
         /// </summary>
         /// <param name="channel1">The first channel to read from.</param>
         /// <param name="channel2">The second channel to read from.</param>
-        private sealed class ReadFromEither(IReadChannel<object> channel1, IReadChannel<object> channel2)
+        /// <param name="channel3">The third channel to read from.</param>
+        private sealed class ReadFromEitherPrioritized(IReadChannel<object> channel1, IReadChannel<object> channel2, IReadChannel<object> channel3)
         {
             /// <summary>
             /// The first task that is reading from the channels.
@@ -58,6 +59,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The second task that is reading from the channels.
             /// </summary>
             private Task<object> t2;
+            /// <summary>
+            /// The third task that is reading from the channels.
+            /// </summary>
+            private Task<object> t3;
 
             /// <summary>
             /// Reads from either of the two channels asynchronously.
@@ -71,17 +76,30 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // This is safe here, because the shutdown only happens on failure termination
                 t1 ??= channel1.ReadAsync();
                 t2 ??= channel2.ReadAsync();
+                t3 ??= channel3.ReadAsync();
 
-                var r = await Task.WhenAny(t1, t2).ConfigureAwait(false);
-                if (r == t1)
+                // Wait for any of the tasks to complete.
+                await Task.WhenAny(t1, t2, t3).ConfigureAwait(false);
+
+                // Check the channels in priority
+                // If t1 is completed, we process it first
+                if (t1.IsCompletedSuccessfully)
                 {
+                    var result = await t1.ConfigureAwait(false);
                     t1 = null;
-                    return await r.ConfigureAwait(false);
+                    return result;
                 }
-                else
+                else if (t2.IsCompletedSuccessfully)
                 {
+                    var result = await t2.ConfigureAwait(false);
                     t2 = null;
-                    return await r.ConfigureAwait(false);
+                    return result;
+                }
+                else // t3.IsCompletedSuccessfully
+                {
+                    var result = await t3.ConfigureAwait(false);
+                    t3 = null;
+                    return result;
                 }
             }
         }

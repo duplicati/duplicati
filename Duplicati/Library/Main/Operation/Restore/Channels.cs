@@ -52,6 +52,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         public readonly IChannel<(long, string, TempFile)> DecryptRequest = ChannelManager.CreateChannel<(long, string, TempFile)>(buffersize: BufferSize);
 
+        // TODO DecompressionAck could be made into a channel of `long`, but because of the ReadFromEitherPrioritized workaround, it has to be an `object`.
         /// <summary>
         /// Channel between <see cref="BlockManager"/> and <see cref="VolumeManager"/> to keep track of volumes that are actively being read.
         /// </summary>
