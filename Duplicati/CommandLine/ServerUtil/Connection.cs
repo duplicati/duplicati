@@ -227,7 +227,7 @@ public class Connection
                         if (string.IsNullOrWhiteSpace(accessToken))
                             throw new InvalidOperationException("Failed to get access token");
 
-                        if (!string.IsNullOrWhiteSpace(refreshToken))
+                        if (!string.IsNullOrWhiteSpace(refreshToken) && obtainRefreshToken)
                             (settings with { RefreshToken = refreshToken, RefreshNonce = refreshNonce }).Save(console);
 
                         return CreateConnectionWithClient(client, accessToken);
@@ -264,7 +264,7 @@ public class Connection
             if (string.IsNullOrWhiteSpace(accessToken))
                 throw new InvalidOperationException("Failed to get access token");
 
-            if (!string.IsNullOrWhiteSpace(refreshToken))
+            if (!string.IsNullOrWhiteSpace(refreshToken) && obtainRefreshToken)
                 (settings with { RefreshToken = refreshToken, RefreshNonce = refreshNonce }).Save(console);
 
             return CreateConnectionWithClient(client, accessToken);
