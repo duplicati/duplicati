@@ -197,6 +197,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             break;
                                         case BlockRequestType.DecompressAck:
                                             {
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for block {0} from volume {1}", request.BlockID, request.VolumeID);
                                                 handle_ack(request.BlockID, request.VolumeID);
                                             }
                                             break;
