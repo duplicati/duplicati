@@ -147,7 +147,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_block?.Start();
                         var blocks = await db
                             .GetBlocksFromFile(file.BlocksetID, results.TaskControl.ProgressToken)
-                            .ToArrayAsync()
+                            .ToArrayAsync(results.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
                         sw_block?.Stop();
 

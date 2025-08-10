@@ -478,7 +478,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, $"Received block request: {block_request.RequestType} for block {block_request.BlockID} from volume {block_request.VolumeID}");
                             sw_ack?.Start();
                             block_request.RequestType = BlockRequestType.DecompressAck;
-                            await self.Ack.WriteAsync(block_request).ConfigureAwait(false);
+                            while (true)
+                            {
+                                var did_write = await self.Ack.TryWriteAsync(block_request, TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+                                if (did_write)
+                                    break;
+                                await results.TaskControl.ProgressRendevouz();
+                            }
                             sw_ack?.Stop();
 
                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, $"Received data for block {block_request.BlockID} from volume {block_request.VolumeID}");
