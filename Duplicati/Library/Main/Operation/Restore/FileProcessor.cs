@@ -303,7 +303,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                                 sw_req?.Start();
                                 // Burst the block requests to speed up the restore
-                                int burst = Channels.BufferSize;
+                                int burst = (int)Math.Max(options.RestoreChannelBufferSize, 1);
                                 int j = 0;
                                 for (int i = 0; i < (int)Math.Min(missing_blocks.Count, burst); i++)
                                 {
