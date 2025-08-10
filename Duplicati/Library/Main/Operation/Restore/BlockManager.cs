@@ -291,6 +291,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     m_active_readers[block_request.BlockID] = m_active_readers.TryGetValue(block_request.BlockID, out var c) ? c + 1 : 1;
                 }
 
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Active readers for block {0}: {1}", block_request.BlockID, m_active_readers[block_request.BlockID]);
+
                 // Check if the block is already in the cache, and return it if it is.
                 if (m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
                     return value;
@@ -316,6 +318,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 else
                 {
+                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Block {0} is already being requested, waiting for it to be available", block_request.BlockID);
                     sw_get_wait?.Stop();
                 }
 
@@ -467,15 +470,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         while (true)
                         {
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, "Waiting for block request from volume");
                             sw_read?.Start();
                             var (block_request, data) = await self.Input.ReadAsync().ConfigureAwait(false);
                             sw_read?.Stop();
 
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, $"Received block request: {block_request.RequestType} for block {block_request.BlockID} from volume {block_request.VolumeID}");
                             sw_ack?.Start();
                             block_request.RequestType = BlockRequestType.DecompressAck;
                             await self.Ack.WriteAsync(block_request).ConfigureAwait(false);
                             sw_ack?.Stop();
 
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, $"Received data for block {block_request.BlockID} from volume {block_request.VolumeID}");
                             sw_set?.Start();
                             cache.Set(block_request.BlockID, data);
                             sw_set?.Stop();
@@ -518,6 +524,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             sw_req?.Start();
                             var block_request = await req.ReadAsync().ConfigureAwait(false);
                             sw_req?.Stop();
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, $"Received block request: {block_request.RequestType}");
                             switch (block_request.RequestType)
                             {
                                 case BlockRequestType.Download:

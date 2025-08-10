@@ -55,6 +55,14 @@ namespace Duplicati.Library.Main.Operation.Restore
         public static int file_processors_restoring_files;
         public static object file_processor_continue_lock = new object();
         public static TaskCompletionSource file_processor_continue = new();
+        /// <summary>
+        /// Lock for the file processor ID.
+        /// </summary>
+        public static object id_lock = new();
+        /// <summary>
+        /// The current file processor ID. Used for debugging.
+        /// </summary>
+        public static int id = 0;
 
         /// <summary>
         /// Runs the file processor process that restores the files that need to be restored.
@@ -93,6 +101,12 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // Indicates whether this FileProcessor is still restoring files
                 var decremented = false;
+                // ID for this file processor, used for debugging.
+                int my_id = -1;
+                lock (id_lock)
+                {
+                    my_id = id++;
+                }
 
                 try
                 {
@@ -106,6 +120,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_file?.Start();
                         var file = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_file?.Stop();
+
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "FileRestored", null, $"{my_id} Restoring file {file.TargetPath}");
 
                         if (file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID && !options.SkipMetadata)
                         {
@@ -453,7 +469,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                         sw_work_results?.Stop();
 
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "RestoredFile", "Restored file {0}", file.TargetPath);
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "RestoredFile", $"{my_id} Restored file {{0}}", file.TargetPath);
                     }
                 }
                 catch (RetiredException)

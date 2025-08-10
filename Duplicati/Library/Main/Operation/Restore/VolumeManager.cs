@@ -181,9 +181,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         while (true)
                         {
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Flushing ack channel before waiting");
                             await flush_ack_channel().ConfigureAwait(false);
                             // TODO: CoCol ReadFromAnyAsync deadlocks, so we use a workaround
-                            var msg = await rfa.ReadFromEitherAsync().ConfigureAwait(false);
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Waiting for volume request or response");
                             switch (msg)
                             {
                                 case BlockRequest request:
@@ -223,7 +224,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     // Cache_max = 0 auto evicts when all of the requests have been ack'ed.
                                                     if (cache_max > 0 && (cache.Count + in_flight_downloads.Count) >= cache_max)
                                                     {
-                                                        Logging.Log.WriteVerboseMessage(LOGTAG, "VolumeRequest", null, "Evicting volume");
+                                                        Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Evicting volume");
                                                         // TODO switch based of the eviction strategy.
                                                         // fifo / lifo based on both when they were downloaded and when they were used
                                                         // random
