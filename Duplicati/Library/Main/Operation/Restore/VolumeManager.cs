@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 #nullable enable
@@ -118,6 +119,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Dictionary<long, List<BlockRequest>> in_flight_downloads = [];
                     // Dictionary to keep track of volumes that are actively being accessed. Used for cache eviction.
                     Dictionary<long, long> in_flight_decompressing = [];
+                    // Dictionary to keep track of the currently responding request to prevent auto evicting during a response.
+                    long? responding = null;
 
                     Stopwatch? sw_cache_set = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_cache_evict = options.InternalProfiling ? new() : null;
@@ -145,7 +148,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             if (dcount <= 1)
                             {
                                 in_flight_decompressing.Remove(volume_id);
-                                if (cache_max == 0)
+                                if (volume_id != responding && cache_max == 0)
                                 {
                                     handle_evict(volume_id);
                                 }
@@ -284,6 +287,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         tmpfiles[volume_id] = tmpfile;
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
+                                        responding = volume_id;
                                         foreach (var request in in_flight_downloads[volume_id])
                                         {
                                             // Ensure ACK channel is empty to avoid deadlock
@@ -304,6 +308,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             else
                                                 in_flight_decompressing[request.VolumeID] = 1;
                                         }
+                                        responding = null;
                                         in_flight_downloads.Remove(volume_id);
                                         sw_wakeup?.Stop();
                                         break;
