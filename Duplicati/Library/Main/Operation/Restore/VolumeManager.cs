@@ -140,9 +140,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_cache_evict?.Stop();
                     }
 
-                    void handle_ack(long block_id, long volume_id)
+                    void handle_ack(long volume_id)
                     {
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for block {0} from volume {1}", block_id, volume_id);
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for volume {0}", volume_id);
                         if (in_flight_decompressing.TryGetValue(volume_id, out var dcount))
                         {
                             if (dcount <= 1)
@@ -157,7 +157,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 in_flight_decompressing[volume_id] = dcount - 1;
                         }
                         else
-                            Logging.Log.WriteWarningMessage(LOGTAG, "VolumeRequest", null, "Decompression acknowledgment for block {0} from volume {1} not found", block_id, volume_id);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "VolumeRequest", null, "Decompression acknowledgment for volume {0} not found", volume_id);
                     }
 
                     async Task flush_ack_channel()
@@ -166,15 +166,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                         while (true)
                         {
                             var (has_read, ack_msg) = await self.DecompressAck.TryReadAsync().ConfigureAwait(false);
+
                             if (!has_read)
                                 break;
-                            if (ack_msg is not BlockRequest ack_request)
-                            {
-                                Logging.Log.WriteErrorMessage(LOGTAG, "VolumeRequest", null, "Unexpected message type in ack channel: {0}", ack_msg?.GetType().Name);
-                                break;
-                            }
 
-                            handle_ack(ack_request.BlockID, ack_request.VolumeID);
+                            handle_ack(ack_msg);
                         }
                     }
 
@@ -204,7 +200,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         case BlockRequestType.DecompressAck:
                                             {
                                                 Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for block {0} from volume {1}", request.BlockID, request.VolumeID);
-                                                handle_ack(request.BlockID, request.VolumeID);
+                                                handle_ack(request.VolumeID);
                                             }
                                             break;
                                         case BlockRequestType.Download:

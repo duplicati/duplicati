@@ -480,7 +480,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             block_request.RequestType = BlockRequestType.DecompressAck;
                             while (true)
                             {
-                                var did_write = await self.Ack.TryWriteAsync(block_request, TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+                                var did_write = await self.Ack.TryWriteAsync(block_request.VolumeID, TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
                                 if (did_write)
                                     break;
                                 await results.TaskControl.ProgressRendevouz();
