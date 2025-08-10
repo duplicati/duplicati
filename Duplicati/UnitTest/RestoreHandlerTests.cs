@@ -29,6 +29,8 @@ using Duplicati.Library.Main;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
+#nullable enable
+
 namespace Duplicati.UnitTest
 {
     public class RestoreHandlerTests : BasicSetupHelper
