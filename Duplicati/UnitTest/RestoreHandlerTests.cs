@@ -164,7 +164,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreVolumeCache([Values("0b", "1mb", "5mb", "1gb")] string cache_size, [Values("0", "1", null)] string? channel_size)
+        public async System.Threading.Tasks.Task RestoreVolumeCache([Values("0b", "1mb", "5mb", "1gb")] string cache_size, [Values("0", "1", null)] string? channel_size)
         {
             var opts = TestOptions;
             opts["dblock-size"] = "1mb";
@@ -201,14 +201,13 @@ namespace Duplicati.UnitTest
                 TestUtils.AssertResults(c.Restore(["*"]));
             });
 
-            System.Threading.Tasks.Task.WhenAny(timeout_task, restore_task).ContinueWith(t =>
-            {
-                if (t.Result == timeout_task)
-                    Assert.Fail("Restore timed out");
-                else if (t.Result == restore_task)
-                    // Throw any exceptions it might have
-                    t.Result.GetAwaiter().GetResult();
-            });
+            var t = await System.Threading.Tasks.Task.WhenAny(timeout_task, restore_task);
+
+            if (t == timeout_task)
+                Assert.Fail("Restore timed out");
+            else if (t == restore_task)
+                // Throw any exceptions it might have
+                t.GetAwaiter().GetResult();
 
             TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restoring with different volume cache sizes");
         }
