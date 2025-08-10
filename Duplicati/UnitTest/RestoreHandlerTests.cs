@@ -180,7 +180,7 @@ namespace Duplicati.UnitTest
             opts["restore-path"] = RESTOREFOLDER;
 
             // Write a bunch of files
-            Random rng = new Random();
+            Random rng = new();
             byte[] data = new byte[1024];
             for (int i = 0; i < 1000; i++)
             {
@@ -189,22 +189,25 @@ namespace Duplicati.UnitTest
                 File.WriteAllBytes(filePath, data);
             }
 
-            using (var c = new Controller("file://" + this.TARGETFOLDER, opts, null))
-                TestUtils.AssertResults(c.Backup([this.DATAFOLDER]));
+            using var c = new Controller("file://" + this.TARGETFOLDER, opts, null);
+            TestUtils.AssertResults(c.Backup([this.DATAFOLDER]));
 
             // Start a 30 second timeout
             var timeout_task = System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(30));
 
             var restore_task = System.Threading.Tasks.Task.Run(() =>
             {
-                using var c = new Controller("file://" + this.TARGETFOLDER, opts, null);
                 TestUtils.AssertResults(c.Restore(["*"]));
             });
 
             var t = await System.Threading.Tasks.Task.WhenAny(timeout_task, restore_task);
 
             if (t == timeout_task)
+            {
+                c.Abort();
+                await restore_task; // Ensure we wait for the restore task to complete
                 Assert.Fail("Restore timed out");
+            }
             else if (t == restore_task)
                 // Throw any exceptions it might have
                 t.GetAwaiter().GetResult();
