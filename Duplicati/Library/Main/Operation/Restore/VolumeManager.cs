@@ -191,11 +191,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         case BlockRequestType.CacheEvict:
                                             {
-                                                if (cache_max > 0)
-                                                {
-                                                    Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Evicting volume {0} from cache by request", request.VolumeID);
-                                                    handle_evict(request.VolumeID);
-                                                }
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Evicting volume {0} from cache by request", request.VolumeID);
+                                                handle_evict(request.VolumeID);
                                             }
                                             break;
                                         case BlockRequestType.DecompressAck:
@@ -222,7 +219,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 else
                                                 {
                                                     // Check if downloading another volume would exceed cache limits.
-                                                    if ((cache.Count + in_flight_downloads.Count) >= cache_max)
+                                                    // Cache_max = 0 auto evicts when all of the requests have been ack'ed.
+                                                    if (cache_max > 0 && (cache.Count + in_flight_downloads.Count) >= cache_max)
                                                     {
                                                         Logging.Log.WriteVerboseMessage(LOGTAG, "VolumeRequest", null, "Evicting volume");
                                                         // TODO switch based of the eviction strategy.
