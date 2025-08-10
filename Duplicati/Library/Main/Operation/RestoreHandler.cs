@@ -344,13 +344,11 @@ namespace Duplicati.Library.Main.Operation
                 .ConfigureAwait(false);
 
             using var setup_log_timer = new Logging.Timer(LOGTAG, "RestoreNetworkSetup", "RestoreNetworkSetup");
-            // Create the channels between BlockManager and FileProcessor
-            Restore.Channels.BufferSize = m_options.RestoreChannelBufferSize;
-            var fileprocessor_requests = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize: Restore.Channels.BufferSize)).ToArray();
-            var fileprocessor_responses = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Task<byte[]>>(buffersize: Restore.Channels.BufferSize)).ToArray();
+            var fileprocessor_requests = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize: m_options.RestoreChannelBufferSize)).ToArray();
+            var fileprocessor_responses = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Task<byte[]>>(buffersize: m_options.RestoreChannelBufferSize)).ToArray();
 
             // Create the process network
-            Restore.Channels channels = new();
+            Restore.Channels channels = new(m_options);
             var filelister = Restore.FileLister.Run(channels, database, m_options, m_result);
             Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
