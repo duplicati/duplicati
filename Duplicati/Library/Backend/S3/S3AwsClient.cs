@@ -56,7 +56,7 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// The S3 client
         /// </summary>
-        private readonly AmazonS3Client m_client;
+        private readonly CustomAwsS3Client m_client;
         /// <summary>
         /// The option to specify if chunk encoding should be used
         /// </summary>
@@ -105,7 +105,7 @@ namespace Duplicati.Library.Backend
 
             CommandLineArgumentMapper.ApplyArguments(cfg, options, EXT_OPTION_PREFIX);
 
-            m_client = new AmazonS3Client(awsID, awsKey, cfg);
+            m_client = new CustomAwsS3Client(awsID, awsKey, cfg);
 
             m_timeouts = timeouts;
             m_useV2ListApi = string.Equals(options.GetValueOrDefault("list-api-version", "v1"), "v2", StringComparison.OrdinalIgnoreCase);
