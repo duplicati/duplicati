@@ -123,11 +123,15 @@ public static partial class Command
     /// <summary>
     /// The packages that are required for GUI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> DebianGUIDepends = ["libice6", "libsm6", "libfontconfig1", DebianLibIcuVersions, DebianLibSslVersions];
+    private static readonly IReadOnlyList<string> DebianGUIDepends = ["libice6", "libsm6", "libfontconfig1", DebianLibSslVersions];
     /// <summary>
     /// The packages that are required for CLI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> DebianCLIDepends = [DebianLibIcuVersions, DebianLibSslVersions];
+    private static readonly IReadOnlyList<string> DebianCLIDepends = [DebianLibSslVersions];
+    /// <summary>
+    /// The packages that are recommended for Debian builds
+    /// </summary>
+    private static readonly IReadOnlyList<string> DebianRecommends = [DebianLibIcuVersions];
 
     /// <summary>
     /// The packages that are required for GUI builds

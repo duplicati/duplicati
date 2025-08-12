@@ -860,6 +860,7 @@ public static partial class Command
                     .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
                     .Replace("%ARCH%", debArchString)
                     .Replace("%PACKAGE_TYPE%", packageType)
+                    .Replace("%RECOMMENDS%", string.Join(", ", DebianRecommends))
                     .Replace("%DEPENDS%", string.Join(", ", target.Interface == InterfaceType.GUI
                         ? DebianGUIDepends
                         : DebianCLIDepends))
@@ -935,6 +936,25 @@ public static partial class Command
                 string.Join("\n", conffiles)
             );
 
+            File.Copy(
+                Path.Combine(resourcesDir, $"preinst"),
+                Path.Combine(pkgroot, "DEBIAN", "preinst"),
+                true
+            );
+
+            var filemode777 = UnixFileMode.UserRead
+                | UnixFileMode.UserWrite
+                | UnixFileMode.UserExecute
+                | UnixFileMode.GroupRead
+                | UnixFileMode.GroupWrite
+                | UnixFileMode.GroupExecute
+                | UnixFileMode.OtherRead
+                | UnixFileMode.OtherWrite
+                | UnixFileMode.OtherExecute;
+
+            if (!OperatingSystem.IsWindows())
+                File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "preinst"), filemode777);
+
             if (target.Interface == InterfaceType.Agent)
             {
                 // Write a custom postinst script
@@ -953,16 +973,8 @@ public static partial class Command
 
                 if (!OperatingSystem.IsWindows())
                 {
-                    var filemode = UnixFileMode.UserRead
-                        | UnixFileMode.UserWrite
-                        | UnixFileMode.UserExecute
-                        | UnixFileMode.GroupRead
-                        | UnixFileMode.GroupExecute
-                        | UnixFileMode.OtherRead
-                        | UnixFileMode.OtherExecute;
-
-                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "prerm"), filemode);
-                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "postinst"), filemode);
+                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "prerm"), filemode777);
+                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "postinst"), filemode777);
                 }
             }
 
