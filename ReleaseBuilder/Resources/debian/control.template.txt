@@ -6,6 +6,7 @@ Homepage: https://duplicati.com
 Package: duplicati%PACKAGE_TYPE%
 Architecture: %ARCH%
 Depends: %DEPENDS%
+Recommends: %RECOMMENDS%
 Version: %VERSION%
 Description: Backup client for encrypted online backups
  Duplicati is a free open-source backup client that securely stores encrypted, incremental,
