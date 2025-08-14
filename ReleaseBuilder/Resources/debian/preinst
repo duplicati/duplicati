@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+
+if ! ldconfig -p 2>/dev/null | grep -qE 'libicuuc\.so\.[0-9]+'; then
+    echo
+    echo "************************************************************"
+    echo "WARNING: No system ICU library (libicuNN) detected."
+    echo
+    echo "Duplicati relies on ICU for globalization."
+    echo "Without ICU, Duplicati will likely fail at runtime with"
+    echo "errors like: 'Couldn't find a valid ICU package installed'."
+    echo
+    echo "To fix this, either:"
+    echo "  1. Install a system ICU package (e.g. libicu75, libicu74, ...)"
+    echo "     Example: sudo apt install libicu75"
+    echo "  2. Or run with invariant globalization enabled:"
+    echo "     export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1"
+    echo "************************************************************"
+    echo
+fi
+
+exit 0
