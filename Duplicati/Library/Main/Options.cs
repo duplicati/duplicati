@@ -167,7 +167,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default value for the maximum size of the restore volume cache
         /// </summary>
-        private const string DEFAULT_RESTORE_VOLUME_CACHE_MAX = "4gb";
+        private const string DEFAULT_RESTORE_VOLUME_CACHE_HINT = "4gb";
 
         /// <summary>
         /// The default value for the number of volume decryptors during restore
@@ -554,7 +554,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, DEFAULT_RESTORE_FILE_PROCESSORS.ToString()),
             new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
             new CommandLineArgument("restore-preallocate-size", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorePreallocateSizeShort, Strings.Options.RestorePreallocateSizeLong, "false"),
-            new CommandLineArgument("restore-volume-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheMaxShort, Strings.Options.RestoreVolumeCacheMaxLong, DEFAULT_RESTORE_VOLUME_CACHE_MAX),
+            new CommandLineArgument("restore-volume-cache-hint", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheHintShort, Strings.Options.RestoreVolumeCacheHintLong, DEFAULT_RESTORE_VOLUME_CACHE_HINT),
             new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, DEFAULT_RESTORE_VOLUME_DECOMPRESSORS.ToString()),
             new CommandLineArgument("restore-volume-decryptors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecryptorsShort, Strings.Options.RestoreVolumeDecryptorsLong, DEFAULT_RESTORE_VOLUME_DECRYPTORS.ToString()),
             new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, DEFAULT_RESTORE_VOLUME_DOWNLOADERS.ToString()),
@@ -1706,7 +1706,7 @@ namespace Duplicati.Library.Main
         // <summary>
         // Gets the size of the volume cache used during restore, in MB.
         // </summary>
-        public long RestoreVolumeCacheMax => GetSize("restore-volume-cache-max", "mb", DEFAULT_RESTORE_VOLUME_CACHE_MAX);
+        public long RestoreVolumeCacheHint => GetSize("restore-volume-cache-hint", "mb", DEFAULT_RESTORE_VOLUME_CACHE_HINT);
 
         /// <summary>
         /// Gets the number of volume decryptors to use in the restore process

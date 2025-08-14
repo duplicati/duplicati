@@ -171,7 +171,7 @@ namespace Duplicati.UnitTest
             var opts = TestOptions;
             opts["dblock-size"] = "1mb";
             opts["blocksize"] = "1kb";
-            opts["restore-volume-cache-max"] = cache_size;
+            opts["restore-volume-cache-hint"] = cache_size;
             if (channel_size != null)
                 opts["restore-channel-buffer-size"] = channel_size;
             opts["restore-legacy"] = "false";

@@ -107,8 +107,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 },
                 async self =>
                 {
-                    // The maximum number of volumes to have in cache at once.
-                    long cache_max = options.RestoreVolumeCacheMax / options.VolumeSize;
+                    // The maximum number of volumes to have in cache at once. If this is exceeded, we'll try to evict the least recently used volume that is not actively in use.
+                    long cache_max = options.RestoreVolumeCacheHint / options.VolumeSize;
                     // Cache of volume readers.
                     Dictionary<long, BlockVolumeReader> cache = [];
                     // List of which volume was accessed last. Used for cache eviction.
