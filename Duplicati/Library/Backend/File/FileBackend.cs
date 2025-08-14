@@ -31,31 +31,92 @@ namespace Duplicati.Library.Backend
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
+    /// <summary>
+    /// The file backend implementation
+    /// </summary>
     public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
+        /// <summary>
+        /// The option key for the destination marker file
+        /// </summary>
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
+        /// <summary>
+        /// The option key for the alternate target paths
+        /// </summary>
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
+        /// <summary>
+        /// The option key for moving files instead of copying them
+        /// </summary>
         private const string OPTION_MOVE_FILE = "use-move-for-put";
+        /// <summary>
+        /// The option key for forcing reauthentication against the remote share
+        /// </summary>
         private const string OPTION_FORCE_REAUTH = "force-smb-authentication";
+        /// <summary>
+        /// The option key for disabling length verification
+        /// </summary>
         private const string OPTION_DISABLE_LENGTH_VERIFICATION = "disable-length-verification";
+        /// <summary>
+        /// The option key for disabling filename sanitization
+        /// </summary>
+        private const string OPTION_DISABLE_FILENAME_SANITIZATION = "disable-filename-sanitation";
 
+        /// <summary>
+        /// The path to the remote file storage (i.e., the directory where files are stored)
+        /// </summary>
         private readonly string m_path;
+        /// <summary>
+        /// The username for authentication against the remote share
+        /// </summary>
         private string? m_username;
+        /// <summary>
+        /// The password for authentication against the remote share
+        /// </summary>
         private string? m_password;
+        /// <summary>
+        /// Flag to indicate if the file should be moved instead of copied
+        /// </summary>
         private readonly bool m_moveFile;
+        /// <summary>
+        /// Flag to indicate if the backend has already authenticated
+        /// </summary>
         private bool m_hasAutenticated;
+        /// <summary>
+        /// Flag to indicate if the backend should force reauthentication
+        /// </summary>
         private readonly bool m_forceReauth;
+        /// <summary>
+        /// Flag to indicate if the destination file length should be verified against the source file length
+        /// </summary>
         private readonly bool m_verifyDestinationLength;
+        /// <summary>
+        /// Flag to indicate if filename sanitization is disabled
+        /// </summary>
+        private readonly bool m_disableFilenameSanitization;
+        /// <summary>
+        /// The timeout options for the backend operations
+        /// </summary>
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
+        /// <summary>
+        /// The system IO abstraction used for file operations
+        /// </summary>
         private static readonly ISystemIO systemIO = SystemIO.IO_OS;
 
+        /// <summary>
+        /// Unused constructor for dynamic loading purposes
+        /// </summary>
         public File()
         {
             m_path = null!;
             m_timeouts = null!;
         }
 
+        /// <summary>
+        /// Constructs a file backend with the specified URL and options.
+        /// </summary>
+        /// <param name="url">The url to the remote file storage</param>
+        /// <param name="options">The options for the file backend</param>
         public File(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
@@ -123,9 +184,13 @@ namespace Duplicati.Library.Backend
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
             m_forceReauth = Utility.Utility.ParseBoolOption(options, OPTION_FORCE_REAUTH);
             m_verifyDestinationLength = !Utility.Utility.ParseBoolOption(options, OPTION_DISABLE_LENGTH_VERIFICATION);
+            m_disableFilenameSanitization = Utility.Utility.ParseBoolOption(options, OPTION_DISABLE_FILENAME_SANITIZATION);
             m_hasAutenticated = false;
         }
 
+        /// <summary>
+        /// Pre-authenticates against the remote share if necessary.
+        /// </summary>
         private void PreAuthenticate()
         {
             if (!OperatingSystem.IsWindows())
@@ -143,6 +208,25 @@ namespace Duplicati.Library.Backend
             { }
         }
 
+        /// <summary>
+        /// Sanitizes the filenames if filename sanitization is enabled.
+        /// </summary>
+        /// <param name="filename">The filename to sanitize</param>
+        /// <returns>The sanitized filename</returns>
+        private string SanitizeFilename(string filename)
+        {
+            if (m_disableFilenameSanitization)
+                return filename;
+
+            // Trim null characters due to issue with Sharepoint mounted folders
+            return filename.Trim('\0');
+        }
+
+        /// <summary>
+        /// Gets the remote path for the specified file.
+        /// </summary>
+        /// <param name="remotename">The remote filename</param>
+        /// <returns>The remote path for the specified file</returns>
         private string GetRemoteName(string remotename)
         {
             PreAuthenticate();
@@ -150,13 +234,15 @@ namespace Duplicati.Library.Backend
             if (!systemIO.DirectoryExists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            return systemIO.PathCombine(m_path, remotename);
+            return systemIO.PathCombine(m_path, SanitizeFilename(remotename));
         }
 
         #region IBackendInterface Members
 
+        /// <inheritdoc />
         public string DisplayName => Strings.FileBackend.DisplayName;
 
+        /// <inheritdoc />
         public string ProtocolKey => "file";
 
         /// <inheritdoc />
@@ -169,6 +255,7 @@ namespace Duplicati.Library.Backend
 
             var res = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ =>
                 systemIO.EnumerateFileEntries(m_path)
+                    .Select(entry => new FileEntry(SanitizeFilename(entry.Name), entry.Size, entry.LastAccess, entry.LastModification, entry.IsFolder, entry.IsArchived))
             ).ConfigureAwait(false);
 
             foreach (var entry in res)
@@ -176,14 +263,14 @@ namespace Duplicati.Library.Backend
         }
 
 #if DEBUG_RETRY
-        private static Random random = new Random();
+        /// <inheritdoc />
         public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
-                using(System.IO.FileStream writestream = systemIO.FileCreate(GetRemoteName(remotename)))
+                using(var writestream = systemIO.FileCreate(GetRemoteName(remotename)))
                 {
-                    if (random.NextDouble() > 0.6666)
+                    if (Random.Shared.NextDouble() > 0.6666)
                         throw new Exception("Random upload failure");
                     await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken).ConfigureAwait(false);
                 }
@@ -196,6 +283,7 @@ namespace Duplicati.Library.Backend
 
         }
 #else
+        /// <inheritdoc />
         public async Task PutAsync(string targetFilename, Stream sourceStream, CancellationToken cancelToken)
         {
             try
@@ -217,6 +305,7 @@ namespace Duplicati.Library.Backend
         }
 #endif
 
+        /// <inheritdoc />
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
@@ -234,6 +323,7 @@ namespace Duplicati.Library.Backend
 
         }
 
+        /// <inheritdoc />
         public Task PutAsync(string targetFilename, string sourceFilePath, CancellationToken cancelToken)
         {
             try
@@ -268,6 +358,7 @@ namespace Duplicati.Library.Backend
 
         }
 
+        /// <inheritdoc />
         public Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             try
@@ -282,6 +373,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <inheritdoc />
         public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _
@@ -289,6 +381,7 @@ namespace Duplicati.Library.Backend
             ).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -305,6 +398,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, Strings.FileBackend.AlternateTargetPathsLong(OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
                     new CommandLineArgument(OPTION_DISABLE_LENGTH_VERIFICATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableLengthVerificationShort, Strings.FileBackend.DisableLengthVerificationLong),
+                    new CommandLineArgument(OPTION_DISABLE_FILENAME_SANITIZATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableFilenameSanitizationShort, Strings.FileBackend.DisableFilenameSanitizationLong),
                     .. TimeoutOptionsHelper.GetOptions()
                 ]);
 
@@ -312,11 +406,14 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <inheritdoc />
         public string Description => Strings.FileBackend.Description;
 
+        /// <inheritdoc />
         public Task TestAsync(CancellationToken cancelToken)
             => this.TestReadWritePermissionsAsync(cancelToken);
 
+        /// <inheritdoc />
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             if (systemIO.DirectoryExists(m_path))
@@ -331,6 +428,7 @@ namespace Duplicati.Library.Backend
 
         #region IDisposable Members
 
+        /// <inheritdoc />
         public void Dispose()
         {
             m_username = null;
@@ -339,6 +437,10 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
+        /// <summary>
+        /// Maps System.IO exceptions to Duplicati specific exceptions.
+        /// </summary>
+        /// <param name="ex">The exception to map.</param>
         private static void MapException(Exception ex)
         {
             if (ex is DirectoryNotFoundException)
@@ -347,6 +449,10 @@ namespace Duplicati.Library.Backend
                 throw new FileMissingException(Strings.FileBackend.FileNotFoundError(ex.Message), ex);
         }
 
+        /// <summary>
+        /// Gets the drive or volume information for the specified path.
+        /// </summary>
+        /// <returns>The drive or volume information, or null if it could not be determined.</returns>
         private DriveInfo? GetDrive()
         {
             string root;
@@ -389,6 +495,7 @@ namespace Duplicati.Library.Backend
             return null;
         }
 
+        /// <inheritdoc />
         public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
         {
             var driveInfo = this.GetDrive();
@@ -412,8 +519,10 @@ namespace Duplicati.Library.Backend
             return Task.FromResult<IQuotaInfo?>(null);
         }
 
+        /// <inheritdoc />
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
+        /// <inheritdoc />
         public Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
             var source = GetRemoteName(oldname);
@@ -430,7 +539,7 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="directory">Directory</param>
         /// <returns>Quota info</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("windows")]
         public static QuotaInfo? GetDiskFreeSpace(string directory)
         {
@@ -446,9 +555,20 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <summary>
+        /// Provides helper methods for working with Windows drives.
+        /// </summary>
         [SupportedOSPlatform("windows")]
         private static class WindowsDriveHelper
         {
+            /// <summary>
+            /// Gets the free disk space for the specified directory using the Win32 API.
+            /// </summary>
+            /// <param name="lpDirectoryName">The directory name to check</param>
+            /// <param name="lpFreeBytesAvailable">The available free bytes</param>
+            /// <param name="lpTotalNumberOfBytes">The total number of bytes</param>
+            /// <param name="lpTotalNumberOfFreeBytes">The total number of free bytes</param>
+            /// <returns></returns>
             [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
             [return: MarshalAs(UnmanagedType.Bool)]
             public static extern bool GetDiskFreeSpaceEx(
@@ -458,6 +578,11 @@ namespace Duplicati.Library.Backend
                 out ulong lpTotalNumberOfFreeBytes);
         }
 
+        /// <summary>
+        /// Verifies that the target file size matches the source file size.
+        /// </summary>
+        /// <param name="targetFilePath">The path to the target file</param>
+        /// <param name="sourceFilePath"> The path to the source file</param>
         private static void VerifyMatchingSize(string targetFilePath, string sourceFilePath)
         {
             try
@@ -480,6 +605,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <summary>
+        /// Verifies that the target file size matches the source stream length or expected length.
+        /// </summary>
+        /// <param name="targetFilePath">The path to the target file</param>
+        /// <param name="sourceStream">The source stream to check the length against</param>
+        /// <param name="expectedLength">The expected length of the file</param>
         private static void VerifyMatchingSize(string targetFilePath, Stream? sourceStream, long? expectedLength)
         {
             try
