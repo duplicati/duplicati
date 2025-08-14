@@ -1,3 +1,8 @@
-#!/bin/sh
-systemctl enable duplicati-agent
-systemctl start duplicati-agent
+if ! command -v systemctl >/dev/null 2>&1; then
+    echo "Warning: systemctl not found. Service 'duplicati-agent' will not be enabled or started."
+else
+    systemctl enable duplicati-agent || \
+        echo "Warning: Failed to enable duplicati-agent service."
+    systemctl start duplicati-agent || \
+        echo "Warning: Failed to start duplicati-agent service."
+fi
