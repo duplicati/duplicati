@@ -942,18 +942,16 @@ public static partial class Command
                 true
             );
 
-            var filemode777 = UnixFileMode.UserRead
+            var filemode755 = UnixFileMode.UserRead
                 | UnixFileMode.UserWrite
                 | UnixFileMode.UserExecute
                 | UnixFileMode.GroupRead
-                | UnixFileMode.GroupWrite
                 | UnixFileMode.GroupExecute
                 | UnixFileMode.OtherRead
-                | UnixFileMode.OtherWrite
                 | UnixFileMode.OtherExecute;
 
             if (!OperatingSystem.IsWindows())
-                File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "preinst"), filemode777);
+                File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "preinst"), filemode755);
 
             if (target.Interface == InterfaceType.Agent)
             {
@@ -973,8 +971,8 @@ public static partial class Command
 
                 if (!OperatingSystem.IsWindows())
                 {
-                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "prerm"), filemode777);
-                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "postinst"), filemode777);
+                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "prerm"), filemode755);
+                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "postinst"), filemode755);
                 }
             }
 
