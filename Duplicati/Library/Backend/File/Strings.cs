@@ -37,6 +37,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string ForceReauthShort { get { return LC.L(@"Force authentication against remote share"); } }
         public static string DisableLengthVerificationLong { get { return LC.L(@"As an extra precaution the uploaded file length will be checked against the local source length."); } }
         public static string DisableLengthVerificationShort { get { return LC.L(@"Disable length verification"); } }
+        public static string DisableFilenameSanitizationLong { get { return LC.L(@"When this option is set, the backend will not sanitize filenames. This may lead to issues with certain characters in the filename, but is necessary for some mounted storage that returns incorrect paths."); } }
+        public static string DisableFilenameSanitizationShort { get { return LC.L(@"Disable filename sanitization"); } }
         public static string FileNotFoundError(string filename) { return LC.L(@"File not found: {0}", filename); }
     }
 }
