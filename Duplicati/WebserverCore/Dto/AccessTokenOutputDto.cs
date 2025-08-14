@@ -20,4 +20,4 @@
 // DEALINGS IN THE SOFTWARE.
 namespace Duplicati.WebserverCore.Dto;
 
-public record AccessTokenOutputDto(string AccessToken);
+public record AccessTokenOutputDto(string AccessToken, string? RefreshNonce);

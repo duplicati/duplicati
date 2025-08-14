@@ -123,11 +123,15 @@ public static partial class Command
     /// <summary>
     /// The packages that are required for GUI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> DebianGUIDepends = ["libice6", "libsm6", "libfontconfig1", DebianLibIcuVersions, DebianLibSslVersions];
+    private static readonly IReadOnlyList<string> DebianGUIDepends = ["libice6", "libsm6", "libfontconfig1", DebianLibSslVersions];
     /// <summary>
     /// The packages that are required for CLI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> DebianCLIDepends = [DebianLibIcuVersions, DebianLibSslVersions];
+    private static readonly IReadOnlyList<string> DebianCLIDepends = [DebianLibSslVersions];
+    /// <summary>
+    /// The packages that are recommended for Debian builds
+    /// </summary>
+    private static readonly IReadOnlyList<string> DebianRecommends = [DebianLibIcuVersions];
 
     /// <summary>
     /// The packages that are required for GUI builds
@@ -1027,14 +1031,14 @@ public static partial class Command
         {
             using var ms = new MemoryStream();
             using var fs = File.OpenRead(keyfile);
-            SharpAESCrypt.SharpAESCrypt.Decrypt(password, fs, ms);
+            SharpAESCrypt.AESCrypt.Decrypt(password, fs, ms);
 
             var rsa = RSA.Create();
             rsa.FromXmlString(System.Text.Encoding.UTF8.GetString(ms.ToArray()));
 
             return rsa;
         }
-        catch (SharpAESCrypt.SharpAESCrypt.WrongPasswordException)
+        catch (SharpAESCrypt.WrongPasswordException)
         {
             if (!askForNewPassword)
                 throw;

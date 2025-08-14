@@ -36,10 +36,14 @@ backupApp.controller('AppController', function($rootScope, $scope, $cookies, $lo
     $scope.isLoggedIn = false;
 
     $scope.log_out = function() {
+        const storedNonce = localStorage.getItem('v1:persist:duplicati:refreshNonce');
+        const body = storedNonce ? { Nonce: storedNonce } : undefined;
+
         // Use a path under /auth/refresh to allow the cookie to be sent for deletion
         // Calling `/auth/logout` also works, but does not revoke the token in the database
-        AppService.post('/auth/refresh/logout').then(function() {
+        AppService.post('/auth/refresh/logout', body).then(function() {
             AppService.clearAccessToken();
+            localStorage.removeItem('v1:persist:duplicati:refreshNonce');
             location.href = '/login.html';            
         }, AppUtils.connectionError);
     };

@@ -93,7 +93,7 @@ class Program
             // Refresh token (if using refresh tokens)
             try
             {
-                var refreshResult = await client.RefreshTokenV1Async(CancellationToken.None);
+                var refreshResult = await client.RefreshTokenV1Async(null, CancellationToken.None);
                 Console.WriteLine($"✓ Token refreshed: {refreshResult.AccessToken[..10]}...");
             }
             catch (Exception ex)

@@ -281,7 +281,7 @@ namespace Duplicati.Library.Main.Database
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
                 yield return new RemoteVolume(
                     rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"),
-                    rd.ConvertValueToString(1) ?? throw new Exception("Hash was null"),
+                    rd.ConvertValueToString(1) ?? "",
                     rd.ConvertValueToInt64(2, -1)
                 );
         }

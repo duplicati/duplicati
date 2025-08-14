@@ -18,24 +18,34 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System.Text;
 
-namespace ReleaseBuilder;
+using Duplicati.Library.Interface;
+using NUnit.Framework;
 
-public static class EncryptionHelper
+namespace Duplicati.UnitTest
 {
-    /// <summary>
-    /// Decrypts the contents of the password file, using the given password and returns the file contents as a string
-    /// </summary>
-    /// <param name="passwordfile">The password file to decrypt</param>
-    /// <param name="password">The password to decrypt with</param>
-    /// <returns>The file contents</returns>
-    public static string DecryptPasswordFile(string passwordfile, string password)
+    public class AllowEmptySourceTest : BasicSetupHelper
     {
-        using var ms = new MemoryStream();
-        using var fs = File.OpenRead(passwordfile);
-        SharpAESCrypt.AESCrypt.Decrypt(password, fs, ms);
+        [Test]
+        [Category("Targeted")]
+        public void BackupFailsWhenSourceFolderIsEmpty()
+        {
+            var testopts = TestOptions.Expand(new { });
 
-        return Encoding.UTF8.GetString(ms.ToArray());
+            using var controller = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null);
+            var ex = Assert.Throws<UserInformationException>(() => controller.Backup(new[] { DATAFOLDER }));
+            Assert.That(ex!.HelpID, Is.EqualTo("SourceFolderEmpty"));
+        }
+
+        [Test]
+        [Category("Targeted")]
+        public void BackupWorksWhenSourceFolderIsEmpty()
+        {
+            var testopts = TestOptions.Expand(new { allow_empty_source = true });
+
+            using var controller = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null);
+            var result = controller.Backup(new[] { DATAFOLDER });
+            Assert.That(result, Is.Not.Null);
+        }
     }
 }

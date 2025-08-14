@@ -1,3 +1,46 @@
+2025-08-08 - 2.1.1.100_canary_2025-08-08
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+
+This build adresses an issue with timeouts on B2 uploads, along with a number of minor fixes.
+
+There is a breaking change in that Duplicati will now consider an empty *source* folder as an error, unless you specify `--allow-empty-source`. This is done to avoid common mistakes where a folder was supposed to be mounted but was not.
+
+The Docker images have been overhauled and now supports running with a custom UID/GID combination.
+
+The login flow has been secured slightly and now features an extra nonce value that is required on requests. If you have custom code authenticating with Duplicati this is a breaking change.
+
+Finally, there is now also an option to log internal HTTP requests to the log for tracing and debugging.
+
+## Detailed list of changes:
+- Fixed commandline test command issuing a warning
+- Fixed erratic timeouts on B2
+- Corrected reported timeouts in BackendTester
+- Fixed some quoting of SQLite queries
+- Update Docker images with UID/GID support
+- Fixed CLI help not showing the datafolder environment variable name
+- Changed repair message to suggest purge-broken-files
+- Fixed a thread resource leak in TrayIcon
+- Fixed Vacuum failing to complete due to active transaction
+- Fixed an issue with missing hashes on remote volumes causing crashes
+- Updated localizations, thanks to all translators
+- Fixed a case where databases could be opened with pooling enabled
+- Remote Sync tool now restart and retries on transfer failures
+- Fixed an issue that prevent setting a default theme
+- Added detailed output option to serverutil list-backups command
+- Added `--allow-empty-source` option
+- Added nonce to refresh tokens and improved non-persisted logins
+- Updated multiple packages to latest versions, including AWSSDK, Azure, SMB, FluentFTP, and SharpCompress
+- Added option to log http requests and socket data
+
+## ngclient changes:
+- Converted from Sparkle to ShipUI
+- Progress bar is now fixed length
+- Updated translations, thanks to all translators
+- Added support for a refresh nonce
+
 2025-07-15 - 2.1.0.125_canary_2025-07-15
 ==========
 This release is a canary release intended to be used for testing.

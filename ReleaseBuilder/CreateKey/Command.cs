@@ -57,7 +57,7 @@ public static class Command
             var newkey = RSA.Create(2048).ToXmlString(true);
             using (var fs = File.OpenWrite(keyfile.FullName))
             using (var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(newkey)))
-                SharpAESCrypt.SharpAESCrypt.Encrypt(keyfilePassword, ms, fs);
+                SharpAESCrypt.AESCrypt.Encrypt(keyfilePassword, ms, fs);
 
             Console.WriteLine($"Keyfile created at {keyfile.FullName}");
         }, passwordOption, keyfileArgument);

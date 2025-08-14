@@ -394,6 +394,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("list-sets-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListsetsonlyShort, Strings.Options.ListsetsonlyLong, "false"),
             new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
             new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
+            new CommandLineArgument("allow-empty-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowemptysourceShort, Strings.Options.AllowemptysourceLong, "false"),
 
             new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
             new CommandLineArgument("check-filetime-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CheckfiletimeonlyShort, Strings.Options.CheckfiletimeonlyLong, "false"),
@@ -446,6 +447,9 @@ namespace Duplicati.Library.Main
 
             new CommandLineArgument("log-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)), Strings.Options.LogLevelDeprecated("log-file-log-level", "console-log-level")),
             new CommandLineArgument("suppress-warnings", CommandLineArgument.ArgumentType.String, Strings.Options.SuppresswarningsShort, Strings.Options.SuppresswarningsLong),
+
+            new CommandLineArgument("log-http-requests", CommandLineArgument.ArgumentType.Boolean, Strings.Options.LoghttprequestsShort, Strings.Options.LoghttprequestsLong, "false"),
+            new CommandLineArgument("log-socket-data", CommandLineArgument.ArgumentType.Integer, Strings.Options.LogsocketdataShort, Strings.Options.LogsocketdataLong, "-1"),
 
             new CommandLineArgument("profile-all-database-queries", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ProfilealldatabasequeriesShort, Strings.Options.ProfilealldatabasequeriesLong, "false"),
 
@@ -1047,6 +1051,16 @@ namespace Duplicati.Library.Main
             => m_options.GetValueOrDefault("suppress-warnings")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
+        /// A value indicating if HTTP requests should be logged
+        /// </summary>
+        public bool LogHttpRequests => GetBool("log-http-requests");
+
+        /// <summary>
+        /// Gets the number of bytes of socket data to include in logs, -1 disables logging
+        /// </summary>
+        public int LogSocketData => GetInt("log-socket-data", -1);
+
+        /// <summary>
         /// Gets the filter used for log-file messages.
         /// </summary>
         /// <value>The log file filter.</value>
@@ -1353,6 +1367,10 @@ namespace Duplicati.Library.Main
         /// Gets a flag indicating if missing source elements should be ignored
         /// </summary>
         public bool AllowMissingSource => GetBool("allow-missing-source");
+        /// <summary>
+        /// Gets a flag indicating if empty source elements should cause backups to fail
+        /// </summary>
+        public bool AllowEmptySource => GetBool("allow-empty-source");
 
         /// <summary>
         /// Gets a value indicating if a verification file should be uploaded after changing the remote store

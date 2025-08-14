@@ -39,6 +39,7 @@ namespace Duplicati.Library.Main.Strings
         public static string CompletedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has completed", operationname); }
         public static string FailedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has failed", operationname); }
         public static string InvalidPathError(string path, string message) { return LC.L(@"Invalid path: ""{0}"" ({1})", path, message); }
+        public static string SourceFolderEmptyError(string foldername, string optionname) { return LC.L(@"The source folder {0} is empty, aborting backup. If this is expected, consider using the --{1} option.", foldername, optionname); }
         public static string FailedForceLocaleError(string exMsg) { return LC.L(@"Failed to apply 'force-locale' setting. Please try to update .NET-Framework. Exception was: ""{0}"" ", exMsg); }
         public static string SourceVolumeNameInvalidError(string filename) { return LC.L(@"The source {0} uses an invalid volume name, aborting backup", filename); }
         public static string SourceVolumeNameNotFoundError(string filename, Guid volumeGuid) { return LC.L(@"The source {0} is on volume {1}, which could not be found, aborting backup", filename, volumeGuid); }
@@ -132,6 +133,10 @@ namespace Duplicati.Library.Main.Strings
         public static string LogLevelDeprecated(string option1, string option2) { return LC.L("Use the options --{0} and --{1} instead.", option1, option2); }
         public static string SuppresswarningsLong { get { return LC.L(@"Suppress warnings and log them as information instead. Use this if you need to silence specific warnings. This option accepts a comma separated list of warning IDs."); } }
         public static string SuppresswarningsShort { get { return LC.L(@"Suppress specific warnings"); } }
+        public static string LoghttprequestsLong { get { return LC.L(@"Enable logging of HTTP request diagnostics. Messages are logged at the {0} level, so make sure the log outputs at that level.", Logging.LogMessageType.Verbose); } }
+        public static string LoghttprequestsShort { get { return LC.L(@"Log HTTP requests"); } }
+        public static string LogsocketdataLong { get { return LC.L(@"Enable logging of socket data. A value of 0 logs only event messages, a positive value includes that many bytes of data. Use -1 to disable. Messages are logged at the {0} level, so make sure the log outputs at that level.", Logging.LogMessageType.Verbose); } }
+        public static string LogsocketdataShort { get { return LC.L(@"Log socket data"); } }
         public static string DisableautocreatefolderLong { get { return LC.L(@"If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation."); } }
         public static string DisableautocreatefolderShort { get { return LC.L(@"Disable automatic folder creation"); } }
         public static string VssexcludewritersLong { get { return LC.L(@"Use this option to exclude faulty writers from a snapshot. This is equivalent to the -wx flag of the vshadow.exe tool, except that it only accepts writer class GUIDs, and not component names or instance GUIDs. Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs are allowed, including with and without curly braces."); } }
@@ -222,6 +227,8 @@ namespace Duplicati.Library.Main.Strings
         public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
         public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing."); } }
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
+        public static string AllowemptysourceLong { get { return LC.L(@"Use this option to allow backups to run if one or more source folders are empty. Usually an empty source folder is an indication that something like a USB drive is not mounted correctly. This check only works for filesystem source paths."); } }
+        public static string AllowemptysourceShort { get { return LC.L(@"Allow backups to run if source folders are empty"); } }
         public static string OverwriteLong { get { return LC.L(@"Use this option to overwrite target files when restoring. If this option is not set, the files will be restored with a timestamp and a number appended."); } }
         public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
         public static string VerboseLong { get { return LC.L(@"Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed."); } }

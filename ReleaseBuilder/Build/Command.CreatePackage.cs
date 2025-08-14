@@ -860,6 +860,7 @@ public static partial class Command
                     .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
                     .Replace("%ARCH%", debArchString)
                     .Replace("%PACKAGE_TYPE%", packageType)
+                    .Replace("%RECOMMENDS%", string.Join(", ", DebianRecommends))
                     .Replace("%DEPENDS%", string.Join(", ", target.Interface == InterfaceType.GUI
                         ? DebianGUIDepends
                         : DebianCLIDepends))
@@ -935,6 +936,23 @@ public static partial class Command
                 string.Join("\n", conffiles)
             );
 
+            File.Copy(
+                Path.Combine(resourcesDir, $"preinst"),
+                Path.Combine(pkgroot, "DEBIAN", "preinst"),
+                true
+            );
+
+            var filemode755 = UnixFileMode.UserRead
+                | UnixFileMode.UserWrite
+                | UnixFileMode.UserExecute
+                | UnixFileMode.GroupRead
+                | UnixFileMode.GroupExecute
+                | UnixFileMode.OtherRead
+                | UnixFileMode.OtherExecute;
+
+            if (!OperatingSystem.IsWindows())
+                File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "preinst"), filemode755);
+
             if (target.Interface == InterfaceType.Agent)
             {
                 // Write a custom postinst script
@@ -953,16 +971,8 @@ public static partial class Command
 
                 if (!OperatingSystem.IsWindows())
                 {
-                    var filemode = UnixFileMode.UserRead
-                        | UnixFileMode.UserWrite
-                        | UnixFileMode.UserExecute
-                        | UnixFileMode.GroupRead
-                        | UnixFileMode.GroupExecute
-                        | UnixFileMode.OtherRead
-                        | UnixFileMode.OtherExecute;
-
-                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "prerm"), filemode);
-                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "postinst"), filemode);
+                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "prerm"), filemode755);
+                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "postinst"), filemode755);
                 }
             }
 
@@ -1217,6 +1227,9 @@ public static partial class Command
                 await PackageSupport.RenameExecutables(tgfolder);
                 await PackageSupport.SetPermissionFlags(tgfolder, rtcfg);
             }
+
+            // Copy in the run-as-user.sh script
+            File.Copy(Path.Combine(resourcesDir, "run-as-user.sh"), Path.Combine(tmpbuild, "run-as-user.sh"), true);
 
             var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString(), $"{rtcfg.ReleaseInfo.Version}-{rtcfg.ReleaseInfo.Channel}" };
             if (rtcfg.ReleaseInfo.Channel == ReleaseChannel.Stable)

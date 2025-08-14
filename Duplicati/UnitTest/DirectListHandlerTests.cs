@@ -19,7 +19,8 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>(this.TestOptions)
             {
-                ["upload-unchanged-backups"] = "true"
+                ["upload-unchanged-backups"] = "true",
+                ["allow-empty-source"] = "true"
             };
 
             for (var i = 0; i < 3; i++)
@@ -38,7 +39,8 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>(this.TestOptions)
             {
-                ["upload-unchanged-backups"] = "true"
+                ["upload-unchanged-backups"] = "true",
+                ["allow-empty-source"] = "true"
             };
 
             var initial = new[] {

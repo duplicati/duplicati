@@ -30,24 +30,24 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
 {
     private static readonly string LOGTAG = Log.LogTagFromType<LoginProvider>();
 
-    public async Task<(string AccessToken, string? RefreshToken)> PerformLoginWithSigninToken(string signinTokenString, bool issueRefreshToken, CancellationToken ct)
+    public async Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithSigninToken(string signinTokenString, bool shortLived, CancellationToken ct)
     {
         var signinToken = tokenProvider.ReadSigninToken(signinTokenString);
         var userId = signinToken.UserId;
-        if (!issueRefreshToken)
-            return (tokenProvider.CreateAccessToken(userId, tokenProvider.TemporaryFamilyId), null);
 
         var tokenFamily = await repo.CreateTokenFamily(userId, ct);
+        var (refreshToken, nonce) = tokenProvider.CreateRefreshToken(userId, tokenFamily.Id, tokenFamily.Counter, shortLived);
 
         return (
             tokenProvider.CreateAccessToken(userId, tokenFamily.Id),
-            tokenProvider.CreateRefreshToken(userId, tokenFamily.Id, tokenFamily.Counter)
+            refreshToken,
+            nonce
         );
     }
 
-    public async Task<(string AccessToken, string RefreshToken)> PerformLoginWithRefreshToken(string refreshTokenString, CancellationToken ct)
+    public async Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithRefreshToken(string refreshTokenString, string? nonce, CancellationToken ct)
     {
-        var refreshToken = tokenProvider.ReadRefreshToken(refreshTokenString);
+        var refreshToken = tokenProvider.ReadRefreshToken(refreshTokenString, nonce);
         var tokenFamily = await repo.GetTokenFamily(refreshToken.UserId, refreshToken.TokenFamilyId, ct)
             ?? throw new UnauthorizedException("Invalid refresh token");
 
@@ -65,33 +65,35 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
         }
 
         tokenFamily = await repo.IncrementTokenFamily(tokenFamily, ct);
+        var isShortLived = (refreshToken.Expiration - refreshToken.ValidFrom).TotalMinutes <= jwtConfig.RefreshTokenShortLivedDurationInMinutes + 1;
+        (var newRefreshToken, var newNonce) = tokenProvider.CreateRefreshToken(refreshToken.UserId, tokenFamily.Id, tokenFamily.Counter, isShortLived);
 
         return (
             tokenProvider.CreateAccessToken(refreshToken.UserId, tokenFamily.Id),
-            tokenProvider.CreateRefreshToken(refreshToken.UserId, tokenFamily.Id, tokenFamily.Counter)
+            newRefreshToken,
+            newNonce
         );
     }
 
-    public async Task<(string AccessToken, string? RefreshToken)> PerformLoginWithPassword(string password, bool issueRefreshToken, CancellationToken ct)
+    public async Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithPassword(string password, bool shortLived, CancellationToken ct)
     {
         if (!connection.ApplicationSettings.VerifyWebserverPassword(password))
             throw new UnauthorizedException("Invalid password");
 
         var userId = "webserver";
-        if (!issueRefreshToken)
-            return (tokenProvider.CreateAccessToken(userId, tokenProvider.TemporaryFamilyId), null);
-
         var tokenFamily = await repo.CreateTokenFamily(userId, ct);
+        var (refreshToken, nonce) = tokenProvider.CreateRefreshToken(userId, tokenFamily.Id, tokenFamily.Counter, shortLived);
 
         return (
             tokenProvider.CreateAccessToken(userId, tokenFamily.Id),
-            tokenProvider.CreateRefreshToken(userId, tokenFamily.Id, tokenFamily.Counter)
+            refreshToken,
+            nonce
         );
     }
 
-    public async Task PerformLogoutWithRefreshToken(string refreshTokenString, CancellationToken ct)
+    public async Task PerformLogoutWithRefreshToken(string refreshTokenString, string? nonce, CancellationToken ct)
     {
-        var token = tokenProvider.ReadRefreshToken(refreshTokenString);
+        var token = tokenProvider.ReadRefreshToken(refreshTokenString, nonce);
         await repo.InvalidateTokenFamily(token.UserId, token.TokenFamilyId, ct);
     }
 
