@@ -1059,8 +1059,8 @@ namespace Duplicati.Library.Main
                             // If the directory exists, but is empty, and we are not allowed to have empty sources, throw an error
                             try
                             {
-                                if (!m_options.AllowEmptySource && di.Exists && !di.EnumerateFileSystemInfos().Any())
-                                    throw new UserInformationException(Strings.Controller.SourceFolderEmptyError(inputsource, "allow-empty-source"), "SourceFolderEmpty");
+                                if (m_options.PreventEmptySource && di.Exists && !di.EnumerateFileSystemInfos().Any())
+                                    throw new UserInformationException(Strings.Controller.SourceFolderEmptyError(inputsource), "SourceFolderEmpty");
                             }
                             catch (UnauthorizedAccessException ex)
                             {

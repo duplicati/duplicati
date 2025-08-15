@@ -24,13 +24,13 @@ using NUnit.Framework;
 
 namespace Duplicati.UnitTest
 {
-    public class AllowEmptySourceTest : BasicSetupHelper
+    public class PreventEmptySourceTest : BasicSetupHelper
     {
         [Test]
         [Category("Targeted")]
         public void BackupFailsWhenSourceFolderIsEmpty()
         {
-            var testopts = TestOptions.Expand(new { });
+            var testopts = TestOptions.Expand(new { prevent_empty_source = true });
 
             using var controller = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null);
             var ex = Assert.Throws<UserInformationException>(() => controller.Backup(new[] { DATAFOLDER }));
@@ -41,7 +41,7 @@ namespace Duplicati.UnitTest
         [Category("Targeted")]
         public void BackupWorksWhenSourceFolderIsEmpty()
         {
-            var testopts = TestOptions.Expand(new { allow_empty_source = true });
+            var testopts = TestOptions.Expand(new { });
 
             using var controller = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null);
             var result = controller.Backup(new[] { DATAFOLDER });
