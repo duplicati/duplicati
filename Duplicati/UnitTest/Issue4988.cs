@@ -47,7 +47,7 @@ public class Issue4988 : BasicSetupHelper
     [Category("ManualTamper")]
     public void TestManualDindexTamperAndRecreate()
     {
-        var testopts = TestOptions.Expand(new { no_encryption = "true", allow_empty_source = "true" });
+        var testopts = TestOptions.Expand(new { no_encryption = "true" });
         var opts = new Options(testopts);
 
         // Step 1: Create an empty folder
