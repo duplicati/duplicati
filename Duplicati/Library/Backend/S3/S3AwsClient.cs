@@ -222,10 +222,13 @@ namespace Duplicati.Library.Backend
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source,
             CancellationToken cancelToken)
         {
-            (source, var md5, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(source, "MD5", cancelToken).ConfigureAwait(false);
+            (source, var hashes, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(source, ["MD5", "SHA256"], cancelToken).ConfigureAwait(false);
             using var _ = tmp;
 
-            md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(md5));
+            // Precalculate the hashes to avoid calculating them in the PutObjectAsync call where the stream could be throttled
+            // Use lowercase base64 encoding for the checksums to match non-AWS SDK implementations
+            var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0])).ToLowerInvariant();
+            var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1])).ToLowerInvariant();
 
             using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
             var objectAddRequest = new PutObjectRequest
@@ -235,6 +238,8 @@ namespace Duplicati.Library.Backend
                 InputStream = ts,
                 UseChunkEncoding = m_useChunkEncoding,
                 MD5Digest = md5,
+                ChecksumAlgorithm = ChecksumAlgorithm.SHA256,
+                ChecksumSHA256 = sha256,
                 DisablePayloadSigning = m_disablePayloadSigning
             };
             if (!string.IsNullOrWhiteSpace(m_storageClass))
