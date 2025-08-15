@@ -226,9 +226,8 @@ namespace Duplicati.Library.Backend
             using var _ = tmp;
 
             // Precalculate the hashes to avoid calculating them in the PutObjectAsync call where the stream could be throttled
-            // Use lowercase base64 encoding for the checksums to match non-AWS SDK implementations
-            var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0])).ToLowerInvariant();
-            var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1])).ToLowerInvariant();
+            var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0]));
+            var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1]));
 
             using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
             var objectAddRequest = new PutObjectRequest
