@@ -1,23 +1,24 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,6 +28,8 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
+#nullable enable
 
 namespace Duplicati.UnitTest
 {
@@ -159,6 +162,59 @@ namespace Duplicati.UnitTest
                 var restoredFileSecurity = new FileInfo(restoredFilePath).GetAccessControl();
                 Assert.IsTrue(restoredFileSecurity.AreAccessRulesProtected);
             }
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async System.Threading.Tasks.Task RestoreVolumeCache([Values("0b", "1mb", "5mb", "1gb")] string cache_size, [Values("0", "1", null)] string? channel_size)
+        {
+            var opts = TestOptions;
+            opts["dblock-size"] = "1mb";
+            opts["blocksize"] = "1kb";
+            opts["restore-volume-cache-hint"] = cache_size;
+            if (channel_size != null)
+                opts["restore-channel-buffer-size"] = channel_size;
+            opts["restore-legacy"] = "false";
+            opts["restore-file-processors"] = "4";
+            opts["restore-volume-decryptors"] = "4";
+            opts["restore-volume-decompressors"] = "4";
+            opts["restore-volume-downloaders"] = "4";
+            opts["restore-path"] = RESTOREFOLDER;
+
+            // Write a bunch of files
+            Random rng = new();
+            byte[] data = new byte[1024];
+            for (int i = 0; i < 1000; i++)
+            {
+                rng.NextBytes(data);
+                var filePath = Path.Combine(this.DATAFOLDER, $"file{i}");
+                File.WriteAllBytes(filePath, data);
+            }
+
+            using var c = new Controller("file://" + this.TARGETFOLDER, opts, null);
+            TestUtils.AssertResults(c.Backup([this.DATAFOLDER]));
+
+            // Start a 30 second timeout
+            var timeout_task = System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(30));
+
+            var restore_task = System.Threading.Tasks.Task.Run(() =>
+            {
+                TestUtils.AssertResults(c.Restore(["*"]));
+            });
+
+            var t = await System.Threading.Tasks.Task.WhenAny(timeout_task, restore_task);
+
+            if (t == timeout_task)
+            {
+                c.Abort();
+                await restore_task; // Ensure we wait for the restore task to complete
+                Assert.Fail("Restore timed out");
+            }
+            else if (t == restore_task)
+                // Throw any exceptions it might have
+                t.GetAwaiter().GetResult();
+
+            TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restoring with different volume cache sizes");
         }
 
         [Test]

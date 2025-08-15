@@ -55,6 +55,10 @@ namespace Duplicati.Library.Main.Operation.Restore
         public static int file_processors_restoring_files;
         public static object file_processor_continue_lock = new object();
         public static TaskCompletionSource file_processor_continue = new();
+        /// <summary>
+        /// The current file processor ID. Used for debugging.
+        /// </summary>
+        private static int processor_id = 0;
 
         /// <summary>
         /// Runs the file processor process that restores the files that need to be restored.
@@ -93,6 +97,8 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // Indicates whether this FileProcessor is still restoring files
                 var decremented = false;
+                // ID for this file processor, used for debugging.
+                var my_id = Interlocked.Increment(ref processor_id);
 
                 try
                 {
@@ -106,6 +112,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_file?.Start();
                         var file = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_file?.Stop();
+
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "FileRestored", null, $"{my_id} Restoring file {file.TargetPath}");
 
                         if (file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID && !options.SkipMetadata)
                         {
@@ -131,7 +139,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_block?.Start();
                         var blocks = await db
                             .GetBlocksFromFile(file.BlocksetID, results.TaskControl.ProgressToken)
-                            .ToArrayAsync()
+                            .ToArrayAsync(results.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
                         sw_block?.Stop();
 
@@ -175,7 +183,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 else
                                 {
                                     verified_blocks.Clear();
-                                    missing_blocks = [.. blocks.Select(x => { x.CacheDecrEvict = false; return x; })];
+                                    missing_blocks = [.. blocks.Select(x => { x.RequestType = BlockRequestType.Download; return x; })];
                                 }
                                 file = new_file;
                             }
@@ -194,7 +202,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     block.BlockHash,
                                     block.BlockSize,
                                     block.VolumeID,
-                                    true
+                                    BlockRequestType.CacheEvict
                                 )
                             ).ConfigureAwait(false);
                             sw_req?.Stop();
@@ -239,7 +247,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             blocks[0].BlockHash,
                                             blocks[0].BlockSize,
                                             blocks[0].VolumeID,
-                                            true
+                                            BlockRequestType.CacheEvict
                                         )
                                     ).ConfigureAwait(false);
                                 }
@@ -287,7 +295,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                                 sw_req?.Start();
                                 // Burst the block requests to speed up the restore
-                                int burst = Channels.BufferSize;
+                                int burst = (int)Math.Max(options.RestoreChannelBufferSize, 1);
                                 int j = 0;
                                 for (int i = 0; i < (int)Math.Min(missing_blocks.Count, burst); i++)
                                 {
@@ -298,7 +306,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             missing_blocks[i].BlockHash,
                                             missing_blocks[i].BlockSize,
                                             missing_blocks[i].VolumeID,
-                                            false
+                                            BlockRequestType.Download
                                         )
                                     ).ConfigureAwait(false);
                                 }
@@ -330,7 +338,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     missing_blocks[j + burst].BlockHash,
                                                     missing_blocks[j + burst].BlockSize,
                                                     missing_blocks[j + burst].VolumeID,
-                                                    false
+                                                    BlockRequestType.Download
                                                 )
                                             ).ConfigureAwait(false);
                                         }
@@ -364,7 +372,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 blocks[i].BlockHash,
                                                 blocks[i].BlockSize,
                                                 blocks[i].VolumeID,
-                                                true
+                                                BlockRequestType.CacheEvict
                                             )
                                         ).ConfigureAwait(false);
                                         sw_req?.Stop();
@@ -453,7 +461,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                         sw_work_results?.Stop();
 
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "RestoredFile", "Restored file {0}", file.TargetPath);
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "RestoredFile", $"{my_id} Restored file {{0}}", file.TargetPath);
                     }
                 }
                 catch (RetiredException)
@@ -627,7 +635,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         block.BlockHash,
                         block.BlockSize,
                         block.VolumeID,
-                        false
+                        BlockRequestType.Download
                     )
                 ).ConfigureAwait(false);
                 sw_req?.Stop();
@@ -648,7 +656,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         block.BlockHash,
                         block.BlockSize,
                         block.VolumeID,
-                        true
+                        BlockRequestType.CacheEvict
                     )
                 ).ConfigureAwait(false);
                 sw_req?.Stop();
@@ -859,7 +867,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         blocks[j].BlockHash,
                                         blocks[j].BlockSize,
                                         blocks[j].VolumeID,
-                                        true
+                                        BlockRequestType.CacheEvict
                                     )
                                 ).ConfigureAwait(false);
                                 verified_blocks.Add(blocks[j]);

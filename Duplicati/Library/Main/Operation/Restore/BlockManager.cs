@@ -247,7 +247,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     else if (vol_count == 0)
                     {
                         m_volumecount.Remove(blockRequest.VolumeID);
-                        blockRequest.CacheDecrEvict = true;
+                        blockRequest.RequestType = BlockRequestType.CacheEvict;
                         emit_evict = true;
                     }
                     else // vol_count < 0
@@ -291,6 +291,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     m_active_readers[block_request.BlockID] = m_active_readers.TryGetValue(block_request.BlockID, out var c) ? c + 1 : 1;
                 }
 
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Active readers for block {0}: {1}", block_request.BlockID, m_active_readers[block_request.BlockID]);
+
                 // Check if the block is already in the cache, and return it if it is.
                 if (m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
                     return value;
@@ -316,6 +318,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 else
                 {
+                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Block {0} is already being requested, waiting for it to be available", block_request.BlockID);
                     sw_get_wait?.Stop();
                 }
 
@@ -332,17 +335,17 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="blockRequest">The block request related to the value.</param>
             /// <param name="value">The byte[] buffer holding the block data.</param>
-            public void Set(BlockRequest blockRequest, byte[] value)
+            public void Set(long blockID, byte[] value)
             {
-                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockRequest.BlockID);
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockID);
 
                 sw_set_set?.Start();
-                m_block_cache.Set(blockRequest.BlockID, value);
+                m_block_cache.Set(blockID, value);
                 sw_set_set?.Stop();
 
                 // Notify any waiters that the block is available.
                 sw_set_wake_get?.Start();
-                if (m_waiters.TryRemove(blockRequest.BlockID, out var tcs))
+                if (m_waiters.TryRemove(blockID, out var tcs))
                 {
                     sw_set_wake_get?.Stop();
                     sw_set_wake_set?.Start();
@@ -447,6 +450,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             new
             {
                 Input = channels.DecompressedBlock.AsRead(),
+                Ack = channels.DecompressionAck.AsWrite(),
                 Output = channels.VolumeRequest.AsWrite()
             },
             async self =>
@@ -460,17 +464,32 @@ namespace Duplicati.Library.Main.Operation.Restore
                 var volume_consumer = Task.Run(async () =>
                 {
                     Stopwatch sw_read = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_ack = options.InternalProfiling ? new() : null;
                     Stopwatch sw_set = options.InternalProfiling ? new() : null;
                     try
                     {
                         while (true)
                         {
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, "Waiting for block request from volume");
                             sw_read?.Start();
                             var (block_request, data) = await self.Input.ReadAsync().ConfigureAwait(false);
                             sw_read?.Stop();
 
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, $"Received block request: {block_request.RequestType} for block {block_request.BlockID} from volume {block_request.VolumeID}");
+                            sw_ack?.Start();
+                            block_request.RequestType = BlockRequestType.DecompressAck;
+                            while (true)
+                            {
+                                var did_write = await self.Ack.TryWriteAsync(block_request.VolumeID, TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+                                if (did_write)
+                                    break;
+                                await results.TaskControl.ProgressRendevouz();
+                            }
+                            sw_ack?.Stop();
+
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, $"Received data for block {block_request.BlockID} from volume {block_request.VolumeID}");
                             sw_set?.Start();
-                            cache.Set(block_request, data);
+                            cache.Set(block_request.BlockID, data);
                             sw_set?.Stop();
                         }
                     }
@@ -480,7 +499,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read.ElapsedMilliseconds}ms, Ack: {sw_ack.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
                         }
 
                         // Cancel any remaining readers - although there shouldn't be any.
@@ -511,22 +530,27 @@ namespace Duplicati.Library.Main.Operation.Restore
                             sw_req?.Start();
                             var block_request = await req.ReadAsync().ConfigureAwait(false);
                             sw_req?.Stop();
-                            if (block_request.CacheDecrEvict)
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, $"Received block request: {block_request.RequestType}");
+                            switch (block_request.RequestType)
                             {
-                                sw_cache?.Start();
-                                // Target file already had the block.
-                                await cache.CheckCounts(block_request).ConfigureAwait(false);
-                                sw_cache?.Stop();
-                            }
-                            else
-                            {
-                                sw_get?.Start();
-                                var datatask = cache.Get(block_request);
-                                sw_get?.Stop();
+                                case BlockRequestType.Download:
+                                    sw_get?.Start();
+                                    var datatask = cache.Get(block_request);
+                                    sw_get?.Stop();
 
-                                sw_resp?.Start();
-                                await res.WriteAsync(datatask).ConfigureAwait(false);
-                                sw_resp?.Stop();
+                                    sw_resp?.Start();
+                                    await res.WriteAsync(datatask).ConfigureAwait(false);
+                                    sw_resp?.Stop();
+                                    break;
+                                case BlockRequestType.CacheEvict:
+                                    sw_cache?.Start();
+                                    // Target file already had the block.
+                                    await cache.CheckCounts(block_request).ConfigureAwait(false);
+                                    sw_cache?.Stop();
+                                    break;
+                                case BlockRequestType.DecompressAck:
+                                default:
+                                    throw new InvalidOperationException($"Unexpected block request type: {block_request.RequestType}");
                             }
                         }
                     }

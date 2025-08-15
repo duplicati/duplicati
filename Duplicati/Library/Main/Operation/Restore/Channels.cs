@@ -29,14 +29,8 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// <summary>
     /// Named channels for the restore operation.
     /// </summary>
-    internal class Channels
+    internal class Channels(Options options)
     {
-        /// <summary>
-        /// The buffer size for the channels. The buffer size is the number of
-        /// messages that can be queued up before the sender blocks.
-        /// </summary>
-        public static int BufferSize;
-
         /// <summary>
         /// Channel between <see cref="FileLister"/> and <see cref="FileProcessor"/>.
         /// </summary>
@@ -45,30 +39,38 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Channel between <see cref="VolumeManager"/> and <see cref="VolumeDownloader"/>.
         /// </summary>
-        public readonly IChannel<long> DownloadRequest = ChannelManager.CreateChannel<long>(buffersize: BufferSize);
+        public readonly IChannel<long> DownloadRequest = ChannelManager.CreateChannel<long>(buffersize: options.RestoreChannelBufferSize);
 
         /// <summary>
         /// Channel between <see cref="VolumeDownloader"/> and <see cref="VolumeDecryptor"/>
         /// </summary>
-        public readonly IChannel<(long, string, TempFile)> DecryptRequest = ChannelManager.CreateChannel<(long, string, TempFile)>(buffersize: BufferSize);
+        public readonly IChannel<(long, string, TempFile)> DecryptRequest = ChannelManager.CreateChannel<(long, string, TempFile)>(buffersize: options.RestoreChannelBufferSize);
+
+        /// <summary>
+        /// Channel between <see cref="BlockManager"/> and <see cref="VolumeManager"/> to keep track of volumes that are actively being read.
+        ///
+        /// Size is computed as '2 * options.RestoreChannelBufferSize + options.RestoreVolumeDecompressors + 1' to avoid deadlocks.
+        /// </summary>
+        public readonly IChannel<long> DecompressionAck = ChannelManager.CreateChannel<long>(buffersize: 2 * options.RestoreChannelBufferSize + options.RestoreVolumeDecompressors + 1);
 
         /// <summary>
         /// Channel between <see cref="VolumeManager"/> and <see cref="VolumeDecompressor"/>
         /// </summary>
-        public readonly IChannel<(BlockRequest, BlockVolumeReader)> DecompressionRequest = ChannelManager.CreateChannel<(BlockRequest, BlockVolumeReader)>(buffersize: BufferSize);
+        public readonly IChannel<(BlockRequest, BlockVolumeReader)> DecompressionRequest = ChannelManager.CreateChannel<(BlockRequest, BlockVolumeReader)>(buffersize: options.RestoreChannelBufferSize);
 
         /// <summary>
-        /// Channel between <see cref="VolumeManager"/> and <see cref="BlockManager"/> holding the decompressed blocks.
-        public readonly IChannel<(BlockRequest, byte[])> DecompressedBlock = ChannelManager.CreateChannel<(BlockRequest, byte[])>(buffersize: BufferSize);
+        /// Channel between <see cref="VolumeDecompressor"/> and <see cref="BlockManager"/> holding the decompressed blocks.
+        /// </summary>
+        public readonly IChannel<(BlockRequest, byte[])> DecompressedBlock = ChannelManager.CreateChannel<(BlockRequest, byte[])>(buffersize: options.RestoreChannelBufferSize);
 
         /// <summary>
         /// Channel between <see cref="VolumeManager"/> <see cref="VolumeDecryptor"/>, used for requesting and responding volumes to the manager.
         /// </summary>
-        public readonly IChannel<object> VolumeResponse = ChannelManager.CreateChannel<object>(buffersize: BufferSize);
+        public readonly IChannel<object> VolumeResponse = ChannelManager.CreateChannel<object>(buffersize: options.RestoreChannelBufferSize);
         /// <summary>
         /// Channel between <see cref="VolumeManager"/> and <see cref="BlockManager"/>, used for requesting and responding volumes to the manager.
         /// </summary>
-        public readonly IChannel<object> VolumeRequest = ChannelManager.CreateChannel<object>(buffersize: BufferSize);
+        public readonly IChannel<object> VolumeRequest = ChannelManager.CreateChannel<object>(buffersize: options.RestoreChannelBufferSize);
     }
 
 }
