@@ -56,13 +56,9 @@ namespace Duplicati.Library.Main.Operation.Restore
         public static object file_processor_continue_lock = new object();
         public static TaskCompletionSource file_processor_continue = new();
         /// <summary>
-        /// Lock for the file processor ID.
-        /// </summary>
-        public static object id_lock = new();
-        /// <summary>
         /// The current file processor ID. Used for debugging.
         /// </summary>
-        public static int id = 0;
+        private static int processor_id = 0;
 
         /// <summary>
         /// Runs the file processor process that restores the files that need to be restored.
@@ -102,11 +98,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // Indicates whether this FileProcessor is still restoring files
                 var decremented = false;
                 // ID for this file processor, used for debugging.
-                int my_id = -1;
-                lock (id_lock)
-                {
-                    my_id = id++;
-                }
+                var my_id = Interlocked.Increment(ref processor_id);
 
                 try
                 {
