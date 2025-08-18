@@ -244,6 +244,12 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
 
+            // Provide SigV4 payload hash explicitly (lowercase hex) iff applicable.
+            // - If chunked streaming is ON, the SDK uses the streaming literal.
+            // - If payload signing is disabled, the SDK uses the UNSIGNED-PAYLOAD literal.
+            if (!m_useChunkEncoding && !m_disablePayloadSigning)
+                objectAddRequest.Headers["x-amz-content-sha256"] = hashes[1].ToLowerInvariant();
+
             try
             {
                 await m_client.PutObjectAsync(objectAddRequest, cancelToken);
