@@ -222,10 +222,12 @@ namespace Duplicati.Library.Backend
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source,
             CancellationToken cancelToken)
         {
-            (source, var md5, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(source, "MD5", cancelToken).ConfigureAwait(false);
+            (source, var hashes, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(source, ["MD5", "SHA256"], cancelToken).ConfigureAwait(false);
             using var _ = tmp;
 
-            md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(md5));
+            // Precalculate the hashes to avoid calculating them in the PutObjectAsync call where the stream could be throttled
+            var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0]));
+            var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1]));
 
             using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
             var objectAddRequest = new PutObjectRequest
@@ -235,10 +237,18 @@ namespace Duplicati.Library.Backend
                 InputStream = ts,
                 UseChunkEncoding = m_useChunkEncoding,
                 MD5Digest = md5,
+                ChecksumAlgorithm = ChecksumAlgorithm.SHA256,
+                ChecksumSHA256 = sha256,
                 DisablePayloadSigning = m_disablePayloadSigning
             };
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
+
+            // Provide SigV4 payload hash explicitly (lowercase hex) iff applicable.
+            // - If chunked streaming is ON, the SDK uses the streaming literal.
+            // - If payload signing is disabled, the SDK uses the UNSIGNED-PAYLOAD literal.
+            if (!m_useChunkEncoding && !m_disablePayloadSigning)
+                objectAddRequest.Headers["x-amz-content-sha256"] = hashes[1].ToLowerInvariant();
 
             try
             {

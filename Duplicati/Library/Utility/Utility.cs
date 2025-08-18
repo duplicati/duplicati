@@ -1890,35 +1890,73 @@ namespace Duplicati.Library.Utility
         /// <returns>A tuple with the stream, the hash and a temporary file if used</returns>
         public static async Task<(Stream content, string hash, TempFile? tmpfile)> CalculateThrottledStreamHash(Stream stream, string hashalgorithm, CancellationToken cancelToken)
         {
+            var res = await CalculateThrottledStreamHash(stream, new[] { hashalgorithm }, cancelToken).ConfigureAwait(false);
+            return (res.content, res.hashes.First(), res.tmpfile);
+        }
+
+        /// <summary>
+        /// Calculates the hash of a throttled stream and returns the stream to read
+        /// </summary>
+        /// <param name="stream">The source stream
+        /// <param name="hashalgorithms">The hash algorithms to use</param>
+        /// <param name="cancelToken">The cancellation token to observe</param>
+        /// <returns>A tuple with the stream, the hash and a temporary file if used</returns>
+        public static async Task<(Stream content, string[] hashes, TempFile? tmpfile)> CalculateThrottledStreamHash(Stream stream, IEnumerable<string> hashalgorithms, CancellationToken cancelToken)
+        {
             TempFile? tmp = null;
-            string contentHash;
-            var measure = stream.UnwrapThrottledStream();
-            if (measure.CanSeek)
+            List<HashAlgorithm>? hashalgs = null;
+
+            try
             {
+                string[] contentHashes;
+                var measure = stream.UnwrapThrottledStream();
+                if (!measure.CanSeek)
+                    tmp = new TempFile();
+
                 var p = measure.Position;
+                hashalgs = hashalgorithms.Select(ha => HashFactory.CreateHasher(ha)).ToList();
 
-                // Compute the hash
-                using (var hashalg = HashFactory.CreateHasher(hashalgorithm))
-                    contentHash = ByteArrayAsHexString(hashalg.ComputeHash(measure));
-
-                measure.Position = p;
-            }
-            else
-            {
-                // No seeking possible, use a temp file
-                tmp = new TempFile();
-                await using (var sr = File.OpenWrite(tmp))
-                using (var hasher = HashFactory.CreateHasher(hashalgorithm))
-                await using (var hc = new HashCalculatingStream(measure, hasher))
+                await using (var sr = tmp == null ? null : File.OpenWrite(tmp))
                 {
-                    await CopyStreamAsync(hc, sr, cancelToken).ConfigureAwait(false);
-                    contentHash = hc.GetFinalHashString();
+                    int read;
+                    var buffer = new byte[1024 * 8];
+                    while ((read = await measure.ReadAsync(buffer, 0, buffer.Length, cancelToken).ConfigureAwait(false)) > 0)
+                    {
+                        // Feed the data to all hashers
+                        foreach (var hasher in hashalgs)
+                            hasher.TransformBlock(buffer, 0, read, null, 0);
+
+                        if (sr != null)
+                            await sr.WriteAsync(buffer, 0, read, cancelToken).ConfigureAwait(false);
+                    }
                 }
 
-                stream = File.OpenRead(tmp);
-            }
+                // Finalize the hashes
+                foreach (var hasher in hashalgs)
+                    hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
 
-            return (stream, contentHash, tmp);
+                // Get the final hash strings
+                contentHashes = hashalgs.Select(hashalg => ByteArrayAsHexString(hashalg.Hash!)).ToArray();
+                foreach (var hasher in hashalgs)
+                    hasher.Dispose();
+
+                // Reset the position of the stream if it was seekable
+                if (measure.CanSeek)
+                    measure.Position = p;
+
+                return (tmp == null ? stream : File.OpenRead(tmp), contentHashes, tmp);
+            }
+            catch
+            {
+                tmp?.Dispose();
+                throw;
+            }
+            finally
+            {
+                if (hashalgs != null)
+                    foreach (var hasher in hashalgs)
+                        hasher.Dispose();
+            }
         }
     }
 }
