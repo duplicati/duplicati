@@ -1,3 +1,35 @@
+2025-08-19 - 2.1.1.101_canary_2025-08-19
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+This version has an update to the restore process that reduces the amount of temporary space used during restores. 
+With the option `--restore-volume-cache-hint` it is now possible to choose how much size to use, and the dafult is 4GiB.
+
+A problem with ngclient saving sizes with the default multiplier was fixed, and an improved list of destinations was added.
+
+The breaking change in 2.1.1.100 with the `--allow-empty-source` was tested and found to have too many negative issues, so it was inverted to be `--prevent-empty-source` such that it is possible to turn it on, but it does not by default fail if the source folder is empty.
+
+For Debian packages, the libICU package is now a recommended dependency and will not prevent installing the package.
+A pre-install script warns if no libICU package was found, and shows how to run without libICU present.
+
+## Detailed list of changes:
+- Fixed an issue with null values on Sharepoint mounted folders
+- Improve support for libICU on Debian
+- Fixed a case where testing would fail on a missing hash value
+- Added support for limiting the usage of local temporary disk space during restore
+- Inverted `--allow-empty-source` to `--prevent-empty-source` (opt-in)
+- Fixed an issue with S3 backend reading stream twice
+- Lowercase S3 AWS Client content hash for better compatibility with other providers
+
+## ngclient changes:
+- Improved searching for destinations
+- Resolved some issues with colors not being applied
+- Fixed an issue with non-default size multiplier causing invalid values to be saved
+- Streamlined suffixes for sizes to be the same
+- Removed support for picking `bytes` as the multiplier
+- Fixed issue with livelog page requesting invalid data when disabled
+
 2025-08-08 - 2.1.1.100_canary_2025-08-08
 ==========
 This release is a canary release intended to be used for testing.
