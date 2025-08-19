@@ -111,14 +111,14 @@ public static partial class Command
     /// The supported versions of libicu for Debian
     /// </summary>
     private static string DebianLibIcuVersions => "libicu | " + string.Join(" | ",
-        "78;77;76;75;74;73;72;71;70;69;68;67;66;65;63;60;57;55;52"
+        "80;79;78;77;76;75;74;73;72;71;70;69;68;67"
         .Split(";", StringSplitOptions.RemoveEmptyEntries)
         .Select(x => $"libicu{x}"));
 
     /// <summary>
     /// The supported versions of libssl for Debian
     /// </summary>
-    private static string DebianLibSslVersions => "libssl3 | libssl1.1";
+    private static string DebianLibSslVersions => "libssl3 | libssl1.1 | libssl3t64";
 
     /// <summary>
     /// The packages that are required for GUI builds
