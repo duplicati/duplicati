@@ -1,7 +1,7 @@
 FROM debian:latest
 
 RUN apt update -y && \
-    apt install -y libssl3 ca-certificates libicu72 rclone gnupg tini
+    apt install -y libssl3t64 ca-certificates libicu76 rclone gnupg tini
 
 ENTRYPOINT [ "/usr/bin/tini", "--", "/run-as-user.sh" ]
 
