@@ -222,7 +222,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     n.include = ' ';
                 else
                     n.include = null;
-            }, root);            
+            }, root);
         }
 
         function updateFilterList() {
@@ -249,7 +249,7 @@ backupApp.directive('sourceFolderPicker', function() {
         }
 
         function syncTreeWithLists() {
-            if (scope.ngSources == null || sourceNodeChildren == null || scope.dirsep == null)
+            if (scope.ngSources === null || sourceNodeChildren === null || scope.dirsep === null)
                 return;
 
             sourcemap = {};
@@ -259,31 +259,41 @@ backupApp.directive('sourceFolderPicker', function() {
 
             function findInList(lst, path) {
                 for(var x in lst)
-                    if (compareablePath(lst[x].id) == path)
+                    if (compareablePath(lst[x].id) === path)
                         return x;
 
                 return false;
             }
 
-            for(var i = 0; i < scope.ngSources.length; i++) {
-                var k = compareablePath(scope.ngSources[i]);
-                if (k.length == 0)
+            for(let i = 0; i < scope.ngSources.length; i++) {
+                const pathId = scope.ngSources[i];
+                const path = compareablePath(pathId);
+                if (path.length === 0)
                     continue;
 
-                sourcemap[k] = true;
+                sourcemap[path] = true;
 
-                var txt = scope.ngSources[i];
-                if (k.indexOf('%') == 0) {
-                    var nx = k.substr(1).indexOf('%') + 2;
-                    if (nx > 1) {
-                        var key = compareablePath(k.substr(0, nx));
-                        txt = displayMap[compareablePath(k)] || ((displayMap[compareablePath(key)] || key) + txt.substr(nx));
-                    }
+                let txt = pathId;
+                const rootMatch = /^%[^%]*%/.exec(path);
+                if (rootMatch) {
+                  const root = rootMatch[0];
+                  const key = compareablePath(root);
+                  const subPath = pathId.slice(root.length);
+
+                  txt = (displayMap[key] || root) + subPath;
+
+                  if (key === compareablePath('%HYPERV%')) {
+                    const isHyperVRoot = path === key || subPath === '' || subPath === scope.dirsep;
+                    const vmName = displayMap[compareablePath(path)];
+                    txt = isHyperVRoot
+                      ? gettextCatalog.getString('All Hyper-V Machines')
+                      : gettextCatalog.getString('Hyper-V Machine: {{name}}', { name :  vmName });
+                  }
                 }
 
                 var n = {
                     text: txt,
-                    id: scope.ngSources[i],
+                    id: pathId,
                     include: '+',
                     other: true,
                     leaf: true
@@ -293,10 +303,10 @@ backupApp.directive('sourceFolderPicker', function() {
 
                 sourceNodeChildren.push(n);
 
-                if (defunctmap[k] == null && n.iconCls != "x-tree-icon-hyperv" && n.iconCls != "x-tree-icon-hypervmachine" && n.iconCls != "x-tree-icon-mssql" && n.iconCls != "x-tree-icon-mssqldb") {
-                    defunctmap[k] = true;
+                if (defunctmap[path] == null && n.iconCls != "x-tree-icon-hyperv" && n.iconCls != "x-tree-icon-hypervmachine" && n.iconCls != "x-tree-icon-mssql" && n.iconCls != "x-tree-icon-mssqldb") {
+                    defunctmap[path] = true;
 
-                    var p = scope.ngSources[i];
+                    var p = pathId;
                     if (p.substr(0, 1) == '%' && p.substr(p.length - 1, 1) == '%')
                         p += scope.dirsep;
 
@@ -427,7 +437,6 @@ backupApp.directive('sourceFolderPicker', function() {
             self = this;
 
             if (node.root || node.leaf || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked'
-                || node.iconCls == 'x-tree-icon-hyperv' || node.iconCls == 'x-tree-icon-hypervmachine'
                 || node.iconCls == 'x-tree-icon-mssql' || node.iconCls == 'x-tree-icon-mssqldb')
                 return;
 
@@ -441,7 +450,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     if (node.children != null)
                         for (var i in node.children) {
                             var child = node.children[i];
-                            setEntryType(child);
+                            displayMap[compareablePath(child.id)] = child.text;
                             if (self.expandedPath != null) {
                                 var childPath = compareablePath(child.id);
                                 if (shouldExpand(childPath, self.expandedPath)) {

@@ -1,28 +1,29 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System.Security.Principal;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Snapshots.Windows;
+using Duplicati.WebserverCore.Dto;
 using Duplicati.WebserverCore.Exceptions;
 
 namespace Duplicati.WebserverCore.Endpoints.V1.FilesystemPlugins;
@@ -31,6 +32,7 @@ public class Hyperv : IFilesystemPlugin
 {
     private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Hyperv>();
     public string RootName => "%HYPERV%";
+
     public IEnumerable<Dto.TreeNodeDto> GetEntries(string[] pathSegments)
     {
         if (!OperatingSystem.IsWindows())
@@ -42,70 +44,48 @@ public class Hyperv : IFilesystemPlugin
 
         try
         {
-            if (pathSegments == null || pathSegments.Length == 0)
+            if (pathSegments.Length == 0)
             {
                 hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
                 if (!hypervUtility.Guests.Any())
                     return [];
-
-                return [new Dto.TreeNodeDto()
-                {
-                    id =  Util.AppendDirSeparator(RootName),
-                    text = "Hyper-V Machines",
-                    cls = "hyperv",
-                    iconCls = "x-tree-icon-hyperv",
-                    check = false,
-                    temporary = false,
-                    leaf = false,
-                    systemFile = false,
-                    hidden = false,
-                    symlink = false,
-                    fileSize = -1,
-                    resolvedpath = null
-                }];
-
+                return
+                [
+                    new TreeNodeDto
+                    {
+                        id = Util.AppendDirSeparator(RootName),
+                        text = "Hyper-V Machines",
+                        cls = "folder",
+                        iconCls = "x-tree-icon-hyperv",
+                        check = false,
+                        temporary = false,
+                        leaf = false,
+                        systemFile = false,
+                        hidden = false,
+                        symlink = false,
+                        fileSize = -1,
+                        resolvedpath = null
+                    }
+                ];
             }
-            else if (pathSegments.Length == 1)
+
+            if (pathSegments.Length == 1)
             {
                 hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
-                return hypervUtility.Guests.Select(x => new Dto.TreeNodeDto()
+                return hypervUtility.Guests.Select(x => new Dto.TreeNodeDto
                 {
-                    id = Util.AppendDirSeparator(string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x.ID.ToString()))),
+                    id = string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x.ID.ToString())),
                     text = x.Name,
-                    cls = "hyperv",
-                    iconCls = "x-tree-icon-hyperv",
+                    cls = "file",
+                    iconCls = "x-tree-icon-hypervmachine",
                     check = false,
                     temporary = false,
-                    leaf = false,
+                    leaf = true,
                     systemFile = false,
                     hidden = false,
                     symlink = false,
                     fileSize = -1,
                     resolvedpath = null
-                }).ToList();
-            }
-            else
-            {
-                var machineId = new Guid(pathSegments[1]);
-                hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER, true);
-                var foundVMs = hypervUtility.Guests.FindAll(x => x.ID.Equals(machineId));
-
-                if (foundVMs.Count != 1)
-                    throw new NotFoundException(string.Format($"Cannot find VM with ID {machineId}"));
-                return foundVMs[0].DataPaths.Select(x => new Dto.TreeNodeDto()
-                {
-                    text = x,
-                    id = string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x)),
-                    cls = "folder",
-                    iconCls = "x-tree-icon-hypervmachine",
-                    check = false,
-                    leaf = true,
-                    hidden = false,
-                    systemFile = false,
-                    temporary = false,
-                    symlink = false,
-                    fileSize = -1,
-                    resolvedpath = x
                 }).ToList();
             }
         }
