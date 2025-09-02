@@ -88,6 +88,34 @@ public class Hyperv : IFilesystemPlugin
                     resolvedpath = null
                 }).ToList();
             }
+
+            if (pathSegments.Length == 2)
+            {
+                hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+                var selectedVm = hypervUtility.Guests.FirstOrDefault(x => x.ID.ToString() == pathSegments[1]);
+                if (selectedVm is null)
+                {
+                    return Array.Empty<Dto.TreeNodeDto>();
+                }
+
+                return [
+                    new Dto.TreeNodeDto
+                    {
+                        id = string.Join(Path.DirectorySeparatorChar, pathSegments),
+                        text = selectedVm.Name,
+                        cls = "file",
+                        iconCls = "x-tree-icon-hypervmachine",
+                        check = false,
+                        temporary = false,
+                        leaf = true,
+                        systemFile = false,
+                        hidden = false,
+                        symlink = false,
+                        fileSize = -1,
+                        resolvedpath = null
+                    }
+                ];
+            }
         }
         catch (Exception ex)
         {

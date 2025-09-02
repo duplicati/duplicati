@@ -275,6 +275,10 @@ backupApp.directive('sourceFolderPicker', function() {
                 return false;
             }
 
+            function getHyperVText(path, key, name) {
+                return path === key ? gettextCatalog.getString('All Hyper-V Machines') : gettextCatalog.getString('Hyper-V Machine: {{name}}', { name });
+            }
+
             for(let i = 0; i < scope.ngSources.length; i++) {
                 const pathId = scope.ngSources[i];
                 const path = compareablePath(pathId);
@@ -293,7 +297,21 @@ backupApp.directive('sourceFolderPicker', function() {
                     txt = (displayMap[key] || root) + subPath;
 
                     if (key === compareablePath('%HYPERV%')) {
-                        txt = path === key ? gettextCatalog.getString('All Hyper-V Machines') : gettextCatalog.getString('Hyper-V Machine: {{name}}', {name: displayMap[compareablePath(path)]});
+                      if (displayMap[compareablePath(path)] === undefined) {
+                        AppService.postJson('/filesystem?onlyfolders=false&showhidden=true', { path: pathId })
+                          .then((res) => {
+                            if (res.data && res.data.length > 0) {
+                              const name = res.data[0].text;
+                              displayMap[compareablePath(path)] = name;
+                              const node = sourceNodeChildren.find(x => compareablePath(x.id) === path);
+                              if (node) {
+                                node.text = getHyperVText(path, key, name);
+                              }
+                            }
+                          });
+                      } else {
+                        txt = getHyperVText(path, key, displayMap[compareablePath(path)]);
+                      }
                     }
 
                     if (key === compareablePath('%MSSQL%')) {
