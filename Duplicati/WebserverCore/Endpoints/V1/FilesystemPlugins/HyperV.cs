@@ -53,7 +53,7 @@ public class Hyperv : IFilesystemPlugin
                 [
                     new TreeNodeDto
                     {
-                        id = Util.AppendDirSeparator(RootName),
+                        id = RootName,
                         text = "Hyper-V Machines",
                         cls = "folder",
                         iconCls = "x-tree-icon-hyperv",
