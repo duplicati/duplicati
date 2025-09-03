@@ -90,7 +90,7 @@ public static class SslOptionsHelper
         return new SslCertificateOptions(
             Utility.ParseBoolOption(options, $"{prefix}{UseSSLOption}"),
             Utility.ParseBoolOption(options, $"{prefix}{AcceptAnySslCertificateOption}"),
-            string.IsNullOrWhiteSpace(acceptSpecificCertificatesString) ? [] : acceptSpecificCertificatesString.Split([",", ";"], StringSplitOptions.RemoveEmptyEntries)
+            string.IsNullOrWhiteSpace(acceptSpecificCertificatesString) ? Array.Empty<string>() : acceptSpecificCertificatesString.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
         );
     }
 

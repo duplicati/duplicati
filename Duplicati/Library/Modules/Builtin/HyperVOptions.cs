@@ -221,7 +221,7 @@ namespace Duplicati.Library.Modules.Builtin
                 .ToList();
 
             var filterhandler = pathFilters.Select(x => x.Filter)
-                .Concat(filter.Split([System.IO.Path.PathSeparator], StringSplitOptions.RemoveEmptyEntries))
+                .Concat(filter.Split(new[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x => Utility.FilterExpression.StringToIFilter(x))
                 .Append(new Utility.FilterExpression())

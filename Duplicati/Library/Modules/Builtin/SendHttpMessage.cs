@@ -293,7 +293,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             commandlineOptions.TryGetValue(OPTION_EXTRA_PARAMETERS, out m_extraParameters);
             m_acceptAnyCertificate = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_ACCEPT_ANY_CERTIFICATE);
-            m_acceptSpecificCertificates = commandlineOptions.ContainsKey(OPTION_ACCEPT_SPECIFIED_CERTIFICATE) ? commandlineOptions[OPTION_ACCEPT_SPECIFIED_CERTIFICATE].Split([",", ";"], StringSplitOptions.RemoveEmptyEntries) : null;
+            m_acceptSpecificCertificates = commandlineOptions.ContainsKey(OPTION_ACCEPT_SPECIFIED_CERTIFICATE) ? commandlineOptions[OPTION_ACCEPT_SPECIFIED_CERTIFICATE].Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries) : null;
 
             m_retries = Utility.Utility.ParseIntOption(commandlineOptions.AsReadOnly(), OPTION_SEND_HTTP_RETRIES, DEFAULT_RETRIES);
             m_retryDelay = Utility.Utility.ParseTimespanOption(commandlineOptions.AsReadOnly(), OPTION_SEND_HTTP_RETRY_DELAY, DEFAULT_RETRY_DELAY);
