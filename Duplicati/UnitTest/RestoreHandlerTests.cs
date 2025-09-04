@@ -246,5 +246,40 @@ namespace Duplicati.UnitTest
 
             TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restoring without local data");
         }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public void RestoreOtherProcessIsUsingFile()
+        {
+            var file1Path = Path.Combine(this.DATAFOLDER, "file1");
+            byte[] original_contents = [1, 2, 3];
+            File.WriteAllBytes(file1Path, original_contents);
+
+            var opts = new Dictionary<string, string>(this.TestOptions);
+            opts["overwrite"] = "true";
+
+            using var c = new Controller("file://" + this.TARGETFOLDER, opts, null);
+
+            var res_backup = c.Backup([this.DATAFOLDER]);
+            TestUtils.AssertResults(res_backup);
+
+            File.WriteAllBytes(file1Path, [4, 5, 6]);
+            
+            using (var fs = new FileStream(file1Path, FileMode.Open, FileAccess.Read, FileShare.None))
+            {    
+                    var res_failing = c.Restore(["*"]);
+                    Assert.AreEqual(2, res_failing.Errors.Count());
+                    var first_error = res_failing.Errors.First();
+                    Assert.IsTrue(
+                        first_error.Contains("IOException: The process cannot access the file")
+                        &&
+                        first_error.EndsWith(" because it is being used by another process.")
+                    );
+            }
+
+            var res_restore = c.Restore(["*"]);
+            TestUtils.AssertResults(res_restore);
+            Assert.AreEqual(original_contents, File.ReadAllBytes(file1Path));
+        }
     }
 }

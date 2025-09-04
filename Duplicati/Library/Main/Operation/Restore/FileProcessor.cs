@@ -145,7 +145,16 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_work_verify_target?.Start();
                         // Verify the target file blocks that may already exist.
-                        var (bytes_verified, missing_blocks, verified_blocks) = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, buffer, options, results).ConfigureAwait(false);
+                        long bytes_verified;
+                        List<BlockRequest> missing_blocks, verified_blocks;
+                        try {
+                            (bytes_verified, missing_blocks, verified_blocks) = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, buffer, options, results).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteErrorMessage(LOGTAG, "VerifyTargetBlocks", ex, "Error during checking the target file");
+                            continue;
+                        }
                         long bytes_written = 0;
                         sw_work_verify_target?.Stop();
                         if (blocks.Length != missing_blocks.Count + verified_blocks.Count)
@@ -177,7 +186,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     }
                                     else
                                     {
-                                        await CopyOldTargetBlocksToNewTarget(file, new_file, buffer, verified_blocks).ConfigureAwait(false);
+                                        try
+                                        {
+                                            await CopyOldTargetBlocksToNewTarget(file, new_file, buffer, verified_blocks).ConfigureAwait(false);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Logging.Log.WriteErrorMessage(LOGTAG, "CopyOldTargetToNew", ex, "Error when trying to copy {0} to {1}", file, new_file);
+                                            results.BrokenLocalFiles.Add(file.TargetPath);
+                                        }
                                     }
                                 }
                                 else
@@ -731,6 +748,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         results.BrokenLocalFiles.Add(file.TargetPath);
                     }
+                    throw;
                 }
 
                 // If all of the individual blocks have been verified.
