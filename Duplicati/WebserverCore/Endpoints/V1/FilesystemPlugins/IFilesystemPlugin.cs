@@ -50,8 +50,5 @@ public static class KnownPlugins
     {
         yield return new Hyperv();
         yield return new MSSQL();
-#if DEBUG
-        yield return new TestPlugin();
-#endif
     }
 }
