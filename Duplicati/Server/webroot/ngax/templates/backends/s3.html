@@ -9,7 +9,7 @@
 
     <select name="s3_server" id="s3_server" ng-model="$parent.s3_server"
             ng-options="v as k + ' (' + v + ')' for (k, v) in s3_providers | orderBy: k">
-        <option value="" translate translate-params-server="s3_server_custom || ''">Custom server url ({{server}})
+        <option value="" translate translate-params-server="s3_server_custom || ''">Custom server url
         </option>
     </select>
 
@@ -31,7 +31,7 @@
     <select name="s3_region" id="s3_region" ng-model="$parent.s3_region"
             ng-options="v as k + ' (' + v + ')' for (k, v) in s3_regions | orderBy: k"
             title="{{'The region parameter is only applied when creating a new bucket' | translate}}">
-        <option value="" translate translate-params-region="s3_region_custom || ''">Custom region value ({{region}})
+        <option value="" translate translate-params-region="s3_region_custom || ''">Custom region value
         </option>
     </select>
 
@@ -47,7 +47,7 @@
     <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass"
             ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclasses | orderBy: k"
             title="{{'The storage class affects the availability and price for a stored file' | translate}}">
-        <option value="" translate translate-params-class="s3_storageclass_custom || ''">Custom storage class ({{class}})
+        <option value="" translate translate-params-class="s3_storageclass_custom || ''">Custom storage class
         </option>
     </select>
 
