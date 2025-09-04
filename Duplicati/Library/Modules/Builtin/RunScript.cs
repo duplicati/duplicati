@@ -480,7 +480,7 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
             // Explicit CR/LF types for all OSes instead of Environment.NewLine in case stdout producer
             // script explicitly uses a different line ending from the OS the process is ran on.
-            foreach (var line in stdout.Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries))
+            foreach (var line in stdout.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries))
             {
                 var prefix = LogActions.Keys.FirstOrDefault(p => line.StartsWith(p));
                 if (prefix == null) continue;

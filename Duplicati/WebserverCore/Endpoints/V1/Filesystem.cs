@@ -30,6 +30,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1;
 
 public class Filesystem : IEndpointV1
 {
+    private static string LOGTAG = Library.Logging.Log.LogTagFromType<Filesystem>();
     private record FilesystemInput(string path);
     public static void Map(RouteGroupBuilder group)
     {
@@ -78,6 +79,7 @@ public class Filesystem : IEndpointV1
 
         string? specialpath = null;
         string? specialtoken = null;
+        string? pluginkey = null;
 
         if (path.StartsWith("%", StringComparison.Ordinal))
         {
@@ -91,10 +93,14 @@ public class Filesystem : IEndpointV1
                     specialpath = node.resolvedpath;
                     specialtoken = node.id;
                 }
+                else
+                {
+                    pluginkey = tk;
+                }
             }
         }
 
-        path = ExpandPath(path);
+        path = pluginkey == null ? ExpandPath(path) : path;
 
         try
         {
@@ -112,6 +118,19 @@ public class Filesystem : IEndpointV1
                         )
                         .Select(TryCreateTreeNodeForDrive) // This will try to create a TreeNode for selected drives
                         .WhereNotNull(); // This filters out such entries that could not be created
+            }
+            else if (pluginkey != null)
+            {
+                var plugin = FilesystemPlugins.KnownPlugins.GetPlugins().FirstOrDefault(x => x.RootName == pluginkey);
+                if (plugin == null)
+                {
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "NonExistingPlugin", null, $"Requested plugin key {pluginkey} which is not supported");
+                    res = Enumerable.Empty<Dto.TreeNodeDto>();
+                }
+                else
+                {
+                    res = plugin.GetEntries(path.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries));
+                }
             }
             else
             {
@@ -138,7 +157,10 @@ public class Filesystem : IEndpointV1
                         check = false
 
                     })
-                    .Union(res);
+                    // Add plugins for Hyper-V and MSSQL
+                    .Concat(FilesystemPlugins.KnownPlugins.GetPlugins()
+                        .SelectMany(plugin => plugin.GetEntries(Array.Empty<string>())))
+                    .Concat(res);
             }
 
             if (specialtoken != null && specialpath != null)

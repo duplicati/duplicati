@@ -115,7 +115,7 @@ namespace Duplicati.Library.Backend.Box
         {
             var parentid = "0";
 
-            foreach (var p in _path.Split(["/"], StringSplitOptions.RemoveEmptyEntries))
+            foreach (var p in _path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 var el = (MiniFolder?)await PagedFileListResponse(parentid, true, cancelToken).FirstOrDefaultAsync(x => x.Name == p, cancellationToken: cancelToken).ConfigureAwait(false);
                 if (el == null)
