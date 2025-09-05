@@ -426,7 +426,7 @@ namespace Duplicati.Library.Main.Database
                 ")
                     .ExpandInClauseParameterMssqlite("@States", [
                         RemoteVolumeState.Deleted,
-                            RemoteVolumeState.Deleting
+                        RemoteVolumeState.Deleting
                     ])
                     .ExecuteNonQueryAsync(token)
                     .ConfigureAwait(false);
