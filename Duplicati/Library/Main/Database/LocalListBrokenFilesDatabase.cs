@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.Database
         private static readonly string BLOCK_VOLUME_IDS = $@"
             SELECT ""ID""
             FROM ""RemoteVolume""
-            WHERE ""Type"" = '{RemoteVolumeType.Blocks}'
+            WHERE ""Type"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeType.Blocks)}'
         ";
 
         // Invalid blocksets include those that:
@@ -63,8 +63,8 @@ namespace Duplicati.Library.Main.Database
                     ""BlocksetID"" AS ""BlocksetID""
                 FROM ""FileLookup""
                 WHERE
-                    ""BlocksetID"" != {FOLDER_BLOCKSET_ID}
-                    AND ""BlocksetID"" != {SYMLINK_BLOCKSET_ID}
+                    ""BlocksetID"" != {Library.Utility.Utility.FormatInvariant(FOLDER_BLOCKSET_ID)}
+                    AND ""BlocksetID"" != {Library.Utility.Utility.FormatInvariant(SYMLINK_BLOCKSET_ID)}
                 UNION
                     SELECT
                         ""A"".""ID"" AS ""ID"",
@@ -270,7 +270,7 @@ namespace Duplicati.Library.Main.Database
                     ""Size""
                 FROM ""RemoteVolume""
                 WHERE
-                    ""Type"" = '{RemoteVolumeType.Index}'
+                    ""Type"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeType.Index)}'
                     AND ""ID"" NOT IN (
                         SELECT ""IndexVolumeID""
                         FROM ""IndexBlockLink""
@@ -353,8 +353,8 @@ namespace Duplicati.Library.Main.Database
             if (names == null || !names.Any()) return;
 
             await using var deletecmd = m_connection.CreateCommand(m_rtr);
-            var temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            var volidstable = "DelVolSetIds-" + temptransguid;
+            var temptransguid = Library.Utility.Utility.GetHexGuid();
+            var volidstable = $"DelVolSetIds-{temptransguid}";
 
             // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
             await deletecmd.ExecuteNonQueryAsync($@"

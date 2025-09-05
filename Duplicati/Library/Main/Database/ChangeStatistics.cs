@@ -21,6 +21,7 @@
 #nullable enable
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
@@ -48,8 +49,7 @@ public static class ChangeStatistics
     /// <returns>A task that completes when the statistics are updated.</returns>
     internal static async Task UpdateChangeStatistics(SqliteCommand cmd, BackupResults results, long currentFilesetId, long previousFilesetId, CancellationToken token)
     {
-        var tmpName = $"TmpFileState_{Guid.NewGuid():N}";
-
+        var tmpName = $"TmpFileState_{Library.Utility.Utility.GetHexGuid()}";
         try
         {
             // Create temp table
@@ -290,9 +290,12 @@ public static class ChangeStatistics
     private static string GetBlocksetCondition(string alias, long? blocksetId, long[]? exclude)
     {
         if (blocksetId.HasValue)
-            return @$"{alias}.""BlocksetID"" = {blocksetId.Value}";
+            return $@"{alias}.""BlocksetID"" = {Library.Utility.Utility.FormatInvariant(blocksetId.Value)}";
         if (exclude?.Length > 0)
-            return @$"{alias}.""BlocksetID"" NOT IN ({string.Join(",", exclude)})";
+        {
+            var formatted_exclude = exclude.Select(x => Library.Utility.Utility.FormatInvariant(x));
+            return $@"{alias}.""BlocksetID"" NOT IN ({string.Join(",", formatted_exclude)})";
+        }
         return string.Empty;
     }
 }

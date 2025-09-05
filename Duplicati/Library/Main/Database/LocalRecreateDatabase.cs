@@ -146,44 +146,50 @@ namespace Duplicati.Library.Main.Database
         /// <param name="temptable">The name of the temporary table containing blocklist hashes and indices.</param>
         /// <param name="fullBlockListBlockCount">The number of blocks in the full block list, used to calculate the full index.</param>
         /// <returns>A SQL query string that selects blocklist entries with their full index and block size.</returns>
-        private static string SELECT_BLOCKLIST_ENTRIES(long blocksize, long blockhashsize, string temptable, long fullBlockListBlockCount) => $@"
-            SELECT
-                ""E"".""BlocksetID"",
-                ""F"".""Index"" + (""E"".""BlocklistIndex"" * {fullBlockListBlockCount}) AS ""FullIndex"",
-                ""F"".""BlockHash"",
-                MIN({blocksize}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * {fullBlockListBlockCount})) * {blocksize})) AS ""BlockSize"",
-                ""E"".""Hash"",
-                ""E"".""BlocklistSize"",
-                ""E"".""BlocklistHash""
-            FROM
-                (
-                    SELECT *
-                    FROM
-                        (
-                            SELECT
-                                ""A"".""BlocksetID"",
-                                ""A"".""Index"" AS ""BlocklistIndex"",
-                                MIN({fullBlockListBlockCount} * {blockhashsize}, (((""B"".""Length"" + {blocksize} - 1) / {blocksize}) - (""A"".""Index"" * ({fullBlockListBlockCount}))) * {blockhashsize}) AS ""BlocklistSize"",
-                                ""A"".""Hash"" AS ""BlocklistHash"",
-                                ""B"".""Length""
-                            FROM
-                                ""BlocklistHash"" ""A"",
-                                ""Blockset"" ""B""
-                            WHERE
-                                ""B"".""ID"" = ""A"".""BlocksetID""
-                        ) ""C"",
-                        ""Block"" ""D""
-                    WHERE
-                        ""C"".""BlocklistHash"" = ""D"".""Hash""
-                        AND ""C"".""BlocklistSize"" = ""D"".""Size""
-                ) ""E"",
-                ""{temptable}"" ""F""
-            WHERE
-                ""F"".""BlocklistHash"" = ""E"".""Hash""
-            ORDER BY
-                ""E"".""BlocksetID"",
-                ""FullIndex""
-        ";
+        private static string SELECT_BLOCKLIST_ENTRIES(long blocksize, long blockhashsize, string temptable, long fullBlockListBlockCount)
+        {
+            string str_blocksize = Library.Utility.Utility.FormatInvariant("{0}", blocksize);
+            string str_blockhashsize = Library.Utility.Utility.FormatInvariant("{0}", blockhashsize);
+            string str_fullBlockListBlockCount = Library.Utility.Utility.FormatInvariant("{0}", fullBlockListBlockCount);
+            return $@"
+                SELECT
+                    ""E"".""BlocksetID"",
+                    ""F"".""Index"" + (""E"".""BlocklistIndex"" * {str_fullBlockListBlockCount}) AS ""FullIndex"",
+                    ""F"".""BlockHash"",
+                    MIN({str_blocksize}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * {str_fullBlockListBlockCount})) * {str_blocksize})) AS ""BlockSize"",
+                    ""E"".""Hash"",
+                    ""E"".""BlocklistSize"",
+                    ""E"".""BlocklistHash""
+                FROM
+                    (
+                        SELECT *
+                        FROM
+                            (
+                                SELECT
+                                    ""A"".""BlocksetID"",
+                                    ""A"".""Index"" AS ""BlocklistIndex"",
+                                    MIN({str_fullBlockListBlockCount} * {str_blockhashsize}, (((""B"".""Length"" + {str_blocksize} - 1) / {str_blocksize}) - (""A"".""Index"" * ({str_fullBlockListBlockCount}))) * {str_blockhashsize}) AS ""BlocklistSize"",
+                                    ""A"".""Hash"" AS ""BlocklistHash"",
+                                    ""B"".""Length""
+                                FROM
+                                    ""BlocklistHash"" ""A"",
+                                    ""Blockset"" ""B""
+                                WHERE
+                                    ""B"".""ID"" = ""A"".""BlocksetID""
+                            ) ""C"",
+                            ""Block"" ""D""
+                        WHERE
+                            ""C"".""BlocklistHash"" = ""D"".""Hash""
+                            AND ""C"".""BlocklistSize"" = ""D"".""Size""
+                    ) ""E"",
+                    ""{temptable}"" ""F""
+                WHERE
+                    ""F"".""BlocklistHash"" = ""E"".""Hash""
+                ORDER BY
+                    ""E"".""BlocksetID"",
+                    ""FullIndex""
+            ";
+        }
 
         /// <summary>
         /// Asynchronously creates a new instance of the <see cref="LocalRecreateDatabase"/> class.
@@ -201,8 +207,8 @@ namespace Duplicati.Library.Main.Database
                 await LocalRestoreDatabase.CreateAsync(parentdb, dbnew, token)
                     .ConfigureAwait(false);
 
-            dbnew.m_tempblocklist = "TempBlocklist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            dbnew.m_tempsmalllist = "TempSmalllist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            dbnew.m_tempblocklist = $"TempBlocklist_{Library.Utility.Utility.GetHexGuid()}";
+            dbnew.m_tempsmalllist = $"TempSmalllist_{Library.Utility.Utility.GetHexGuid()}";
 
             if (dbnew.m_connection == null)
                 throw new Exception("Connection is null");
@@ -551,7 +557,7 @@ namespace Duplicati.Library.Main.Database
                     AND ""S"".""BlockHash"" = ""Block"".""Hash""
                     AND ""S"".""BlockSize"" = ""Block"".""Size""
                     AND ""Blockset"".""Length"" = ""S"".""BlockSize""
-                    AND ""Blockset"".""Length"" <= {blocksize}
+                    AND ""Blockset"".""Length"" <= {Library.Utility.Utility.FormatInvariant(blocksize)}
             ";
 
             var selectAllBlocksetEntries = @$"
@@ -660,6 +666,8 @@ namespace Duplicati.Library.Main.Database
                             AND ""B"".""Size"" = ""TS"".""BlockSize""
                     )
                 ";
+            var str_blocksize = Library.Utility.Utility.FormatInvariant(blocksize);
+            var str_blocksize_per_hashsize = Library.Utility.Utility.FormatInvariant(blocksize / hashsize);
             var insertBlocksCommand = $@"
                 INSERT INTO ""Block"" (
                     ""Hash"",
@@ -673,7 +681,7 @@ namespace Duplicati.Library.Main.Database
                 FROM (
                     SELECT
                         ""NB"".""BlockHash"",
-                        MIN({blocksize}, ""BS"".""Length"" - ((""NB"".""Index"" + (BH.""Index"" * {blocksize / hashsize})) * {blocksize})) AS ""BlockSize""
+                        MIN({str_blocksize}, ""BS"".""Length"" - ((""NB"".""Index"" + (BH.""Index"" * {str_blocksize_per_hashsize})) * {str_blocksize})) AS ""BlockSize""
                     FROM (
                         SELECT
                             ""TBL"".""BlockListHash"",
@@ -702,7 +710,7 @@ namespace Duplicati.Library.Main.Database
                         ON (
                             ""BS"".""FullHash"" = ""TS"".""FileHash""
                             AND ""BS"".""Length"" = ""TS"".""BlockSize""
-                            AND ""BS"".""Length"" <= {blocksize}
+                            AND ""BS"".""Length"" <= {str_blocksize}
                         )
                     JOIN ""Block"" ""BL""
                         ON (
@@ -724,7 +732,7 @@ namespace Duplicati.Library.Main.Database
                 )
                 SELECT DISTINCT
                     ""BH"".""blocksetid"",
-                    (""BH"".""Index"" * {blocksize / hashsize}) + ""TBL"".""Index"" as ""FullIndex"",
+                    (""BH"".""Index"" * {str_blocksize_per_hashsize}) + ""TBL"".""Index"" as ""FullIndex"",
                     ""BK"".""ID"" AS ""BlockID""
                 FROM ""{m_tempblocklist}"" ""TBL""
                     JOIN ""blocklisthash"" ""BH""
@@ -734,7 +742,7 @@ namespace Duplicati.Library.Main.Database
                     LEFT OUTER JOIN ""BlocksetEntry"" ""BE""
                         ON (
                             BE.""BlockSetID"" = ""BH"".""BlocksetID""
-                            AND BE.""Index"" = (""BH"".""Index"" * {blocksize / hashsize})+""TBL"".""Index""
+                            AND BE.""Index"" = (""BH"".""Index"" * {str_blocksize_per_hashsize})+""TBL"".""Index""
                         )
                 WHERE ""BE"".""BlockSetID"" IS NULL
                 {extra}
@@ -1144,7 +1152,7 @@ namespace Duplicati.Library.Main.Database
                     SELECT ""BlocklistHash"".""Hash""
                     FROM ""BlocklistHash""
                     LEFT OUTER JOIN ""BlocksetEntry""
-                        ON ""BlocksetEntry"".""Index"" = (""BlocklistHash"".""Index"" * {blocksize / hashsize})
+                        ON ""BlocksetEntry"".""Index"" = (""BlocklistHash"".""Index"" * {Library.Utility.Utility.FormatInvariant(blocksize / hashsize)})
                         AND ""BlocksetEntry"".""BlocksetID"" = ""BlocklistHash"".""BlocksetID""
                     WHERE ""BlocksetEntry"".""BlocksetID"" IS NULL
                 ";
@@ -1287,7 +1295,7 @@ namespace Duplicati.Library.Main.Database
                             ""Remotevolume""
                         WHERE
                             ""Block"".""VolumeID"" = ""Remotevolume"".""ID""
-                            AND ""Remotevolume"".""State"" = '{RemoteVolumeState.Temporary}'
+                            AND ""Remotevolume"".""State"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Temporary)}'
                     ) A,
                     (
                         SELECT
@@ -1299,7 +1307,7 @@ namespace Duplicati.Library.Main.Database
                             ""Remotevolume""
                         WHERE
                             ""DuplicateBlock"".""VolumeID"" = ""Remotevolume"".""ID""
-                            AND ""Remotevolume"".""State"" = '{RemoteVolumeState.Verified}'
+                            AND ""Remotevolume"".""State"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Verified)}'
                         GROUP BY
                             ""DuplicateBlock"".""BlockID"",
                             ""Remotevolume"".""State""
@@ -1340,8 +1348,8 @@ namespace Duplicati.Library.Main.Database
                     SELECT ""ID""
                     FROM ""RemoteVolume""
                     WHERE
-                        ""Type"" = '{RemoteVolumeType.Blocks}'
-                        AND ""State"" = '{RemoteVolumeState.Temporary}'
+                        ""Type"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeType.Blocks)}'
+                        AND ""State"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Temporary)}'
                         AND ""ID"" NOT IN (
                             SELECT DISTINCT ""VolumeID""
                             FROM ""Block""
@@ -1353,8 +1361,8 @@ namespace Duplicati.Library.Main.Database
                     SELECT ""ID""
                     FROM ""RemoteVolume""
                     WHERE
-                        ""Type"" = '{RemoteVolumeType.Blocks}'
-                        AND ""State"" = '{RemoteVolumeState.Temporary}'
+                        ""Type"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeType.Blocks)}'
+                        AND ""State"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Temporary)}'
                         AND ""ID"" NOT IN (
                             SELECT DISTINCT ""VolumeID""
                             FROM ""Block""
@@ -1363,8 +1371,8 @@ namespace Duplicati.Library.Main.Database
 
                 DELETE FROM ""RemoteVolume""
                 WHERE
-                    ""Type"" = '{RemoteVolumeType.Blocks}'
-                    AND ""State"" = '{RemoteVolumeState.Temporary}'
+                    ""Type"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeType.Blocks)}'
+                    AND ""State"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Temporary)}'
                     AND ""ID"" NOT IN (
                         SELECT DISTINCT ""VolumeID""
                         FROM ""Block""
@@ -1378,8 +1386,8 @@ namespace Duplicati.Library.Main.Database
                 SELECT COUNT(*)
                 FROM ""RemoteVolume""
                 WHERE
-                    ""State"" = '{RemoteVolumeState.Temporary}'
-                    AND ""Type"" = '{RemoteVolumeType.Blocks}'
+                    ""State"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Temporary)}'
+                    AND ""Type"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeType.Blocks)}'
             ";
 
             await using var cmd = m_connection.CreateCommand(m_rtr);

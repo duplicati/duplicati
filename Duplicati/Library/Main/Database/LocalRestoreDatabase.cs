@@ -55,7 +55,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// A unique identifier for the temporary table set, used to ensure that temporary tables do not conflict with others.
         /// </summary>
-        protected readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+        protected readonly string m_temptabsetguid = Library.Utility.Utility.GetHexGuid();
         /// <summary>
         /// The name of the temporary table in the database, which is used to store the list of files to restore.
         /// </summary>
@@ -154,9 +154,9 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that completes when the progress tracker is created.</returns>
         public async Task CreateProgressTracker(bool createFilesNewlyDoneTracker, CancellationToken token)
         {
-            m_fileprogtable = "FileProgress-" + m_temptabsetguid;
-            m_totalprogtable = "TotalProgress-" + m_temptabsetguid;
-            m_filesnewlydonetable = createFilesNewlyDoneTracker ? "FilesNewlyDone-" + m_temptabsetguid : null;
+            m_fileprogtable = $"FileProgress-{m_temptabsetguid}";
+            m_totalprogtable = $"TotalProgress-{m_temptabsetguid}";
+            m_filesnewlydonetable = createFilesNewlyDoneTracker ? $"FilesNewlyDone-{m_temptabsetguid}" : null;
 
             await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
@@ -411,8 +411,8 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that, when awaited, returns a tuple containing the count of files to restore and the total size of those files.</returns>
         public async Task<Tuple<long, long>> PrepareRestoreFilelist(DateTime restoretime, long[] versions, IFilter filter, CancellationToken token)
         {
-            m_tempfiletable = "Fileset-" + m_temptabsetguid;
-            m_tempblocktable = "Blocks-" + m_temptabsetguid;
+            m_tempfiletable = $"Fileset-{m_temptabsetguid}";
+            m_tempblocktable = $"Blocks-{m_temptabsetguid}";
 
             await using (var cmd = m_connection.CreateCommand())
             {
@@ -522,7 +522,7 @@ namespace Duplicati.Library.Main.Database
                         // unfortunately we cannot do this if the filesystem is case sensitive as
                         // SQLite only supports ASCII compares
                         var p = expression.GetSimpleList();
-                        var m_filenamestable = "Filenames-" + m_temptabsetguid;
+                        var m_filenamestable = $"Filenames-{m_temptabsetguid}";
                         await cmd.ExecuteNonQueryAsync($@"
                             CREATE TEMPORARY TABLE ""{m_filenamestable}"" (
                                 ""Path"" TEXT NOT NULL
@@ -1516,16 +1516,17 @@ namespace Duplicati.Library.Main.Database
             {
                 // TODO: Skip metadata as required
                 // Have to order by target path and hash, to ensure BlockDescriptor and BlockSource match adjacent rows
+                var str_blocksize = Library.Utility.Utility.FormatInvariant(blocksize);
                 await using var cmd = db.Connection.CreateCommand($@"
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""A"".""ID"",
                         ""B"".""Hash"",
-                        (""B"".""Index"" * {blocksize}),
+                        (""B"".""Index"" * {str_blocksize}),
                         ""B"".""Index"",
                         ""B"".""Size"",
                         ""C"".""Path"",
-                        (""D"".""Index"" * {blocksize}),
+                        (""D"".""Index"" * {str_blocksize}),
                         ""E"".""Size"",
                         ""B"".""Metadata""
                     FROM
@@ -1682,7 +1683,7 @@ namespace Duplicati.Library.Main.Database
 
                 await using var c = db.Connection.CreateCommand()
                     .SetTransaction(db.Transaction);
-                fam.m_tmptable = "VolumeFiles-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                fam.m_tmptable = $"VolumeFiles-{Library.Utility.Utility.GetHexGuid()}";
                 await c.ExecuteNonQueryAsync($@"
                     CREATE TEMPORARY TABLE ""{fam.m_tmptable}"" (
                         ""Hash"" TEXT NOT NULL,
@@ -1800,7 +1801,7 @@ namespace Duplicati.Library.Main.Database
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""BB"".""FileID"",
-                        (""BB"".""Index"" * {m_blocksize}),
+                        (""BB"".""Index"" * {Library.Utility.Utility.FormatInvariant(m_blocksize)}),
                         ""BB"".""Size"",
                         ""BB"".""Hash""
                     FROM
@@ -1854,7 +1855,7 @@ namespace Duplicati.Library.Main.Database
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""BB"".""FileID"",
-                        (""BB"".""Index"" * {m_blocksize}),
+                        (""BB"".""Index"" * {Library.Utility.Utility.FormatInvariant(m_blocksize)}),
                         ""BB"".""Size"",
                         ""BB"".""Hash""
                     FROM
@@ -2014,7 +2015,7 @@ namespace Duplicati.Library.Main.Database
                     FROM ""{m_tempfiletable}"" ""F""
                     LEFT JOIN ""Blockset"" ""B""
                         ON ""F"".""BlocksetID"" = ""B"".""ID""
-                    WHERE ""F"".""BlocksetID"" != {FOLDER_BLOCKSET_ID}
+                    WHERE ""F"".""BlocksetID"" != {Library.Utility.Utility.FormatInvariant(FOLDER_BLOCKSET_ID)}
                     ORDER BY ""Length"" DESC
                 ")
                     .SetTransaction(m_rtr);
@@ -2050,21 +2051,22 @@ namespace Duplicati.Library.Main.Database
             {
                 await using var cmd = m_connection.CreateCommand();
                 cmd.SetTransaction(m_rtr);
+                var str_folderblocksetid = Library.Utility.Utility.FormatInvariant(FOLDER_BLOCKSET_ID);
                 await using var rd = await cmd.ExecuteReaderAsync($@"
-                SELECT
-                    ""F"".""ID"",
-                    '',
-                    ""F"".""TargetPath"",
-                    '',
-                    0,
-                    {FOLDER_BLOCKSET_ID}
-                FROM ""{m_tempfiletable}"" ""F""
-                WHERE
-                    ""F"".""BlocksetID"" = {FOLDER_BLOCKSET_ID}
-                    AND ""F"".""MetadataID"" IS NOT NULL
-                    AND ""F"".""MetadataID"" >= 0
-            ", token)
-                    .ConfigureAwait(false);
+                    SELECT
+                        ""F"".""ID"",
+                        '',
+                        ""F"".""TargetPath"",
+                        '',
+                        0,
+                        {str_folderblocksetid}
+                    FROM ""{m_tempfiletable}"" ""F""
+                    WHERE
+                        ""F"".""BlocksetID"" = {str_folderblocksetid}
+                        AND ""F"".""MetadataID"" IS NOT NULL
+                        AND ""F"".""MetadataID"" >= 0
+                ", token)
+                        .ConfigureAwait(false);
 
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new FileRequest(
@@ -2890,7 +2892,7 @@ namespace Duplicati.Library.Main.Database
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
             }
 
-            m_latestblocktable = "LatestBlocksetIds-" + m_temptabsetguid;
+            m_latestblocktable = $"LatestBlocksetIds-{m_temptabsetguid}";
 
             var whereclause = $@"
                 ""{m_tempfiletable}"".""LocalSourceExists"" = 1

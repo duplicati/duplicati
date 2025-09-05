@@ -305,7 +305,7 @@ namespace Duplicati.Library.Main.Database
                             END
                     FROM ""LogData""
                     WHERE
-                        {string.Join(" OR ", slice.Select((x, i) => @$"""Message"" LIKE @Message{i}"))}
+                        {string.Join(" OR ", slice.Select((x, i) => @$"""Message"" LIKE @Message{Library.Utility.Utility.FormatInvariant(i)}"))}
                     UNION
                         SELECT
                             ""Timestamp"",

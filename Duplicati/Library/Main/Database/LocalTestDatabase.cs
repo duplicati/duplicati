@@ -247,7 +247,7 @@ namespace Duplicati.Library.Main.Database
                         yield return new RemoteVolume(rd);
 
                 //First we select some filesets
-                var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
+                var whereClause = string.IsNullOrEmpty(tp.Query) ? " WHERE " : $" {tp.Query} AND ";
                 await using (var rd = await cmd.SetCommandAndParameters(@$"
                         SELECT
                             ""A"".""VolumeID"",
@@ -401,7 +401,7 @@ namespace Duplicati.Library.Main.Database
             {
                 bl.m_db = db;
                 bl.m_volumename = volumename;
-                var tablename = tablePrefix + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var tablename = $"{tablePrefix}-{Library.Utility.Utility.GetHexGuid()}";
 
                 await using (var cmd = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction))
                 {
@@ -563,7 +563,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare([EnumeratorCancellation] CancellationToken token)
             {
-                var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var cmpName = $"CmpTable-{Library.Utility.Utility.GetHexGuid()}";
 
                 var create = $@"
                     CREATE TEMPORARY TABLE ""{cmpName}"" AS
@@ -782,7 +782,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare([EnumeratorCancellation] CancellationToken token)
             {
-                var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var cmpName = $"CmpTable-{Library.Utility.Utility.GetHexGuid()}";
                 var create = $@"
                     CREATE TEMPORARY TABLE ""{cmpName}"" AS
                     SELECT
@@ -1188,7 +1188,11 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize, [EnumeratorCancellation] CancellationToken token)
             {
-                var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var cmpName = $"CmpTable-{Library.Utility.Utility.GetHexGuid()}";
+
+                var str_blocksize = Library.Utility.Utility.FormatInvariant(blockSize);
+                var str_hashesperblock = Library.Utility.Utility.FormatInvariant(hashesPerBlock);
+                var str_hashsize = Library.Utility.Utility.FormatInvariant(hashSize);
 
                 var create = $@"
                     CREATE TEMPORARY TABLE ""{cmpName}"" (
@@ -1208,10 +1212,10 @@ namespace Duplicati.Library.Main.Database
                         SELECT
                             ""blh"".""Hash"",
                             CASE
-                                WHEN ""blh"".""Index"" = (((""bs"".""Length"" + {blockSize} - 1) / {blockSize} - 1) / {hashesPerBlock})
-                                     AND ((""bs"".""Length"" + {blockSize} - 1) / {blockSize}) % {hashesPerBlock} != 0
-                                THEN {hashSize} * ((""bs"".""Length"" + {blockSize} - 1) / {blockSize} % {hashesPerBlock})
-                                ELSE {hashSize} * {hashesPerBlock}
+                                WHEN ""blh"".""Index"" = (((""bs"".""Length"" + {str_blocksize} - 1) / {str_blocksize} - 1) / {str_hashesperblock})
+                                     AND ((""bs"".""Length"" + {str_blocksize} - 1) / {str_blocksize}) % {str_hashesperblock} != 0
+                                THEN {str_hashsize} * ((""bs"".""Length"" + {str_blocksize} - 1) / {str_blocksize} % {str_hashesperblock})
+                                ELSE {str_hashsize} * {str_hashesperblock}
                             END AS ""Size""
                         FROM ""BlocklistHash"" ""blh""
                         JOIN ""Blockset"" ""bs""

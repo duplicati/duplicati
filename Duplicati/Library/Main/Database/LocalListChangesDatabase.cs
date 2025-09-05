@@ -259,8 +259,8 @@ namespace Duplicati.Library.Main.Database
                 var sh = new StorageHelper
                 {
                     m_db = db,
-                    m_previousTable = "Previous-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray()),
-                    m_currentTable = "Current-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())
+                    m_previousTable = $"Previous-{Library.Utility.Utility.GetHexGuid()}",
+                    m_currentTable = $"Current-{Library.Utility.Utility.GetHexGuid()}"
                 };
 
                 await using (var cmd = sh.m_db.Connection.CreateCommand(db.Transaction))
@@ -340,7 +340,7 @@ namespace Duplicati.Library.Main.Database
                         NULL AS ""FileHash"",
                         ""Blockset"".""Fullhash"" AS ""MetaHash"",
                         -1 AS ""Size"",
-                        {(int)Interface.ListChangesElementType.Folder} AS ""Type"",
+                        {Library.Utility.Utility.FormatInvariant((int)Interface.ListChangesElementType.Folder)} AS ""Type"",
                         ""FilesetEntry"".""FilesetID"" AS ""FilesetID""
                     FROM
                         ""File"",
@@ -360,7 +360,7 @@ namespace Duplicati.Library.Main.Database
                         NULL AS ""FileHash"",
                         ""Blockset"".""Fullhash"" AS ""MetaHash"",
                         -1 AS ""Size"",
-                        {(int)Interface.ListChangesElementType.Symlink} AS ""Type"",
+                        {Library.Utility.Utility.FormatInvariant((int)Interface.ListChangesElementType.Symlink)} AS ""Type"",
                         ""FilesetEntry"".""FilesetID"" AS ""FilesetID""
                     FROM
                         ""File"",
@@ -380,7 +380,7 @@ namespace Duplicati.Library.Main.Database
                         ""FB"".""FullHash"" AS ""FileHash"",
                         ""MB"".""Fullhash"" AS ""MetaHash"",
                         ""FB"".""Length"" AS ""Size"",
-                        {(int)Interface.ListChangesElementType.File} AS ""Type"",
+                        {Library.Utility.Utility.FormatInvariant((int)Interface.ListChangesElementType.File)} AS ""Type"",
                         ""FilesetEntry"".""FilesetID"" AS ""FilesetID""
                     FROM
                         ""File"",
@@ -428,7 +428,7 @@ namespace Duplicati.Library.Main.Database
                     // unfortunately we cannot do this if the filesystem is case sensitive as
                     // SQLite only supports ASCII compares
                     var p = expression.GetSimpleList();
-                    var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                    var filenamestable = $"Filenames-{Library.Utility.Utility.GetHexGuid()}";
                     await cmd.ExecuteNonQueryAsync($@"
                             CREATE TEMPORARY TABLE ""{filenamestable}"" (
                                 ""Path"" TEXT NOT NULL
