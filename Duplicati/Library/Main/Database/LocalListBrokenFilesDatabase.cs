@@ -353,8 +353,8 @@ namespace Duplicati.Library.Main.Database
             if (names == null || !names.Any()) return;
 
             await using var deletecmd = m_connection.CreateCommand(m_rtr);
-            var temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            var volidstable = "DelVolSetIds-" + temptransguid;
+            var temptransguid = Library.Utility.Utility.GetHexGuid();
+            var volidstable = $"DelVolSetIds-{temptransguid}";
 
             // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
             await deletecmd.ExecuteNonQueryAsync($@"

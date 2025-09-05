@@ -56,7 +56,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// <summary>
     /// The table to use.
     /// </summary>
-    private readonly string _tableName = $"TemporaryList-{Guid.NewGuid():N}";
+    private readonly string _tableName = $"TemporaryList-{Library.Utility.Utility.GetHexGuid()}";
 
     /// <summary>
     /// Flag indicating if the object has been disposed.

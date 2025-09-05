@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Database
         public async Task Fix(CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
-            var tablename = "PathMap-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            var tablename = $"PathMap-{Library.Utility.Utility.GetHexGuid()}";
 
             // TODO: Rewrite this to use PathPrefix
             // TODO: Needs to be much faster

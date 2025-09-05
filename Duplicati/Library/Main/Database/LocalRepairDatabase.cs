@@ -437,7 +437,7 @@ namespace Duplicati.Library.Main.Database
                 m_connection = connection;
                 m_rtr = rtr;
                 m_volumename = volumename;
-                var tablename = "MissingBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var tablename = $"MissingBlocks-{Library.Utility.Utility.GetHexGuid()}";
                 m_tablename = tablename;
             }
 
@@ -670,7 +670,7 @@ namespace Duplicati.Library.Main.Database
             {
                 await using var cmd = m_connection.CreateCommand(m_rtr);
 
-                var blocklistTableName = $"BlocklistHashList-{Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())}";
+                var blocklistTableName = $"BlocklistHashList-{Library.Utility.Utility.GetHexGuid()}";
 
                 try
                 {
@@ -1019,7 +1019,7 @@ namespace Duplicati.Library.Main.Database
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateMetadataHashes", "Found duplicate metadatahashes, repairing");
 
-                var tablename = "TmpFile-" + Guid.NewGuid().ToString("N");
+                var tablename = $"TmpFile-{Library.Utility.Utility.GetHexGuid()}";
 
                 await cmd.ExecuteNonQueryAsync($@"
                     CREATE TEMPORARY TABLE ""{tablename}""
@@ -1671,7 +1671,7 @@ namespace Duplicati.Library.Main.Database
         public async Task CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
-            var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            var tablename = $"ProbeBlocks-{Library.Utility.Utility.GetHexGuid()}";
 
             try
             {
@@ -1931,7 +1931,7 @@ namespace Duplicati.Library.Main.Database
                     "FailedToLocateEmptyMetadataBlockset");
 
             // Step 1: Create temp table with Metadataset IDs referencing empty blocksets (excluding the one to keep)
-            var tablename = "FixMetadatasets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            var tablename = $"FixMetadatasets-{Library.Utility.Utility.GetHexGuid()}";
 
             try
             {

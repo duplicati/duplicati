@@ -424,7 +424,17 @@ namespace Duplicati.Library.Utility
             return parent;
         }
 
-
+        /// <summary>
+        /// Generates a new GUID and returns it as a hex string (without hyphens).
+        /// </summary>
+        /// <remarks>The string is preformed using invariant culture.</remarks>
+        /// <returns>A hex string representation of a new GUID</returns>
+        public static string GetHexGuid()
+        {
+            return FormatInvariant(ByteArrayAsHexString(
+                Guid.NewGuid().ToByteArray()
+            ));
+        }
 
         /// <summary>
         /// Given a collection of unique folders, returns only parent-most folders

@@ -407,7 +407,7 @@ namespace Duplicati.Library.Main.Database
             if (deletedBlockCacheSizeLong >= 0)
             {
                 await using var cmd = dbnew.Connection.CreateCommand();
-                dbnew.m_tempDeletedBlockTable = "DeletedBlock-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                dbnew.m_tempDeletedBlockTable = $"DeletedBlock-{Library.Utility.Utility.GetHexGuid()}";
                 await cmd.SetCommandAndParameters($@"
                     CREATE TEMPORARY TABLE ""{dbnew.m_tempDeletedBlockTable}"" AS
                     SELECT
@@ -1533,7 +1533,7 @@ namespace Duplicati.Library.Main.Database
                 prevFileSetId;
 
             // copy entries from previous file set into a temporary table, except those file IDs already added by the current backup
-            var tempFileSetTable = "FilesetEntry-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            var tempFileSetTable = $"FilesetEntry-{Library.Utility.Utility.GetHexGuid()}";
             await cmd
                 .SetTransaction(m_rtr)
                 .SetCommandAndParameters($@"

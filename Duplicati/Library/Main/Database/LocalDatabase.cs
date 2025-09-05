@@ -919,10 +919,10 @@ namespace Duplicati.Library.Main.Database
             if (names == null || !names.Any()) return;
 
             await using var deletecmd = m_connection.CreateCommand(m_rtr);
-            string temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            var volidstable = "DelVolSetIds-" + temptransguid;
-            var blocksetidstable = "DelBlockSetIds-" + temptransguid;
-            var filesetidstable = "DelFilesetIds-" + temptransguid;
+            string temptransguid = Library.Utility.Utility.GetHexGuid();
+            var volidstable = $"DelVolSetIds-{temptransguid}";
+            var blocksetidstable = $"DelBlockSetIds-{temptransguid}";
+            var filesetidstable = $"DelFilesetIds-{temptransguid}";
 
             // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
             await deletecmd.ExecuteNonQueryAsync($@"
@@ -2512,7 +2512,7 @@ namespace Duplicati.Library.Main.Database
             /// <param name="db">The database to use for creating the temporary table.</param>
             private FilteredFilenameTable(LocalDatabase db)
             {
-                Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                Tablename = $"Filenames-{Library.Utility.Utility.GetHexGuid()}";
                 m_db = db;
             }
 

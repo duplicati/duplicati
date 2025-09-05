@@ -401,7 +401,7 @@ namespace Duplicati.Library.Main.Database
             {
                 bl.m_db = db;
                 bl.m_volumename = volumename;
-                var tablename = tablePrefix + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var tablename = $"{tablePrefix}-{Library.Utility.Utility.GetHexGuid()}";
 
                 await using (var cmd = bl.m_db.Connection.CreateCommand(bl.m_db.Transaction))
                 {
@@ -563,7 +563,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare([EnumeratorCancellation] CancellationToken token)
             {
-                var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var cmpName = $"CmpTable-{Library.Utility.Utility.GetHexGuid()}";
 
                 var create = $@"
                     CREATE TEMPORARY TABLE ""{cmpName}"" AS
@@ -782,7 +782,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare([EnumeratorCancellation] CancellationToken token)
             {
-                var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var cmpName = $"CmpTable-{Library.Utility.Utility.GetHexGuid()}";
                 var create = $@"
                     CREATE TEMPORARY TABLE ""{cmpName}"" AS
                     SELECT
@@ -1188,7 +1188,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare(int hashesPerBlock, int hashSize, int blockSize, [EnumeratorCancellation] CancellationToken token)
             {
-                var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var cmpName = $"CmpTable-{Library.Utility.Utility.GetHexGuid()}";
 
                 var create = $@"
                     CREATE TEMPORARY TABLE ""{cmpName}"" (

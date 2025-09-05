@@ -201,8 +201,8 @@ namespace Duplicati.Library.Main.Database
                 await LocalRestoreDatabase.CreateAsync(parentdb, dbnew, token)
                     .ConfigureAwait(false);
 
-            dbnew.m_tempblocklist = "TempBlocklist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            dbnew.m_tempsmalllist = "TempSmalllist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            dbnew.m_tempblocklist = $"TempBlocklist_{Library.Utility.Utility.GetHexGuid()}";
+            dbnew.m_tempsmalllist = $"TempSmalllist_{Library.Utility.Utility.GetHexGuid()}";
 
             if (dbnew.m_connection == null)
                 throw new Exception("Connection is null");

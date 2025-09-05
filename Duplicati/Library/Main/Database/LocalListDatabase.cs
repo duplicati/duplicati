@@ -197,7 +197,7 @@ namespace Duplicati.Library.Main.Database
                         .FilesetTimes(token)
                         .ToArrayAsync(cancellationToken: token)
                         .ConfigureAwait(false),
-                    m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())
+                    m_tablename = $"Filesets-{Library.Utility.Utility.GetHexGuid()}"
                 };
                 var tmp = await owner.GetFilelistWhereClause(time, versions, fs.m_filesets, false, token)
                     .ConfigureAwait(false);
@@ -500,7 +500,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc />
             public async IAsyncEnumerable<IFileversion> SelectFolderContents(IFilter filter, [EnumeratorCancellation] CancellationToken token)
             {
-                var tbname = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var tbname = $"Filenames-{Library.Utility.Utility.GetHexGuid()}";
                 try
                 {
                     string pathprefix;

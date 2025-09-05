@@ -48,8 +48,7 @@ public static class ChangeStatistics
     /// <returns>A task that completes when the statistics are updated.</returns>
     internal static async Task UpdateChangeStatistics(SqliteCommand cmd, BackupResults results, long currentFilesetId, long previousFilesetId, CancellationToken token)
     {
-        var tmpName = $"TmpFileState_{Guid.NewGuid():N}";
-
+        var tmpName = $"TmpFileState_{Library.Utility.Utility.GetHexGuid()}";
         try
         {
             // Create temp table
