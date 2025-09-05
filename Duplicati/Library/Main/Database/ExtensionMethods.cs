@@ -548,10 +548,15 @@ public static partial class ExtensionMethods
                 break;
             }
 
-        foreach ((var value, var index) in values.Select((value, index) => (value, index)))
-            cmd.AddNamedParameter($"{originalParamName}{index}", value);
+        var inClause = string.Join(", ", values.Select((value, index) =>
+        {
+            string formatted_name = Library.Utility.Utility.FormatInvariant(originalParamName);
+            string formatted_index = Library.Utility.Utility.FormatInvariant(index);
+            string param_name = $"{formatted_name}{formatted_index}";
+            cmd.AddNamedParameter(param_name, value);
+            return param_name;
+        }));
 
-        var inClause = string.Join(", ", values.Select((_, index) => $"{originalParamName}{index}"));
         if (string.IsNullOrWhiteSpace(inClause) && values.Any())
             throw new ArgumentException("IN clause cannot be empty", nameof(values));
 
@@ -1219,10 +1224,15 @@ public static partial class ExtensionMethods
                 break;
             }
 
-        foreach ((var value, var index) in values.Select((value, index) => (value, index)))
-            cmd.AddNamedParameter($"{originalParamName}{index}", value);
+        var inClause = string.Join(", ", values.Select((value, index) =>
+        {
+            string formatted_name = Library.Utility.Utility.FormatInvariant(originalParamName);
+            string formatted_index = Library.Utility.Utility.FormatInvariant(index);
+            string param_name = $"{formatted_name}{formatted_index}";
+            cmd.AddNamedParameter(param_name, value);
+            return param_name;
+        }));
 
-        var inClause = string.Join(", ", values.Select((_, index) => $"{originalParamName}{index}"));
         if (string.IsNullOrWhiteSpace(inClause) && values.Any())
             throw new ArgumentException("IN clause cannot be empty", nameof(values));
 

@@ -211,7 +211,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
         _isTable = true;
         foreach (var slice in _values.Chunk(LocalDatabase.CHUNK_SIZE))
         {
-            var parameterNames = slice.Select((_, i) => $"@p{i}").ToArray();
+            var parameterNames = slice.Select((_, i) => $"@p{Library.Utility.Utility.FormatInvariant(i)}").ToArray();
             var sql = $@"
                 INSERT INTO ""{_tableName}"" (""Value"")
                 VALUES {string.Join(", ", parameterNames.Select(p => $"({p})"))}

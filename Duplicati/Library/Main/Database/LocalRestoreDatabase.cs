@@ -1516,16 +1516,17 @@ namespace Duplicati.Library.Main.Database
             {
                 // TODO: Skip metadata as required
                 // Have to order by target path and hash, to ensure BlockDescriptor and BlockSource match adjacent rows
+                var str_blocksize = Library.Utility.Utility.FormatInvariant(blocksize);
                 await using var cmd = db.Connection.CreateCommand($@"
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""A"".""ID"",
                         ""B"".""Hash"",
-                        (""B"".""Index"" * {blocksize}),
+                        (""B"".""Index"" * {str_blocksize}),
                         ""B"".""Index"",
                         ""B"".""Size"",
                         ""C"".""Path"",
-                        (""D"".""Index"" * {blocksize}),
+                        (""D"".""Index"" * {str_blocksize}),
                         ""E"".""Size"",
                         ""B"".""Metadata""
                     FROM
@@ -1800,7 +1801,7 @@ namespace Duplicati.Library.Main.Database
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""BB"".""FileID"",
-                        (""BB"".""Index"" * {m_blocksize}),
+                        (""BB"".""Index"" * {Library.Utility.Utility.FormatInvariant(m_blocksize)}),
                         ""BB"".""Size"",
                         ""BB"".""Hash""
                     FROM
@@ -1854,7 +1855,7 @@ namespace Duplicati.Library.Main.Database
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""BB"".""FileID"",
-                        (""BB"".""Index"" * {m_blocksize}),
+                        (""BB"".""Index"" * {Library.Utility.Utility.FormatInvariant(m_blocksize)}),
                         ""BB"".""Size"",
                         ""BB"".""Hash""
                     FROM
@@ -2014,7 +2015,7 @@ namespace Duplicati.Library.Main.Database
                     FROM ""{m_tempfiletable}"" ""F""
                     LEFT JOIN ""Blockset"" ""B""
                         ON ""F"".""BlocksetID"" = ""B"".""ID""
-                    WHERE ""F"".""BlocksetID"" != {FOLDER_BLOCKSET_ID}
+                    WHERE ""F"".""BlocksetID"" != {Library.Utility.Utility.FormatInvariant(FOLDER_BLOCKSET_ID)}
                     ORDER BY ""Length"" DESC
                 ")
                     .SetTransaction(m_rtr);
@@ -2050,21 +2051,22 @@ namespace Duplicati.Library.Main.Database
             {
                 await using var cmd = m_connection.CreateCommand();
                 cmd.SetTransaction(m_rtr);
+                var str_folderblocksetid = Library.Utility.Utility.FormatInvariant(FOLDER_BLOCKSET_ID);
                 await using var rd = await cmd.ExecuteReaderAsync($@"
-                SELECT
-                    ""F"".""ID"",
-                    '',
-                    ""F"".""TargetPath"",
-                    '',
-                    0,
-                    {FOLDER_BLOCKSET_ID}
-                FROM ""{m_tempfiletable}"" ""F""
-                WHERE
-                    ""F"".""BlocksetID"" = {FOLDER_BLOCKSET_ID}
-                    AND ""F"".""MetadataID"" IS NOT NULL
-                    AND ""F"".""MetadataID"" >= 0
-            ", token)
-                    .ConfigureAwait(false);
+                    SELECT
+                        ""F"".""ID"",
+                        '',
+                        ""F"".""TargetPath"",
+                        '',
+                        0,
+                        {str_folderblocksetid}
+                    FROM ""{m_tempfiletable}"" ""F""
+                    WHERE
+                        ""F"".""BlocksetID"" = {str_folderblocksetid}
+                        AND ""F"".""MetadataID"" IS NOT NULL
+                        AND ""F"".""MetadataID"" >= 0
+                ", token)
+                        .ConfigureAwait(false);
 
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new FileRequest(

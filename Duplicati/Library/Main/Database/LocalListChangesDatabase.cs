@@ -340,7 +340,7 @@ namespace Duplicati.Library.Main.Database
                         NULL AS ""FileHash"",
                         ""Blockset"".""Fullhash"" AS ""MetaHash"",
                         -1 AS ""Size"",
-                        {(int)Interface.ListChangesElementType.Folder} AS ""Type"",
+                        {Library.Utility.Utility.FormatInvariant((int)Interface.ListChangesElementType.Folder)} AS ""Type"",
                         ""FilesetEntry"".""FilesetID"" AS ""FilesetID""
                     FROM
                         ""File"",
@@ -360,7 +360,7 @@ namespace Duplicati.Library.Main.Database
                         NULL AS ""FileHash"",
                         ""Blockset"".""Fullhash"" AS ""MetaHash"",
                         -1 AS ""Size"",
-                        {(int)Interface.ListChangesElementType.Symlink} AS ""Type"",
+                        {Library.Utility.Utility.FormatInvariant((int)Interface.ListChangesElementType.Symlink)} AS ""Type"",
                         ""FilesetEntry"".""FilesetID"" AS ""FilesetID""
                     FROM
                         ""File"",
@@ -380,7 +380,7 @@ namespace Duplicati.Library.Main.Database
                         ""FB"".""FullHash"" AS ""FileHash"",
                         ""MB"".""Fullhash"" AS ""MetaHash"",
                         ""FB"".""Length"" AS ""Size"",
-                        {(int)Interface.ListChangesElementType.File} AS ""Type"",
+                        {Library.Utility.Utility.FormatInvariant((int)Interface.ListChangesElementType.File)} AS ""Type"",
                         ""FilesetEntry"".""FilesetID"" AS ""FilesetID""
                     FROM
                         ""File"",

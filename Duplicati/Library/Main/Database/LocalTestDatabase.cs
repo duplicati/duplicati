@@ -247,7 +247,7 @@ namespace Duplicati.Library.Main.Database
                         yield return new RemoteVolume(rd);
 
                 //First we select some filesets
-                var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
+                var whereClause = string.IsNullOrEmpty(tp.Query) ? " WHERE " : $" {tp.Query} AND ";
                 await using (var rd = await cmd.SetCommandAndParameters(@$"
                         SELECT
                             ""A"".""VolumeID"",
@@ -1190,6 +1190,10 @@ namespace Duplicati.Library.Main.Database
             {
                 var cmpName = $"CmpTable-{Library.Utility.Utility.GetHexGuid()}";
 
+                var str_blocksize = Library.Utility.Utility.FormatInvariant(blockSize);
+                var str_hashesperblock = Library.Utility.Utility.FormatInvariant(hashesPerBlock);
+                var str_hashsize = Library.Utility.Utility.FormatInvariant(hashSize);
+
                 var create = $@"
                     CREATE TEMPORARY TABLE ""{cmpName}"" (
                         ""Hash"" TEXT NOT NULL,
@@ -1208,10 +1212,10 @@ namespace Duplicati.Library.Main.Database
                         SELECT
                             ""blh"".""Hash"",
                             CASE
-                                WHEN ""blh"".""Index"" = (((""bs"".""Length"" + {blockSize} - 1) / {blockSize} - 1) / {hashesPerBlock})
-                                     AND ((""bs"".""Length"" + {blockSize} - 1) / {blockSize}) % {hashesPerBlock} != 0
-                                THEN {hashSize} * ((""bs"".""Length"" + {blockSize} - 1) / {blockSize} % {hashesPerBlock})
-                                ELSE {hashSize} * {hashesPerBlock}
+                                WHEN ""blh"".""Index"" = (((""bs"".""Length"" + {str_blocksize} - 1) / {str_blocksize} - 1) / {str_hashesperblock})
+                                     AND ((""bs"".""Length"" + {str_blocksize} - 1) / {str_blocksize}) % {str_hashesperblock} != 0
+                                THEN {str_hashsize} * ((""bs"".""Length"" + {str_blocksize} - 1) / {str_blocksize} % {str_hashesperblock})
+                                ELSE {str_hashsize} * {str_hashesperblock}
                             END AS ""Size""
                         FROM ""BlocklistHash"" ""blh""
                         JOIN ""Blockset"" ""bs""

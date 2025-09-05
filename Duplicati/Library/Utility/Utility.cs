@@ -1673,6 +1673,16 @@ namespace Duplicati.Library.Utility
             => formattable.ToString(CultureInfo.InvariantCulture);
 
         /// <summary>
+        /// Formats the value using the invariant culture.
+        /// </summary>
+        /// <remarks>This is a shortcut for FormatInvariant("{0}", value).</remarks>
+        /// <typeparam name="T">The type of the value.</typeparam>
+        /// <param name="value">The value to format.</param>
+        /// <returns>The formatted string.</returns>
+        public static string FormatInvariant<T>(this T value)
+            => FormatInvariant("{0}", value);
+
+        /// <summary>
         /// Performs the function with an additional timeout
         /// </summary>
         /// <param name="timeout">The timeout to observe</param>

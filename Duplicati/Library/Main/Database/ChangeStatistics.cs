@@ -21,6 +21,7 @@
 #nullable enable
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
@@ -289,9 +290,12 @@ public static class ChangeStatistics
     private static string GetBlocksetCondition(string alias, long? blocksetId, long[]? exclude)
     {
         if (blocksetId.HasValue)
-            return Library.Utility.Utility.FormatInvariant($@"{alias}.""BlocksetID"" = {blocksetId.Value}");
+            return $@"{alias}.""BlocksetID"" = {Library.Utility.Utility.FormatInvariant(blocksetId.Value)}";
         if (exclude?.Length > 0)
-            return Library.Utility.Utility.FormatInvariant($@"{alias}.""BlocksetID"" NOT IN ({string.Join(",", exclude)})");
+        {
+            var formatted_exclude = exclude.Select(x => Library.Utility.Utility.FormatInvariant(x));
+            return $@"{alias}.""BlocksetID"" NOT IN ({string.Join(",", formatted_exclude)})";
+        }
         return string.Empty;
     }
 }
