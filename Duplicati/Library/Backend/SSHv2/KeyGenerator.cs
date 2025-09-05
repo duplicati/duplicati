@@ -211,6 +211,10 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(KEY_TYPE_NAME, CommandLineArgument.ArgumentType.Enumeration, Strings.KeyGenerator.KeyTypeShort, Strings.KeyGenerator.KeyTypeLong, DEFAULT_KEYTYPE, null, new string[] {KEYTYPE_DSA, KEYTYPE_RSA}),
             new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.Integer, Strings.KeyGenerator.KeyUsernameShort, Strings.KeyGenerator.KeyUsernameLong, DEFAULT_USERNAME),
         ];
+
+        public IDictionary<string, IDictionary<string, string?>> GetLookups()
+            => new Dictionary<string, IDictionary<string, string?>>();
+
         #endregion
     }
 }

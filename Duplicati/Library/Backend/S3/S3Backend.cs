@@ -45,7 +45,7 @@ namespace Duplicati.Library.Backend
         private const string S3_LIST_API_VERSION_OPTION = "s3-list-api-version";
         private const string S3_RECURSIVE_LIST = "s3-recursive-list";
 
-        public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+        public static readonly Dictionary<string, string?> KNOWN_S3_PROVIDERS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
             { "MyCloudyPlace (EU)", "s3.mycloudyplace.com" },
             { "Impossible Cloud (US)", "us-west-1.storage.impossibleapi.net" },
@@ -95,7 +95,7 @@ namespace Duplicati.Library.Backend
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
-        public static readonly Dictionary<string, string> KNOWN_S3_LOCATIONS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+        public static readonly Dictionary<string, string?> KNOWN_S3_LOCATIONS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) {
             { "(default)", "" },
             { "US East (Ohio)", "us-east-2" },
             { "US East (N. Virginia)", "us-east-1" },
@@ -137,13 +137,13 @@ namespace Duplicati.Library.Backend
             { "EU", "eu-west-1" }
         };
 
-        public static readonly Dictionary<string, string> DEFAULT_S3_LOCATION_BASED_HOSTS;
+        public static readonly Dictionary<string, string?> DEFAULT_S3_LOCATION_BASED_HOSTS;
 
-        public static readonly Dictionary<string, string> KNOWN_S3_STORAGE_CLASSES;
+        public static readonly Dictionary<string, string?> KNOWN_S3_STORAGE_CLASSES;
 
         static S3()
         {
-            var ns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            var ns = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) {
                 { "(default)", "" },
                 { "Standard", "STANDARD" },
                 { "Infrequent Access (IA)", "STANDARD_IA" },
@@ -167,8 +167,8 @@ namespace Duplicati.Library.Backend
 
             DEFAULT_S3_LOCATION_BASED_HOSTS = KNOWN_S3_LOCATIONS
                 .Where(x => !string.IsNullOrWhiteSpace(x.Value))
-                .Select(x => new KeyValuePair<string, string>(x.Value, $"s3.{x.Value}.amazonaws.com"))
-                .Append(new KeyValuePair<string, string>("EU", "s3.eu-west-1.amazonaws.com"))
+                .Select(x => new KeyValuePair<string, string?>(x.Value!, $"s3.{x.Value}.amazonaws.com"))
+                .Append(new KeyValuePair<string, string?>("EU", "s3.eu-west-1.amazonaws.com"))
                 .DistinctBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
         }
@@ -233,7 +233,8 @@ namespace Duplicati.Library.Backend
                 if (!string.IsNullOrEmpty(locationConstraint))
                 {
                     if (DEFAULT_S3_LOCATION_BASED_HOSTS.TryGetValue(locationConstraint, out var s3hostmatch))
-                        hostname = s3hostmatch;
+                        if (!string.IsNullOrEmpty(s3hostmatch))
+                            hostname = s3hostmatch;
                 }
             }
 

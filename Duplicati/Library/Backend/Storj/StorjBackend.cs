@@ -59,13 +59,13 @@ namespace Duplicati.Library.Backend.Storj
         private readonly IObjectService _objectService;
         private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
-        public static readonly Dictionary<string, string> KNOWN_STORJ_SATELLITES = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
+        public static readonly Dictionary<string, string?> KNOWN_STORJ_SATELLITES = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase){
             { "US Central", "us1.storj.io:7777" },
             { "Asia East", "ap1.storj.io:7777" },
             { "Europe", "eu1.storj.io:7777" },
         };
 
-        public static readonly Dictionary<string, string> KNOWN_AUTHENTICATION_METHODS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
+        public static readonly Dictionary<string, string?> KNOWN_AUTHENTICATION_METHODS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase){
             { "API key", "API key" },
             { "Access grant", "Access grant" },
         };
