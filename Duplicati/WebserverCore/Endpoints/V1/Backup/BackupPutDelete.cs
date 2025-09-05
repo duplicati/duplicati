@@ -113,11 +113,11 @@ public class BackupPutDelete : IEndpointV1
                 if (connection.Backups.Any(x => x.Name.Equals(backup.Name, StringComparison.OrdinalIgnoreCase) && x.ID != backup.ID))
                     throw new ConflictException($"There already exists a backup with the name: {backup.Name}");
 
+                backup.UnmaskSensitiveInformation(existing);
                 var err = connection.ValidateBackup(backup, schedule);
                 if (!string.IsNullOrWhiteSpace(err))
                     throw new BadRequestException(err);
 
-                //TODO: Merge in real passwords where the placeholder is found
                 connection.AddOrUpdateBackupAndSchedule(backup, schedule);
             }
         }

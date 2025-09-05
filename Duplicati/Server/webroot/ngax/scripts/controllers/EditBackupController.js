@@ -73,6 +73,10 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         return this.ExtendedOptions.includes('--gpg-encryption-command=--encrypt');
     }
 
+    $scope.isMaskedPassphrase = function() {
+        return this.Options && this.Options['passphrase'] && this.Options['passphrase'] == $scope.SystemInfo.PasswordPlaceholder;
+    };
+
     $scope.generatePassphrase = function() {
         this.Options["passphrase"] = this.RepeatPasshrase = AppUtils.generatePassphrase();
         this.ShowPassphrase = true;

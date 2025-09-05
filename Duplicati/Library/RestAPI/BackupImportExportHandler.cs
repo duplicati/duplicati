@@ -31,8 +31,7 @@ public static class BackupImportExportHandler
 {
     public static void RemovePasswords(IBackup backup)
     {
-        backup.SanitizeSettings();
-        backup.SanitizeTargetUrl();
+        backup.RemoveSensitiveInformation();
     }
 
     public static byte[] ExportToJSON(Connection connection, IBackup backup, string passphrase)
@@ -78,11 +77,9 @@ public static class BackupImportExportHandler
             throw new InvalidOperationException($"A backup with the name {importedStructure.Backup.Name} already exists.");
         }
 
-        string error = connection.ValidateBackup(importedStructure.Backup, importedStructure.Schedule);
+        var error = connection.ValidateBackup(importedStructure.Backup, importedStructure.Schedule);
         if (!string.IsNullOrWhiteSpace(error))
-        {
             throw new InvalidOperationException(error);
-        }
 
         // This creates a new ID and DBPath.
         connection.AddOrUpdateBackupAndSchedule(importedStructure.Backup, importedStructure.Schedule);
