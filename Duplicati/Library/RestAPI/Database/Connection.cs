@@ -43,7 +43,7 @@ namespace Duplicati.Server.Database
         /// <summary>
         /// The placeholder for passwords in the UI
         /// </summary>
-        public const string PASSWORD_PLACEHOLDER = "**********";
+        public const string PASSWORD_PLACEHOLDER = "***************";
 
         private readonly IDbConnection m_connection;
         private readonly IDbCommand m_errorcmd;
@@ -76,6 +76,8 @@ namespace Duplicati.Server.Database
                     ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD
                 ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        public static IReadOnlySet<string> PasswordFieldNames => _encryptedFields;
 
         public Connection(IDbConnection connection, bool disableFieldEncryption, EncryptedFieldHelper.KeyInstance? key, string dataFolder, Action startOrStopUsageReporter)
         {
@@ -540,6 +542,11 @@ namespace Duplicati.Server.Database
 
             if (string.IsNullOrWhiteSpace(item.TargetURL))
                 return "Missing a target";
+
+            if (item.TargetURL.Contains(PASSWORD_PLACEHOLDER))
+                return "TargetURL contains password placeholder value";
+            if (item.Settings != null && item.Settings.Any(x => PASSWORD_PLACEHOLDER.Equals(x.Value)))
+                return "Settings contains password placeholder value";
 
             if (item.Sources == null || item.Sources.Any(x => string.IsNullOrWhiteSpace(x)) || item.Sources.Length == 0)
                 return "Invalid source list";
