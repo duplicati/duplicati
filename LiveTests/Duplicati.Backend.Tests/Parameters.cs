@@ -33,6 +33,7 @@ public static class Parameters
         "--auto-create-folder",
         "--extended-chars=_-",
         "--force",
+        "--failure-retries=3",
         $"--max-file-size={Environment.GetEnvironmentVariable("MAX_FILE_SIZE") ?? "1000kb"}",
         $"--number-of-files={Environment.GetEnvironmentVariable("NUMBER_OF_FILES") ?? "20"}"
     ];
