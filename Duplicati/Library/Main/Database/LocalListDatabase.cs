@@ -197,12 +197,10 @@ namespace Duplicati.Library.Main.Database
                         .FilesetTimes(token)
                         .ToArrayAsync(cancellationToken: token)
                         .ConfigureAwait(false),
-                    m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())
+                    m_tablename = $"Filesets-{Library.Utility.Utility.GetHexGuid()}"
                 };
-                var tmp = await owner.GetFilelistWhereClause(time, versions, fs.m_filesets, false, token)
+                var (Query, Values) = await owner.GetFilelistWhereClause(time, versions, fs.m_filesets, false, token)
                     .ConfigureAwait(false);
-                var query = tmp.Item1;
-                var args = tmp.Item2;
 
                 await using (var cmd = fs.m_db.Connection.CreateCommand())
                 {
@@ -212,8 +210,8 @@ namespace Duplicati.Library.Main.Database
                             ""ID"" AS ""FilesetID"",
                             ""IsFullBackup"" AS ""IsFullBackup"",
                             ""Timestamp"" AS ""Timestamp""
-                        FROM ""Fileset"" {query}
-                    ", args, token)
+                        FROM ""Fileset"" {Query}
+                    ", Values, token)
                         .ConfigureAwait(false);
 
                     await cmd.ExecuteNonQueryAsync($@"
@@ -365,7 +363,7 @@ namespace Duplicati.Library.Main.Database
                 if (!string.IsNullOrWhiteSpace(prefixrule))
                     await cmd.SetCommandAndParameters($@"
                             DELETE FROM ""{tmpnames.Tablename}""
-                            WHERE SUBSTR(""Path"", 1, {prefixrule.Length}) != @Rule
+                            WHERE SUBSTR(""Path"", 1, {Library.Utility.Utility.FormatInvariant(prefixrule.Length)}) != @Rule
                         ")
                         .SetParameterValue("@Rule", prefixrule)
                         .ExecuteNonQueryAsync(token)
@@ -500,7 +498,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc />
             public async IAsyncEnumerable<IFileversion> SelectFolderContents(IFilter filter, [EnumeratorCancellation] CancellationToken token)
             {
-                var tbname = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var tbname = $"Filenames-{Library.Utility.Utility.GetHexGuid()}";
                 try
                 {
                     string pathprefix;
@@ -1351,17 +1349,17 @@ namespace Duplicati.Library.Main.Database
                     var parts = filterExpression.GetSimpleList();
                     foreach (var part in parts)
                     {
-                        var propName = $"@Part{filterProps.Count}";
+                        var propName = $"@Part{Library.Utility.Utility.FormatInvariant(filterProps.Count)}";
                         filterProps[propName] = part;
                         if (caseSensitive)
                             caseWhenParts.Add($@"
                                 WHEN instr(LOWER(pp.""Prefix"" || fl.""Path""), LOWER({propName})) > 0
-                                THEN {(filterExpression.Result ? 0 : 1)}
+                                THEN {(filterExpression.Result ? "0" : "1")}
                             ");
                         else
                             caseWhenParts.Add($@"
                                 WHEN instr(pp.""Prefix"" || fl.""Path"", {propName}) > 0
-                                THEN {(filterExpression.Result ? 0 : 1)}
+                                THEN {(filterExpression.Result ? "0" : "1")}
                             ");
                     }
                 }
@@ -1370,17 +1368,17 @@ namespace Duplicati.Library.Main.Database
                     var parts = filterExpression.GetSimpleList();
                     foreach (var part in parts)
                     {
-                        var propName = $"@Part{filterProps.Count}";
+                        var propName = $"@Part{Library.Utility.Utility.FormatInvariant(filterProps.Count)}";
                         filterProps[propName] = part;
                         if (caseSensitive)
                             caseWhenParts.Add($@"
                                 WHEN LOWER(pp.""Prefix"" || fl.""Path"") GLOB LOWER({propName})
-                                THEN {(filterExpression.Result ? 0 : 1)}
+                                THEN {(filterExpression.Result ? "0" : "1")}
                             ");
                         else
                             caseWhenParts.Add($@"
                                 WHEN pp.""Prefix"" || fl.""Path"" GLOB {propName}
-                                THEN {(filterExpression.Result ? 0 : 1)}
+                                THEN {(filterExpression.Result ? "0" : "1")}
                             ");
                     }
                 }
