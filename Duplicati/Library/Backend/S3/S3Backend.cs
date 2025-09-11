@@ -247,6 +247,10 @@ namespace Duplicati.Library.Backend
             if (!options.ContainsKey("s3-ext-forcepathstyle") && !hostname.EndsWith(".amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
 
+            // Validate that hostname doesn't contain a path
+            if (hostname.Contains('/') || hostname.Contains('\\'))
+                throw new UserInformationException(Strings.S3Backend.NoPathAllowedInEndpointError, "S3NoPathInEndpoint");
+
 
             var s3ClientOptionValue = options.GetValueOrDefault(S3_CLIENT_OPTION);
 
