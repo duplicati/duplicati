@@ -58,6 +58,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string DescriptionRecursiveListShort { get { return LC.L(@"Use this option to list all files in the bucket"); } }
         public static string DescriptionRecursiveListLong { get { return LC.L(@"To reduce the number of objects listed, the default is to only list the first level of objects. Use this option to list all objects in the bucket."); } }
         public static string UnknownS3ClientError(string client) { return LC.L(@"Unknown S3 client: {0}", client); }
+        public static string NoPathAllowedInEndpointError { get { return LC.L(@"No path allowed in endpoint"); } }
     }
 
     internal static class S3Config
