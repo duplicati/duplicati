@@ -222,7 +222,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     n.include = ' ';
                 else
                     n.include = null;
-            }, root);            
+            }, root);
         }
 
         function updateFilterList() {
@@ -248,8 +248,18 @@ backupApp.directive('sourceFolderPicker', function() {
                 filterList = AppUtils.filterListToRegexps(scope.ngFilters, scope.systeminfo.CaseSensitiveFilesystem);
         }
 
+        function buildDisplayName(child, parent) {
+            var p = parent ? compareablePath(parent.id) : null;
+            if (p === compareablePath('%HYPERV%') || p === compareablePath('%MSSQL%')) {
+              return child.text;
+            }
+
+            var parentName = displayMap[compareablePath(parent.id)] || parent.text || '';
+            return parentName ? (parentName + '\\' + child.text) : child.text;
+        }
+
         function syncTreeWithLists() {
-            if (scope.ngSources == null || sourceNodeChildren == null || scope.dirsep == null)
+            if (scope.ngSources === null || sourceNodeChildren === null || scope.dirsep === null)
                 return;
 
             sourcemap = {};
@@ -259,31 +269,66 @@ backupApp.directive('sourceFolderPicker', function() {
 
             function findInList(lst, path) {
                 for(var x in lst)
-                    if (compareablePath(lst[x].id) == path)
+                    if (compareablePath(lst[x].id) === path)
                         return x;
 
                 return false;
             }
 
-            for(var i = 0; i < scope.ngSources.length; i++) {
-                var k = compareablePath(scope.ngSources[i]);
-                if (k.length == 0)
+            function getHyperVText(path, key, name) {
+                return path === key ? gettextCatalog.getString('All Hyper-V Machines') : gettextCatalog.getString('Hyper-V Machine: {{name}}', { name });
+            }
+
+            for(let i = 0; i < scope.ngSources.length; i++) {
+                const pathId = scope.ngSources[i];
+                const path = compareablePath(pathId);
+                if (path.length === 0)
                     continue;
 
-                sourcemap[k] = true;
+                sourcemap[path] = true;
 
-                var txt = scope.ngSources[i];
-                if (k.indexOf('%') == 0) {
-                    var nx = k.substr(1).indexOf('%') + 2;
-                    if (nx > 1) {
-                        var key = compareablePath(k.substr(0, nx));
-                        txt = displayMap[compareablePath(k)] || ((displayMap[compareablePath(key)] || key) + txt.substr(nx));
+                let txt = pathId;
+                const rootMatch = /^%[^%]*%/.exec(path);
+                if (rootMatch) {
+                    const root = rootMatch[0];
+                    const key = compareablePath(root);
+                    const subPath = pathId.slice(root.length);
+
+                    txt = (displayMap[key] || root) + subPath;
+
+                    if (key === compareablePath('%HYPERV%')) {
+                      if (displayMap[compareablePath(path)] === undefined) {
+                        AppService.postJson('/filesystem?onlyfolders=false&showhidden=true', { path: pathId })
+                          .then((res) => {
+                            if (res.data && res.data.length > 0) {
+                              const name = res.data[0].text;
+                              displayMap[compareablePath(path)] = name;
+                              const node = sourceNodeChildren.find(x => compareablePath(x.id) === path);
+                              if (node) {
+                                node.text = getHyperVText(path, key, name);
+                              }
+                            }
+                          });
+                      } else {
+                        txt = getHyperVText(path, key, displayMap[compareablePath(path)]);
+                      }
+                    }
+
+                    if (key === compareablePath('%MSSQL%')) {
+                        if (path === key) {
+                            txt = gettextCatalog.getString('All Microsoft SQL Servers');
+                        } else {
+                            const normSubPath = subPath && subPath[0] === scope.dirsep ? subPath.slice(1) : subPath;
+                            const parts = (normSubPath || '').split(scope.dirsep).filter(Boolean);
+                            txt = path.endsWith(scope.dirsep)? gettextCatalog.getString('Microsoft SQL Server: {{name}}', {name: parts.join('\\')}) : gettextCatalog.getString('Microsoft SQL Database: {{name}}', {name: parts.join('\\')});
+                        }
+                        displayMap[compareablePath(path)] = txt;
                     }
                 }
 
                 var n = {
                     text: txt,
-                    id: scope.ngSources[i],
+                    id: pathId,
                     include: '+',
                     other: true,
                     leaf: true
@@ -293,10 +338,10 @@ backupApp.directive('sourceFolderPicker', function() {
 
                 sourceNodeChildren.push(n);
 
-                if (defunctmap[k] == null && n.iconCls != "x-tree-icon-hyperv" && n.iconCls != "x-tree-icon-hypervmachine" && n.iconCls != "x-tree-icon-mssql" && n.iconCls != "x-tree-icon-mssqldb") {
-                    defunctmap[k] = true;
+                if (defunctmap[path] == null && n.iconCls != "x-tree-icon-hyperv" && n.iconCls != "x-tree-icon-hypervmachine" && n.iconCls != "x-tree-icon-mssql" && n.iconCls != "x-tree-icon-mssqldb") {
+                    defunctmap[path] = true;
 
-                    var p = scope.ngSources[i];
+                    var p = pathId;
                     if (p.substr(0, 1) == '%' && p.substr(p.length - 1, 1) == '%')
                         p += scope.dirsep;
 
@@ -426,9 +471,7 @@ backupApp.directive('sourceFolderPicker', function() {
             node.expanded = !node.expanded;
             self = this;
 
-            if (node.root || node.leaf || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked'
-                || node.iconCls == 'x-tree-icon-hyperv' || node.iconCls == 'x-tree-icon-hypervmachine'
-                || node.iconCls == 'x-tree-icon-mssql' || node.iconCls == 'x-tree-icon-mssqldb')
+          if (node.root || node.leaf || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked')
                 return;
 
             if (!node.children && !node.loading) {
@@ -441,7 +484,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     if (node.children != null)
                         for (var i in node.children) {
                             var child = node.children[i];
-                            setEntryType(child);
+                            displayMap[compareablePath(child.id)] = buildDisplayName(child, node);
                             if (self.expandedPath != null) {
                                 var childPath = compareablePath(child.id);
                                 if (shouldExpand(childPath, self.expandedPath)) {
@@ -554,11 +597,14 @@ backupApp.directive('sourceFolderPicker', function() {
             scope.treedata.children.push(usernode, systemnode, sourcenode);
 
             for(var i = 0; i < data.data.length; i++) {
-                if (data.data[i].id.indexOf('%') == 0) {
-                    usernode.children.push(data.data[i]);
-                    var cp = compareablePath(data.data[i].id);
-                    displayMap[cp] = data.data[i].text;
-
+                if (data.data[i].id.indexOf('%') === 0) {
+                    const path = compareablePath(data.data[i].id)
+                    if (path === compareablePath('%HYPERV%') || path === compareablePath('%MSSQL%')) {
+                        scope.treedata.children.unshift(data.data[i]);
+                    } else {
+                        usernode.children.push(data.data[i]);
+                    }
+                    displayMap[path] = data.data[i].text;
                     setIconCls(data.data[i]);
                 }
                 else
@@ -567,71 +613,6 @@ backupApp.directive('sourceFolderPicker', function() {
 
             syncTreeWithLists();
 
-        }, AppUtils.connectionError);
-
-        AppService.get('/hyperv', {path: '/'}).then(function(data) {
-            if (data.data != null && data.data.length > 0) {
-                var hypervnode = {
-                    text: gettextCatalog.getString('Hyper-V Machines'),
-                    id: "%HYPERV%",
-                    children: []
-                };
-                setIconCls(hypervnode);
-                var cp = compareablePath(hypervnode.id);
-                displayMap[cp] = gettextCatalog.getString('All Hyper-V Machines');
-
-                // add HyperV at the beginning
-                if (scope.treedata.children.length < 1)
-                    scope.treedata.children.push(hypervnode);
-                else
-                    scope.treedata.children = [hypervnode].concat(scope.treedata.children);
-
-                for (var i = 0; i < data.data.length; i++) {
-                    var node = {
-                        leaf: true,
-                        id: "%HYPERV%\\" + data.data[i].id,
-                        text: data.data[i].text};
-
-                    cp = compareablePath(node.id);
-                    displayMap[cp] = gettextCatalog.getString('Hyper-V Machine:') + " " + node.text;
-                    setIconCls(node);
-                    hypervnode.children.push(node);
-                }
-                syncTreeWithLists();
-            }
-        }, AppUtils.connectionError);
-
-        AppService.get('/mssql', { path: '/' }).then(function (data) {
-            if (data.data != null && data.data.length > 0) {
-                var mssqlnode = {
-                    text: gettextCatalog.getString('Microsoft SQL Databases'),
-                    id: "%MSSQL%",
-                    children: []
-                };
-                setIconCls(mssqlnode);
-                var cp = compareablePath(mssqlnode.id);
-                displayMap[cp] = gettextCatalog.getString('All Microsoft SQL Databases');
-
-                // add MS SQL DB at the beginning
-                if (scope.treedata.children.length < 1)
-                    scope.treedata.children.push(mssqlnode);
-                else
-                    scope.treedata.children = [mssqlnode].concat(scope.treedata.children);
-
-                for (var i = 0; i < data.data.length; i++) {
-                    var node = {
-                        leaf: true,
-                        id: "%MSSQL%\\" + data.data[i].id,
-                        text: data.data[i].text
-                    };
-
-                    cp = compareablePath(node.id);
-                    displayMap[cp] = gettextCatalog.getString('Microsoft SQL Database:') + " " + node.text;
-                    setIconCls(node);
-                    mssqlnode.children.push(node);
-                }
-                syncTreeWithLists();
-            }
         }, AppUtils.connectionError);
     }
   }

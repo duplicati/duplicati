@@ -81,8 +81,30 @@ namespace Duplicati.Library.Snapshots.Windows
         }
     }
 
+    public interface IMSSQLUtility
+    {
+        /// <summary>
+        /// The MS SQL VSS Writer Guid
+        /// </summary>
+        Guid MSSQLWriterGuid { get; }
+        /// <summary>
+        /// MS SQL is supported only on Windows platform
+        /// </summary>
+        bool IsMSSQLInstalled { get; }
+        /// <summary>
+        /// Enumerated MS SQL DBs
+        /// </summary>
+        List<MSSQLDB> DBs { get; }
+
+        /// <summary>
+        /// For all MS SQL databases it enumerate all associated paths using VSS data
+        /// </summary>
+        /// <returns>A collection of DBs and paths</returns>
+        void QueryDBsInfo(WindowsSnapshotProvider provider);
+    }
+
     [SupportedOSPlatform("windows")]
-    public class MSSQLUtility
+    public class MSSQLUtility : IMSSQLUtility
     {
         /// <summary>
         /// The tag used for logging
@@ -91,7 +113,11 @@ namespace Duplicati.Library.Snapshots.Windows
         /// <summary>
         /// The MS SQL VSS Writer Guid
         /// </summary>
-        public static readonly Guid MSSQLWriterGuid = new Guid("a65faa63-5ea8-4ebc-9dbd-a0c4db26912a");
+        private static readonly Guid _MSSQLWriterGuid = new Guid("a65faa63-5ea8-4ebc-9dbd-a0c4db26912a");
+        /// <summary>
+        /// The MS SQL VSS Writer Guid
+        /// </summary>
+        public Guid MSSQLWriterGuid => _MSSQLWriterGuid;
         /// <summary>
         /// MS SQL is supported only on Windows platform
         /// </summary>
@@ -160,7 +186,7 @@ namespace Duplicati.Library.Snapshots.Windows
 
             using (var vssBackupComponents = new SnapshotManager(provider))
             {
-                var writerGUIDS = new[] { MSSQLWriterGuid };
+                var writerGUIDS = new[] { _MSSQLWriterGuid };
                 try
                 {
                     vssBackupComponents.SetupWriters(writerGUIDS, null);
