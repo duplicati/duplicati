@@ -81,8 +81,40 @@ namespace Duplicati.Library.Snapshots.Windows
         }
     }
 
+    /// <summary>
+    /// Interface for Hyper-V utility to query Hyper-V guests and their paths
+    /// </summary>
+    public interface IHyperVUtility
+    {
+        /// <summary>
+        /// The Hyper-V VSS Writer Guid
+        /// </summary>
+        Guid HyperVWriterGuid { get; }
+        /// <summary>
+        /// Hyper-V is supported only on Windows platform
+        /// </summary>
+        bool IsHyperVInstalled { get; }
+        /// <summary>
+        /// Hyper-V writer is supported only on Server version of Windows
+        /// </summary>
+        bool IsVSSWriterSupported { get; }
+
+        /// <summary>
+        /// Enumerated Hyper-V guests
+        /// </summary>
+        List<HyperVGuest> Guests { get; }
+
+        /// <summary>
+        /// Query Hyper-V for all Virtual Machines info
+        /// </summary>
+        /// <param name="bIncludePaths">Specify if returned data should contain VM paths</param>
+        /// <param name="provider">The provider to use for VSS</param>
+        /// <returns>List of Hyper-V Machines</returns>
+        void QueryHyperVGuestsInfo(SnapshotProvider provider, bool bIncludePaths = false);
+    }
+
     [SupportedOSPlatform("windows")]
-    public class HyperVUtility
+    public class HyperVUtility : IHyperVUtility
     {
         /// <summary>
         /// The tag used for logging
@@ -101,7 +133,11 @@ namespace Duplicati.Library.Snapshots.Windows
         /// <summary>
         /// The Hyper-V VSS Writer Guid
         /// </summary>
-        public static readonly Guid HyperVWriterGuid = new Guid("66841cd4-6ded-4f4b-8f17-fd23f8ddc3de");
+        internal static readonly Guid _HyperVWriterGuid = new Guid("66841cd4-6ded-4f4b-8f17-fd23f8ddc3de");
+        /// <summary>
+        /// The Hyper-V VSS Writer Guid
+        /// </summary>
+        public Guid HyperVWriterGuid => _HyperVWriterGuid;
         /// <summary>
         /// Hyper-V is supported only on Windows platform
         /// </summary>
@@ -223,7 +259,7 @@ namespace Duplicati.Library.Snapshots.Windows
         {
             using (var vssBackupComponents = new SnapshotManager(provider))
             {
-                var writerGUIDS = new[] { HyperVWriterGuid };
+                var writerGUIDS = new[] { _HyperVWriterGuid };
 
                 try
                 {

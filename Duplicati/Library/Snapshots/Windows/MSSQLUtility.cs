@@ -81,8 +81,30 @@ namespace Duplicati.Library.Snapshots.Windows
         }
     }
 
+    public interface IMSSQLUtility
+    {
+        /// <summary>
+        /// The MS SQL VSS Writer Guid
+        /// </summary>
+        Guid MSSQLWriterGuid { get; }
+        /// <summary>
+        /// MS SQL is supported only on Windows platform
+        /// </summary>
+        bool IsMSSQLInstalled { get; }
+        /// <summary>
+        /// Enumerated MS SQL DBs
+        /// </summary>
+        List<MSSQLDB> DBs { get; }
+
+        /// <summary>
+        /// For all MS SQL databases it enumerate all associated paths using VSS data
+        /// </summary>
+        /// <returns>A collection of DBs and paths</returns>
+        void QueryDBsInfo(SnapshotProvider provider);
+    }
+
     [SupportedOSPlatform("windows")]
-    public class MSSQLUtility
+    public class MSSQLUtility : IMSSQLUtility
     {
         /// <summary>
         /// The tag used for logging
@@ -91,7 +113,11 @@ namespace Duplicati.Library.Snapshots.Windows
         /// <summary>
         /// The MS SQL VSS Writer Guid
         /// </summary>
-        public static readonly Guid MSSQLWriterGuid = new Guid("a65faa63-5ea8-4ebc-9dbd-a0c4db26912a");
+        private static readonly Guid _MSSQLWriterGuid = new Guid("a65faa63-5ea8-4ebc-9dbd-a0c4db26912a");
+        /// <summary>
+        /// The MS SQL VSS Writer Guid
+        /// </summary>
+        public Guid MSSQLWriterGuid => _MSSQLWriterGuid;
         /// <summary>
         /// MS SQL is supported only on Windows platform
         /// </summary>
@@ -126,21 +152,21 @@ namespace Duplicati.Library.Snapshots.Windows
                 try { arrInstalledInstances = (string[])installed; }
                 catch { }
 
-            if(Environment.Is64BitOperatingSystem && arrInstalledInstances == null)
+            if (Environment.Is64BitOperatingSystem && arrInstalledInstances == null)
             {
                 var installed32on64 = Microsoft.Win32.Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Microsoft SQL Server", "InstalledInstances", "");
                 if (installed32on64 is string on64)
                 {
                     if (!string.IsNullOrWhiteSpace(on64))
                         arrInstalledInstances = new string[] { on64 };
-                }         
+                }
                 else if (installed32on64 is string[] strings)
                     arrInstalledInstances = strings;
                 else if (installed32on64 != null)
                     try { arrInstalledInstances = (string[])installed32on64; }
                     catch { }
             }
-            
+
             IsMSSQLInstalled = arrInstalledInstances != null && arrInstalledInstances.Length > 0;
 
             if (!IsMSSQLInstalled)
@@ -160,7 +186,7 @@ namespace Duplicati.Library.Snapshots.Windows
 
             using (var vssBackupComponents = new SnapshotManager(provider))
             {
-                var writerGUIDS = new [] { MSSQLWriterGuid };
+                var writerGUIDS = new[] { _MSSQLWriterGuid };
                 try
                 {
                     vssBackupComponents.SetupWriters(writerGUIDS, null);
@@ -170,7 +196,7 @@ namespace Duplicati.Library.Snapshots.Windows
                     throw new Interface.UserInformationException("Microsoft SQL Server VSS Writer not found - cannot backup SQL databases.", "NoMsSqlVssWriter");
                 }
 
-                foreach (var o in  vssBackupComponents.ParseWriterMetaData(writerGUIDS))
+                foreach (var o in vssBackupComponents.ParseWriterMetaData(writerGUIDS))
                 {
                     m_DBs.Add(new MSSQLDB(o.Name, o.LogicalPath + "\\" + o.Name, o.Paths.ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1))
                                            .Distinct(Utility.Utility.ClientFilenameStringComparer)

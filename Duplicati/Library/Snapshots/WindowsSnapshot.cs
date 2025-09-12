@@ -41,6 +41,16 @@ namespace Duplicati.Library.Snapshots
     public sealed class WindowsSnapshot : SnapshotBase
     {
         /// <summary>
+        /// The default snapshot provider
+        /// </summary>
+        public static readonly SnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_PROVIDER = SnapshotProvider.AlphaVSS;
+
+        /// <summary>
+        /// The default snapshot query provider
+        /// </summary>
+        public static readonly SnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER = SnapshotProvider.AlphaVSS;
+
+        /// <summary>
         /// The tag used for logging messages
         /// </summary>
         public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
