@@ -29,22 +29,6 @@ namespace Duplicati.Server.Database
 {
     public class Backup : IBackup
     {
-        // Sensitive information that may be stored in TargetUrl
-        private readonly string[] UrlPasswords = {
-            "authid",
-            "auth-password",
-            "storj-secret",
-            "storj-shared-access",
-        };
-
-        // Sensitive information that may be stored in Settings
-        private readonly string[] SettingPasswords = {
-            "passphrase",
-            "--authid",
-            "--send-mail-password",
-            "--send-xmpp-password",
-        };
-
         public Backup()
         {
             this.ID = null;
@@ -122,9 +106,9 @@ namespace Duplicati.Server.Database
         public bool IsTemporary { get { return ID != null && ID.IndexOf("-", StringComparison.Ordinal) > 0; } }
 
         /// <summary>
-        /// Sanitizes the backup TargetUrl from any fields in the PasswordFields list.
+        /// Sanitizes the backup TargetUrl from any fields in the PasswordFieldNames list.
         /// </summary>
-        public void SanitizeTargetUrl()
+        private void SanitizeTargetUrl()
         {
             var url = new Duplicati.Library.Utility.Uri(this.TargetURL);
             NameValueCollection filteredParameters = new NameValueCollection();
@@ -134,22 +118,58 @@ namespace Duplicati.Server.Database
                 // breaks assumptions made by the decode_uri function in AppUtils.js. Since we are simply
                 // removing password parameters, we will leave the parameters as they are in the target URL.
                 filteredParameters = Library.Utility.Uri.ParseQueryString(url.Query, false);
-                // TODO: This list is not exhaustive, look at the BackendLoader and find all password fields + aliases
-                foreach (string field in this.UrlPasswords)
-                {
+                foreach (var field in Connection.PasswordFieldNames)
                     filteredParameters.Remove(field);
-                }
             }
             url = url.SetQuery(Duplicati.Library.Utility.Uri.BuildUriQuery(filteredParameters));
             this.TargetURL = url.ToString();
         }
 
         /// <summary>
-        /// Sanitizes the settings from any fields in the PasswordFields list.
+        /// Sanitizes the settings from any fields in the PasswordFieldNames list.
         /// </summary>
-        public void SanitizeSettings()
+        private void SanitizeSettings()
         {
-            this.Settings = this.Settings.Where((setting) => !SettingPasswords.Contains(setting.Name)).ToArray();
+            this.Settings = this.Settings.Where((setting) => !Connection.PasswordFieldNames.Contains(setting.Name)).ToArray();
+        }
+
+        /// <inheritdoc/>
+        public void RemoveSensitiveInformation()
+        {
+            SanitizeTargetUrl();
+            SanitizeSettings();
+        }
+
+        /// <inheritdoc/>
+        public void MaskSensitiveInformation()
+        {
+            var protectedNames = Connection.PasswordFieldNames;
+            TargetURL = QuerystringMasking.Mask(TargetURL, protectedNames);
+
+            foreach (var setting in this.Settings)
+                if (protectedNames.Contains(setting.Name))
+                    setting.Value = Connection.PASSWORD_PLACEHOLDER;
+        }
+
+        /// <inheritdoc/>
+        public void UnmaskSensitiveInformation(IBackup previous)
+        {
+            if (previous == null)
+                throw new ArgumentNullException(nameof(previous));
+
+            TargetURL = QuerystringMasking.Unmask(TargetURL, previous.TargetURL);
+
+            var prevSettings = previous.Settings.ToDictionary(x => x.Name, x => x.Value, StringComparer.OrdinalIgnoreCase);
+            foreach (var setting in this.Settings)
+            {
+                if (setting.Value == Connection.PASSWORD_PLACEHOLDER)
+                {
+                    if (prevSettings.TryGetValue(setting.Name, out var prevValue))
+                        setting.Value = prevValue;
+                    else
+                        throw new InvalidOperationException($"Cannot unmask setting '{setting.Name}' because it did not exist in the previous configuration.");
+                }
+            }
         }
     }
 }

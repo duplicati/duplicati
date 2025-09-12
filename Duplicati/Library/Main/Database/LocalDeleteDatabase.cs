@@ -380,7 +380,7 @@ namespace Duplicati.Library.Main.Database
         /// </returns>
         private async IAsyncEnumerable<VolumeUsage> GetWastedSpaceReport([EnumeratorCancellation] CancellationToken token)
         {
-            var tmptablename = "UsageReport-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            var tmptablename = $"UsageReport-{Library.Utility.Utility.GetHexGuid()}";
 
             var usedBlocks = @"
                 SELECT
@@ -893,8 +893,8 @@ namespace Duplicati.Library.Main.Database
                 return;
 
             await using var cmd = m_connection.CreateCommand(m_rtr);
-            var updatedBlocks = "BlocksToUpdate-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            var replacementBlocks = "ReplacementBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            var updatedBlocks = $"BlocksToUpdate-{Library.Utility.Utility.GetHexGuid()}";
+            var replacementBlocks = $"ReplacementBlocks-{Library.Utility.Utility.GetHexGuid()}";
             try
             {
                 await cmd.SetCommandAndParameters($@"

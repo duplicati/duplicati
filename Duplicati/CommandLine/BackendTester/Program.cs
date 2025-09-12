@@ -154,6 +154,9 @@ namespace Duplicati.CommandLine.BackendTester
             }
 
             var autoCreateFolders = Library.Utility.Utility.ParseBoolOption(options, "auto-create-folder");
+            var retries = 0;
+            if (options.ContainsKey("failure-retries"))
+                retries = int.Parse(options["failure-retries"]);
 
             options.TryGetValue("enable-module", out var enabledModulesValue);
             options.TryGetValue("disable-module", out var disabledModulesValue);
@@ -173,8 +176,8 @@ namespace Duplicati.CommandLine.BackendTester
                 IEnumerable<Library.Interface.IFileEntry> curlist = null;
                 try
                 {
-                    backend.TestAsync(CancellationToken.None).Await();
-                    curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
+                    Retry(() => backend.TestAsync(CancellationToken.None), retries).Await();
+                    curlist = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries);
                 }
                 catch (FolderMissingException)
                 {
@@ -182,8 +185,8 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         try
                         {
-                            backend.CreateFolderAsync(CancellationToken.None).Await();
-                            curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
+                            Retry(() => backend.CreateFolderAsync(CancellationToken.None), retries).Await();
+                            curlist = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries);
                         }
                         catch (Exception ex)
                         {
@@ -202,7 +205,7 @@ namespace Duplicati.CommandLine.BackendTester
                             if (Library.Utility.Utility.ParseBoolOption(options, "force"))
                             {
                                 Console.WriteLine($"{LogTimeStamp}Auto clean, removing file: {fe.Name}");
-                                backend.DeleteAsync(fe.Name, CancellationToken.None).Await();
+                                Retry(() => backend.DeleteAsync(fe.Name, CancellationToken.None), retries).Await();
                                 continue;
                             }
                             else
@@ -315,9 +318,9 @@ namespace Duplicati.CommandLine.BackendTester
 
                             //Upload a dummy file for entry 0 and the last one, they will be replaced by the real files afterwards
                             //We upload entry 0 twice just to try to freak any internal cache list
-                            Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming, throttleUpload, readWriteTimeout);
-                            Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming, throttleUpload, readWriteTimeout);
-                            Uploadfile(dummy, files.Count - 1, files[files.Count - 1].remotefilename, backend, disableStreaming, throttleUpload, readWriteTimeout);
+                            Retry(() => Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming, throttleUpload, readWriteTimeout), retries);
+                            Retry(() => Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming, throttleUpload, readWriteTimeout), retries);
+                            Retry(() => Uploadfile(dummy, files.Count - 1, files[files.Count - 1].remotefilename, backend, disableStreaming, throttleUpload, readWriteTimeout), retries);
                         }
 
                     }
@@ -325,7 +328,7 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.WriteLine($"{LogTimeStamp}Uploading files ...");
 
                     for (int i = 0; i < files.Count; i++)
-                        Uploadfile(files[i].localfilename, i, files[i].remotefilename, backend, disableStreaming, throttleUpload, readWriteTimeout);
+                        Retry(() => Uploadfile(files[i].localfilename, i, files[i].remotefilename, backend, disableStreaming, throttleUpload, readWriteTimeout), retries);
 
                     TempFile originalRenamedFile = null;
                     string renamedFileNewName = null;
@@ -339,7 +342,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                         Console.WriteLine($"{LogTimeStamp}Renaming file {renameIndex} from {originalRenamedFile.remotefilename} to {renamedFileNewName}");
 
-                        renameEnabledBackend.RenameAsync(originalRenamedFile.remotefilename, renamedFileNewName, CancellationToken.None).Await();
+                        Retry(() => renameEnabledBackend.RenameAsync(originalRenamedFile.remotefilename, renamedFileNewName, CancellationToken.None), retries).Await();
                         files[renameIndex] = new TempFile(renamedFileNewName, originalRenamedFile.localfilename, originalRenamedFile.hash, originalRenamedFile.length);
                     }
 
@@ -351,7 +354,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                     Console.WriteLine($"{LogTimeStamp}Verifying file list ...");
 
-                    curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
+                    curlist = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries);
                     foreach (var fe in curlist)
                         if (!fe.IsFolder)
                         {
@@ -402,16 +405,19 @@ namespace Duplicati.CommandLine.BackendTester
 
                             try
                             {
-                                if (backend is IStreamingBackend streamingBackend && !disableStreaming)
+                                Retry(async () =>
                                 {
-                                    using (var fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                                    using (var timeoutStream = new TimeoutObservingStream(fs) { WriteTimeout = readWriteTimeout })
-                                    using (var ts = new ThrottleEnabledStream(timeoutStream, throttleManager))
-                                    using (var nss = new NonSeekableStream(ts))
-                                        streamingBackend.GetAsync(files[i].remotefilename, nss, timeoutStream.TimeoutToken).Await();
-                                }
-                                else
-                                    backend.GetAsync(files[i].remotefilename, cf, CancellationToken.None).Await();
+                                    if (backend is IStreamingBackend streamingBackend && !disableStreaming)
+                                    {
+                                        using (var fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                                        using (var timeoutStream = new TimeoutObservingStream(fs) { WriteTimeout = readWriteTimeout })
+                                        using (var ts = new ThrottleEnabledStream(timeoutStream, throttleManager))
+                                        using (var nss = new NonSeekableStream(ts))
+                                            await streamingBackend.GetAsync(files[i].remotefilename, nss, timeoutStream.TimeoutToken);
+                                    }
+                                    else
+                                        await backend.GetAsync(files[i].remotefilename, cf, CancellationToken.None);
+                                }, retries).Await();
 
                                 e = null;
                             }
@@ -454,7 +460,7 @@ namespace Duplicati.CommandLine.BackendTester
                         try
                         {
                             Console.WriteLine($"{LogTimeStamp}Deleting file {i}");
-                            backend.DeleteAsync(files[i].remotefilename, CancellationToken.None).Await();
+                            Retry(() => backend.DeleteAsync(files[i].remotefilename, CancellationToken.None), retries).Await();
                         }
                         catch (Exception ex)
                         {
@@ -468,7 +474,7 @@ namespace Duplicati.CommandLine.BackendTester
                         Thread.Sleep(waitAfterDelete);
                     }
 
-                    curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
+                    curlist = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries);
                     foreach (var fe in curlist)
                         if (!fe.IsFolder)
                         {
@@ -510,7 +516,7 @@ namespace Duplicati.CommandLine.BackendTester
                     bool noException;
                     try
                     {
-                        quota = quotaEnabledBackend.GetQuotaInfoAsync(CancellationToken.None).Await();
+                        quota = Retry(() => quotaEnabledBackend.GetQuotaInfoAsync(CancellationToken.None), retries).Await();
                         noException = true;
                     }
                     catch (Exception ex)
@@ -537,7 +543,7 @@ namespace Duplicati.CommandLine.BackendTester
                 Console.WriteLine($"{LogTimeStamp}Checking DNS names used by this backend...");
                 try
                 {
-                    var dnsNames = backend.GetDNSNamesAsync(CancellationToken.None).Await();
+                    var dnsNames = Retry(() => backend.GetDNSNamesAsync(CancellationToken.None), retries).Await();
                     if (dnsNames != null)
                     {
                         foreach (string dnsName in dnsNames)
@@ -647,30 +653,58 @@ namespace Duplicati.CommandLine.BackendTester
             return filename;
         }
 
-        private static string LogTimeStamp => $"[{DateTime.Now:HH:mm:ss fff}] ";
-
-        public static IList<ICommandLineArgument> SupportedCommands
+        private static async Task<T> Retry<T>(Func<Task<T>> action, int retries)
         {
-            get
+            var total = retries;
+            while (true)
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("reruns", CommandLineArgument.ArgumentType.Integer, "The number of test runs to perform", "A number that describes how many times the test is performed", "5"),
-                    new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, "The path used to store temporary files", "The backend tester will use the system default temp path. You can set this option to choose another path."),
-                    new CommandLineArgument("extended-chars", CommandLineArgument.ArgumentType.String, "A list of allowed extended filename chars", "A list of characters besides {a-z, A-Z, 0-9} to use when generating filenames", ExtendedChars),
-                    new CommandLineArgument("number-of-files", CommandLineArgument.ArgumentType.Integer, "The number of files to test with", "An integer describing how many files to upload during a test run", "10"),
-                    new CommandLineArgument("min-file-size", CommandLineArgument.ArgumentType.Size, "The minimum allowed file size", "File sizes are chosen at random, this value is the lower bound", "1kb"),
-                    new CommandLineArgument("max-file-size", CommandLineArgument.ArgumentType.Size, "The maximum allowed file size", "File sizes are chosen at random, this value is the upper bound", "50mb"),
-                    new CommandLineArgument("min-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the lower bound", "5"),
-                    new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the upper bound", "80"),
-                    new CommandLineArgument("trim-filename-spaces", CommandLineArgument.ArgumentType.Boolean, "Trim whitespace from filenames", "A value that indicates if whitespace should be trimmed from the ends of randomly generated filenames", "false"),
-                    new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allow automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
-                    new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypass the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
-                    new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Remove any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
-                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activate file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
-                    new CommandLineArgument("wait-after-upload", CommandLineArgument.ArgumentType.Timespan, "Wait after all uploads", "A value that indicates how long to wait after all files are uploaded, to account for the backends eventual consistency", "0s"),
-                    new CommandLineArgument("wait-after-delete", CommandLineArgument.ArgumentType.Timespan, "Wait after all deletes", "A value that indicates how long to wait after each delete operation, to account for the backends eventual consistency", "0s"),
-                });
+                retries--;
+                try
+                {
+                    return await action();
+                }
+                catch
+                {
+                    if (retries <= 0)
+                        throw;
+
+                    var delay = Utility.GetRetryDelay(TimeSpan.FromSeconds(1), total - retries, true);
+                    Console.WriteLine($"{LogTimeStamp}Operation failed with exception, {retries} retries left, delaying retry for {delay.TotalMilliseconds} ms");
+                    await Task.Delay(delay);
+
+                    Console.WriteLine($"{LogTimeStamp}Retrying after error, {retries} retries left");
+                }
             }
         }
+
+        private static async Task Retry(Func<Task> action, int retries)
+            => await Retry(async () => { await action(); return true; }, retries);
+
+        private static void Retry(Action action, int retries)
+            => Retry(() => { action(); return true; }, retries);
+
+        private static T Retry<T>(Func<T> action, int retries)
+            => Retry(() => Task.FromResult(action()), retries).Result;
+
+        private static string LogTimeStamp => $"[{DateTime.Now:HH:mm:ss fff}] ";
+
+        public static IList<ICommandLineArgument> SupportedCommands => [
+            new CommandLineArgument("reruns", CommandLineArgument.ArgumentType.Integer, "The number of test runs to perform", "A number that describes how many times the test is performed", "5"),
+            new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, "The path used to store temporary files", "The backend tester will use the system default temp path. You can set this option to choose another path."),
+            new CommandLineArgument("extended-chars", CommandLineArgument.ArgumentType.String, "A list of allowed extended filename chars", "A list of characters besides {a-z, A-Z, 0-9} to use when generating filenames", ExtendedChars),
+            new CommandLineArgument("number-of-files", CommandLineArgument.ArgumentType.Integer, "The number of files to test with", "An integer describing how many files to upload during a test run", "10"),
+            new CommandLineArgument("min-file-size", CommandLineArgument.ArgumentType.Size, "The minimum allowed file size", "File sizes are chosen at random, this value is the lower bound", "1kb"),
+            new CommandLineArgument("max-file-size", CommandLineArgument.ArgumentType.Size, "The maximum allowed file size", "File sizes are chosen at random, this value is the upper bound", "50mb"),
+            new CommandLineArgument("min-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the lower bound", "5"),
+            new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the upper bound", "80"),
+            new CommandLineArgument("trim-filename-spaces", CommandLineArgument.ArgumentType.Boolean, "Trim whitespace from filenames", "A value that indicates if whitespace should be trimmed from the ends of randomly generated filenames", "false"),
+            new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allow automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
+            new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypass the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
+            new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Remove any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
+            new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activate file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
+            new CommandLineArgument("wait-after-upload", CommandLineArgument.ArgumentType.Timespan, "Wait after all uploads", "A value that indicates how long to wait after all files are uploaded, to account for the backends eventual consistency", "0s"),
+            new CommandLineArgument("wait-after-delete", CommandLineArgument.ArgumentType.Timespan, "Wait after all deletes", "A value that indicates how long to wait after each delete operation, to account for the backends eventual consistency", "0s"),
+            new CommandLineArgument("failure-retries", CommandLineArgument.ArgumentType.Integer, "The number of retries for each operation", "An integer that indicates how many times an operation should be retried before giving up", "0"),
+        ];
     }
 }

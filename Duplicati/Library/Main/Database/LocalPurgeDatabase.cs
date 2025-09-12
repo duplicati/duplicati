@@ -235,7 +235,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     ParentID = parentid,
                     m_db = db,
-                    m_tablename = "TempDeletedFilesTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())
+                    m_tablename = $"TempDeletedFilesTable-{Library.Utility.Utility.GetHexGuid()}"
                 };
 
                 await using (var cmd = db.Connection.CreateCommand())
@@ -279,7 +279,7 @@ namespace Duplicati.Library.Main.Database
                     // unfortunately we cannot do this if the filesystem is not case-sensitive as
                     // SQLite only supports ASCII compares
                     var p = expression.GetSimpleList();
-                    var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                    var filenamestable = $"Filenames-{Library.Utility.Utility.GetHexGuid()}";
                     await using var cmd = m_db.Connection.CreateCommand();
                     await cmd.ExecuteNonQueryAsync($@"
                             CREATE TEMPORARY TABLE ""{filenamestable}"" (
