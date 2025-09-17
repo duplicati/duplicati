@@ -53,12 +53,16 @@ namespace Duplicati.Server.Database
             }
         }
 
-        protected void SetDBPath(string path) => this.DBPath = path;
+        public void SetDBPath(string path) => this.DBPath = path;
 
         /// <summary>
         /// The backup ID
         /// </summary>
         public string ID { get; set; }
+        /// <summary>
+        /// The external ID for tracking the backup, or null if not set
+        /// </summary>
+        public string ExternalID { get; set; }
         /// <summary>
         /// The backup name
         /// </summary>

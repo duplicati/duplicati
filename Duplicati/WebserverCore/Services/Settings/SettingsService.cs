@@ -55,6 +55,7 @@ public class SettingsService(Connection connection) : ISettingsService
         Server.Database.ServerSettings.CONST.ENCRYPTED_FIELDS,
         Server.Database.ServerSettings.CONST.REMOTE_CONTROL_CONFIG,
         Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD,
+        Server.Database.ServerSettings.CONST.ADDITIONAL_REPORT_URL,
         "ServerSSLCertificate",
         "server-passphrase-trayicon-hash",
         "server-passphrase-trayicon-salt"

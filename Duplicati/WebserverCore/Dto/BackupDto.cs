@@ -30,6 +30,10 @@ public sealed record BackupDto
     /// </summary>
     public required string ID { get; init; }
     /// <summary>
+    /// An external ID for tracking the backup, or null if not set
+    /// </summary>
+    public required string? ExternalID { get; init; }
+    /// <summary>
     /// The backup name
     /// </summary>
     public required string Name { get; init; }
