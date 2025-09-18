@@ -114,7 +114,7 @@ public static class DataFolderLocator
                     newlocation
                 };
 
-            // If %LOCALAPPDATA% is inside the Windows folder, prefer a LocalService folder instead
+            // If %LOCALAPPDATA% is inside the Windows folder, prefer the ProgramData folder instead
             if (Common.IO.Util.IsPathUnderWindowsFolder(newlocation))
                 folderOrder.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), appName));
 

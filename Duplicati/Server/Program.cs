@@ -573,7 +573,7 @@ namespace Duplicati.Server
                     connection.RegisterNotification(
                         Serialization.NotificationType.Warning,
                         "Incorrect storage folder",
-                        "The server configuraion is stored inside the Windows folder. Please move the configuration to a different location, or it may be deleted on Windows version upgrades.",
+                        "The server configuration is stored inside the Windows folder. Please move the configuration to a different location, or it may be deleted on Windows version upgrades.",
                         null,
                         null,
                         "config:issue:windows-folder-used",
