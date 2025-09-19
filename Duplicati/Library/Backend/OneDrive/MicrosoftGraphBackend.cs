@@ -698,9 +698,33 @@ namespace Duplicati.Library.Backend
             using (var responseStream = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => response.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false))
             using (var timeoutStream = responseStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
             using (var reader = new StreamReader(timeoutStream))
-            using (var jsonReader = new JsonTextReader(reader))
-                return m_serializer.Deserialize<T>(jsonReader)
-                    ?? throw new MicrosoftGraphException("Failed to parse response", response);
+            {
+                var content = await reader.ReadToEndAsync().ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(content))
+                {
+                    try
+                    {
+                        using (var stringReader = new StringReader(content))
+                        using (var jsonReader = new JsonTextReader(stringReader))
+                        {
+                            var data = m_serializer.Deserialize<T>(jsonReader);
+                            if (data != null)
+                                return data;
+                        }
+                    }
+                    catch (JsonException ex)
+                    {
+                        Log.WriteErrorMessage(
+                            LOGTAG,
+                            "MicrosoftGraphJsonParseError",
+                            ex,
+                            "Error parsing JSON response: {0}",
+                            content);
+                    }
+                }
+
+                throw new MicrosoftGraphException("Failed to parse response", response, content);
+            }
         }
 
         private async Task ThrowUploadSessionException(
