@@ -1,0 +1,2 @@
+﻿ALTER TABLE "Backup" ADD COLUMN "ExternalID" TEXT NULL;
+

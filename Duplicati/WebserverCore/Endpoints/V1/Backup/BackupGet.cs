@@ -114,6 +114,7 @@ public class BackupGet : IEndpointV1
             new Dto.BackupDto()
             {
                 ID = bk.ID,
+                ExternalID = bk.ExternalID,
                 Name = bk.Name,
                 Sources = bk.Sources,
                 Settings = bk.Settings?.Select(x => new Dto.SettingDto()

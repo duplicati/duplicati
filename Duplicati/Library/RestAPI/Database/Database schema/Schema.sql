@@ -12,7 +12,8 @@ CREATE TABLE "Backup" (
     "Description" TEXT NOT NULL DEFAULT '',
     "Tags" TEXT NOT NULL,
     "TargetURL" TEXT NOT NULL,
-    "DBPath" TEXT NOT NULL
+    "DBPath" TEXT NOT NULL,
+    "ExternalID" TEXT NULL
 );
 
 /*
@@ -164,5 +165,5 @@ CREATE TABLE "TokenFamily" (
     "LastUpdated" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (8);
+INSERT INTO "Version" ("Version") VALUES (9);
 
