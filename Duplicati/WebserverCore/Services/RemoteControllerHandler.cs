@@ -23,6 +23,7 @@ using System.Net.Http.Headers;
 using Duplicati.Library.Logging;
 using Duplicati.Library.RemoteControl;
 using Duplicati.Server.Database;
+using Duplicati.Server.Serialization;
 using Duplicati.WebserverCore.Abstractions;
 using Newtonsoft.Json;
 
@@ -84,11 +85,50 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
         Log.WriteMessage(LogMessageType.Verbose, LOGTAG, "OnControl", "Received control message: {0}", message);
         try
         {
-            if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.ConfigureReportUrlSet, StringComparison.OrdinalIgnoreCase))
-                connection.ApplicationSettings.AdditionalReportUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ConfigureReportUrlParameter);
+            if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.UpdateSettingsCommand, StringComparison.OrdinalIgnoreCase))
+            {
+                result = new Dictionary<string, string?>
+                {
+                    [ControlResponseMessage.SettingsVersionKey] = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.SettingsVersionKey)
+                };
 
-            if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.ConfigureReportUrlGet, StringComparison.OrdinalIgnoreCase))
-                result = new Dictionary<string, string?> { { ControlRequestMessage.ConfigureReportUrlParameter, connection.ApplicationSettings.AdditionalReportUrl } };
+                connection.ApplicationSettings.AdditionalReportUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ReportUrlKey);
+
+                var backupConfigs = message.ControlRequestMessage.Parameters
+                    .Where(kv => kv.Key.StartsWith(ControlRequestMessage.BackupConfigKeyPrefix, StringComparison.OrdinalIgnoreCase))
+                    .Select(kv => kv.Key)
+                    .ToHashSet();
+
+                var existingBackups = connection.Backups.Where(x => !string.IsNullOrWhiteSpace(x.ExternalID) && x.ExternalID.StartsWith(ControlRequestMessage.BackupConfigKeyPrefix, StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(x => x.ExternalID!, x => x);
+
+                var deletedBackupIds = existingBackups.Where(kv => !backupConfigs.Contains(kv.Key)).Select(kv => kv.Value.ID).ToList();
+                foreach (var id in deletedBackupIds)
+                    connection.DeleteBackup(long.Parse(id));
+
+                foreach (var externalId in backupConfigs)
+                {
+                    var config = message.ControlRequestMessage.Parameters.GetValueOrDefault(externalId);
+                    if (string.IsNullOrWhiteSpace(config))
+                        continue;
+
+                    using var reader = new StringReader(config);
+                    var importData = Serializer.Deserialize<Server.Serializable.ImportExportStructure>(reader);
+                    if (importData?.Backup == null)
+                        continue;
+
+                    importData.Backup.ExternalID = externalId;
+                    importData.Backup.ID = null;
+                    importData.Backup.SetDBPath(null);
+                    importData.Backup.Metadata = null;
+
+                    // Keep ID and DBPath if the backup already exists
+                    if (existingBackups.TryGetValue(externalId, out var existing))
+                        importData.Backup.ID = existing.ID;
+
+                    connection.AddOrUpdateBackupAndSchedule(importData.Backup, importData.Schedule);
+                }
+            }
         }
         catch (Exception ex)
         {

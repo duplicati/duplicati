@@ -89,17 +89,21 @@ public sealed record WelcomeMessage(string PublicKeyHash, string MachineName, st
 public sealed record ControlRequestMessage(string Command, Dictionary<string, string?> Parameters)
 {
     /// <summary>
-    /// The configure report url command
+    /// The command to update settings
     /// </summary>
-    public const string ConfigureReportUrlSet = "configure-report-url:set";
+    public const string UpdateSettingsCommand = "updatesettings";
     /// <summary>
-    /// A control message to return if the report url is configured
+    /// The key that contains the reporting URL
     /// </summary>
-    public const string ConfigureReportUrlGet = "configure-report-url:get";
+    public const string ReportUrlKey = "reportingurl";
     /// <summary>
-    /// The url parameter for the configure report url command
+    /// The prefix used for backup config keys
     /// </summary>
-    public const string ConfigureReportUrlParameter = "url";
+    public const string BackupConfigKeyPrefix = "backupconfig:";
+    /// <summary>
+    /// The key that contains the applied settings version
+    /// </summary>
+    public const string SettingsVersionKey = "settingsversion";
 
 }
 /// <summary>
@@ -108,7 +112,13 @@ public sealed record ControlRequestMessage(string Command, Dictionary<string, st
 /// <param name="Success">Whether the command was successful</param>
 /// <param name="Output">The output of the command</param>
 /// <param name="ErrorMessage">The error message if the command failed</param>
-public sealed record ControlResponseMessage(bool Success, Dictionary<string, string?>? Output, string? ErrorMessage);
+public sealed record ControlResponseMessage(bool Success, Dictionary<string, string?>? Output, string? ErrorMessage)
+{
+    /// <summary>
+    /// The key used for reporting the applied settings version
+    /// </summary>
+    public const string SettingsVersionKey = "settingsversion";
+}
 
 /// <summary>
 /// A message to send a command

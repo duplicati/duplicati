@@ -186,21 +186,12 @@ public class BackupPost : IEndpointV1
         return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup), skipQueue));
     }
 
-    private class WrappedBackup : Server.Database.Backup
-    {
-        public string? DBPathSetter
-        {
-            get => DBPath;
-            set => SetDBPath(value);
-        }
-    }
-
     private static Dto.CreateBackupDto ExecuteCopyToTemp(IBackup backup, Connection connection)
     {
-        var ipx = Serializer.Deserialize<WrappedBackup>(new StringReader(Newtonsoft.Json.JsonConvert.SerializeObject(backup)));
+        var ipx = Serializer.Deserialize<Server.Database.Backup>(new StringReader(Newtonsoft.Json.JsonConvert.SerializeObject(backup)));
 
         using (var tf = new Library.Utility.TempFile())
-            ipx.DBPathSetter = tf;
+            ipx.SetDBPath(tf);
         ipx.ID = null;
 
         connection.RegisterTemporaryBackup(ipx);

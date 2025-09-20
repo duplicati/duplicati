@@ -32,21 +32,6 @@ namespace Duplicati.WebserverCore.Services;
 /// <param name="connection">The database connection used to access backup information.</param>
 public class BackupListService(Connection connection) : IBackupListService
 {
-    /// <summary>
-    /// A wrapper class for the Backup entity to allow setting the DBPath property
-    /// </summary>
-    private class WrappedBackup : Backup
-    {
-        /// <summary>
-        /// Gets or sets the database path.
-        /// </summary>
-        public string? DBPathSetter
-        {
-            get => DBPath;
-            set => SetDBPath(value);
-        }
-    }
-
     /// <inheritdoc/>
     public CreateBackupDto Add(BackupAndScheduleInputDto data, bool temporary, bool existingDb)
     {
@@ -58,14 +43,13 @@ public class BackupListService(Connection connection) : IBackupListService
             var filters = data.Backup.Filters ?? Array.Empty<Dto.BackupAndScheduleInputDto.FilterInputDto>();
             var settings = data.Backup.Settings ?? Array.Empty<Dto.BackupAndScheduleInputDto.SettingInputDto>();
 
-            var backup = new WrappedBackup()
+            var backup = new Backup()
             {
                 ID = null,
                 Name = data.Backup.Name,
                 Description = data.Backup.Description,
                 Tags = data.Backup.Tags,
                 TargetURL = data.Backup.TargetURL,
-                DBPathSetter = null,
                 Sources = data.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
                 {
@@ -96,7 +80,7 @@ public class BackupListService(Connection connection) : IBackupListService
             if (temporary)
             {
                 using (var tf = new Library.Utility.TempFile())
-                    backup.DBPathSetter = tf;
+                    backup.SetDBPath(tf);
 
                 connection.RegisterTemporaryBackup(backup);
             }
@@ -104,7 +88,7 @@ public class BackupListService(Connection connection) : IBackupListService
             {
                 if (existingDb)
                 {
-                    backup.DBPathSetter = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(data.Backup.TargetURL, null, false, false);
+                    backup.SetDBPath(Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(data.Backup.TargetURL, null, false, false));
                     if (string.IsNullOrWhiteSpace(data.Backup.DBPath))
                         throw new Exception("Unable to find remote db path?");
                 }
@@ -283,6 +267,7 @@ public class BackupListService(Connection connection) : IBackupListService
             Backup = new Dto.BackupDto()
             {
                 ID = x.Backup.ID,
+                ExternalID = x.Backup.ExternalID,
                 Name = x.Backup.Name,
                 Description = x.Backup.Description,
                 IsTemporary = x.Backup.IsTemporary,
