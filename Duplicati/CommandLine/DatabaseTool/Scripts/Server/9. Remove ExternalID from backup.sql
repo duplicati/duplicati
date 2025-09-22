@@ -6,7 +6,7 @@ CREATE TABLE "Backup" (
     "Description" TEXT NOT NULL DEFAULT '',
     "Tags" TEXT NOT NULL,
     "TargetURL" TEXT NOT NULL,
-    "DBPath" TEXT NOT NULL,
+    "DBPath" TEXT NOT NULL
 );
 
 INSERT INTO "Backup"("ID", "Name", "Description", "Tags", "TargetURL", "DBPath")
