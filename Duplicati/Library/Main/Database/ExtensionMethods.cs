@@ -129,6 +129,25 @@ public static class ExtensionMethods
 
                 txt = txt.Substring(0, ix) + v + txt.Substring(ix + 1);
             }
+
+            var paramName = p.ParameterName;
+            if (string.IsNullOrEmpty(paramName))
+                continue;
+
+            string value;
+            if (p.Value == null || p.Value == DBNull.Value)
+                value = "NULL";
+            else if (p.Value is string)
+                value = Library.Utility.Utility.FormatInvariant($"\"{p.Value}\"");
+            else if (p.Value is DateTime dt)
+                value = Library.Utility.Utility.FormatInvariant($"\"{dt:O}\"");
+            else if (p.Value is byte[] bytes)
+                value = Library.Utility.Utility.FormatInvariant($"X'{BitConverter.ToString(bytes).Replace("-", "")}'");
+            else
+                value = Library.Utility.Utility.FormatInvariant($"{p.Value ?? "NULL"}");
+
+            // Replace all occurrences of the parameter (with word boundary)
+            txt = Regex.Replace(txt, $@"\B{Regex.Escape(paramName)}\b", value, RegexOptions.IgnoreCase);
         }
 
         return txt;
