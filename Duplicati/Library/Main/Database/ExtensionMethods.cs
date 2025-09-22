@@ -385,11 +385,8 @@ public static partial class ExtensionMethods
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or -1 if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, CancellationToken cancellationToken)
-    {
-        return await ExecuteScalarInt64Async(self, true, null, null, -1, cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public static Task<long> ExecuteScalarInt64Async(this SqliteCommand self, CancellationToken cancellationToken)
+        => ExecuteScalarInt64Async(self, true, null, null, -1, cancellationToken);
 
     /// <summary>
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
@@ -398,11 +395,8 @@ public static partial class ExtensionMethods
     /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or -1 if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, long defaultvalue, CancellationToken cancellationToken)
-    {
-        return await ExecuteScalarInt64Async(self, true, null, null, defaultvalue, cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public static Task<long> ExecuteScalarInt64Async(this SqliteCommand self, long defaultvalue, CancellationToken cancellationToken)
+        => ExecuteScalarInt64Async(self, true, null, null, defaultvalue, cancellationToken);
 
     /// <summary>
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
@@ -411,11 +405,8 @@ public static partial class ExtensionMethods
     /// <param name="writeLog">Whether to write a log entry.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or -1 if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, CancellationToken cancellationToken)
-    {
-        return await ExecuteScalarInt64Async(self, writeLog, null, null, -1, cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public static Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, CancellationToken cancellationToken)
+        => ExecuteScalarInt64Async(self, writeLog, null, null, -1, cancellationToken);
 
     /// <summary>
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
@@ -425,11 +416,8 @@ public static partial class ExtensionMethods
     /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, long defaultvalue, CancellationToken cancellationToken)
-    {
-        return await ExecuteScalarInt64Async(self, writeLog, null, null, defaultvalue, cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public static Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, long defaultvalue, CancellationToken cancellationToken)
+        => ExecuteScalarInt64Async(self, writeLog, null, null, defaultvalue, cancellationToken);
 
     /// <summary>
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
@@ -438,11 +426,8 @@ public static partial class ExtensionMethods
     /// <param name="cmd">The command text to execute.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, CancellationToken cancellationToken)
-    {
-        return await ExecuteScalarInt64Async(self, true, cmd, null, -1, cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public static Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, CancellationToken cancellationToken)
+        => ExecuteScalarInt64Async(self, true, cmd, null, -1, cancellationToken);
 
     /// <summary>
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
@@ -452,11 +437,8 @@ public static partial class ExtensionMethods
     /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, long defaultvalue, CancellationToken cancellationToken)
-    {
-        return await ExecuteScalarInt64Async(self, true, cmd, null, defaultvalue, cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public static Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, long defaultvalue, CancellationToken cancellationToken)
+        => ExecuteScalarInt64Async(self, true, cmd, null, defaultvalue, cancellationToken);
 
     /// <summary>
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
@@ -466,11 +448,8 @@ public static partial class ExtensionMethods
     /// <param name="values">The values to use as parameters.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, Dictionary<string, object?>? values, CancellationToken cancellationToken)
-    {
-        return await ExecuteScalarInt64Async(self, true, cmd, values, -1, cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public static Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, Dictionary<string, object?>? values, CancellationToken cancellationToken)
+        => ExecuteScalarInt64Async(self, true, cmd, values, -1, cancellationToken);
 
     /// <summary>
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
@@ -481,11 +460,8 @@ public static partial class ExtensionMethods
     /// <param name="defaultvalue">The default value to return if no rows are returned or the value cannot be converted.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, Dictionary<string, object?>? values, long defaultvalue, CancellationToken cancellationToken)
-    {
-        return await ExecuteScalarInt64Async(self, true, cmd, values, defaultvalue, cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public static Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string? cmd, Dictionary<string, object?>? values, long defaultvalue, CancellationToken cancellationToken)
+        => ExecuteScalarInt64Async(self, true, cmd, values, defaultvalue, cancellationToken);
 
     /// <summary>
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
@@ -496,11 +472,8 @@ public static partial class ExtensionMethods
     /// <param name="values">The values to set as parameters.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, string? cmd, Dictionary<string, object?>? values, CancellationToken cancellationToken)
-    {
-        return await ExecuteScalarInt64Async(self, writeLog, cmd, values, -1, cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public static Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, string? cmd, Dictionary<string, object?>? values, CancellationToken cancellationToken)
+        => ExecuteScalarInt64Async(self, writeLog, cmd, values, -1, cancellationToken);
 
     /// <summary>
     /// Executes the command asynchronously and returns the first column of the first row in the result set as an Int64.
@@ -801,13 +774,13 @@ public static partial class ExtensionMethods
             if (p.Value == null || p.Value == DBNull.Value)
                 v = "NULL";
             else if (p.Value is string)
-                v = $"\"{p.Value}\"";
+                v = Library.Utility.Utility.FormatInvariant($"\"{p.Value}\"");
             else if (p.Value is DateTime dt)
-                v = $"\"{dt:O}\"";
+                v = Library.Utility.Utility.FormatInvariant($"\"{dt:O}\"");
             else if (p.Value is byte[] bytes)
-                v = $"X'{BitConverter.ToString(bytes).Replace("-", "")}'";
+                v = Library.Utility.Utility.FormatInvariant($"X'{BitConverter.ToString(bytes).Replace("-", "")}'");
             else
-                v = p.Value.ToString() ?? "NULL";
+                v = p.Value?.FormatInvariant() ?? "NULL";
 
             // Replace all occurrences of the parameter (with word boundary)
             txt = Regex.Replace(txt, $@"\B{Regex.Escape(paramName)}\b", v, RegexOptions.IgnoreCase);
@@ -835,9 +808,7 @@ public static partial class ExtensionMethods
     /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
     /// <returns>The number of rows affected</returns>
     public static int ExecuteNonQuery(this IDbCommand self, string cmd)
-    {
-        return ExecuteNonQuery(self, true, cmd);
-    }
+        => ExecuteNonQuery(self, true, cmd);
 
     /// <summary>
     /// Executes the command and returns the number of rows affected.
@@ -847,9 +818,7 @@ public static partial class ExtensionMethods
     /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
     /// <returns>The number of rows affected</returns>
     public static int ExecuteNonQuery(this IDbCommand self, string cmd, Dictionary<string, object?> values)
-    {
-        return ExecuteNonQuery(self, true, cmd, values);
-    }
+        => ExecuteNonQuery(self, true, cmd, values);
 
     /// <summary>
     /// Executes the command and returns the number of rows affected.
@@ -906,9 +875,7 @@ public static partial class ExtensionMethods
     /// <param name="cmd">The command string to execute</param>
     /// <returns>The scalar value of the first row</returns>
     public static object? ExecuteScalar(this IDbCommand self, string cmd)
-    {
-        return ExecuteScalar(self, true, cmd);
-    }
+        => ExecuteScalar(self, true, cmd);
 
     /// <summary>
     /// Executes the command and returns the scalar value of the first row.
@@ -934,9 +901,7 @@ public static partial class ExtensionMethods
     /// <param name="defaultvalue">The default value to return if no value is found</param>
     /// <returns>The scalar int64 value of the first row as a string</returns>
     public static long ExecuteScalarInt64(this IDbCommand self, bool writeLog, long defaultvalue = -1)
-    {
-        return ExecuteScalarInt64(self, writeLog, null, defaultvalue);
-    }
+        => ExecuteScalarInt64(self, writeLog, null, defaultvalue);
 
     /// <summary>
     /// Executes the command and returns the scalar int64 value of the first row as a string.
@@ -945,9 +910,7 @@ public static partial class ExtensionMethods
     /// <param name="defaultvalue">The default value to return if no value is found</param>
     /// <returns>The scalar int64 value of the first row as a string</returns>
     public static long ExecuteScalarInt64(this IDbCommand self, long defaultvalue = -1)
-    {
-        return ExecuteScalarInt64(self, true, null, defaultvalue);
-    }
+        => ExecuteScalarInt64(self, true, null, defaultvalue);
 
     /// <summary>
     /// Executes the command and returns the scalar int64 value of the first row as a string.
@@ -970,9 +933,7 @@ public static partial class ExtensionMethods
     /// <param name="defaultvalue">The default value to return if no value is found</param>
     /// <returns>The scalar int64 value of the first row as a string</returns>
     public static long ExecuteScalarInt64(this IDbCommand self, string? cmd, long defaultvalue = -1)
-    {
-        return ExecuteScalarInt64(self, true, cmd, defaultvalue);
-    }
+        => ExecuteScalarInt64(self, true, cmd, defaultvalue);
 
     /// <summary>
     /// Executes the command and returns the scalar int64 value of the first row as a string.
@@ -1003,9 +964,7 @@ public static partial class ExtensionMethods
     /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
     /// <returns>A <see cref="IDataReader"/> instance</returns>
     public static IDataReader ExecuteReader(this IDbCommand self, string cmd, Dictionary<string, object?>? values)
-    {
-        return ExecuteReader(self, true, cmd, values);
-    }
+        => ExecuteReader(self, true, cmd, values);
 
 
     /// <summary>
@@ -1015,9 +974,7 @@ public static partial class ExtensionMethods
     /// <param name="cmd">The command string to execute</param>
     /// <returns>A <see cref="IDataReader"/> instance</returns>
     public static IDataReader ExecuteReader(this IDbCommand self, string cmd)
-    {
-        return ExecuteReader(self, true, cmd);
-    }
+        => ExecuteReader(self, true, cmd);
 
     /// <summary>
     /// Executes the command and returns a data reader.
@@ -1174,26 +1131,6 @@ public static partial class ExtensionMethods
 
         return cmd;
     }
-
-    /// <summary>
-    /// Creates the transaction for the given connection and executes a "BEGIN IMMEDIATE" command to ensure that the transaction can be comitted or rolled back.
-    /// This works around a quirk in SQLite where the transaction is not initialized until the first command is executed.
-    /// This means that if the transaction is rolled back or committed with no commands executed, it will fail with an exception.
-    /// </summary>
-    /// <param name="self">The connection to create the transaction on</param>
-    /// <returns>The transaction</returns>
-    //public static IDbTransaction BeginTransactionSafe(this IDbConnection self)
-    //{
-    //    var transaction = self.BeginTransaction();
-    //    // using (var cmd = self.CreateCommand(transaction, "BEGIN IMMEDIATE;"))
-    //    //     try { cmd.ExecuteNonQuery(); }
-    //    //     catch {
-    //             // ignore
-    //           }
-    //
-    //    return transaction;
-    //}
-
 
     /// <summary>
     /// Creates a command with the given command string, and adds parameters to fit the input

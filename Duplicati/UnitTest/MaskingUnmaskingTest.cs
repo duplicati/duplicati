@@ -166,7 +166,10 @@ public class BackupConfigMaskingTests
             Metadata = new Dictionary<string, string>()
         };
 
+        // Suppress as we are in test code
+#pragma warning disable SYSLIB0050 // Type or member is obsolete
         var conn = (Connection)FormatterServices.GetUninitializedObject(typeof(Connection));
+#pragma warning restore SYSLIB0050 // Type or member is obsolete
         var err = conn.ValidateBackup(backup, null);
 
         if (string.IsNullOrEmpty(err))
