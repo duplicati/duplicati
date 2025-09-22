@@ -36,6 +36,10 @@ namespace Duplicati.Library.Backend.Strings
         public static string StorageclassDescriptionShort { get { return LC.L(@"Specify storage class for creating a bucket"); } }
         public static string ProjectDescriptionLong { get { return LC.L(@"This option is only used when creating new buckets. Use this option to supply the project ID that the bucket is attached to. The project determines where usage charges are applied."); } }
         public static string ProjectDescriptionShort { get { return LC.L(@"Specify project for creating a bucket"); } }
+        public static string ServiceAccountJsonDescriptionShort { get { return LC.L(@"Service account JSON"); } }
+        public static string ServiceAccountJsonDescriptionLong { get { return LC.L(@"String with JSON credentials for a Google Cloud service account. When set, AuthID is not required."); } }
+        public static string ServiceAccountFileDescriptionShort { get { return LC.L(@"Service account JSON"); } }
+        public static string ServiceAccountFileDescriptionLong { get { return LC.L(@"Path to a file with JSON credentials for a Google Cloud service account. When set, AuthID is not required."); } }
     }
 
     internal static class GoogleDrive
