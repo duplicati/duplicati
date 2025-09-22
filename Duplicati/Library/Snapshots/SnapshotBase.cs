@@ -91,11 +91,13 @@ namespace Duplicati.Library.Snapshots
         {
             if (source.IsFolder)
             {
+                // Removing the null characters is a workaround for a bug in .NET core:
+                // https://github.com/dotnet/runtime/issues/49803
                 foreach (var f in ListFiles(source.Path))
-                    yield return new SnapshotSourceFileEntry(this, f, false, false);
+                    yield return new SnapshotSourceFileEntry(this, f.Trim('\0'), false, false);
 
                 foreach (var d in ListFolders(source.Path))
-                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(d), true, false);
+                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(d.Trim('\0')), true, false);
             }
         }
 
@@ -105,9 +107,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
         public virtual DateTime GetLastWriteTimeUtc(string localPath)
-        {
-            return File.GetLastWriteTimeUtc(localPath);
-        }
+            => File.GetLastWriteTimeUtc(localPath);
 
         /// <summary>
         /// Gets the last write time of a given file in UTC
@@ -115,9 +115,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
         public virtual DateTime GetCreationTimeUtc(string localPath)
-        {
-            return File.GetCreationTimeUtc(localPath);
-        }
+            => File.GetCreationTimeUtc(localPath);
 
         /// <summary>
         /// Opens a file for reading
@@ -125,9 +123,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>An open filestream that can be read</returns>
         public virtual Stream OpenRead(string localPath)
-        {
-            return File.Open(localPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        }
+            => File.Open(localPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
         /// <summary>
         /// Opens a file for reading
@@ -144,9 +140,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The length of the file</returns>
         public virtual long GetFileSize(string localPath)
-        {
-            return new FileInfo(localPath).Length;
-        }
+            => new FileInfo(localPath).Length;
 
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
@@ -161,9 +155,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The file attributes</returns>
         /// <param name="localPath">The file or folder to examine</param>
         public virtual FileAttributes GetAttributes(string localPath)
-        {
-            return File.GetAttributes(ConvertToSnapshotPath(localPath));
-        }
+            => File.GetAttributes(ConvertToSnapshotPath(localPath));
 
         /// <summary>
         /// Gets the metadata for the given file or folder
@@ -179,9 +171,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
         /// <param name="localPath">The file or folder to examine</param>
         public virtual bool IsBlockDevice(string localPath)
-        {
-            return false;
-        }
+            => false;
 
         /// <summary>
         /// Gets a unique hardlink target ID
@@ -189,9 +179,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The hardlink ID</returns>
         /// <param name="localPath">The file or folder to examine</param>
         public virtual string HardlinkTargetID(string localPath)
-        {
-            return null;
-        }
+            => null;
 
         /// <inheritdoc />
         public abstract string ConvertToLocalPath(string snapshotPath);
@@ -201,15 +189,11 @@ namespace Duplicati.Library.Snapshots
 
         /// <inheritdoc />
         public virtual bool FileExists(string localFilePath)
-        {
-            return File.Exists(ConvertToSnapshotPath(localFilePath));
-        }
+            => File.Exists(ConvertToSnapshotPath(localFilePath));
 
         /// <inheritdoc />
         public virtual bool DirectoryExists(string localFolderPath)
-        {
-            return Directory.Exists(ConvertToSnapshotPath(localFolderPath));
-        }
+            => Directory.Exists(ConvertToSnapshotPath(localFolderPath));
 
         #endregion
 
@@ -219,9 +203,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>All folders found in the folder</returns>
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected virtual string[] ListFolders(string localFolderPath)
-        {
-            return Directory.GetDirectories(localFolderPath);
-        }
+            => Directory.GetDirectories(localFolderPath);
 
         /// <summary>
         /// Lists all files in the given folder
@@ -229,9 +211,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>All folders found in the folder</returns>
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected virtual string[] ListFiles(string localFolderPath)
-        {
-            return Directory.GetFiles(localFolderPath);
-        }
+            => Directory.GetFiles(localFolderPath);
 
         #region IDisposable interface
 
