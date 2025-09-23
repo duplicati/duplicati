@@ -1042,6 +1042,8 @@ ON
                     SELECT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = @VolumeId
                     UNION ALL
                     SELECT ""Hash"", ""Size"" FROM ""DeletedBlock"" WHERE ""VolumeID"" = @VolumeId
+                    UNION ALL
+                    SELECT ""Hash"", ""Size"" FROM ""DuplicateBlock"" INNER JOIN ""Block"" ON ""DuplicateBlock"".""BlockID"" = ""Block"".""ID"" WHERE ""DuplicateBlock"".""VolumeID"" = @VolumeId
                 )
                 SELECT DISTINCT ""Hash"", ""Size"" FROM AllBlocks")
                 .SetParameterValue("@VolumeId", volumeid);
