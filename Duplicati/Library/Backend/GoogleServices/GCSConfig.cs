@@ -44,20 +44,9 @@ namespace Duplicati.Library.Backend.GoogleServices
 
         public IDictionary<string, string?> Execute(IDictionary<string, string?> options)
         {
-            options.TryGetValue(KEY_CONFIGTYPE, out var k);
-            if (string.IsNullOrWhiteSpace(k))
-                k = DEFAULT_CONFIG_TYPE_STR;
-
-            if (!Enum.TryParse<ConfigType>(k, true, out var ct))
-                ct = DEFAULT_CONFIG_TYPE;
-
-            switch (ct)
-            {
-                case ConfigType.StorageClasses:
-                    return WebApi.GoogleCloudStorage.KNOWN_GCS_STORAGE_CLASSES.ToDictionary((x) => x.Key, (y) => y.Value);
-                default:
-                    return WebApi.GoogleCloudStorage.KNOWN_GCS_LOCATIONS.ToDictionary((x) => x.Key, (y) => y.Value);
-            }
+            var ct = Utility.Utility.ParseEnumOption(options.AsReadOnly(), KEY_CONFIGTYPE, DEFAULT_CONFIG_TYPE);
+            GetLookups().TryGetValue(ct.ToString(), out var dict);
+            return dict ?? new Dictionary<string, string?>();
         }
 
         public string Key => "gcs-getconfig";
@@ -71,6 +60,13 @@ namespace Duplicati.Library.Backend.GoogleServices
         [
             new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.GCSConfig.ConfigTypeShort, Strings.GCSConfig.ConfigTypeLong, DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
         ];
+
+        public IDictionary<string, IDictionary<string, string?>> GetLookups()
+            => new Dictionary<string, IDictionary<string, string?>>()
+            {
+                { ConfigType.Locations.ToString(), WebApi.GoogleCloudStorage.KNOWN_GCS_LOCATIONS.ToDictionary((x) => x.Key, (y) => y.Value) },
+                { ConfigType.StorageClasses.ToString(), WebApi.GoogleCloudStorage.KNOWN_GCS_STORAGE_CLASSES.ToDictionary((x) => x.Key, (y) => y.Value) },
+            };
 
         #endregion
     }

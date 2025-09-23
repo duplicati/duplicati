@@ -47,6 +47,12 @@ namespace Duplicati.Library.Interface
         /// <returns>A list of output values</returns>
         IDictionary<string, string> Execute(IDictionary<string, string> options);
 
+        /// <summary>
+        /// Returns lookup data from the module, if any.
+        /// </summary>
+        /// <returns>A dictionary of lookup dictionaries</returns>
+        IDictionary<string, IDictionary<string, string>> GetLookups();
+
     }
 }
 

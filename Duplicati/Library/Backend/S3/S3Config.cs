@@ -43,26 +43,11 @@ namespace Duplicati.Library.Backend
 
         #region IWebModule implementation
 
-        public IDictionary<string, string> Execute(IDictionary<string, string> options)
+        public IDictionary<string, string> Execute(IDictionary<string, string?> options)
         {
-            options.TryGetValue(KEY_CONFIGTYPE, out var k);
-            if (string.IsNullOrWhiteSpace(k))
-                k = DEFAULT_CONFIG_TYPE_STR;
-
-            if (!Enum.TryParse<ConfigType>(k, true, out var ct))
-                ct = DEFAULT_CONFIG_TYPE;
-
-            switch (ct)
-            {
-                case ConfigType.RegionHosts:
-                    return S3.DEFAULT_S3_LOCATION_BASED_HOSTS;
-                case ConfigType.Regions:
-                    return S3.KNOWN_S3_LOCATIONS;
-                case ConfigType.StorageClasses:
-                    return S3.KNOWN_S3_STORAGE_CLASSES;
-                default:
-                    return S3.KNOWN_S3_PROVIDERS;
-            }
+            var ct = Utility.Utility.ParseEnumOption(options.AsReadOnly(), KEY_CONFIGTYPE, DEFAULT_CONFIG_TYPE);
+            GetLookups().TryGetValue(ct.ToString(), out var dict);
+            return dict ?? new Dictionary<string, string>();
         }
 
         public string Key => "s3-getconfig";
@@ -75,6 +60,15 @@ namespace Duplicati.Library.Backend
         [
             new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Config.ConfigTypeShort, Strings.S3Config.ConfigTypeLong, DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
         ];
+
+        public IDictionary<string, IDictionary<string, string?>> GetLookups()
+            => new Dictionary<string, IDictionary<string, string?>>()
+            {
+                { ConfigType.Providers.ToString(), S3.KNOWN_S3_PROVIDERS.ToDictionary((x) => x.Key, (y) => y.Value) },
+                { ConfigType.Regions.ToString(), S3.KNOWN_S3_LOCATIONS.ToDictionary((x) => x.Key, (y) => y.Value) },
+                { ConfigType.RegionHosts.ToString(), S3.DEFAULT_S3_LOCATION_BASED_HOSTS.ToDictionary((x) => x.Key, (y) => y.Value) },
+                { ConfigType.StorageClasses.ToString(), S3.KNOWN_S3_STORAGE_CLASSES.ToDictionary((x) => x.Key, (y) => y.Value) },
+            };
 
         #endregion
     }

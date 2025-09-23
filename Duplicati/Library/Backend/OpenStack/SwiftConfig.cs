@@ -38,22 +38,11 @@ namespace Duplicati.Library.Backend.OpenStack
         {
         }
 
-        public IDictionary<string, string> Execute(IDictionary<string, string> options)
+        public IDictionary<string, string?> Execute(IDictionary<string, string?> options)
         {
-            options.TryGetValue(KEY_CONFIGTYPE, out var k);
-            if (string.IsNullOrWhiteSpace(k))
-                k = DEFAULT_CONFIG_TYPE_STR;
-
-            if (!Enum.TryParse<ConfigType>(k, true, out var ct))
-                ct = DEFAULT_CONFIG_TYPE;
-
-            switch (ct)
-            {
-                case ConfigType.Versions:
-                    return OpenStackStorage.OpenstackVersions.ToDictionary((x) => x.Key, (y) => y.Value);
-                default:
-                    return OpenStackStorage.KnownOpenstackProviders.ToDictionary((x) => x.Key, (y) => y.Value);
-            }
+            var ct = Utility.Utility.ParseEnumOption(options.AsReadOnly(), KEY_CONFIGTYPE, DEFAULT_CONFIG_TYPE);
+            GetLookups().TryGetValue(ct.ToString(), out var dict);
+            return dict ?? new Dictionary<string, string?>();
         }
 
         public string Key => "openstack-getconfig";
@@ -65,5 +54,13 @@ namespace Duplicati.Library.Backend.OpenStack
         public IList<ICommandLineArgument> SupportedCommands => [
             new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.SwiftConfig.ConfigTypeOptionShort, Strings.SwiftConfig.ConfigTypeOptionLong, DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
         ];
+
+        public IDictionary<string, IDictionary<string, string?>> GetLookups()
+            => new Dictionary<string, IDictionary<string, string?>>()
+            {
+                { ConfigType.Providers.ToString(), OpenStackStorage.KnownOpenstackProviders.ToDictionary((x) => x.Key, (y) => y.Value) },
+                { ConfigType.Versions.ToString(), OpenStackStorage.OpenstackVersions.ToDictionary((x) => x.Key, (y) => y.Value) },
+            };
+
     }
 }
