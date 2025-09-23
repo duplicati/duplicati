@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 #nullable enable
@@ -186,7 +186,7 @@ namespace Duplicati.Library.Utility
                     streamLength = stream.Position;
                     isStreamPosition = true;
                 }
-                catch { } // 
+                catch { } //
             }
 
             return streamLength;
@@ -424,7 +424,17 @@ namespace Duplicati.Library.Utility
             return parent;
         }
 
-
+        /// <summary>
+        /// Generates a new GUID and returns it as a hex string (without hyphens).
+        /// </summary>
+        /// <remarks>The string is preformed using invariant culture.</remarks>
+        /// <returns>A hex string representation of a new GUID</returns>
+        public static string GetHexGuid()
+        {
+            return FormatInvariant(ByteArrayAsHexString(
+                Guid.NewGuid().ToByteArray()
+            ));
+        }
 
         /// <summary>
         /// Given a collection of unique folders, returns only parent-most folders
@@ -596,7 +606,7 @@ namespace Duplicati.Library.Utility
         {
             // Since StreamReader defaults to UTF8 and most text files will NOT be UTF8 without BOM,
             // we need to detect the encoding (at least that it's not UTF8).
-            // So we read the first 4096 bytes and try to decode them as UTF8. 
+            // So we read the first 4096 bytes and try to decode them as UTF8.
             var buffer = new byte[4096];
             using (var file = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
@@ -781,23 +791,23 @@ namespace Duplicati.Library.Utility
             return (T)(object)flags;
         }
 
-        /// <summary> 
-        /// Parses an option with int value, returning the default value if the option is not found or cannot be parsed 
-        /// </summary> 
-        /// <param name="options">The set of options to look for the setting in</param> 
-        /// <param name="value">The value to look for in the settings</param> 
-        /// <param name="default">default value</param> 
-        /// <returns></returns> 
+        /// <summary>
+        /// Parses an option with int value, returning the default value if the option is not found or cannot be parsed
+        /// </summary>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="default">default value</param>
+        /// <returns></returns>
         public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default)
             => options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default;
 
-        /// <summary> 
-        /// Parses an option with long value, returning the default value if the option is not found or cannot be parsed 
-        /// </summary> 
-        /// <param name="options">The set of options to look for the setting in</param> 
-        /// <param name="value">The value to look for in the settings</param> 
-        /// <param name="default">default value</param> 
-        /// <returns></returns> 
+        /// <summary>
+        /// Parses an option with long value, returning the default value if the option is not found or cannot be parsed
+        /// </summary>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="default">default value</param>
+        /// <returns></returns>
         public static long ParseLongOption(IReadOnlyDictionary<string, string?> options, string value, long @default)
             => options.TryGetValue(value, out var opt) && long.TryParse(opt ?? string.Empty, out var result) ? result : @default;
 
@@ -890,7 +900,7 @@ namespace Duplicati.Library.Utility
 
 
         /// <value>
-        /// Returns a value indicating if the filesystem, is case sensitive 
+        /// Returns a value indicating if the filesystem, is case sensitive
         /// </value>
         public static bool IsFSCaseSensitive
         {
@@ -1323,7 +1333,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The salted hash</returns>
         public static byte[] RepeatedHashWithSalt(byte[] data, byte[] salt, int repeats = 1200)
         {
-            // We avoid storing the passphrase directly, 
+            // We avoid storing the passphrase directly,
             // instead we salt and rehash repeatedly
             using (var h = System.Security.Cryptography.SHA256.Create())
             {
@@ -1450,7 +1460,7 @@ namespace Duplicati.Library.Utility
             else
             {
                 // Windows needs only needs " replaced with "",
-                // but is prone to %var% expansion when used in 
+                // but is prone to %var% expansion when used in
                 // immediate mode (i.e. from command prompt)
                 // Fortunately it does not expand when processes
                 // are started from within .Net
@@ -1661,6 +1671,16 @@ namespace Duplicati.Library.Utility
         /// <returns>The formatted string</returns>
         public static string FormatInvariant(this FormattableString formattable)
             => formattable.ToString(CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Formats the value using the invariant culture.
+        /// </summary>
+        /// <remarks>This is a shortcut for FormatInvariant("{0}", value).</remarks>
+        /// <typeparam name="T">The type of the value.</typeparam>
+        /// <param name="value">The value to format.</param>
+        /// <returns>The formatted string.</returns>
+        public static string FormatInvariant<T>(this T value)
+            => FormatInvariant("{0}", value);
 
         /// <summary>
         /// Performs the function with an additional timeout

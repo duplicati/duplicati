@@ -411,9 +411,9 @@ namespace Duplicati.Library.Main.Database
                     ""Name"" IN (
                         SELECT ""Name""
                         FROM ""Remotevolume""
-                        WHERE ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
+                        WHERE ""State"" IN ('{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Deleted)}', '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Deleting)}')
                     )
-                    AND NOT ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
+                    AND NOT ""State"" IN ('{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Deleted)}', '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Deleting)}')
             ", token)
                 .ConfigureAwait(false);
 
@@ -432,7 +432,7 @@ namespace Duplicati.Library.Main.Database
             dbnew.m_removedeletedremotevolumeCommand = await connection.CreateCommandAsync($@"
                 DELETE FROM ""Remotevolume""
                 WHERE
-                    ""State"" == '{RemoteVolumeState.Deleted}'
+                    ""State"" == '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Deleted)}'
                     AND (
                         ""DeleteGraceTime"" < @Now
                         OR LENGTH(""DeleteGraceTime"") > 12
@@ -681,7 +681,7 @@ namespace Duplicati.Library.Main.Database
                     {
                         if (v >= 0 && v < filesets.Length)
                         {
-                            var argName = "@Fileset" + v;
+                            var argName = $"@Fileset{Library.Utility.Utility.FormatInvariant(v)}";
                             args.Add(argName, filesets[v].Key);
                             qs.Append(argName);
                             qs.Append(',');
@@ -919,10 +919,10 @@ namespace Duplicati.Library.Main.Database
             if (names == null || !names.Any()) return;
 
             await using var deletecmd = m_connection.CreateCommand(m_rtr);
-            string temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            var volidstable = "DelVolSetIds-" + temptransguid;
-            var blocksetidstable = "DelBlockSetIds-" + temptransguid;
-            var filesetidstable = "DelFilesetIds-" + temptransguid;
+            string temptransguid = Library.Utility.Utility.GetHexGuid();
+            var volidstable = $"DelVolSetIds-{temptransguid}";
+            var blocksetidstable = $"DelBlockSetIds-{temptransguid}";
+            var filesetidstable = $"DelFilesetIds-{temptransguid}";
 
             // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
             await deletecmd.ExecuteNonQueryAsync($@"
@@ -1731,6 +1731,7 @@ namespace Duplicati.Library.Main.Database
             if (real_count != unique_count)
                 throw new DatabaseInconsistencyException($"Found {real_count} blocklist hashes, but there should be {unique_count}. Run repair to fix it.");
 
+            var blocksize_per_hashsize = Library.Utility.Utility.FormatInvariant(blocksize / hashsize);
             var itemswithnoblocklisthash = await cmd.ExecuteScalarInt64Async($@"
                 SELECT COUNT(*)
                 FROM (
@@ -1738,7 +1739,7 @@ namespace Duplicati.Library.Main.Database
                     FROM (
                         SELECT
                             ""N"".""BlocksetID"",
-                            ((""N"".""BlockCount"" + {blocksize / hashsize} - 1) / {blocksize / hashsize}) AS ""BlocklistHashCountExpected"",
+                            ((""N"".""BlockCount"" + {blocksize_per_hashsize} - 1) / {blocksize_per_hashsize}) AS ""BlocklistHashCountExpected"",
                             CASE
                                 WHEN ""G"".""BlocklistHashCount"" IS NULL
                                 THEN 0
@@ -2050,6 +2051,8 @@ namespace Duplicati.Library.Main.Database
                     SELECT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = @VolumeId
                     UNION ALL
                     SELECT ""Hash"", ""Size"" FROM ""DeletedBlock"" WHERE ""VolumeID"" = @VolumeId
+                    UNION ALL
+                    SELECT ""Hash"", ""Size"" FROM ""DuplicateBlock"" INNER JOIN ""Block"" ON ""DuplicateBlock"".""BlockID"" = ""Block"".""ID"" WHERE ""DuplicateBlock"".""VolumeID"" = @VolumeId
                 )
                 SELECT DISTINCT ""Hash"", ""Size"" FROM AllBlocks
             ", token)
@@ -2512,7 +2515,7 @@ namespace Duplicati.Library.Main.Database
             /// <param name="db">The database to use for creating the temporary table.</param>
             private FilteredFilenameTable(LocalDatabase db)
             {
-                Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                Tablename = $"Filenames-{Library.Utility.Utility.GetHexGuid()}";
                 m_db = db;
             }
 
@@ -2607,7 +2610,7 @@ namespace Duplicati.Library.Main.Database
                         if (sb.Length != 0)
                             sb.Append(" OR ");
 
-                        var argName = $"@Arg{args.Count}";
+                        var argName = $"@Arg{Library.Utility.Utility.FormatInvariant(args.Count)}";
                         if (type == FilterType.Wildcard)
                         {
                             sb.Append(@$"""Path"" LIKE {argName}");
@@ -2965,8 +2968,8 @@ namespace Duplicati.Library.Main.Database
                         FROM ""FilesetEntry""
                     )
                     AND (
-                        ""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}'
-                        OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}'
+                        ""RemoteVolume"".""State"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Uploading)}'
+                        OR ""RemoteVolume"".""State"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeState.Temporary)}'
                     )
             ", token)
                 .ConfigureAwait(false);

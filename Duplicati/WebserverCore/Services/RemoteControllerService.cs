@@ -102,5 +102,6 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
     {
         Disable();
         connection.ApplicationSettings.RemoteControlConfig = string.Empty;
+        connection.ApplicationSettings.AdditionalReportUrl = string.Empty;
     }
 }

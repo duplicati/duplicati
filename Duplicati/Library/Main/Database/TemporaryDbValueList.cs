@@ -56,7 +56,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// <summary>
     /// The table to use.
     /// </summary>
-    private readonly string _tableName = $"TemporaryList-{Guid.NewGuid():N}";
+    private readonly string _tableName = $"TemporaryList-{Library.Utility.Utility.GetHexGuid()}";
 
     /// <summary>
     /// Flag indicating if the object has been disposed.
@@ -211,7 +211,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
         _isTable = true;
         foreach (var slice in _values.Chunk(LocalDatabase.CHUNK_SIZE))
         {
-            var parameterNames = slice.Select((_, i) => $"@p{i}").ToArray();
+            var parameterNames = slice.Select((_, i) => $"@p{Library.Utility.Utility.FormatInvariant(i)}").ToArray();
             var sql = $@"
                 INSERT INTO ""{_tableName}"" (""Value"")
                 VALUES {string.Join(", ", parameterNames.Select(p => $"({p})"))}

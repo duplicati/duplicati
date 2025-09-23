@@ -32,7 +32,6 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         private static readonly Regex authorizationHeaderRemover = new Regex(@"Authorization:\s*Bearer\s+\S+", RegexOptions.IgnoreCase);
 
         private readonly HttpResponseMessage? responseMessage;
-        private readonly HttpWebResponse? webResponse;
 
         public MicrosoftGraphException(HttpResponseMessage response)
             : this(string.Format("{0}: {1} error from request {2}", response.StatusCode, response.ReasonPhrase, response.RequestMessage?.RequestUri), response)
@@ -44,26 +43,15 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         {
         }
 
-        public MicrosoftGraphException(string message, HttpResponseMessage response, Exception? innerException)
-            : base(BuildFullMessage(message, response), innerException)
+        public MicrosoftGraphException(string message, HttpResponseMessage response, string? content)
+            : this(message, response, content, null)
+        {
+        }
+
+        public MicrosoftGraphException(string message, HttpResponseMessage response, string? content, Exception? innerException)
+            : base(BuildFullMessage(message, response, content), innerException)
         {
             this.responseMessage = response;
-        }
-
-        public MicrosoftGraphException(HttpWebResponse response)
-            : this(string.Format("{0}: {1} error from request {2}", response.StatusCode, response.StatusDescription, response.ResponseUri), response)
-        {
-        }
-
-        public MicrosoftGraphException(string message, HttpWebResponse response)
-            : this(message, response, null)
-        {
-        }
-
-        public MicrosoftGraphException(string message, HttpWebResponse response, Exception? innerException)
-            : base(BuildFullMessage(message, response), innerException)
-        {
-            this.webResponse = response;
         }
 
         public HttpStatusCode StatusCode
@@ -72,59 +60,44 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
             {
                 if (responseMessage != null)
                     return responseMessage.StatusCode;
-                if (webResponse != null)
-                    return webResponse.StatusCode;
                 return HttpStatusCode.InternalServerError;
             }
         }
 
-        protected static string? ResponseToString(HttpResponseMessage response)
+        protected static string? ResponseToString(HttpResponseMessage response, string? content)
         {
             if (response == null)
                 return null;
 
-            // Start to read the content
-            using (Task<string> content = response.Content.ReadAsStringAsync())
+            try
             {
-                // Since the exception message may be saved / sent in logs, we want to prevent the authorization header from being included.
-                // it wouldn't be as bad as recording the username/password in logs, since the token will expire, but it doesn't hurt to be safe.
-                // So we replace anything in the request that looks like the auth header with a safe version.
-                var requestMessage = response.RequestMessage == null
-                    ? ""
-                    : authorizationHeaderRemover.Replace(response.RequestMessage.ToString(), "Authorization: Bearer ABC...XYZ");
-
-                return string.Format("{0}\n{1}\n{2}", requestMessage, response, PrettifyJson(content.Await()));
+                // Try to read the contents, but not if we already have it
+                if (string.IsNullOrEmpty(content))
+                    content = PrettifyJson(response.Content.ReadAsStringAsync().Await());
             }
+            catch (Exception ex)
+            {
+                content = $"<error reading body>: {ex.Message}";
+            }
+
+            // Prevent leaking any authorization headers
+            var requestMessage = response.RequestMessage == null
+                ? ""
+                : authorizationHeaderRemover.Replace(response.RequestMessage.ToString(), "Authorization: Bearer ABC...XYZ");
+            return string.Format("{0}\n{1}\n{2}", requestMessage, response, content);
+
         }
 
-        private static string BuildFullMessage(string message, HttpResponseMessage response)
+        private static string BuildFullMessage(string message, HttpResponseMessage response, string? content)
         {
             if (response != null)
             {
-                return string.Format("{0}\n{1}", message, ResponseToString(response));
+                return string.Format("{0}\n{1}", message, ResponseToString(response, content));
             }
             else
             {
                 return message;
             }
-        }
-
-        protected static string? ResponseToString(HttpWebResponse response)
-        {
-            if (response == null)
-                return null;
-
-            // Start to read the content
-            using (var responseStream = response.GetResponseStream())
-            using (var textReader = new StreamReader(responseStream))
-                return string.Format("{0}\n{1}", response, PrettifyJson(textReader.ReadToEnd()));
-        }
-
-        private static string BuildFullMessage(string message, HttpWebResponse response)
-        {
-            if (response == null)
-                return message;
-            return string.Format("{0}\n{1}", message, ResponseToString(response));
         }
 
         private static string PrettifyJson(string json)
@@ -157,11 +130,6 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
             : base(string.Format("Item at {0} was not found", response.RequestMessage?.RequestUri?.ToString() ?? "<unknown>"), response)
         {
         }
-
-        public DriveItemNotFoundException(HttpWebResponse response)
-            : base(string.Format("Item at {0} was not found", response.ResponseUri?.ToString() ?? "<unknown>"), response)
-        {
-        }
     }
 
     public class UploadSessionException : MicrosoftGraphException
@@ -174,20 +142,7 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
             : base(
                   string.Format("Error uploading fragment {0} of {1} for {2}", fragment, fragmentCount, originalResponse.RequestMessage?.RequestUri?.ToString() ?? "<unknown>"),
                   originalResponse,
-                  fragmentException)
-        {
-            this.Fragment = fragment;
-            this.FragmentCount = fragmentCount;
-        }
-
-        public UploadSessionException(
-            HttpWebResponse originalResponse,
-            int fragment,
-            int fragmentCount,
-            Exception fragmentException)
-            : base(
-                  string.Format("Error uploading fragment {0} of {1} for {2}", fragment, fragmentCount, originalResponse.ResponseUri?.ToString() ?? "<unknown>"),
-                  originalResponse,
+                  null,
                   fragmentException)
         {
             this.Fragment = fragment;

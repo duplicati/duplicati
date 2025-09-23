@@ -36,7 +36,7 @@ public sealed class S3Tests : BaseTest
     {
         return TestS3WithClient("aws");
     }
-    
+
     /// <summary>
     /// Perform tests using Minio Client
     /// </summary>
@@ -46,7 +46,7 @@ public sealed class S3Tests : BaseTest
     {
         return TestS3WithClient("minio");
     }
-    
+
     /// <summary>
     /// Performs tests with selected client. The S3 tests don't have any additional parameters to be set or tested.
     /// </summary>
@@ -55,22 +55,22 @@ public sealed class S3Tests : BaseTest
     private Task TestS3WithClient(string client)
     {
         CheckRequiredEnvironment([
-            "TESTCREDENTIAL_S3_KEY", 
+            "TESTCREDENTIAL_S3_KEY",
             "TESTCREDENTIAL_S3_SECRET",
             "TESTCREDENTIAL_S3_BUCKETNAME",
             "TESTCREDENTIAL_S3_REGION"
-        ]); 
-        
-        Console.WriteLine( $"s3://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_BUCKETNAME")}/?s3-location-constraint={Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_REGION")}&s3-storage-class=&s3-client={client}&auth-username={Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_KEY")}&auth-password={Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_SECRET")}");
+        ]);
+
+        var testUri = $"s3://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_BUCKETNAME")}/?s3-location-constraint={Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_REGION")}&s3-storage-class=&s3-client={client}&auth-username={Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_KEY")}&auth-password={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_SECRET")!)}";
         var exitCode = CommandLine.BackendTester.Program.Main(
             new[]
             {
-                $"s3://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_BUCKETNAME")}/?s3-location-constraint={Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_REGION")}&s3-storage-class=&s3-client={client}&auth-username={Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_KEY")}&auth-password={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_SECRET")!)}"
+                testUri
             }.Concat(Parameters.GlobalTestParameters).ToArray());
 
         if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
 
         return Task.CompletedTask;
     }
-    
+
 }

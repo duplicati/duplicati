@@ -98,8 +98,7 @@ public class BackupGet : IEndpointV1
         var scheduleId = connection.GetScheduleIDsFromTags(new string[] { "ID=" + bk.ID });
         var schedule = scheduleId.Any() ? connection.GetSchedule(scheduleId.First()) : null;
         var sourcenames = SpecialFolders.GetSourceNames(bk);
-
-        //TODO: Filter out the password in both settings and the target url
+        bk.MaskSensitiveInformation();
 
         return new GetBackupResultDto(
             schedule == null ? null : new Dto.ScheduleDto()
@@ -115,6 +114,7 @@ public class BackupGet : IEndpointV1
             new Dto.BackupDto()
             {
                 ID = bk.ID,
+                ExternalID = bk.ExternalID,
                 Name = bk.Name,
                 Sources = bk.Sources,
                 Settings = bk.Settings?.Select(x => new Dto.SettingDto()
@@ -236,8 +236,7 @@ public class BackupGet : IEndpointV1
 
     public static void RemovePasswords(IBackup backup)
     {
-        backup.SanitizeSettings();
-        backup.SanitizeTargetUrl();
+        backup.RemoveSensitiveInformation();
     }
 
     private static Dto.ExportCommandlineDto ExecuteGetExportCmdline(Connection connection, IBackup backup, bool exportPasswords)

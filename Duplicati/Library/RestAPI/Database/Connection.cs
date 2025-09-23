@@ -43,7 +43,7 @@ namespace Duplicati.Server.Database
         /// <summary>
         /// The placeholder for passwords in the UI
         /// </summary>
-        public const string PASSWORD_PLACEHOLDER = "**********";
+        public const string PASSWORD_PLACEHOLDER = "***************";
 
         private readonly IDbConnection m_connection;
         private readonly IDbCommand m_errorcmd;
@@ -76,6 +76,8 @@ namespace Duplicati.Server.Database
                     ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD
                 ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        public static IReadOnlySet<string> PasswordFieldNames => _encryptedFields;
 
         public Connection(IDbConnection connection, bool disableFieldEncryption, EncryptedFieldHelper.KeyInstance? key, string dataFolder, Action startOrStopUsageReporter)
         {
@@ -541,6 +543,11 @@ namespace Duplicati.Server.Database
             if (string.IsNullOrWhiteSpace(item.TargetURL))
                 return "Missing a target";
 
+            if (item.TargetURL.Contains(PASSWORD_PLACEHOLDER))
+                return "TargetURL contains password placeholder value";
+            if (item.Settings != null && item.Settings.Any(x => PASSWORD_PLACEHOLDER.Equals(x.Value)))
+                return "Settings contains password placeholder value";
+
             if (item.Sources == null || item.Sources.Any(x => string.IsNullOrWhiteSpace(x)) || item.Sources.Length == 0)
                 return "Invalid source list";
 
@@ -688,7 +695,7 @@ namespace Duplicati.Server.Database
                             if (update)
                                 cmd.SetCommandAndParameters(@"UPDATE ""Backup"" SET ""Name""=@Name, ""Description""=@Description, ""Tags""=@Tags, ""TargetURL""=@TargetUrl WHERE ""ID""=@Id");
                             else
-                                cmd.SetCommandAndParameters(@"INSERT INTO ""Backup"" (""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (@Name,@Description,@Tags,@TargetUrl,@DbPath)");
+                                cmd.SetCommandAndParameters(@"INSERT INTO ""Backup"" (""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (@Name,@ExternalID,@Description,@Tags,@TargetUrl,@DbPath)");
                         },
                         (cmd, n) =>
                         {
@@ -705,7 +712,9 @@ namespace Duplicati.Server.Database
                             if (update)
                                 cmd.SetParameterValue("@Id", item.ID);
                             else
-                                cmd.SetParameterValue("@DbPath", n.DBPath);
+                                cmd.SetParameterValue("@DbPath", n.DBPath)
+                                    .SetParameterValue("@ExternalID", n.ExternalID ?? "");
+
                         });
 
                     if (!update)
@@ -883,12 +892,13 @@ namespace Duplicati.Server.Database
                         {
                             ID = ConvertToInt64(rd, 0).ToString(),
                             Name = ConvertToString(rd, 1),
-                            Description = ConvertToString(rd, 2),
-                            Tags = (ConvertToString(rd, 3) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                            TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 4), m_key),
-                            DBPath = ConvertToString(rd, 5),
+                            ExternalID = ConvertToString(rd, 2),
+                            Description = ConvertToString(rd, 3),
+                            Tags = (ConvertToString(rd, 4) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
+                            TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 5), m_key),
+                            DBPath = ConvertToString(rd, 6),
                         },
-                        cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" "))
+                        cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" "))
                         .ToArray();
 
                     foreach (var n in lst)

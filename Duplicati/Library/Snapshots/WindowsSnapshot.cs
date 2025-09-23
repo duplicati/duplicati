@@ -55,7 +55,7 @@ namespace Duplicati.Library.Snapshots
         /// The default snapshot query provider
         /// </summary>
         public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER =
-            WindowsSnapshotProvider.Vanara;
+            WindowsSnapshotProvider.AlphaVSS;
 
         /// <summary>
         /// The tag used for logging messages

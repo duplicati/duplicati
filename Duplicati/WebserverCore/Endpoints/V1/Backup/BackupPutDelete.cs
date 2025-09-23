@@ -49,15 +49,6 @@ public class BackupPutDelete : IEndpointV1
     private static IBackup GetBackup(Connection connection, string id)
         => connection.GetBackup(id) ?? throw new NotFoundException("Backup not found");
 
-    private class WrappedBackup : Server.Database.Backup
-    {
-        public string? DBPathSetter
-        {
-            get => DBPath;
-            set => SetDBPath(value);
-        }
-    }
-
     private static void ExecutePut(IBackup existing, Connection connection, Dto.BackupAndScheduleInputDto input)
     {
         // TODO: This method and "POST /backups" are 99% identical
@@ -70,14 +61,13 @@ public class BackupPutDelete : IEndpointV1
 
         try
         {
-            var backup = new WrappedBackup()
+            var backup = new Server.Database.Backup()
             {
                 ID = existing.ID,
                 Name = input.Backup.Name,
                 Description = input.Backup.Description,
                 Tags = input.Backup.Tags,
                 TargetURL = input.Backup.TargetURL,
-                DBPathSetter = null,
                 Sources = input.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
                 {
@@ -113,11 +103,11 @@ public class BackupPutDelete : IEndpointV1
                 if (connection.Backups.Any(x => x.Name.Equals(backup.Name, StringComparison.OrdinalIgnoreCase) && x.ID != backup.ID))
                     throw new ConflictException($"There already exists a backup with the name: {backup.Name}");
 
+                backup.UnmaskSensitiveInformation(existing);
                 var err = connection.ValidateBackup(backup, schedule);
                 if (!string.IsNullOrWhiteSpace(err))
                     throw new BadRequestException(err);
 
-                //TODO: Merge in real passwords where the placeholder is found
                 connection.AddOrUpdateBackupAndSchedule(backup, schedule);
             }
         }

@@ -33,6 +33,10 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         string ID { get; set; }
         /// <summary>
+        /// An external ID for tracking the backup, or null if not set
+        /// </summary>
+        string ExternalID { get; set; }
+        /// <summary>
         /// The backup name
         /// </summary>
         string Name { get; set; }
@@ -78,9 +82,15 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         bool IsTemporary { get; }
 
-        void SanitizeTargetUrl();
+        /// <summary>
+        /// Removes sensitive information from the backup settings and target URL
+        /// </summary>
+        void RemoveSensitiveInformation();
 
-        void SanitizeSettings();
+        /// <summary>
+        /// Masks sensitive information in the backup settings and target URL
+        /// </summary>
+        void MaskSensitiveInformation();
     }
 }
 

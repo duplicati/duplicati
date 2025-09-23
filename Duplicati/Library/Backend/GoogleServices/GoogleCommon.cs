@@ -45,7 +45,7 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// <param name="readWriteTimeout">The read write timeout.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Tuple with the range and the response.</returns>
-        private static async Task<(long, T? Response)> QueryUploadRange<T>(OAuthHelperHttpClient oauth, string uploaduri, long streamlength, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancellationToken)
+        private static async Task<(long, T? Response)> QueryUploadRange<T>(JsonWebHelperHttpClient oauth, string uploaduri, long streamlength, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancellationToken)
             where T : class
         {
             using var req = await oauth.CreateRequestAsync(uploaduri, HttpMethod.Put, cancellationToken);
@@ -100,7 +100,7 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// <param name="method">The HTTP Method.</param>
         /// <typeparam name="TRequest">The type of data to upload as metadata.</typeparam>
         /// <typeparam name="TResponse">The type of data returned from the upload.</typeparam>
-        public static async Task<TResponse> ChunkedUploadWithResumeAsync<TRequest, TResponse>(OAuthHelperHttpClient oauth, TRequest requestdata, string url, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancelToken, HttpMethod method)
+        public static async Task<TResponse> ChunkedUploadWithResumeAsync<TRequest, TResponse>(JsonWebHelperHttpClient oauth, TRequest requestdata, string url, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancelToken, HttpMethod method)
             where TRequest : class
             where TResponse : class
         {
@@ -135,7 +135,7 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// <param name="shortTimeout">The short request timeout.</param>
         /// <param name="readWriteTimeout">The read write timeout.</param>
         /// <typeparam name="T">The type of data in the response.</typeparam>
-        private static async Task<T> ChunkedUploadAsync<T>(OAuthHelperHttpClient oauth, string uploaduri, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancelToken)
+        private static async Task<T> ChunkedUploadAsync<T>(JsonWebHelperHttpClient oauth, string uploaduri, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancelToken)
             where T : class
         {
             var queryRange = false;
