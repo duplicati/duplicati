@@ -17,6 +17,7 @@
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.67.0" />    
   </ItemGroup>
 
 </Project>

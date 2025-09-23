@@ -24,6 +24,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
+using Google.Apis.Auth.OAuth2;
 using System.Net;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
@@ -40,11 +41,15 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         private const string LOCATION_OPTION = "gcs-location";
         private const string STORAGECLASS_OPTION = "gcs-storage-class";
+        private const string SERVICE_ACCOUNT_JSON_OPTION = "gcs-service-account-json";
+        private const string SERVICE_ACCOUNT_FILE_OPTION = "gcs-service-account-file";
+
+        private const string CREDENTIAL_SCOPE = "https://www.googleapis.com/auth/devstorage.read_write";
 
         private readonly string m_bucket;
         private readonly string m_prefix;
         private readonly string? m_project;
-        private readonly OAuthHelperHttpClient m_oauth;
+        private readonly JsonWebHelperHttpClient m_oauth;
 
         private readonly string? m_location;
         private readonly string? m_storage_class;
@@ -69,16 +74,32 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             if (m_prefix.StartsWith("/", StringComparison.Ordinal))
                 m_prefix = m_prefix.Substring(1);
 
-            var authId = AuthIdOptionsHelper.Parse(options)
-                .RequireCredentials(TOKEN_URL);
 
+            var serviceAccountFile = options.GetValueOrDefault(SERVICE_ACCOUNT_FILE_OPTION);
+            var serviceAccountJson = options.GetValueOrDefault(SERVICE_ACCOUNT_JSON_OPTION);
             m_timeouts = TimeoutOptionsHelper.Parse(options);
             m_project = options.GetValueOrDefault(PROJECT_OPTION);
             m_location = options.GetValueOrDefault(LOCATION_OPTION);
             m_storage_class = options.GetValueOrDefault(STORAGECLASS_OPTION);
 
-            m_oauth = new OAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl);
-            m_oauth.AutoAuthHeader = true;
+            if (!string.IsNullOrWhiteSpace(serviceAccountJson))
+            {
+                m_oauth = new ServiceAccountHttpClient(GoogleCredential.FromJson(serviceAccountJson).CreateScoped(CREDENTIAL_SCOPE));
+            }
+            else if (!string.IsNullOrWhiteSpace(serviceAccountFile))
+            {
+                m_oauth = new ServiceAccountHttpClient(GoogleCredential.FromFile(serviceAccountFile).CreateScoped(CREDENTIAL_SCOPE));
+            }
+            else
+            {
+                var authId = AuthIdOptionsHelper.Parse(options)
+    .RequireCredentials(TOKEN_URL);
+                var oauth = new OAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl)
+                {
+                    AutoAuthHeader = true
+                };
+                m_oauth = oauth;
+            }
         }
 
 
@@ -222,6 +243,8 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.LocationDescriptionShort, Strings.GoogleCloudStorage.LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(STORAGECLASS_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.StorageclassDescriptionShort, Strings.GoogleCloudStorage.StorageclassDescriptionLong(storageClasses.ToString())),
                     .. AuthIdOptionsHelper.GetOptions(TOKEN_URL),
+                    new CommandLineArgument(SERVICE_ACCOUNT_JSON_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionLong),
+                    new CommandLineArgument(SERVICE_ACCOUNT_FILE_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionLong),
                     new CommandLineArgument(PROJECT_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ProjectDescriptionShort, Strings.GoogleCloudStorage.ProjectDescriptionLong),
                     .. TimeoutOptionsHelper.GetOptions(),
                 ];
