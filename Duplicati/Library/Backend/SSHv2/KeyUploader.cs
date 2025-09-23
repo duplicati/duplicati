@@ -147,6 +147,9 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(OPTION_KEY, CommandLineArgument.ArgumentType.String, Strings.KeyUploader.PubkeyShort, Strings.KeyUploader.PubkeyLong),
         }.Union(new SSHv2().SupportedCommands).ToList();
 
+        public IDictionary<string, IDictionary<string, string?>> GetLookups()
+            => new Dictionary<string, IDictionary<string, string?>>();
+
         #endregion
     }
 }

@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Server.Serialization.Interface;
 
@@ -87,6 +88,7 @@ namespace Duplicati.Server.Serializable
                 this.Description = module.Description;
                 this.DisplayName = module.DisplayName;
                 this.Options = module.SupportedCommands?.ToArray() ?? [];
+                this.Lookups = module.GetLookups();
             }
 
             /// <summary>
@@ -116,6 +118,10 @@ namespace Duplicati.Server.Serializable
             /// The options supported by the module
             /// </summary>
             public Library.Interface.ICommandLineArgument[] Options { get; private set; }
+            /// <summary>
+            /// The lookups supported by the module
+            /// </summary>
+            public IDictionary<string, IDictionary<string, string>> Lookups { get; private set; }
         }
 
         /// <summary>

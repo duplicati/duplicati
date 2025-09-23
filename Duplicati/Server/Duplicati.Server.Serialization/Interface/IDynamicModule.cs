@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Collections.Generic;
+
 namespace Duplicati.Server.Serialization.Interface
 {
     /// <summary>
@@ -42,7 +44,11 @@ namespace Duplicati.Server.Serialization.Interface
         /// <summary>
         /// The options supported by the module
         /// </summary>
-        Duplicati.Library.Interface.ICommandLineArgument[] Options { get; }
+        Library.Interface.ICommandLineArgument[] Options { get; }
+        /// <summary>
+        /// The lookups supported by the module
+        /// </summary>
+        IDictionary<string, IDictionary<string, string>> Lookups { get; }
     }
 }
 

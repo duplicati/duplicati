@@ -71,7 +71,7 @@ public class OpenStackStorage : IStreamingBackend
     private readonly OpenStackWebHelper m_helper;
     private OpenStackAuthResponse.TokenClass? m_accessToken;
 
-    public static readonly KeyValuePair<string, string>[] KnownOpenstackProviders =
+    public static readonly KeyValuePair<string, string?>[] KnownOpenstackProviders =
     [
         new("Rackspace US", "https://identity.api.rackspacecloud.com/v2.0"),
         new("Rackspace UK", "https://lon.identity.api.rackspacecloud.com/v2.0"),
@@ -88,7 +88,7 @@ public class OpenStackStorage : IStreamingBackend
         new("Catalyst Cloud - nz-por-1 (NZ)", "https://api.nz-por-1.catalystcloud.io:5000/v3")
     ];
 
-    public static readonly KeyValuePair<string, string>[] OpenstackVersions =
+    public static readonly KeyValuePair<string, string?>[] OpenstackVersions =
     [
         new("v2.0", "v2"),
         new("v3", "v3")

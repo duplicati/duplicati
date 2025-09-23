@@ -107,6 +107,9 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public IDictionary<string, IDictionary<string, string?>> GetLookups()
+            => new Dictionary<string, IDictionary<string, string?>>();
+
         private static void ValidateArgument(string? arg, string type)
         {
             if (string.IsNullOrWhiteSpace(arg))

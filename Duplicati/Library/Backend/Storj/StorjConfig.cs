@@ -48,22 +48,20 @@ namespace Duplicati.Library.Backend.Storj
             new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, LC.L("The config to get"), LC.L("Provide different config values"), DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
         ];
 
-        public IDictionary<string, string> Execute(IDictionary<string, string> options)
+        public IDictionary<string, string?> Execute(IDictionary<string, string?> options)
         {
-            options.TryGetValue(KEY_CONFIGTYPE, out var k);
-            if (string.IsNullOrWhiteSpace(k))
-                k = DEFAULT_CONFIG_TYPE_STR;
-
-            if (!Enum.TryParse<ConfigType>(k, true, out var ct))
-                ct = DEFAULT_CONFIG_TYPE;
-
-            return ct switch
-            {
-                ConfigType.Satellites => Storj.KNOWN_STORJ_SATELLITES,
-                ConfigType.AuthenticationMethods => Storj.KNOWN_AUTHENTICATION_METHODS,
-                _ => Storj.KNOWN_STORJ_SATELLITES,
-            };
+            var ct = Utility.Utility.ParseEnumOption(options.AsReadOnly(), KEY_CONFIGTYPE, DEFAULT_CONFIG_TYPE);
+            GetLookups().TryGetValue(ct.ToString(), out var dict);
+            return dict ?? new Dictionary<string, string?>();
         }
+
+        public IDictionary<string, IDictionary<string, string?>> GetLookups()
+            => new Dictionary<string, IDictionary<string, string?>>()
+            {
+                { ConfigType.Satellites.ToString(), Storj.KNOWN_STORJ_SATELLITES.ToDictionary((x) => x.Key, (y) => y.Value) },
+                { ConfigType.AuthenticationMethods.ToString(), Storj.KNOWN_AUTHENTICATION_METHODS.ToDictionary((x) => x.Key, (y) => y.Value) },
+            };
+
         #endregion
     }
 }
