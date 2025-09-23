@@ -1,3 +1,61 @@
+2025-09-23 - 2.1.1.102_canary_2025-09-23
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+This version contains a number of fixes for issues discovered through testing, including fixes for the restore process and the index file recreate.
+
+This version adds support for Service Account JSON when using Google Clouds Services for storage.
+
+To improve security, this version adds masking of passwords so it is harder to leak sensitive values. 
+
+## Database update to v9
+This version updates the server settings database to v9 to add a new column to the `Backup` table.
+The database tool can downgrade without data loss (assuming that external configs were not loaded).
+
+## Detailed list of changes:
+- Fixed an issue with the restore flow where it would fail if a local file existed but was locked
+- Removed display of custom values in NGAX dropdowns
+- Fixed an issue with locale settings affecting SQL statements
+- Mask passwords when sending them through the API to avoid leaking secrets
+- Added retry option for backend tester
+- Downgrade Minio library to 6.0.0 due to faulty error handling in later versions
+- Validate that the S3 hostname does not contain a path, thanks @smyja
+- Updated logic for showing HyperV and MSSQL in source browser
+- Fixed an issue where the MSGraph backend would attempt to re-read the response body for error messages
+- Added support for remotely managed backup configurations
+- Removed leading and trailing null characters from paths to work around an issue with .NET Core and some virtual filesystems
+- Improved debug logging of SQL statements to use invariant locale
+- Added support for Service Account JSON authentication with GCS
+- Updated CoCoL to fix a flood of unhandled exception messages
+- Fixed a case where a recreated index volume would sometimes not contain all data
+- Added support for sending webmodule data without needing a callback
+
+## ngclient changes:
+- Fixed images not showing for the destination list
+- Fixed some UI rendering issues caused by missing values in data
+- Added destination icons to backup list view
+- Fixed destinations page not scrolling correctly
+- Updated ShipUI library
+- Fixed an issue with text-editing of advanced options that could loose values
+- Improved support for smaller screens
+- Fixed some button displays and added dark theme for loading screen
+- Simplified source and destination trees
+- Source tree now supports HyperV and MSSQL sources, if present
+- Updated to Angular v20.2
+- Added support for showing externally managed reporting url and backups
+- Fixed wording on channels to reflect Beta status
+- Fixed some typo's and casing issues
+- Correct handling of advanced options with leading slashes
+- Prevent adding a leading slash for Windows UNC style paths
+- Fixed file backend ignoring advanced options
+- Added multiple search terms to destination list, and fixed priority sorting
+- Added machine name to the left-hand menu for easier identification
+- Improved logic for import to better reflect the current state when editing
+- Fixed support for choosing filter groups when adding source filters
+- Added support for GCS Service Account JSON
+- Fixed wording on restore to not mention the option to restore a config from storage
+
 2025-08-19 - 2.1.1.101_canary_2025-08-19
 ==========
 This release is a canary release intended to be used for testing.
