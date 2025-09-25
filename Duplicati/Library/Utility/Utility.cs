@@ -1648,15 +1648,6 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Formats the string using the invariant culture
         /// </summary>
-        /// <param name="format">The format string</param>
-        /// <param name="args">The arguments to format</param>
-        /// <returns>The formatted string</returns>
-        public static string FormatInvariant(this string format, params object?[] args)
-            => string.Format(CultureInfo.InvariantCulture, format, args);
-
-        /// <summary>
-        /// Formats the string using the invariant culture
-        /// </summary>
         /// <param name="formattable">The formattable string</param>
         /// <returns>The formatted string</returns>
         public static string FormatInvariant(this FormattableString formattable)
