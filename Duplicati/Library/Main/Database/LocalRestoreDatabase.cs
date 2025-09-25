@@ -1516,7 +1516,7 @@ namespace Duplicati.Library.Main.Database
             {
                 // TODO: Skip metadata as required
                 // Have to order by target path and hash, to ensure BlockDescriptor and BlockSource match adjacent rows
-                var str_blocksize = Library.Utility.Utility.FormatInvariant(blocksize);
+                var str_blocksize = Library.Utility.Utility.FormatInvariantValue(blocksize);
                 await using var cmd = db.Connection.CreateCommand($@"
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
@@ -1801,7 +1801,7 @@ namespace Duplicati.Library.Main.Database
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""BB"".""FileID"",
-                        (""BB"".""Index"" * {Library.Utility.Utility.FormatInvariant(m_blocksize)}),
+                        (""BB"".""Index"" * {Library.Utility.Utility.FormatInvariantValue(m_blocksize)}),
                         ""BB"".""Size"",
                         ""BB"".""Hash""
                     FROM
@@ -1855,7 +1855,7 @@ namespace Duplicati.Library.Main.Database
                     SELECT DISTINCT
                         ""A"".""TargetPath"",
                         ""BB"".""FileID"",
-                        (""BB"".""Index"" * {Library.Utility.Utility.FormatInvariant(m_blocksize)}),
+                        (""BB"".""Index"" * {Library.Utility.Utility.FormatInvariantValue(m_blocksize)}),
                         ""BB"".""Size"",
                         ""BB"".""Hash""
                     FROM
@@ -2015,7 +2015,7 @@ namespace Duplicati.Library.Main.Database
                     FROM ""{m_tempfiletable}"" ""F""
                     LEFT JOIN ""Blockset"" ""B""
                         ON ""F"".""BlocksetID"" = ""B"".""ID""
-                    WHERE ""F"".""BlocksetID"" != {Library.Utility.Utility.FormatInvariant(FOLDER_BLOCKSET_ID)}
+                    WHERE ""F"".""BlocksetID"" != {Library.Utility.Utility.FormatInvariantValue(FOLDER_BLOCKSET_ID)}
                     ORDER BY ""Length"" DESC
                 ")
                     .SetTransaction(m_rtr);
@@ -2051,7 +2051,7 @@ namespace Duplicati.Library.Main.Database
             {
                 await using var cmd = m_connection.CreateCommand();
                 cmd.SetTransaction(m_rtr);
-                var str_folderblocksetid = Library.Utility.Utility.FormatInvariant(FOLDER_BLOCKSET_ID);
+                var str_folderblocksetid = Library.Utility.Utility.FormatInvariantValue(FOLDER_BLOCKSET_ID);
                 await using var rd = await cmd.ExecuteReaderAsync($@"
                     SELECT
                         ""F"".""ID"",

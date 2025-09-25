@@ -431,9 +431,9 @@ namespace Duplicati.Library.Utility
         /// <returns>A hex string representation of a new GUID</returns>
         public static string GetHexGuid()
         {
-            return FormatInvariant(ByteArrayAsHexString(
+            return ByteArrayAsHexString(
                 Guid.NewGuid().ToByteArray()
-            ));
+            );
         }
 
         /// <summary>
@@ -1658,18 +1658,9 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Formats the string using the invariant culture
         /// </summary>
-        /// <param name="format">The format string</param>
-        /// <param name="args">The arguments to format</param>
-        /// <returns>The formatted string</returns>
-        public static string FormatInvariant(this string format, params object?[] args)
-            => string.Format(CultureInfo.InvariantCulture, format, args);
-
-        /// <summary>
-        /// Formats the string using the invariant culture
-        /// </summary>
         /// <param name="formattable">The formattable string</param>
         /// <returns>The formatted string</returns>
-        public static string FormatInvariant(this FormattableString formattable)
+        public static string FormatInvariantFormattable(this FormattableString formattable)
             => formattable.ToString(CultureInfo.InvariantCulture);
 
         /// <summary>
@@ -1679,8 +1670,10 @@ namespace Duplicati.Library.Utility
         /// <typeparam name="T">The type of the value.</typeparam>
         /// <param name="value">The value to format.</param>
         /// <returns>The formatted string.</returns>
-        public static string FormatInvariant<T>(this T value)
-            => FormatInvariant("{0}", value);
+        public static string FormatInvariantValue<T>(this T value)
+            => value is IFormattable f
+                ? f.ToString(null, CultureInfo.InvariantCulture)
+                : string.Format(CultureInfo.InvariantCulture, "{0}", value);
 
         /// <summary>
         /// Performs the function with an additional timeout

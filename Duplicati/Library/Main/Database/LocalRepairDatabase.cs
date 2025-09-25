@@ -589,7 +589,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<BlockWithSourceData> GetSourceFilesWithBlocks(long blocksize, [EnumeratorCancellation] CancellationToken token)
             {
-                var str_blocksize = Library.Utility.Utility.FormatInvariant(blocksize);
+                var str_blocksize = Library.Utility.Utility.FormatInvariantValue(blocksize);
                 await using var cmd = m_connection.CreateCommand($@"
                     SELECT DISTINCT
                         ""{m_tablename}"".""Hash"",
@@ -1303,7 +1303,7 @@ namespace Duplicati.Library.Main.Database
             using var blockhasher = HashFactory.CreateHasher(blockhashalgorithm);
 
             var hashsize = blockhasher.HashSize / 8;
-            var blocksize_per_hashsize = Library.Utility.Utility.FormatInvariant(blocksize / hashsize);
+            var blocksize_per_hashsize = Library.Utility.Utility.FormatInvariantValue(blocksize / hashsize);
 
             var sql = $@"
                 SELECT *
@@ -1754,8 +1754,8 @@ namespace Duplicati.Library.Main.Database
         {
             await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
 
-            var str_blocksize = Library.Utility.Utility.FormatInvariant(blocksize);
-            var str_blockhashlength = Library.Utility.Utility.FormatInvariant(blockhashlength);
+            var str_blocksize = Library.Utility.Utility.FormatInvariantValue(blocksize);
+            var str_blockhashlength = Library.Utility.Utility.FormatInvariantValue(blockhashlength);
 
             var query = $@"
                 SELECT

@@ -523,9 +523,7 @@ public static partial class ExtensionMethods
 
         var inClause = string.Join(", ", values.Select((value, index) =>
         {
-            string formatted_name = Library.Utility.Utility.FormatInvariant(originalParamName);
-            string formatted_index = Library.Utility.Utility.FormatInvariant(index);
-            string param_name = $"{formatted_name}{formatted_index}";
+            var param_name = Library.Utility.Utility.FormatInvariantFormattable($"{originalParamName}{index}");
             cmd.AddNamedParameter(param_name, value);
             return param_name;
         }));
@@ -578,7 +576,7 @@ public static partial class ExtensionMethods
     /// <exception cref="ArgumentException">If the command text contains '?' as a parameter placeholder.</exception>
     public static SqliteCommand SetCommandAndParameters(this SqliteCommand cmd, string cmdtext)
     {
-        cmd.CommandText = Library.Utility.Utility.FormatInvariant(cmdtext);
+        cmd.CommandText = cmdtext;
         cmd.Parameters.Clear();
 
 #if DEBUG
@@ -774,13 +772,13 @@ public static partial class ExtensionMethods
             if (p.Value == null || p.Value == DBNull.Value)
                 v = "NULL";
             else if (p.Value is string)
-                v = Library.Utility.Utility.FormatInvariant($"\"{p.Value}\"");
+                v = Library.Utility.Utility.FormatInvariantFormattable($"\"{p.Value}\"");
             else if (p.Value is DateTime dt)
-                v = Library.Utility.Utility.FormatInvariant($"\"{dt:O}\"");
+                v = Library.Utility.Utility.FormatInvariantFormattable($"\"{dt:O}\"");
             else if (p.Value is byte[] bytes)
-                v = Library.Utility.Utility.FormatInvariant($"X'{BitConverter.ToString(bytes).Replace("-", "")}'");
+                v = Library.Utility.Utility.FormatInvariantFormattable($"X'{BitConverter.ToString(bytes).Replace("-", "")}'");
             else
-                v = p.Value?.FormatInvariant() ?? "NULL";
+                v = p.Value?.FormatInvariantValue() ?? "NULL";
 
             // Replace all occurrences of the parameter (with word boundary)
             txt = Regex.Replace(txt, $@"\B{Regex.Escape(paramName)}\b", v, RegexOptions.IgnoreCase);
@@ -1163,9 +1161,7 @@ public static partial class ExtensionMethods
 
         var inClause = string.Join(", ", values.Select((value, index) =>
         {
-            string formatted_name = Library.Utility.Utility.FormatInvariant(originalParamName);
-            string formatted_index = Library.Utility.Utility.FormatInvariant(index);
-            string param_name = $"{formatted_name}{formatted_index}";
+            var param_name = Library.Utility.Utility.FormatInvariantFormattable($"{originalParamName}{index}");
             cmd.AddNamedParameter(param_name, value);
             return param_name;
         }));
