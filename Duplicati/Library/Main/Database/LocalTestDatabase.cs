@@ -1190,9 +1190,9 @@ namespace Duplicati.Library.Main.Database
             {
                 var cmpName = $"CmpTable-{Library.Utility.Utility.GetHexGuid()}";
 
-                var str_blocksize = Library.Utility.Utility.FormatInvariant(blockSize);
-                var str_hashesperblock = Library.Utility.Utility.FormatInvariant(hashesPerBlock);
-                var str_hashsize = Library.Utility.Utility.FormatInvariant(hashSize);
+                var str_blocksize = Library.Utility.Utility.FormatInvariantValue(blockSize);
+                var str_hashesperblock = Library.Utility.Utility.FormatInvariantValue(hashesPerBlock);
+                var str_hashsize = Library.Utility.Utility.FormatInvariantValue(hashSize);
 
                 var create = $@"
                     CREATE TEMPORARY TABLE ""{cmpName}"" (

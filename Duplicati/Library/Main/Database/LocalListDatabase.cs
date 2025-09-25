@@ -363,7 +363,7 @@ namespace Duplicati.Library.Main.Database
                 if (!string.IsNullOrWhiteSpace(prefixrule))
                     await cmd.SetCommandAndParameters($@"
                             DELETE FROM ""{tmpnames.Tablename}""
-                            WHERE SUBSTR(""Path"", 1, {Library.Utility.Utility.FormatInvariant(prefixrule.Length)}) != @Rule
+                            WHERE SUBSTR(""Path"", 1, {Library.Utility.Utility.FormatInvariantValue(prefixrule.Length)}) != @Rule
                         ")
                         .SetParameterValue("@Rule", prefixrule)
                         .ExecuteNonQueryAsync(token)
@@ -1349,7 +1349,7 @@ namespace Duplicati.Library.Main.Database
                     var parts = filterExpression.GetSimpleList();
                     foreach (var part in parts)
                     {
-                        var propName = $"@Part{Library.Utility.Utility.FormatInvariant(filterProps.Count)}";
+                        var propName = $"@Part{Library.Utility.Utility.FormatInvariantValue(filterProps.Count)}";
                         filterProps[propName] = part;
                         if (caseSensitive)
                             caseWhenParts.Add($@"
@@ -1368,7 +1368,7 @@ namespace Duplicati.Library.Main.Database
                     var parts = filterExpression.GetSimpleList();
                     foreach (var part in parts)
                     {
-                        var propName = $"@Part{Library.Utility.Utility.FormatInvariant(filterProps.Count)}";
+                        var propName = $"@Part{Library.Utility.Utility.FormatInvariantValue(filterProps.Count)}";
                         filterProps[propName] = part;
                         if (caseSensitive)
                             caseWhenParts.Add($@"
