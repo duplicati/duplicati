@@ -32,7 +32,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
 {
     public class RemoteOperation : IEndpointV1
     {
-        private record RemoteOperationInput(string path);
+        private record RemoteOperationInput(string path, string? backupId);
 
         public static void Map(RouteGroupBuilder group)
         {
@@ -41,11 +41,11 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                 .RequireAuthorization();
 
             group.MapPost("/remoteoperation/test", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromQuery] bool? autocreate, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
-                => ExecuteTest(connection, applicationSettings, input.path, autocreate ?? false, cancelToken))
+                => ExecuteTest(connection, applicationSettings, input.path, input.backupId, autocreate ?? false, cancelToken))
                 .RequireAuthorization();
 
-            group.MapPost("/remoteoperation/create", ([FromBody] RemoteOperationInput input, CancellationToken cancelToken)
-                => ExecuteCreate(input.path, cancelToken))
+            group.MapPost("/remoteoperation/create", ([FromServices] Connection connection, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
+                => ExecuteCreate(connection, input.path, input.backupId, cancelToken))
                 .RequireAuthorization();
         }
 
@@ -121,12 +121,26 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             }
         }
 
-        private static async Task ExecuteTest(Connection connection, IApplicationSettings applicationSettings, string url, bool autoCreate, CancellationToken cancelToken)
+        private static string UnmaskUrl(Connection connection, string maskedurl, string? backupId)
+        {
+            var previousUrl = !string.IsNullOrWhiteSpace(backupId) ? connection.GetBackup(backupId)?.TargetURL : null;
+            var unmasked = string.IsNullOrWhiteSpace(previousUrl)
+                ? maskedurl
+                : QuerystringMasking.Unmask(maskedurl, previousUrl);
+
+            if (Connection.UrlContainsPasswordPlaceholder(unmasked))
+                throw new ArgumentException("Unmasked URL contains password placeholder");
+
+            return unmasked;
+        }
+
+        private static async Task ExecuteTest(Connection connection, IApplicationSettings applicationSettings, string maskedurl, string? backupId, bool autoCreate, CancellationToken cancelToken)
         {
             TupleDisposeWrapper? wrapper = null;
 
             try
             {
+                var url = UnmaskUrl(connection, maskedurl, backupId);
                 wrapper = await GetBackend(connection, applicationSettings, url, cancelToken);
 
                 using (var b = wrapper.Backend)
@@ -181,11 +195,12 @@ namespace Duplicati.WebserverCore.Endpoints.V1
         }
 
 
-        private static async Task ExecuteCreate(string uri, CancellationToken cancelToken)
+        private static async Task ExecuteCreate(Connection connection, string maskedurl, string? backupId, CancellationToken cancelToken)
         {
             try
             {
-                using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
+                var url = UnmaskUrl(connection, maskedurl, backupId);
+                using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>()))
                     await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
             }
             catch (UserInformationException uex)

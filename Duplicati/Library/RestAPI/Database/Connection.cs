@@ -33,6 +33,7 @@ using System.Data;
 using Duplicati.Library.Main.Database;
 using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.RegularExpressions;
 
 #nullable enable
 
@@ -309,6 +310,29 @@ namespace Duplicati.Server.Database
             }
         }
 
+        /// <summary>
+        /// Checks if the given value is the password placeholder.
+        /// </summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns><c>true</c> if the value is the password placeholder; otherwise <c>false</c>.</returns>
+        public static bool IsPasswordPlaceholder(string? value)
+            => string.IsNullOrWhiteSpace(value)
+                ? false
+                : value.Length > 3 && value.All(c => c == '*');
+
+        /// <summary>
+        /// Regular expression to match a URL password mask (3 or more asterisks or %2A)
+        /// </summary>
+        private static Regex UrlPasswordMaskRegex = new Regex(@"(\*|%2A){3,}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// Checks if the given url contains a password placeholder.
+        /// </summary>
+        /// <param name="url">The url to check.</param>
+        /// <returns><c>true</c> if the value contains a password placeholder; otherwise <c>false</c>.</returns>
+        public static bool UrlContainsPasswordPlaceholder(string? url)
+            => !string.IsNullOrWhiteSpace(url) && UrlPasswordMaskRegex.IsMatch(url);
+
         public ISetting[] GetSettings(long id)
         {
             lock (m_lock)
@@ -346,7 +370,7 @@ namespace Duplicati.Server.Database
                     cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"") VALUES (@BackupId, @Filter, @Name, @Value)"),
                     (cmd, f) =>
                     {
-                        if (PASSWORD_PLACEHOLDER.Equals(f.Value))
+                        if (IsPasswordPlaceholder(f.Value))
                             throw new Exception("Attempted to save a property with the placeholder password");
 
                         cmd.SetParameterValue("@BackupId", id)
@@ -543,10 +567,10 @@ namespace Duplicati.Server.Database
             if (string.IsNullOrWhiteSpace(item.TargetURL))
                 return "Missing a target";
 
-            if (item.TargetURL.Contains(PASSWORD_PLACEHOLDER))
-                return "TargetURL contains password placeholder value";
-            if (item.Settings != null && item.Settings.Any(x => PASSWORD_PLACEHOLDER.Equals(x.Value)))
-                return "Settings contains password placeholder value";
+            if (UrlContainsPasswordPlaceholder(item.TargetURL))
+                return "TargetURL is password placeholder value";
+            if (item.Settings != null && item.Settings.Any(x => IsPasswordPlaceholder(x.Value)))
+                return "Settings is password placeholder value";
 
             if (item.Sources == null || item.Sources.Any(x => string.IsNullOrWhiteSpace(x)) || item.Sources.Length == 0)
                 return "Invalid source list";
@@ -699,7 +723,7 @@ namespace Duplicati.Server.Database
                         },
                         (cmd, n) =>
                         {
-                            if (n.TargetURL.IndexOf(PASSWORD_PLACEHOLDER, StringComparison.Ordinal) >= 0)
+                            if (UrlContainsPasswordPlaceholder(n.TargetURL))
                                 throw new Exception("Attempted to save a backup with the password placeholder");
                             if (update && long.Parse(n.ID) <= 0)
                                 throw new Exception("Invalid update, cannot update application settings through update method");
