@@ -1,3 +1,23 @@
+2025-09-25 - 2.1.1.103_canary_2025-09-25
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+This version is a bugfix release for some issues discovered with the previous canary build.
+
+## Database update to v9 (also in previous version)
+This version updates the server settings database to v9 to add a new column to the `Backup` table.
+The database tool can downgrade without data loss (assuming that external configs were not loaded).
+
+## Detailed list of changes:
+- Fixed issue with invariant formatting causing crashes during backup
+- Added Administrator permissions to data folders on Windows
+- Fixed an issue with the "Test connection" button after passwords are masked
+
+## ngclient changes:
+- Updated localizations
+- Updated API calls to support masked passwords for test connection
+
 2025-09-23 - 2.1.1.102_canary_2025-09-23
 ==========
 This release is a canary release intended to be used for testing.
