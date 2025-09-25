@@ -21,7 +21,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.Serialization;
 using System.Web;
 using Duplicati.Server.Database;
@@ -146,9 +145,15 @@ public class BackupConfigMaskingTests
     }
 
     [Test]
-    public void ValidateBackupDetectsPlaceholder()
+    public void ValidateBackupDetectsPlaceholder([Values(0, 1, 2)] int type)
     {
-        var placeholder = Connection.PASSWORD_PLACEHOLDER;
+        var placeholder = type switch
+        {
+            0 => Connection.PASSWORD_PLACEHOLDER,
+            1 => "***",
+            2 => "%2A%2a%2A",
+            _ => throw new ArgumentOutOfRangeException(nameof(type))
+        };
 
         var backup = new Backup
         {

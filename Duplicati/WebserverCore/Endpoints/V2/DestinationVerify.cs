@@ -108,6 +108,18 @@ public class DestinationVerify : IEndpointV2
         }
     }
 
+    private static string UnmaskUrl(Connection connection, string maskedurl, string? backupId)
+    {
+        var previousUrl = !string.IsNullOrWhiteSpace(backupId) ? connection.GetBackup(backupId)?.TargetURL : null;
+        var unmasked = string.IsNullOrWhiteSpace(previousUrl)
+            ? maskedurl
+            : QuerystringMasking.Unmask(maskedurl, previousUrl);
+
+        if (Connection.UrlContainsPasswordPlaceholder(unmasked))
+            throw new ArgumentException("Unmasked URL contains password placeholder");
+
+        return unmasked;
+    }
 
     private static async Task<DestinationTestResponseDto> ExecuteTest(Connection connection, IApplicationSettings applicationSettings, DestinationTestRequestDto input, CancellationToken cancelToken)
     {
@@ -115,7 +127,8 @@ public class DestinationVerify : IEndpointV2
 
         try
         {
-            wrapper = await GetBackend(connection, applicationSettings, input.DestinationUrl, cancelToken);
+            var url = UnmaskUrl(connection, input.DestinationUrl, input.BackupId);
+            wrapper = await GetBackend(connection, applicationSettings, url, cancelToken);
 
             using (var b = wrapper.Backend)
             {

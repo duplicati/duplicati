@@ -166,7 +166,7 @@ namespace Duplicati.Server.Database
             var prevSettings = previous.Settings.ToDictionary(x => x.Name, x => x.Value, StringComparer.OrdinalIgnoreCase);
             foreach (var setting in this.Settings)
             {
-                if (setting.Value == Connection.PASSWORD_PLACEHOLDER)
+                if (Connection.IsPasswordPlaceholder(setting.Value))
                 {
                     if (prevSettings.TryGetValue(setting.Name, out var prevValue))
                         setting.Value = prevValue;

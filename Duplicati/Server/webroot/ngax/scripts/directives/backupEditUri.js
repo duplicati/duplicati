@@ -3,10 +3,11 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
     restrict: 'E',
     scope: {
         uri: '=uri',
+        backupId: '=backupId',
         setBuilduriFn: '&'
     },
     templateUrl: 'templates/edituri.html',
-    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, EditUriBuiltins) {
+    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService) {
 
         var scope = $scope;
         scope.AppUtils = AppUtils;
@@ -41,7 +42,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                     dlg.dismiss();
 
                 dlg = DialogService.dialog(gettextCatalog.getString('Testing …'), gettextCatalog.getString('Testing connection …'), [], null, function() {
-                    AppService.postJson('/remoteoperation/test', { path: uri }).then(function() {
+                    AppService.postJson('/remoteoperation/test', { path: uri, backupId: scope.backupId }).then(function() {
                         scope.Testing = false;
                         dlg.dismiss();
 
@@ -202,6 +203,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
         }
 
         $scope.testConnection = function() {
+            console.log(scope);
             builduri(performConnectionTest);
         };
 

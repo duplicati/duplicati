@@ -31,6 +31,11 @@ public sealed record DestinationTestRequestDto
     public required string DestinationUrl { get; init; }
 
     /// <summary>
+    /// The backup ID, if known
+    /// </summary>
+    public string? BackupId { get; init; }
+
+    /// <summary>
     /// Any additional options to pass to the destination
     /// </summary>
     public required Dictionary<string, string> Options { get; init; } = new();

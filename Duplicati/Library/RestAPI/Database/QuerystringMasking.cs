@@ -97,8 +97,8 @@ public static class QuerystringMasking
             var newValues = GetValuesCaseInsensitive(newQuery, key);
             if (newValues is null || newValues.Length == 0) continue;
 
-            // If any value is the mask, replace the entire set for that key from the previous URL
-            if (newValues.Any(v => string.Equals(v, Connection.PASSWORD_PLACEHOLDER, StringComparison.Ordinal)))
+            // If any value contains the mask, replace the entire set for that key from the previous URL
+            if (newValues.Any(v => Connection.IsPasswordPlaceholder(v)))
             {
                 var prevValues = GetValuesCaseInsensitive(prevQuery, key);
                 if (prevValues is null || prevValues.Length == 0)
