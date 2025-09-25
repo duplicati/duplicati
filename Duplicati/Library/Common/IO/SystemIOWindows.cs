@@ -45,14 +45,19 @@ namespace Duplicati.Library.Common.IO
         private static readonly string DIRSEP = Util.DirectorySeparatorString;
 
         /// <summary>
-        /// The current user name
+        /// The current user SID
         /// </summary>
-        private static readonly string CURRENT_USERNAME = WindowsIdentity.GetCurrent().Name;
+        private static readonly SecurityIdentifier CURRENT_USER_SID = WindowsIdentity.GetCurrent().User;
 
         /// <summary>
-        /// The LocalSystem user name
+        /// The LocalSystem user SID
         /// </summary>
-        private static readonly string LOCAL_SYSTEM_NAME = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null).Translate(typeof(NTAccount)).Value;
+        private static readonly SecurityIdentifier LOCAL_SYSTEM_SID = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
+        /// <summary>
+        /// The Administrator user SID
+        /// </summary>
+        private static readonly SecurityIdentifier ADMINISTRATORS_SID = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
 
         /// <summary>
         /// Prefix path with one of the extended device path prefixes
@@ -561,7 +566,7 @@ namespace Duplicati.Library.Common.IO
         }
 
         /// <summary>
-        /// Sets the unix permission user read-write Only.
+        /// Sets the file permissions to user read-write only.
         /// </summary>
         /// <param name="path">The file to set permissions on.</param>
         public void FileSetPermissionUserRWOnly(string path)
@@ -572,25 +577,26 @@ namespace Duplicati.Library.Common.IO
             // Remove inherited permissions to ensure only the current user has access
             security.SetAccessRuleProtection(true, false);
 
-            // Grant the current user read access
-            security.AddAccessRule(new FileSystemAccessRule(
-                CURRENT_USERNAME,
-                FileSystemRights.FullControl,
-                AccessControlType.Allow
-            ));
+            var users = new[] {
+                CURRENT_USER_SID,
+                LOCAL_SYSTEM_SID,
+                ADMINISTRATORS_SID
+            }.ToHashSet();
 
-            security.AddAccessRule(new FileSystemAccessRule(
-                LOCAL_SYSTEM_NAME,
-                FileSystemRights.FullControl,
-                AccessControlType.Allow
-            ));
+            // Grant the users read access
+            foreach (var user in users)
+                security.AddAccessRule(new FileSystemAccessRule(
+                    user,
+                    FileSystemRights.FullControl,
+                    AccessControlType.Allow
+                ));
 
             // Adjust with the new security settings
             new FileInfo(path).SetAccessControl(security);
         }
 
         /// <summary>
-        /// Sets the permission to read-write only for the current user.
+        /// Sets the directory permissions to read-write only for the current user.
         /// </summary>
         /// <param name="path">The directory to set permissions on.</param>
         public void DirectorySetPermissionUserRWOnly(string path)
@@ -601,22 +607,21 @@ namespace Duplicati.Library.Common.IO
             // Remove inherited permissions to ensure only the current user has access
             security.SetAccessRuleProtection(true, false);
 
-            // Grant the current user read access
-            security.AddAccessRule(new FileSystemAccessRule(
-                CURRENT_USERNAME,
-                FileSystemRights.FullControl,
-                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, // Apply to subfolders & files
-                PropagationFlags.None, // Keeps inheritance settings intact
-                AccessControlType.Allow
-            ));
+            var users = new[] {
+                CURRENT_USER_SID,
+                LOCAL_SYSTEM_SID,
+                ADMINISTRATORS_SID
+            }.ToHashSet();
 
-            security.AddAccessRule(new FileSystemAccessRule(
-                LOCAL_SYSTEM_NAME,
-                FileSystemRights.FullControl,
-                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, // Apply to subfolders & files
-                PropagationFlags.None, // Keeps inheritance settings intact
-                AccessControlType.Allow
-            ));
+            // Grant the users full access
+            foreach (var user in users)
+                security.AddAccessRule(new FileSystemAccessRule(
+                    user,
+                    FileSystemRights.FullControl, // Using full-control to allow changing permissions as well
+                    InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, // Apply to subfolders & files
+                    PropagationFlags.None, // Keeps inheritance settings intact
+                    AccessControlType.Allow
+                ));
 
             // Adjust with the new security settings
             new DirectoryInfo(path).SetAccessControl(security);
