@@ -206,7 +206,7 @@ namespace Duplicati.Library.Common.IO
                 Propagation = rule.PropagationFlags;
             }
 
-            public FileSystemAccessRule Create(System.Security.AccessControl.FileSystemSecurity owner)
+            public FileSystemAccessRule Create(FileSystemSecurity owner)
             {
                 return (FileSystemAccessRule)owner.AccessRuleFactory(
                     new System.Security.Principal.SecurityIdentifier(SID),
@@ -218,9 +218,9 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
-        private static Newtonsoft.Json.JsonSerializer _cachedSerializer;
+        private static JsonSerializer _cachedSerializer;
 
-        private Newtonsoft.Json.JsonSerializer Serializer
+        private JsonSerializer Serializer
         {
             get
             {
@@ -229,8 +229,8 @@ namespace Duplicati.Library.Common.IO
                     return _cachedSerializer;
                 }
 
-                _cachedSerializer = Newtonsoft.Json.JsonSerializer.Create(
-                    new Newtonsoft.Json.JsonSerializerSettings { Culture = System.Globalization.CultureInfo.InvariantCulture });
+                _cachedSerializer = JsonSerializer.Create(
+                    new JsonSerializerSettings { Culture = System.Globalization.CultureInfo.InvariantCulture });
 
                 return _cachedSerializer;
             }
@@ -238,7 +238,7 @@ namespace Duplicati.Library.Common.IO
 
         private string SerializeObject<T>(T o)
         {
-            using (var tw = new System.IO.StringWriter())
+            using (var tw = new StringWriter())
             {
                 Serializer.Serialize(tw, o);
                 tw.Flush();
@@ -248,123 +248,82 @@ namespace Duplicati.Library.Common.IO
 
         private T DeserializeObject<T>(string data)
         {
-            using (var tr = new System.IO.StringReader(data))
-            {
+            using (var tr = new StringReader(data))
                 return (T)Serializer.Deserialize(tr, typeof(T));
-            }
         }
 
 
         [SupportedOSPlatform("windows")]
-        private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
-        {
-            return new DirectoryInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
-        }
+        private FileSystemSecurity GetAccessControlDir(string path)
+            => new DirectoryInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
 
 
         [SupportedOSPlatform("windows")]
-        private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
-        {
-            return new FileInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
-        }
+        private FileSystemSecurity GetAccessControlFile(string path)
+            => new FileInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
 
 
         [SupportedOSPlatform("windows")]
         private void SetAccessControlFile(string path, FileSecurity rules)
-        {
-            new FileInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
-        }
-
+            => new FileInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
 
         [SupportedOSPlatform("windows")]
         private void SetAccessControlDir(string path, DirectorySecurity rules)
-        {
-            new DirectoryInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
-        }
+            => new DirectoryInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
 
         #region ISystemIO implementation
         public void DirectoryCreate(string path)
-        {
-            System.IO.Directory.CreateDirectory(AddExtendedDevicePathPrefix(path));
-        }
+            => Directory.CreateDirectory(AddExtendedDevicePathPrefix(path));
 
         public void DirectoryDelete(string path, bool recursive)
-        {
-            System.IO.Directory.Delete(AddExtendedDevicePathPrefix(path), recursive);
-        }
+            => Directory.Delete(AddExtendedDevicePathPrefix(path), recursive);
 
         public bool DirectoryExists(string path)
-        {
-            return System.IO.Directory.Exists(AddExtendedDevicePathPrefix(path));
-        }
+            => Directory.Exists(AddExtendedDevicePathPrefix(path));
 
         public void DirectoryMove(string sourceDirName, string destDirName)
-        {
-            System.IO.Directory.Move(AddExtendedDevicePathPrefix(sourceDirName), AddExtendedDevicePathPrefix(destDirName));
-        }
+            => Directory.Move(AddExtendedDevicePathPrefix(sourceDirName), AddExtendedDevicePathPrefix(destDirName));
 
         public void FileDelete(string path)
-        {
-            System.IO.File.Delete(AddExtendedDevicePathPrefix(path));
-        }
+            => File.Delete(AddExtendedDevicePathPrefix(path));
 
         public void FileSetLastWriteTimeUtc(string path, DateTime time)
-        {
-            System.IO.File.SetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path), time);
-        }
+            => File.SetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path), time);
 
         public void FileSetCreationTimeUtc(string path, DateTime time)
-        {
-            System.IO.File.SetCreationTimeUtc(AddExtendedDevicePathPrefix(path), time);
-        }
+            => File.SetCreationTimeUtc(AddExtendedDevicePathPrefix(path), time);
 
         public DateTime FileGetLastWriteTimeUtc(string path)
-        {
-            return System.IO.File.GetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path));
-        }
+            => File.GetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path));
 
         public DateTime FileGetCreationTimeUtc(string path)
-        {
-            return System.IO.File.GetCreationTimeUtc(AddExtendedDevicePathPrefix(path));
-        }
+            => File.GetCreationTimeUtc(AddExtendedDevicePathPrefix(path));
 
         public bool FileExists(string path)
-        {
-            return System.IO.File.Exists(AddExtendedDevicePathPrefix(path));
-        }
+            => File.Exists(AddExtendedDevicePathPrefix(path));
 
-        public System.IO.FileStream FileOpenRead(string path)
-        {
-            return System.IO.File.Open(AddExtendedDevicePathPrefix(path), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
-        }
+        public FileStream FileOpenRead(string path)
+            => File.Open(AddExtendedDevicePathPrefix(path), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-        public System.IO.FileStream FileOpenReadWrite(string path)
-        {
-            return !FileExists(path)
+        public FileStream FileOpenReadWrite(string path)
+            => !FileExists(path)
                 ? FileCreate(path)
-                : System.IO.File.Open(AddExtendedDevicePathPrefix(path), System.IO.FileMode.Open, System.IO.FileAccess.ReadWrite);
-        }
+                : File.Open(AddExtendedDevicePathPrefix(path), FileMode.Open, FileAccess.ReadWrite);
 
-        public System.IO.FileStream FileOpenWrite(string path)
-        {
-            return !FileExists(path)
+        public FileStream FileOpenWrite(string path)
+            => !FileExists(path)
                 ? FileCreate(path)
-                : System.IO.File.OpenWrite(AddExtendedDevicePathPrefix(path));
-        }
+                : File.OpenWrite(AddExtendedDevicePathPrefix(path));
 
-        public System.IO.FileStream FileCreate(string path)
-        {
-            return System.IO.File.Create(AddExtendedDevicePathPrefix(path));
-        }
+        public FileStream FileCreate(string path)
+            => File.Create(AddExtendedDevicePathPrefix(path));
 
-        public System.IO.FileAttributes GetFileAttributes(string path)
-        {
-            return System.IO.File.GetAttributes(AddExtendedDevicePathPrefix(path));
-        }
+        public FileAttributes GetFileAttributes(string path)
+            => File.GetAttributes(AddExtendedDevicePathPrefix(path));
 
-        public void SetFileAttributes(string path, System.IO.FileAttributes attributes)
+        public void SetFileAttributes(string path, FileAttributes attributes)
         {
-            System.IO.File.SetAttributes(AddExtendedDevicePathPrefix(path), attributes);
+            File.SetAttributes(AddExtendedDevicePathPrefix(path), attributes);
         }
 
         /// <summary>
@@ -373,163 +332,93 @@ namespace Duplicati.Library.Common.IO
         /// <param name="file">The file or folder to examine</param>
         /// <returns>The symlink target</returns>
         public string GetSymlinkTarget(string file)
-        {
-            return new FileInfo(AddExtendedDevicePathPrefix(file)).LinkTarget;
-        }
+            => new FileInfo(AddExtendedDevicePathPrefix(file)).LinkTarget;
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path)
-        {
-            return System.IO.Directory.EnumerateFileSystemEntries(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
-        }
+            => Directory.EnumerateFileSystemEntries(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
 
         public IEnumerable<string> EnumerateFiles(string path)
-        {
-            return System.IO.Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
-        }
+            => Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
-        {
-            return System.IO.Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern, searchOption).Select(RemoveExtendedDevicePathPrefix);
-        }
+            => Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern, searchOption).Select(RemoveExtendedDevicePathPrefix);
 
         public string PathGetFileName(string path)
-        {
-            return RemoveExtendedDevicePathPrefix(System.IO.Path.GetFileName(AddExtendedDevicePathPrefix(path)));
-        }
+            => RemoveExtendedDevicePathPrefix(Path.GetFileName(AddExtendedDevicePathPrefix(path)));
 
         public string PathGetDirectoryName(string path)
-        {
-            return RemoveExtendedDevicePathPrefix(System.IO.Path.GetDirectoryName(AddExtendedDevicePathPrefix(path)));
-        }
+            => RemoveExtendedDevicePathPrefix(Path.GetDirectoryName(AddExtendedDevicePathPrefix(path)));
 
         public string PathGetExtension(string path)
-        {
-            return RemoveExtendedDevicePathPrefix(System.IO.Path.GetExtension(AddExtendedDevicePathPrefix(path)));
-        }
+            => RemoveExtendedDevicePathPrefix(Path.GetExtension(AddExtendedDevicePathPrefix(path)));
 
         public string PathChangeExtension(string path, string extension)
-        {
-            return RemoveExtendedDevicePathPrefix(System.IO.Path.ChangeExtension(AddExtendedDevicePathPrefix(path), extension));
-        }
+            => RemoveExtendedDevicePathPrefix(Path.ChangeExtension(AddExtendedDevicePathPrefix(path), extension));
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)
         {
-            System.IO.Directory.SetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path), time);
+            Directory.SetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path), time);
         }
 
         public void DirectorySetCreationTimeUtc(string path, DateTime time)
         {
-            System.IO.Directory.SetCreationTimeUtc(AddExtendedDevicePathPrefix(path), time);
+            Directory.SetCreationTimeUtc(AddExtendedDevicePathPrefix(path), time);
         }
 
         public void FileMove(string source, string target)
         {
-            System.IO.File.Move(AddExtendedDevicePathPrefix(source), AddExtendedDevicePathPrefix(target));
+            File.Move(AddExtendedDevicePathPrefix(source), AddExtendedDevicePathPrefix(target));
         }
 
         public long FileLength(string path)
-        {
-            return new System.IO.FileInfo(AddExtendedDevicePathPrefix(path)).Length;
-        }
+            => new FileInfo(AddExtendedDevicePathPrefix(path)).Length;
 
         public string GetPathRoot(string path)
-        {
-            if (IsPrefixedWithExtendedDevicePathPrefix(path))
-            {
-                return Path.GetPathRoot(path);
-            }
-            else
-            {
-                return RemoveExtendedDevicePathPrefix(Path.GetPathRoot(AddExtendedDevicePathPrefix(path)));
-            }
-        }
-
+            => IsPrefixedWithExtendedDevicePathPrefix(path)
+                ? Path.GetPathRoot(path)
+                : RemoveExtendedDevicePathPrefix(Path.GetPathRoot(AddExtendedDevicePathPrefix(path)));
         public string[] GetDirectories(string path)
-        {
-            if (IsPrefixedWithExtendedDevicePathPrefix(path))
-            {
-                return Directory.GetDirectories(path);
-            }
-            else
-            {
-                return Directory.GetDirectories(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix).ToArray();
-            }
-        }
+            => IsPrefixedWithExtendedDevicePathPrefix(path)
+                ? Directory.GetDirectories(path)
+                : Directory.GetDirectories(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix).ToArray();
 
         public string[] GetFiles(string path)
-        {
-            if (IsPrefixedWithExtendedDevicePathPrefix(path))
-            {
-                return Directory.GetFiles(path);
-            }
-            else
-            {
-                return Directory.GetFiles(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix).ToArray();
-            }
-        }
+            => IsPrefixedWithExtendedDevicePathPrefix(path)
+                ? Directory.GetFiles(path)
+                : Directory.GetFiles(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix).ToArray();
 
         public string[] GetFiles(string path, string searchPattern)
-        {
-            if (IsPrefixedWithExtendedDevicePathPrefix(path))
-            {
-                return Directory.GetFiles(path, searchPattern);
-            }
-            else
-            {
-                return Directory.GetFiles(AddExtendedDevicePathPrefix(path), searchPattern).Select(RemoveExtendedDevicePathPrefix).ToArray();
-            }
-        }
+            => IsPrefixedWithExtendedDevicePathPrefix(path)
+                ? Directory.GetFiles(path, searchPattern)
+                : Directory.GetFiles(AddExtendedDevicePathPrefix(path), searchPattern).Select(RemoveExtendedDevicePathPrefix).ToArray();
 
         public DateTime GetCreationTimeUtc(string path)
-        {
-            return Directory.GetCreationTimeUtc(AddExtendedDevicePathPrefix(path));
-        }
+            => Directory.GetCreationTimeUtc(AddExtendedDevicePathPrefix(path));
 
         public DateTime GetLastWriteTimeUtc(string path)
-        {
-            return Directory.GetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path));
-        }
+            => Directory.GetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path));
 
         public IEnumerable<string> EnumerateDirectories(string path)
-        {
-            if (IsPrefixedWithExtendedDevicePathPrefix(path))
-            {
-                return Directory.EnumerateDirectories(path);
-            }
-            else
-            {
-                return Directory.EnumerateDirectories(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
-            }
-        }
+            => IsPrefixedWithExtendedDevicePathPrefix(path)
+                ? Directory.EnumerateDirectories(path)
+                : Directory.EnumerateDirectories(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
 
         public IEnumerable<IFileEntry> EnumerateFileEntries(string path)
         {
             // For consistency with previous implementation, enumerate files first and directories after
-            DirectoryInfo dir;
-            if (IsPrefixedWithExtendedDevicePathPrefix(path))
-            {
-                dir = new DirectoryInfo(path);
-            }
-            else
-            {
-                dir = new DirectoryInfo(AddExtendedDevicePathPrefix(path));
-            }
+            var dir = IsPrefixedWithExtendedDevicePathPrefix(path)
+                ? new DirectoryInfo(path)
+                : new DirectoryInfo(AddExtendedDevicePathPrefix(path));
 
             foreach (FileInfo file in dir.EnumerateFiles())
-            {
                 yield return FileEntry(file);
-            }
 
             foreach (DirectoryInfo d in dir.EnumerateDirectories())
-            {
                 yield return DirectoryEntry(d);
-            }
         }
 
         public void FileCopy(string source, string target, bool overwrite)
-        {
-            File.Copy(AddExtendedDevicePathPrefix(source), AddExtendedDevicePathPrefix(target), overwrite);
-        }
+            => File.Copy(AddExtendedDevicePathPrefix(source), AddExtendedDevicePathPrefix(target), overwrite);
 
         public string PathGetFullPath(string path)
         {
@@ -538,32 +427,23 @@ namespace Duplicati.Library.Common.IO
             // 2. If path is not already prefixed with \\?\, the return value should also not be prefixed
             // 3. If path is relative or has relative components, that should be resolved by calling Path.GetFullPath()
             // 4. If path is not relative and has no relative components, prefix with \\?\ to prevent normalization from munging "problematic Windows paths"
-            if (IsPrefixedWithExtendedDevicePathPrefix(path))
-            {
-                return path;
-            }
-            else
-            {
-                return RemoveExtendedDevicePathPrefix(Path.GetFullPath(AddExtendedDevicePathPrefix(path)));
-            }
+            return IsPrefixedWithExtendedDevicePathPrefix(path)
+                ? path
+                : RemoveExtendedDevicePathPrefix(Path.GetFullPath(AddExtendedDevicePathPrefix(path)));
         }
 
         public IFileEntry DirectoryEntry(string path)
-        {
-            return DirectoryEntry(new DirectoryInfo(AddExtendedDevicePathPrefix(path)));
-        }
+            => DirectoryEntry(new DirectoryInfo(AddExtendedDevicePathPrefix(path)));
+
         public IFileEntry DirectoryEntry(DirectoryInfo dInfo)
-        {
-            return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
+            => new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
             {
                 IsFolder = true
             };
-        }
 
         public IFileEntry FileEntry(string path)
-        {
-            return FileEntry(new FileInfo(AddExtendedDevicePathPrefix(path)));
-        }
+            => FileEntry(new FileInfo(AddExtendedDevicePathPrefix(path)));
+
         public IFileEntry FileEntry(FileInfo fileInfo)
         {
             var lastAccess = new DateTime();
@@ -621,9 +501,7 @@ namespace Duplicati.Library.Common.IO
                 {
                     bool isProtected = bool.Parse(data["win-ext:accessrulesprotected"]);
                     if (rules.AreAccessRulesProtected != isProtected)
-                    {
                         rules.SetAccessRuleProtection(isProtected, false);
-                    }
                 }
 
                 if (data.ContainsKey("win-ext:accessrules"))
@@ -631,7 +509,7 @@ namespace Duplicati.Library.Common.IO
                     var content = DeserializeObject<FileSystemAccess[]>(data["win-ext:accessrules"]);
                     var c = rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier));
                     for (var i = c.Count - 1; i >= 0; i--)
-                        rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);
+                        rules.RemoveAccessRule((FileSystemAccessRule)c[i]);
 
                     Exception ex = null;
 
@@ -660,14 +538,12 @@ namespace Duplicati.Library.Common.IO
         }
 
         public string PathCombine(params string[] paths)
-        {
-            return Path.Combine(paths);
-        }
+            => Path.Combine(paths);
 
         public void CreateSymlink(string symlinkfile, string target, bool asDir)
         {
             if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
-                throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
+                throw new IOException(string.Format("File already exists: {0}", symlinkfile));
 
 
             if (asDir)
@@ -680,13 +556,13 @@ namespace Duplicati.Library.Common.IO
             }
 
             //Sadly we do not get a notification if the creation fails :(
-            System.IO.FileAttributes attr = 0;
+            FileAttributes attr = 0;
             if ((!asDir && FileExists(symlinkfile)) || (asDir && DirectoryExists(symlinkfile)))
                 try { attr = GetFileAttributes(symlinkfile); }
                 catch { }
 
-            if ((attr & System.IO.FileAttributes.ReparsePoint) == 0)
-                throw new System.IO.IOException(string.Format("Unable to create symlink, check account permissions: {0}", symlinkfile));
+            if ((attr & FileAttributes.ReparsePoint) == 0)
+                throw new IOException(string.Format("Unable to create symlink, check account permissions: {0}", symlinkfile));
         }
 
         /// <summary>

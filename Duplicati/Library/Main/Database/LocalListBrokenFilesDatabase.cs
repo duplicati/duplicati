@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.Database
         private static readonly string BLOCK_VOLUME_IDS = $@"
             SELECT ""ID""
             FROM ""RemoteVolume""
-            WHERE ""Type"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeType.Blocks)}'
+            WHERE ""Type"" = '{Library.Utility.Utility.FormatInvariantValue(RemoteVolumeType.Blocks)}'
         ";
 
         // Invalid blocksets include those that:
@@ -63,8 +63,8 @@ namespace Duplicati.Library.Main.Database
                     ""BlocksetID"" AS ""BlocksetID""
                 FROM ""FileLookup""
                 WHERE
-                    ""BlocksetID"" != {Library.Utility.Utility.FormatInvariant(FOLDER_BLOCKSET_ID)}
-                    AND ""BlocksetID"" != {Library.Utility.Utility.FormatInvariant(SYMLINK_BLOCKSET_ID)}
+                    ""BlocksetID"" != {Library.Utility.Utility.FormatInvariantValue(FOLDER_BLOCKSET_ID)}
+                    AND ""BlocksetID"" != {Library.Utility.Utility.FormatInvariantValue(SYMLINK_BLOCKSET_ID)}
                 UNION
                     SELECT
                         ""A"".""ID"" AS ""ID"",
@@ -270,7 +270,7 @@ namespace Duplicati.Library.Main.Database
                     ""Size""
                 FROM ""RemoteVolume""
                 WHERE
-                    ""Type"" = '{Library.Utility.Utility.FormatInvariant(RemoteVolumeType.Index)}'
+                    ""Type"" = '{Library.Utility.Utility.FormatInvariantValue(RemoteVolumeType.Index)}'
                     AND ""ID"" NOT IN (
                         SELECT ""IndexVolumeID""
                         FROM ""IndexBlockLink""

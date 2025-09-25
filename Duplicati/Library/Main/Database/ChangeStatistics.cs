@@ -290,10 +290,10 @@ public static class ChangeStatistics
     private static string GetBlocksetCondition(string alias, long? blocksetId, long[]? exclude)
     {
         if (blocksetId.HasValue)
-            return $@"{alias}.""BlocksetID"" = {Library.Utility.Utility.FormatInvariant(blocksetId.Value)}";
+            return $@"{alias}.""BlocksetID"" = {Library.Utility.Utility.FormatInvariantValue(blocksetId.Value)}";
         if (exclude?.Length > 0)
         {
-            var formatted_exclude = exclude.Select(x => Library.Utility.Utility.FormatInvariant(x));
+            var formatted_exclude = exclude.Select(x => Library.Utility.Utility.FormatInvariantValue(x));
             return $@"{alias}.""BlocksetID"" NOT IN ({string.Join(",", formatted_exclude)})";
         }
         return string.Empty;

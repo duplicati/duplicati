@@ -22,8 +22,11 @@
 using LicenseUpdater;
 
 var cmdargs = Environment.GetCommandLineArgs();
-if (cmdargs.Length != 2)
-    throw new Exception($"Usage: dotnet run <path-to-source-folder>");
+if (cmdargs.Length != 2 && cmdargs.Length != 3)
+    throw new Exception($"Usage: dotnet run <path-to-source-folder> [\"copyright name\"]");
+
+if (cmdargs.Length == 3)
+    Fragments.CopyrightHolder = cmdargs[2];
 
 var startpath = Path.GetFullPath(Environment.GetCommandLineArgs().Skip(1).First());
 if (!Directory.Exists(startpath))
@@ -37,7 +40,7 @@ var target_extensions = new[] {
     // ".css"
 }.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-File.WriteAllText(Path.Combine(startpath, "LICENSE"), Fragments.GetLicenseTextWithPrefixedLines(string.Empty));
+File.WriteAllText(Path.Combine(startpath, "LICENSE"), Fragments.LICENSE_FILE_HEADER + Fragments.GetLicenseTextWithPrefixedLines(string.Empty));
 
 var candidates = Directory.EnumerateFiles(startpath, "*", SearchOption.AllDirectories)
     .Where(x => target_extensions.Contains(Path.GetExtension(x) ?? string.Empty));
@@ -67,7 +70,8 @@ foreach (var file in candidates)
 
     if (string.Equals(Path.GetExtension(file), ".cs", StringComparison.OrdinalIgnoreCase) && !data.StartsWith("// Copyright", StringComparison.OrdinalIgnoreCase))
     {
-        data = Fragments.GetLicenseTextWithPrefixedLines() + data;
+        var linefeed = data.Contains("\r\n") ? "\r\n" : data.Contains("\r") ? "\r" : "\n";
+        data = Fragments.GetLicenseTextWithPrefixedLines(linefeed: linefeed) + data;
         File.WriteAllText(file, data);
         // Console.WriteLine($"{file} updated!");
         continue;
