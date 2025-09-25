@@ -1660,7 +1660,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="formattable">The formattable string</param>
         /// <returns>The formatted string</returns>
-        public static string FormatInvariantFormattable(this FormattableString formattable)
+        public static string FormatInvariantFormattable(FormattableString formattable)
             => formattable.ToString(CultureInfo.InvariantCulture);
 
         /// <summary>
@@ -1670,7 +1670,7 @@ namespace Duplicati.Library.Utility
         /// <typeparam name="T">The type of the value.</typeparam>
         /// <param name="value">The value to format.</param>
         /// <returns>The formatted string.</returns>
-        public static string FormatInvariantValue<T>(this T value)
+        public static string FormatInvariantValue<T>(T value)
             => value is IFormattable f
                 ? f.ToString(null, CultureInfo.InvariantCulture)
                 : string.Format(CultureInfo.InvariantCulture, "{0}", value);

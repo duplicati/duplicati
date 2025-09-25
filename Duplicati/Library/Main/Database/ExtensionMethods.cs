@@ -778,7 +778,7 @@ public static partial class ExtensionMethods
             else if (p.Value is byte[] bytes)
                 v = Library.Utility.Utility.FormatInvariantFormattable($"X'{BitConverter.ToString(bytes).Replace("-", "")}'");
             else
-                v = p.Value?.FormatInvariantValue() ?? "NULL";
+                v = Library.Utility.Utility.FormatInvariantValue(p.Value);
 
             // Replace all occurrences of the parameter (with word boundary)
             txt = Regex.Replace(txt, $@"\B{Regex.Escape(paramName)}\b", v, RegexOptions.IgnoreCase);
