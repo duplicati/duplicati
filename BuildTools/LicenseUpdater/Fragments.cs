@@ -25,9 +25,12 @@ namespace LicenseUpdater;
 
 public static class Fragments
 {
-    public static string NEW_LICENSE = @"MIT License
+    public static string CopyrightHolder = "Team Duplicati";
 
-Copyright (c) YYYY Duplicati contributors
+    public static string LICENSE_FILE_HEADER = @"MIT License
+
+";
+    public static string NEW_LICENSE = @"Copyright (c) YYYY $HOLDER
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the ""Software""), to deal
@@ -54,19 +57,20 @@ SOFTWARE.".Replace("YYYY", DateTime.UtcNow.Year.ToString());
     public static Regex CS_LGPL_MATCH = new Regex(@"(?<license>//\s+Copyright \(C\) \d{4}, The Duplicati Team.+(?:Free Software Foundation).+Boston,\s+MA\s+0211\d-130\d\s+USA)", RE_OPTS);
 
     public static Regex CS_MIT_MATCH = new Regex(@"(?<license>//\s+Copyright \(C\) \d{4}, The Duplicati Team.+(?:copyright notice and this permission notice).+IN THE SOFTWARE\.)", RE_OPTS);
+    public static Regex CS_MIT_MATCH2 = new Regex(@"(?<license>//\s+Copyright \(C\) \d{4}, The Duplicati Team.+(?:copyright notice and this permission notice).+IN THE SOFTWARE\.)".Replace("The Duplicati Team", Fragments.CopyrightHolder), RE_OPTS);
 
     public static Regex CSPROJ_COPYRIGHT_MATCH = new Regex(@"<Copyright>(.*?)<\/Copyright>");
 
-    public static string GetLicenseTextWithPrefixedLines(string linePrefix = "// ")
-        => string.Join("\n", Fragments.NEW_LICENSE.Split("\n").Select(x => linePrefix + x).Append(string.Empty));
+    public static string GetLicenseTextWithPrefixedLines(string linePrefix = "// ", string linefeed = "\n")
+        => string.Join(linefeed, Fragments.NEW_LICENSE.Replace("$HOLDER", Fragments.CopyrightHolder).Split("\n").Select(x => linePrefix + x).Append(string.Empty));
 
     private static readonly string LicenseTextWithPrefixedLines = GetLicenseTextWithPrefixedLines();
 
-    public static readonly string CopyrightText = $"Copyright © {DateTime.UtcNow.Year.ToString()} Team Duplicati, MIT license";
+    public static readonly string CopyrightText = $"Copyright © {DateTime.UtcNow.Year.ToString()} {Fragments.CopyrightHolder}, MIT license";
 
     public static bool MatchAndReplace(ref string data)
     {
-        foreach (var m in new[] { CS_REGION_MATCH, CS_MIT_MATCH })
+        foreach (var m in new[] { CS_REGION_MATCH, CS_MIT_MATCH, CS_MIT_MATCH2 })
         {
             var match = m.Match(data);
             if (match.Success && match.Groups["license"].Success)
