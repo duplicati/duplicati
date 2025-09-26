@@ -18,6 +18,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Server;
+using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -38,8 +40,8 @@ public class Commandline : IEndpointV1
             => ExecuteAbortCommand(commandlineRunService, runid))
             .RequireAuthorization();
 
-        group.MapPost("/commandline", ([FromServices] ICommandlineRunService commandlineRunService, [FromBody] string[] input)
-            => ExecuteRunCommand(commandlineRunService, input))
+        group.MapPost("/commandline", ([FromServices] Connection connection, [FromServices] ICommandlineRunService commandlineRunService, [FromBody] string[] input)
+            => ExecuteRunCommand(connection, commandlineRunService, input))
             .RequireAuthorization();
     }
 
@@ -87,12 +89,73 @@ public class Commandline : IEndpointV1
         activeRun.Abort();
     }
 
-    private static Dto.CommandlineTaskStartedDto ExecuteRunCommand(ICommandlineRunService commandlineRunService, string[] arguments)
+    private static Dto.CommandlineTaskStartedDto ExecuteRunCommand(Connection connection, ICommandlineRunService commandlineRunService, string[] arguments)
     {
         if (arguments.Length == 0)
             throw new BadRequestException("No arguments provided");
         if (CommandLine.Program.SupportedCommands.Contains(arguments[0]) == false)
             throw new BadRequestException("Command not supported");
+
+        // Parse arguments into args + options, so we can replace any password placeholders
+        var args = new List<string>();
+        var options = new List<KeyValuePair<string, string?>>();
+        var inArgParse = false;
+
+        foreach (var n in arguments)
+        {
+            if (n.StartsWith("--", StringComparison.Ordinal))
+            {
+                var eq = n.IndexOf('=');
+                if (eq > 2)
+                {
+                    var key = n.Substring(2, eq - 2);
+                    var value = n.Substring(eq + 1);
+                    if (value.StartsWith("\"") && value.EndsWith("\"") && value.Length >= 2)
+                        value = value.Substring(1, value.Length - 2);
+                    options.Add(new KeyValuePair<string, string?>(key, value));
+                    inArgParse = false;
+                }
+                else
+                {
+                    var key = n.Substring(2);
+                    options.Add(new KeyValuePair<string, string?>(key, null));
+                    inArgParse = true;
+                }
+            }
+            // Support "--key value" format
+            else if (inArgParse)
+            {
+                var last = options[^1];
+                options[^1] = new KeyValuePair<string, string?>(last.Key, n);
+                inArgParse = false;
+            }
+            else
+            {
+                args.Add(n);
+            }
+        }
+
+        var backupId = options.FirstOrDefault(x => x.Key.Equals("backup-id", StringComparison.OrdinalIgnoreCase)).Value;
+        if (backupId != null)
+        {
+            var backup = connection.GetBackup(backupId);
+            if (backup != null)
+            {
+                if (args.Count > 1)
+                    args[1] = QuerystringMasking.Unmask(args[1], backup.TargetURL);
+
+                var settings = backup.Settings.ToDictionary(x => x.Name, x => x.Value, StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < options.Count; i++)
+                {
+                    var opt = options[i];
+                    if (settings.TryGetValue(opt.Key, out var val) && Connection.IsPasswordPlaceholder(opt.Value))
+                        options[i] = new KeyValuePair<string, string?>(opt.Key, val);
+                }
+            }
+        }
+
+        arguments = args.Concat(options.Select(x => x.Value == null ? $"--{x.Key}" : $"--{x.Key}={x.Value}")).ToArray();
+
         return new Dto.CommandlineTaskStartedDto("OK", commandlineRunService.StartTask(arguments));
     }
 
