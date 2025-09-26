@@ -1020,7 +1020,7 @@ namespace Duplicati.Library.Main.Database
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
             {
                 var path = rd.ConvertValueToString(0) ?? string.Empty;
-                var size = rd.ConvertValueToInt64(-1);
+                var size = rd.ConvertValueToInt64(1);
                 var isDir = rd.GetInt32(2) != 0;
                 var isSymlink = rd.GetInt32(3) != 0;
                 var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
