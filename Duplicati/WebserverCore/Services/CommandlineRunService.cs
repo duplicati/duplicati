@@ -99,7 +99,6 @@ public class CommandlineRunService(IQueueRunnerService queueRunnerService, ILogW
         public bool Finished { get; set; } = false;
         public bool Started { get; set; } = false;
         public bool IsLogDisposed { get; set; } = false;
-        public Thread? Thread;
 
         public IEnumerable<string> GetLog() => Log;
 
@@ -108,10 +107,6 @@ public class CommandlineRunService(IQueueRunnerService queueRunnerService, ILogW
             var tt = this.Task;
             if (tt != null)
                 tt.Abort();
-
-            var tr = this.Thread;
-            if (tr != null)
-                tr.Interrupt();
         }
     }
 
@@ -143,7 +138,6 @@ public class CommandlineRunService(IQueueRunnerService queueRunnerService, ILogW
         {
             try
             {
-                k.Thread = Thread.CurrentThread;
                 k.Started = true;
 
                 // Expand sources for supporting %DOCUMENTS% and similar
@@ -191,7 +185,6 @@ public class CommandlineRunService(IQueueRunnerService queueRunnerService, ILogW
             finally
             {
                 k.Finished = true;
-                k.Thread = null;
             }
         });
 
