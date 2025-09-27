@@ -7,7 +7,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
         setBuilduriFn: '&'
     },
     templateUrl: 'templates/edituri.html',
-    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService) {
+    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, EditUriBuiltins) {
 
         var scope = $scope;
         scope.AppUtils = AppUtils;
