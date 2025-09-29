@@ -31,23 +31,23 @@ We also provide a comprehensive [Duplicati manual](https://docs.duplicati.com), 
 
 # Features
 
-- Duplicati uses AES-256 encryption (or GNU Privacy Guard) to secure all data before uploading.
-- Initial full backup followed by smaller, incremental updates to save bandwidth and storage.
-- Built-in scheduler ensures backups stay up-to-date automatically.
-- An integrated updater notifies you of new releases.
-- Encrypted backups can be transferred to destinations like FTP, WebDAV, SSH (SFTP), Amazon S3, and more.
-- Flexible backup options: back up folders, specific file types (e.g., documents or images), or use custom filters.
-- Available as a user-friendly application or a command-line tool.
-- Supports backing up open or locked files using Volume Snapshot Service (VSS) on Windows or Logical Volume Manager (LVM) on Linux.
-- Advanced options for filters, deletion rules, transfer settings, bandwidth limits, and more.
+-   Duplicati uses AES-256 encryption (or GNU Privacy Guard) to secure all data before uploading.
+-   Only initial backup is with full contents, all additional backups are differential to save bandwidth and storage
+-   Built-in scheduler ensures backups stay up-to-date automatically.
+-   An integrated updater notifies you of new releases.
+-   Encrypted backups can be transferred to destinations like FTP, WebDAV, SSH (SFTP), Amazon S3, and more.
+-   Flexible backup options: back up folders, specific file types (e.g., documents or images), or use custom filters.
+-   Available as a user-friendly application or a command-line tool.
+-   Supports backing up open or locked files using Volume Snapshot Service (VSS) on Windows or Logical Volume Manager (LVM) on Linux.
+-   Advanced options for filters, deletion rules, transfer settings, bandwidth limits, and more.
 
 # Why Use Duplicati?
 
 Keep your data safe, store it remotely, and back it up regularly! Many backup solutions fail to meet these essential requirements, but Duplicati excels at all three:
 
-- **Keep your data safe:** Duplicati uses strong encryption to ensure your data remains private. With a secure password, your backup files are safer on a public web server than unencrypted files at home.
-- **Store your backup remotely:** Protect your data from local disasters like fires by storing backups on remote servers. Duplicati supports incremental backups, making it efficient to use distant storage destinations.
-- **Backup regularly:** Outdated backups are as good as no backups. Duplicati's built-in scheduler ensures your backups are always current. It also uses compression and incremental backups to save storage and bandwidth.
+-   **Keep your data safe:** Duplicati uses strong encryption to ensure your data remains private. With a secure password, your backup files are safer on a public web server than unencrypted files at home.
+-   **Store your backup remotely:** Protect your data from local disasters like fires by storing backups on remote servers. Duplicati supports incremental backups, making it efficient to use distant storage destinations.
+-   **Backup regularly:** Outdated backups are as good as no backups. Duplicati's built-in scheduler ensures your backups are always current. It also uses compression and incremental backups to save storage and bandwidth.
 
 # Contributing
 
