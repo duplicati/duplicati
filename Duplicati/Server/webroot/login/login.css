@@ -83,3 +83,18 @@ input {
     margin-left: 16px;
     color: #777;
 }
+
+#login div.nojs {
+    margin-top: 16px;
+    margin-left: 16px;
+    color: red;
+    opacity: 0;
+    animation: showafter2s 0s forwards;
+    animation-delay: 2s;
+}
+
+@keyframes showafter2s {
+    to {
+        opacity: 1;
+    }
+}
