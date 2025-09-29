@@ -1,5 +1,7 @@
 $(document).ready(function() {
     var processing = false;
+
+    document.getElementById('no-js-warning').style.display = 'none';
     
     function getQueryParam(name) {
         var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);

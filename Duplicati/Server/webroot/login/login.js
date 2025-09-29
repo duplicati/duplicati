@@ -1,5 +1,7 @@
 $(document).ready(function() {
     var processing = false;
+    
+    document.getElementById('no-js-warning').style.display = 'none';
 
     $('#login-form').on('submit', function() {
 
