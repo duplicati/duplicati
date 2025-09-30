@@ -149,7 +149,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Verify the target file blocks that may already exist.
                         long bytes_verified;
                         List<BlockRequest> missing_blocks, verified_blocks;
-                        try {
+                        try
+                        {
                             (bytes_verified, missing_blocks, verified_blocks) = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, buffer, options, results).ConfigureAwait(false);
                         }
                         catch (Exception ex)
