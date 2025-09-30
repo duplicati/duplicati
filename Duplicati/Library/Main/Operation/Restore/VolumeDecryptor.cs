@@ -69,23 +69,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_read?.Start();
                         var (volume_id, volume_name, volume) = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_read?.Stop();
-                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, $"Decrypting volume {volume_name} (ID: {volume_id})");
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Decrypting volume {0} (ID: {1})", volume_name, volume_id);
 
                         sw_decrypt?.Start();
                         var tmpfile = backend.DecryptFile(volume, volume_name, options);
                         sw_decrypt?.Stop();
-                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, $"Decrypted volume {volume_name} (ID: {volume_id})");
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Decrypted volume {0} (ID: {1})", volume_name, volume_id);
 
                         sw_bvr?.Start();
                         var bvr = new BlockVolumeReader(options.CompressionModule, tmpfile, options);
                         sw_bvr?.Stop();
-                        Logging.Log.WriteExplicitMessage(LOGTAG, "BlockVolumeReader", null, $"Created BlockVolumeReader for volume {volume_name} (ID: {volume_id})");
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "BlockVolumeReader", null, "Created BlockVolumeReader for volume {0} (ID: {1})", volume_name, volume_id);
 
                         sw_write?.Start();
                         // Pass the decrypted volume to the `VolumeDecompressor` process.
                         await self.Output.WriteAsync((volume_id, tmpfile, bvr)).ConfigureAwait(false);
                         sw_write?.Stop();
-                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, $"Passed decrypted volume {volume_name} (ID: {volume_id}) to next stage");
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Passed decrypted volume {0} (ID: {1}) to next stage", volume_name, volume_id);
                     }
                 }
                 catch (RetiredException)

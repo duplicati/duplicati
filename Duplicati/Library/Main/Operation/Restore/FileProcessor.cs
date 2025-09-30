@@ -115,7 +115,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         var file = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_file?.Stop();
 
-                        Logging.Log.WriteExplicitMessage(LOGTAG, "FileRestored", null, $"{my_id} Restoring file {file.TargetPath}");
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "FileRestored", null, "{0} Restoring file {1}", my_id, file.TargetPath);
 
                         if (file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID && !options.SkipMetadata)
                         {

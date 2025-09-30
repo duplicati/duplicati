@@ -144,7 +144,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 m_entry_options.RegisterPostEvictionCallback((key, value, reason, state) =>
                 {
                     Interlocked.Decrement(ref m_block_cache_count);
-                    Logging.Log.WriteExplicitMessage(LOGTAG, "CacheEvictCallback", $"Evicted block {key} from cache");
+                    Logging.Log.WriteExplicitMessage(LOGTAG, "CacheEvictCallback", "Evicted block {0} from cache", key);
                 });
                 m_readers = readers;
                 sw_cacheevict = options.InternalProfiling ? new() : null;
@@ -240,12 +240,12 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (error_block_id != -1)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block {blockRequest.BlockID} has a count below 0");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, "Block {0} has a count below 0", blockRequest.BlockID);
                 }
 
                 if (error_volume_id != -1)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume {blockRequest.VolumeID} has a count below 0");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, "Volume {0} has a count below 0", blockRequest.VolumeID);
                 }
             }
 
@@ -454,7 +454,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             var (block_request, data) = await self.Input.ReadAsync().ConfigureAwait(false);
                             sw_read?.Stop();
 
-                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, $"Received block request: {block_request.RequestType} for block {block_request.BlockID} from volume {block_request.VolumeID}");
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, "Received block request: {0} for block {1} from volume {2}", block_request.RequestType, block_request.BlockID, block_request.VolumeID);
                             sw_ack?.Start();
                             block_request.RequestType = BlockRequestType.DecompressAck;
                             while (true)
@@ -466,7 +466,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                             sw_ack?.Stop();
 
-                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, $"Received data for block {block_request.BlockID} from volume {block_request.VolumeID}");
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, "Received data for block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
                             sw_set?.Start();
                             cache.Set(block_request.BlockID, data);
                             sw_set?.Stop();
@@ -509,19 +509,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                             sw_req?.Start();
                             var block_request = await req.ReadAsync().ConfigureAwait(false);
                             sw_req?.Stop();
-                            Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, $"Received block request: {block_request.RequestType}");
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, "Received block request: {0}", block_request.RequestType);
                             switch (block_request.RequestType)
                             {
                                 case BlockRequestType.Download:
                                     sw_get?.Start();
                                     var datatask = cache.Get(block_request);
                                     sw_get?.Stop();
-                                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, $"Retrieved data for block {block_request.BlockID} and volume {block_request.VolumeID}");
+                                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, "Retrieved data for block {0} and volume {1}", block_request.BlockID, block_request.VolumeID);
 
                                     sw_resp?.Start();
                                     await res.WriteAsync(datatask).ConfigureAwait(false);
                                     sw_resp?.Stop();
-                                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, $"Passed data for block {block_request.BlockID} and volume {block_request.VolumeID} to FileProcessor");
+                                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, "Passed data for block {0} and volume {1} to FileProcessor", block_request.BlockID, block_request.VolumeID);
                                     break;
                                 case BlockRequestType.CacheEvict:
                                     sw_cache?.Start();
@@ -529,7 +529,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     await cache.CheckCounts(block_request).ConfigureAwait(false);
                                     sw_cache?.Stop();
 
-                                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, $"Decremented counts for block {block_request.BlockID} and volume {block_request.VolumeID}");
+                                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, "Decremented counts for block {0} and volume {1}", block_request.BlockID, block_request.VolumeID);
                                     break;
                                 case BlockRequestType.DecompressAck:
                                 default:
