@@ -60,6 +60,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 Stopwatch? sw_read = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_write = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_decrypt = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_bvr = options.InternalProfiling ? new() : null;
                 try
                 {
                     while (true)
@@ -71,8 +72,11 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_decrypt?.Start();
                         var tmpfile = backend.DecryptFile(volume, volume_name, options);
-                        var bvr = new BlockVolumeReader(options.CompressionModule, tmpfile, options);
                         sw_decrypt?.Stop();
+
+                        sw_bvr?.Start();
+                        var bvr = new BlockVolumeReader(options.CompressionModule, tmpfile, options);
+                        sw_bvr?.Stop();
 
                         sw_write?.Start();
                         // Pass the decrypted volume to the `VolumeDecompressor` process.
