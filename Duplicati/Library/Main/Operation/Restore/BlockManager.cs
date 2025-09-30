@@ -75,7 +75,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// The dictionary holding the `Task` for each block request in flight.
             /// </summary>
-            private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> m_waiters = new();
+            private readonly ConcurrentDictionary<long, TaskCompletionSource<DataBlock>> m_waiters = [];
             /// <summary>
             /// The number of readers accessing this dictionary. Used during shutdown / cleanup.
             /// </summary>
@@ -125,10 +125,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The cache eviction options. Used for registering a callback when a block is evicted from the cache.
             /// </summary>
             private readonly MemoryCacheEntryOptions m_entry_options = new();
-            /// <summary>
-            /// Dictionary to keep track of how many active readers are accessing each block. On eviction, the byte[] buffer can only be returned to the ArrayPool if there are no active readers.
-            /// </summary>
-            private readonly ConcurrentDictionary<long, long> m_active_readers = [];
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
@@ -141,29 +137,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 m_volume_request = volume_request;
                 var cache_options = new MemoryCacheOptions();
                 m_block_cache = new MemoryCache(cache_options);
-                m_entry_options.RegisterPostEvictionCallback(async (key, value, reason, state) =>
+                m_entry_options.RegisterPostEvictionCallback((key, value, reason, state) =>
                 {
-                    bool was_present = false;
-                    while (true)
-                    {
-                        lock (m_blockcount_lock)
-                        {
-                            if (m_active_readers.TryGetValue((long)key, out var ac))
-                            {
-                                if (ac == 0)
-                                {
-                                    was_present = true;
-                                    break;
-                                }
-                            }
-                            else
-                                break;
-                        }
-
-                        await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
-                    }
-                    if (was_present)
-                        ArrayPool<byte>.Shared.Return((byte[])value);
+                    Logging.Log.WriteExplicitMessage(LOGTAG, "CacheEvictCallback", $"Evicted block {key} from cache");
                 });
                 this.readers = readers;
                 sw_cacheevict = options.InternalProfiling ? new() : null;
@@ -217,12 +193,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     sw_checkcounts?.Start();
 
-                    var active = m_active_readers.TryGetValue(blockRequest.BlockID, out var ac) ? ac - 1 : 0;
-                    if (active == 0)
-                        m_active_readers.Remove(blockRequest.BlockID, out var _);
-                    else
-                        m_active_readers[blockRequest.BlockID] = active;
-
                     var block_count = m_blockcount.TryGetValue(blockRequest.BlockID, out var c) ? c - 1 : 0;
 
                     if (block_count > 0)
@@ -233,7 +203,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         // Evict the block from the cache and check if the volume is no longer needed.
                         m_blockcount.Remove(blockRequest.BlockID);
-                        data = m_block_cache.Get<byte[]>(blockRequest.BlockID);
                         m_block_cache.Remove(blockRequest.BlockID);
                     }
                     else // block_count < 0
@@ -259,8 +228,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     sw_checkcounts?.Stop();
                 }
 
-                if (data != null)
-                    ArrayPool<byte>.Shared.Return(data);
 
                 // Notify the `VolumeManager` that it should evict the volume.
                 if (emit_evict)
@@ -284,19 +251,12 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="block_request">The requested block.</param>
             /// <returns>A `Task` holding the data block.</returns>
-            public async Task<byte[]> Get(BlockRequest block_request)
+            public async Task<DataBlock> Get(BlockRequest block_request)
             {
                 Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Getting block {0} from cache", block_request.BlockID);
 
-                lock (m_blockcount_lock)
-                {
-                    m_active_readers[block_request.BlockID] = m_active_readers.TryGetValue(block_request.BlockID, out var c) ? c + 1 : 1;
-                }
-
-                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Active readers for block {0}: {1}", block_request.BlockID, m_active_readers[block_request.BlockID]);
-
                 // Check if the block is already in the cache, and return it if it is.
-                if (m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
+                if (m_block_cache.TryGetValue(block_request.BlockID, out DataBlock? value))
                 {
                     if (value is null)
                         throw new InvalidOperationException($"Block {block_request.BlockID} was in the cache, but the value was null");
@@ -306,7 +266,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // If the block is not in the cache, request it from the volume.
                 sw_get_wait?.Start();
-                var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var tcs = new TaskCompletionSource<DataBlock>(TaskCreationOptions.RunContinuationsAsynchronously);
                 var new_tcs = m_waiters.GetOrAdd(block_request.BlockID, tcs);
                 if (tcs == new_tcs)
                 {
@@ -344,10 +304,12 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="value">The byte[] buffer holding the block data.</param>
             public void Set(long blockID, byte[] value)
             {
+                // TODO If this block is only needed once, then it can skip the cache.
                 Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockID);
 
                 sw_set_set?.Start();
-                m_block_cache.Set(blockID, value);
+                var block = new DataBlock(value);
+                m_block_cache.Set(blockID, block);
                 sw_set_set?.Stop();
 
                 // Notify any waiters that the block is available.
@@ -356,7 +318,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     sw_set_wake_get?.Stop();
                     sw_set_wake_set?.Start();
-                    tcs.SetResult(value);
+                    tcs.SetResult(block);
                     sw_set_wake_set?.Stop();
                 }
                 sw_set_wake_get?.Stop();
@@ -398,11 +360,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     var blocks = m_blockcount.Where(x => x.Value != 0).Select(x => x.Key).ToArray();
                     var blockids = string.Join(", ", blocks);
                     Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block count in SleepableDictionarys block table is not zero: {blockcount}{Environment.NewLine}");
-                }
-
-                if (m_active_readers.Count > 0)
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"There are still {m_active_readers.Count} files being read by {m_active_readers.Sum(x => x.Value)} readers");
                 }
 
                 if (volumecount != 0)
@@ -451,7 +408,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="fp_responses">The channels for writing block responses back to the `FileProcessor`.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The results of the restore operation.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest>[] fp_requests, IChannel<Task<byte[]>>[] fp_responses, Options options, RestoreResults results)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest>[] fp_requests, IChannel<Task<DataBlock>>[] fp_responses, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new

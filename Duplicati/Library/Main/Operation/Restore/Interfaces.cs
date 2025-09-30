@@ -19,6 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System.Buffers;
+
+#nullable enable
+
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
@@ -30,6 +34,29 @@ namespace Duplicati.Library.Main.Operation.Restore
         Download, // Request to download a block
         CacheEvict, // Request to evict a block from cache
         DecompressAck // Acknowledgment for decompression completion
+    }
+
+    /// <summary>
+    /// Represents a block of data where the byte[] buffer is returned to the ArrayPool when the DataBlock is finalized.
+    /// </summary>
+    public class DataBlock(byte[] data)
+    {
+        /// <summary>
+        /// The data buffer for this block. This buffer is returned to the ArrayPool when the DataBlock is finalized, which will make this field null.
+        /// </summary>
+        public byte[]? Data = data;
+
+        /// <summary>
+        /// Finalizer that returns the data buffer to the ArrayPool if it hasn't been returned yet.
+        /// </summary>
+        ~DataBlock()
+        {
+            if (Data != null)
+            {
+                ArrayPool<byte>.Shared.Return(Data);
+                Data = null;
+            }
+        }
     }
 
     /// <summary>

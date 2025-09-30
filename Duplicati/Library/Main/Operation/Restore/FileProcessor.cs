@@ -71,7 +71,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="block_response">The channel to receive blocks from the block manager.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<Task<byte[]>> block_response, Options options, RestoreResults results)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<Task<DataBlock>> block_response, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -344,7 +344,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         // Read the block from the response and issue a new request, if more blocks are missing
                                         sw_resp?.Start();
-                                        var data = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                                        var datablock = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                                        if (datablock.Data == null)
+                                        {
+                                            throw new Exception($"Received null data block from request {missing_blocks[i].BlockID} for file {file.TargetPath}");
+                                        }
                                         sw_resp?.Stop();
 
                                         sw_req?.Start();
@@ -365,7 +369,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                                         // Hash the block to verify the file hash
                                         sw_work_hash?.Start();
-                                        filehasher.TransformBlock(data, 0, (int)blocks[i].BlockSize, data, 0);
+                                        filehasher.TransformBlock(datablock.Data, 0, (int)blocks[i].BlockSize, datablock.Data, 0);
                                         sw_work_hash?.Stop();
                                         if (options.Dryrun)
                                         {
@@ -376,7 +380,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         {
                                             // Write the block to the file
                                             sw_work_write?.Start();
-                                            await fs.WriteAsync(data.AsMemory(0, (int)blocks[i].BlockSize)).ConfigureAwait(false);
+                                            await fs!.WriteAsync(datablock.Data.AsMemory(0, (int)blocks[i].BlockSize)).ConfigureAwait(false);
                                             sw_work_write?.Stop();
                                         }
 
@@ -630,7 +634,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="sw_resp">The stopwatch for internal profiling of the block responses.</param>
         /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
         /// <returns>An awaitable `Task`, which returns `true` if the metadata was restored successfully, `false` otherwise.</returns>
-        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<Task<byte[]>> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp, CancellationToken cancellationToken)
+        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<Task<DataBlock>> block_response, Options options, Stopwatch? sw_meta, Stopwatch? sw_work, Stopwatch? sw_req, Stopwatch? sw_resp, CancellationToken cancellationToken)
         {
             sw_meta?.Start();
             // Since each FileProcessor should have its own connection, it's ok
@@ -660,11 +664,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_req?.Stop();
 
                 sw_resp?.Start();
-                var data = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                var datablock = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                if (datablock.Data == null)
+                {
+                    throw new Exception($"Received null data block from request {block.BlockID} when restoring metadata for file {file.TargetPath}");
+                }
                 sw_resp?.Stop();
 
                 sw_work?.Start();
-                ms.Write(data, 0, (int)block.BlockSize);
+                ms.Write(datablock.Data, 0, (int)block.BlockSize);
                 sw_work?.Stop();
 
                 sw_req?.Start();

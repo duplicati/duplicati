@@ -345,7 +345,7 @@ namespace Duplicati.Library.Main.Operation
 
             using var setup_log_timer = new Logging.Timer(LOGTAG, "RestoreNetworkSetup", "RestoreNetworkSetup");
             var fileprocessor_requests = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize: m_options.RestoreChannelBufferSize)).ToArray();
-            var fileprocessor_responses = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Task<byte[]>>(buffersize: m_options.RestoreChannelBufferSize)).ToArray();
+            var fileprocessor_responses = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Task<Restore.DataBlock>>(buffersize: m_options.RestoreChannelBufferSize)).ToArray();
 
             // Create the process network
             Restore.Channels channels = new(m_options);
