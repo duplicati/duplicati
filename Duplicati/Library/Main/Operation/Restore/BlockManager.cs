@@ -83,7 +83,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// The number of readers accessing this dictionary. Used during shutdown / cleanup.
             /// </summary>
-            private int readers = 0;
+            private int m_readers = 0;
             /// <summary>
             /// Internal stopwatch for profiling the cache eviction.
             /// </summary>
@@ -146,7 +146,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Interlocked.Decrement(ref m_block_cache_count);
                     Logging.Log.WriteExplicitMessage(LOGTAG, "CacheEvictCallback", $"Evicted block {key} from cache");
                 });
-                this.readers = readers;
+                m_readers = readers;
                 sw_cacheevict = options.InternalProfiling ? new() : null;
                 sw_checkcounts = options.InternalProfiling ? new() : null;
                 sw_get_wait = options.InternalProfiling ? new() : null;
@@ -345,7 +345,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             public void Retire()
             {
-                if (Interlocked.Decrement(ref readers) <= 0)
+                if (Interlocked.Decrement(ref m_readers) <= 0)
                 {
                     m_volume_request.Retire();
                 }
