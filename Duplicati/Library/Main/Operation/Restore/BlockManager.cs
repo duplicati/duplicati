@@ -363,32 +363,37 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (blockcount != 0)
                 {
-                    var blocks = m_blockcount.Where(x => x.Value != 0).Select(x => x.Key).ToArray();
+                    var blocks = m_blockcount
+                        .Where(x => x.Value != 0)
+                        .Take(10)
+                        .Select(x => x.Key);
                     var blockids = string.Join(", ", blocks);
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block count in SleepableDictionarys block table is not zero: {blockcount}{Environment.NewLine}");
+                    Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountError", null, $"Block count in SleepableDictionarys block table is not zero: {blockcount}{Environment.NewLine}First 10 blocks: {blockids}");
                 }
 
                 if (volumecount != 0)
                 {
-                    var vols = m_volumecount.Where(x => x.Value != 0).Select(x => x.Key).ToArray();
+                    var vols = m_volumecount
+                        .Where(x => x.Value != 0)
+                        .Take(10)
+                        .Select(x => x.Key);
                     var volids = string.Join(", ", vols);
-                    Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume count in SleepableDictionarys volume table is not zero: {volumecount}{Environment.NewLine}Volumes: {volids}");
+                    Logging.Log.WriteErrorMessage(LOGTAG, "VolumeCountError", null, $"Volume count in SleepableDictionarys volume table is not zero: {volumecount}{Environment.NewLine}First 10 volumes: {volids}");
                 }
+
+                if (m_block_cache.Count > 0)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
+                    Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"Block counts in cache ({m_blockcount.Count}): {string.Join(", ", m_blockcount.Select(x => x.Value))}");
+                }
+
+                if (m_block_cache.Count != m_block_cache_count)
+                    Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, "The secondary counter doesn't match the actual count {0} != {1} (max size is {2})", m_block_cache_count, m_block_cache.Count, m_options.RestoreCacheMax);
 
                 if (m_options.InternalProfiling)
                 {
                     Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts!.ElapsedMilliseconds}ms, Get wait: {sw_get_wait!.ElapsedMilliseconds}ms, Set set: {sw_set_set!.ElapsedMilliseconds}ms, Set wake get: {sw_set_wake_get!.ElapsedMilliseconds}ms, Set wake set: {sw_set_wake_set!.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict!.ElapsedMilliseconds}ms");
                 }
-
-                if (m_block_cache.Count > 0)
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheMismatch", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheMismatch", null, $"Block counts in cache ({m_blockcount.Count}): {string.Join(", ", m_blockcount.Select(x => x.Value))}");
-                }
-
-                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCount", "Cache count was {0}/{1}/{2}", m_block_cache_count, m_block_cache.Count, m_options.RestoreCacheMax);
-                if (m_block_cache.Count != m_block_cache_count)
-                    Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, "The secondary counter doesn't match the actual count {0} != {1}", m_block_cache_count, m_block_cache.Count);
             }
 
             /// <summary>
