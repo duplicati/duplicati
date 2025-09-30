@@ -32,6 +32,8 @@ using CoCoL;
 using Duplicati.Library.Main.Database;
 using Microsoft.Extensions.Caching.Memory;
 
+#nullable enable
+
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
@@ -81,27 +83,27 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// Internal stopwatch for profiling the cache eviction.
             /// </summary>
-            private readonly Stopwatch sw_cacheevict;
+            private readonly Stopwatch? sw_cacheevict;
             /// <summary>
             /// Internal stopwatch for profiling the `CheckCounts` method.
             /// </summary>
-            private readonly Stopwatch sw_checkcounts;
+            private readonly Stopwatch? sw_checkcounts;
             /// <summary>
             /// Internal stopwatch for profiling setting up the waiters.
             /// </summary>
-            private readonly Stopwatch sw_get_wait;
+            private readonly Stopwatch? sw_get_wait;
             /// <summary>
             /// Internal stopwatch for profiling setting a block in the cache.
             /// </summary>
-            private readonly Stopwatch sw_set_set;
+            private readonly Stopwatch? sw_set_set;
             /// <summary>
             /// Internal stopwatch for profiling getting a waiter to notify that the block is available.
             /// </summary>
-            private readonly Stopwatch sw_set_wake_get;
+            private readonly Stopwatch? sw_set_wake_get;
             /// <summary>
             /// Internal stopwatch for profiling for waking up the waiting request.
             /// </summary>
-            private readonly Stopwatch sw_set_wake_set;
+            private readonly Stopwatch? sw_set_wake_set;
 
             /// <summary>
             /// Dictionary for keeping track of how many times each block is requested. Used to determine when a block is no longer needed.
@@ -295,7 +297,12 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // Check if the block is already in the cache, and return it if it is.
                 if (m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
+                {
+                    if (value is null)
+                        throw new InvalidOperationException($"Block {block_request.BlockID} was in the cache, but the value was null");
+
                     return value;
+                }
 
                 // If the block is not in the cache, request it from the volume.
                 sw_get_wait?.Start();
@@ -407,7 +414,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (m_options.InternalProfiling)
                 {
-                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Set set: {sw_set_set.ElapsedMilliseconds}ms, Set wake get: {sw_set_wake_get.ElapsedMilliseconds}ms, Set wake set: {sw_set_wake_set.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict.ElapsedMilliseconds}ms");
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts!.ElapsedMilliseconds}ms, Get wait: {sw_get_wait!.ElapsedMilliseconds}ms, Set set: {sw_set_set!.ElapsedMilliseconds}ms, Set wake get: {sw_set_wake_get!.ElapsedMilliseconds}ms, Set wake set: {sw_set_wake_set!.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict!.ElapsedMilliseconds}ms");
                 }
 
                 if (m_block_cache.Count > 0)
@@ -463,9 +470,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // The volume consumer will read blocks from the input channel (data blocks from the volumes) and store them in the cache.
                 var volume_consumer = Task.Run(async () =>
                 {
-                    Stopwatch sw_read = options.InternalProfiling ? new() : null;
-                    Stopwatch sw_ack = options.InternalProfiling ? new() : null;
-                    Stopwatch sw_set = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_read = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_ack = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_set = options.InternalProfiling ? new() : null;
                     try
                     {
                         while (true)
@@ -499,7 +506,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read.ElapsedMilliseconds}ms, Ack: {sw_ack.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read!.ElapsedMilliseconds}ms, Ack: {sw_ack!.ElapsedMilliseconds}ms, Set: {sw_set!.ElapsedMilliseconds}ms");
                         }
 
                         // Cancel any remaining readers - although there shouldn't be any.
@@ -519,10 +526,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // The block handlers will read block requests from the `FileProcessor`, access the cache for the blocks, and write the resulting blocks to the `FileProcessor`.
                 var block_handlers = fp_requests.Zip(fp_responses, (req, res) => Task.Run(async () =>
                 {
-                    Stopwatch sw_req = options.InternalProfiling ? new() : null;
-                    Stopwatch sw_resp = options.InternalProfiling ? new() : null;
-                    Stopwatch sw_cache = options.InternalProfiling ? new() : null;
-                    Stopwatch sw_get = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_req = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_resp = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_cache = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_get = options.InternalProfiling ? new() : null;
                     try
                     {
                         while (true)
@@ -560,7 +567,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Block handler - Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Cache: {sw_cache.ElapsedMilliseconds}ms, Get: {sw_get.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Block handler - Req: {sw_req!.ElapsedMilliseconds}ms, Resp: {sw_resp!.ElapsedMilliseconds}ms, Cache: {sw_cache!.ElapsedMilliseconds}ms, Get: {sw_get!.ElapsedMilliseconds}ms");
                         }
 
                         cache.Retire();

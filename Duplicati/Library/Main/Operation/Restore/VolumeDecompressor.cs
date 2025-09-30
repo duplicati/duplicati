@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Utility;
 
+#nullable enable
+
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
@@ -54,12 +56,12 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                Stopwatch sw_read = options.InternalProfiling ? new() : null;
-                Stopwatch sw_write = options.InternalProfiling ? new() : null;
-                Stopwatch sw_decompress_alloc = options.InternalProfiling ? new() : null;
-                Stopwatch sw_decompress_locking = options.InternalProfiling ? new() : null;
-                Stopwatch sw_decompress_read = options.InternalProfiling ? new() : null;
-                Stopwatch sw_verify = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_read = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_write = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_decompress_alloc = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_decompress_locking = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_decompress_read = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_verify = options.InternalProfiling ? new() : null;
 
                 try
                 {
@@ -104,7 +106,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress allocate: {sw_decompress_alloc.ElapsedMilliseconds}ms, Decompress lock: {sw_decompress_locking.ElapsedMilliseconds}ms, Decompress read: {sw_decompress_read.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms, Decompress allocate: {sw_decompress_alloc!.ElapsedMilliseconds}ms, Decompress lock: {sw_decompress_locking!.ElapsedMilliseconds}ms, Decompress read: {sw_decompress_read!.ElapsedMilliseconds}ms, Verify: {sw_verify!.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)

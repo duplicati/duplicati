@@ -31,6 +31,8 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
 
+#nullable enable
+
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
@@ -78,22 +80,22 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                Stopwatch sw_file = options.InternalProfiling ? new() : null;
-                Stopwatch sw_block = options.InternalProfiling ? new() : null;
-                Stopwatch sw_meta = options.InternalProfiling ? new() : null;
-                Stopwatch sw_req = options.InternalProfiling ? new() : null;
-                Stopwatch sw_resp = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work_verify_target = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work_retarget = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work_notify_local = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work_verify_local = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work_empty_file = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work_hash = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work_read = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work_write = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work_results = options.InternalProfiling ? new() : null;
-                Stopwatch sw_work_meta = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_file = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_block = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_meta = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_req = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_resp = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work_verify_target = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work_retarget = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work_notify_local = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work_verify_local = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work_empty_file = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work_hash = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work_read = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work_write = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work_results = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_work_meta = options.InternalProfiling ? new() : null;
 
                 // Indicates whether this FileProcessor is still restoring files
                 var decremented = false;
@@ -283,7 +285,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             filehasher.Initialize();
                             sw_work_hash?.Stop();
 
-                            FileStream fs = null;
+                            FileStream? fs = null;
                             try
                             {
                                 // Open the target file
@@ -332,7 +334,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 if (!options.Dryrun && options.RestorePreAllocate)
                                 {
                                     // Preallocate the file size to avoid fragmentation / help the operating system / filesystem.
-                                    fs.SetLength(file.Length);
+                                    fs!.SetLength(file.Length);
                                 }
 
                                 for (int i = 0; i < blocks.Length; i++)
@@ -422,7 +424,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 sw_work_hash?.Stop();
 
                                 sw_work?.Start();
-                                if (Convert.ToBase64String(filehasher.Hash) != file.Hash)
+                                if (filehasher.Hash != null && Convert.ToBase64String(filehasher.Hash) != file.Hash)
                                 {
                                     Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.TargetPath} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash)}");
                                     throw new Exception("File hash mismatch");
@@ -487,7 +489,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"File: {sw_file.ElapsedMilliseconds}ms, Block: {sw_block.ElapsedMilliseconds}ms, Meta: {sw_meta.ElapsedMilliseconds}ms, Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Work: {sw_work.ElapsedMilliseconds}ms, VerifyTarget: {sw_work_verify_target.ElapsedMilliseconds}ms, Retarget: {sw_work_retarget.ElapsedMilliseconds}ms, NotifyLocal: {sw_work_notify_local.ElapsedMilliseconds}ms, VerifyLocal: {sw_work_verify_local.ElapsedMilliseconds}ms, EmptyFile: {sw_work_empty_file.ElapsedMilliseconds}ms, Hash: {sw_work_hash.ElapsedMilliseconds}ms, Read: {sw_work_read.ElapsedMilliseconds}ms, Write: {sw_work_write.ElapsedMilliseconds}ms, Results: {sw_work_results.ElapsedMilliseconds}ms, Meta: {sw_work_meta.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"File: {sw_file!.ElapsedMilliseconds}ms, Block: {sw_block!.ElapsedMilliseconds}ms, Meta: {sw_meta!.ElapsedMilliseconds}ms, Req: {sw_req!.ElapsedMilliseconds}ms, Resp: {sw_resp!.ElapsedMilliseconds}ms, Work: {sw_work!.ElapsedMilliseconds}ms, VerifyTarget: {sw_work_verify_target!.ElapsedMilliseconds}ms, Retarget: {sw_work_retarget!.ElapsedMilliseconds}ms, NotifyLocal: {sw_work_notify_local!.ElapsedMilliseconds}ms, VerifyLocal: {sw_work_verify_local!.ElapsedMilliseconds}ms, EmptyFile: {sw_work_empty_file!.ElapsedMilliseconds}ms, Hash: {sw_work_hash!.ElapsedMilliseconds}ms, Read: {sw_work_read!.ElapsedMilliseconds}ms, Write: {sw_work_write!.ElapsedMilliseconds}ms, Results: {sw_work_results!.ElapsedMilliseconds}ms, Meta: {sw_work_meta?.ElapsedMilliseconds}ms");
                     }
                     return;
                 }
@@ -756,7 +758,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     // Verify the file hash
                     filehasher.TransformFinalBlock([], 0, 0);
-                    if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
+                    if (filehasher.Hash != null && Convert.ToBase64String(filehasher.Hash) == file.Hash)
                     {
                         // Truncate the file if it is larger than the expected size.
                         FileInfo fi = new(file.TargetPath);
@@ -932,7 +934,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     // No more blocks are missing, so check the file hash.
                     filehasher.TransformFinalBlock([], 0, 0);
-                    if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
+                    if (filehasher.Hash != null && Convert.ToBase64String(filehasher.Hash) == file.Hash)
                     {
                         // Truncate the file if it is larger than the expected size.
                         if (file.Length < f_target?.Length)
@@ -960,7 +962,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     else
                     {
-                        Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.TargetPath} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash)}");
+                        Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.TargetPath} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash ?? [0])}");
                         lock (results)
                         {
                             results.BrokenLocalFiles.Add(file.TargetPath);

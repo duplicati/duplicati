@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Volumes;
 
+#nullable enable
+
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
@@ -55,9 +57,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                Stopwatch sw_read = options.InternalProfiling ? new() : null;
-                Stopwatch sw_write = options.InternalProfiling ? new() : null;
-                Stopwatch sw_decrypt = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_read = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_write = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_decrypt = options.InternalProfiling ? new() : null;
                 try
                 {
                     while (true)
@@ -84,7 +86,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Decrypt: {sw_decrypt.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Decrypt: {sw_decrypt!.ElapsedMilliseconds}ms, BlockVolumeReader: {sw_bvr!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)
