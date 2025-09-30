@@ -73,6 +73,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_read?.Start();
                         var volume_id = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_read?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DownloadVolume", null, $"Downloaded volume {volume_id}");
 
                         // Trigger the download.
                         sw_wait?.Start();
@@ -93,11 +94,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             throw;
                         }
                         sw_wait?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DownloadVolume", null, $"Downloaded volume {volume_name} (ID: {volume_id})");
 
                         // Pass the download handle (which may or may not have downloaded already) to the `VolumeDecryptor` process.
                         sw_write?.Start();
                         await self.Output.WriteAsync((volume_id, volume_name, f)).ConfigureAwait(false);
                         sw_write?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DownloadVolume", null, $"Passed volume {volume_name} (ID: {volume_id}) to next stage");
                     }
                 }
                 catch (RetiredException)

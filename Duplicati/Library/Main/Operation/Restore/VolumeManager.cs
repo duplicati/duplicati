@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     void handle_ack(long volume_id)
                     {
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for volume {0}", volume_id);
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Decompression acknowledgment for volume {0}", volume_id);
                         if (in_flight_decompressing.TryGetValue(volume_id, out var dcount))
                         {
                             if (dcount <= 1)

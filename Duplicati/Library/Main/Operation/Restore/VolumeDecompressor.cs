@@ -73,10 +73,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Get the block request and volume from the `VolumeDecryptor` process.
                         var (block_request, volume_reader) = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_read?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", $"Decompressing block {block_request.BlockID} from volume {block_request.VolumeID}");
 
                         sw_decompress_alloc?.Start();
                         var data = ArrayPool<byte>.Shared.Rent(options.Blocksize);
                         sw_decompress_alloc?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", $"Allocated buffer for block {block_request.BlockID} from volume {block_request.VolumeID}");
+
                         sw_decompress_locking?.Start();
                         lock (volume_reader) // The BlockVolumeReader is not thread-safe
                         {
@@ -85,6 +88,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             volume_reader.ReadBlock(block_request.BlockHash, data);
                             sw_decompress_read?.Stop();
                         }
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", $"Decompressed block {block_request.BlockID} from volume {block_request.VolumeID}");
 
                         sw_verify?.Start();
                         var hash = Convert.ToBase64String(block_hasher.ComputeHash(data, 0, (int)block_request.BlockSize));
@@ -93,11 +97,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             Logging.Log.WriteErrorMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block {block_request.BlockID} in volume {block_request.VolumeID}, expected hash: {block_request.BlockHash}, actual hash: {hash}");
                         }
                         sw_verify?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", $"Verified block {block_request.BlockID} from volume {block_request.VolumeID}");
 
                         sw_write?.Start();
                         // Send the block to the `BlockManager` process.
                         await self.Output.WriteAsync((block_request, data)).ConfigureAwait(false);
                         sw_write?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", $"Sent block {block_request.BlockID} from volume {block_request.VolumeID} to BlockManager");
                     }
                 }
                 catch (RetiredException)

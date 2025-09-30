@@ -192,8 +192,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 long error_block_id = -1;
                 long error_volume_id = -1;
                 var emit_evict = false;
-                byte[] data = null;
 
+                Logging.Log.WriteExplicitMessage(LOGTAG, "CheckCounts", "Trying to acquire m_blockcount_lock for block {0}", blockRequest.BlockID);
                 lock (m_blockcount_lock)
                 {
                     sw_checkcounts?.Start();
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     sw_checkcounts?.Stop();
                 }
-
+                Logging.Log.WriteExplicitMessage(LOGTAG, "CheckCounts", "Released m_blockcount_lock for block {0}", blockRequest.BlockID);
 
                 // Notify the `VolumeManager` that it should evict the volume.
                 if (emit_evict)
@@ -516,16 +516,20 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     sw_get?.Start();
                                     var datatask = cache.Get(block_request);
                                     sw_get?.Stop();
+                                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, $"Retrieved data for block {block_request.BlockID} and volume {block_request.VolumeID}");
 
                                     sw_resp?.Start();
                                     await res.WriteAsync(datatask).ConfigureAwait(false);
                                     sw_resp?.Stop();
+                                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, $"Passed data for block {block_request.BlockID} and volume {block_request.VolumeID} to FileProcessor");
                                     break;
                                 case BlockRequestType.CacheEvict:
                                     sw_cache?.Start();
                                     // Target file already had the block.
                                     await cache.CheckCounts(block_request).ConfigureAwait(false);
                                     sw_cache?.Stop();
+
+                                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, $"Decremented counts for block {block_request.BlockID} and volume {block_request.VolumeID}");
                                     break;
                                 case BlockRequestType.DecompressAck:
                                 default:
