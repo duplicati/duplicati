@@ -314,7 +314,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 sw_set_set?.Start();
                 var block = new DataBlock(value);
-                m_block_cache.Set(blockID, block);
+                m_block_cache.Set(blockID, block, m_entry_options);
                 Interlocked.Increment(ref m_block_cache_count);
                 sw_set_set?.Stop();
 
