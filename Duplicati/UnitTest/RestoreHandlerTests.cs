@@ -268,7 +268,7 @@ namespace Duplicati.UnitTest
             using (var fs = new FileStream(file1Path, FileMode.Open, FileAccess.Read, FileShare.None))
             {    
                     var res_failing = c.Restore(["*"]);
-                    Assert.AreEqual(2, res_failing.Errors.Count());
+                Assert.AreEqual(4, res_failing.Errors.Count());
                     var first_error = res_failing.Errors.First();
                     Assert.IsTrue(
                         first_error.Contains("IOException: The process cannot access the file")
