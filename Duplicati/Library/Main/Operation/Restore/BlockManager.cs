@@ -73,6 +73,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly MemoryCache m_block_cache;
             /// <summary>
+            /// Secondary counter for the number of blocks in the cache. It's faster than the MemoryCache.Count property.
+            /// </summary>
+            private int m_block_cache_count = 0;
+            /// <summary>
             /// The dictionary holding the `Task` for each block request in flight.
             /// </summary>
             private readonly ConcurrentDictionary<long, TaskCompletionSource<DataBlock>> m_waiters = [];
@@ -139,6 +143,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 m_block_cache = new MemoryCache(cache_options);
                 m_entry_options.RegisterPostEvictionCallback((key, value, reason, state) =>
                 {
+                    Interlocked.Decrement(ref m_block_cache_count);
                     Logging.Log.WriteExplicitMessage(LOGTAG, "CacheEvictCallback", $"Evicted block {key} from cache");
                 });
                 this.readers = readers;
@@ -310,6 +315,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_set_set?.Start();
                 var block = new DataBlock(value);
                 m_block_cache.Set(blockID, block);
+                Interlocked.Increment(ref m_block_cache_count);
                 sw_set_set?.Stop();
 
                 // Notify any waiters that the block is available.
@@ -324,7 +330,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_set_wake_get?.Stop();
 
                 sw_cacheevict?.Start();
-                if (m_block_cache.Count > m_options.RestoreCacheMax)
+                if (m_block_cache_count > m_options.RestoreCacheMax)
                 {
                     m_block_cache.Compact(m_options.RestoreCacheMax == 0 ? 1.0 : m_options.RestoreCacheEvict);
                 }
@@ -379,6 +385,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheMismatch", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
                     Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheMismatch", null, $"Block counts in cache ({m_blockcount.Count}): {string.Join(", ", m_blockcount.Select(x => x.Value))}");
                 }
+
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCount", "Cache count was {0}/{1}/{2}", m_block_cache_count, m_block_cache.Count, m_options.RestoreCacheMax);
+                if (m_block_cache.Count != m_block_cache_count)
+                    Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, "The secondary counter doesn't match the actual count {0} != {1}", m_block_cache_count, m_block_cache.Count);
             }
 
             /// <summary>
