@@ -134,6 +134,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The cache eviction options. Used for registering a callback when a block is evicted from the cache.
             /// </summary>
             private readonly MemoryCacheEntryOptions m_entry_options = new();
+            private bool m_retired = false;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
@@ -370,9 +371,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             public void Retire()
             {
-                if (Interlocked.Decrement(ref m_readers) <= 0)
+                if (!m_retired && Interlocked.Decrement(ref m_readers) <= 0)
                 {
                     m_volume_request.Retire();
+                    m_retired = true;
                 }
             }
 
@@ -415,6 +417,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                 if (m_options.InternalProfiling)
                 {
                     Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts!.ElapsedMilliseconds}ms, Get wait: {sw_get_wait!.ElapsedMilliseconds}ms, Set set: {sw_set_set!.ElapsedMilliseconds}ms, Set wake get: {sw_set_wake_get!.ElapsedMilliseconds}ms, Set wake set: {sw_set_wake_set!.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict!.ElapsedMilliseconds}ms");
+                }
+
+                if (!m_retired)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "NotRetired", null, "SleepableDictionary was disposed without having retired channels.");
+                    m_retired = true;
+                    m_volume_request.Retire();
                 }
             }
 
