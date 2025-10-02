@@ -19,7 +19,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System;
 using System.Buffers;
+using System.Threading;
 
 #nullable enable
 
@@ -39,7 +41,7 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// <summary>
     /// Represents a block of data where the byte[] buffer is returned to the ArrayPool when the DataBlock is finalized.
     /// </summary>
-    public class DataBlock(byte[] data)
+    public class DataBlock(byte[] data) : IDisposable
     {
         /// <summary>
         /// The data buffer for this block. This buffer is returned to the ArrayPool when the DataBlock is finalized, which will make this field null.
@@ -47,14 +49,40 @@ namespace Duplicati.Library.Main.Operation.Restore
         public byte[]? Data = data;
 
         /// <summary>
-        /// Finalizer that returns the data buffer to the ArrayPool if it hasn't been returned yet.
+        /// The reference count for this DataBlock. When the reference count reaches zero, the byte[] buffer is returned to the ArrayPool.
         /// </summary>
-        ~DataBlock()
+        private int references = 1;
+
+        /// <summary>
+        /// References this DataBlock, incrementing the reference count.
+        /// </summary>
+        /// <remarks>The method returns the DataBlock instance for `using` statements.</remarks>
+        /// <returns>This DataBlock instance.</returns>
+        public DataBlock Reference(int count = 1)
         {
-            if (Data != null)
+            Interlocked.Add(ref references, count);
+            return this;
+        }
+
+        public void Dispose()
+        {
+            Dereference();
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Dereferences this DataBlock, returning the byte[] buffer to the ArrayPool if the reference count reaches zero.
+        /// </summary>
+        /// <returns>true if the buffer was returned to the ArrayPool; otherwise, false.</returns>
+        private void Dereference()
+        {
+            if (Interlocked.Decrement(ref references) == 0)
             {
-                ArrayPool<byte>.Shared.Return(Data);
-                Data = null;
+                if (Data != null)
+                {
+                    ArrayPool<byte>.Shared.Return(Data);
+                    Data = null;
+                }
             }
         }
     }

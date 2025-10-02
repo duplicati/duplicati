@@ -345,7 +345,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         // Read the block from the response and issue a new request, if more blocks are missing
                                         sw_resp?.Start();
-                                        var datablock = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                                        using var datablock = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
                                         if (datablock.Data == null)
                                         {
                                             throw new Exception($"Received null data block from request {missing_blocks[i].BlockID} for file {file.TargetPath}");
@@ -665,7 +665,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_req?.Stop();
 
                 sw_resp?.Start();
-                var datablock = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                using var datablock = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
                 if (datablock.Data == null)
                 {
                     throw new Exception($"Received null data block from request {block.BlockID} when restoring metadata for file {file.TargetPath}");

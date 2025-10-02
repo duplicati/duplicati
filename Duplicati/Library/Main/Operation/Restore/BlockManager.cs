@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// The dictionary holding the `Task` for each block request in flight.
             /// </summary>
-            private readonly ConcurrentDictionary<long, TaskCompletionSource<DataBlock>> m_waiters = [];
+            private readonly ConcurrentDictionary<long, (int Count, TaskCompletionSource<DataBlock> Task)> m_waiters = [];
             /// <summary>
             /// The number of readers accessing this dictionary. Used during shutdown / cleanup.
             /// </summary>
@@ -143,6 +143,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                 m_block_cache = new MemoryCache(cache_options);
                 m_entry_options.RegisterPostEvictionCallback((key, value, reason, state) =>
                 {
+                    if (value is DataBlock dataBlock)
+                    {
+                        dataBlock.Dispose();
+                    }
+                    else if (value is null)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "CacheEvictCallback", null, "Evicted block {0} from cache, but the value was null", key);
+                    }
+                    else
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "CacheEvictCallback", null, "Evicted block {0} from cache, but the value was of unexpected type {1}", key, value.GetType().FullName);
+                    }
                     Interlocked.Decrement(ref m_block_cache_count);
                     Logging.Log.WriteExplicitMessage(LOGTAG, "CacheEvictCallback", "Evicted block {0} from cache", key);
                 });
@@ -266,13 +278,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (value is null)
                         throw new InvalidOperationException($"Block {block_request.BlockID} was in the cache, but the value was null");
 
-                    return value;
+                    value.Reference();
+
+                    // If the block was evicted in between the TryGetValue and the Reference call,
+                    // we need to request it again.
+                    if (value.Data is not null)
+                        return value;
                 }
 
                 // If the block is not in the cache, request it from the volume.
                 sw_get_wait?.Start();
                 var tcs = new TaskCompletionSource<DataBlock>(TaskCreationOptions.RunContinuationsAsynchronously);
-                var new_tcs = m_waiters.GetOrAdd(block_request.BlockID, tcs);
+                var (_, new_tcs) = m_waiters.AddOrUpdate(block_request.BlockID, (1, tcs), (key, old) => (old.Count + 1, old.Task));
                 if (tcs == new_tcs)
                 {
                     Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Requesting block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
@@ -313,18 +330,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                 Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockID);
 
                 sw_set_set?.Start();
-                var block = new DataBlock(value);
+                var block = new DataBlock(value); // Implicitly referenced on creation.
                 m_block_cache.Set(blockID, block, m_entry_options);
                 Interlocked.Increment(ref m_block_cache_count);
                 sw_set_set?.Stop();
 
                 // Notify any waiters that the block is available.
                 sw_set_wake_get?.Start();
-                if (m_waiters.TryRemove(blockID, out var tcs))
+                if (m_waiters.TryRemove(blockID, out var entry))
                 {
                     sw_set_wake_get?.Stop();
                     sw_set_wake_set?.Start();
-                    tcs.SetResult(block);
+                    block.Reference(entry.Count);
+                    entry.Task.SetResult(block);
                     sw_set_wake_set?.Stop();
                 }
                 sw_set_wake_get?.Stop();
@@ -402,7 +420,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             public void CancelAll()
             {
-                foreach (var tcs in m_waiters.Values)
+                foreach (var (_, tcs) in m_waiters.Values)
                 {
                     tcs.SetException(new RetiredException("Request waiter"));
                 }
