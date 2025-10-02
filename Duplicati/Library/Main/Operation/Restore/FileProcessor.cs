@@ -174,7 +174,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             if (SystemIO.IO_OS.FileExists(new_name))
                             {
                                 // The file already exists, which it only does when it matches the target hash. So we can skip the file.
-                                Logging.Log.WriteInformationMessage(LOGTAG, "FileAlreadyExists", null, $"File {file.TargetPath} already exists and matches the target hash as a copy: {new_name}");
+                                Logging.Log.WriteInformationMessage(LOGTAG, "FileAlreadyExists", "File {0} already exists and matches the target hash as a copy: {1}", file.TargetPath, new_name);
                                 missing_blocks.Clear();
                             }
                             else
