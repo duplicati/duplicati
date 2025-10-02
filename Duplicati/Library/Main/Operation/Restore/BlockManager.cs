@@ -77,6 +77,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private int m_block_cache_count = 0;
             /// <summary>
+            /// Flag indicating if the cache is currently being compacted. Used to avoid triggering multiple compactions as they are expensive.
+            /// Multiple triggers can occur as the eviction callback is launched in a task, so the count can be above the max for a short while.
+            /// </summary>
+            private int m_block_cache_compacting = 0;
+            /// <summary>
             /// The dictionary holding the `Task` for each block request in flight.
             /// </summary>
             private readonly ConcurrentDictionary<long, (int Count, TaskCompletionSource<DataBlock> Task)> m_waiters = [];
@@ -157,6 +162,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     Interlocked.Decrement(ref m_block_cache_count);
                     Logging.Log.WriteExplicitMessage(LOGTAG, "CacheEvictCallback", "Evicted block {0} from cache", key);
+                    if (reason is EvictionReason.Capacity)
+                        Interlocked.Exchange(ref m_block_cache_compacting, 0);
                 });
                 m_readers = readers;
                 sw_cacheevict = options.InternalProfiling ? new() : null;
@@ -348,7 +355,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_set_wake_get?.Stop();
 
                 sw_cacheevict?.Start();
-                if (m_block_cache_count > m_options.RestoreCacheMax)
+                if (m_block_cache_count > m_options.RestoreCacheMax && Interlocked.CompareExchange(ref m_block_cache_compacting, 1, 0) == 0)
                 {
                     m_block_cache.Compact(m_options.RestoreCacheMax == 0 ? 1.0 : m_options.RestoreCacheEvict);
                 }
@@ -404,9 +411,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"Block counts in cache ({m_blockcount.Count}): {string.Join(", ", m_blockcount.Select(x => x.Value))}");
                 }
-
-                if (m_block_cache.Count != m_block_cache_count)
-                    Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, "The secondary counter doesn't match the actual count {0} != {1} (max size is {2})", m_block_cache_count, m_block_cache.Count, m_options.RestoreCacheMax);
 
                 if (m_options.InternalProfiling)
                 {
