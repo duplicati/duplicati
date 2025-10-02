@@ -71,7 +71,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         sw_read?.Start();
                         // Get the block request and volume from the `VolumeDecryptor` process.
-                        var (block_request, volume_reader) = await self.Input.ReadAsync().ConfigureAwait(false);
+                        var (block_request, volume) = await self.Input.ReadAsync().ConfigureAwait(false);
+                        using var _ = volume;
                         sw_read?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Decompressing block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
@@ -81,11 +82,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Allocated buffer for block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
                         sw_decompress_locking?.Start();
-                        lock (volume_reader) // The BlockVolumeReader is not thread-safe
+                        lock (volume.Reader!) // The BlockVolumeReader is not thread-safe
                         {
                             sw_decompress_locking?.Stop();
                             sw_decompress_read?.Start();
-                            volume_reader.ReadBlock(block_request.BlockHash, data);
+                            volume.Reader.ReadBlock(block_request.BlockHash, data);
                             sw_decompress_read?.Stop();
                         }
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Decompressed block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);

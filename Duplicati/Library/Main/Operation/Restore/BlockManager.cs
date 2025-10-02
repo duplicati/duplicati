@@ -485,18 +485,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                             var (block_request, data) = await self.Input.ReadAsync().ConfigureAwait(false);
                             sw_read?.Stop();
 
-                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, "Received block request: {0} for block {1} from volume {2}", block_request.RequestType, block_request.BlockID, block_request.VolumeID);
-                            sw_ack?.Start();
-                            block_request.RequestType = BlockRequestType.DecompressAck;
-                            while (true)
-                            {
-                                var did_write = await self.Ack.TryWriteAsync(block_request.VolumeID, TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
-                                if (did_write)
-                                    break;
-                                await results.TaskControl.ProgressRendevouz();
-                            }
-                            sw_ack?.Stop();
-
                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, "Received data for block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
                             sw_set?.Start();
                             cache.Set(block_request.BlockID, data);
@@ -562,7 +550,6 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                                     Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, "Decremented counts for block {0} and volume {1}", block_request.BlockID, block_request.VolumeID);
                                     break;
-                                case BlockRequestType.DecompressAck:
                                 default:
                                     throw new InvalidOperationException($"Unexpected block request type: {block_request.RequestType}");
                             }

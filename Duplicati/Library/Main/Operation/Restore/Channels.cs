@@ -56,7 +56,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Channel between <see cref="VolumeManager"/> and <see cref="VolumeDecompressor"/>
         /// </summary>
-        public readonly IChannel<(BlockRequest, BlockVolumeReader)> DecompressionRequest = ChannelManager.CreateChannel<(BlockRequest, BlockVolumeReader)>(buffersize: options.RestoreChannelBufferSize);
+        public readonly IChannel<(BlockRequest, VolumeWrapper)> DecompressionRequest = ChannelManager.CreateChannel<(BlockRequest, VolumeWrapper)>(buffersize: options.RestoreChannelBufferSize);
 
         /// <summary>
         /// Channel between <see cref="VolumeDecompressor"/> and <see cref="BlockManager"/> holding the decompressed blocks.
