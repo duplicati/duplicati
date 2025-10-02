@@ -411,7 +411,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 if (m_block_cache.Count > 0)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
-                    Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"Block counts in cache ({m_blockcount.Count}): {string.Join(", ", m_blockcount.Select(x => x.Value))}");
+                    Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"First 10 block counts in cache ({m_blockcount.Count}): {string.Join(", ", m_blockcount.Take(10).Select(x => x.Value))}");
                 }
 
                 if (m_options.InternalProfiling)
