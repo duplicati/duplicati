@@ -13,10 +13,10 @@
     <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.10" />
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="uplink.NET" Version="2.13.3501" />
-    <PackageReference Include="uplink.NET.Win" Version="2.13.3501" />
-    <PackageReference Include="uplink.NET.Linux" Version="2.13.3501" />
-    <PackageReference Include="uplink.NET.Mac" Version="2.13.3484" />
+    <PackageReference Include="uplink.NET" Version="2.14.3598" />
+    <PackageReference Include="uplink.NET.Win" Version="2.14.3598" />
+    <PackageReference Include="uplink.NET.Linux" Version="2.14.3598" />
+    <PackageReference Include="uplink.NET.Mac" Version="2.14.3598" />
   </ItemGroup>
 
   <ItemGroup>
