@@ -61,6 +61,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 Stopwatch? sw_write = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_decrypt = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_bvr = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_vw = options.InternalProfiling ? new() : null;
                 try
                 {
                     while (true)
@@ -80,7 +81,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_bvr?.Start();
                         var bvr = new BlockVolumeReader(options.CompressionModule, tmpfile, options);
                         sw_bvr?.Stop();
+                        sw_vw?.Start();
                         var volume_wrapper = new VolumeWrapper(tmpfile, bvr);
+                        sw_vw?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "BlockVolumeReader", null, "Created BlockVolumeReader for volume {0} (ID: {1})", volume_name, volume_id);
 
                         sw_write?.Start();
@@ -96,7 +99,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Decrypt: {sw_decrypt!.ElapsedMilliseconds}ms, BlockVolumeReader: {sw_bvr!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Decrypt: {sw_decrypt!.ElapsedMilliseconds}ms, BlockVolumeReader: {sw_bvr!.ElapsedMilliseconds}ms, VolumeWrapper: {sw_vw!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)
