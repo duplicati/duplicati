@@ -81,6 +81,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_decompress_alloc?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Allocated buffer for block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
+                        var block = new DataBlock(data);
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Instantiated DataBlock for block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
+
                         sw_decompress_locking?.Start();
                         lock (volume.Reader!) // The BlockVolumeReader is not thread-safe
                         {
@@ -102,7 +105,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_write?.Start();
                         // Send the block to the `BlockManager` process.
-                        await self.Output.WriteAsync((block_request, data)).ConfigureAwait(false);
+                        await self.Output.WriteAsync((block_request, block)).ConfigureAwait(false);
                         sw_write?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Sent block {0} from volume {1} to BlockManager", block_request.BlockID, block_request.VolumeID);
                     }

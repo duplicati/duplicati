@@ -338,14 +338,13 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="blockRequest">The block request related to the value.</param>
             /// <param name="value">The byte[] buffer holding the block data.</param>
-            public void Set(long blockID, byte[] value)
+            public void Set(long blockID, DataBlock value)
             {
                 // TODO If this block is only needed once, then it can skip the cache.
                 Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockID);
 
                 sw_set_set?.Start();
-                var block = new DataBlock(value); // Implicitly referenced on creation.
-                m_block_cache.Set(blockID, block, m_entry_options);
+                m_block_cache.Set(blockID, value, m_entry_options);
                 Interlocked.Increment(ref m_block_cache_count);
                 sw_set_set?.Stop();
 
@@ -355,8 +354,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     sw_set_wake_get?.Stop();
                     sw_set_wake_set?.Start();
-                    block.Reference(entry.Count);
-                    entry.Task.SetResult(block);
+                    value.Reference(entry.Count);
+                    entry.Task.SetResult(value);
                     sw_set_wake_set?.Stop();
                 }
                 sw_set_wake_get?.Stop();
