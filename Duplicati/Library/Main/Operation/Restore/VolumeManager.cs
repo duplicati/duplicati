@@ -115,10 +115,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     List<long> cache_last_touched = [];
                     // Dictionary to keep track of active downloads. Used for grouping requests to the same volume.
                     Dictionary<long, List<BlockRequest>> in_flight_downloads = [];
-                    // Dictionary to keep track of volumes that are actively being accessed. Used for cache eviction.
-                    Dictionary<long, long> in_flight_decompressing = [];
-                    // Dictionary to keep track of the currently responding request to prevent auto evicting during a response.
-                    long? responding = null;
 
                     Stopwatch? sw_cache_set = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_cache_evict = options.InternalProfiling ? new() : null;
@@ -169,37 +165,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     volume.Reference();
                                                     await self.DecompressRequest.WriteAsync((request, volume)).ConfigureAwait(false);
                                                     Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting decompression of block {0} from cached volume {1}", request.BlockID, request.VolumeID);
-                                                    if (in_flight_decompressing.TryGetValue(request.VolumeID, out var count))
-                                                        in_flight_decompressing[request.VolumeID] = count + 1;
-                                                    else
-                                                        in_flight_decompressing[request.VolumeID] = 1;
                                                 }
                                                 else
                                                 {
-                                                    // Check if downloading another volume would exceed cache limits.
-                                                    // Cache_max = 0 auto evicts when all of the requests have been ack'ed.
-                                                    if (cache_max > 0 && (cache.Count + in_flight_downloads.Count) >= cache_max)
-                                                    {
-                                                        Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Evicting volume");
-                                                        // TODO switch based of the eviction strategy.
-                                                        // fifo / lifo based on both when they were downloaded and when they were used
-                                                        // random
-                                                        // Heuristic based of accesses and recency
-                                                        // Cache would overflow if we request another; we have to evict something, or store the request for later.
-
-                                                        // LRU
-                                                        for (int i = 0; i < cache_last_touched.Count; i++)
-                                                        {
-                                                            var volume_id = cache_last_touched[i];
-                                                            if (!(in_flight_decompressing.TryGetValue(volume_id, out var count) && count > 0))
-                                                            {
-                                                                // Entry can be safely evicted
-                                                                handle_evict(volume_id);
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-
                                                     Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} not found in cache, requesting volume {1}", request.BlockID, request.VolumeID);
                                                     if (in_flight_downloads.TryGetValue(request.VolumeID, out var waiters))
                                                     {
@@ -227,18 +195,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         cache_last_touched.Add(volume_id);
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
-                                        responding = volume_id;
                                         foreach (var request in in_flight_downloads[volume_id])
                                         {
                                             // Request the decompressions
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from newly cached volume {1}", request.BlockID, volume_id);
                                             await self.DecompressRequest.WriteAsync((request, volume)).ConfigureAwait(false);
-                                            if (in_flight_decompressing.TryGetValue(request.VolumeID, out var count))
-                                                in_flight_decompressing[request.VolumeID] = count + 1;
-                                            else
-                                                in_flight_decompressing[request.VolumeID] = 1;
                                         }
-                                        responding = null;
                                         in_flight_downloads.Remove(volume_id);
                                         sw_wakeup?.Stop();
                                         break;
