@@ -138,6 +138,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The cache eviction options. Used for registering a callback when a block is evicted from the cache.
             /// </summary>
             private readonly MemoryCacheEntryOptions m_entry_options = new();
+            /// <summary>
+            /// Flag indicating if the dictionary has been retired. Used to avoid multiple retire attempts.
+            /// </summary>
             private bool m_retired = false;
 
             /// <summary>
