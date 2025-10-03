@@ -104,6 +104,11 @@ namespace Duplicati.Library.Main.Operation.Restore
         public BlockVolumeReader? Reader = reader;
 
         /// <summary>
+        /// The size of the volume file in bytes.
+        /// </summary>
+        public long Size { init; get; } = new System.IO.FileInfo(file).Length;
+
+        /// <summary>
         /// The reference count for this DataBlock. When the reference count reaches zero, the byte[] buffer is returned to the ArrayPool.
         /// </summary>
         private int references = 1;

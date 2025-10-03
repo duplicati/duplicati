@@ -108,9 +108,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                 async self =>
                 {
                     // The maximum number of volumes to have in cache at once. If this is exceeded, we'll try to evict the least recently used volume that is not actively in use.
-                    long cache_max = options.RestoreVolumeCacheHint / options.VolumeSize;
+                    long cache_max = options.RestoreVolumeCacheHint;
                     // Cache of volume readers.
                     Dictionary<long, VolumeWrapper> cache = [];
+                    // Current size of the cache in bytes.
+                    long cache_size = 0;
                     // List of which volume was accessed last. Used for cache eviction.
                     List<long> cache_last_touched = [];
                     // Dictionary to keep track of active downloads. Used for grouping requests to the same volume.
@@ -129,8 +131,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                         Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Evicting volume {0} from cache", volume_id);
                         sw_cache_evict?.Start();
                         cache.Remove(volume_id, out var volume);
-                        volume?.Dispose();
-                        cache_last_touched.Remove(volume_id);
+                        if (volume != null)
+                        {
+                            cache_size -= volume.Size;
+                            volume.Dispose();
+                            cache_last_touched.Remove(volume_id);
+                        }
                         sw_cache_evict?.Stop();
                     }
 
@@ -209,21 +215,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         if (cache_max > 0)
                                         {
                                             // Check if adding another volume would exceed cache limits.
-                                            if ((cache.Count + 1) > cache_max)
+                                            while (cache_size > 0 && (cache_size + volume.Size) > cache_max)
                                             {
                                                 // TODO switch based of the eviction strategy.
                                                 // fifo / lifo based on both when they were downloaded and when they were used
                                                 // random
                                                 // Heuristic based of accesses and recency
                                                 // Cache would overflow if we request another; we have to evict something, or store the request for later.
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Cache full ({0} + {1} > {2}), evicting LRU", cache_size, volume.Size, cache_max);
                                                 evict_lru();
                                             }
-                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} ({1} + 1 <= {2})", volume_id, cache.Count, cache_max);
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} ({1} + {2} <= {3})", volume_id, cache_size, volume.Size, cache_max);
                                             cache[volume_id] = volume;
+                                            cache_size += volume.Size;
                                         }
                                         else
                                         {
-                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Not caching volume {0} ({1} + 1 > {2})", volume_id, cache.Count, cache_max);
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Not caching volume {0} ({1} + {2} > {3})", volume_id, cache_size, volume.Size, cache_max);
                                             volume.Dispose();
                                         }
                                         cache_last_touched.Add(volume_id);
