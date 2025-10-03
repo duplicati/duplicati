@@ -102,6 +102,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly Stopwatch? sw_get_wait;
             /// <summary>
+            /// Internal stopwatch for profiling writing the block request to the volume request channel.
+            /// </summary>
+            private readonly Stopwatch? sw_get_write;
+            /// <summary>
             /// Internal stopwatch for profiling setting a block in the cache.
             /// </summary>
             private readonly Stopwatch? sw_set_set;
@@ -170,6 +174,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_cacheevict = options.InternalProfiling ? new() : null;
                 sw_checkcounts = options.InternalProfiling ? new() : null;
                 sw_get_wait = options.InternalProfiling ? new() : null;
+                sw_get_write = options.InternalProfiling ? new() : null;
                 sw_set_set = options.InternalProfiling ? new() : null;
                 sw_set_wake_get = options.InternalProfiling ? new() : null;
                 sw_set_wake_set = options.InternalProfiling ? new() : null;
@@ -300,12 +305,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                 var (_, new_tcs) = m_waiters.AddOrUpdate(block_request.BlockID, (1, tcs), (key, old) => (old.Count + 1, old.Task));
                 if (tcs == new_tcs)
                 {
+                    sw_get_wait?.Stop();
                     Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Requesting block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
                     // We are the first to request this block
+                    sw_get_write?.Start();
                     await m_volume_request.WriteAsync(block_request).ConfigureAwait(false);
-
-                    sw_get_wait?.Stop();
+                    sw_get_write?.Stop();
 
                     // Add a timeout monitor
                     using var tcs1 = new CancellationTokenSource();
@@ -315,8 +321,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 else
                 {
-                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Block {0} is already being requested, waiting for it to be available", block_request.BlockID);
                     sw_get_wait?.Stop();
+                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Block {0} is already being requested, waiting for it to be available", block_request.BlockID);
                 }
 
                 return await new_tcs.Task.ConfigureAwait(false);
@@ -416,7 +422,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (m_options.InternalProfiling)
                 {
-                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts!.ElapsedMilliseconds}ms, Get wait: {sw_get_wait!.ElapsedMilliseconds}ms, Set set: {sw_set_set!.ElapsedMilliseconds}ms, Set wake get: {sw_set_wake_get!.ElapsedMilliseconds}ms, Set wake set: {sw_set_wake_set!.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict!.ElapsedMilliseconds}ms");
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts!.ElapsedMilliseconds}ms, Get wait: {sw_get_wait!.ElapsedMilliseconds}ms, Get write: {sw_get_write!.ElapsedMilliseconds}ms, Set set: {sw_set_set!.ElapsedMilliseconds}ms, Set wake get: {sw_set_wake_get!.ElapsedMilliseconds}ms, Set wake set: {sw_set_wake_set!.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict!.ElapsedMilliseconds}ms");
                 }
 
                 if (!m_retired)
