@@ -349,11 +349,16 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="value">The byte[] buffer holding the block data.</param>
             public void Set(long blockID, DataBlock value)
             {
-                // TODO If this block is only needed once, then it can skip the cache.
                 Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockID);
 
+                sw_set_wake_get?.Start();
+                var waiters_exist = m_waiters.TryRemove(blockID, out var entry);
+                sw_set_wake_get?.Stop();
+
                 sw_set_set?.Start();
-                if (m_block_cache_max > 0)
+                bool fullfills = waiters_exist && entry.Count >= m_blockcount[blockID];
+                bool added_to_cache = !fullfills && m_block_cache_max > 0;
+                if (added_to_cache)
                 {
                     m_block_cache.Set(blockID, value, m_entry_options);
                     Interlocked.Increment(ref m_block_cache_count);
@@ -361,24 +366,22 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_set_set?.Stop();
 
                 // Notify any waiters that the block is available.
-                sw_set_wake_get?.Start();
-                if (m_waiters.TryRemove(blockID, out var entry))
+                sw_set_wake_set?.Start();
+                if (waiters_exist)
                 {
-                    sw_set_wake_get?.Stop();
-                    sw_set_wake_set?.Start();
                     value.Reference(entry.Count);
                     entry.Task.SetResult(value);
-                    sw_set_wake_set?.Stop();
                 }
-                sw_set_wake_get?.Stop();
+                sw_set_wake_set?.Stop();
 
                 sw_cacheevict?.Start();
-                if (m_block_cache_max > 0)
+                if (added_to_cache)
                 {
                     if (m_block_cache_count > m_block_cache_max && Interlocked.CompareExchange(ref m_block_cache_compacting, 1, 0) == 0)
                         m_block_cache.Compact(m_options.RestoreCacheEvict);
                 }
                 else
+                    // This method is responsible for the disposal
                     value.Dispose();
                 sw_cacheevict?.Stop();
             }
