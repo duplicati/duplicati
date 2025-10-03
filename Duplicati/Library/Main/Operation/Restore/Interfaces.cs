@@ -93,7 +93,14 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// </summary>
     public class VolumeWrapper(TempFile file, BlockVolumeReader reader) : IDisposable
     {
-        public TempFile? File = file;
+        /// <summary>
+        /// The TempFile for this volume.
+        /// </summary>
+        private TempFile? File = file;
+
+        /// <summary>
+        /// The BlockVolumeReader for this volume.
+        /// </summary>
         public BlockVolumeReader? Reader = reader;
 
         /// <summary>
