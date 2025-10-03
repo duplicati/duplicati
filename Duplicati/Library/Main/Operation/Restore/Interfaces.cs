@@ -133,10 +133,10 @@ namespace Duplicati.Library.Main.Operation.Restore
         {
             if (Interlocked.Decrement(ref references) == 0)
             {
-                File?.Dispose();
-                File = null;
                 Reader?.Dispose();
                 Reader = null;
+                File?.Dispose();
+                File = null;
             }
         }
     }
