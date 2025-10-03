@@ -75,7 +75,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// Secondary counter for the number of blocks in the cache. It's faster than the MemoryCache.Count property.
             /// </summary>
-            private int m_block_cache_count = 0;
+            private int m_block_cache_count;
+            /// <summary>
+            /// The maximum number of blocks to hold in the cache. If the number of blocks exceeds this value, the cache will be compacted. It is a cached value of <see cref="Options.RestoreCacheMax"/>.
+            /// </summary>
+            private long m_block_cache_max;
             /// <summary>
             /// Flag indicating if the cache is currently being compacted. Used to avoid triggering multiple compactions as they are expensive.
             /// Multiple triggers can occur as the eviction callback is launched in a task, so the count can be above the max for a short while.
@@ -154,6 +158,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 m_volume_request = volume_request;
                 var cache_options = new MemoryCacheOptions();
                 m_block_cache = new MemoryCache(cache_options);
+                m_block_cache_max = options.RestoreCacheMax;
+                m_block_cache_count = 0;
                 m_entry_options.RegisterPostEvictionCallback((key, value, reason, state) =>
                 {
                     if (value is DataBlock dataBlock)
@@ -347,8 +353,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                 Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockID);
 
                 sw_set_set?.Start();
-                m_block_cache.Set(blockID, value, m_entry_options);
-                Interlocked.Increment(ref m_block_cache_count);
+                if (m_block_cache_max > 0)
+                {
+                    m_block_cache.Set(blockID, value, m_entry_options);
+                    Interlocked.Increment(ref m_block_cache_count);
+                }
                 sw_set_set?.Stop();
 
                 // Notify any waiters that the block is available.
@@ -364,10 +373,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_set_wake_get?.Stop();
 
                 sw_cacheevict?.Start();
-                if (m_block_cache_count > m_options.RestoreCacheMax && Interlocked.CompareExchange(ref m_block_cache_compacting, 1, 0) == 0)
+                if (m_block_cache_max > 0)
                 {
-                    m_block_cache.Compact(m_options.RestoreCacheMax == 0 ? 1.0 : m_options.RestoreCacheEvict);
+                    if (m_block_cache_count > m_block_cache_max && Interlocked.CompareExchange(ref m_block_cache_compacting, 1, 0) == 0)
+                        m_block_cache.Compact(m_options.RestoreCacheEvict);
                 }
+                else
+                    value.Dispose();
                 sw_cacheevict?.Stop();
             }
 
