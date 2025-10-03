@@ -264,17 +264,17 @@ namespace Duplicati.UnitTest
             TestUtils.AssertResults(res_backup);
 
             File.WriteAllBytes(file1Path, [4, 5, 6]);
-            
+
             using (var fs = new FileStream(file1Path, FileMode.Open, FileAccess.Read, FileShare.None))
-            {    
-                    var res_failing = c.Restore(["*"]);
-                    Assert.AreEqual(2, res_failing.Errors.Count());
-                    var first_error = res_failing.Errors.First();
-                    Assert.IsTrue(
-                        first_error.Contains("IOException: The process cannot access the file")
-                        &&
-                        first_error.EndsWith(" because it is being used by another process.")
-                    );
+            {
+                var res_failing = c.Restore(["*"]);
+                Assert.AreEqual(4, res_failing.Errors.Count());
+                var first_error = res_failing.Errors.First();
+                Assert.IsTrue(
+                    first_error.Contains("IOException: The process cannot access the file")
+                    &&
+                    first_error.EndsWith(" because it is being used by another process.")
+                );
             }
 
             var res_restore = c.Restore(["*"]);

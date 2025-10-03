@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Volumes;
 
+#nullable enable
+
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
@@ -55,9 +57,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                Stopwatch sw_read = options.InternalProfiling ? new() : null;
-                Stopwatch sw_write = options.InternalProfiling ? new() : null;
-                Stopwatch sw_decrypt = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_read = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_write = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_decrypt = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_bvr = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_vw = options.InternalProfiling ? new() : null;
                 try
                 {
                     while (true)
@@ -66,16 +70,27 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_read?.Start();
                         var (volume_id, volume_name, volume) = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_read?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Decrypting volume {0} (ID: {1})", volume_name, volume_id);
 
                         sw_decrypt?.Start();
                         var tmpfile = backend.DecryptFile(volume, volume_name, options);
-                        var bvr = new BlockVolumeReader(options.CompressionModule, tmpfile, options);
                         sw_decrypt?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Decrypted volume {0} (ID: {1})", volume_name, volume_id);
+
+                        // TODO These two steps could be moved to another process to allow even more parallelism.
+                        sw_bvr?.Start();
+                        var bvr = new BlockVolumeReader(options.CompressionModule, tmpfile, options);
+                        sw_bvr?.Stop();
+                        sw_vw?.Start();
+                        var volume_wrapper = new VolumeWrapper(tmpfile, bvr);
+                        sw_vw?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "BlockVolumeReader", null, "Created BlockVolumeReader for volume {0} (ID: {1})", volume_name, volume_id);
 
                         sw_write?.Start();
                         // Pass the decrypted volume to the `VolumeDecompressor` process.
-                        await self.Output.WriteAsync((volume_id, tmpfile, bvr)).ConfigureAwait(false);
+                        await self.Output.WriteAsync((volume_id, volume_wrapper)).ConfigureAwait(false);
                         sw_write?.Stop();
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Passed decrypted volume {0} (ID: {1}) to next stage", volume_name, volume_id);
                     }
                 }
                 catch (RetiredException)
@@ -84,7 +99,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Decrypt: {sw_decrypt.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Decrypt: {sw_decrypt!.ElapsedMilliseconds}ms, BlockVolumeReader: {sw_bvr!.ElapsedMilliseconds}ms, VolumeWrapper: {sw_vw!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)

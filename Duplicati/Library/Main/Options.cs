@@ -165,9 +165,9 @@ namespace Duplicati.Library.Main
         private static readonly int DEFAULT_RESTORE_FILE_PROCESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
-        /// The default value for the maximum size of the restore volume cache
+        /// The default value for the maximum size of the restore volume cache is 100 times the volume size. E.g. for 50MB volumes, the default cache size is 5GB.
         /// </summary>
-        private const string DEFAULT_RESTORE_VOLUME_CACHE_HINT = "4gb";
+        private const string DEFAULT_RESTORE_VOLUME_CACHE_HINT = "";
 
         /// <summary>
         /// The default value for the number of volume decryptors during restore
@@ -1724,7 +1724,18 @@ namespace Duplicati.Library.Main
         // <summary>
         // Gets the size of the volume cache used during restore, in MB.
         // </summary>
-        public long RestoreVolumeCacheHint => GetSize("restore-volume-cache-hint", "mb", DEFAULT_RESTORE_VOLUME_CACHE_HINT);
+        public long RestoreVolumeCacheHint
+        {
+            get
+            {
+                m_options.TryGetValue("restore-volume-cache-hint", out var s);
+
+                if (string.IsNullOrEmpty(s))
+                    return VolumeSize * 100; // Default to 100 times the volume size
+
+                return GetSize("restore-volume-cache-hint", "mb", $"{VolumeSize * 100}b");
+            }
+        }
 
         /// <summary>
         /// Gets the number of volume decryptors to use in the restore process

@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Database;
 
+#nullable enable
+
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
@@ -56,10 +58,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                Stopwatch sw_get_files = options.InternalProfiling ? new() : null;
-                Stopwatch sw_write_file = options.InternalProfiling ? new() : null;
-                Stopwatch sw_get_folders = options.InternalProfiling ? new() : null;
-                Stopwatch sw_write_folder = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_get_files = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_write_file = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_get_folders = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_write_folder = options.InternalProfiling ? new() : null;
 
                 bool threw_exception = false;
 
@@ -109,7 +111,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Get files: {sw_get_files.ElapsedMilliseconds}ms, Write files: {sw_write_file.ElapsedMilliseconds}ms, Get folders: {sw_get_folders.ElapsedMilliseconds}ms, Write folders: {sw_write_folder.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Get files: {sw_get_files!.ElapsedMilliseconds}ms, Write files: {sw_write_file!.ElapsedMilliseconds}ms, Get folders: {sw_get_folders!.ElapsedMilliseconds}ms, Write folders: {sw_write_folder!.ElapsedMilliseconds}ms");
                     }
                 }
             });

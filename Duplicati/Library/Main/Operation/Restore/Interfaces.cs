@@ -19,6 +19,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System;
+using System.Buffers;
+using System.Threading;
+using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
+
+#nullable enable
+
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
@@ -29,7 +37,113 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         Download, // Request to download a block
         CacheEvict, // Request to evict a block from cache
-        DecompressAck // Acknowledgment for decompression completion
+    }
+
+    /// <summary>
+    /// Represents a block of data where the byte[] buffer is returned to the ArrayPool when the DataBlock is finalized.
+    /// </summary>
+    public class DataBlock(byte[] data) : IDisposable
+    {
+        /// <summary>
+        /// The data buffer for this block. This buffer is returned to the ArrayPool when the DataBlock is finalized, which will make this field null.
+        /// </summary>
+        public byte[]? Data = data;
+
+        /// <summary>
+        /// The reference count for this DataBlock. When the reference count reaches zero, the byte[] buffer is returned to the ArrayPool.
+        /// </summary>
+        private int references = 1;
+
+        /// <summary>
+        /// References this DataBlock, incrementing the reference count.
+        /// </summary>
+        /// <remarks>The method returns the DataBlock instance for `using` statements.</remarks>
+        /// <returns>This DataBlock instance.</returns>
+        public DataBlock Reference(int count = 1)
+        {
+            Interlocked.Add(ref references, count);
+            return this;
+        }
+
+        public void Dispose()
+        {
+            Dereference();
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Dereferences this DataBlock, returning the byte[] buffer to the ArrayPool if the reference count reaches zero.
+        /// </summary>
+        /// <returns>true if the buffer was returned to the ArrayPool; otherwise, false.</returns>
+        private void Dereference()
+        {
+            if (Interlocked.Decrement(ref references) == 0)
+            {
+                if (Data != null)
+                {
+                    ArrayPool<byte>.Shared.Return(Data);
+                    Data = null;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Represents a block of data where the byte[] buffer is returned to the ArrayPool when the DataBlock is finalized.
+    /// </summary>
+    public class VolumeWrapper(TempFile file, BlockVolumeReader reader) : IDisposable
+    {
+        /// <summary>
+        /// The TempFile for this volume.
+        /// </summary>
+        private TempFile? File = file;
+
+        /// <summary>
+        /// The BlockVolumeReader for this volume.
+        /// </summary>
+        public BlockVolumeReader? Reader = reader;
+
+        /// <summary>
+        /// The size of the volume file in bytes.
+        /// </summary>
+        public long Size { init; get; } = new System.IO.FileInfo(file).Length;
+
+        /// <summary>
+        /// The reference count for this DataBlock. When the reference count reaches zero, the byte[] buffer is returned to the ArrayPool.
+        /// </summary>
+        private int references = 1;
+
+        /// <summary>
+        /// References this DataBlock, incrementing the reference count.
+        /// </summary>
+        /// <remarks>The method returns the DataBlock instance for `using` statements.</remarks>
+        /// <returns>This DataBlock instance.</returns>
+        public VolumeWrapper Reference(int count = 1)
+        {
+            Interlocked.Add(ref references, count);
+            return this;
+        }
+
+        public void Dispose()
+        {
+            Dereference();
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Dereferences this DataBlock, returning the byte[] buffer to the ArrayPool if the reference count reaches zero.
+        /// </summary>
+        /// <returns>true if the buffer was returned to the ArrayPool; otherwise, false.</returns>
+        private void Dereference()
+        {
+            if (Interlocked.Decrement(ref references) == 0)
+            {
+                Reader?.Dispose();
+                Reader = null;
+                File?.Dispose();
+                File = null;
+            }
+        }
     }
 
     /// <summary>
