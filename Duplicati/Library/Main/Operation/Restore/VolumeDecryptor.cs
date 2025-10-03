@@ -76,14 +76,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_decrypt?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Decrypted volume {0} (ID: {1})", volume_name, volume_id);
 
+                        // TODO These two steps could be moved to another process to allow even more parallelism.
                         sw_bvr?.Start();
                         var bvr = new BlockVolumeReader(options.CompressionModule, tmpfile, options);
                         sw_bvr?.Stop();
+                        var volume_wrapper = new VolumeWrapper(tmpfile, bvr);
                         Logging.Log.WriteExplicitMessage(LOGTAG, "BlockVolumeReader", null, "Created BlockVolumeReader for volume {0} (ID: {1})", volume_name, volume_id);
 
                         sw_write?.Start();
                         // Pass the decrypted volume to the `VolumeDecompressor` process.
-                        await self.Output.WriteAsync((volume_id, tmpfile, bvr)).ConfigureAwait(false);
+                        await self.Output.WriteAsync((volume_id, volume_wrapper)).ConfigureAwait(false);
                         sw_write?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Passed decrypted volume {0} (ID: {1}) to next stage", volume_name, volume_id);
                     }

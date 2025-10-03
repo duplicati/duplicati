@@ -207,10 +207,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             throw new InvalidOperationException($"Unexpected request type: {request.RequestType}");
                                     }
                                     break;
-                                case (long volume_id, TempFile tmpfile, BlockVolumeReader reader):
+                                case (long volume_id, VolumeWrapper volume):
                                     {
                                         sw_cache_set?.Start();
-                                        var volume = new VolumeWrapper(tmpfile, reader);
                                         volume.Reference(in_flight_downloads[volume_id].Count);
                                         if (cache_max > 0)
                                         {
