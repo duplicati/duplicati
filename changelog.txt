@@ -1,3 +1,24 @@
+2025-10-03 - 2.1.1.104_canary_2025-10-03
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+This version is a bugfix release for some issues discovered with the previous canary build.
+
+
+## Detailed list of changes:
+- Fixed unmasking password from commandline UI
+- Fixed ngax loosing all customer destination editors
+- Fixed a wrong lookup for file size during restore file listing that caused slowdowns
+- Added alerts on login/signin pages that JavaScript is required
+- Updated Storj library uplink.NET to 2.14.3598 for fixing Linux crashes
+- Fixed an issue with restore flow that could deadlock an block restores
+
+## ngclient changes:
+- Updated localizations, thanks to all translators
+- Added support for masked passwords when testing a connection
+- Fixed some buttons not being styled correctly
+
 2025-09-25 - 2.1.1.103_canary_2025-09-25
 ==========
 This release is a canary release intended to be used for testing.
