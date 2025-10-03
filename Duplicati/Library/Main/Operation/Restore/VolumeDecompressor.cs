@@ -59,6 +59,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 Stopwatch? sw_read = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_write = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_decompress_alloc = options.InternalProfiling ? new() : null;
+                Stopwatch? sw_decompress_instantiate = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_decompress_locking = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_decompress_read = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_verify = options.InternalProfiling ? new() : null;
@@ -81,7 +82,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_decompress_alloc?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Allocated buffer for block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
+                        sw_decompress_instantiate?.Start();
                         var block = new DataBlock(data);
+                        sw_decompress_instantiate?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Instantiated DataBlock for block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
                         sw_decompress_locking?.Start();
@@ -116,7 +119,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms, Decompress allocate: {sw_decompress_alloc!.ElapsedMilliseconds}ms, Decompress lock: {sw_decompress_locking!.ElapsedMilliseconds}ms, Decompress read: {sw_decompress_read!.ElapsedMilliseconds}ms, Verify: {sw_verify!.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms, Decompress allocate: {sw_decompress_alloc!.ElapsedMilliseconds}ms, Decompress instantiate: {sw_decompress_instantiate!.ElapsedMilliseconds}ms, Decompress lock: {sw_decompress_locking!.ElapsedMilliseconds}ms, Decompress read: {sw_decompress_read!.ElapsedMilliseconds}ms, Verify: {sw_verify!.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)
