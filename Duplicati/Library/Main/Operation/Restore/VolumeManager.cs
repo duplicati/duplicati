@@ -118,6 +118,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     Stopwatch? sw_cache_set = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_cache_evict = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_cache_lru = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_query = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_backend = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_request = options.InternalProfiling ? new() : null;
@@ -125,11 +126,25 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     void handle_evict(long volume_id)
                     {
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Evicting volume {0} from cache", volume_id);
                         sw_cache_evict?.Start();
                         cache.Remove(volume_id, out var volume);
                         volume?.Dispose();
                         cache_last_touched.Remove(volume_id);
                         sw_cache_evict?.Stop();
+                    }
+
+                    void evict_lru()
+                    {
+                        sw_cache_lru?.Start();
+                        if (cache_last_touched.Count > 0)
+                        {
+                            // Pop the last element of cache_last_touched
+                            var volume_id = cache_last_touched[0];
+                            cache_last_touched.RemoveAt(0);
+                            handle_evict(volume_id);
+                        }
+                        sw_cache_lru?.Stop();
                     }
 
                     await results.TaskControl.ProgressRendevouz().ConfigureAwait(false);
@@ -191,7 +206,26 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         sw_cache_set?.Start();
                                         var volume = new VolumeWrapper(tmpfile, reader);
                                         volume.Reference(in_flight_downloads[volume_id].Count);
-                                        cache[volume_id] = volume;
+                                        if (cache_max > 0)
+                                        {
+                                            // Check if adding another volume would exceed cache limits.
+                                            if ((cache.Count + 1) > cache_max)
+                                            {
+                                                // TODO switch based of the eviction strategy.
+                                                // fifo / lifo based on both when they were downloaded and when they were used
+                                                // random
+                                                // Heuristic based of accesses and recency
+                                                // Cache would overflow if we request another; we have to evict something, or store the request for later.
+                                                evict_lru();
+                                            }
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} ({1} + 1 <= {2})", volume_id, cache.Count, cache_max);
+                                            cache[volume_id] = volume;
+                                        }
+                                        else
+                                        {
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Not caching volume {0} ({1} + 1 > {2})", volume_id, cache.Count, cache_max);
+                                            volume.Dispose();
+                                        }
                                         cache_last_touched.Add(volume_id);
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
