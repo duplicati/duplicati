@@ -61,7 +61,7 @@ namespace Duplicati.Library.Main.Database
                 ID = rd.ConvertValueToInt64(0);
                 Name = rd.ConvertValueToString(1) ?? "";
                 Size = rd.ConvertValueToInt64(2);
-                Hash = rd.ConvertValueToString(3) ?? throw new ArgumentNullException("Hash cannot be null");
+                Hash = rd.ConvertValueToString(3) ?? "";
                 VerificationCount = rd.ConvertValueToInt64(4);
             }
         }
