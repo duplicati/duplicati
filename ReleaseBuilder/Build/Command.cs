@@ -447,6 +447,9 @@ public static partial class Command
 
     static async Task DoBuild(CommandInput input)
     {
+        if (input.ResumeFromUpload)
+            input = input with { KeepBuilds = true };
+
         Console.WriteLine($"Building {input.Channel} release ...");
         var configuration = Configuration.Create(input.Channel);
 
