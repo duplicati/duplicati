@@ -22,6 +22,7 @@
 
 using System;
 using System.Data;
+using System.Linq;
 
 namespace Duplicati.Library.Main.Database;
 
@@ -210,7 +211,10 @@ public static class ChangeStatistics
         if (blocksetId.HasValue)
             return LocalDatabase.FormatInvariant($"{alias}.\"BlocksetID\" = {blocksetId.Value}");
         if (exclude?.Length > 0)
-            return LocalDatabase.FormatInvariant($"{alias}.\"BlocksetID\" NOT IN ({string.Join(",", exclude)})");
+        {
+            var formatted_exclude = exclude.Select(x => LocalDatabase.FormatInvariant($"{x}"));            
+            return LocalDatabase.FormatInvariant($"{alias}.\"BlocksetID\" NOT IN ({string.Join(",", formatted_exclude)})");
+        }
         return string.Empty;
     }
 }
