@@ -1,3 +1,46 @@
+2025-10-10 - 2.1.2.2_beta_2025-10-10
+==========
+This release is a beta release inteded to be used for testing.
+
+If no major issue are found with this release, it will be used to create a new stable release.
+
+# About this release
+
+This release is primarily a bugfix release from the previous beta and fixes a few minor issues discovered during the testing period.
+
+## Database version upgrade
+No database version upgrades in this version, but the beta releases updates the local database to v17 and the settings database to v9.
+The database tool can downgrade to previous versions.
+
+## New since last beta
+- Fixed an issue with rebuilt database having null values for hashes
+- Fixed an issue with non-US locales using different characters for the negative number symbol
+- Updated UI to latest version to fix tooltip issues
+
+## Summary of large changes since last stable
+- New user interface
+- New datafolder default location for Administrator/root
+- New backends pCloud, Filen and Filejump.
+- New backend for SMB to avoid mounting shares
+- Removed Sia backend and marked Mega as deprecated
+- Common http options are now applied to backends, and timeout options are renamed
+- Installer packages are now signed by Duplicati Inc
+- Remote source support for S3, SSH and SMB
+- Database is upgraded to v17 for local db, and v9 for settings database
+- Database upgrade/downgrade tool is provided
+- New file and folder enumeration logic
+- Timeouts logic on all backend operations
+- Improved database validation and repair logic
+- ServerUtil can output JSON for script integration
+- Improved support for having Duplicati behind a proxy
+- Updated throttle logic, all streams share the throttle
+- Improved repair logic
+- VSS is automatically on if running on Windows with sufficient privileges
+- Improved backend test function
+- Ability to suppress warnings
+- Support for remotely managed backup configs
+- Added support for Google IAM
+
 2025-10-03 - 2.1.2.1_beta_2025-10-03
 ==========
 This release is a beta release inteded to be used for testing.
