@@ -324,6 +324,8 @@ public class B2 : IStreamingBackend
             request.Content.Headers.Add("Content-Length", timeoutStream.Length.ToString());
 
             var response = await _httpClient.UploadStream(request, cancelToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
             var rdata = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
 
             UploadFileResponse fileinfo;
