@@ -31,6 +31,7 @@ using System.Text.Json;
 using System.Net.Http;
 using System.Threading;
 using Duplicati.Library.Common.IO;
+using JsonSignature;
 
 namespace Duplicati.Library.AutoUpdater
 {
