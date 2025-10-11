@@ -1,3 +1,18 @@
+2025-10-10 - 2.1.1.105_canary_2025-10-10
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+This version is a bugfix release for some issues discovered with the previous canary build.
+
+## Detailed list of changes:
+- Using the JsonSignature library instead of embedding the code
+- Added status code check for B2 backend
+
+## ngclient changes:
+- Fixed an issue where usage reports could not be disabled
+- Fixed an issue where tooltips could prevent buttons from being clicked
+
 2025-10-03 - 2.1.1.104_canary_2025-10-03
 ==========
 This release is a canary release intended to be used for testing.
