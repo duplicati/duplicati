@@ -413,7 +413,6 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("retry-with-exponential-backoff", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RetrywithexponentialbackoffShort, Strings.Options.RetrywithexponentialbackoffLong, "false"),
 
             new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false"),
-            new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT.ToString()),
             new CommandLineArgument("asynchronous-concurrent-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousconcurrentuploadlimitShort, Strings.Options.AsynchronousconcurrentuploadlimitLong, DEFAULT_ASYNCHRONOUS_CONCURRENT_UPLOAD_LIMIT.ToString()),
             new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong, System.IO.Path.GetTempPath()),
 
@@ -1001,13 +1000,6 @@ namespace Duplicati.Library.Main
         /// </summary>
         public int AsynchronousConcurrentUploadLimit
             => GetInt("asynchronous-concurrent-upload-limit", DEFAULT_ASYNCHRONOUS_CONCURRENT_UPLOAD_LIMIT);
-
-        /// <summary>
-        /// Gets the number of volumes to create ahead of time when using async transfers,
-        /// a value of zero indicates no limit
-        /// </summary>
-        public long AsynchronousUploadLimit
-            => GetInt("asynchronous-upload-limit", DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT);
 
         /// <summary>
         /// Gets the temporary folder to use for asynchronous transfers
