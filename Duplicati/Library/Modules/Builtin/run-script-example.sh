@@ -13,10 +13,11 @@
 # --run-script-after = <filename>
 # --run-script-with-arguments = <boolean>
 #
-# --run-script-before = <filename>
-# Duplicati will run the script before the backup job and waits for its 
-# completion for 60 seconds (default timeout value). After a timeout a 
-# warning is logged and the backup is started.
+# --run-script-before-required = <filename>
+# Duplicati will run the script before the backup job and wait for its 
+# completion for 60 seconds (default timeout value). The backup will only be
+# run if the script completes with an allowed exit code (0, 2, or 4). 
+# A timeout or any other exit code will abort the backup.
 # The following exit codes are supported:
 #
 # - 0: OK, run operation
@@ -27,11 +28,11 @@
 # - 5: Error don't run operation
 # - other: Error don't run operation
 #
-# --run-script-before-required = <filename>
-# Duplicati will run the script before the backup job and wait for its 
-# completion for 60 seconds (default timeout value). The backup will only be
-# run if the script completes with the exit code 0. Other exit codes or a
-# timeout will cancel the backup job.
+# --run-script-before = <filename>
+# Duplicati will run the script before the backup job and waits for its 
+# completion for 60 seconds (default timeout value). After a timeout a 
+# warning is logged and the backup is started.
+# Any other exit code than 0 will be logged as a warning.
 #
 # --run-script-timeout = <time>
 # Specify a new value for the timeout. Default is 60s. Accepted values are
@@ -42,9 +43,7 @@
 # Duplicati will run the script after the backup job and wait for its 
 # completion for 60 seconds (default timeout value). After a timeout a 
 # warning is logged.
-# The same exit codes as in --run-script-before are supported, but
-# the operation will always continue (i.e. 1 => 0, 3 => 2, 5 => 4)
-# as it has already completed so stopping it during stop is useless.
+# Any other exit code than 0 will be logged as a warning.
 #
 # --run-script-with-arguments = <boolean>
 # If set to true, the script path will be parsed as a command line, and the
