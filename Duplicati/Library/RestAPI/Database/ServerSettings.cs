@@ -31,6 +31,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.AutoUpdater;
 using Microsoft.Extensions.DependencyInjection;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.Library.Snapshots;
 
 #nullable enable
 
@@ -77,6 +78,7 @@ namespace Duplicati.Server.Database
             public const string ADDITIONAL_REPORT_URL = "additional-report-url";
             public const string BACKUP_LIST_SORT_ORDER = "backup-list-sort-order";
             public const string DISABLE_API_EXTENSIONS = "disable-api-extensions";
+            public const string POWER_MODE_PROVIDER = "power-mode-provider";
         }
 
         private readonly Dictionary<string, string?> settings;
@@ -155,6 +157,7 @@ namespace Duplicati.Server.Database
                 provider?.GetRequiredService<EventPollNotify>()?.SignalServerSettingsUpdated();
                 // If throttle options were changed, update now
                 provider?.GetRequiredService<IQueueRunnerService>()?.GetCurrentTask()?.UpdateThrottleSpeeds(UploadSpeedLimit, DownloadSpeedLimit);
+                provider?.GetRequiredService<LiveControls>()?.UpdatePowerModeProvider();
             }
 
             // In case the usage reporter is enabled or disabled, refresh now
@@ -837,6 +840,24 @@ namespace Duplicati.Server.Database
             {
                 lock (databaseConnection.m_lock)
                     settings[CONST.BACKUP_LIST_SORT_ORDER] = value;
+                SaveSettings();
+            }
+        }
+
+        public PowerModeProvider PowerModeProvider
+        {
+            get
+            {
+                var provider = settings[CONST.POWER_MODE_PROVIDER];
+                if (Enum.TryParse<PowerModeProvider>(provider, true, out var parsedProvider))
+                    return parsedProvider;
+
+                return PowerModeProvider.Default;
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.POWER_MODE_PROVIDER] = value == PowerModeProvider.Default ? null : value.ToString();
                 SaveSettings();
             }
         }

@@ -47,7 +47,7 @@ public static class WindowsShimLoader
     /// Cache of types already loaded
     /// </summary>
     private static readonly Dictionary<string, Type> _loadedTypes = new Dictionary<string, Type>();
-    
+
     /// <summary>
     /// Cached reference to the assembly we are loading from
     /// </summary>
@@ -100,7 +100,7 @@ public static class WindowsShimLoader
             var path = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
             return path is null ? IntPtr.Zero : LoadUnmanagedDllFromPath(path);
         }
-    }    
+    }
 
     /// <summary>
     /// Loads a type using reflection
@@ -153,6 +153,13 @@ public static class WindowsShimLoader
     /// <returns>A disposable instance</returns>
     public static IDisposable NewSeBackupPrivilegeScope()
         => LoadWithReflection<IDisposable>("SeBackupPrivilegeScope");
+
+    /// <summary>
+    /// Creates a new PowerModeProvider that can notify of suspend/resume events
+    /// </summary>
+    /// <returns>A new PowerModeProvider</returns>
+    public static IPowerModeProvider NewPowerModeProvider()
+        => LoadWithReflection<IPowerModeProvider>("PowerManagementModule");
 
     /// <summary>
     /// Creates a new BackupDataStream for reading data with BackupRead
