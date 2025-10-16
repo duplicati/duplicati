@@ -88,11 +88,6 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_READ_WRITE_TIMEOUT = "30s";
 
         /// <summary>
-        /// The default asynchronous upload limit
-        /// </summary>
-        private const int DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT = 4;
-
-        /// <summary>
         /// The default number of concurrent uploads
         /// </summary>
         private const int DEFAULT_ASYNCHRONOUS_CONCURRENT_UPLOAD_LIMIT = 4;
