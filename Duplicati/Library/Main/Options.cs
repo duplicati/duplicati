@@ -88,14 +88,9 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_READ_WRITE_TIMEOUT = "30s";
 
         /// <summary>
-        /// The default asynchronous upload limit
-        /// </summary>
-        private const int DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT = 4;
-
-        /// <summary>
         /// The default number of concurrent uploads
         /// </summary>
-        private const int DEFAULT_ASYNCHRONOUS_CONCURRENT_UPLOAD_LIMIT = 4;
+        private const int DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT = 4;
 
         /// <summary>
         /// The backends where throttling is disabled by default
@@ -413,8 +408,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("retry-with-exponential-backoff", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RetrywithexponentialbackoffShort, Strings.Options.RetrywithexponentialbackoffLong, "false"),
 
             new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false"),
-            new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT.ToString()),
-            new CommandLineArgument("asynchronous-concurrent-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousconcurrentuploadlimitShort, Strings.Options.AsynchronousconcurrentuploadlimitLong, DEFAULT_ASYNCHRONOUS_CONCURRENT_UPLOAD_LIMIT.ToString()),
+            new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousconcurrentuploadlimitShort, Strings.Options.AsynchronousconcurrentuploadlimitLong, DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT.ToString(), ["asynchronous-concurrent-upload-limit"]),
             new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong, System.IO.Path.GetTempPath()),
 
             new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
@@ -1000,14 +994,7 @@ namespace Duplicati.Library.Main
         /// Gets the number of concurrent volume uploads allowed. Zero for unlimited.
         /// </summary>
         public int AsynchronousConcurrentUploadLimit
-            => GetInt("asynchronous-concurrent-upload-limit", DEFAULT_ASYNCHRONOUS_CONCURRENT_UPLOAD_LIMIT);
-
-        /// <summary>
-        /// Gets the number of volumes to create ahead of time when using async transfers,
-        /// a value of zero indicates no limit
-        /// </summary>
-        public long AsynchronousUploadLimit
-            => GetInt("asynchronous-upload-limit", DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT);
+            => GetInt("asynchronous-upload-limit", GetInt("asynchronous-concurrent-upload-limit", DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT));
 
         /// <summary>
         /// Gets the temporary folder to use for asynchronous transfers
