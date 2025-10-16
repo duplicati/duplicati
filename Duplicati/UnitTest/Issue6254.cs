@@ -42,7 +42,7 @@ namespace Duplicati.UnitTest
                 keep_versions = 1,
                 no_auto_compact = true,
                 zip_compression_level = 0,
-                asynchronous_concurrent_upload_limit = 1,
+                asynchronous_upload_limit = 1,
                 blocksize = "100kb",
                 dblock_size = "4mb"
             });
