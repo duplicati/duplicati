@@ -54,6 +54,9 @@ namespace Duplicati.Server
         private const string DISABLE_UPDATE_CHECK_OPTION = "disable-update-check";
         private const string REGISTER_REMOTE_CONTROL_OPTION = "register-remote-control";
         private const string REGISTER_REMOTE_CONTROL_REREGISTER_OPTION = "register-remote-control-force";
+        private const string ALLOWED_BACKEND_MODULES = "allowed-backend-modules";
+        private const string ALLOWED_ENCRYPTION_MODULES = "allowed-encryption-modules";
+        private const string ALLOWED_COMPRESSION_MODULES = "allowed-compression-modules";
         private const string LOG_FILE_OPTION = "log-file";
         private const string LOG_LEVEL_OPTION = "log-level";
         private const string LOG_CONSOLE_OPTION = "log-console";
@@ -188,6 +191,12 @@ namespace Duplicati.Server
 
             // Validate after logging is configured
             CommandLineArgumentValidator.ValidateArguments(SupportedCommands, commandlineOptions, KnownDuplicateOptions, ValidationIgnoredOptions);
+
+            // Unload any modules that are not allowed
+            Library.DynamicLoader.BackendLoader.OnlyAllowBackends(commandlineOptions.GetValueOrDefault(ALLOWED_BACKEND_MODULES));
+            Library.DynamicLoader.EncryptionLoader.OnlyAllowModules(commandlineOptions.GetValueOrDefault(ALLOWED_ENCRYPTION_MODULES));
+            Library.DynamicLoader.CompressionLoader.OnlyAllowModules(commandlineOptions.GetValueOrDefault(ALLOWED_COMPRESSION_MODULES));
+
 
             var crashed = false;
             var terminated = false;
@@ -962,6 +971,9 @@ namespace Duplicati.Server
             new CommandLineArgument(SETTINGS_ENCRYPTION_KEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Program.SettingsencryptionkeyShort, Strings.Program.SettingsencryptionkeyLong(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME)),
             new CommandLineArgument(REGISTER_REMOTE_CONTROL_OPTION, CommandLineArgument.ArgumentType.String, Strings.Program.RegisterRemoteControlShort, Strings.Program.RegisterRemoteControlLong),
             new CommandLineArgument(REGISTER_REMOTE_CONTROL_REREGISTER_OPTION, CommandLineArgument.ArgumentType.String, Strings.Program.RegisterRemoteControlReregisterShort, Strings.Program.RegisterRemoteControlReregisterLong),
+            new CommandLineArgument(ALLOWED_BACKEND_MODULES, CommandLineArgument.ArgumentType.String, Strings.Program.AllowedBackendModulesShort, Strings.Program.AllowedBackendModulesLong),
+            new CommandLineArgument(ALLOWED_ENCRYPTION_MODULES, CommandLineArgument.ArgumentType.String, Strings.Program.AllowedEncryptionModulesShort, Strings.Program.AllowedEncryptionModulesLong),
+            new CommandLineArgument(ALLOWED_COMPRESSION_MODULES, CommandLineArgument.ArgumentType.String, Strings.Program.AllowedCompressionModulesShort, Strings.Program.AllowedCompressionModulesLong),
             .. SECRET_PROVIDER_OPTIONS
         ];
 

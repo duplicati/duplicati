@@ -146,5 +146,11 @@ namespace Duplicati.Library.DynamicLoader
         }
         #endregion
 
+        /// <summary>
+        /// Removes all compression modules except the specified ones
+        /// </summary>
+        /// <param name="allowedModules">The module keys to keep, comma-separated</param>
+        public static void OnlyAllowModules(string allowedModules)
+            => _compressionLoader.RemoveAllModulesExcept(allowedModules);
     }
 }

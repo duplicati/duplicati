@@ -244,5 +244,37 @@ namespace Duplicati.Library.DynamicLoader
             lock (m_lock)
                 m_interfaces[GetInterfaceKey(module)] = module;
         }
+
+        /// <summary>
+        /// Helper method to unregister a module
+        /// </summary>
+        public void RemoveModule(string key)
+        {
+            LoadInterfaces();
+            lock (m_lock)
+                m_interfaces.Remove(key);
+        }
+
+        /// <summary>
+        /// Helper method to unregister all modules except the ones in the provided list
+        /// </summary>
+        /// <param name="keysToKeep">The keys to keep, comma-separated</param>
+        public void RemoveAllModulesExcept(string keysToKeep)
+        {
+            var keysToKeepSet = (keysToKeep ?? "")
+                .Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (keysToKeepSet.Count > 0)
+            {
+                LoadInterfaces();
+                lock (m_lock)
+                {
+                    var keysToRemove = m_interfaces.Keys.Where(k => !keysToKeepSet.Contains(k)).ToList();
+                    foreach (var key in keysToRemove)
+                        m_interfaces.Remove(key);
+                }
+            }
+        }
     }
 }
