@@ -193,6 +193,16 @@ namespace Duplicati.CommandLine
             options.Remove(Library.AutoUpdater.DataFolderManager.SERVER_DATAFOLDER_OPTION);
             options.Remove(Library.AutoUpdater.DataFolderManager.PORTABLE_MODE_OPTION);
 
+            // Unload any modules that are not allowed
+            Library.DynamicLoader.BackendLoader.OnlyAllowBackends(options.GetValueOrDefault("allowed-backend-modules"));
+            Library.DynamicLoader.EncryptionLoader.OnlyAllowModules(options.GetValueOrDefault("allowed-encryption-modules"));
+            Library.DynamicLoader.CompressionLoader.OnlyAllowModules(options.GetValueOrDefault("allowed-compression-modules"));
+
+            // These options are only used by the command line tool
+            options.Remove("allowed-backend-modules");
+            options.Remove("allowed-encryption-modules");
+            options.Remove("allowed-compression-modules");
+
             if (!options.ContainsKey("passphrase"))
                 if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
                     options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
@@ -304,6 +314,9 @@ namespace Duplicati.CommandLine
             new CommandLineArgument("auto-update", CommandLineArgument.ArgumentType.Boolean, Strings.Program.AutoUpdateOptionShort, Strings.Program.AutoUpdateOptionLong, "false"),
             new CommandLineArgument(DataFolderManager.PORTABLE_MODE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortableModeOptionShort, Strings.Program.PortableModeOptionLong, DataFolderManager.PORTABLE_MODE.ToString().ToLowerInvariant()),
             new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.DataFolderOptionShort, Strings.Program.DataFolderOptionLong, DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)),
+            new CommandLineArgument("allowed-backend-modules", CommandLineArgument.ArgumentType.String, Strings.Program.AllowedBackendModulesShort, Strings.Program.AllowedBackendModulesLong),
+            new CommandLineArgument("allowed-encryption-modules", CommandLineArgument.ArgumentType.String, Strings.Program.AllowedEncryptionModulesShort, Strings.Program.AllowedEncryptionModulesLong),
+            new CommandLineArgument("allowed-compression-modules", CommandLineArgument.ArgumentType.String, Strings.Program.AllowedCompressionModulesShort, Strings.Program.AllowedCompressionModulesLong),
         ];
 
         private static bool ReadOptionsFromFile(TextWriter outwriter, string filename, ref Library.Utility.IFilter filter, List<string> cargs, Dictionary<string, string> options)

@@ -60,6 +60,12 @@ namespace Duplicati.CommandLine.Strings
         public static string PortableModeOptionLong { get { return LC.L(@"If this option is set, the configuration files will be stored in a data subfolder of the Duplicati installation folder. This is useful for running from a USB stick or other portable media."); } }
         public static string DataFolderOptionShort { get { return LC.L(@"Data folder"); } }
         public static string DataFolderOptionLong { get { return LC.L(@"The folder where data is stored. This is the folder where the database and other files are stored."); } }
+        public static string AllowedBackendModulesShort { get { return LC.L(@"Allowed backends"); } }
+        public static string AllowedBackendModulesLong { get { return LC.L(@"Comma-separated list of backend protocol keys that are allowed to be used. If this option is not specified, all available backends are allowed. Use this option to restrict the backends that can be used, for example in a managed environment. Example: --allowed-backend-modules=file,ftp,s3"); } }
+        public static string AllowedEncryptionModulesShort { get { return LC.L(@"Allowed encryption modules"); } }
+        public static string AllowedEncryptionModulesLong { get { return LC.L(@"Comma-separated list of encryption module file extensions that are allowed to be used. If this option is not specified, all available encryption modules are allowed. Use this option to restrict the encryption modules that can be used, for example in a managed environment. Example: --allowed-encryption-modules=aes,gpg"); } }
+        public static string AllowedCompressionModulesShort { get { return LC.L(@"Allowed compression modules"); } }
+        public static string AllowedCompressionModulesLong { get { return LC.L(@"Comma-separated list of compression module file extensions that are allowed to be used. If this option is not specified, all available compression modules are allowed. Use this option to restrict the compression modules that can be used, for example in a managed environment. Example: --allowed-compression-modules=zip"); } }
 
         // ReSharper disable once UnusedMember.Global
         // This is a placeholder message that is intended to be used with the code

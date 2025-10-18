@@ -192,5 +192,12 @@ namespace Duplicati.Library.DynamicLoader
         {
             _backendLoader.AddModule(backend);
         }
+
+        /// <summary>
+        /// Removes all backends except the specified ones
+        /// </summary>
+        /// <param name="protocolKeys">The protocol keys to keep, comma-separated</param>
+        public static void OnlyAllowBackends(string protocolKeys)
+            => _backendLoader.RemoveAllModulesExcept(protocolKeys);
     }
 }
