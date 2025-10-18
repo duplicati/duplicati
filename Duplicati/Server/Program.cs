@@ -236,7 +236,7 @@ namespace Duplicati.Server
 
                 SetPurgeTempFilesTimer(connection, commandlineOptions);
 
-                LiveControl.StateChanged = (e) => { LiveControl_StateChanged(queueRunner, connection, eventPollNotify, e); };
+                LiveControl.StateChanged = (e) => { LiveControl_StateChanged(queueRunner, connection, eventPollNotify, scheduler, e); };
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, PING_PONG_KEEPALIVE_OPTION))
                 {
@@ -857,7 +857,7 @@ namespace Duplicati.Server
         /// This event handler updates the trayicon menu with the current state of the runner.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        private static void LiveControl_StateChanged(IQueueRunnerService queueRunnerService, Connection connection, EventPollNotify eventPollNotify, LiveControls.LiveControlEvent e)
+        private static void LiveControl_StateChanged(IQueueRunnerService queueRunnerService, Connection connection, EventPollNotify eventPollNotify, ISchedulerService schedulerService, LiveControls.LiveControlEvent e)
         {
             var appSettings = connection.ApplicationSettings;
             switch (e.State)
@@ -873,6 +873,7 @@ namespace Duplicati.Server
                     {
                         queueRunnerService.Resume();
                         queueRunnerService.GetCurrentTask()?.Resume();
+                        schedulerService?.Reschedule();
                         appSettings.PausedUntil = null;
                         break;
                     }

@@ -21,6 +21,7 @@
 using System.Globalization;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Localization;
+using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Server;
 using Duplicati.Server.Database;
@@ -228,6 +229,11 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         /// The timezones available on the system
         /// </summary>
         public required IEnumerable<SystemInfoDto.TimeZoneDto> TimeZones { get; init; }
+
+        /// <summary>
+        /// The power mode providers supported
+        /// </summary>
+        public required string[] PowerModeProviders { get; init; }
     }
 
     /// <summary>
@@ -266,6 +272,9 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             SecretProviderModules = Server.Serializable.ServerSettings.SecretProviderModules,
             UsingAlternateUpdateURLs = AutoUpdateSettings.UsesAlternateURLs,
             LogLevels = Enum.GetNames(typeof(Library.Logging.LogMessageType)),
+            PowerModeProviders = OperatingSystem.IsWindows()
+                ? [string.Empty, PowerModeProvider.None.ToString(), PowerModeProvider.Net.ToString(), PowerModeProvider.Native.ToString()]
+                : [string.Empty, PowerModeProvider.None.ToString()],
             SpecialFolders = SpecialFolders.Nodes.Select(n => new Dto.SystemInfoDto.SpecialFolderDto { ID = n.id, Path = n.resolvedpath }).ToArray(),
             SupportedLocales = Library.Localization.LocalizationService.SupportedCultures
                 .Select(x => new Dto.SystemInfoDto.LocaleDto
@@ -363,6 +372,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             TimeZones = systeminfo.TimeZones,
             DefaultOAuthURL = AuthIdOptionsHelper.DUPLICATI_OAUTH_SERVICE,
             DefaultOAuthURLv2 = AuthIdOptionsHelper.DUPLICATI_OAUTH_SERVICE_NEW,
+            PowerModeProviders = systeminfo.PowerModeProviders,
         };
     }
 }

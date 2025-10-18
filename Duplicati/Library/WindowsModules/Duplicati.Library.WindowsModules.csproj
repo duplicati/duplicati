@@ -11,11 +11,11 @@
     <PackageReference Include="Vanara.PInvoke.VssApi" Version="4.1.6" />
     <PackageReference Include="Vanara.PInvoke.Kernel32" Version="4.1.6" />
     <PackageReference Include="Vanara.PInvoke.Security" Version="4.1.6" />
+    <PackageReference Include="Vanara.PInvoke.User32" Version="4.1.6" />
     <PackageReference Include="Vanara.Security" Version="4.1.6" />
   </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
-    <!-- <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" /> -->
   </ItemGroup>
 </Project>

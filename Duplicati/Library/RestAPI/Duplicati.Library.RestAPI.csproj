@@ -6,10 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="9.0.6" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\CommandLine\CLI\Duplicati.CommandLine.csproj" />
     <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\Encryption\Duplicati.Library.Encryption.csproj" />
