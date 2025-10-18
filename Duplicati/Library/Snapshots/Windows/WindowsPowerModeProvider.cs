@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Runtime.Versioning;
 using Duplicati.Library.Interface;
@@ -32,9 +34,9 @@ namespace Duplicati.Library.Snapshots.Windows;
 public class WindowsPowerModeProvider : IPowerModeProvider
 {
     /// <inheritdoc />
-    public Action OnResume { get; set; }
+    public Action? OnResume { get; set; }
     /// <inheritdoc />
-    public Action OnSuspend { get; set; }
+    public Action? OnSuspend { get; set; }
 
     /// <summary>
     /// Constructs a new power mode provider
