@@ -44,7 +44,9 @@ public static class PowerModeUtility
                 PowerModeProvider.Net =>
                     new Windows.WindowsPowerModeProvider(),
                 PowerModeProvider.Native or PowerModeProvider.Default =>
-                    Windows.WindowsShimLoader.NewPowerModeProvider(),
+                    OperatingSystem.IsWindowsVersionAtLeast(8, 0) ?
+                        Windows.WindowsShimLoader.NewPowerModeProvider()
+                        : new Windows.WindowsPowerModeProvider(),
                 _ => null
             };
 
