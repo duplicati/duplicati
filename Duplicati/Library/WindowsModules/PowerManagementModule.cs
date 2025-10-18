@@ -29,8 +29,7 @@ using Duplicati.Library.Interface;
 namespace Duplicati.Library.WindowsModules;
 
 /// <summary>
-/// Provides power management functionality for Windows using the powrprof callback API.
-/// Eliminates the hidden window by registering a suspend/resume callback (Windows 8+).
+/// Provides power management functionality for Windows using the powrprof callback API (Windows 8+).
 /// </summary>
 [SupportedOSPlatform("windows")]
 public sealed class PowerManagementModule : IPowerModeProvider, IDisposable
@@ -91,13 +90,17 @@ public sealed class PowerManagementModule : IPowerModeProvider, IDisposable
     }
 
     /// <summary>
+    /// Constant indicating successful operation.
+    /// </summary>
+    private const uint STATUS_SUCCESS = 0;
+
+    /// <summary>
     /// Callback invoked by the system for suspend/resume notifications.
     /// </summary>
     /// <param name="context">User-provided context (unused).</param>
     /// <param name="type">Power event type (e.g., PBT_APMSUSPEND, PBT_APMRESUMEAUTOMATIC).</param>
     /// <param name="setting">Additional info (unused).</param>
     /// <returns>STATUS_SUCCESS (0) on success.</returns>
-    private static uint STATUS_SUCCESS => 0;
     private uint SuspendResumeCallback(IntPtr context, uint type, IntPtr setting)
     {
         switch (type)
@@ -127,16 +130,22 @@ public sealed class PowerManagementModule : IPowerModeProvider, IDisposable
         _callbackRef = null;
     }
 
-    // Interop
-
-    // Power broadcast event for system suspend.
+    /// <summary>
+    /// Power broadcast event for system suspend.
+    /// </summary>
     private const uint PBT_APMSUSPEND = 0x0004;
-    // Power broadcast event for automatic resume from suspend.
+    /// <summary>
+    /// Power broadcast event for automatic resume from suspend.
+    /// </summary>
     private const uint PBT_APMRESUMEAUTOMATIC = 0x0012;
-    // Power broadcast event for resume from suspend.
+    /// <summary>
+    /// Power broadcast event for resume from suspend.
+    /// </summary>
     private const uint PBT_APMRESUMESUSPEND = 0x0007;
 
-    // Flag indicating that the recipient is a callback routine.
+    /// <summary>
+    /// Flag indicating that the recipient is a callback routine.
+    /// </summary>
     private const uint DEVICE_NOTIFY_CALLBACK = 2;
 
     /// <summary>
@@ -145,7 +154,13 @@ public sealed class PowerManagementModule : IPowerModeProvider, IDisposable
     [StructLayout(LayoutKind.Sequential)]
     private struct DEVICE_NOTIFY_SUBSCRIBE_PARAMETERS
     {
+        /// <summary>
+        /// The callback routine to receive notifications.
+        /// </summary>
         public DEVICE_NOTIFY_CALLBACK_ROUTINE Callback;
+        /// <summary>
+        /// User-defined context passed to the callback.
+        /// </summary>
         public IntPtr Context;
     }
 
