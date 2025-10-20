@@ -20,8 +20,9 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Runtime.Versioning;
+using Duplicati.Library.Interface;
 using Duplicati.Library.IO;
+using Duplicati.Library.Snapshots;
 using Duplicati.Server.Database;
 
 namespace Duplicati.Server
@@ -132,6 +133,16 @@ namespace Duplicati.Server
         private readonly Connection m_connection;
 
         /// <summary>
+        /// The power mode provider, if any
+        /// </summary>
+        private IPowerModeProvider m_powerModeProvider;
+
+        /// <summary>
+        /// The current power mode provider
+        /// </summary>
+        private PowerModeProvider m_currentPowerModeProvider = PowerModeProvider.None;
+
+        /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
         /// <param name="connection">The connection to use</param>
@@ -199,10 +210,30 @@ namespace Duplicati.Server
                 }
             }
 
+            UpdatePowerModeProvider();
+        }
+
+        /// <summary>
+        /// Updates the current power mode provider, if changed
+        /// </summary>
+        public void UpdatePowerModeProvider()
+        {
             try
             {
-                if (OperatingSystem.IsWindows())
-                    RegisterHibernateMonitor();
+                var newProvider = m_connection.ApplicationSettings.PowerModeProvider;
+                if (newProvider == m_currentPowerModeProvider)
+                    return;
+
+                if (m_powerModeProvider != null)
+                    System.Threading.Interlocked.Exchange(ref m_powerModeProvider, null)?.Dispose();
+
+                m_powerModeProvider = PowerModeUtility.GetPowerModeProvider(newProvider);
+                m_currentPowerModeProvider = newProvider;
+                if (m_powerModeProvider != null)
+                {
+                    m_powerModeProvider.OnResume = OnResume;
+                    m_powerModeProvider.OnSuspend = OnSuspend;
+                }
             }
             catch { }
         }
@@ -362,71 +393,55 @@ namespace Duplicati.Server
         public DateTime EstimatedPauseEnd { get { return m_waitTimeExpiration; } }
 
         /// <summary>
-        /// Method for calling a Win32 API
+        /// Method called when the power mode provider signals suspend
         /// </summary>
-        [SupportedOSPlatform("windows")]
-        private void RegisterHibernateMonitor()
+        private void OnSuspend()
         {
-            Microsoft.Win32.SystemEvents.PowerModeChanged += new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
+            //If we are running, register as being paused due to suspending
+            if (this.m_state == LiveControlState.Running)
+            {
+                this.SetPauseMode();
+                m_pausedForSuspend = true;
+                m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
+            }
+            else
+            {
+                if (m_waitTimeExpiration.Ticks != 0)
+                {
+                    m_pausedForSuspend = true;
+                    m_suspendMinimumPause = this.EstimatedPauseEnd;
+                    ResetTimer(null);
+                }
+            }
         }
 
         /// <summary>
-        /// A monitor for detecting when the system hibernates or resumes
+        /// Method called when the power mode provider signals resume
         /// </summary>
-        /// <param name="sender">Unused sender parameter</param>
-        /// <param name="_e">The event information</param>
-        [SupportedOSPlatform("windows")]
-        private void SystemEvents_PowerModeChanged(object sender, object _e)
+        private void OnResume()
         {
-            Microsoft.Win32.PowerModeChangedEventArgs e = _e as Microsoft.Win32.PowerModeChangedEventArgs;
-            if (e == null)
-                return;
-
-            if (e.Mode == Microsoft.Win32.PowerModes.Suspend)
+            //If we have been been paused due to suspending, we un-pause now
+            if (m_pausedForSuspend)
             {
-                //If we are running, register as being paused due to suspending
-                if (this.m_state == LiveControlState.Running)
+                long delayTicks = (m_suspendMinimumPause - DateTime.UtcNow).Ticks;
+
+                var appset = m_connection.ApplicationSettings;
+                if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
+                    try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
+                    catch { }
+
+                if (delayTicks > 0)
                 {
-                    this.SetPauseMode();
-                    m_pausedForSuspend = true;
-                    m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
+                    this.Pause(TimeSpan.FromTicks(delayTicks), true);
                 }
                 else
                 {
-                    if (m_waitTimeExpiration.Ticks != 0)
-                    {
-                        m_pausedForSuspend = true;
-                        m_suspendMinimumPause = this.EstimatedPauseEnd;
-                        ResetTimer(null);
-                    }
-
+                    this.Resume();
                 }
             }
-            else if (e.Mode == Microsoft.Win32.PowerModes.Resume)
-            {
-                //If we have been been paused due to suspending, we un-pause now
-                if (m_pausedForSuspend)
-                {
-                    long delayTicks = (m_suspendMinimumPause - DateTime.UtcNow).Ticks;
 
-                    var appset = m_connection.ApplicationSettings;
-                    if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
-                        try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
-                        catch { }
-
-                    if (delayTicks > 0)
-                    {
-                        this.Pause(TimeSpan.FromTicks(delayTicks), true);
-                    }
-                    else
-                    {
-                        this.Resume();
-                    }
-                }
-
-                m_pausedForSuspend = false;
-                m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
-            }
+            m_pausedForSuspend = false;
+            m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
         }
 
     }

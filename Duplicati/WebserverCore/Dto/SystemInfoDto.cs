@@ -227,6 +227,10 @@ public sealed record SystemInfoDto
     /// The new default OAuth URL for v2 authentication.
     /// </summary>
     public required string DefaultOAuthURLv2 { get; init; }
+    /// <summary>
+    /// The supported power mode providers
+    /// </summary>
+    public required IEnumerable<string> PowerModeProviders { get; init; }
 
     /// <summary>
     /// Represents a timezone.

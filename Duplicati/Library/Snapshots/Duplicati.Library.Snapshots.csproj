@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="9.0.6" />
   </ItemGroup>
 
   <ItemGroup>
