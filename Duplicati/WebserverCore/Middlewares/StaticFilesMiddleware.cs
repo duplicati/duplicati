@@ -59,7 +59,7 @@ public static class StaticFilesExtensions
         if (!prefix.EndsWith("/"))
             prefix += "/";
 
-        return fileContent.Replace("<base href=\"/\">", $"<base href=\"{prefix}\">");
+        return fileContent.Replace("<base href=\"/\" \/>", $"<base href=\"{prefix}\" \/>");
     }
 
     public static IApplicationBuilder UseDefaultStaticFiles(this WebApplication app, string webroot, IEnumerable<string> spaPaths)
