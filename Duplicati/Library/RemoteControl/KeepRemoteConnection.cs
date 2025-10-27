@@ -645,8 +645,11 @@ public class KeepRemoteConnection : IDisposable
                 {
                     foreach (var header in CommandRequestMessage.Headers)
                     {
-                        if (header.Key == "Content-Type" && request.Content != null)
-                            request.Content.Headers.ContentType = new MediaTypeHeaderValue(header.Value);
+                        if (header.Key == "Content-Type")
+                        {
+                            if (request.Content != null)
+                                request.Content.Headers.ContentType = new MediaTypeHeaderValue(header.Value);
+                        }
                         else
                             request.Headers.Add(header.Key, header.Value);
                     }
