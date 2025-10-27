@@ -740,8 +740,20 @@ namespace Duplicati.Library.Backend
             using (var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl))
             using (var response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
             {
-                // Note that the response body should always be empty in this case.
-                await this.ParseResponseAsync<UploadSession>(response, cancelToken).ConfigureAwait(false);
+                try
+                {
+                    // Note that the response body should always be empty in this case.
+                    if (response.StatusCode != HttpStatusCode.NoContent)
+                        await this.ParseResponseAsync<UploadSession>(response, cancelToken).ConfigureAwait(false);
+                }
+                catch (Exception parseEx)
+                {
+                    Log.WriteErrorMessage(
+                        LOGTAG,
+                        "MicrosoftGraphUploadSessionCancelError",
+                        parseEx,
+                        "Error canceling upload session after fragment upload failure");
+                }
             }
 
             throw new UploadSessionException(createSessionResponse, fragment, fragmentCount, ex);
