@@ -92,7 +92,7 @@ partial class BackendManager
                         throw new Exception(Strings.Controller.DownloadedFileSizeError(RemoteFilename, dataSizeDownloaded, Size));
 
                     if (!string.IsNullOrEmpty(Hash) && fileHash != Hash)
-                        throw new HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, Hash, fileHash));
+                        throw new HashMismatchException(Strings.Controller.HashMismatchError(RemoteFilename, Hash, fileHash));
                 }
 
                 // Perform decryption after hash validation, if needed
