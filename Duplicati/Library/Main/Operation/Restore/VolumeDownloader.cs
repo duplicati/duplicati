@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_read?.Start();
                         var volume_id = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_read?.Stop();
-                        Logging.Log.WriteExplicitMessage(LOGTAG, "DownloadVolume", null, "Downloaded volume {0}", volume_id);
+                        Logging.Log.WriteExplicitMessage(LOGTAG, "DownloadVolume", null, "Downloading volume {0}", volume_id);
 
                         // Trigger the download.
                         sw_wait?.Start();
