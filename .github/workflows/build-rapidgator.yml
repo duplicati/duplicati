@@ -1,4 +1,4 @@
-name: Build and release Rapidgator backend
+name: Build and Release Rapidgator Backend
 
 on:
   push:
