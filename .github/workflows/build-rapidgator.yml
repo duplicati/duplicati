@@ -35,9 +35,10 @@ jobs:
 
       - name: Create zip of published output
         id: prepare_zip
+        env:
+          ZIP_NAME: rapidgator-${{ github.ref_name || format('build-{0}', github.run_id) }}.zip
         run: |
           cd artifacts
-          ZIP_NAME="rapidgator-${{ github.ref_name || format('build-{0}', github.run_id) }}.zip"
           zip -r "$ZIP_NAME" rapidgator
           echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
 
@@ -45,8 +46,8 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && github.ref_name || github.event.inputs.release_tag || format('build-{0}', github.run_id) }}
-          release_name: ${{ github.event.inputs.release_name || format('Rapidgator build #{0}', github.run_number) }}
+          tag_name: ${{ github.event.inputs.release_tag || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || format('build-{0}', github.run_id) }}
+          release_name: ${{ github.event.inputs.release_name || format('Rapidgator build {0}', github.run_number) }}
           draft: false
           prerelease: false
 
