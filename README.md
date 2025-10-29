@@ -1,3 +1,12 @@
+# Duplicati with a Rapidgator.net backend
+Rapidgator is a filehoster which is quite inexpensive for the storage you get. 
+They also offer a propriatary API which is documented [here](https://rapidgator.net/article/api/index).
+The only hastle i had were the delete rights. By default you are only allowed to delete files after clicking on a link provided by in a automated mail. But the support was so friendly to remove this restriction so i now can delete whatever i want whenever i want :)
+
+The source of the Backend is located in `Duplicati/Library/Backend/Rapidgator`
+
+Use this backend by placing the libraries in `modules/backend/`
+
 # Duplicati
 
 **English** | [中文](./README.zh-CN.md) | [日本語](./README.ja-JP.md)
