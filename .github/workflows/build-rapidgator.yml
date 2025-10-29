@@ -1,0 +1,59 @@
+name: Build and release Rapidgator backend
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional tag name to use for the release (if omitted and run from a tag push the tag will be used)'
+        required: false
+      release_name:
+        description: 'Optional release name'
+        required: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore NuGet packages for Rapidgator project
+        run: dotnet restore Duplicati/Library/Backend/Rapidgator/Duplicati.Library.Backend.Rapidgator.csproj
+
+      - name: Publish Rapidgator project
+        run: |
+          mkdir -p artifacts
+          dotnet publish Duplicati/Library/Backend/Rapidgator/Duplicati.Library.Backend.Rapidgator.csproj -c Release -o ./artifacts/rapidgator
+
+      - name: Create zip of published output
+        id: prepare_zip
+        run: |
+          cd artifacts
+          ZIP_NAME="rapidgator-${{ github.ref_name || format('build-{0}', github.run_id) }}.zip"
+          zip -r "$ZIP_NAME" rapidgator
+          echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && github.ref_name || github.event.inputs.release_tag || format('build-{0}', github.run_id) }}
+          release_name: ${{ github.event.inputs.release_name || format('Rapidgator build #{0}', github.run_number) }}
+          draft: false
+          prerelease: false
+
+      - name: Upload release asset (zip)
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/${{ steps.prepare_zip.outputs.zip_name }}
+          asset_name: ${{ steps.prepare_zip.outputs.zip_name }}
+          asset_content_type: application/zip
