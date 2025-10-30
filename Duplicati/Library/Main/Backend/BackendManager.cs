@@ -249,6 +249,10 @@ internal partial class BackendManager : IBackendManager
     public async Task PutAsync(VolumeWriterBase volume, IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken)
     {
         volume.Close();
+        if (indexVolume != null && !indexVolume.IsVolumeActive)
+            throw new InvalidOperationException("Index volume is not active, cannot upload index volume");
+        if (indexVolume != null)
+            indexVolume.IsReadyForFinish = false; // Prevent the index volume from being manipulated after this point
 
         var op = new PutOperation(volume.RemoteFilename, context, waitForComplete, cancelToken)
         {
