@@ -7,9 +7,10 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using System.Net;
 using System.Net.Http.Json;
-using System.Security.Cryptography;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Authentication;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Backend.Rapidgator;
 
@@ -193,24 +194,10 @@ public class RapidgatorBackend : IStreamingBackend, IBackend, IDynamicModule, ID
         string folderIdAsync = await GetFolderIdAsync(true, _folder);
     }
 
-    public IList<ICommandLineArgument> SupportedCommands
-    {
-        get
-        {
-            CommandLineArgument[] options = AuthOptionsHelper.GetOptions();
-            int length = options.Length;
-            List<ICommandLineArgument> list = new List<ICommandLineArgument>(length);
-            CollectionsMarshal.SetCount<ICommandLineArgument>(list, length);
-            Span<ICommandLineArgument> span = CollectionsMarshal.AsSpan<ICommandLineArgument>(list);
-            int index = 0;
-            foreach (CommandLineArgument commandLineArgument in options)
-            {
-                span[index] = (ICommandLineArgument)commandLineArgument;
-                ++index;
-            }
-            return list;
-        }
-    }
+    public IList<ICommandLineArgument> SupportedCommands =>
+    [
+        .. AuthOptionsHelper.GetOptions()
+    ];
 
     public void Dispose()
     {
