@@ -142,9 +142,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 blockvolume = null;
                                 indexvolume = null;
 
-                                await database.CommitTransactionAsync("CommitAddBlockToOutputFlush", true, taskreader.ProgressToken).ConfigureAwait(false);
-                                await backendManager.PutAsync(blockVolumeCopy, indexVolumeCopy, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager, taskreader.ProgressToken), taskreader.ProgressToken).ConfigureAwait(false);
-
+                                if (!options.Dryrun)
+                                {
+                                    await database.CommitTransactionAsync("CommitAddBlockToOutputFlush", true, taskreader.ProgressToken).ConfigureAwait(false);
+                                    await backendManager.PutAsync(blockVolumeCopy, indexVolumeCopy, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager, taskreader.ProgressToken), taskreader.ProgressToken).ConfigureAwait(false);
+                                }
                             }
 
                         }
