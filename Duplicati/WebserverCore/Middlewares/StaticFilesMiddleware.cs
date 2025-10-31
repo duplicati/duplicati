@@ -18,7 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.FileProviders.Physical;
@@ -54,12 +54,20 @@ public static class StaticFilesExtensions
 
     private sealed record SpaConfig(string Prefix, string FileContent, string BasePath);
 
+    private static readonly Regex _baseHrefRegex = new Regex(
+        @"(<base\b[^>]*?\bhref\s*=\s*)(['""])\s*/\s*(?=\2)",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private static string PatchIndexContent(string fileContent, string prefix)
     {
         if (!prefix.EndsWith("/"))
             prefix += "/";
 
-        return fileContent.Replace("<base href=\"/\" />", $"<base href=\"{prefix}\" />");
+        return _baseHrefRegex.Replace(fileContent, match =>
+        {
+            var quote = match.Groups[2].Value;
+            return $"{match.Groups[1].Value}{quote}{prefix}";
+        });
     }
 
     public static IApplicationBuilder UseDefaultStaticFiles(this WebApplication app, string webroot, IEnumerable<string> spaPaths)
