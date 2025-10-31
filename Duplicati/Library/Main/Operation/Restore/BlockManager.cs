@@ -323,10 +323,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                     sw_get_write?.Stop();
 
                     // Add a timeout monitor
+                    var timeout = TimeSpan.FromMilliseconds(DeadlockTimer.MaxProcessingTime);
                     using var tcs1 = new CancellationTokenSource();
-                    var t = await Task.WhenAny(Task.Delay(TimeSpan.FromMinutes(5), tcs1.Token), new_tcs.Task).ConfigureAwait(false);
+                    var t = await Task.WhenAny(
+                        Task.Delay(timeout, tcs1.Token),
+                        new_tcs.Task
+                    ).ConfigureAwait(false);
                     if (t != new_tcs.Task)
-                        Logging.Log.WriteWarningMessage(LOGTAG, "BlockRequestTimeout", null, "Block request for block {0} has been in flight for over 5 minutes. This may be a deadlock.", block_request.BlockID);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BlockRequestTimeout", null, "Block request for block {0} has been in flight for over {1} milliseconds. This may be a deadlock.", block_request.BlockID, timeout.TotalMilliseconds);
                 }
                 else
                 {
@@ -448,6 +452,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                     m_retired = true;
                     m_volume_request.Retire();
                 }
+
+                // Stop the deadlock timer
+                DeadlockTimer.Token.Cancel();
             }
 
             /// <summary>
