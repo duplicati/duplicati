@@ -400,7 +400,7 @@ public static partial class Command
         {
             if (!_useDiscourseAnnounce.HasValue)
             {
-                if (Input.DisableDiscordAnnounce || channel == ReleaseChannel.Debug || channel == ReleaseChannel.Nightly)
+                if (Input.DisableDiscourseAnnounce || channel == ReleaseChannel.Debug || channel == ReleaseChannel.Nightly)
                 {
                     _useDiscourseAnnounce = false;
                     return;

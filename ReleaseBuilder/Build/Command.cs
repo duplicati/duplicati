@@ -312,7 +312,7 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
-        var disableDiscordAnnounceOption = new Option<bool>(
+        var disableDiscourseAnnounceOption = new Option<bool>(
             name: "--disable-discourse-announce",
             description: "Disables posting to the forum",
             getDefaultValue: () => false
@@ -371,7 +371,7 @@ public static partial class Command
             disableS3UploadOption,
             disableGithubUploadOption,
             disableUpdateServerReloadOption,
-            disableDiscordAnnounceOption,
+            disableDiscourseAnnounceOption,
             useHostedBuildsOption,
             resumeFromUploadOption,
             propagateReleaseOption,
@@ -408,7 +408,7 @@ public static partial class Command
     /// <param name="DisableS3Upload">If S3 upload should be disabled</param>
     /// <param name="DisableGithubUpload">If Github upload should be disabled</param>
     /// <param name="DisableUpdateServerReload">If the update server should not be reloaded</param>
-    /// <param name="DisableDiscordAnnounce">If forum posting should be disabled</param>
+    /// <param name="DisableDiscourseAnnounce">If forum posting should be disabled</param>
     /// <param name="UseHostedBuilds">If hosted builds should be used</param>
     /// <param name="ResumeFromUpload">If the process should resume from the upload step</param>
     /// <param name="PropagateRelease">If the release should be propagated to the next channel</param>
@@ -437,7 +437,7 @@ public static partial class Command
         bool DisableS3Upload,
         bool DisableGithubUpload,
         bool DisableUpdateServerReload,
-        bool DisableDiscordAnnounce,
+        bool DisableDiscourseAnnounce,
         bool UseHostedBuilds,
         bool ResumeFromUpload,
         bool PropagateRelease,
