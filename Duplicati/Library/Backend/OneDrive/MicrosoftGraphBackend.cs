@@ -420,7 +420,7 @@ namespace Duplicati.Library.Backend
                                     LOGTAG,
                                     "MicrosoftGraphFragmentUpload",
                                     "Uploading fragment {0}/{1} of remote file {2}",
-                                    fragmentNumber,
+                                    fragmentNumber + 1,
                                     fragmentCount,
                                     remotename);
 
@@ -436,7 +436,7 @@ namespace Duplicati.Library.Backend
                                     try
                                     {
                                         // The uploaded put requests will error if they are authenticated
-                                        using (var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => this.m_client.SendAsync(request, false, ct)).ConfigureAwait(false))
+                                        using (var response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
                                         {
                                             // Note: On the last request, the json result includes the default properties of the item that was uploaded
                                             await this.ParseResponseAsync<UploadSession>(response, cancelToken).ConfigureAwait(false);
@@ -459,7 +459,7 @@ namespace Duplicati.Library.Backend
                                                 await this.ThrowUploadSessionException(
                                                     uploadSession,
                                                     createSessionResponse,
-                                                    fragmentNumber,
+                                                    fragmentNumber + 1,
                                                     fragmentCount,
                                                     ex,
                                                     cancelToken).ConfigureAwait(false);
@@ -474,7 +474,7 @@ namespace Duplicati.Library.Backend
                                             await this.ThrowUploadSessionException(
                                                 uploadSession,
                                                 createSessionResponse,
-                                                fragmentNumber,
+                                                fragmentNumber + 1,
                                                 fragmentCount,
                                                 ex,
                                                 cancelToken).ConfigureAwait(false);
@@ -491,7 +491,7 @@ namespace Duplicati.Library.Backend
                                                 "MicrosoftGraphFragmentRetryIn",
                                                 ex,
                                                 "Uploading fragment {0}/{1} of remote file {2} failed and will be retried in {3}",
-                                                fragmentNumber,
+                                                fragmentNumber + 1,
                                                 fragmentCount,
                                                 remotename,
                                                 delay);
@@ -506,7 +506,7 @@ namespace Duplicati.Library.Backend
                                             await this.ThrowUploadSessionException(
                                                 uploadSession,
                                                 createSessionResponse,
-                                                fragmentNumber,
+                                                fragmentNumber + 1,
                                                 fragmentCount,
                                                 ex,
                                                 cancelToken).ConfigureAwait(false);
@@ -519,7 +519,7 @@ namespace Duplicati.Library.Backend
                                                 "MicrosoftGraphFragmentRetry",
                                                 ex,
                                                 "Uploading fragment {0}/{1} of remote file {2} failed and will be retried",
-                                                fragmentNumber,
+                                                fragmentNumber + 1,
                                                 fragmentCount,
                                                 remotename);
 
@@ -531,7 +531,7 @@ namespace Duplicati.Library.Backend
                                             await this.ThrowUploadSessionException(
                                                 uploadSession,
                                                 createSessionResponse,
-                                                fragmentNumber,
+                                                fragmentNumber + 1,
                                                 fragmentCount,
                                                 ex,
                                                 cancelToken).ConfigureAwait(false);
@@ -543,7 +543,7 @@ namespace Duplicati.Library.Backend
                                         await this.ThrowUploadSessionException(
                                             uploadSession,
                                             createSessionResponse,
-                                            fragmentNumber,
+                                            fragmentNumber + 1,
                                             fragmentCount,
                                             ex,
                                             cancelToken).ConfigureAwait(false);
