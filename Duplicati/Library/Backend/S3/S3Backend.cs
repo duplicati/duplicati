@@ -249,6 +249,7 @@ namespace Duplicati.Library.Backend
                 options["s3-ext-forcepathstyle"] = "true";
 
             // Validate that hostname doesn't contain a path
+            hostname = hostname.Trim('/').Trim('\\');
             if (hostname.Contains('/') || hostname.Contains('\\'))
                 throw new UserInformationException(Strings.S3Backend.NoPathAllowedInEndpointError, "S3NoPathInEndpoint");
 
