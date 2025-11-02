@@ -59,7 +59,7 @@ namespace Duplicati.License
             if (!string.IsNullOrWhiteSpace(TAG))
                 v += " - " + TAG;
 #if DEBUG
-            v = " - debug";
+            v += " - debug";
 #endif
             VERSION_NAME = v;
 
