@@ -84,4 +84,8 @@ public interface IQueuedTask
     /// Resumes the task.
     /// </summary>
     void Resume();
+    /// <summary>
+    /// Indicates whether the task is currently paused.
+    /// </summary>
+    bool IsPaused { get; }
 }

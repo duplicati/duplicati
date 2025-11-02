@@ -36,5 +36,7 @@ public class Tasks : IEndpointV1
         group.MapGet("/task/{taskid}", ([FromRoute] long taskId, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.GetTaskInfo(taskId)).RequireAuthorization();
         group.MapPost("/task/{taskid}/stop", ([FromRoute] long taskId, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.StopTask(taskId)).RequireAuthorization();
         group.MapPost("/task/{taskid}/abort", ([FromRoute] long taskId, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.AbortTask(taskId)).RequireAuthorization();
+        group.MapPost("/task/{taskid}/pause", ([FromRoute] long taskId, [FromQuery] bool? alsoTransfers, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.PauseTask(taskId, alsoTransfers ?? false)).RequireAuthorization();
+        group.MapPost("/task/{taskid}/resume", ([FromRoute] long taskId, [FromServices] ITaskQueueService taskQueueService) => taskQueueService.ResumeTask(taskId)).RequireAuthorization();
     }
 }

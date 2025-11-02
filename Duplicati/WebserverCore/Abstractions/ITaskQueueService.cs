@@ -50,4 +50,16 @@ public interface ITaskQueueService
     /// </summary>
     /// <param name="taskid">The ID of the task to abort.</param>
     void AbortTask(long taskid);
+
+    /// <summary>
+    /// Pauses a task with the specified task ID. This will pause the task if it is currently running.
+    /// </summary>
+    /// <param name="taskid">The ID of the task to pause.</param>
+    /// <param name="alsoTransfers">If true, associated transfers will also be paused.</param>
+    void PauseTask(long taskid, bool alsoTransfers);
+    /// <summary>
+    /// Resumes a task with the specified task ID. This will resume the task if it is currently paused.
+    /// </summary>
+    /// <param name="taskid">The ID of the task to resume.</param>
+    void ResumeTask(long taskid);
 }

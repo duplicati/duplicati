@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
 using Duplicati.WebserverCore.Exceptions;
@@ -28,7 +29,7 @@ namespace Duplicati.WebserverCore.Services;
 /// Provides functionality to manage and retrieve information about tasks in the task queue.
 /// </summary>
 /// <param name="queueRunnerService">The service responsible for running and managing tasks in the queue.</param>
-public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQueueService
+public class TaskQueueService(IQueueRunnerService queueRunnerService, EventPollNotify eventPollNotify) : ITaskQueueService
 {
 
     /// <inheritdoc/>
@@ -91,6 +92,14 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
     public void AbortTask(long taskid)
         => StopOrAbortTask(taskid, true);
 
+    /// <inheritdoc/>
+    public void PauseTask(long taskid, bool alsoTransfers)
+        => PauseOrResumeTask(taskid, true, alsoTransfers);
+
+    /// <inheritdoc/>
+    public void ResumeTask(long taskid)
+        => PauseOrResumeTask(taskid, false, false);
+
     /// <summary>
     /// Stops or aborts a task based on the provided task ID.
     /// </summary>
@@ -112,5 +121,26 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
             task.Abort();
         else
             task.Stop();
+    }
+
+    /// <summary>
+    /// Pauses or resumes a task based on the provided task ID.
+    /// </summary>
+    /// <param name="taskid">The ID of the task to pause or resume.</
+    /// <param name="pause">If true, the task will be paused; otherwise, it will be resumed.</param>
+    /// <param name="alsoTransfers">If true, associated transfers will also be paused or resumed.</param>
+    private void PauseOrResumeTask(long taskid, bool pause, bool alsoTransfers)
+    {
+        var task = queueRunnerService.GetCurrentTask();
+        if (task == null)
+            throw new NotFoundException("Current task does not match the requested task ID");
+
+        if (pause)
+            task.Pause(alsoTransfers);
+        else
+            task.Resume();
+
+        eventPollNotify.SignalNewEvent();
+        eventPollNotify.SignalTaskQueueUpdate();
     }
 }

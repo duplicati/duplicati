@@ -90,6 +90,10 @@ namespace Duplicati.Library.Main.Operation.Common
         /// Terminates the progress without allowing a flush
         /// </summary>
         void Terminate();
+        /// <summary>
+        /// Indicates whether the task is currently paused.
+        /// </summary>
+        bool IsPaused { get; }
     }
 
     /// <summary>
@@ -255,6 +259,16 @@ namespace Duplicati.Library.Main.Operation.Common
                 }
             }
         }
+
+        public bool IsPaused
+        {
+            get
+            {
+                lock (m_lock)
+                    return m_progressstate == State.Paused;
+            }
+        }
+
 
         /// <summary>
         /// Requests that the progress should be stopped in an orderly manner,

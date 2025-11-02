@@ -1137,6 +1137,8 @@ namespace Duplicati.Library.Main
             return sources.ToArray();
         }
 
+        public bool IsPaused => m_currentTaskControl?.IsPaused ?? false;
+
         public void Pause(bool alsoTransfers)
         {
             var ct = m_currentTaskControl;

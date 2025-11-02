@@ -104,6 +104,8 @@ namespace Duplicati.Server
                 Controller?.Resume();
             }
 
+            public bool IsPaused => Controller?.IsPaused ?? false;
+
             public long OriginalUploadSpeed { get; set; }
             public long OriginalDownloadSpeed { get; set; }
 

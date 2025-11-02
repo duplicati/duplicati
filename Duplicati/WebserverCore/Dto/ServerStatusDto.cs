@@ -30,7 +30,7 @@ public sealed record ServerStatusDto
     /// <summary>
     /// Gets or sets the active task.
     /// </summary>
-    public required Tuple<long, string?>? ActiveTask { get; init; }
+    public required Tuple<long, string?, bool>? ActiveTask { get; init; }
 
     /// <summary>
     /// Gets or sets the state of the program.

@@ -46,7 +46,7 @@ public class StatusService(
             UpdatedVersion = GetUpdatedVersion(),
             UpdaterState = updatePollThread.ThreadState,
             UpdateDownloadProgress = updatePollThread.DownloadProgess,
-            ActiveTask = task == null ? null : new Tuple<long, string?>(task.TaskID, task.BackupID),
+            ActiveTask = task == null ? null : new Tuple<long, string?, bool>(task.TaskID, task.BackupID, task.IsPaused),
             SchedulerQueueIds = queueRunnerService.GetQueueWithIds(),
             ProposedSchedule = scheduler.GetProposedSchedule(),
             LastEventID = eventPollNotify.EventNo,

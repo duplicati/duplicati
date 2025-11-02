@@ -56,7 +56,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v1:subscribe:taskqueue",
         "v1:subscribe:taskcompleted",
         "v1:subscribe:notifications",
-
+        "v1:task:pause-resume",
         // "v1:subscribe:scheduler",
     ];
 
