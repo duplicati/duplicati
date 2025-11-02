@@ -132,7 +132,7 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService, EventPollN
     private void PauseOrResumeTask(long taskid, bool pause, bool alsoTransfers)
     {
         var task = queueRunnerService.GetCurrentTask();
-        if (task == null)
+        if (task == null || task.TaskID != taskid)
             throw new NotFoundException("Current task does not match the requested task ID");
 
         if (pause)
