@@ -57,7 +57,7 @@ namespace Duplicati.License
 
             var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             if (!string.IsNullOrWhiteSpace(TAG))
-                v = " - " + TAG;
+                v += " - " + TAG;
 #if DEBUG
             v = " - debug";
 #endif
