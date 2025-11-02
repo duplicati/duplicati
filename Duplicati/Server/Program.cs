@@ -543,6 +543,24 @@ namespace Duplicati.Server
 
         private static void EmitWarningsForConfigurationIssues(Connection connection, IApplicationSettings applicationSettings, Dictionary<string, string> commandlineOptions)
         {
+            // First, remove any pending notifications, if the issue is resolved
+            if (connection.IsEncryptingFields)
+            {
+                // Remove any existing unencrypted database notification
+                var updateNotifications = connection.GetNotifications().Where(x => x.Action == "config:issue:unencrypted-database").ToList();
+                foreach (var n in updateNotifications)
+                    connection.DismissNotification(n.ID);
+            }
+
+            if (OperatingSystem.IsWindows() && !applicationSettings.DataFolder.StartsWith(Util.AppendDirSeparator(Environment.GetFolderPath(Environment.SpecialFolder.Windows)), StringComparison.OrdinalIgnoreCase))
+            {
+                // Remove any existing windows folder used notification
+                var updateNotifications = connection.GetNotifications().Where(x => x.Action == "config:issue:windows-folder-used").ToList();
+                foreach (var n in updateNotifications)
+                    connection.DismissNotification(n.ID);
+            }
+
+            // Emit warnings if the application has been updated
             if (connection.ApplicationSettings.LastConfigIssueCheckVersion != UpdaterManager.SelfVersion.Version)
             {
                 var updateNotifications = connection.GetNotifications().Where(x => x.Action.StartsWith("config:issue:")).ToList();
