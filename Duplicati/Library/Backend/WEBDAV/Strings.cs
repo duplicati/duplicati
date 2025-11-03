@@ -39,5 +39,7 @@ Error message: {3}", foldername, filename, extension, errormessage); }
         public static string UsernameRequired { get { return LC.L(@"Digest authentication requires a username to be set"); } }
         public static string DescriptionUseExtendedPropfindShort { get { return LC.L(@"Use extended PROPFIND body"); } }
         public static string DescriptionUseExtendedPropfindLong { get { return LC.L(@"Use an extended PROPFIND body to request listings of files and folders. This is required for some servers"); } }
+        public static string DescriptionUseLegacyPropfindParsingShort { get { return LC.L(@"Use legacy PROPFIND parsing"); } }
+        public static string DescriptionUseLegacyPropfindParsingLong { get { return LC.L(@"Use the legacy PROPFIND response parsing logic."); } }
     }
 }
