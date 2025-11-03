@@ -28,11 +28,13 @@ namespace Duplicati.WebserverCore.Dto;
 /// <param name="import_metadata">Whether the metadata should be imported</param>
 /// <param name="direct">Whether the backup should be imported and created directly</param>
 /// <param name="passphrase">The passphrase to use for the backup configuration</param>
+/// <param name="temporary">Whether the backup should be created as temporary</param>
 public sealed record ImportBackupInputDto
 (
     string config,
     bool? cmdline,
     bool? import_metadata,
     bool? direct,
-    string? passphrase
+    string? passphrase,
+    bool? temporary
 );
