@@ -327,18 +327,22 @@ namespace Duplicati.Library.Main.Operation
                 await CreateDirectoryStructure(database, m_options, m_result).ConfigureAwait(false);
 
             using var setup_log_timer = new Logging.Timer(LOGTAG, "RestoreNetworkSetup", "RestoreNetworkSetup");
-            // Create the channels between BlockManager and FileProcessor
-            Restore.Channels.BufferSize = m_options.RestoreChannelBufferSize;
-            var fileprocessor_requests = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize: Restore.Channels.BufferSize)).ToArray();
-            var fileprocessor_responses = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Task<byte[]>>(buffersize: Restore.Channels.BufferSize)).ToArray();
+            var fileprocessor_requests = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize: Math.Max(m_options.RestoreChannelBufferSize, 1))).ToArray();
+            var fileprocessor_responses = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Task<Restore.DataBlock>>(buffersize: m_options.RestoreChannelBufferSize)).ToArray();
+
+            // Configure channels and process parameters
+            Restore.Channels channels = new(m_options);
+            Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
+            Restore.VolumeDownloader.MaxProcessingTimes = new int[m_options.RestoreVolumeDownloaders];
+            Restore.VolumeDecryptor.MaxProcessingTimes = new int[m_options.RestoreVolumeDecryptors];
+            Restore.VolumeDecompressor.MaxProcessingTimes = new int[m_options.RestoreVolumeDecompressors];
 
             // Create the process network
-            Restore.Channels channels = new();
+            var deadlock_timer = Restore.DeadlockTimer.Run();
             var filelister = Restore.FileLister.Run(channels, database, m_options, m_result);
-            Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
-            var blockmanager = Restore.BlockManager.Run(channels, database, m_options, fileprocessor_requests, fileprocessor_responses);
-            var volumecache = Restore.VolumeManager.Run(channels, m_options);
+            var blockmanager = Restore.BlockManager.Run(channels, database, fileprocessor_requests, fileprocessor_responses, m_options, m_result);
+            var volumecache = Restore.VolumeManager.Run(channels, m_options, m_result);
             var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.Run(channels, database, backendManager, m_options, m_result)).ToArray();
             var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecryptors).Select(i => Restore.VolumeDecryptor.Run(channels, backendManager, m_options)).ToArray();
             var volumedecompressors = Enumerable.Range(0, m_options.RestoreVolumeDecompressors).Select(i => Restore.VolumeDecompressor.Run(channels, m_options)).ToArray();
@@ -348,6 +352,7 @@ namespace Duplicati.Library.Main.Operation
             // Wait for the network to complete
             Task[] all =
                 [
+                    deadlock_timer,
                     filelister,
                     ..fileprocessors,
                     blockmanager,
@@ -373,6 +378,11 @@ namespace Duplicati.Library.Main.Operation
                 await Task.WhenAll(all).ConfigureAwait(false);
                 kill_updater.Cancel();
             }
+
+            // Cleanup the process Id counters
+            Restore.VolumeDownloader.IdCounter = -1;
+            Restore.VolumeDecryptor.IdCounter = -1;
+            Restore.VolumeDecompressor.IdCounter = -1;
 
             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                 return;

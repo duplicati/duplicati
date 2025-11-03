@@ -1041,7 +1041,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
 
             using var reader = cmd.ExecuteReader();
             for (long i = 0; reader.Read(); i++)
-                yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
+                yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), BlockRequestType.Download);
 
             // Return the connection to the pool
             m_connection_pool.Add(connection);
@@ -1068,7 +1068,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
             using var reader = cmd.ExecuteReader();
             for (long i = 0; reader.Read(); i++)
             {
-                yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
+                yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), BlockRequestType.Download);
             }
 
             // Return the connection to the pool
