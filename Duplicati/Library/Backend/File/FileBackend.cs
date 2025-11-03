@@ -245,6 +245,8 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc />
         public string ProtocolKey => "file";
 
+        public bool SupportsStreaming => !m_moveFile;
+
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {

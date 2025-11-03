@@ -130,7 +130,7 @@ namespace RemoteSynchronization
 
             _backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(_backendUrl, _options);
             _streamingBackend = _backend as IStreamingBackend;
-            if (_streamingBackend == null)
+            if (_streamingBackend == null || !_streamingBackend.SupportsStreaming)
             {
                 _backend.Dispose();
                 _backend = null;

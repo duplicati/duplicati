@@ -280,51 +280,48 @@ namespace Duplicati.Library.Backend
 
         #region IBackend Members
 
-        public string DisplayName
-        {
-            get { return Strings.S3Backend.DisplayName; }
-        }
+        /// <inheritdoc/>
+        public string DisplayName => Strings.S3Backend.DisplayName;
 
-        public string ProtocolKey
-        {
-            get { return "s3"; }
-        }
+        /// <inheritdoc/>
+        public string ProtocolKey => "s3";
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
 
+        /// <inheritdoc/>
         public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
             => Connection.ListBucketAsync(m_bucket, m_prefix, m_recurseLists, cancelToken);
 
+        /// <inheritdoc/>
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
                 await PutAsync(remotename, fs, cancelToken);
         }
 
+        /// <inheritdoc/>
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
             await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
         }
 
+        /// <inheritdoc/>
         public async Task GetAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None))
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
-        {
-            return Connection.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancelToken);
-        }
+            => Connection.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancelToken);
 
+        /// <inheritdoc/>
         public Task DeleteAsync(string remotename, CancellationToken cancelToken)
-        {
-            return Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancelToken);
-        }
+            => Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancelToken);
 
+        /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -358,17 +355,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string Description
-        {
-            get
-            {
-                return Strings.S3Backend.Description_v2;
-            }
-        }
+        public string Description => Strings.S3Backend.Description_v2;
 
+        /// <inheritdoc/>
         public Task TestAsync(CancellationToken cancelToken)
             => this.TestReadWritePermissionsAsync(cancelToken);
 
+        /// <inheritdoc/>
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             //S3 does not complain if the bucket already exists
@@ -379,15 +372,15 @@ namespace Duplicati.Library.Backend
 
         #region IRenameEnabledBackend Members
 
+        /// <inheritdoc/>
         public Task RenameAsync(string source, string target, CancellationToken cancelToken)
-        {
-            return Connection.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
-        }
+            => Connection.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
 
         #endregion
 
         #region IDisposable Members
 
+        /// <inheritdoc/>
         public void Dispose()
         {
             m_s3Client?.Dispose();
@@ -395,11 +388,9 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        private IS3Client Connection
-        {
-            get { return m_s3Client; }
-        }
+        private IS3Client Connection => m_s3Client;
 
+        /// <inheritdoc/>
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
         {
             var host = m_s3Client.GetDnsHost();

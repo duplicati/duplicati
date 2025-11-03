@@ -223,10 +223,13 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public string DisplayName => Strings.GoogleCloudStorage.DisplayName;
 
+        /// <inheritdoc/>
         public string ProtocolKey => "gcs";
 
+        /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -250,12 +253,19 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 ];
             }
         }
+
+        /// <inheritdoc/>
         public string Description => Strings.GoogleCloudStorage.Description;
 
+        /// <inheritdoc/>
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.GoogleCloudStorage.Hosts());
 
         #endregion
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
+        /// <inheritdoc/>
         public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             var item = new BucketResourceItem { name = m_prefix + remotename };

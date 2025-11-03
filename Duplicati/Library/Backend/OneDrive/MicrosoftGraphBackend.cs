@@ -163,16 +163,23 @@ namespace Duplicati.Library.Backend
             this.rootPathFromURL = new Lazy<string>(() => MicrosoftGraphBackend.NormalizeSlashes(Utility.Utility.Await(this.GetRootPathFromUrlAsync(url, CancellationToken.None))));
         }
 
+        /// <inheritdoc/>
         public abstract string ProtocolKey { get; }
 
+        /// <inheritdoc/>
         public abstract string DisplayName { get; }
 
+        /// <inheritdoc/>
         public string Description => this.DescriptionTemplate(
                     "Microsoft Service Agreement",
                     SERVICES_AGREEMENT,
                     "Microsoft Online Privacy Statement",
                     PRIVACY_STATEMENT);
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
+        /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands => [
             .. AuthIdOptionsHelper.GetOptions(TokenUrl),
             new CommandLineArgument(UPLOAD_SESSION_FRAGMENT_SIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.MicrosoftGraph.FragmentSizeShort, Strings.MicrosoftGraph.FragmentSizeLong, Library.Utility.Utility.FormatSizeString(UPLOAD_SESSION_FRAGMENT_DEFAULT_SIZE)),

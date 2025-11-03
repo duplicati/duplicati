@@ -42,6 +42,7 @@ namespace Duplicati.UnitTest
             public string DisplayName => "Test Archive Enabled Backend";
             public string ProtocolKey => Key;
             public string Description => "Test Archive Enabled";
+            public bool SupportsStreaming => backend.SupportsStreaming;
             public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
             private readonly IStreamingBackend backend;
 

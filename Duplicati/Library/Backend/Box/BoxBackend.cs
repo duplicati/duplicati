@@ -297,18 +297,26 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
+        /// <inheritdoc/>
         public Task TestAsync(CancellationToken cancelToken)
             => this.TestReadWritePermissionsAsync(cancelToken);
 
+        /// <inheritdoc/>
         public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
             return GetCurrentFolderAsync(true, cancellationToken);
         }
 
+        /// <inheritdoc/>
         public string DisplayName => Strings.Box.DisplayName;
 
+        /// <inheritdoc/>
         public string ProtocolKey => "box";
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
+        /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands =>
         [
             .. AuthIdOptionsHelper.GetOptions(TOKEN_URL),
@@ -316,13 +324,16 @@ namespace Duplicati.Library.Backend.Box
             .. TimeoutOptionsHelper.GetOptions()
         ];
 
+        /// <inheritdoc/>
         public string Description => Strings.Box.Description;
 
+        /// <inheritdoc/>
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] {
             new System.Uri(BOX_API_URL).Host,
             new System.Uri(BOX_UPLOAD_URL).Host
         }.Distinct().WhereNotNullOrWhiteSpace().ToArray());
 
+        /// <inheritdoc/>
         public void Dispose()
         {
         }

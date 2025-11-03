@@ -200,6 +200,9 @@ public class TahoeBackend : IStreamingBackend
     /// <inheritdoc />
     public string Description => Strings.TahoeBackend.Description;
 
+    /// <inheritdoc/>
+    public bool SupportsStreaming => true;
+
     /// <inheritdoc />
     public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { new System.Uri(_url).Host });
 

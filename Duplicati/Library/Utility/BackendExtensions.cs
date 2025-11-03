@@ -78,7 +78,7 @@ public static class BackendExtensions
         // Test write permissions
         try
         {
-            if (backend is IStreamingBackend streamingBackend)
+            if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming)
             {
                 using (var testStream = new MemoryStream(Encoding.UTF8.GetBytes(TEST_FILE_CONTENT)))
                     await streamingBackend.PutAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
@@ -101,7 +101,7 @@ public static class BackendExtensions
         // Test read permissions
         try
         {
-            if (backend is IStreamingBackend streamingBackend)
+            if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming)
             {
                 using var testStream = new MemoryStream();
                 await streamingBackend.GetAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);

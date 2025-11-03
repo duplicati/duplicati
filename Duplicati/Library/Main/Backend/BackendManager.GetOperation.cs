@@ -127,7 +127,7 @@ partial class BackendManager
                 string retHashcode;
                 dlTarget = new TempFile();
                 Context.ProgressHandler.BeginTransfer(BackendActionType.Get, Size, RemoteFilename);
-                if (backend is IStreamingBackend streamingBackend && !Context.Options.DisableStreamingTransfers)
+                if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !Context.Options.DisableStreamingTransfers)
                 {
                     // extended to use stacked streams
                     using (var fs = System.IO.File.OpenWrite(dlTarget))

@@ -55,6 +55,9 @@ public class pCloudBackend : IStreamingBackend
     /// </summary>
     public string Description => Strings.pCloudBackend.Description;
 
+    /// <inheritdoc/>
+    public bool SupportsStreaming => true;
+
     /// <summary>
     /// The server URL to be used (pcloud uses 2 different endpoints depending if its an european or non european hosting)
     /// </summary>

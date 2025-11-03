@@ -119,6 +119,8 @@ namespace Duplicati.UnitTest
                 return "A testing backend that does not return size information";
             }
         }
+        public bool SupportsStreaming => m_backend?.SupportsStreaming ?? false;
+
         #endregion
         #region IDisposable implementation
         public void Dispose()
