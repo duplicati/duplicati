@@ -46,6 +46,10 @@ namespace Duplicati.Library.Backend
         /// The use extended propfind option name
         /// </summary>
         private const string USE_EXTENDED_PROPFIND_OPTION = "use-extended-propfind";
+        /// <summary>
+        /// The use legacy propfind parsing option name
+        /// </summary>
+        private const string USE_LEGACY_PROPFIND_PARSING_OPTION = "use-legacy-parsing";
 
         /// <summary>
         /// The credentials to use for the connection
@@ -95,6 +99,18 @@ namespace Duplicati.Library.Backend
         /// The options for the SSL certificate validation
         /// </summary>
         private readonly SslOptionsHelper.SslCertificateOptions m_certificateOptions;
+        /// <summary>
+        /// Flag indicating if the legacy PROPFIND parsing should be used
+        /// </summary>
+        private readonly bool m_useLegacyParsing;
+        /// <summary>
+        /// The base URI that represents the configured WebDAV root
+        /// </summary>
+        private readonly System.Uri m_baseUri;
+        /// <summary>
+        /// Known path prefixes used to interpret PROPFIND href responses
+        /// </summary>
+        private readonly List<string> m_propfindPathPrefixes;
 
         /// <summary>
         /// A list of files seen in the last List operation.
@@ -136,6 +152,9 @@ namespace Duplicati.Library.Backend
             m_dnsName = string.Empty;
             m_certificateOptions = null!;
             m_timeouts = null!;
+            m_useLegacyParsing = false;
+            m_baseUri = null!;
+            m_propfindPathPrefixes = null!;
         }
 
         public WEBDAV(string url, Dictionary<string, string?> options)
@@ -156,6 +175,7 @@ namespace Duplicati.Library.Backend
             m_useIntegratedAuthentication = Utility.Utility.ParseBoolOption(options, INTEGRATED_AUTHENTICATION_OPTION);
             m_forceDigestAuthentication = Utility.Utility.ParseBoolOption(options, FORCE_DIGEST_AUTHENTICATION_OPTION);
             m_useExtendedPropfind = Utility.Utility.ParseBoolOption(options, USE_EXTENDED_PROPFIND_OPTION);
+            m_useLegacyParsing = Utility.Utility.ParseBoolOption(options, USE_LEGACY_PROPFIND_PARSING_OPTION);
             m_debugPropfindFile = options.GetValueOrDefault(DEBUG_PROPFIND_FILE_OPTION);
 
             // Explicitly support setups with no username and password
@@ -181,6 +201,159 @@ namespace Duplicati.Library.Backend
             m_sanitizedUrl = new Utility.Uri(m_certificateOptions.UseSSL ? "https" : "http", u.Host, m_path).ToString();
             m_reverseProtocolUrl = new Utility.Uri(m_certificateOptions.UseSSL ? "http" : "https", u.Host, m_path).ToString();
             m_timeouts = TimeoutOptionsHelper.Parse(options);
+
+            m_baseUri = new System.Uri(m_url, System.UriKind.Absolute);
+            m_propfindPathPrefixes = BuildPropfindPrefixes();
+        }
+
+        private List<string> BuildPropfindPrefixes()
+        {
+            var prefixes = new HashSet<string>(StringComparer.Ordinal);
+
+            AddPropfindPrefix(prefixes, "/");
+            AddPropfindPrefix(prefixes, m_baseUri.AbsolutePath);
+            AddPropfindPrefix(prefixes, m_path);
+            AddPropfindPrefixFromUri(prefixes, m_url);
+            AddPropfindPrefixFromUri(prefixes, m_rawurl);
+            AddPropfindPrefixFromUri(prefixes, m_rawurlPort);
+            AddPropfindPrefixFromUri(prefixes, m_sanitizedUrl);
+            AddPropfindPrefixFromUri(prefixes, m_reverseProtocolUrl);
+
+            var ordered = new List<string>(prefixes);
+            ordered.Sort((left, right) => right.Length.CompareTo(left.Length));
+            return ordered;
+        }
+
+        private static void AddPropfindPrefixFromUri(HashSet<string> prefixes, string? uri)
+        {
+            if (string.IsNullOrWhiteSpace(uri))
+                return;
+
+            if (System.Uri.TryCreate(uri, System.UriKind.Absolute, out var parsed))
+                AddPropfindPrefix(prefixes, parsed.AbsolutePath);
+        }
+
+        private static void AddPropfindPrefix(HashSet<string> prefixes, string? path)
+        {
+            if (path == null)
+                return;
+
+            var normalized = Utility.Uri.UrlDecode(path.Replace("+", "%2B"));
+
+            if (!normalized.StartsWith("/", StringComparison.Ordinal))
+                normalized = "/" + normalized;
+
+            if (!normalized.EndsWith("/", StringComparison.Ordinal))
+                normalized += "/";
+
+            prefixes.Add(normalized);
+        }
+
+        private string? ExtractNameFromPropfindHref(string hrefValue)
+        {
+            if (string.IsNullOrWhiteSpace(hrefValue))
+                return null;
+
+            var trimmed = hrefValue.Trim();
+
+            if (!System.Uri.TryCreate(trimmed, System.UriKind.Absolute, out var hrefUri))
+            {
+                if (System.Uri.TryCreate(trimmed, System.UriKind.Relative, out var relativeUri))
+                {
+                    hrefUri = new System.Uri(m_baseUri, relativeUri);
+                }
+                else
+                {
+                    var decodedValue = Utility.Uri.UrlDecode(trimmed.Replace("+", "%2B"));
+                    return ExtractRelativeFromDecodedPath(decodedValue);
+                }
+            }
+
+            var decodedPath = Utility.Uri.UrlDecode(hrefUri.AbsolutePath.Replace("+", "%2B"));
+            var name = ExtractRelativeFromDecodedPath(decodedPath);
+            if (!string.IsNullOrEmpty(name))
+                return name;
+
+            var decodedHref = Utility.Uri.UrlDecode(trimmed.Replace("+", "%2B"));
+            return ExtractRelativeFromDecodedPath(decodedHref);
+        }
+
+        private string? ExtractRelativeFromDecodedPath(string decodedPath)
+        {
+            if (string.IsNullOrEmpty(decodedPath))
+                return null;
+
+            var comparisonPath = decodedPath.StartsWith("/", StringComparison.Ordinal)
+                ? decodedPath
+                : "/" + decodedPath;
+
+            foreach (var prefix in m_propfindPathPrefixes)
+            {
+                if (comparisonPath.Equals(prefix, StringComparison.Ordinal))
+                    return null;
+
+                if (comparisonPath.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    var remainder = comparisonPath.Substring(prefix.Length);
+                    return remainder.Length == 0 ? null : remainder;
+                }
+
+                var trimmedPrefix = prefix.EndsWith("/", StringComparison.Ordinal)
+                    ? prefix.Substring(0, prefix.Length - 1)
+                    : prefix;
+
+                if (trimmedPrefix.Length > 0)
+                {
+                    if (comparisonPath.Equals(trimmedPrefix, StringComparison.Ordinal))
+                        return null;
+
+                    if (comparisonPath.StartsWith(trimmedPrefix + "/", StringComparison.Ordinal))
+                    {
+                        var remainder = comparisonPath.Substring(trimmedPrefix.Length + 1);
+                        return remainder.Length == 0 ? null : remainder;
+                    }
+                }
+            }
+
+            if (comparisonPath.StartsWith("/", StringComparison.Ordinal))
+            {
+                var remainder = comparisonPath.Substring(1);
+                return remainder.Length == 0 ? null : remainder;
+            }
+
+            return comparisonPath.Length == 0 ? null : comparisonPath;
+        }
+
+        private string? ExtractNameFromPropfindHrefLegacy(string hrefValue)
+        {
+            if (string.IsNullOrWhiteSpace(hrefValue))
+                return null;
+
+            string name = Utility.Uri.UrlDecode(hrefValue.Replace("+", "%2B"));
+
+            string cmp_path;
+
+            if (name.StartsWith(m_url, StringComparison.Ordinal))
+                cmp_path = m_url;
+            else if (name.StartsWith(m_rawurl, StringComparison.Ordinal))
+                cmp_path = m_rawurl;
+            else if (name.StartsWith(m_rawurlPort, StringComparison.Ordinal))
+                cmp_path = m_rawurlPort;
+            else if (name.StartsWith(m_path, StringComparison.Ordinal))
+                cmp_path = m_path;
+            else if (name.StartsWith("/" + m_path, StringComparison.Ordinal))
+                cmp_path = "/" + m_path;
+            else if (name.StartsWith(m_sanitizedUrl, StringComparison.Ordinal))
+                cmp_path = m_sanitizedUrl;
+            else if (name.StartsWith(m_reverseProtocolUrl, StringComparison.Ordinal))
+                cmp_path = m_reverseProtocolUrl;
+            else
+                return null;
+
+            if (name.Length <= cmp_path.Length)
+                return null;
+
+            return name.Substring(cmp_path.Length);
         }
 
         /// <summary>
@@ -286,47 +459,24 @@ namespace Duplicati.Library.Backend
             }
 
             var entries = new List<IFileEntry>();
-            foreach (System.Xml.XmlNode n in lst)
+            foreach (var n in lst.Cast<System.Xml.XmlNode>())
             {
-                //IIS uses %20 for spaces and %2B for +
-                //Apache uses %20 for spaces and + for +
-                string name = Utility.Uri.UrlDecode(n.InnerText.Replace("+", "%2B"));
+                var name = m_useLegacyParsing
+                    ? ExtractNameFromPropfindHrefLegacy(n.InnerText)
+                    : ExtractNameFromPropfindHref(n.InnerText) ?? ExtractNameFromPropfindHrefLegacy(n.InnerText);
 
-                string cmp_path;
-
-                //TODO: This list is getting ridiculous, should change to regexps
-
-                if (name.StartsWith(m_url, StringComparison.Ordinal))
-                    cmp_path = m_url;
-                else if (name.StartsWith(m_rawurl, StringComparison.Ordinal))
-                    cmp_path = m_rawurl;
-                else if (name.StartsWith(m_rawurlPort, StringComparison.Ordinal))
-                    cmp_path = m_rawurlPort;
-                else if (name.StartsWith(m_path, StringComparison.Ordinal))
-                    cmp_path = m_path;
-                else if (name.StartsWith("/" + m_path, StringComparison.Ordinal))
-                    cmp_path = "/" + m_path;
-                else if (name.StartsWith(m_sanitizedUrl, StringComparison.Ordinal))
-                    cmp_path = m_sanitizedUrl;
-                else if (name.StartsWith(m_reverseProtocolUrl, StringComparison.Ordinal))
-                    cmp_path = m_reverseProtocolUrl;
-                else
+                if (string.IsNullOrEmpty(name))
                     continue;
 
-                if (name.Length <= cmp_path.Length)
-                    continue;
+                var size = -1L;
+                var lastAccess = new DateTime();
+                var lastModified = new DateTime();
+                var isCollection = false;
 
-                name = name.Substring(cmp_path.Length);
-
-                long size = -1;
-                DateTime lastAccess = new DateTime();
-                DateTime lastModified = new DateTime();
-                bool isCollection = false;
-
-                System.Xml.XmlNode? stat = n.ParentNode?.SelectSingleNode("D:propstat/D:prop", nm);
+                var stat = n.ParentNode?.SelectSingleNode("D:propstat/D:prop", nm);
                 if (stat != null)
                 {
-                    System.Xml.XmlNode? s = stat.SelectSingleNode("D:getcontentlength", nm);
+                    var s = stat.SelectSingleNode("D:getcontentlength", nm);
                     if (s != null)
                         size = long.Parse(s.InnerText);
                     s = stat.SelectSingleNode("D:getlastmodified", nm);
@@ -409,6 +559,7 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(FORCE_DIGEST_AUTHENTICATION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
             new CommandLineArgument(DEBUG_PROPFIND_FILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.WEBDAV.DescriptionDebugPropfindShort, Strings.WEBDAV.DescriptionDebugPropfindLong),
             new CommandLineArgument(USE_EXTENDED_PROPFIND_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseExtendedPropfindShort, Strings.WEBDAV.DescriptionUseExtendedPropfindLong),
+            new CommandLineArgument(USE_LEGACY_PROPFIND_PARSING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseLegacyPropfindParsingShort, Strings.WEBDAV.DescriptionUseLegacyPropfindParsingLong, "false"),
             .. SslOptionsHelper.GetOptions(),
             .. TimeoutOptionsHelper.GetOptions()
         ];
