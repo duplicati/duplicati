@@ -737,7 +737,7 @@ namespace Duplicati.Library.Utility
         /// <typeparam name="T">The enum type parameter.</typeparam>
         public static T ParseFlagsOption<T>(IReadOnlyDictionary<string, string?> options, string value, T @default) where T : struct, Enum
         {
-            return options.TryGetValue(value, out var opt) ? ParseEnum(opt, @default) : @default;
+            return options.TryGetValue(value, out var opt) ? ParseFlags(opt, @default) : @default;
         }
 
         /// <summary>
