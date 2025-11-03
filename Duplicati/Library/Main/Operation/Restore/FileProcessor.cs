@@ -60,7 +60,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// The current file processor ID. Used for debugging.
         /// </summary>
-        private static int processor_id = 0;
+        private static int processor_id = -1;
 
         /// <summary>
         /// Runs the file processor process that restores the files that need to be restored.
