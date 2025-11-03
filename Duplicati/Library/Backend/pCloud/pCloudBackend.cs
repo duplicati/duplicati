@@ -166,6 +166,7 @@ public class pCloudBackend : IStreamingBackend
             CommandLineArgument.ArgumentType.Password,
             Strings.pCloudBackend.AuthPasswordDescriptionShort,
             Strings.pCloudBackend.AuthPasswordDescriptionLong(TOKEN_URL)),
+        .. TimeoutOptionsHelper.GetOptions()
     ];
 
     /// <summary>
