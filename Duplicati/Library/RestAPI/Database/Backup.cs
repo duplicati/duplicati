@@ -184,12 +184,12 @@ namespace Duplicati.Server.Database
                 ExternalID = this.ExternalID,
                 Name = this.Name,
                 Description = this.Description,
-                Tags = (string[])this.Tags.Clone(),
+                Tags = (string[])this.Tags?.Clone() ?? [],
                 TargetURL = this.TargetURL,
                 DBPath = this.DBPath,
-                Sources = (string[])this.Sources.Clone(),
-                Settings = this.Settings.Select(s => new Setting { Name = s.Name, Value = s.Value, Filter = s.Filter }).ToArray(),
-                Filters = this.Filters.Select(f => new Filter { Order = f.Order, Include = f.Include, Expression = f.Expression }).ToArray(),
+                Sources = (string[])this.Sources?.Clone() ?? [],
+                Settings = this.Settings?.Select(s => new Setting { Name = s.Name, Value = s.Value, Filter = s.Filter }).ToArray() ?? [],
+                Filters = this.Filters?.Select(f => new Filter { Order = f.Order, Include = f.Include, Expression = f.Expression }).ToArray() ?? [],
                 Metadata = new Dictionary<string, string>(this.Metadata)
             };
         }
