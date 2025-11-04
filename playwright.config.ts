@@ -8,4 +8,6 @@ export default defineConfig({
   testDir: "playwright-tests",
   timeout: 120000,
   workers: 1,
+  reporter: process.env.CI ? "html" : "list",
+  outputDir: "test-results/",
 });

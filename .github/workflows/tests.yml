@@ -54,3 +54,11 @@ jobs:
           timeout 30 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/127.0.0.1/8200; do sleep 1; echo waiting; done'
       - name: Run Playwright tests
         run: npx playwright test
+
+      - name: Upload Playwright test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results/
+          retention-days: 7
