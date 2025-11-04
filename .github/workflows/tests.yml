@@ -52,6 +52,8 @@ jobs:
         run: |
           ./published/Duplicati.Server --disable-database-encryption --webservice-password=easy1234 &
           timeout 30 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/127.0.0.1/8200; do sleep 1; echo waiting; done'
+      - name: Load web UI
+        run: curl -f http://localhost:8200/ngclient/index.html
       - name: Run Playwright tests
         run: npx playwright test
 
