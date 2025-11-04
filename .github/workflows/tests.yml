@@ -29,10 +29,26 @@ jobs:
       - name: Run unit tests
         run: dotnet test --no-build --verbosity minimal Duplicati.sln
 
-  # Disabled, as a new test needs to be written for the new UI
-  # selenium:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Selenium
-  #       run: pipeline/selenium/test.sh
+  playwright_tests:
+    name: Playwright UI tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/checkout@v4
+      - name: Install NPM dependencies
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Publish Duplicati server
+        run: dotnet publish -o published Duplicati.sln
+      - name: Start server
+        run: |
+          ./published/Duplicati.Server --webservice-password=easy1234 &
+          timeout 30 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/127.0.0.1/8200; do sleep 1; echo waiting; done'
+      - name: Run Playwright tests
+        run: npx playwright test
