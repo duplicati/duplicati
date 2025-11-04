@@ -74,12 +74,8 @@ jobs:
         run: npm ci
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
-      - name: Install web UI dependencies
-        run: |
-          cd Duplicati/Server/webroot/ngclient
-          npm ci
       - name: Publish Duplicati server
-        run: dotnet publish -o published Duplicati.sln
+        run: dotnet publish -c Debug -o published Duplicati.sln
       - name: Start server
         run: |
           ./published/Duplicati.Server --disable-database-encryption --webservice-password=easy1234 &
