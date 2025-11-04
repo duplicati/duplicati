@@ -29,8 +29,6 @@ test.beforeAll(async () => {
   await fs.rm(TEMP_FOLDER, { recursive: true, force: true });
   await writeRandomFile(path.join(SOURCE_FOLDER, TESTFILE_NAME), 1024);
   await fs.mkdir(TEMP_FOLDER, { recursive: true });
-  // Remove this line once "Test destination" button works reliably
-  await fs.mkdir(DESTINATION_FOLDER, { recursive: true });
 });
 
 async function clickThreeDotMenu(page: Page, action: string) {
@@ -112,15 +110,14 @@ async function createBackup(page: Page) {
   await page.fill("#destination-custom-0-other", DESTINATION_FOLDER);
   await page.locator("button").filter({ hasText: "Test destination" }).click();
 
-  // Comment in this once the "Test connection" button works reliably
-  // await page
-  //   .locator("footer")
-  //   .filter({
-  //     has: page.locator("button").filter({ hasText: "Create folder" }),
-  //   })
-  //   .locator("button")
-  //   .filter({ hasText: "Create folder" })
-  //   .click();
+  await page
+    .locator("footer")
+    .filter({
+      has: page.locator("button").filter({ hasText: "Create folder" }),
+    })
+    .locator("button")
+    .filter({ hasText: "Create folder" })
+    .click();
 
   await page.locator("button").filter({ hasText: "Continue" }).click();
   await page
