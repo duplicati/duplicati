@@ -6,8 +6,8 @@ const SERVER_URL = process.env.SERVER_URL || "http://localhost:8200";
 const SPA_PATH = "/ngclient";
 const HOME_URL = `${SERVER_URL}${SPA_PATH}/`;
 const LOGIN_URL = `${SERVER_URL}${SPA_PATH}/login`;
-const WEBSERVICE_PASSWORD = "easy1234";
-const BACKUP_NAME = "PlaywrightBackup";
+const WEBSERVICE_PASSWORD = process.env.WEBSERVICE_PASSWORD || "easy1234";
+const BACKUP_NAME = process.env.BACKUP_NAME || "PlaywrightBackup";
 const PASSWORD = "the_backup_password_is_really_long_and_safe";
 const SOURCE_FOLDER = path.resolve("playwright_source");
 const DESTINATION_FOLDER = path.resolve("playwright_destination");
@@ -40,7 +40,7 @@ async function restoreAndVerify(page: Page) {
 
   const backupElement = page
     .locator("div.backup")
-    .filter({ hasText: "PlayWrightBackup" });
+    .filter({ hasText: BACKUP_NAME });
 
   backupElement
     .locator("button")
@@ -150,7 +150,7 @@ async function deleteBackupIfExists(page: Page) {
   // Cleanup existing backup with the same name
   const existingBackupElement = page
     .locator("div.backup")
-    .filter({ hasText: "PlaywrightBackup" });
+    .filter({ hasText: BACKUP_NAME });
 
   if ((await existingBackupElement.count()) > 0) {
     await existingBackupElement
@@ -195,14 +195,14 @@ async function runBackup(page: Page) {
 
   const chipLocator = page
     .locator("div.backup")
-    .filter({ hasText: "PlaywrightBackup" })
+    .filter({ hasText: BACKUP_NAME })
     .locator("sh-chip");
 
   var currentText = await chipLocator.allInnerTexts();
 
   const backupElement = page
     .locator("div.backup")
-    .filter({ hasText: "PlayWrightBackup" });
+    .filter({ hasText: BACKUP_NAME });
   await backupElement.locator("button").filter({ hasText: "Start" }).click();
 
   // Wait for the chip to be present (assuming it updates after backup)
@@ -249,7 +249,7 @@ async function restoreFromConfigFile(page: Page) {
   await page.waitForLoadState("networkidle");
   await page
     .locator("div.backup")
-    .filter({ hasText: "PlayWrightBackup" })
+    .filter({ hasText: BACKUP_NAME })
     .locator("button")
     .filter({
       has: page.locator("sh-icon").filter({ hasText: "three-vertical" }),
