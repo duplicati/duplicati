@@ -81,12 +81,19 @@ namespace Duplicati.Library.Backend
 
         #region [Public Properties]
 
+        /// <inheritdoc/>
         public virtual string ProtocolKey => "mssp";
 
+        /// <inheritdoc/>
         public virtual string DisplayName => Strings.SharePoint.DisplayName;
 
+        /// <inheritdoc/>
         public virtual string Description => Strings.SharePoint.Description;
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
+        /// <inheritdoc/>
         public virtual IList<ICommandLineArgument> SupportedCommands => [
             .. AuthOptionsHelper.GetOptions(),
             new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.SharePoint.DescriptionIntegratedAuthenticationShort, Strings.SharePoint.DescriptionIntegratedAuthenticationLong),

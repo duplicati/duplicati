@@ -137,6 +137,8 @@ namespace Duplicati.UnitTest
             }
         }
         public string Description => "A testing backend that randomly fails";
+        public bool SupportsStreaming => m_backend?.SupportsStreaming ?? false;
+
         #endregion
         #region IDisposable implementation
         public void Dispose()

@@ -289,7 +289,7 @@ partial class BackendManager
             try
             {
                 Context.ProgressHandler.BeginTransfer(BackendActionType.Put, size, RemoteFilename);
-                if (backend is IStreamingBackend streamingBackend && !Context.Options.DisableStreamingTransfers)
+                if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !Context.Options.DisableStreamingTransfers)
                 {
                     using var fs = System.IO.File.OpenRead(LocalFilename);
                     using var ts = new ThrottleEnabledStream(fs, Context.UploadThrottleManager, Context.DownloadThrottleManager);

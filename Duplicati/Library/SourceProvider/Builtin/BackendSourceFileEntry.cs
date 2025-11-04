@@ -259,7 +259,7 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
         if (isFolder)
             throw new InvalidOperationException("OpenRead can only be called on files");
 
-        if (parent.WrappedBackend is IStreamingBackend streamingBackend)
+        if (parent.WrappedBackend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming)
         {
             var pipe = new Pipe();
 

@@ -61,14 +61,20 @@ namespace Duplicati.Library.Backend
             dbx = new DropboxHelper(authId, TimeoutOptionsHelper.Parse(options));
         }
 
+        /// <inheritdoc/>
         public void Dispose()
         {
             // do nothing
         }
 
+        /// <inheritdoc/>
         public string DisplayName => Strings.Dropbox.DisplayName;
 
+        /// <inheritdoc/>
         public string ProtocolKey => "dropbox";
+
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
 
         private IFileEntry ParseEntry(MetaData md)
         {

@@ -601,6 +601,9 @@ public class B2 : IStreamingBackend
     public string Description => Strings.B2.Description;
 
     /// <inheritdoc/>
+    public bool SupportsStreaming => true;
+
+    /// <inheritdoc/>
     public async Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
     {
         var config = await _b2AuthHelper.GetConfigAsync(cancelToken);

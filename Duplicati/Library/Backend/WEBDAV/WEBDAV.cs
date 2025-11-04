@@ -568,6 +568,9 @@ namespace Duplicati.Library.Backend
         public string Description => Strings.WEBDAV.Description;
 
         ///<inheritdoc/>
+        public bool SupportsStreaming => true;
+
+        ///<inheritdoc/>
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_dnsName });
 
         ///<inheritdoc/>

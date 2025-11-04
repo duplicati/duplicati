@@ -36,20 +36,17 @@ namespace Duplicati.Library.Backend;
 /// </summary>
 public class SMBBackend : IStreamingBackend, IFolderEnabledBackend
 {
-    /// <summary>
-    /// Implementation of interface property for the backend key
-    /// </summary>
+    /// <inheritdoc/>
     public virtual string ProtocolKey => "smb";
 
-    /// <summary>
-    /// Implementation of interface property for the backend display name
-    /// </summary>
+    /// <inheritdoc/>
     public virtual string DisplayName => Strings.SMBBackend.DisplayName;
 
-    /// <summary>
-    /// Implementation of interface property for the backend description
-    /// </summary>
+    /// <inheritdoc/>
     public virtual string Description => Strings.SMBBackend.Description;
+
+    /// <inheritdoc/>
+    public virtual bool SupportsStreaming => true;
 
     /// <summary>
     /// Hostname only (no ports or paths) to be used on DNS resolutions.

@@ -250,32 +250,43 @@ namespace Duplicati.Library.Backend.Mega
             }
         }
 
+        /// <inheritdoc/>
         public Task TestAsync(CancellationToken cancelToken)
             => this.TestReadWritePermissionsAsync(cancelToken);
 
+        /// <inheritdoc/>
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             return FetchCurrentFolderAsync(true, cancelToken);
         }
 
+        /// <inheritdoc/>
         public string DisplayName => Strings.MegaBackend.DisplayName;
 
+        /// <inheritdoc/>
         public string ProtocolKey => "mega";
 
+        /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands => [
             .. AuthOptionsHelper.GetOptions(),
             new CommandLineArgument("auth-two-factor-key", CommandLineArgument.ArgumentType.Password, Strings.MegaBackend.AuthTwoFactorKeyDescriptionShort, Strings.MegaBackend.AuthTwoFactorKeyDescriptionLong),
             .. TimeoutOptionsHelper.GetOptions()
         ];
 
+        /// <inheritdoc/>
         public string Description => Strings.MegaBackend.Description;
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
+        /// <inheritdoc/>
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
         #endregion
 
         #region IDisposable implementation
 
+        /// <inheritdoc/>
         public void Dispose()
         {
         }

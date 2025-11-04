@@ -198,6 +198,9 @@ namespace Duplicati.Library.Backend
         public Task TestAsync(CancellationToken cancelToken)
             => this.TestReadWritePermissionsAsync(cancelToken);
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
         /// <inheritdoc />
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {

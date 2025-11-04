@@ -47,5 +47,9 @@ namespace Duplicati.Library.Interface
         /// <param name="cancelToken">Token to cancel the operation.</param>
         Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken);
 
+        /// <summary>
+        /// Indicates whether the backend supports streaming operations.
+        /// </summary>
+        bool SupportsStreaming { get; }
     }
 }

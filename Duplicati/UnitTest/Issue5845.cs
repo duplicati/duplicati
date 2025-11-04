@@ -40,6 +40,7 @@ namespace Duplicati.UnitTest
             public string DisplayName => "Test sorter";
             public string ProtocolKey => Key;
             public string Description => "Test sorter";
+            public bool SupportsStreaming => backend.SupportsStreaming;
             public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
             private readonly IStreamingBackend backend;
 

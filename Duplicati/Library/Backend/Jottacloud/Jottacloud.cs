@@ -359,6 +359,9 @@ public class Jottacloud : IStreamingBackend
     public string Description => Strings.Jottacloud.Description;
 
     /// <inheritdoc/>
+    public bool SupportsStreaming => true;
+
+    /// <inheritdoc/>
     public Task TestAsync(CancellationToken cancelToken)
         => this.TestReadWritePermissionsAsync(cancelToken);
 

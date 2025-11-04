@@ -123,6 +123,9 @@ public class FilenBackend : IStreamingBackend
     public string Description => Strings.FilenBackend.Description;
 
     /// <inheritdoc/>
+    public bool SupportsStreaming => true;
+
+    /// <inheritdoc/>
     public IList<ICommandLineArgument> SupportedCommands => [
         .. AuthOptionsHelper.GetOptions(),
         new CommandLineArgument(TwoFactorOption, CommandLineArgument.ArgumentType.String, Strings.FilenBackend.TwoFactorShort, Strings.FilenBackend.TwoFactorLong),
