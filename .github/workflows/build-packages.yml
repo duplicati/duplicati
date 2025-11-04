@@ -1,4 +1,8 @@
 name: Tests
+permissions:
+  contents: read
+  issues: none
+  pull-requests: none
 
 on: [pull_request, workflow_dispatch]
 
