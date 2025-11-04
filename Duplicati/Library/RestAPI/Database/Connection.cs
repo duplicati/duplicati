@@ -226,7 +226,7 @@ namespace Duplicati.Server.Database
             lock (m_lock)
             {
                 m_temporaryBackups.TryGetValue(id, out var b);
-                return b;
+                return b?.Clone();
             }
         }
 

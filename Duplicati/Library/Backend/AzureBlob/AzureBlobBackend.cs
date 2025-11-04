@@ -122,10 +122,16 @@ namespace Duplicati.Library.Backend.AzureBlob
             return new HashSet<AccessTier>(storageClass.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => new AccessTier(x)));
         }
 
+        /// <inheritdoc/>
         public string DisplayName => Strings.AzureBlobBackend.DisplayName;
 
+        /// <inheritdoc/>
         public string ProtocolKey => "azure";
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
+        /// <inheritdoc/>
         public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
             => _azureBlob.ListContainerEntriesAsync(cancelToken);
 

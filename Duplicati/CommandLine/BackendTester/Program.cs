@@ -231,14 +231,13 @@ namespace Duplicati.CommandLine.BackendTester
                 var trimFilenameSpaces = Library.Utility.Utility.ParseBoolOption(options, "trim-filename-spaces");
                 var waitAfterUpload = TimeSpan.Zero;
                 var waitAfterDelete = TimeSpan.Zero;
+                var useStreaming = backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !disableStreaming;
 
                 var throttleUpload = 0L;
                 if (options.TryGetValue("throttle-upload", out var throttleUploadString))
                 {
-                    if (!(backend is IStreamingBackend) || disableStreaming)
-                    {
+                    if (!useStreaming)
                         Console.WriteLine($"{LogTimeStamp}Warning: Throttling is only supported in this tool on streaming backends");
-                    }
 
                     throttleUpload = Duplicati.Library.Utility.Sizeparser.ParseSize(throttleUploadString, "kb");
                 }
@@ -246,10 +245,8 @@ namespace Duplicati.CommandLine.BackendTester
                 var throttleDownload = 0L;
                 if (options.TryGetValue("throttle-download", out var throttleDownloadString))
                 {
-                    if (!(backend is IStreamingBackend) || disableStreaming)
-                    {
+                    if (!useStreaming)
                         Console.WriteLine($"{LogTimeStamp}Warning: Throttling is only supported in this tool on streaming backends");
-                    }
 
                     throttleDownload = Duplicati.Library.Utility.Sizeparser.ParseSize(throttleDownloadString, "kb");
                 }
@@ -407,7 +404,7 @@ namespace Duplicati.CommandLine.BackendTester
                             {
                                 Retry(async () =>
                                 {
-                                    if (backend is IStreamingBackend streamingBackend && !disableStreaming)
+                                    if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !disableStreaming)
                                     {
                                         using (var fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                                         using (var timeoutStream = new TimeoutObservingStream(fs) { WriteTimeout = readWriteTimeout })
@@ -582,7 +579,7 @@ namespace Duplicati.CommandLine.BackendTester
 
             try
             {
-                if (backend is IStreamingBackend streamingBackend && !disableStreaming)
+                if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !disableStreaming)
                 {
                     using (var fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                     using (var timeoutStream = new TimeoutObservingStream(fs) { ReadTimeout = readWriteTimeout })

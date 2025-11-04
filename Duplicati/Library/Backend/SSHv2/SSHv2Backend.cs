@@ -183,6 +183,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands => [
             .. AuthOptionsHelper.GetOptions(),
             new CommandLineArgument(SSH_FINGERPRINT_OPTION, CommandLineArgument.ArgumentType.String,
@@ -212,12 +213,17 @@ namespace Duplicati.Library.Backend
             .. TimeoutOptionsHelper.GetOptions(),
         ];
 
+        /// <inheritdoc/>
         public string Description => Strings.SSHv2Backend.Description;
+
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
 
         #endregion
 
         #region IDisposable Members
 
+        /// <inheritdoc/>
         public void Dispose()
         {
             if (m_con != null)

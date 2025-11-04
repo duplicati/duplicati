@@ -130,10 +130,13 @@ namespace Duplicati.Library.Backend.Storj
             _timeouts = TimeoutOptionsHelper.Parse(options);
         }
 
+        /// <inheritdoc/>
         public string DisplayName => Strings.Storj.DisplayName;
 
+        /// <inheritdoc/>
         public string ProtocolKey => PROTOCOL_KEY;
 
+        /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands => [
             new CommandLineArgument(STORJ_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAuthMethodDescriptionShort, Strings.Storj.StorjAuthMethodDescriptionLong, STORJ_DEFAULT_AUTH_METHOD, null, [STORJ_AUTH_METHOD_API_KEY, STORJ_AUTH_METHOD_ACCESS_GRANT]),
             new CommandLineArgument(STORJ_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, STORJ_DEFAULT_SATELLITE),
@@ -145,13 +148,19 @@ namespace Duplicati.Library.Backend.Storj
             .. TimeoutOptionsHelper.GetOptions(),
         ];
 
+        /// <inheritdoc/>
         public string Description => Strings.Storj.Description;
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
+        /// <inheritdoc/>
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
             => Task.FromResult<string[]>(string.IsNullOrWhiteSpace(_satellite)
                 ? []
                 : [_satellite.Split(':').First()]);
 
+        /// <inheritdoc/>
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             //Storj DCS has no folders

@@ -160,6 +160,9 @@ namespace Duplicati.Library.Backend
         ///<inheritdoc/>
         public string Description => Strings.Filejump.Description;
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
         ///<inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands =>
         [

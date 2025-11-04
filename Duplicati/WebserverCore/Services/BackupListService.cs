@@ -121,7 +121,7 @@ public class BackupListService(Connection connection) : IBackupListService
     }
 
     /// <inheritdoc/>
-    public ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, string passphrase, string tempfile)
+    public ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile)
     {
         try
         {
@@ -145,7 +145,10 @@ public class BackupListService(Connection connection) : IBackupListService
                     if (!string.IsNullOrWhiteSpace(err))
                         throw new BadRequestException(err);
 
-                    connection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
+                    if (temporary)
+                        connection.RegisterTemporaryBackup(ipx.Backup);
+                    else
+                        connection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
                 }
 
                 return new ImportBackupOutputDto(ipx.Backup.ID, null);

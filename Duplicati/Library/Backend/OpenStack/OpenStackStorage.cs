@@ -491,6 +491,9 @@ public class OpenStackStorage : IStreamingBackend
     /// <inheritdoc />
     public string Description => Strings.OpenStack.Description;
 
+    /// <inheritdoc/>
+    public bool SupportsStreaming => true;
+
     /// <inheritdoc />
     public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] {
             new System.Uri(m_authUri).Host,

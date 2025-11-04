@@ -19,12 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Security;
 using System.Runtime.CompilerServices;
 using System.Security.Authentication;
-using System.Text;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
@@ -260,7 +258,6 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="url">Configured url.</param>
         /// <param name="options">Configured options. cannot be null.</param>
-        [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")] // The behavior of accessing the virtual properties is as expected
         public FTP(string url, Dictionary<string, string?> options)
         {
             _sslOptions = SslOptionsHelper.Parse(options);
@@ -513,6 +510,9 @@ namespace Duplicati.Library.Backend
 
         /// <inheritdoc />
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { _url.Host });
+
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
 
         /// <inheritdoc />
         public async Task TestAsync(CancellationToken cancellationToken)

@@ -38,6 +38,7 @@ namespace Duplicati.UnitTest
             public string DisplayName => "Test backend";
             public string ProtocolKey => Key;
             public string Description => "Test backend";
+            public bool SupportsStreaming => backend.SupportsStreaming;
             public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
             private readonly IStreamingBackend backend;
 

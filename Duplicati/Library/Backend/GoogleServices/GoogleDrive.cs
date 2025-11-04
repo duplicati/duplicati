@@ -316,10 +316,16 @@ namespace Duplicati.Library.Backend.GoogleDrive
             m_currentFolderId = await GetFolderIdAsync(m_path, true, cancelToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public string DisplayName => Strings.GoogleDrive.DisplayName;
 
+        /// <inheritdoc/>
         public string ProtocolKey => "googledrive";
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
+        /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands =>
         [
             .. AuthIdOptionsHelper.GetOptions(TOKEN_URL),
@@ -330,13 +336,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
             .. TimeoutOptionsHelper.GetOptions(),
         ];
 
-        public string Description
-        {
-            get
-            {
-                return Strings.GoogleDrive.Description;
-            }
-        }
+        /// <inheritdoc/>
+        public string Description => Strings.GoogleDrive.Description;
 
         #endregion
 

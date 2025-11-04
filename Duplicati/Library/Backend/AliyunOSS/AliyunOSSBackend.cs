@@ -289,12 +289,19 @@ namespace Duplicati.Library.Backend.AliyunOSS
             }
         }
 
+        /// <inheritdoc/>
         public string DisplayName => Strings.OSSBackend.DisplayName;
 
+        /// <inheritdoc/>
         public string Description => Strings.OSSBackend.Description;
 
+        /// <inheritdoc/>
         public string ProtocolKey => "aliyunoss";
 
+        /// <inheritdoc/>
+        public bool SupportsStreaming => true;
+
+        /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
