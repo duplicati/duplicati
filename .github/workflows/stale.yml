@@ -1,4 +1,9 @@
 name: Close inactive issues
+permissions:
+  contents: read
+  issues: write
+  pull-requests: none
+
 on:
   schedule:
     - cron: "30 1 * * *"
