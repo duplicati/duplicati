@@ -323,6 +323,7 @@ test("backup and restore flow", async ({ page }) => {
     .addCookies([
       { name: "default-client", value: "ngclient", url: SERVER_URL },
     ]);
+  await page.setDefaultTimeout(30000);
   await page.goto(LOGIN_URL);
   await page.waitForLoadState("networkidle");
   await page.fill("[formcontrolname='pass']", WEBSERVICE_PASSWORD);
