@@ -343,6 +343,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             cmdline: false,
             import_metadata: true,
             direct: true,
+            temporary: false,
             passphrase: null);
 
         var response = await httpClient.PostAsJsonAsync("/api/v1/backups/import", importRequest, JsonOptions).ConfigureAwait(false);
