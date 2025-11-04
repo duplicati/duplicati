@@ -77,6 +77,8 @@ namespace Duplicati.Server.Database
             public const string ADDITIONAL_REPORT_URL = "additional-report-url";
             public const string BACKUP_LIST_SORT_ORDER = "backup-list-sort-order";
             public const string DISABLE_API_EXTENSIONS = "disable-api-extensions";
+            public const string POWER_MODE_PROVIDER = "power-mode-provider";
+            public const string DISABLE_CONSOLE_CONTROL = "disable-console-control";
         }
 
         private readonly Dictionary<string, string?> settings;
@@ -649,6 +651,21 @@ namespace Duplicati.Server.Database
                 return !DisableHTTPS && !string.IsNullOrWhiteSpace(settings[CONST.SERVER_SSL_CERTIFICATE]);
             }
         }
+
+        public bool DisableConsoleControl
+        {
+            get
+            {
+                return Utility.ParseBool(settings[CONST.DISABLE_CONSOLE_CONTROL], false);
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.DISABLE_CONSOLE_CONTROL] = value.ToString();
+                SaveSettings();
+            }
+        }
+
 
         public X509Certificate2Collection? ServerSSLCertificate
         {

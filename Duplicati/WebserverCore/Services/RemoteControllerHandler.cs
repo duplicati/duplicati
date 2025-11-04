@@ -144,6 +144,12 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
     /// <inheritdoc/>
     public async Task OnMessage(KeepRemoteConnection.CommandMessage commandMessage)
     {
+        if (connection.ApplicationSettings.DisableConsoleControl)
+        {
+            commandMessage.Respond(new CommandResponseMessage(501, "Remote control is disabled.", null));
+            return;
+        }
+
         using var httpClient = httpClientFactory.CreateClient();
         var token = jwtTokenProvider.CreateAccessToken("remote-control", jwtTokenProvider.TemporaryFamilyId, TimeSpan.FromMinutes(2));
 
