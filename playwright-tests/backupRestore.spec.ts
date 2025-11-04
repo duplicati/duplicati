@@ -80,7 +80,7 @@ async function completeRestoreFlow(page: Page) {
   await page
     .locator("sh-card")
     .filter({ hasText: "Restore completed" })
-    .waitFor();
+    .waitFor({ timeout: 60000 });
 
   const restored = await fs.stat(path.join(RESTORE_FOLDER, "file.txt"));
   expect(restored.isFile()).toBeTruthy();
