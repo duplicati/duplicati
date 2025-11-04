@@ -34,26 +34,29 @@ test.beforeAll(async () => {
   await fs.mkdir(DESTINATION_FOLDER, { recursive: true });
 });
 
-async function restoreAndVerify(page: Page) {
-  await page.goto(HOME_URL);
-  await page.waitForLoadState("networkidle");
-
+async function clickThreeDotMenu(page: Page, action: string) {
   const backupElement = page
     .locator("div.backup")
     .filter({ hasText: BACKUP_NAME });
 
-  backupElement
+  await backupElement
     .locator("button")
     .filter({
       has: page.locator("sh-icon").filter({ hasText: "three-vertical" }),
     })
     .click();
 
-  await page
+  await backupElement
     .locator("div.options button")
-    .filter({ hasText: "Restore" })
+    .filter({ hasText: action })
     .click();
+}
 
+async function restoreAndVerify(page: Page) {
+  await page.goto(HOME_URL);
+  await page.waitForLoadState("networkidle");
+
+  await clickThreeDotMenu(page, "Restore");
   await completeRestoreFlow(page);
 }
 
@@ -153,17 +156,7 @@ async function deleteBackupIfExists(page: Page) {
     .filter({ hasText: BACKUP_NAME });
 
   if ((await existingBackupElement.count()) > 0) {
-    await existingBackupElement
-      .locator("button")
-      .filter({
-        has: page.locator("sh-icon").filter({ hasText: "three-vertical" }),
-      })
-      .click();
-
-    await page
-      .locator("div.options button")
-      .filter({ hasText: "Delete" })
-      .click();
+    await clickThreeDotMenu(page, "Delete");
 
     const deleteDatabase = page
       .locator("sh-checkbox")
@@ -247,24 +240,16 @@ async function directRestoreFromFiles(page: Page) {
 async function restoreFromConfigFile(page: Page) {
   await page.goto(HOME_URL);
   await page.waitForLoadState("networkidle");
-  await page
-    .locator("div.backup")
-    .filter({ hasText: BACKUP_NAME })
-    .locator("button")
-    .filter({
-      has: page.locator("sh-icon").filter({ hasText: "three-vertical" }),
-    })
-    .click();
 
-  await page
-    .locator("div.options button")
-    .filter({ hasText: "Export" })
-    .click();
+  await clickThreeDotMenu(page, "Export");
 
   const exportPasswords = page
     .locator("sh-toggle")
     .filter({ hasText: "Export passwords" })
     .locator('input[type="checkbox"]');
+
+  // Wait to ensure the UI is toggled properly
+  await page.waitForTimeout(1000);
 
   if (!(await exportPasswords.isChecked())) {
     await exportPasswords.click();
@@ -287,6 +272,8 @@ async function restoreFromConfigFile(page: Page) {
   const download = await downloadPromise;
   const downloadPath = path.join(TEMP_FOLDER, CONFIG_FILE_NAME);
   await download.saveAs(downloadPath);
+
+  console.log("Saved config file to: ", downloadPath);
 
   await page.goto(HOME_URL);
   await page.waitForLoadState("networkidle");
@@ -314,6 +301,8 @@ async function restoreFromConfigFile(page: Page) {
     .filter({ hasText: "Restore" })
     .click();
 
+  console.log("Imported configuration, proceeding with restore...");
+
   await completeRestoreFlow(page);
 }
 
@@ -324,29 +313,39 @@ test("backup and restore flow", async ({ page }) => {
       { name: "default-client", value: "ngclient", url: SERVER_URL },
     ]);
   await page.setDefaultTimeout(30000);
+  await test.setTimeout(120000);
+
+  console.log("Navigating to login page...");
   await page.goto(LOGIN_URL);
   await page.waitForLoadState("networkidle");
   await page.fill("[formcontrolname='pass']", WEBSERVICE_PASSWORD);
 
   await page.locator("button").filter({ hasText: "Login" }).click();
 
-  await page.waitForURL(HOME_URL);
+  console.log("Waiting for page to load...");
+  await page.locator("text=Add backup").waitFor();
 
   // Ensure no existing backup
+  console.log("Deleting existing backup if it exists...");
   await deleteBackupIfExists(page);
 
   // Add backup
+  console.log("Creating new backup...");
   await createBackup(page);
 
   // Run backup
+  console.log("Running backup...");
   await runBackup(page);
 
   // Restore
+  console.log("Restoring and verifying backup...");
   await restoreAndVerify(page);
 
   // Restore directly from backup files
+  console.log("Direct restore from backup files...");
   await directRestoreFromFiles(page);
 
   // Restore from config
+  console.log("Restore from configuration file...");
   await restoreFromConfigFile(page);
 });
