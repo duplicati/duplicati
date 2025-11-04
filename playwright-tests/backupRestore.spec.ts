@@ -2,10 +2,9 @@ import { expect, Page, test } from "@playwright/test";
 import fs from "fs/promises";
 import path from "path";
 
-const SERVER_URL = process.env.SERVER_URL || "http://localhost:8200";
-const SPA_PATH = "/ngclient";
-const HOME_URL = `${SERVER_URL}${SPA_PATH}/`;
-const LOGIN_URL = `${SERVER_URL}${SPA_PATH}/login`;
+const SERVER_URL = process.env.SERVER_URL || "http://localhost:8200/ngclient";
+const HOME_URL = `${SERVER_URL}/`;
+const LOGIN_URL = `${SERVER_URL}/login`;
 const WEBSERVICE_PASSWORD = process.env.WEBSERVICE_PASSWORD || "easy1234";
 const BACKUP_NAME = process.env.BACKUP_NAME || "PlaywrightBackup";
 const PASSWORD = "the_backup_password_is_really_long_and_safe";
@@ -273,7 +272,7 @@ async function restoreFromConfigFile(page: Page) {
   const downloadPath = path.join(TEMP_FOLDER, CONFIG_FILE_NAME);
   await download.saveAs(downloadPath);
 
-  console.log("Saved config file to: ", downloadPath);
+  console.log("Exported config file");
 
   await page.goto(HOME_URL);
   await page.waitForLoadState("networkidle");
