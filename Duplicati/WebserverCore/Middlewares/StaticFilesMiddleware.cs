@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.Text.RegularExpressions;
+using Duplicati.Library.AutoUpdater;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.FileProviders.Physical;
@@ -58,10 +59,21 @@ public static class StaticFilesExtensions
         @"(<base\b[^>]*?\bhref\s*=\s*)(['""])\s*/\s*(?=\2)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    private static readonly Regex _headInjectRegex = new Regex(
+        @"(</head\s*>)",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline);
+
     private static string PatchIndexContent(string fileContent, string prefix)
     {
         if (!prefix.EndsWith("/"))
             prefix += "/";
+
+        var headContent = string.Empty;
+        if (!string.IsNullOrWhiteSpace(AutoUpdateSettings.CustomCssFilePath))
+            headContent += $"<link rel=\"stylesheet\" href=\"oem-custom.css\" />";
+        if (!string.IsNullOrWhiteSpace(AutoUpdateSettings.CustomJsFilePath))
+            headContent += $"<script src=\"oem-custom.js\"></script>";
+        fileContent = _headInjectRegex.Replace(fileContent, headContent + "</head>");
 
         return _baseHrefRegex.Replace(fileContent, match =>
         {
@@ -88,6 +100,13 @@ public static class StaticFilesExtensions
 
         var prefixHandlerMap = new List<SpaConfig>();
         var missingFile = new FileInfo(Path.Combine(webroot, "missing-spa.html"));
+
+        var customCssFile = string.IsNullOrWhiteSpace(AutoUpdateSettings.CustomCssFilePath)
+            ? null
+            : new FileInfo(AutoUpdateSettings.CustomCssFilePath!);
+        var customJsFile = string.IsNullOrWhiteSpace(AutoUpdateSettings.CustomJsFilePath)
+            ? null
+            : new FileInfo(AutoUpdateSettings.CustomJsFilePath!);
 
         foreach (var prefix in spaPaths)
         {
@@ -150,6 +169,22 @@ public static class StaticFilesExtensions
                         forwardedPrefix = DEFAULT_FORWARDED_PREFIX;
 
                     await context.Response.WriteAsync(PatchIndexContent(indexContent, forwardedPrefix), context.RequestAborted);
+                    await context.Response.CompleteAsync();
+                }
+                else if (path.Value.EndsWith("/oem-custom.css") && (customCssFile?.Exists ?? false))
+                {
+                    // Serve the custom CSS file
+                    context.Response.ContentType = "text/css";
+                    context.Response.StatusCode = 200;
+                    await context.Response.SendFileAsync(new PhysicalFileInfo(customCssFile));
+                    await context.Response.CompleteAsync();
+                }
+                else if (path.Value.EndsWith("/oem-custom.js") && (customJsFile?.Exists ?? false))
+                {
+                    // Serve the custom JS file
+                    context.Response.ContentType = "application/javascript";
+                    context.Response.StatusCode = 200;
+                    await context.Response.SendFileAsync(new PhysicalFileInfo(customJsFile));
                     await context.Response.CompleteAsync();
                 }
                 else
