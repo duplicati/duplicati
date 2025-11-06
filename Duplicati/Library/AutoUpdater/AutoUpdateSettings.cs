@@ -75,6 +75,14 @@ namespace Duplicati.Library.AutoUpdater
         /// The OEM update install template file name
         /// </summary>
         private const string OEM_UPDATE_INSTALL_FILE = "oem-update-installid.txt";
+        /// <summary>
+        /// The OEM file with custom CSS
+        /// </summary>
+        private const string OEM_CUSTOM_CSS_FILE = "oem-custom.css";
+        /// <summary>
+        /// The OEM file with custom JS
+        /// </summary>
+        private const string OEM_CUSTOM_JS_FILE = "oem-custom.js";
 
         /// <summary>
         /// The update URL environment variable name template
@@ -110,6 +118,23 @@ namespace Duplicati.Library.AutoUpdater
                 string.Join("|", Enum.GetNames(typeof(ReleaseType)).Union(new[] { "preview" }))), RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
+        /// Gets the OEM file path for the given filename, or null if not present
+        /// </summary>
+        /// <param name="filename">The OEM filename</param>
+        /// <returns>The full path to the OEM file, or null if not present</returns>
+        private static string? GetOEMFile(string? filename)
+        {
+            if (string.IsNullOrWhiteSpace(filename))
+                return null;
+
+            var path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filename);
+            if (System.IO.File.Exists(path))
+                return path;
+
+            return null;
+        }
+
+        /// <summary>
         /// Reads a resource text from the assembly, with an optional OEM filename override
         /// </summary>
         /// <param name="name">The embedded resource name</param>
@@ -133,8 +158,9 @@ namespace Duplicati.Library.AutoUpdater
             try
             {
                 // Check for OEM override
-                if (!string.IsNullOrWhiteSpace(oemname) && System.IO.File.Exists(oemname))
-                    result = System.IO.File.ReadAllText(oemname);
+                var oemnamepath = GetOEMFile(oemname);
+                if (!string.IsNullOrWhiteSpace(oemnamepath) && System.IO.File.Exists(oemnamepath))
+                    result = System.IO.File.ReadAllText(oemnamepath);
             }
             catch
             {
@@ -242,6 +268,16 @@ namespace Duplicati.Library.AutoUpdater
         /// The text for the update install file
         /// </summary>
         public static string UpdateInstallFileText => string.Format(ReadResourceText(UPDATE_INSTALL_FILE, OEM_UPDATE_INSTALL_FILE), Guid.NewGuid().ToString("N"));
+
+        /// <summary>
+        /// The custom CSS file path, or null if not present
+        /// </summary>
+        public static string? CustomCssFilePath => GetOEMFile(OEM_CUSTOM_CSS_FILE);
+
+        /// <summary>
+        /// The custom JS file path, or null if not present
+        /// </summary>
+        public static string? CustomJsFilePath => GetOEMFile(OEM_CUSTOM_JS_FILE);
 
         /// <summary>
         /// Updates the machine file text with the machine ID
