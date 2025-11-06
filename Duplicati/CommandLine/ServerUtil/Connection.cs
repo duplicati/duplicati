@@ -434,10 +434,10 @@ public class Connection
     }
 
     /// <summary>
-    /// Gets a backup's most recent log by ID
+    /// Gets a backup's most recent log status by backup ID
     /// </summary>
     /// <param name="backupId">The ID of the backup</param>
-    /// <returns>The status and error of the most recent backup log</returns>
+    /// <returns>The status of the most recent backup log</returns>
     public async Task<string> GetBackupStatus(string backupId)
     {
         var response = await client.GetAsync($"backup/{Uri.EscapeDataString(backupId)}/log");
@@ -446,14 +446,13 @@ public class Connection
         var parsedLogs = await response.Content.ReadFromJsonAsync<List<Dictionary<string, object>>>()
             ?? throw new UserReportedException("Failed to parse response");
 
-        // Return status of the log and errors if any
-
+        if (parsedLogs.Count < 1)
+        {
+            return "Failed to run";
+        }
         var lastLogResultString = ((JsonElement)parsedLogs[0]["Message"]).GetString();
         var lastLogResult = JsonSerializer.Deserialize<JsonElement>(lastLogResultString);
-        var parsedResult = lastLogResult.GetProperty("ParsedResult");
-        // TODO: Figure out how error should be displayed and returned
-        var errors = lastLogResult.GetProperty("Errors");
-        return parsedResult.ToString();
+        return lastLogResult.GetProperty("ParsedResult").ToString();
     }
 
     /// <summary>
