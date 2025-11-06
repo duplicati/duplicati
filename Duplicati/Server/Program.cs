@@ -43,25 +43,45 @@ namespace Duplicati.Server
 {
     public class Program
     {
+        /// <summary>The commandline argument name for parameters file.</summary>
         private const string PARAMETERS_FILE_OPTION = "parameters-file";
+        /// <summary>Alternative names for the parameters file option.</summary>
         private static readonly string[] PARAMETERS_FILE_OPTION_EXTRAS = ["parameterfile"];
+        /// <summary>The commandline argument name for ping-pong keepalive.</summary>
         private const string PING_PONG_KEEPALIVE_OPTION = "ping-pong-keepalive";
+        /// <summary>The commandline argument name for Windows event log.</summary>
         private const string WINDOWS_EVENTLOG_OPTION = "windows-eventlog";
+        /// <summary>The commandline argument name for Windows event log level.</summary>
         private const string WINDOWS_EVENTLOG_LEVEL_OPTION = "windows-eventlog-level";
+        /// <summary>The commandline argument name for disabling database encryption.</summary>
         private const string DISABLE_DB_ENCRYPTION_OPTION = "disable-db-encryption";
+        /// <summary>The commandline argument name for requiring database encryption key.</summary>
         private const string REQUIRE_DB_ENCRYPTION_KEY_OPTION = "require-db-encryption-key";
+        /// <summary>The commandline argument name for settings encryption key.</summary>
         private const string SETTINGS_ENCRYPTION_KEY_OPTION = "settings-encryption-key";
+        /// <summary>The commandline argument name for disabling update check.</summary>
         private const string DISABLE_UPDATE_CHECK_OPTION = "disable-update-check";
+        /// <summary>The commandline argument name for registering remote control.</summary>
         private const string REGISTER_REMOTE_CONTROL_OPTION = "register-remote-control";
+        /// <summary>The commandline argument name for forcing remote control reregistration.</summary>
         private const string REGISTER_REMOTE_CONTROL_REREGISTER_OPTION = "register-remote-control-force";
+        /// <summary>The commandline argument name for allowed backend modules.</summary>
         private const string ALLOWED_BACKEND_MODULES = "allowed-backend-modules";
+        /// <summary>The commandline argument name for allowed encryption modules.</summary>
         private const string ALLOWED_ENCRYPTION_MODULES = "allowed-encryption-modules";
+        /// <summary>The commandline argument name for allowed compression modules.</summary>
         private const string ALLOWED_COMPRESSION_MODULES = "allowed-compression-modules";
+        /// <summary>The commandline argument name for log file.</summary>
         private const string LOG_FILE_OPTION = "log-file";
+        /// <summary>The commandline argument name for log level.</summary>
         private const string LOG_LEVEL_OPTION = "log-level";
+        /// <summary>The commandline argument name for log console.</summary>
         private const string LOG_CONSOLE_OPTION = "log-console";
+        /// <summary>The commandline argument name for temp directory.</summary>
         private const string TEMPDIR_OPTION = "tempdir";
+        /// <summary>The commandline argument name for log retention.</summary>
         private const string LOG_RETENTION_OPTION = "log-retention";
+        /// <summary>The commandline argument name for help.</summary>
         private const string HELP_OPTION = "help";
 
 
@@ -182,8 +202,7 @@ namespace Duplicati.Server
             {
                 string filename = commandlineOptions[parameterFileOption];
                 commandlineOptions.Remove(parameterFileOption);
-                if (!ReadOptionsFromFile(filename, ref filter, args, commandlineOptions))
-                    return 100;
+                ReadOptionsFromFile(filename, ref filter, args, commandlineOptions);
             }
 
             var logHandler = new LogWriteHandler();
@@ -365,6 +384,14 @@ namespace Duplicati.Server
             return 0;
         }
 
+        /// <summary>
+        /// Starts the Duplicati web server
+        /// </summary>
+        /// <param name="options">The commandline options</param>
+        /// <param name="connection">The connection to use</param>
+        /// <param name="logWriteHandler">The log write handler</param>
+        /// <param name="applicationSettings">The application settings</param>
+        /// <returns></returns>
         private static async Task<DuplicatiWebserver> StartWebServer(IReadOnlyDictionary<string, string> options, Connection connection, ILogWriteHandler logWriteHandler, IApplicationSettings applicationSettings)
         {
             var server = await WebServerLoader.TryRunServer(options, connection, async parsedOptions =>
@@ -399,6 +426,11 @@ namespace Duplicati.Server
             return server;
         }
 
+        /// <summary>
+        /// Sets up the timer for purging temp files and log data
+        /// </summary>
+        /// <param name="connection">The connection to use</param>
+        /// <param name="commandlineOptions">The commandline options</param>
         private static void SetPurgeTempFilesTimer(Connection connection, Dictionary<string, string> commandlineOptions)
         {
             var lastPurge = new DateTime(0);
@@ -454,6 +486,14 @@ namespace Duplicati.Server
                     DEBUG_MODE ? TimeSpan.FromHours(1) : TimeSpan.FromDays(1));
         }
 
+        /// <summary>
+        /// Registers the server for remote control
+        /// </summary>
+        /// <param name="remoteControllerRegistration">The remote controller registration</param>
+        /// <param name="remoteController">The remote controller</param>
+        /// <param name="remoteControlUrl">The remote control URL</param>
+        /// <param name="reRegister">Whether to re-register</param>
+        /// <param name="logMessageToConsole">Callback to log messages to console</param>
         private static void RegisterForRemoteControl(IRemoteControllerRegistration remoteControllerRegistration, IRemoteController remoteController, string remoteControlUrl, bool reRegister, Action<string> logMessageToConsole)
         {
             if (remoteController.CanEnable)
@@ -494,6 +534,11 @@ namespace Duplicati.Server
             });
         }
 
+        /// <summary>
+        /// Adjusts the application settings based on commandline options
+        /// </summary>
+        /// <param name="connection">The connection to use</param>
+        /// <param name="commandlineOptions">The commandline options</param>
         private static void AdjustApplicationSettings(Connection connection, Dictionary<string, string> commandlineOptions)
         {
             // This clears the JWT config, and a new will be generated, invalidating all existing tokens
@@ -550,6 +595,12 @@ namespace Duplicati.Server
             }
         }
 
+        /// <summary>
+        /// Emits warnings for configuration issues
+        /// </summary>
+        /// <param name="connection">The connection</param>
+        /// <param name="applicationSettings">The application settings</param>
+        /// <param name="commandlineOptions">The commandline options</param>
         private static void EmitWarningsForConfigurationIssues(Connection connection, IApplicationSettings applicationSettings, Dictionary<string, string> commandlineOptions)
         {
             // First, remove any pending notifications, if the issue is resolved
@@ -618,7 +669,12 @@ namespace Duplicati.Server
             }
         }
 
-        private static void CreateApplicationInstance(string dataFolder, bool writeToConsoleOnExceptionw)
+        /// <summary>
+        /// Creates the application instance to ensure a single instance is running for the current user
+        /// </summary>
+        /// <param name="dataFolder">The data folder to use for single instance locking</param>
+        /// <param name="writeToConsoleOnException">Write to console on exception</param>
+        private static void CreateApplicationInstance(string dataFolder, bool writeToConsoleOnException)
         {
             try
             {
@@ -627,7 +683,7 @@ namespace Duplicati.Server
             }
             catch (Exception ex)
             {
-                if (writeToConsoleOnExceptionw)
+                if (writeToConsoleOnException)
                 {
                     Console.WriteLine(Strings.Program.StartupFailure(ex));
                     Environment.Exit(200);
@@ -638,7 +694,7 @@ namespace Duplicati.Server
 
             if (!ApplicationInstance.IsFirstInstance)
             {
-                if (writeToConsoleOnExceptionw)
+                if (writeToConsoleOnException)
                 {
                     Console.WriteLine(Strings.Program.AnotherInstanceDetected);
                     Environment.Exit(200);
@@ -648,6 +704,10 @@ namespace Duplicati.Server
             }
         }
 
+        /// <summary>
+        /// Applies environment variables by converting them to commandline options
+        /// </summary>
+        /// <param name="commandlineOptions">The commandline options</param>
         private static void ApplyEnvironmentVariables(Dictionary<string, string> commandlineOptions)
         {
             foreach (var key in SupportedCommands.SelectMany(x => (x.Aliases ?? []).Prepend(x.Name)).Distinct())
@@ -667,11 +727,23 @@ namespace Duplicati.Server
                 commandlineOptions[SETTINGS_ENCRYPTION_KEY_OPTION] = Environment.GetEnvironmentVariable(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME);
         }
 
+        /// <summary>
+        /// Applies the secret provider to the commandline options and application settings
+        /// </summary>
+        /// <param name="applicationSettings">The application settings</param>
+        /// <param name="commandlineOptions">The commandline options</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>A task that represents the asynchronous operation</returns>
         private static async Task ApplySecretProvider(IApplicationSettings applicationSettings, Dictionary<string, string> commandlineOptions, CancellationToken cancellationToken)
             => applicationSettings.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], [], commandlineOptions, TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancellationToken).ConfigureAwait(false);
 
+        /// <summary>
+        /// A log destination that writes to the console
+        /// </summary>
+        /// <param name="level">The minimum log level</param>
         private class ConsoleLogDestination(LogMessageType level) : ILogDestination
         {
+            /// <inheritdoc />
             public void WriteMessage(LogEntry entry)
             {
                 if (entry.Level >= level)
@@ -679,6 +751,12 @@ namespace Duplicati.Server
             }
         }
 
+        /// <summary>
+        /// Configures logging based on commandline options
+        /// </summary>
+        /// <param name="logWriteHandler">The log write handler</param>
+        /// <param name="commandlineOptions">The commandline options</param>
+        /// <returns>A disposable log scope</returns>
         private static IDisposable ConfigureLogging(ILogWriteHandler logWriteHandler, Dictionary<string, string> commandlineOptions)
         {
             IDisposable logScope;
@@ -748,9 +826,14 @@ namespace Duplicati.Server
             return logScope;
         }
 
-        private static int ShowHelp(bool writeToConsoleOnExceptionw)
+        /// <summary>
+        /// Shows the help information
+        /// </summary>
+        /// <param name="writeToConsoleOnException">Whether to write to console on exception</param>
+        /// <returns>An integer indicating the result</returns>
+        private static int ShowHelp(bool writeToConsoleOnException)
         {
-            if (writeToConsoleOnExceptionw)
+            if (writeToConsoleOnException)
             {
                 Console.WriteLine(Strings.Program.HelpDisplayDialog);
 
@@ -763,6 +846,14 @@ namespace Duplicati.Server
             throw new Exception("Server invoked with --help");
         }
 
+        /// <summary>
+        /// Gets the database connection, upgrading the database if needed
+        /// </summary>
+        /// <param name="applicationSettings">The application settings</param>
+        /// <param name="commandlineOptions">The commandline options</param>
+        /// <param name="silentConsole">Whether to suppress console output</param>
+        /// <param name="changeDbEncryption">Whether to change the database encryption state if the arguments require it</param>
+        /// <returns>The database connection</returns>
         public static Connection GetDatabaseConnection(IApplicationSettings applicationSettings, Dictionary<string, string> commandlineOptions, bool silentConsole, bool changeDbEncryption)
         {
             // Emit a warning if the database is stored in the Windows folder
@@ -858,6 +949,10 @@ namespace Duplicati.Server
             return new Connection(con, disableDbEncryption, encKey, applicationSettings.DataFolder, applicationSettings.StartOrStopUsageReporter);
         }
 
+        /// <summary>
+        /// Starts or stops the usage reporter based on application settings
+        /// </summary>
+        /// <param name="connection">The connection</param>
         private static void StartOrStopUsageReporter(Connection connection)
         {
             var disableUsageReporter =
@@ -1001,7 +1096,15 @@ namespace Duplicati.Server
         /// </summary>
         public static readonly HashSet<string> KnownDuplicateOptions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        private static bool ReadOptionsFromFile(string filename, ref IFilter filter, List<string> cargs, Dictionary<string, string> options)
+        /// <summary>
+        /// Reads options from a file and applies them to the current commandline arguments and options
+        /// </summary>
+        /// <param name="filename">The filename</param>
+        /// <param name="filter">The filter</param>
+        /// <param name="cargs">The commandline arguments</param>
+        /// <param name="options">The options</param>
+        /// <returns>True if successful</returns>
+        private static void ReadOptionsFromFile(string filename, ref IFilter filter, List<string> cargs, Dictionary<string, string> options)
         {
             try
             {
@@ -1078,8 +1181,6 @@ namespace Duplicati.Server
                     cargs.AddRange(newsource);
                 else if (newsource.Count > 0)
                     Log.WriteVerboseMessage(LOGTAG, "NotUsingBackupSources", Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
-
-                return true;
             }
             catch (Exception e)
             {
