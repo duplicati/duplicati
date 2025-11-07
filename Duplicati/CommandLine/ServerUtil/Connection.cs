@@ -445,14 +445,19 @@ public class Connection
 
         var parsedLogs = await response.Content.ReadFromJsonAsync<List<Dictionary<string, object>>>()
             ?? throw new UserReportedException("Failed to parse response");
-
         if (parsedLogs.Count < 1)
         {
-            return "Failed to run";
+            return "No logs available";
         }
-        var lastLogResultString = ((JsonElement)parsedLogs[0]["Message"]).GetString();
-        var lastLogResult = JsonSerializer.Deserialize<JsonElement>(lastLogResultString);
-        return lastLogResult.GetProperty("ParsedResult").ToString();
+        try
+        {
+            var lastLogResultString = ((JsonElement)parsedLogs[0]["Message"]).GetString();
+            var lastLogResult = JsonSerializer.Deserialize<JsonElement>(lastLogResultString);
+            return lastLogResult.GetProperty("ParsedResult").ToString();
+        } catch
+        {
+            return "Failed to parse backup log";
+        }
     }
 
     /// <summary>
