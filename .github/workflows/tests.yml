@@ -31,14 +31,20 @@ jobs:
         run: dotnet build --no-restore Duplicati.sln
 
       - name: Run unit tests with coverage
-        run: dotnet test --no-build --verbosity minimal --filter "Category!=Integration" --collect:"XPlat Code Coverage" --results-directory TestResults/unit Duplicati.sln
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/TestResults/unit"
+          dotnet test --no-build --verbosity minimal \
+            --filter "Category!=Integration" \
+            --collect:"XPlat Code Coverage" \
+            --results-directory "$GITHUB_WORKSPACE/TestResults/unit" \
+            Duplicati.sln
 
       - name: Upload unit test coverage
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-coverage-${{ runner.os }}
-          path: TestResults/unit
+          path: TestResults/unit/**
 
   integration_tests:
     name: Integration tests
@@ -64,14 +70,20 @@ jobs:
         run: dotnet build --no-restore Duplicati.sln
 
       - name: Run integration tests with coverage
-        run: dotnet test --no-build --verbosity minimal --filter "Category=Integration" --collect:"XPlat Code Coverage" --results-directory TestResults/integration Duplicati.sln
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/TestResults/integration"
+          dotnet test --no-build --verbosity minimal \
+            --filter "Category=Integration" \
+            --collect:"XPlat Code Coverage" \
+            --results-directory "$GITHUB_WORKSPACE/TestResults/integration" \
+            Duplicati.sln
 
       - name: Upload integration test coverage
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-coverage-${{ runner.os }}
-          path: TestResults/integration
+          path: TestResults/integration/**
 
   # Disabled, as a new test needs to be written for the new UI
   # selenium:
