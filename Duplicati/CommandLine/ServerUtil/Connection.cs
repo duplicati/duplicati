@@ -447,7 +447,7 @@ public class Connection
             ?? throw new UserReportedException("Failed to parse response");
         if (parsedLogs.Count < 1)
         {
-            return "No logs available";
+            return "No log generated";
         }
         try
         {
