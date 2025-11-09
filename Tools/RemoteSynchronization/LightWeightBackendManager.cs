@@ -208,6 +208,7 @@ namespace RemoteSynchronization
                             // Download the file, rename it, and delete the old one
                             using var downloaded = new MemoryStream();
                             await sb.GetAsync(oldname, downloaded, token).ConfigureAwait(false);
+                            downloaded.Seek(0, SeekOrigin.Begin);
                             await sb.PutAsync(newname, downloaded, token).ConfigureAwait(false);
                             await sb.DeleteAsync(oldname, token).ConfigureAwait(false);
                             _anyUploaded = true;
