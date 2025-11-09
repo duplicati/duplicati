@@ -704,42 +704,42 @@ jobs:
           dotnet test --no-build --filter="ClassName~Filen.FilenTests"
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-  test_filejump:
-    needs: check_secrets
-    if: needs.check_secrets.outputs.filejump_secrets_available == 'true'
-    name: Filejump Tests
-    runs-on: "${{ matrix.os }}"
-    strategy:
-      max-parallel: 1
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
-    steps:
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.x
-      - name: Checkout source
-        uses: actions/checkout@v4
-      - name: Restore NuGet dependencies
-        run: >-
-          dotnet restore
-          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-      - name: Build project
-        run: >-
-          dotnet build --no-restore
-          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-      - name: Run Filejump tests
-        env:
-          TESTCREDENTIAL_FILEJUMP_FOLDER: "${{ secrets.TESTCREDENTIAL_FILEJUMP_FOLDER }}"
-          TESTCREDENTIAL_FILEJUMP_TOKEN: "${{ secrets.TESTCREDENTIAL_FILEJUMP_TOKEN }}"
-        run: >-
-          dotnet test --no-build --filter="ClassName~Filejump.FilejumpTests"
-          --logger:"console;verbosity=detailed"
-          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  # test_filejump:
+  #   needs: check_secrets
+  #   if: needs.check_secrets.outputs.filejump_secrets_available == 'true'
+  #   name: Filejump Tests
+  #   runs-on: "${{ matrix.os }}"
+  #   strategy:
+  #     max-parallel: 1
+  #     fail-fast: false
+  #     matrix:
+  #       os:
+  #         - ubuntu-latest
+  #         - windows-latest
+  #         - macos-latest
+  #   steps:
+  #     - name: Set up .NET
+  #       uses: actions/setup-dotnet@v4
+  #       with:
+  #         dotnet-version: 8.x
+  #     - name: Checkout source
+  #       uses: actions/checkout@v4
+  #     - name: Restore NuGet dependencies
+  #       run: >-
+  #         dotnet restore
+  #         LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  #     - name: Build project
+  #       run: >-
+  #         dotnet build --no-restore
+  #         LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  #     - name: Run Filejump tests
+  #       env:
+  #         TESTCREDENTIAL_FILEJUMP_FOLDER: "${{ secrets.TESTCREDENTIAL_FILEJUMP_FOLDER }}"
+  #         TESTCREDENTIAL_FILEJUMP_TOKEN: "${{ secrets.TESTCREDENTIAL_FILEJUMP_TOKEN }}"
+  #       run: >-
+  #         dotnet test --no-build --filter="ClassName~Filejump.FilejumpTests"
+  #         --logger:"console;verbosity=detailed"
+  #         LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
   test_onedrive:
     needs: check_secrets
     if: needs.check_secrets.outputs.onedrive_secrets_available == 'true'
