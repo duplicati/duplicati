@@ -1,3 +1,76 @@
+2025-11-09 - 2.2.0.1_stable_2025-11-09
+==========
+This is a minor patch release to fix some issues uncovered with the latest stable release.
+
+# Changes from 2.2.0.0 to 2.2.0.1
+- Report remote filenames on failures
+- Fixed issues with timeouts on MSGraph-based backends (OneDrive and others)
+- Fixed base-href placement for better proxy support, thanks @peloyeje
+- Fixed an issue with not parsing enums with multiple values (aka flags)
+- Clear warnings for configuration issues, if the issues are resolved
+- Better detection of valid S3 hostnames
+- Showing assembly version in version number
+- Marked `--send-mail-password` as a password setting
+- Improved WebDAV parsing logic for more servers
+- Made pCloud options visible
+- Added option to disable remote control while being connected to console
+- Fixed a retry issue with sync-tool
+
+## Changes in user interface from 2.2.0.0 to 2.2.0.1
+- Added support for picking power-mode provider
+- Fixed issues with filters
+- Fixed styling of some buttons
+- Fixed issue with "Test connection" not offering to fix know issues
+- Made the export tooltip optional
+- Fixed an issue with parsing the exclude attributes and file size
+- Improved some hint texts
+- Fixed support for showing durations that include days
+- The button to resume from paused state is now called "Resume"
+- Hide usage reporter options if this is disabled via environment variables
+- Show currently installed version on the settings page
+- Set user language on first load to avoid default English page
+- Added check when doing cross-OS restores
+- Prevent clicking on steps that cannot be clicked
+- Added password visibility toggle on main password
+- Added some improved views for emails and files
+- Fixed an issue with allowing uppercase and non-ASCII names in the folder path
+- Commandline UI now loads global settings
+- Very long error messages now introduce scrolling inside the popup
+- Show configured backups for restore first, then direct restore options
+- Added scrolling to source paths, which allows more than 25 sources to be added
+- Filejump is hidden as it is undergoing a migration
+- Sizes are now allowing bytes for precision
+- Incorrect volume size warning fixed
+- Added new console connect flow
+
+# Summary of changes from 2.1 to 2.2
+- New user interface
+- New backends: pCloud, Filen and SMB
+- New faster restore flow, use `--restore-legacy=true` to fall back
+- Installer signing keys are from Duplicat Inc
+- Remote sources: S3, IDrive, SSH, and CIFS
+- AWS and Azure blob storage cold storage support
+- Database downgrade tool is included
+- Local database updated to version 17
+- Settings database updated to version 9
+- Improved throttle calculations
+- Removed Sia backend and marked Mega as unsupported
+- All backends now have individual timeout settings
+- Updated location default location for storage folder
+- Securing the permissions on the storage folder
+- New file and folder enumeration logic
+- Timeout logic on all backend operations
+- Improved database validation and repair logic
+- ServerUtil can output JSON for script integration
+- Improved support for having Duplicati behind a proxy
+- Updated throttle logic, all streams share the throttle
+- Improved repair logic
+- VSS is automatically on if running on Windows with sufficient privileges
+- Improved backend test function
+- Ability to suppress warnings
+- Support for remotely provided reporting url and remotely managed backup configs
+- Added support for Google IAM on Google Drive
+
 2025-10-23 - 2.2.0.0_stable_2025-10-23
 ==========
 # About this release
