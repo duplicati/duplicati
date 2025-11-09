@@ -1,3 +1,61 @@
+2025-11-05 - 2.2.0.100_canary_2025-11-05
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+This version is a bugfix release for some issues discovered with the previous canary build and stable release.
+Some of the changes in this Canary will be applied to a new revised stable release.
+
+The changes in this version are mostly bugfixes and minor improvements that are not expected to cause issues.
+
+## Detailed list of changes:
+- Reporting remote filename on errors instead of temporary file
+- Added guards and fix for timeouts in MSGraph backend
+- Added guard against sending an unsupported header in remote control
+- Fixed href-base replacement, thanks @peloyeje
+- Fixed an error parsing flag-options (multiple option names in a single option)
+- Fixed an incorrect option name in release builder
+- Clear notifications on startup for issues that are resolved
+- Improved S3 hostname check to auto-prune trailing slashes
+- Show the assembly version in the version number
+- Made `--send-email-password` a password option so it is guarded
+- Added a dynamically adjusting deadlock timer for the restore flow
+- Improved parsing of WebDAV PROPFIND messages to cover more servers
+- Exposed options for pCloud that were previously not showed
+- Made the file-backend's `--use-move-for-put` option auto-disable streaming transfers
+- Fixed an issue with restoring from a config file that would fail if the backups were encrypted
+- Added option to disable remote control when connected to the console
+
+## ngclient changes:
+- Added support for picking the power-mode provider in settings
+- Fixed some issues with filters
+- Fixed some buttons that were missing styling
+- Fixed issue with Test function not asking to create folder
+- Fixed not showing tooltip to remember password when not encrypting exported file
+- Fixed issues with parsing the exclude attributes and exclude by file size
+- Improved hint texts on start page to be less cloud-oriented
+- Correctly show duration if it takes over 24h
+- Renamed the "Start" button to "Resume" when the server is paused
+- No longer showing the usage reporter option if this is disabled by environment variables
+- The settings page now shows the currently installed version
+- Better detection of users language on initial load
+- Add a warning when doing cross-OS restores
+- Toggled some steps as disabled when clicking them would not result in a working flow
+- Added password visibility toggle on login page
+- Improved advanced options view to show file pickers and email parsers
+- Improved the display of the warning when typing a custom destination URL
+- Fixed some issues with the URL parsing, especially making it case-preserving and fixing Rclone
+- Using the Commandline UI now includes the global advanced settings
+- Very long error messages no longer overflow the screen but gets scrollable instead
+- Changed order of options on the restore overview page to nudge towards using configured backups
+- Added scrolling to source paths when entering more than 25 sources
+- Hiding FileJump destination due to a pending migration
+- Sizes can again be chosen in bytes, which also fixes the wrong warning displayed on the volume size picker
+- Updated localization, thanks to all translators
+- Added a new connection link that shows the console connection status
+- Updated naming for the console connection to be more consistent
+- Hide connection options when connecting remotely
+
 2025-10-10 - 2.1.1.105_canary_2025-10-10
 ==========
 This release is a canary release intended to be used for testing.
