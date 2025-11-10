@@ -36,7 +36,7 @@ jobs:
           dotnet test --no-build --verbosity minimal --filter "Category!=Integration" --collect:"XPlat Code Coverage" --results-directory "$GITHUB_WORKSPACE/TestResults/unit" Duplicati.sln
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ${{ github.workspace }}/TestResults/integration/**/coverage.cobertura.xml
@@ -71,7 +71,7 @@ jobs:
           dotnet test --no-build --verbosity minimal --filter "Category=Integration" --collect:"XPlat Code Coverage" --results-directory "$GITHUB_WORKSPACE/TestResults/integration" Duplicati.sln
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ${{ github.workspace }}/TestResults/integration/**/coverage.cobertura.xml
