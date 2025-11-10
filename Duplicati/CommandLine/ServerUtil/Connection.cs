@@ -434,6 +434,33 @@ public class Connection
     }
 
     /// <summary>
+    /// Gets a backup's most recent log status by backup ID
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <returns>The status of the most recent backup log</returns>
+    public async Task<string> GetBackupStatus(string backupId)
+    {
+        var response = await client.GetAsync($"backup/{Uri.EscapeDataString(backupId)}/log");
+        await EnsureSuccessStatusCodeWithParsing(response);
+
+        var parsedLogs = await response.Content.ReadFromJsonAsync<List<Dictionary<string, object>>>()
+            ?? throw new UserReportedException("Failed to parse response");
+        if (parsedLogs.Count < 1)
+        {
+            return "No log generated";
+        }
+        try
+        {
+            var lastLogResultString = ((JsonElement)parsedLogs[0]["Message"]).GetString();
+            var lastLogResult = JsonSerializer.Deserialize<JsonElement>(lastLogResultString);
+            return lastLogResult.GetProperty("ParsedResult").ToString();
+        } catch
+        {
+            return "Failed to parse backup log";
+        }
+    }
+
+    /// <summary>
     /// Runs a backup
     /// </summary>
     /// <param name="backupId">The ID of the backup</param>

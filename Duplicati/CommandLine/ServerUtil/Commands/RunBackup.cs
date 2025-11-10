@@ -73,9 +73,9 @@ public static class RunBackup
                     if (!quiet)
                         output.AppendConsoleMessage($"[{DateTime.Now}]: {msg}");
                 });
-
+                var response = await connection.GetBackupStatus(matchingBackup.ID);
                 if (!quiet)
-                    output.AppendConsoleMessage("Backup finished");
+                    output.AppendConsoleMessage("Backup status: " + response);
             }
             output.SetResult(true);
         }));
