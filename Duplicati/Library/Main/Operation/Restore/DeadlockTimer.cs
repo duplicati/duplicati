@@ -52,7 +52,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Five minutes in milliseconds.
         /// </summary>
-        private static readonly int five_minutes_ms = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
+        public static int initial_threshold = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
         /// <summary>
         /// Cancellation token for stopping the deadlock timer.
         /// </summary>
@@ -61,7 +61,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// Maximum processing time (in milliseconds) recorded for any block
         /// request.
         /// </summary>
-        public static int MaxProcessingTime = five_minutes_ms;
+        public static int MaxProcessingTime = initial_threshold;
 
         /// <summary>
         /// Runs the deadlock timer process. It runs every second and updates
@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     int decompress = VolumeDecompressor.MaxProcessingTimes.Max();
 
                     MaxProcessingTime = Math.Max(
-                        five_minutes_ms,
+                        initial_threshold,
                         (download + decrypt + decompress) * 2
                     );
                 }

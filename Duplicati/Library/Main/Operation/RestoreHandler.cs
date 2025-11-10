@@ -349,6 +349,8 @@ namespace Duplicati.Library.Main.Operation
 
             // Configure channels and process parameters
             Restore.Channels channels = new(m_options);
+            // Set the deadlock timer threshold to 1 minute per 10 MB of volume size
+            Restore.DeadlockTimer.initial_threshold = (int)TimeSpan.FromMinutes(1).TotalMilliseconds * Math.Max(1, (int)(m_options.VolumeSize / (10 * 1024 * 1024)));
             Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
             Restore.VolumeDownloader.MaxProcessingTimes = new int[m_options.RestoreVolumeDownloaders];
             Restore.VolumeDecryptor.MaxProcessingTimes = new int[m_options.RestoreVolumeDecryptors];
