@@ -14,6 +14,7 @@
     <ProjectReference Include="..\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj" />
     <ProjectReference Include="..\Backend\Box\Duplicati.Library.Backend.Box.csproj" />
     <ProjectReference Include="..\Backend\SMB\Duplicati.Library.Backend.SMB.csproj" />
+    <ProjectReference Include="..\Backend\Duplicati\Duplicati.Library.Backend.Duplicati.csproj" />
     <ProjectReference Include="..\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj" />
     <ProjectReference Include="..\Backend\File\Duplicati.Library.Backend.File.csproj" />
     <ProjectReference Include="..\Backend\FTP\Duplicati.Library.Backend.FTP.csproj" />
