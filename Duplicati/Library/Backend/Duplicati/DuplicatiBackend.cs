@@ -19,7 +19,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend;
@@ -28,6 +30,10 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 {
     //
     // Constants
+    //
+    private const string AUTH_API_KEY_OPTION = "duplicati-auth-apikey";
+    private const string AUTH_ORG_ID_OPTION = "duplicati-auth-orgid";
+    private const string BACKUP_ID_OPTION = "duplicati-backup-id";
 
     //
     // Fields
@@ -35,18 +41,37 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     public string DisplayName => Strings.DuplicatiBackend.DisplayName;
     public string ProtocolKey => "duplicati";
     public bool SupportsStreaming => true;
-    private readonly HttpClient _client;
     public string Description => Strings.DuplicatiBackend.Description;
+
+    private readonly string _api_key;
+    private readonly string _org_id;
+    private readonly HttpClient _client;
+    private string BackupId { get; set; } = string.Empty;
 
     //
     // Constructors
     //
+    public DuplicatiBackend()
+    {
+        // Parameterless constructor for dynamic loading
+        _api_key = string.Empty;
+        _org_id = string.Empty;
+        _client = new HttpClient();
+    }
+
     public DuplicatiBackend(string url, Dictionary<string, string?> options)
     {
+        var uri = new UriBuilder(url)
+        {
+            Scheme = "https"
+        };
         _client = new HttpClient
         {
-            BaseAddress = new Uri(url),
+            BaseAddress = uri.Uri,
         };
+        BackupId = options.GetValueOrDefault(BACKUP_ID_OPTION) ?? string.Empty;
+        _api_key = options.GetValueOrDefault(AUTH_API_KEY_OPTION) ?? string.Empty;
+        _org_id = options.GetValueOrDefault(AUTH_ORG_ID_OPTION) ?? string.Empty;
     }
 
     //
@@ -60,55 +85,108 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     //
     // Helper methods
     //
+    private HttpRequestMessage CreateRequest(HttpMethod method, string path)
+    {
+        var request = new HttpRequestMessage(method, path);
+        request.Headers.Add("Authorization", _api_key);
+        request.Headers.Add("X-Org-Id", _org_id);
+        request.Headers.Add("X-Backup-Id", BackupId);
+        return request;
+    }
+
+    private record RenameRequest(
+        string Source,
+        string Destination
+    );
 
     //
     // IBackend methods
     //
     public async Task CreateFolderAsync(CancellationToken cancelToken)
     {
+        var request = CreateRequest(HttpMethod.Get, "/createfolder");
 
+        var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
     }
 
     public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
     {
+        var request = CreateRequest(HttpMethod.Get, $"/delete/{remotename}");
 
+        var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
     }
 
     public async Task GetAsync(string remotename, Stream destination, CancellationToken token)
     {
+        var request = CreateRequest(HttpMethod.Get, $"/get/{remotename}");
 
+        var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        await using var responseStream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
+        await responseStream.CopyToAsync(destination, token).ConfigureAwait(false);
     }
 
     public Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
     {
-
+        return GetAsync(remotename, File.OpenWrite(filename), cancelToken);
     }
 
     public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
-    public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
+    public async Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
     {
+        var request = CreateRequest(HttpMethod.Get, "/quota");
 
+        var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<QuotaInfo>(cancellationToken: cancelToken).ConfigureAwait(false);
     }
 
     public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
     {
+        var request = CreateRequest(HttpMethod.Get, "/list");
 
+        var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        var entries = await response.Content.ReadFromJsonAsync<List<FileEntry>>(cancellationToken: cancelToken).ConfigureAwait(false) ?? [];
+
+        foreach (var entry in entries)
+        {
+            yield return entry;
+        }
     }
 
     public async Task PutAsync(string remotename, Stream source, CancellationToken token)
     {
+        var request = CreateRequest(HttpMethod.Post, $"/put/{remotename}");
+        request.Content = new StreamContent(source);
 
+        var response = await _client.SendAsync(request, token).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
     }
 
     public async Task PutAsync(string targetFilename, string sourceFilePath, CancellationToken cancelToken)
     {
-
+        await using var fileStream = File.OpenRead(sourceFilePath);
+        await PutAsync(targetFilename, fileStream, cancelToken).ConfigureAwait(false);
     }
 
     public Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
     {
+        var request = CreateRequest(HttpMethod.Post, "/rename");
+        var renameRequest = new RenameRequest(oldname, newname);
+        request.Content = JsonContent.Create(renameRequest);
 
+        return _client.SendAsync(request, cancellationToken).ContinueWith(task =>
+        {
+            var response = task.Result;
+            response.EnsureSuccessStatusCode();
+        }, cancellationToken);
     }
 
     public IList<ICommandLineArgument> SupportedCommands
@@ -121,9 +199,10 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         }
     }
 
-    public Task TestAsync(CancellationToken cancelToken)
+    public async Task TestAsync(CancellationToken cancelToken)
     {
-
+        // No specific test operation, just ensure we can list
+        await ListAsync(cancelToken).ToListAsync(cancelToken);
     }
 
 }
