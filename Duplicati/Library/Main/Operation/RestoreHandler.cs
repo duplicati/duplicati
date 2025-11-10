@@ -352,12 +352,8 @@ namespace Duplicati.Library.Main.Operation
             // Set the deadlock timer threshold to 1 minute per 10 MB of volume size
             Restore.DeadlockTimer.initial_threshold = (int)TimeSpan.FromMinutes(1).TotalMilliseconds * Math.Max(1, (int)(m_options.VolumeSize / (10 * 1024 * 1024)));
             Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
-            Restore.VolumeDownloader.MaxProcessingTimes = new int[m_options.RestoreVolumeDownloaders];
-            Restore.VolumeDecryptor.MaxProcessingTimes = new int[m_options.RestoreVolumeDecryptors];
-            Restore.VolumeDecompressor.MaxProcessingTimes = new int[m_options.RestoreVolumeDecompressors];
 
             // Create the process network
-            var deadlock_timer = Restore.DeadlockTimer.Run();
             var filelister = Restore.FileLister.Run(channels, database, m_options, m_result);
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
             var blockmanager = Restore.BlockManager.Run(channels, database, fileprocessor_requests, fileprocessor_responses, m_options, m_result);
@@ -371,7 +367,6 @@ namespace Duplicati.Library.Main.Operation
             // Wait for the network to complete
             Task[] all =
                 [
-                    deadlock_timer,
                     filelister,
                     ..fileprocessors,
                     blockmanager,
@@ -397,11 +392,6 @@ namespace Duplicati.Library.Main.Operation
                 await Task.WhenAll(all).ConfigureAwait(false);
                 kill_updater.Cancel();
             }
-
-            // Cleanup the process Id counters
-            Restore.VolumeDownloader.IdCounter = -1;
-            Restore.VolumeDecryptor.IdCounter = -1;
-            Restore.VolumeDecompressor.IdCounter = -1;
 
             await database.Transaction
                 .CommitAsync("CommitAfterRestore", token: cancellationToken)
