@@ -198,17 +198,17 @@ msgstr ""
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:200
-#: scripts/controllers/AppController.js:54
-#: scripts/controllers/AppController.js:70
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
 #: scripts/controllers/DeleteController.js:67
-#: scripts/controllers/EditBackupController.js:348
-#: scripts/controllers/EditBackupController.js:363
-#: scripts/controllers/EditBackupController.js:397
-#: scripts/controllers/EditBackupController.js:406
-#: scripts/controllers/EditBackupController.js:433
-#: scripts/controllers/EditBackupController.js:454
-#: scripts/controllers/EditBackupController.js:99
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:352
+#: scripts/controllers/EditBackupController.js:367
+#: scripts/controllers/EditBackupController.js:401
+#: scripts/controllers/EditBackupController.js:410
+#: scripts/controllers/EditBackupController.js:437
+#: scripts/controllers/EditBackupController.js:458
 #: scripts/controllers/ExportController.js:13
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
@@ -264,7 +264,7 @@ msgstr "명령줄 …"
 msgid "Compact now"
 msgstr "최적화 실행"
 
-#: scripts/directives/sourceFolderPicker.js:539
+#: scripts/directives/sourceFolderPicker.js:582
 msgid "Computer"
 msgstr "내 PC"
 
@@ -300,8 +300,8 @@ msgstr "서버에 연결하는 중 …"
 msgid "Connection lost"
 msgstr "연결이 끊어짐"
 
-#: scripts/directives/backupEditUri.js:50
-#: scripts/directives/backupEditUri.js:53
+#: scripts/directives/backupEditUri.js:51
+#: scripts/directives/backupEditUri.js:54
 msgid "Connection worked!"
 msgstr "연결되었습니다!"
 
@@ -333,7 +333,7 @@ msgstr "충돌만"
 msgid "Create bug report …"
 msgstr "버그 리포트 생성 …"
 
-#: scripts/directives/backupEditUri.js:130
+#: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
 msgstr "폴더를 생성하시겠습니까?"
 
@@ -550,9 +550,9 @@ msgstr "대상 경로 입력"
 #: scripts/controllers/RestoreController.js:90
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
-#: scripts/directives/backupEditUri.js:142
-#: scripts/directives/backupEditUri.js:163
-#: scripts/directives/backupEditUri.js:197
+#: scripts/directives/backupEditUri.js:143
+#: scripts/directives/backupEditUri.js:164
+#: scripts/directives/backupEditUri.js:198
 #: scripts/directives/notificationArea.js:41
 #: scripts/directives/notificationArea.js:43
 #: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
@@ -813,10 +813,6 @@ msgstr "최대 다운로드 속도"
 msgid "Max upload speed"
 msgstr "최대 업로드 속도"
 
-#: scripts/directives/sourceFolderPicker.js:629
-msgid "Microsoft SQL Database:"
-msgstr "Microsoft SQL Database:"
-
 #: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
 #: templates/settings.html:90
 msgid "Minutes"
@@ -873,18 +869,18 @@ msgstr "다음 예약 작업:"
 msgid "Next time"
 msgstr "시작"
 
-#: scripts/controllers/AppController.js:189
+#: scripts/controllers/AppController.js:193
 #: scripts/controllers/DeleteController.js:99
-#: scripts/controllers/EditBackupController.js:157
-#: scripts/controllers/EditBackupController.js:167
-#: scripts/controllers/EditBackupController.js:454
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
 #: scripts/controllers/HomeController.js:22
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:130
-#: scripts/directives/backupEditUri.js:172
-#: scripts/directives/backupEditUri.js:86
+#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:173
+#: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -892,7 +888,7 @@ msgstr "시작"
 msgid "No"
 msgstr "아니오"
 
-#: scripts/controllers/EditBackupController.js:433 templates/addoredit.html:49
+#: scripts/controllers/EditBackupController.js:437 templates/addoredit.html:49
 msgid "No encryption"
 msgstr "암호화 없음"
 
@@ -916,11 +912,11 @@ msgstr "비활성화"
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr "아무 것도 삭제되지 않습니다. 백업 크기는 변경될 때마다 커집니다."
 
-#: scripts/controllers/AppController.js:200
-#: scripts/controllers/AppController.js:54
-#: scripts/controllers/AppController.js:70
-#: scripts/controllers/EditBackupController.js:107
-#: scripts/controllers/EditBackupController.js:99
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:111
 #: scripts/controllers/RestoreDirectController.js:24
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/DialogService.js:28 scripts/services/DialogService.js:50
@@ -999,7 +995,7 @@ msgstr "일시 중지"
 msgid "Pause after startup or hibernation"
 msgstr "부팅 또는 최대 절전 모드 후 일시 중지"
 
-#: scripts/controllers/AppController.js:52
+#: scripts/controllers/AppController.js:56
 msgid "Pause options"
 msgstr "일시 중지 옵션"
 
@@ -1213,7 +1209,7 @@ msgstr "스마트 백업 보존"
 msgid "Source Data"
 msgstr "원본 데이터"
 
-#: scripts/directives/sourceFolderPicker.js:545 templates/addoredit.html:124
+#: scripts/directives/sourceFolderPicker.js:588 templates/addoredit.html:124
 msgid "Source data"
 msgstr "원본 데이터"
 
@@ -1258,8 +1254,8 @@ msgstr "저장소 유형"
 msgid "Strong"
 msgstr "강한"
 
-#: scripts/directives/backupEditUri.js:50
-#: scripts/directives/backupEditUri.js:53
+#: scripts/directives/backupEditUri.js:51
+#: scripts/directives/backupEditUri.js:54
 msgid "Success"
 msgstr "성공"
 
@@ -1320,7 +1316,7 @@ msgstr "이번 달"
 msgid "This week"
 msgstr "이번 주"
 
-#: scripts/controllers/AppController.js:68
+#: scripts/controllers/AppController.js:72
 msgid "Throttle settings"
 msgstr "속도 제한 설정"
 
@@ -1356,7 +1352,7 @@ msgstr "사용 통계, 경고, 오류 및 충돌"
 msgid "Useless"
 msgstr "쓸모없는"
 
-#: scripts/directives/sourceFolderPicker.js:532
+#: scripts/directives/sourceFolderPicker.js:575
 msgid "User data"
 msgstr "사용자 데이터"
 
@@ -1435,18 +1431,18 @@ msgstr "파일을 어디에 복원하시겠습니까?"
 msgid "Years"
 msgstr "년"
 
-#: scripts/controllers/AppController.js:189
+#: scripts/controllers/AppController.js:193
 #: scripts/controllers/DeleteController.js:99
-#: scripts/controllers/EditBackupController.js:157
-#: scripts/controllers/EditBackupController.js:167
-#: scripts/controllers/EditBackupController.js:454
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
 #: scripts/controllers/HomeController.js:22
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:130
-#: scripts/directives/backupEditUri.js:172
-#: scripts/directives/backupEditUri.js:86
+#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:173
+#: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -1454,7 +1450,7 @@ msgstr "년"
 msgid "Yes"
 msgstr "예"
 
-#: scripts/controllers/EditBackupController.js:363
+#: scripts/controllers/EditBackupController.js:367
 msgid "Yes, I have stored the passphrase safely"
 msgstr "예, 암호를 안전하게 저장했습니다"
 
@@ -1462,7 +1458,7 @@ msgstr "예, 암호를 안전하게 저장했습니다"
 msgid "Yes, I understand the risk"
 msgstr "네, 위험을 이해했습니다."
 
-#: scripts/controllers/EditBackupController.js:406
+#: scripts/controllers/EditBackupController.js:410
 msgid "Yes, I'm brave!"
 msgstr "네,저는 용감합니다!"
 
@@ -1474,7 +1470,7 @@ msgstr "어제"
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "현재 사용 중: {{appname}} {{version}}"
 
-#: scripts/controllers/EditBackupController.js:243
+#: scripts/controllers/EditBackupController.js:247
 msgid "You must enter a name for the backup"
 msgstr "백업 이름을 입력해야 합니다"
 
