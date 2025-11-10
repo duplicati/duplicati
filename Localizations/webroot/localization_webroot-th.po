@@ -87,13 +87,9 @@ msgstr "ตัวเลือกขั้นสูง:"
 msgid "Advanced:"
 msgstr "ขั้นสูง:"
 
-#: scripts/directives/sourceFolderPicker.js:581
+#: scripts/directives/sourceFolderPicker.js:279
 msgid "All Hyper-V Machines"
 msgstr "เครื่อง Hyper-V ทั้งหมด"
-
-#: scripts/directives/sourceFolderPicker.js:613
-msgid "All Microsoft SQL Databases"
-msgstr "ฐานข้อมูล Microsoft SQL ทั้งหมด"
 
 #: templates/settings.html:20
 msgid "Allow remote access (requires restart)"
@@ -147,17 +143,17 @@ msgstr "ดู"
 msgid "Browser default"
 msgstr "ค่ามาตรฐานของเบราว์เซอร์"
 
-#: scripts/controllers/AppController.js:200
-#: scripts/controllers/AppController.js:54
-#: scripts/controllers/AppController.js:70
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
 #: scripts/controllers/DeleteController.js:67
-#: scripts/controllers/EditBackupController.js:348
-#: scripts/controllers/EditBackupController.js:363
-#: scripts/controllers/EditBackupController.js:397
-#: scripts/controllers/EditBackupController.js:406
-#: scripts/controllers/EditBackupController.js:433
-#: scripts/controllers/EditBackupController.js:454
-#: scripts/controllers/EditBackupController.js:99
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:352
+#: scripts/controllers/EditBackupController.js:367
+#: scripts/controllers/EditBackupController.js:401
+#: scripts/controllers/EditBackupController.js:410
+#: scripts/controllers/EditBackupController.js:437
+#: scripts/controllers/EditBackupController.js:458
 #: scripts/controllers/ExportController.js:13
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
@@ -185,7 +181,7 @@ msgstr "การตรวจสอบล้มเหลว:"
 msgid "Check for updates now"
 msgstr "ตรวจหาการปรับปรุงตอนนี้"
 
-#: scripts/directives/sourceFolderPicker.js:539
+#: scripts/directives/sourceFolderPicker.js:582
 msgid "Computer"
 msgstr "คอมพิวเตอร์"
 
@@ -227,7 +223,7 @@ msgstr "คัดลอกแล้ว!"
 msgid "Copy Destination URL to Clipboard"
 msgstr "คัดลอก URL ปลายทางไปยังคลิปบอร์ด"
 
-#: scripts/directives/backupEditUri.js:130
+#: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
 msgstr "สร้างโฟลเดอร์?"
 
@@ -310,11 +306,11 @@ msgstr "เข้ารหัสลับแฟ้ม"
 msgid "Encryption"
 msgstr "การเข้ารหัสลับ"
 
-#: scripts/controllers/EditBackupController.js:406
+#: scripts/controllers/EditBackupController.js:410
 msgid "Encryption changed"
 msgstr "การเข้ารหัสลับถูกเปลี่ยนแล้ว"
 
-#: scripts/controllers/EditBackupController.js:99
+#: scripts/controllers/EditBackupController.js:103
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
 msgstr "ใส่ URL"
@@ -342,9 +338,9 @@ msgstr "ใส่วลีรหัสผ่านเข้ารหัสลั
 #: scripts/controllers/RestoreController.js:90
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
-#: scripts/directives/backupEditUri.js:142
-#: scripts/directives/backupEditUri.js:163
-#: scripts/directives/backupEditUri.js:197
+#: scripts/directives/backupEditUri.js:143
+#: scripts/directives/backupEditUri.js:164
+#: scripts/directives/backupEditUri.js:198
 #: scripts/directives/notificationArea.js:41
 #: scripts/directives/notificationArea.js:43
 #: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
@@ -492,7 +488,7 @@ msgstr "นำเข้าการตั้งค่าข้อมูลสำ
 msgid "Import from a file"
 msgstr "นำเข้าจากแฟ้ม"
 
-#: scripts/controllers/EditBackupController.js:167
+#: scripts/controllers/EditBackupController.js:171
 msgid "Include a file?"
 msgstr "นับรวมแฟ้ม?"
 
@@ -575,18 +571,18 @@ msgstr "เดือน"
 msgid "Next"
 msgstr "ถัดไป"
 
-#: scripts/controllers/AppController.js:189
+#: scripts/controllers/AppController.js:193
 #: scripts/controllers/DeleteController.js:99
-#: scripts/controllers/EditBackupController.js:157
-#: scripts/controllers/EditBackupController.js:167
-#: scripts/controllers/EditBackupController.js:454
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
 #: scripts/controllers/HomeController.js:22
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:130
-#: scripts/directives/backupEditUri.js:172
-#: scripts/directives/backupEditUri.js:86
+#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:173
+#: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -594,15 +590,15 @@ msgstr "ถัดไป"
 msgid "No"
 msgstr "ไม่"
 
-#: scripts/controllers/EditBackupController.js:433 templates/addoredit.html:49
+#: scripts/controllers/EditBackupController.js:437 templates/addoredit.html:49
 msgid "No encryption"
 msgstr "ไม่เข้ารหัสลับ"
 
-#: scripts/controllers/AppController.js:200
-#: scripts/controllers/AppController.js:54
-#: scripts/controllers/AppController.js:70
-#: scripts/controllers/EditBackupController.js:107
-#: scripts/controllers/EditBackupController.js:99
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:111
 #: scripts/controllers/RestoreDirectController.js:24
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/DialogService.js:28 scripts/services/DialogService.js:50
@@ -642,11 +638,11 @@ msgstr "วลีรหัสผ่าน"
 msgid "Passphrase (if encrypted)"
 msgstr "วลีรหัสผ่าน (ถ้าเข้ารหัสลับ)"
 
-#: scripts/controllers/EditBackupController.js:397
+#: scripts/controllers/EditBackupController.js:401
 msgid "Passphrase changed"
 msgstr "เปลี่ยนวลีรหัสผ่านแล้ว"
 
-#: scripts/controllers/EditBackupController.js:256
+#: scripts/controllers/EditBackupController.js:260
 msgid "Passphrases are not matching"
 msgstr "วลีรหัสผ่านไม่ตรงกัน"
 

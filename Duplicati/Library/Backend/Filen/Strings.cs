@@ -26,7 +26,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string Description => LC.L(@"This backend can read and write data to Filen.io using its REST protocol. Supported format is ""filen://folder/subfolder"".");
         public static string DisplayName => LC.L(@"Filen.io");
         public static string TwoFactorShort => LC.L(@"Optional 2-factor code");
-        public static string TwoFactorLong => LC.L(@"The 2-factor code to use for authentication, leave empty if the account is not MFA protected. Not that a new code must be provided by the user for each authentication attempt.");
+        public static string TwoFactorLong => LC.L(@"The 2-factor code to use for authentication, leave empty if the account is not MFA protected. Note that a new code must be provided by the user for each authentication attempt.");
         public static string MoveToTrashShort => LC.L(@"Move to trash");
         public static string MoveToTrashLong => LC.L(@"If set, files will be moved to the trash instead of being deleted permanently.");
     }

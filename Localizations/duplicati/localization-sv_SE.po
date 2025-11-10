@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-07 15:56+0200\n"
+"POT-Creation-Date: 2025-11-10 11:48+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: axez85 <dr@davidaslan.se>, 2025\n"
 "Language-Team: Swedish (Sweden) (https://app.transifex.com/duplicati/teams/67655/sv_SE/)\n"
@@ -188,12 +188,12 @@ msgstr "Konfigurera vilken SSL-policy som används då kryptering är aktiverad"
 msgid "Google Cloud Storage"
 msgstr "Google Cloud Storage"
 
-#: Library/Backend/GoogleServices/Strings.cs:44
+#: Library/Backend/GoogleServices/Strings.cs:48
 msgid "Google Drive"
 msgstr "Google Drive"
 
-#: Library/Backend/GoogleServices/Strings.cs:46
-#: Library/Backend/File/Strings.cs:40 Library/Compression/Strings.cs:38
+#: Library/Backend/GoogleServices/Strings.cs:50
+#: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Filen kan inte hittas: {0}"
@@ -468,19 +468,19 @@ msgstr ""
 "Porten som webbservern lyssnar på. Flera värden kan anges med ett komma "
 "emellan."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:264
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:269
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Ställ in tiden efter vilken loggdata ska rensas från databasen."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:265
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:270
 msgid "Clean up old log data"
 msgstr "Ta bort gammal data från loggarna"
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:96
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:97
 msgid "Temporary storage folder"
 msgstr "Mapp för temporär lagring"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:121
+#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:127
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Servern har startat och lyssnar på {0}, port {1}"
@@ -512,47 +512,47 @@ msgstr "Inga källmallar angivna för backup"
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Ogiltig sökväg: \"{0}\" ({1})"
 
-#: Library/Main/Strings.cs:58
+#: Library/Main/Strings.cs:59
 msgid "Restore to another folder"
 msgstr "Återställ till en annan mapp"
 
-#: Library/Main/Strings.cs:62
+#: Library/Main/Strings.cs:63
 msgid "Max number of kilobytes to download pr. second"
 msgstr "Maximalt antal kilobyte att ladda ned per sekund"
 
-#: Library/Main/Strings.cs:70
+#: Library/Main/Strings.cs:71
 msgid "Disable encryption"
 msgstr "Inaktivera kryptering"
 
-#: Library/Main/Strings.cs:74
+#: Library/Main/Strings.cs:75
 msgid "Passphrase used to encrypt backups"
 msgstr "Lösenordsfras för att kryptera säkerhetskopior"
 
-#: Library/Main/Strings.cs:80
+#: Library/Main/Strings.cs:81
 msgid "Show all versions"
 msgstr "Visa alla versioner"
 
-#: Library/Main/Strings.cs:84
+#: Library/Main/Strings.cs:85
 msgid "Show folder contents"
 msgstr "Vissa mappens innehåll"
 
-#: Library/Main/Strings.cs:86
+#: Library/Main/Strings.cs:87
 msgid "Time to wait between retries"
 msgstr "Tiden att vänta mellan varje försök"
 
-#: Library/Main/Strings.cs:101
+#: Library/Main/Strings.cs:102
 msgid "Limit the size of the volumes"
 msgstr "Begränsa storleken på volymerna"
 
-#: Library/Main/Strings.cs:109
+#: Library/Main/Strings.cs:110
 msgid "Select what module to use for compression"
 msgstr "Välj vilken modul som ska användas för komprimering"
 
-#: Library/Main/Strings.cs:111
+#: Library/Main/Strings.cs:112
 msgid "Select what module to use for encryption"
 msgstr "Välj vilken modul som ska användas för kryptering"
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:216
 msgid "Use local file data when restoring"
 msgstr "Använd lokala data vid återställning"
 

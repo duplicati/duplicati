@@ -14,7 +14,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-07 15:56+0200\n"
+"POT-Creation-Date: 2025-11-10 11:48+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Leonte Cristian <leontecristian86@gmail.com>, 2024\n"
 "Language-Team: Romanian (https://app.transifex.com/duplicati/teams/67655/ro/)\n"
@@ -382,12 +382,12 @@ msgstr ""
 "Această opțiune este utilizată numai atunci când creați galeți noi. Utilizați această opțiune pentru a schimba tipul de spațiu de stocare al găleții. Încărcăturile și funcționalitatea variază în funcție de clasa de depozitare a cupelor. Clase de stocare cunoscute:\n"
 "{0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:44
+#: Library/Backend/GoogleServices/Strings.cs:48
 msgid "Google Drive"
 msgstr "Disc Google"
 
-#: Library/Backend/GoogleServices/Strings.cs:46
-#: Library/Backend/File/Strings.cs:40 Library/Compression/Strings.cs:38
+#: Library/Backend/GoogleServices/Strings.cs:50
+#: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Fișierul nu a fost găsit: {0}"
@@ -900,16 +900,16 @@ msgstr ""
 "\"orice\" înseamnă orice interfață. Valoarea specială \"loopback\" înseamnă "
 "adaptorul loopback."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:264
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:269
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
 "Setați perioada după care datele din jurnal vor fi epurate din baza de date."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:265
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:270
 msgid "Clean up old log data"
 msgstr "Curăță datele vechi ale jurnalului"
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:96
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:97
 msgid "Temporary storage folder"
 msgstr "Dosarul de stocare temporară"
 
@@ -1021,7 +1021,7 @@ msgstr "Operația {0} a fost finalizată"
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Cale nevalidă: \"{0}\" ({1})"
 
-#: Library/Main/Strings.cs:42
+#: Library/Main/Strings.cs:43
 #, csharp-format
 msgid ""
 "Failed to apply 'force-locale' setting. Please try to update .NET-Framework."
@@ -1030,21 +1030,21 @@ msgstr ""
 "Nu s-a aplicat setarea \"force-locale\". Încercați să actualizați .NET-"
 "Framework. Excepția a fost: \"{0}\""
 
-#: Library/Main/Strings.cs:43
+#: Library/Main/Strings.cs:44
 #, csharp-format
 msgid "The source {0} uses an invalid volume name, aborting backup"
 msgstr ""
 "Sursa {0} utilizează un nume de volum nevalid, care întrerupe copierea de "
 "rezervă"
 
-#: Library/Main/Strings.cs:44
+#: Library/Main/Strings.cs:45
 #, csharp-format
 msgid ""
 "The source {0} is on volume {1}, which could not be found, aborting backup"
 msgstr ""
 "Sursa {0} este pe volumul {1}, care nu a putut fi găsit, avortând backup"
 
-#: Library/Main/Strings.cs:53
+#: Library/Main/Strings.cs:54
 msgid ""
 "A string used to prefix the filenames of the remote volumes, can be used to "
 "store multiple backups in the same remote folder. The prefix cannot contain "
@@ -1057,19 +1057,19 @@ msgstr ""
 "poate conține toate celelalte caractere permise de spațiul de stocare de la "
 "distanță."
 
-#: Library/Main/Strings.cs:54
+#: Library/Main/Strings.cs:55
 msgid "Remote filename prefix"
 msgstr "Nume prefix de la distanță"
 
-#: Library/Main/Strings.cs:56
+#: Library/Main/Strings.cs:57
 msgid "Disable checks based on file time"
 msgstr "Dezactivați verificările în funcție de timpul fișierelor"
 
-#: Library/Main/Strings.cs:58
+#: Library/Main/Strings.cs:59
 msgid "Restore to another folder"
 msgstr "Reveniți la alt dosar"
 
-#: Library/Main/Strings.cs:59
+#: Library/Main/Strings.cs:60
 msgid ""
 "Allow system to enter sleep power modes for inactivity during backup/restore"
 " operations (Windows/OSX only)"
@@ -1078,7 +1078,7 @@ msgstr ""
 "pentru inactivitate în timpul operațiilor de backup / restaurare (numai "
 "pentru Windows / OSX)"
 
-#: Library/Main/Strings.cs:61
+#: Library/Main/Strings.cs:62
 msgid ""
 "By setting this value you can limit how much bandwidth Duplicati consumes "
 "for downloads. Setting this limit can make the backups take longer, but will"
@@ -1089,11 +1089,11 @@ msgstr ""
 "urile să dureze mai mult, dar vor face ca Duplicați să fie mai puțin "
 "invazive."
 
-#: Library/Main/Strings.cs:62
+#: Library/Main/Strings.cs:63
 msgid "Max number of kilobytes to download pr. second"
 msgstr "Număr maxim de kilobytes pentru a descărca pr. al doilea"
 
-#: Library/Main/Strings.cs:63
+#: Library/Main/Strings.cs:64
 msgid ""
 "By setting this value you can limit how much bandwidth Duplicati consumes "
 "for uploads. Setting this limit can make the backups take longer, but will "
@@ -1104,11 +1104,11 @@ msgstr ""
 "ca backup-urile să dureze mai mult, dar vor face ca Duplicați să fie mai "
 "puțin invazive."
 
-#: Library/Main/Strings.cs:64
+#: Library/Main/Strings.cs:65
 msgid "Max number of kilobytes to upload pr. second"
 msgstr "Numărul maxim de kilobyte pentru încărcarea pr. al doilea"
 
-#: Library/Main/Strings.cs:69
+#: Library/Main/Strings.cs:70
 msgid ""
 "If you store the backups on a local disk, and prefer that they are kept "
 "unencrypted, you can turn of encryption completely by using this switch."
@@ -1117,11 +1117,11 @@ msgstr ""
 "păstrate necriptate, puteți utiliza această opțiune pentru criptare "
 "completă."
 
-#: Library/Main/Strings.cs:70
+#: Library/Main/Strings.cs:71
 msgid "Disable encryption"
 msgstr "Dezactivați criptarea"
 
-#: Library/Main/Strings.cs:71
+#: Library/Main/Strings.cs:72
 msgid ""
 "If an upload or download fails, Duplicati will retry a number of times "
 "before failing. Use this to handle unstable network connections better."
@@ -1130,11 +1130,11 @@ msgstr ""
 "multe ori înainte de a nu reuși. Utilizați această opțiune pentru a gestiona"
 " mai bine conexiunile de rețea instabile."
 
-#: Library/Main/Strings.cs:72
+#: Library/Main/Strings.cs:73
 msgid "Number of times to retry a failed transmission"
 msgstr "Numărul de repetări a unei transmisiuni eșuate"
 
-#: Library/Main/Strings.cs:73
+#: Library/Main/Strings.cs:74
 msgid ""
 "Supply a passphrase that Duplicati will use to encrypt the backup volumes, "
 "making them unreadable without the passphrase. This variable can also be "
@@ -1145,19 +1145,19 @@ msgstr ""
 "variabilă poate fi furnizată și prin intermediul variabilei de mediu "
 "PASSPHRASE."
 
-#: Library/Main/Strings.cs:74
+#: Library/Main/Strings.cs:75
 msgid "Passphrase used to encrypt backups"
 msgstr "Frază de acces folosită pentru criptarea copiilor de rezervă"
 
-#: Library/Main/Strings.cs:76
+#: Library/Main/Strings.cs:77
 msgid "The time to list/restore files"
 msgstr "Timpul de afișare / restaurare a fișierelor"
 
-#: Library/Main/Strings.cs:78
+#: Library/Main/Strings.cs:79
 msgid "The version to list/restore files"
 msgstr "Versiunea pentru a lista / restaura fișiere"
 
-#: Library/Main/Strings.cs:79
+#: Library/Main/Strings.cs:80
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
@@ -1165,11 +1165,11 @@ msgstr ""
 "Când căutați fișiere, se caută numai cea mai recentă copie de rezervă. "
 "Utilizați această opțiune pentru a afișa și toate versiunile anterioare."
 
-#: Library/Main/Strings.cs:80
+#: Library/Main/Strings.cs:81
 msgid "Show all versions"
 msgstr "Afișați toate versiunile"
 
-#: Library/Main/Strings.cs:81
+#: Library/Main/Strings.cs:82
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the largest common prefix path."
@@ -1177,11 +1177,11 @@ msgstr ""
 "Când căutați fișiere, toate fișierele potrivite sunt returnate. Utilizați "
 "această opțiune pentru a returna numai cea mai mare cale de prefix comună."
 
-#: Library/Main/Strings.cs:82
+#: Library/Main/Strings.cs:83
 msgid "Show largest prefix"
 msgstr "Afișați cel mai mare prefix"
 
-#: Library/Main/Strings.cs:83
+#: Library/Main/Strings.cs:84
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
@@ -1190,11 +1190,11 @@ msgstr ""
 "această opțiune pentru a returna numai intrările găsite în directorul "
 "specificat ca filtru."
 
-#: Library/Main/Strings.cs:84
+#: Library/Main/Strings.cs:85
 msgid "Show folder contents"
 msgstr "Afișați conținutul folderului"
 
-#: Library/Main/Strings.cs:85
+#: Library/Main/Strings.cs:86
 msgid ""
 "After a failed transmission, Duplicati will wait a short period before "
 "attempting again. This is useful if the network drops out occasionally "
@@ -1204,15 +1204,15 @@ msgstr ""
 "de a încerca din nou. Acest lucru este util dacă rețeaua scade ocazional în "
 "timpul transmisiilor."
 
-#: Library/Main/Strings.cs:86
+#: Library/Main/Strings.cs:87
 msgid "Time to wait between retries"
 msgstr "Este timpul să așteptați între încercări"
 
-#: Library/Main/Strings.cs:90
+#: Library/Main/Strings.cs:91
 msgid "Set control files"
 msgstr "Setați fișiere de control"
 
-#: Library/Main/Strings.cs:93
+#: Library/Main/Strings.cs:94
 msgid ""
 "This option allows you to exclude files that are larger than the given "
 "value. Use this to prevent backups becoming extremely large."
@@ -1221,19 +1221,19 @@ msgstr ""
 "valoarea dată. Utilizați această opțiune pentru a preveni apariția unor "
 "copii de rezervă extrem de mari."
 
-#: Library/Main/Strings.cs:94
+#: Library/Main/Strings.cs:95
 msgid "Limit the size of files being backed up"
 msgstr "Limitați dimensiunea fișierelor care au fost salvate"
 
-#: Library/Main/Strings.cs:99
+#: Library/Main/Strings.cs:100
 msgid "Thread priority"
 msgstr "Prioritate de prioritate"
 
-#: Library/Main/Strings.cs:101
+#: Library/Main/Strings.cs:102
 msgid "Limit the size of the volumes"
 msgstr "Limitați dimensiunea volumelor"
 
-#: Library/Main/Strings.cs:108
+#: Library/Main/Strings.cs:109
 msgid ""
 "Duplicati supports pluggable compression modules. Use this option to select "
 "a module to use for compression. This is only applied when creating new "
@@ -1246,11 +1246,11 @@ msgstr ""
 "existent, numele fișierului este utilizat pentru a selecta modulul de "
 "comprimare."
 
-#: Library/Main/Strings.cs:109
+#: Library/Main/Strings.cs:110
 msgid "Select what module to use for compression"
 msgstr "Selectați ce modul să utilizați pentru comprimare"
 
-#: Library/Main/Strings.cs:110
+#: Library/Main/Strings.cs:111
 msgid ""
 "Duplicati supports pluggable encryption modules. Use this option to select a"
 " module to use for encryption. This is only applied when creating new "
@@ -1263,23 +1263,19 @@ msgstr ""
 "existent, numele fișierului este utilizat pentru a selecta modulul de "
 "criptare."
 
-#: Library/Main/Strings.cs:111
+#: Library/Main/Strings.cs:112
 msgid "Select what module to use for encryption"
 msgstr "Selectați ce modul să utilizați pentru criptare"
 
-#: Library/Main/Strings.cs:121
+#: Library/Main/Strings.cs:122
 msgid "The path where ready volumes are placed until uploaded"
 msgstr "Calea în care sunt plasate volumele pregătite până la încărcare"
 
-#: Library/Main/Strings.cs:123
-msgid "The number of volumes to create ahead of time"
-msgstr "Numărul de volume pe care trebuie să le creați înainte de timp"
-
-#: Library/Main/Strings.cs:131
+#: Library/Main/Strings.cs:130
 msgid "Log information level"
 msgstr "Nivel de informație log"
 
-#: Library/Main/Strings.cs:135
+#: Library/Main/Strings.cs:138
 msgid ""
 "If Duplicati detects that the target folder is missing, it will create it "
 "automatically. Activate this option to prevent automatic folder creation."
@@ -1287,7 +1283,7 @@ msgstr ""
 "Dacă Duplicati detectează lipsa dosarului țintă, îl va crea automat. "
 "Activați această opțiune pentru a împiedica crearea automată a folderelor."
 
-#: Library/Main/Strings.cs:137
+#: Library/Main/Strings.cs:140
 msgid ""
 "Use this option to exclude faulty writers from a snapshot. This is "
 "equivalent to the -wx flag of the vshadow.exe tool, except that it only "
@@ -1302,26 +1298,26 @@ msgstr ""
 "trebuie să fie separate cu punct și virgulă și majoritatea formelor de GUID-"
 "uri sunt permise, inclusiv cu și fără bretele curbate."
 
-#: Library/Main/Strings.cs:138
+#: Library/Main/Strings.cs:141
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr ""
 "Se exclude o listă de guiduri ale scriitorilor VSS separate prin punct și "
 "virgulă (numai pentru Windows)"
 
-#: Library/Main/Strings.cs:148
+#: Library/Main/Strings.cs:151
 msgid "Verify uploads by listing contents"
 msgstr "Verificați încărcările prin afișarea conținutului"
 
-#: Library/Main/Strings.cs:150
+#: Library/Main/Strings.cs:153
 msgid "Upload files synchronously"
 msgstr "Încărcați fișiere sincron"
 
-#: Library/Main/Strings.cs:152
+#: Library/Main/Strings.cs:155
 msgid "Do not re-use connections"
 msgstr "Nu reutilizați conexiunile"
 
-#: Library/Main/Strings.cs:153
+#: Library/Main/Strings.cs:156
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
@@ -1331,19 +1327,19 @@ msgstr ""
 "numărul de încercări. Activați această opțiune pentru a afișa mesajele de "
 "eroare atunci când este efectuată o nouă încercare."
 
-#: Library/Main/Strings.cs:154
+#: Library/Main/Strings.cs:157
 msgid "Show error messages when a retry is performed"
 msgstr "Afișați mesajele de eroare când este efectuată o nouă încercare"
 
-#: Library/Main/Strings.cs:156
+#: Library/Main/Strings.cs:159
 msgid "Upload empty backup files"
 msgstr "Încărcați fișiere de rezervă goale"
 
-#: Library/Main/Strings.cs:164
+#: Library/Main/Strings.cs:167
 msgid "Symlink handling"
 msgstr "Manipularea simbolică"
 
-#: Library/Main/Strings.cs:165
+#: Library/Main/Strings.cs:168
 #, csharp-format
 msgid ""
 "Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
@@ -1359,15 +1355,15 @@ msgstr ""
 "hardlink ca o cale unică. Opțiunea \"{2}\" va ignora toate hardlink-urile cu"
 " mai mult de un link."
 
-#: Library/Main/Strings.cs:166
+#: Library/Main/Strings.cs:169
 msgid "Hardlink handling"
 msgstr "Manipularea hardlinkurilor"
 
-#: Library/Main/Strings.cs:168
+#: Library/Main/Strings.cs:171
 msgid "Exclude files by attribute"
 msgstr "Excludeți fișierele după atribut"
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:172
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -1380,19 +1376,19 @@ msgstr ""
 "instantaneu. Această soluție poate accelera accesul la fișiere în Windows "
 "XP."
 
-#: Library/Main/Strings.cs:170
+#: Library/Main/Strings.cs:173
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "Împărțiți imaginile unei unități (numai pentru Windows)"
 
-#: Library/Main/Strings.cs:172
+#: Library/Main/Strings.cs:175
 msgid "Name of the backup"
 msgstr "Numele de rezervă"
 
-#: Library/Main/Strings.cs:182
+#: Library/Main/Strings.cs:185
 msgid "Manage non-compressible file extensions"
 msgstr "Gestionați extensiile de fișiere care nu pot fi comprimate"
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:186
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -1405,31 +1401,31 @@ msgstr ""
 "cheltuială la stocarea listelor de fișiere. Rețineți că valoarea nu poate fi"
 " modificată după crearea fișierelor la distanță."
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:187
 msgid "Block size used in hashing"
 msgstr "Dimensiunea blocurilor utilizate în hașcare"
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:189
 msgid "List of files to examine for changes"
 msgstr "Lista fișierelor de examinat pentru modificări"
 
-#: Library/Main/Strings.cs:188
+#: Library/Main/Strings.cs:191
 msgid "Path to the local state database"
 msgstr "Calea către baza de date locală de stat"
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:193
 msgid "List of deleted files"
 msgstr "Lista fișierelor șterse"
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:195
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr "Reduceți amprenta de memorie dezactivând căutările în memorie"
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:198
 msgid "Do not query backend at startup"
 msgstr "Nu interogați backend la pornire"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:199
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -1444,7 +1440,7 @@ msgstr ""
 "mai mari ocupă un spațiu mai îndepărtat și care nu pot fi folosite "
 "niciodată."
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:201
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -1457,19 +1453,19 @@ msgstr ""
 "a fi recuperat. Această valoare reprezintă un procentaj utilizat pentru "
 "fiecare volum și pentru stocarea totală."
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:202
 msgid "The maximum wasted space in percent"
 msgstr "Spațiul maxim pierdut în procente"
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:206
 msgid "The hash algorithm used on blocks"
 msgstr "Algoritmul hash utilizat pe blocuri"
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:208
 msgid "The hash algorithm used on files"
 msgstr "Algoritmul hash utilizat în fișiere"
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:209
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -1482,11 +1478,11 @@ msgstr ""
 "pentru a dezactiva o astfel de compactare automată și numai compactă atunci "
 "când executați comanda compactă."
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:210
 msgid "Disable automatic compacting"
 msgstr "Dezactivați compactarea automată"
 
-#: Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:211
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -1498,11 +1494,11 @@ msgstr ""
 "dimensiunea volumului. Acest lucru asigură că volume mari care pot avea "
 "câteva octeți pierduți în spațiu nu sunt descărcate și rescrise."
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:212
 msgid "Volume size threshold"
 msgstr "Volumul pragului de dimensiune"
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:213
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
@@ -1512,11 +1508,11 @@ msgstr ""
 "valoare poate forța gruparea fișierelor mici. Volumele mici vor fi combinate"
 " întotdeauna când pot umple un întreg volum."
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:214
 msgid "Maximum number of small volumes"
 msgstr "Numărul maxim de volume mici"
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:215
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
@@ -1526,43 +1522,43 @@ msgstr ""
 "pentru a găsi blocurile existente. Aceasta este o operație destul de lentă "
 "dar poate limita dimensiunea descărcărilor."
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:216
 msgid "Use local file data when restoring"
 msgstr "Folosiți datele locale ale fișierelor atunci când restaurați"
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:221
 msgid "Keep a number of versions"
 msgstr "Păstrați o serie de versiuni"
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:222
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr ""
 "Utilizați această opțiune pentru a seta intervalul de timp în care sunt "
 "păstrate copii de siguranță."
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:223
 msgid "Keep all versions within a timespan"
 msgstr "Păstrați toate versiunile într-un interval de timp"
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:225
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr "Reduceți numărul de versiuni ștergând copiile de rezervă vechi"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:226
 msgid "Use this option to continue even if some source entries are missing."
 msgstr ""
 "Utilizați această opțiune pentru a continua chiar dacă lipsesc unele intrări"
 " de surse."
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:227
 msgid "Ignore missing source elements"
 msgstr "Ignorați elementele sursă care lipsesc"
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:231
 msgid "Overwrite files when restoring"
 msgstr "Suprascrieți fișierele atunci când restaurați"
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:232
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
@@ -1571,11 +1567,11 @@ msgstr ""
 "rularea unei opțiuni. În general, această opțiune va produce o linie pentru "
 "fiecare fișier procesat."
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:233
 msgid "Output more progress information"
 msgstr "Obțineți mai multe informații despre progres"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:235
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -1583,11 +1579,11 @@ msgstr ""
 "Utilizați această opțiune pentru a crește cantitatea de ieșire generată ca "
 "rezultat al operației, inclusiv toate numele de fișiere."
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:236
 msgid "Output full results"
 msgstr "Rezultatele rezultate complete"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:237
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -1599,27 +1595,27 @@ msgstr ""
 "conține mărimea și șahurile SHA256 ale tuturor fișierelor la distanță și "
 "poate fi folosit pentru a verifica integritatea fișierelor."
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:238
 msgid "Determine if verification files are uploaded"
 msgstr "Determinați dacă fișierele de verificare sunt încărcate"
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:240
 msgid "The number of samples to test after a backup"
 msgstr "Numărul de mostre pentru a testa după o copie de rezervă"
 
-#: Library/Main/Strings.cs:243
+#: Library/Main/Strings.cs:248
 msgid "Size of the file read buffer"
 msgstr "Dimensiunea fișierului de citire a fișierului"
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:251
 msgid "Allow the passphrase to change"
 msgstr "Permiteți modificării expresiei de acces"
 
-#: Library/Main/Strings.cs:248
+#: Library/Main/Strings.cs:253
 msgid "List only filesets"
 msgstr "Listează numai fișierele"
 
-#: Library/Main/Strings.cs:250
+#: Library/Main/Strings.cs:255
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -1630,7 +1626,7 @@ msgstr ""
 "accelera operațiile de backup și restaurare, dar nu va afecta mult "
 "dimensiunea fișierului."
 
-#: Library/Main/Strings.cs:252
+#: Library/Main/Strings.cs:257
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
@@ -1639,11 +1635,11 @@ msgstr ""
 " împiedica să accesați fișierele. Utilizați această opțiune pentru a "
 "restaura și permisiunile."
 
-#: Library/Main/Strings.cs:253
+#: Library/Main/Strings.cs:258
 msgid "Restore file permissions"
 msgstr "Restaurați permisiunile fișierului"
 
-#: Library/Main/Strings.cs:254
+#: Library/Main/Strings.cs:259
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -1654,11 +1650,11 @@ msgstr ""
 "Utilizați această opțiune pentru a dezactiva verificarea și pentru a evita "
 "așteptarea verificării."
 
-#: Library/Main/Strings.cs:255
+#: Library/Main/Strings.cs:260
 msgid "Skip restored file check"
 msgstr "Verificați verificarea fișierului restabilit"
 
-#: Library/Main/Strings.cs:256
+#: Library/Main/Strings.cs:261
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -1668,11 +1664,11 @@ msgstr ""
 "minimiza cantitatea de date descărcate. Utilizați această opțiune pentru a "
 "sări peste această optimizare și utilizați numai date de la distanță."
 
-#: Library/Main/Strings.cs:257
+#: Library/Main/Strings.cs:262
 msgid "Do not use local data"
 msgstr "Nu utilizați date locale"
 
-#: Library/Main/Strings.cs:262
+#: Library/Main/Strings.cs:267
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
@@ -1681,11 +1677,11 @@ msgstr ""
 "blocurilor citite dintr-un volum înainte de a patra fișierele restaurate cu "
 "datele."
 
-#: Library/Main/Strings.cs:263
+#: Library/Main/Strings.cs:268
 msgid "Check block hashes"
 msgstr "Verificați hashes-ul blocului"
 
-#: Library/Main/Strings.cs:266
+#: Library/Main/Strings.cs:271
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -1699,20 +1695,20 @@ msgstr ""
 "Baza de date rezultată poate fi căutată, dar nu poate fi utilizată pentru "
 "restaurarea datelor cu."
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:272
 msgid "Repair database with paths"
 msgstr "Reparați baza de date cu căi"
 
-#: Library/Main/Strings.cs:271
+#: Library/Main/Strings.cs:276
 msgid "Force the locale setting"
 msgstr "Activați setarea locale"
 
-#: Library/Main/Strings.cs:275
+#: Library/Main/Strings.cs:280
 msgid "Handle file communication with backend using threaded pipes"
 msgstr ""
 "Manipulați comunicarea fișierelor cu backend-ul folosind țevi filetate"
 
-#: Library/Main/Strings.cs:284
+#: Library/Main/Strings.cs:289
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
@@ -1723,11 +1719,11 @@ msgstr ""
 "copii de rezervă completate și conținutul încărcat în sesiunea de copiere "
 "incompletă."
 
-#: Library/Main/Strings.cs:291
+#: Library/Main/Strings.cs:296
 msgid "Allow removing all filesets"
 msgstr "Permiteți eliminarea tuturor fileurilor"
 
-#: Library/Main/Strings.cs:292
+#: Library/Main/Strings.cs:297
 msgid ""
 "Some operations that manipulate the local database leave unused entries "
 "behind. These entries are not deleted from a hard drive until a VACUUM "
@@ -1743,7 +1739,7 @@ msgstr ""
 "valide din baza de date. Setarea acestui lucru la adevărat va permite "
 "companiei Duplicați să efectueze operații VACUUM la discreția sa."
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:382
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -1752,17 +1748,17 @@ msgstr ""
 "Cryptolibrary nu suporta transformări reutilizabile pentru algoritmul hash "
 "{0}"
 
-#: Library/Main/Strings.cs:376
+#: Library/Main/Strings.cs:383
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Cryptolibrary nu suporta algoritmul hash {0}"
 
-#: Library/Main/Strings.cs:377
+#: Library/Main/Strings.cs:384
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "Fraza de acces nu poate fi modificată pentru o copie de rezervă existentă"
 
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:385
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Nu a reușit să creeze un instantaneu: {0}"
