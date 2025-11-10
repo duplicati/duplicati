@@ -144,6 +144,22 @@ async function createBackup(page: Page) {
 async function deleteBackupIfExists(page: Page) {
   await page.goto(HOME_URL);
   await page.waitForLoadState("networkidle");
+
+  // Take a screenshot before waiting for backup elements
+  await page.screenshot({
+    path: path.join("test-results", "before-backup-wait.png"),
+    fullPage: true,
+  });
+
+  // Log page content for debugging
+  const pageContent = await page.content();
+  console.log("Page HTML length:", pageContent.length);
+  console.log("Page title:", await page.title());
+
+  // Check if any backup elements exist
+  const backupCount = await page.locator("div.backup").count();
+  console.log("Number of backup elements found:", backupCount);
+
   await page.locator("div.backup").first().waitFor();
 
   // Cleanup existing backup with the same name
@@ -303,6 +319,10 @@ async function restoreFromConfigFile(page: Page) {
 }
 
 test("backup and restore flow", async ({ page }) => {
+  // Enable console logging from the browser
+  page.on("console", (msg) => console.log("Browser console:", msg.text()));
+  page.on("pageerror", (err) => console.error("Browser error:", err.message));
+
   await page
     .context()
     .addCookies([
@@ -314,12 +334,32 @@ test("backup and restore flow", async ({ page }) => {
   console.log("Navigating to login page...");
   await page.goto(LOGIN_URL);
   await page.waitForLoadState("networkidle");
+
+  // Take screenshot after login page loads
+  await page.screenshot({
+    path: path.join("test-results", "01-login-page.png"),
+    fullPage: true,
+  });
+
   await page.fill("[formcontrolname='pass']", WEBSERVICE_PASSWORD);
 
   await page.locator("button").filter({ hasText: "Login" }).click();
 
   console.log("Waiting for page to load...");
+
+  // Take screenshot after login
+  await page.screenshot({
+    path: path.join("test-results", "02-after-login.png"),
+    fullPage: true,
+  });
+
   await page.locator("text=Add backup").waitFor();
+
+  // Take screenshot when home page is ready
+  await page.screenshot({
+    path: path.join("test-results", "03-home-page-ready.png"),
+    fullPage: true,
+  });
 
   // Ensure no existing backup
   console.log("Deleting existing backup if it exists...");
