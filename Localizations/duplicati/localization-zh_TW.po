@@ -6,15 +6,16 @@
 # Translators:
 # Dxball <toby0520@gmail.com>, 2017
 # Jason Cheng <sanyu3u@gmail.com>, 2025
+# YUCHENG CHIU, 2025
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-07 15:56+0200\n"
+"POT-Creation-Date: 2025-11-10 11:48+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Jason Cheng <sanyu3u@gmail.com>, 2025\n"
+"Last-Translator: YUCHENG CHIU, 2025\n"
 "Language-Team: Chinese (Taiwan) (https://app.transifex.com/duplicati/teams/67655/zh_TW/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -29,6 +30,12 @@ msgstr "內建 AES-256 加密演算法"
 #: Library/Encryption/Strings.cs:30
 msgid "Empty passphrase not allowed"
 msgstr "不允許空密碼"
+
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:249
+#, csharp-format
+msgid "The option --{0} is no longer used and has been deprecated."
+msgstr "選項--{0}已不再使用並且已棄用。"
 
 #: Library/Encryption/Strings.cs:37
 #, csharp-format
@@ -169,7 +176,7 @@ msgstr "設定 FTP 加密啟用時採用的 SSL 策略"
 msgid "Google Cloud Storage"
 msgstr "Google Cloud Storage"
 
-#: Library/Backend/GoogleServices/Strings.cs:44
+#: Library/Backend/GoogleServices/Strings.cs:48
 msgid "Google Drive"
 msgstr "Google Drive"
 
@@ -288,6 +295,10 @@ msgstr "資料夾 {0} 找不到，訊息: {1}"
 msgid "Tahoe-LAFS"
 msgstr "Tahoe-LAFS"
 
+#: Library/Backend/Storj/Strings.cs:34
+msgid "API key"
+msgstr "API key"
+
 #: Library/Backend/Storj/Strings.cs:42
 msgid "Folder"
 msgstr "資料夾"
@@ -314,11 +325,11 @@ msgstr ""
 msgid "--{0}: {1}"
 msgstr "--{0}: {1}"
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:265
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:270
 msgid "Clean up old log data"
 msgstr "清理舊的記錄資料"
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:96
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:97
 msgid "Temporary storage folder"
 msgstr "暫存儲存資料夾"
 
@@ -336,77 +347,77 @@ msgstr "載入處理程序類型 {0} 組建 {1} 失敗，錯誤訊息: {2}"
 msgid "backup"
 msgstr "備份"
 
-#: Library/Main/Strings.cs:70
+#: Library/Main/Strings.cs:71
 msgid "Disable encryption"
 msgstr "取消加密"
 
-#: Library/Main/Strings.cs:79
+#: Library/Main/Strings.cs:80
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
 msgstr "當您做檔案搜尋時，只會在最新的備份裡搜尋。可以透過此選項來顯示與搜尋所有先前的版本。"
 
-#: Library/Main/Strings.cs:80
+#: Library/Main/Strings.cs:81
 msgid "Show all versions"
 msgstr "顯示所有版本"
 
-#: Library/Main/Strings.cs:84
+#: Library/Main/Strings.cs:85
 msgid "Show folder contents"
 msgstr "顯示資料夾內容"
 
-#: Library/Main/Strings.cs:90
+#: Library/Main/Strings.cs:91
 msgid "Set control files"
 msgstr "設定控制檔案"
 
-#: Library/Main/Strings.cs:99
+#: Library/Main/Strings.cs:100
 msgid "Thread priority"
 msgstr "執行緒優先權"
 
-#: Library/Main/Strings.cs:129
+#: Library/Main/Strings.cs:128
 msgid "Log internal information to a file"
 msgstr "記錄內部資訊到檔案"
 
-#: Library/Main/Strings.cs:131
+#: Library/Main/Strings.cs:130
 msgid "Log information level"
 msgstr "記錄資訊等級"
 
-#: Library/Main/Strings.cs:154
+#: Library/Main/Strings.cs:157
 msgid "Show error messages when a retry is performed"
 msgstr "當重新嘗試時顯示錯誤訊息"
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:193
 msgid "List of deleted files"
 msgstr "已刪除檔案清單"
 
-#: Library/Main/Strings.cs:243
+#: Library/Main/Strings.cs:248
 msgid "Size of the file read buffer"
 msgstr "檔案讀取緩衝區大小"
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:251
 msgid "Allow the passphrase to change"
 msgstr "允許變更密碼"
 
-#: Library/Main/Strings.cs:255
+#: Library/Main/Strings.cs:260
 msgid "Skip restored file check"
 msgstr "略過已還原檔案檢查"
 
-#: Library/Main/Strings.cs:257
+#: Library/Main/Strings.cs:262
 msgid "Do not use local data"
 msgstr "不要使用本機資料"
 
-#: Library/Main/Strings.cs:299
+#: Library/Main/Strings.cs:304
 msgid "Disable the backup when on battery power"
 msgstr "在低電量時停用備份作業"
 
-#: Library/Main/Strings.cs:302
+#: Library/Main/Strings.cs:307
 msgid "Log file information level"
 msgstr "記錄檔案資訊等級"
 
-#: Library/Main/Strings.cs:308
+#: Library/Main/Strings.cs:313
 msgid "Console information level"
 msgstr "主控台資訊等級"
 
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:385
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "建立快照失敗：{0}"

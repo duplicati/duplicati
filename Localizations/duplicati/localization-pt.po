@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-07 15:56+0200\n"
+"POT-Creation-Date: 2025-11-10 11:48+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Sérgio Marques <smarquespt@gmail.com>, 2025\n"
 "Language-Team: Portuguese (https://app.transifex.com/duplicati/teams/67655/pt/)\n"
@@ -196,17 +196,17 @@ msgstr "Adicionar um atraso após o carregamento de um ficheiro"
 msgid "Google Cloud Storage"
 msgstr "Google Cloud Storage"
 
-#: Library/Backend/GoogleServices/Strings.cs:44
+#: Library/Backend/GoogleServices/Strings.cs:48
 msgid "Google Drive"
 msgstr "Google Drive"
 
-#: Library/Backend/GoogleServices/Strings.cs:46
-#: Library/Backend/File/Strings.cs:40 Library/Compression/Strings.cs:38
+#: Library/Backend/GoogleServices/Strings.cs:50
+#: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Ficheiro não encontrado: {0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:48
+#: Library/Backend/GoogleServices/Strings.cs:52
 msgid "Team drive ID"
 msgstr "ID de Disco de Equipa"
 
@@ -502,13 +502,13 @@ msgstr ""
 "Os hostnames que são autorizados a ligar, separados por ponto-e-vírgula. Um "
 "'*' permite a ligação as todos e desactiva esta protecção."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:264
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:269
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
 "Definir o tempo depois do que os dados de registo serão eliminados da base "
 "de dados."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:265
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:270
 msgid "Clean up old log data"
 msgstr "Apagar dados de registo antigos"
 
@@ -535,16 +535,16 @@ msgstr ""
 "ambiente {0}. Utilizar a opção de linha de comando --{1} para desativar a "
 "encriptação da base de dados."
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:96
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:97
 msgid "Temporary storage folder"
 msgstr "Pasta temporária de armazenamento"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:121
+#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:127
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "O servidor foi iniciado e está a escutar em {0}, porta {1}"
 
-#: Library/RestAPI/Strings.cs:117
+#: Library/RestAPI/Strings.cs:123
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -553,7 +553,7 @@ msgstr ""
 "Não foi possível encontrar uma data válida, utilizando a data de início {0},"
 " o intervalo de repetição {1} e os dias permitidos {2}"
 
-#: Library/RestAPI/Strings.cs:123
+#: Library/RestAPI/Strings.cs:129
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Não foi possível abrir uma porta para escutar, tentou utilizar: {0}"
@@ -567,47 +567,47 @@ msgstr "cópia de segurança"
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Caminho inválido: \"{0}\" ({1})"
 
-#: Library/Main/Strings.cs:58
+#: Library/Main/Strings.cs:59
 msgid "Restore to another folder"
 msgstr "Restaurar para outra pasta"
 
-#: Library/Main/Strings.cs:70
+#: Library/Main/Strings.cs:71
 msgid "Disable encryption"
 msgstr "Desativar encriptação"
 
-#: Library/Main/Strings.cs:80
+#: Library/Main/Strings.cs:81
 msgid "Show all versions"
 msgstr "Mostrar todas as versões"
 
-#: Library/Main/Strings.cs:84
+#: Library/Main/Strings.cs:85
 msgid "Show folder contents"
 msgstr "Mostrar conteúdo da pasta"
 
-#: Library/Main/Strings.cs:99
+#: Library/Main/Strings.cs:100
 msgid "Thread priority"
 msgstr "Prioridade"
 
-#: Library/Main/Strings.cs:101
+#: Library/Main/Strings.cs:102
 msgid "Limit the size of the volumes"
 msgstr "Limitar o tamanho dos volumes"
 
-#: Library/Main/Strings.cs:152
+#: Library/Main/Strings.cs:155
 msgid "Do not re-use connections"
 msgstr "Não reutilizar ligações"
 
-#: Library/Main/Strings.cs:164
+#: Library/Main/Strings.cs:167
 msgid "Symlink handling"
 msgstr "Gestão de ligações simbólicas"
 
-#: Library/Main/Strings.cs:172
+#: Library/Main/Strings.cs:175
 msgid "Name of the backup"
 msgstr "Nome da cópia de segurança"
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:193
 msgid "List of deleted files"
 msgstr "Lista de ficheiros eliminados"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:237
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -619,11 +619,11 @@ msgstr ""
 "hashes SHA256 de todos os ficheiros remotos e pode ser usado para verificar "
 "a integridade dos ficheiros."
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:251
 msgid "Allow the passphrase to change"
 msgstr "Permitir alteração da palavra-passe"
 
-#: Library/Main/Strings.cs:257
+#: Library/Main/Strings.cs:262
 msgid "Do not use local data"
 msgstr "Não utilizar dados locais"
 
