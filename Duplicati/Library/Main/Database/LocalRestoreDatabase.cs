@@ -2237,6 +2237,30 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
+        /// Finds the largest volume size among all 'Blocks' type remote volumes.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>The size of the largest volume, in bytes, or -1 if no volumes are found.</returns>
+        public async Task<long> GetLargestVolumeAsync(CancellationToken token)
+        {
+            using var cmd = m_connection.CreateCommand(@"
+                SELECT
+                    MAX(""Size"")
+                FROM ""RemoteVolume""
+                WHERE ""Type"" = 'Blocks'
+            ")
+                .SetTransaction(m_rtr);
+
+            var result = await cmd.ExecuteScalarAsync(token)
+                .ConfigureAwait(false);
+
+            if (result == DBNull.Value || result == null)
+                return -1;
+
+            return Convert.ToInt64(result);
+        }
+
+        /// <summary>
         /// Returns the volume information for the given volume ID. It is used by the <see cref="VolumeManager"/> to get the volume information for the given volume ID.
         /// </summary>
         /// <param name="VolumeID">The ID of the volume.</param>
