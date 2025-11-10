@@ -67,7 +67,7 @@ namespace Duplicati.Library.Common.IO
         /// <summary>
         /// Helper function to initialize the instance to default values
         /// </summary>
-        private FileEntry() { }
+        public FileEntry() { }
 
         /// <summary>
         /// Constructs an entry supplying all information
