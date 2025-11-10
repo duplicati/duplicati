@@ -26,13 +26,21 @@ namespace Duplicati.Library.Backend;
 
 public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
 {
+    //
+    // Constants
 
+    //
+    // Fields
+    //
     public string DisplayName => Strings.DuplicatiBackend.DisplayName;
     public string ProtocolKey => "duplicati";
     public bool SupportsStreaming => true;
     private readonly HttpClient _client;
     public string Description => Strings.DuplicatiBackend.Description;
 
+    //
+    // Constructors
+    //
     public DuplicatiBackend(string url, Dictionary<string, string?> options)
     {
         _client = new HttpClient
@@ -41,6 +49,21 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         };
     }
 
+    //
+    // Cleanup
+    //
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
+
+    //
+    // Helper methods
+    //
+
+    //
+    // IBackend methods
+    //
     public async Task CreateFolderAsync(CancellationToken cancelToken)
     {
 
@@ -101,11 +124,6 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     public Task TestAsync(CancellationToken cancelToken)
     {
 
-    }
-
-    public void Dispose()
-    {
-        _client.Dispose();
     }
 
 }
