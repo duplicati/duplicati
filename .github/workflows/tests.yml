@@ -33,11 +33,7 @@ jobs:
       - name: Run unit tests with coverage
         run: |
           mkdir -p "$GITHUB_WORKSPACE/TestResults/unit"
-          dotnet test --no-build --verbosity minimal \
-            --filter "Category!=Integration" \
-            --collect:"XPlat Code Coverage" \
-            --results-directory "$GITHUB_WORKSPACE/TestResults/unit" \
-            Duplicati.sln
+          dotnet test --no-build --verbosity minimal --filter "Category!=Integration" --collect:"XPlat Code Coverage" --results-directory "$GITHUB_WORKSPACE/TestResults/unit" Duplicati.sln
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
@@ -79,11 +75,7 @@ jobs:
       - name: Run integration tests with coverage
         run: |
           mkdir -p "$GITHUB_WORKSPACE/TestResults/integration"
-          dotnet test --no-build --verbosity minimal \
-            --filter "Category=Integration" \
-            --collect:"XPlat Code Coverage" \
-            --results-directory "$GITHUB_WORKSPACE/TestResults/integration" \
-            Duplicati.sln
+          dotnet test --no-build --verbosity minimal --filter "Category=Integration" --collect:"XPlat Code Coverage" --results-directory "$GITHUB_WORKSPACE/TestResults/integration" Duplicati.sln
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
