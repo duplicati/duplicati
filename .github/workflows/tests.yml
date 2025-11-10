@@ -39,12 +39,19 @@ jobs:
             --results-directory "$GITHUB_WORKSPACE/TestResults/unit" \
             Duplicati.sln
 
-      - name: Upload unit test coverage
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          name: unit-test-coverage-${{ runner.os }}
-          path: TestResults/unit/**
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ github.workspace }}/TestResults/integration/**/coverage.cobertura.xml
+          flags: unittest,${{ matrix.os }}
+
+      # - name: Upload unit test coverage
+      #   if: ${{ always() }}
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: unit-test-coverage-${{ runner.os }}
+      #     path: TestResults/unit/**
 
   integration_tests:
     name: Integration tests
@@ -82,8 +89,10 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ github.workspace }}/TestResults/integration/**/coverage.cobertura.xml
+          flags: integration,${{ matrix.os }}
 
-      # - name: Upload integration test coverage
+          # - name: Upload integration test coverage
       #   if: ${{ always() }}
       #   uses: actions/upload-artifact@v4
       #   with:
