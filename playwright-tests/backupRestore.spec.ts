@@ -90,7 +90,7 @@ async function completeRestoreFlow(page: Page) {
 async function createBackup(page: Page) {
   await page.goto(HOME_URL);
   await page.waitForLoadState("networkidle");
-  await page.locator("div.backup").first().waitFor();
+  await page.locator("h2").filter({ hasText: "My backups" }).waitFor();
 
   await page.click("text=Add backup");
   await page.locator("button").filter({ hasText: "Add a new backup" }).click();
@@ -144,6 +144,13 @@ async function createBackup(page: Page) {
 async function deleteBackupIfExists(page: Page) {
   await page.goto(HOME_URL);
   await page.waitForLoadState("networkidle");
+
+  try {
+    await page.locator("div.backup").first().waitFor({ timeout: 5000 });
+  } catch (e) {
+    console.log("No backup elements found, skipping deletion.");
+    return;
+  }
 
   // Take a screenshot before waiting for backup elements
   await page.screenshot({
