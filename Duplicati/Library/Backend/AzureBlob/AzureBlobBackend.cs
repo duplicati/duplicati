@@ -56,6 +56,15 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// The option to specify the Azure access tier
         /// </summary>
         private const string AZURE_ACCESS_TIER_OPTION = "azure-access-tier";
+        /// <summary>
+        /// The option to specify the number of internal retries
+        /// </summary>
+        private const string AZURE_INTERNAL_RETRIES_OPTION = "azure-internal-retries";
+
+        /// <summary>
+        /// The default number of internal retries
+        /// </summary>
+        public const int DEFAULT_INTERNAL_RETRIES = 3;
 
         /// <summary>
         /// The default storage classes that are considered archive classes
@@ -106,7 +115,8 @@ namespace Duplicati.Library.Backend.AzureBlob
                 ? null
                 // Warning: The cast here is required to avoid implicit casting null to AccessTier
                 : (AccessTier?)new AccessTier(accessTierValue);
-            _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, accessTier, archiveClasses, timeouts);
+            var internalRetries = Library.Utility.Utility.ParseIntOption(options, AZURE_INTERNAL_RETRIES_OPTION, DEFAULT_INTERNAL_RETRIES);
+            _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, accessTier, archiveClasses, timeouts, internalRetries);
         }
 
         /// <summary>
@@ -190,9 +200,9 @@ namespace Duplicati.Library.Backend.AzureBlob
                         CommandLineArgument.ArgumentType.Flags,
                         Strings.AzureBlobBackend.ArchiveClassesDescriptionShort,
                         Strings.AzureBlobBackend.ArchiveClassesDescriptionLong,
-                        string.Join(",", DEFAULT_ARCHIVE_CLASSES.Select(x => x.ToString())),
+                        string.Join(",", DEFAULT_ARCHIVE_CLASSES.Select(x => Library.Utility.Utility.FormatInvariantValue(x))),
                         null,
-                        ACCESS_TIERS.Select(x => x.ToString()).ToArray()),
+                        ACCESS_TIERS.Select(x => Library.Utility.Utility.FormatInvariantValue(x)).ToArray()),
                     new CommandLineArgument(AZURE_ACCESS_TIER_OPTION,
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.AccessTierDescriptionShort,
@@ -200,6 +210,11 @@ namespace Duplicati.Library.Backend.AzureBlob
                         "",
                         null,
                         ACCESS_TIERS.Select(x => x.ToString()).ToArray()),
+                    new CommandLineArgument(AZURE_INTERNAL_RETRIES_OPTION,
+                        CommandLineArgument.ArgumentType.Integer,
+                        Strings.AzureBlobBackend.InternalRetriesDescriptionShort,
+                        Strings.AzureBlobBackend.InternalRetriesDescriptionLong,
+                        Library.Utility.Utility.FormatInvariantValue(DEFAULT_INTERNAL_RETRIES)),
                     .. TimeoutOptionsHelper.GetOptions()
                 ];
             }

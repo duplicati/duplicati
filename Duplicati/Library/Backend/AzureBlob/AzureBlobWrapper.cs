@@ -27,6 +27,7 @@ using Duplicati.Library.Interface;
 using Uri = System.Uri;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Library.Utility;
+using Azure.Core.Pipeline;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
@@ -64,18 +65,42 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <param name="accessTier">The access tier assigned to blobs on upload.</param>
         /// <param name="archiveClasses">The storage classes that are considered archive classes.</param>
         /// <param name="timeouts">The timeout options.</param>
-        public AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, AccessTier? accessTier, IReadOnlySet<AccessTier> archiveClasses, TimeoutOptionsHelper.Timeouts timeouts)
+        /// <param name="maxRetries">The maximum number of retries for Azure operations.</param>
+        public AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, AccessTier? accessTier, IReadOnlySet<AccessTier> archiveClasses, TimeoutOptionsHelper.Timeouts timeouts, int maxRetries)
         {
             BlobServiceClient blobServiceClient;
+            var maxTicks = timeouts.ReadWriteTimeout.Ticks - TimeSpan.FromSeconds(1).Ticks;
+
+            // If not infinite, then share the timeout across retries
+            var delay = maxTicks <= 0
+                ? TimeSpan.FromSeconds(1)
+                : TimeSpan.FromTicks(maxTicks / Math.Max(1, maxRetries));
+
+            var maxDelay = maxTicks <= 0
+                ? TimeSpan.FromSeconds(10)
+                : TimeSpan.FromTicks(maxTicks);
+
+            var blobServiceOptions = new BlobClientOptions()
+            {
+                Retry =
+                {
+                    MaxRetries = maxRetries,
+                    Mode = Azure.Core.RetryMode.Exponential,
+                    Delay = delay,
+                    MaxDelay = maxDelay
+                },
+                Transport = new HttpClientTransport(new HttpClient { Timeout = Timeout.InfiniteTimeSpan })
+            };
+
             if (sasToken != null)
             {
                 var sasUri = new Uri($"https://{accountName}.blob.core.windows.net/?{sasToken}");
-                blobServiceClient = new BlobServiceClient(sasUri);
+                blobServiceClient = new BlobServiceClient(sasUri, blobServiceOptions);
             }
             else
             {
                 var connectionString = $"DefaultEndpointsProtocol=https;AccountName={accountName};AccountKey={accessKey};EndpointSuffix=core.windows.net";
-                blobServiceClient = new BlobServiceClient(connectionString);
+                blobServiceClient = new BlobServiceClient(connectionString, blobServiceOptions);
             }
 
             _accessTier = accessTier;
