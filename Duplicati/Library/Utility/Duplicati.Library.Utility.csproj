@@ -9,9 +9,9 @@
 
   <ItemGroup>
     <PackageReference Include="Duplicati.StreamUtil" Version="1.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-    <PackageReference Include="System.Management" Version="9.0.6" />
+    <PackageReference Include="System.Management" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
