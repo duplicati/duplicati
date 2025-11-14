@@ -184,12 +184,12 @@ Set the environment variables as described above, then run the tests using the f
 
 Minimal Verbosity:
 
-`dotnet test Duplicati.Backend.Tests.sln --logger:"console;verbosity=normal"`
+`dotnet test Duplicati.Backend.Tests.slnx --logger:"console;verbosity=normal"`
 
 Running with full verbosity (useful if tests are failing):
 
-`dotnet test Duplicati.Backend.Tests.sln --logger:"console;verbosity=detailed"`
+`dotnet test Duplicati.Backend.Tests.slnx --logger:"console;verbosity=detailed"`
 
 Running specific tests:
 
-`dotnet test Duplicati.Backend.Tests.sln --logger:"console;verbosity=detailed" --filter="Name=TestDropBox"`
+`dotnet test Duplicati.Backend.Tests.slnx --logger:"console;verbosity=detailed" --filter="Name=TestDropBox"`

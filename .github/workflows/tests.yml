@@ -19,21 +19,21 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
 
       - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Restore NuGet dependencies
-        run: dotnet restore Duplicati.sln
+        run: dotnet restore Duplicati.slnx
 
       - name: Build Duplicati
-        run: dotnet build --no-restore Duplicati.sln
+        run: dotnet build --no-restore Duplicati.slnx
 
       - name: Run unit tests with coverage
         run: |
           mkdir -p "$GITHUB_WORKSPACE/TestResults/unit"
-          dotnet test --no-build --verbosity minimal --filter "Category!=Integration" --collect:"XPlat Code Coverage" --results-directory "$GITHUB_WORKSPACE/TestResults/unit" Duplicati.sln
+          dotnet test --no-build --verbosity minimal --filter "Category!=Integration" --collect:"XPlat Code Coverage" --results-directory "$GITHUB_WORKSPACE/TestResults/unit" Duplicati.slnx
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
@@ -60,15 +60,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Restore NuGet dependencies
-        run: dotnet restore Duplicati.sln
+        run: dotnet restore Duplicati.slnx
 
       - name: Build Duplicati
-        run: dotnet build --no-restore Duplicati.sln
+        run: dotnet build --no-restore Duplicati.slnx
 
       - name: Run integration tests with coverage
         run: |
           mkdir -p "$GITHUB_WORKSPACE/TestResults/integration"
-          dotnet test --no-build --verbosity minimal --filter "Category=Integration" --collect:"XPlat Code Coverage" --results-directory "$GITHUB_WORKSPACE/TestResults/integration" Duplicati.sln
+          dotnet test --no-build --verbosity minimal --filter "Category=Integration" --collect:"XPlat Code Coverage" --results-directory "$GITHUB_WORKSPACE/TestResults/integration" Duplicati.slnx
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
@@ -93,7 +93,7 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
       - name: Publish Duplicati server
-        run: dotnet publish -c Debug -o published Duplicati.sln
+        run: dotnet publish -c Debug -o published Duplicati.slnx
       - name: Start server
         run: |
           ./published/Duplicati.Server --disable-database-encryption --webservice-password=easy1234 > server.log 2>&1 &

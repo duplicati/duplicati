@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>WindowsService for Duplicati</Description>
+    <AssemblyName>Duplicati.WindowsService</AssemblyName>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Duplicati\WindowsService\Duplicati.WindowsService.csproj" />
+    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
+  </ItemGroup>
+
+</Project>

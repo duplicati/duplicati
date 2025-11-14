@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Description>A backend debugging tool for Duplicati</Description>
     <AssemblyName>Duplicati.CommandLine.BackendTester.Implementation</AssemblyName>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>

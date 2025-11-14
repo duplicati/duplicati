@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "dotnet: build",
-            "program": "${workspaceFolder}/bin/Debug/net9.0/LicenseUpdater.dll",
+            "program": "${workspaceFolder}/bin/Debug/net10.0/LicenseUpdater.dll",
             "args": ["../.."],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
