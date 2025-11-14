@@ -273,8 +273,8 @@ public static partial class Command
             { "System.IO.Pipelines", new Version(9, 0, 0, 0) },
 
             // Using v9.0 for assembly, but 9.0.6 in nuget
-            { "Microsoft.Win32.SystemEvents", new Version(9, 0, 0, 0) },
-            { "System.Drawing.Common", new Version(9, 0, 0, 0) },
+            { "Microsoft.Win32.SystemEvents", new Version(10, 0, 0, 0) },
+            { "System.Drawing.Common", new Version(10, 0, 0, 0) },
 
             // Using v6.0.0.1 for assembly, but 6.0.1 in nuget
             { "System.Memory.Data", new Version(6, 0, 0, 1) }
