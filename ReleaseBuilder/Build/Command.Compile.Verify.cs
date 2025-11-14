@@ -270,7 +270,7 @@ public static partial class Command
             { "SQLitePCLRaw.core", new Version(2, 1, 10, 2445) },
 
             // Using v6.0.0.1 for assembly, but 6.0.1 in nuget
-            { "System.Memory.Data", new Version(6, 0, 0, 1) }
+            { "System.Memory.Data", new Version(8, 0, 0, 1) }
         };
 
         /// <summary>
