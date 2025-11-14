@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
             );
 
             if (callback != null)
-                callback(m_result, lst.ToEnumerable());
+                callback(m_result, lst.ToBlockingEnumerable());
 
             return;
         }

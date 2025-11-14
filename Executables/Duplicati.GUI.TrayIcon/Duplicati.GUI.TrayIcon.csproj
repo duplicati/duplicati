@@ -4,7 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <Description>The Duplicati Tray implementation</Description>
-    <ApplicationIcon>..\..\..\Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.ico</ApplicationIcon>
+    <ApplicationIcon>..\..\Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.ico</ApplicationIcon>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
@@ -23,15 +23,15 @@
   <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->
   <Target Name="CopyWindowsModulesRuntime" AfterTargets="Build" Condition="'$(_CopyWinModules)' == 'True'">
     <ItemGroup>
-      <_WinMods Include="..\..\..\Duplicati\Library\WindowsModules\bin\$(Configuration)\net10.0-windows7.0\**\*.dll" />
+      <_WinMods Include="..\..\Duplicati\Library\WindowsModules\bin\$(Configuration)\net10.0-windows7.0\**\*.dll" />
     </ItemGroup>
 
     <Copy SourceFiles="@(_WinMods)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj" />
-    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
+    <ProjectReference Include="..\..\Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj" />
+    <ProjectReference Include="..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
 
 </Project>

@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
-    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
+    <ProjectReference Include="..\..\Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
+    <ProjectReference Include="..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
 
 </Project>

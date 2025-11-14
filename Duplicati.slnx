@@ -28,7 +28,7 @@
     <Project Path="Duplicati/Library/Backend/TencentCOS/Duplicati.Library.Backend.TencentCOS.csproj" />
     <Project Path="Duplicati/Library/Backend/WEBDAV/Duplicati.Library.Backend.WEBDAV.csproj" />
   </Folder>
-    <Folder Name="/Executables/Implementation/">
+  <Folder Name="/Executables/Implementation/">
     <Project Path="Duplicati/Agent/Duplicati.Agent.csproj" />
     <Project Path="Duplicati/CommandLine/BackendTester/Duplicati.CommandLine.BackendTester.csproj" />
     <Project Path="Duplicati/CommandLine/BackendTool/Duplicati.CommandLine.BackendTool.csproj" />

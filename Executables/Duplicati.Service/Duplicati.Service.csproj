@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Duplicati\Service\Duplicati.Service.csproj" />
-    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
+    <ProjectReference Include="..\..\Duplicati\Service\Duplicati.Service.csproj" />
+    <ProjectReference Include="..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
 
 </Project>

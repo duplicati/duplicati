@@ -222,7 +222,7 @@ namespace Duplicati.Library.Main.Operation
             s.Serialize(stream,
                 db.GetRemoteVolumes(cancellationToken)
                     .Where(x => x.State != RemoteVolumeState.Temporary)
-                    .ToEnumerable()
+                    .ToBlockingEnumerable()
                     .Cast<IRemoteVolume>()
                     .ToArray()
             );
