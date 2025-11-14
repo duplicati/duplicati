@@ -273,7 +273,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.x
+          dotnet-version: 100.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -313,7 +313,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -351,7 +351,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -390,7 +390,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -428,7 +428,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -467,7 +467,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -504,7 +504,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -543,7 +543,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -577,7 +577,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -610,7 +610,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -648,7 +648,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -684,7 +684,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -721,7 +721,7 @@ jobs:
   #     - name: Set up .NET
   #       uses: actions/setup-dotnet@v4
   #       with:
-  #         dotnet-version: 8.x
+  #         dotnet-version: 10.x
   #     - name: Checkout source
   #       uses: actions/checkout@v4
   #     - name: Restore NuGet dependencies
@@ -757,7 +757,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -794,7 +794,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -833,7 +833,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
@@ -871,7 +871,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Restore NuGet dependencies
