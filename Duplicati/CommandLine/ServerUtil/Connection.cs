@@ -451,10 +451,11 @@ public class Connection
         }
         try
         {
-            var lastLogResultString = ((JsonElement)parsedLogs[0]["Message"]).GetString();
+            var lastLogResultString = ((JsonElement)parsedLogs[0]["Message"]).GetString() ?? throw new InvalidOperationException("Failed to get last log message");
             var lastLogResult = JsonSerializer.Deserialize<JsonElement>(lastLogResultString);
             return lastLogResult.GetProperty("ParsedResult").ToString();
-        } catch
+        }
+        catch
         {
             return "Failed to parse backup log";
         }

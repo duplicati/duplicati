@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>Duplicati.Server.Implementation</AssemblyName>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

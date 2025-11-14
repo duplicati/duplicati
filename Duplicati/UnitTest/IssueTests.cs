@@ -412,7 +412,8 @@ namespace Duplicati.UnitTest
             {
                 stream.Seek(0, SeekOrigin.Begin);
                 byte[] buffer = new byte[1];
-                stream.Read(buffer, 0, 1);
+                if (stream.Read(buffer, 0, 1) < 1)
+                    throw new InvalidOperationException("Failed to read from test file");
                 buffer[0] = (byte)~buffer[0];
                 stream.Seek(0, SeekOrigin.Begin);
                 stream.Write(buffer, 0, 1);
