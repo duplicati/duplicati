@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../../Duplicati/CommandLine/BackendTester/Duplicati.CommandLine.BackendTester.csproj" />
+  <Project Path="Duplicati.Backend.Tests.csproj" />
+</Solution>

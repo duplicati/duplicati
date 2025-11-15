@@ -21,10 +21,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using Duplicati.Library.Interface;
 
@@ -97,126 +93,6 @@ namespace Duplicati.Library.Utility
                 return bs;
             }
         }
-    }
-
-
-    /// <summary>
-    /// Class for providing call-context access to http settings
-    /// </summary>
-    public static class HttpContextSettings
-    {
-        /// <summary>
-        /// Internal struct with properties
-        /// </summary>
-        private struct HttpSettings
-        {
-            /// <summary>
-            /// Gets or sets the operation timeout.
-            /// </summary>
-            /// <value>The operation timeout.</value>
-            public TimeSpan OperationTimeout;
-            /// <summary>
-            /// Gets or sets the read write timeout.
-            /// </summary>
-            /// <value>The read write timeout.</value>
-            public TimeSpan ReadWriteTimeout;
-            /// <summary>
-            /// Gets or sets a value indicating whether http requests are buffered.
-            /// </summary>
-            /// <value><c>true</c> if buffer requests; otherwise, <c>false</c>.</value>
-            public bool BufferRequests;
-            /// <summary>
-            /// Gets or sets the certificate validator.
-            /// </summary>
-            /// <value>The certificate validator.</value>
-            public SslCertificateValidator CertificateValidator;
-        }
-
-        /// <summary>
-        /// Starts a new session
-        /// </summary>
-        /// <returns>The session.</returns>
-        /// <param name="operationTimeout">The operation timeout.</param>
-        /// <param name="readwriteTimeout">The readwrite timeout.</param>
-        /// <param name="bufferRequests">If set to <c>true</c> http requests are buffered.</param>
-        public static IDisposable StartSession(TimeSpan operationTimeout = default(TimeSpan), TimeSpan readwriteTimeout = default(TimeSpan), bool bufferRequests = false, bool acceptAnyCertificate = false, string[] allowedCertificates = null)
-        {
-            // Make sure we always use our own version of the callback
-            System.Net.ServicePointManager.ServerCertificateValidationCallback = ServicePointManagerCertificateCallback;
-
-            var httpSettings = new HttpSettings
-            {
-                OperationTimeout = operationTimeout,
-                ReadWriteTimeout = readwriteTimeout,
-                BufferRequests = bufferRequests,
-                CertificateValidator = acceptAnyCertificate || (allowedCertificates != null)
-                    ? new SslCertificateValidator(acceptAnyCertificate, allowedCertificates)
-                    : null
-            };
-
-            return CallContextSettings<HttpSettings>.StartContext(httpSettings);
-        }
-
-        /// <summary>
-        /// The callback used to defer the call context, such that each scope can have its own callback
-        /// </summary>
-        /// <returns><c>true</c>, if point manager certificate callback was serviced, <c>false</c> otherwise.</returns>
-        /// <param name="sender">The sender of the validation.</param>
-        /// <param name="certificate">The certificate to validate.</param>
-        /// <param name="chain">The certificate chain.</param>
-        /// <param name="sslPolicyErrors">Errors discovered.</param>
-        private static bool ServicePointManagerCertificateCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
-            // If we have a custom SSL validator, invoke it
-            if (HttpContextSettings.CertificateValidator != null)
-                return CertificateValidator.ValidateServerCertificate(sender, certificate, chain, sslPolicyErrors);
-
-            // Default is to only approve certificates without errors
-            var result = sslPolicyErrors == SslPolicyErrors.None;
-
-            // Hack: If we have no validator, see if the context is all messed up
-            // This is not the right way, but ServicePointManager is not designed right for this
-            var any = false;
-            foreach (var v in CallContextSettings<HttpSettings>.GetAllInstances())
-                if (v.CertificateValidator != null)
-                {
-                    var t = v.CertificateValidator.ValidateServerCertificate(sender, certificate, chain, sslPolicyErrors);
-
-                    // First instance overrides framework result
-                    if (!any)
-                        result = t;
-
-                    // If there are more, we see if anyone will accept it
-                    else
-                        result |= t;
-
-                    any = true;
-                }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Gets the operation timeout.
-        /// </summary>
-        /// <value>The operation timeout.</value>
-        public static TimeSpan OperationTimeout => CallContextSettings<HttpSettings>.Settings.OperationTimeout;
-        /// <summary>
-        /// Gets the read-write timeout.
-        /// </summary>
-        /// <value>The read write timeout.</value>
-		public static TimeSpan ReadWriteTimeout => CallContextSettings<HttpSettings>.Settings.ReadWriteTimeout;
-        /// <summary>
-        /// Gets a value indicating whether https requests are buffered.
-        /// </summary>
-        /// <value><c>true</c> if buffer requests; otherwise, <c>false</c>.</value>
-		public static bool BufferRequests => CallContextSettings<HttpSettings>.Settings.BufferRequests;
-        /// <summary>
-        /// Gets or sets the certificate validator.
-        /// </summary>
-        /// <value>The certificate validator.</value>
-        public static SslCertificateValidator CertificateValidator => CallContextSettings<HttpSettings>.Settings.CertificateValidator;
-
     }
 
     /// <summary>
@@ -295,9 +171,5 @@ namespace Duplicati.Library.Utility
         /// <param name="initial">The initial value.</param>
         public static IDisposable StartContext(T initial = default(T))
             => new Disposer(initial, _settings.Value);
-
-        public static IEnumerable<T> GetAllInstances()
-            => _instances.Keys.ToList();
-
     }
 }

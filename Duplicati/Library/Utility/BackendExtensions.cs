@@ -23,7 +23,6 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,10 +57,17 @@ public static class BackendExtensions
         var connected = false;
         try
         {
-            if (await backend.ListAsync(cancellationToken).AnyAsync(entry => entry.Name == TEST_FILE_NAME, cancellationToken: cancellationToken).ConfigureAwait(false))
+            await foreach (var entry in backend
+                               .ListAsync(cancellationToken)
+                               .WithCancellation(cancellationToken)
+                               .ConfigureAwait(false))
             {
+                if (entry.Name != TEST_FILE_NAME)
+                    continue;
+
                 connected = true;
                 await backend.DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
+                break;
             }
         }
         catch (Exception e)

@@ -1,0 +1,103 @@
+<Solution>
+  <Folder Name="/Backends/">
+    <Project Path="Duplicati/Library/Backend/AliyunOSS/Duplicati.Library.Backend.AliyunOSS.csproj" />
+    <Project Path="Duplicati/Library/Backend/AzureBlob/Duplicati.Library.Backend.AzureBlob.csproj" />
+    <Project Path="Duplicati/Library/Backend/Backblaze/Duplicati.Library.Backend.Backblaze.csproj" />
+    <Project Path="Duplicati/Library/Backend/Box/Duplicati.Library.Backend.Box.csproj" />
+    <Project Path="Duplicati/Library/Backend/Dropbox/Duplicati.Library.Backend.Dropbox.csproj" />
+    <Project Path="Duplicati/Library/Backend/File/Duplicati.Library.Backend.File.csproj" />
+    <Project Path="Duplicati/Library/Backend/Filejump/Duplicati.Library.Backend.Filejump.csproj" />
+    <Project Path="Duplicati/Library/Backend/Filen/Duplicati.Library.Backend.Filen.csproj" />
+    <Project Path="Duplicati/Library/Backend/FTP/Duplicati.Library.Backend.FTP.csproj" />
+    <Project Path="Duplicati/Library/Backend/GoogleServices/Duplicati.Library.Backend.GoogleServices.csproj" />
+    <Project Path="Duplicati/Library/Backend/Idrivee2/Duplicati.Library.Backend.Idrivee2.csproj">
+      <BuildDependency Project="Duplicati/Library/Backend/S3/Duplicati.Library.Backend.S3.csproj" />
+    </Project>
+    <Project Path="Duplicati/Library/Backend/Jottacloud/Duplicati.Library.Backend.Jottacloud.csproj" />
+    <Project Path="Duplicati/Library/Backend/Mega/Duplicati.Library.Backend.Mega.csproj" />
+    <Project Path="Duplicati/Library/Backend/OneDrive/Duplicati.Library.Backend.OneDrive.csproj" />
+    <Project Path="Duplicati/Library/Backend/OpenStack/Duplicati.Library.Backend.OpenStack.csproj" />
+    <Project Path="Duplicati/Library/Backend/pCloud/Duplicati.Library.Backend.pCloud.csproj" />
+    <Project Path="Duplicati/Library/Backend/Rclone/Duplicati.Library.Backend.Rclone.csproj" />
+    <Project Path="Duplicati/Library/Backend/S3/Duplicati.Library.Backend.S3.csproj" />
+    <Project Path="Duplicati/Library/Backend/SharePoint/Duplicati.Library.Backend.SharePoint.csproj" />
+    <Project Path="Duplicati/Library/Backend/SMB/Duplicati.Library.Backend.SMB.csproj" />
+    <Project Path="Duplicati/Library/Backend/SSHv2/Duplicati.Library.Backend.SSHv2.csproj" />
+    <Project Path="Duplicati/Library/Backend/Storj/Duplicati.Library.Backend.Storj.csproj" />
+    <Project Path="Duplicati/Library/Backend/TahoeLAFS/Duplicati.Library.Backend.TahoeLAFS.csproj" />
+    <Project Path="Duplicati/Library/Backend/TencentCOS/Duplicati.Library.Backend.TencentCOS.csproj" />
+    <Project Path="Duplicati/Library/Backend/WEBDAV/Duplicati.Library.Backend.WEBDAV.csproj" />
+  </Folder>
+  <Folder Name="/Executables/Implementation/">
+    <Project Path="Duplicati/Agent/Duplicati.Agent.csproj" />
+    <Project Path="Duplicati/CommandLine/BackendTester/Duplicati.CommandLine.BackendTester.csproj" />
+    <Project Path="Duplicati/CommandLine/BackendTool/Duplicati.CommandLine.BackendTool.csproj" />
+    <Project Path="Duplicati/CommandLine/CLI/Duplicati.CommandLine.csproj" />
+    <Project Path="Duplicati/CommandLine/DatabaseTool/Duplicati.CommandLine.DatabaseTool.csproj" />
+    <Project Path="Duplicati/CommandLine/RecoveryTool/Duplicati.CommandLine.RecoveryTool.csproj" />
+    <Project Path="Duplicati/CommandLine/SecretTool/Duplicati.CommandLine.SecretTool.csproj" />
+    <Project Path="Duplicati/CommandLine/ServerUtil/Duplicati.CommandLine.ServerUtil.csproj" />
+    <Project Path="Duplicati/CommandLine/SourceTool/Duplicati.CommandLine.SourceTool.csproj" />
+    <Project Path="Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj" />
+    <Project Path="Duplicati/Server/Duplicati.Server.csproj" />
+    <Project Path="Duplicati/Service/Duplicati.Service.csproj" />
+    <Project Path="Duplicati/WindowsService/Duplicati.WindowsService.csproj" />
+  </Folder>
+  <Folder Name="/Executables/">
+    <Project Path="Executables/Duplicati.Agent/Duplicati.Agent.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.AutoUpdater/Duplicati.CommandLine.AutoUpdater.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.BackendTester/Duplicati.CommandLine.BackendTester.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.BackendTool/Duplicati.CommandLine.BackendTool.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.DatabaseTool/Duplicati.CommandLine.DatabaseTool.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.RecoveryTool/Duplicati.CommandLine.RecoveryTool.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.SecretTool/Duplicati.CommandLine.SecretTool.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.ServerUtil/Duplicati.CommandLine.ServerUtil.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.SharpAESCrypt/Duplicati.CommandLine.SharpAESCrypt.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.Snapshots/Duplicati.CommandLine.Snapshots.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.SourceTool/Duplicati.CommandLine.SourceTool.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.SyncTool/Duplicati.CommandLine.SyncTool.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine/Duplicati.CommandLine.csproj" />
+    <Project Path="Executables/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj" />
+    <Project Path="Executables/Duplicati.Server/Duplicati.Server.csproj" />
+    <Project Path="Executables/Duplicati.Service/Duplicati.Service.csproj" />
+    <Project Path="Executables/Duplicati.WindowsModulesLoader/Duplicati.WindowsModulesLoader.csproj" />
+    <Project Path="Executables/Duplicati.WindowsService/Duplicati.WindowsService.csproj" />
+  </Folder>
+  <Folder Name="/Helper Libraries/">
+    <Project Path="Duplicati/Library/Compression/Duplicati.Library.Compression.csproj" />
+    <Project Path="Duplicati/Library/Crashlog/Duplicati.Library.Crashlog.csproj" />
+    <Project Path="Duplicati/Library/DynamicLoader/Duplicati.Library.DynamicLoader.csproj" />
+    <Project Path="Duplicati/Library/SQLiteHelper/Duplicati.Library.SQLiteHelper.csproj" />
+    <Project Path="Duplicati/PackageRef/Duplicati.PackageRef.csproj" />
+  </Folder>
+  <Folder Name="/SourceProviders/">
+    <Project Path="Duplicati/Library/SourceProvider/Builtin/Duplicati.Library.SourceProvider.Builtin.csproj" />
+  </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="Tools/RemoteSynchronization/RemoteSynchronization.csproj" />
+    <Project Path="WebserverCore.Client.UsageExample/WebserverCore.Client.UsageExample.csproj" />
+  </Folder>
+  <Project Path="Duplicati/Library/AutoUpdater/Duplicati.Library.AutoUpdater.csproj" />
+  <Project Path="Duplicati/Library/Backend/OAuthHelper/Duplicati.Library.OAuthHelper.csproj" />
+  <Project Path="Duplicati/Library/Backends/Duplicati.Library.Backends.csproj" />
+  <Project Path="Duplicati/Library/Common/Duplicati.Library.Common.csproj" />
+  <Project Path="Duplicati/Library/Encryption/Duplicati.Library.Encryption.csproj" />
+  <Project Path="Duplicati/Library/Interface/Duplicati.Library.Interface.csproj" />
+  <Project Path="Duplicati/Library/Localization/Duplicati.Library.Localization.csproj" />
+  <Project Path="Duplicati/Library/Logging/Duplicati.Library.Logging.csproj" />
+  <Project Path="Duplicati/Library/Main/Duplicati.Library.Main.csproj" />
+  <Project Path="Duplicati/Library/Modules/Builtin/Duplicati.Library.Modules.Builtin.csproj" />
+  <Project Path="Duplicati/Library/RemoteControl/Duplicati.Library.RemoteControl.csproj" />
+  <Project Path="Duplicati/Library/RestAPI/Duplicati.Library.RestAPI.csproj" />
+  <Project Path="Duplicati/Library/SecretProvider/Duplicati.Library.SecretProvider.csproj" />
+  <Project Path="Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj" />
+  <Project Path="Duplicati/Library/SourceProviders/Duplicati.Library.SourceProviders.csproj" />
+  <Project Path="Duplicati/Library/UsageReporter/Duplicati.Library.UsageReporter.csproj" />
+  <Project Path="Duplicati/Library/Utility/Duplicati.Library.Utility.csproj" />
+  <Project Path="Duplicati/Library/WindowsModules/Duplicati.Library.WindowsModules.csproj" />
+  <Project Path="Duplicati/License/Duplicati.License.csproj" />
+  <Project Path="Duplicati/Server/Duplicati.Server.Serialization/Duplicati.Server.Serialization.csproj" />
+  <Project Path="Duplicati/Tools/Duplicati.Tools.csproj" />
+  <Project Path="Duplicati/UnitTest/Duplicati.UnitTest.csproj" />
+  <Project Path="Duplicati/WebserverCore/Duplicati.WebserverCore.csproj" />
+</Solution>

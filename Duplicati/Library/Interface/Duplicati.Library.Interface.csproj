@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Interface</RootNamespace>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
@@ -10,10 +10,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\PackageRef\Duplicati.PackageRef.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Linq.Async" Version="6.0.3" />
   </ItemGroup>
 
 </Project>

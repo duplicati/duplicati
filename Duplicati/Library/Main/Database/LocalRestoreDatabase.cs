@@ -2024,9 +2024,9 @@ namespace Duplicati.Library.Main.Database
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new FileRequest(
                         rd.ConvertValueToInt64(0),
-                        rd.ConvertValueToString(1),
-                        rd.ConvertValueToString(2),
-                        rd.ConvertValueToString(3),
+                        rd.ConvertValueToString(1) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
+                        rd.ConvertValueToString(2) ?? throw new InvalidOperationException("TargetPath cannot be null"),
+                        rd.ConvertValueToString(3) ?? throw new InvalidOperationException("Hash cannot be null"),
                         rd.ConvertValueToInt64(4),
                         rd.ConvertValueToInt64(5)
                     );
@@ -2071,9 +2071,9 @@ namespace Duplicati.Library.Main.Database
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new FileRequest(
                         rd.ConvertValueToInt64(0),
-                        rd.ConvertValueToString(1),
-                        rd.ConvertValueToString(2),
-                        rd.ConvertValueToString(3),
+                        rd.ConvertValueToString(1) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
+                        rd.ConvertValueToString(2) ?? throw new InvalidOperationException("TargetPath cannot be null"),
+                        rd.ConvertValueToString(3) ?? throw new InvalidOperationException("Hash cannot be null"),
                         rd.ConvertValueToInt64(4),
                         rd.ConvertValueToInt64(5)
                     );
@@ -2171,7 +2171,7 @@ namespace Duplicati.Library.Main.Database
                     yield return new BlockRequest(
                         reader.ConvertValueToInt64(0),
                         i,
-                        reader.ConvertValueToString(1),
+                        reader.ConvertValueToString(1) ?? throw new InvalidOperationException("Block hash cannot be null"),
                         reader.ConvertValueToInt64(2),
                         reader.ConvertValueToInt64(3),
                         BlockRequestType.Download
@@ -2222,7 +2222,7 @@ namespace Duplicati.Library.Main.Database
                     yield return new BlockRequest(
                         reader.ConvertValueToInt64(0),
                         i,
-                        reader.ConvertValueToString(1),
+                        reader.ConvertValueToString(1) ?? throw new InvalidOperationException("Block hash cannot be null"),
                         reader.ConvertValueToInt64(2),
                         reader.ConvertValueToInt64(3),
                         BlockRequestType.Download

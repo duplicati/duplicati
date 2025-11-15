@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Description>Central reference to all source providers</Description>
     <RootNamespace>Duplicati.Library.Backend</RootNamespace>
     <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
