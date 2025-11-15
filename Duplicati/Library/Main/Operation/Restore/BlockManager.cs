@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     sw_get_write?.Stop();
 
                     // Add a timeout monitor
-                    var timeout = TimeSpan.FromMilliseconds(DeadlockTimer.MaxProcessingTime);
+                    var timeout = TimeSpan.FromMilliseconds(DeadlockTimer.MaxProcessingTime * 2);
                     using var tcs1 = new CancellationTokenSource();
                     var t = await Task.WhenAny(
                         Task.Delay(timeout, tcs1.Token),
@@ -452,9 +452,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     m_retired = true;
                     m_volume_request.Retire();
                 }
-
-                // Stop the deadlock timer
-                DeadlockTimer.Token.Cancel();
             }
 
             /// <summary>
@@ -505,6 +502,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     Stopwatch? sw_read = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_set = options.InternalProfiling ? new() : null;
+                    Stopwatch? sw_deadlock = options.InternalProfiling ? new() : null;
                     try
                     {
                         while (true)
@@ -518,6 +516,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                             sw_set?.Start();
                             cache.Set(block_request.BlockID, data);
                             sw_set?.Stop();
+
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeConsumer", null, "Updating deadlock timer for block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
+                            sw_deadlock?.Start();
+                            DeadlockTimer.MaxProcessingTime = Math.Max(DeadlockTimer.MaxProcessingTime, (int)(DateTime.Now - block_request.TimestampMilliseconds).TotalMilliseconds);
+                            sw_deadlock?.Stop();
                         }
                     }
                     catch (RetiredException)
@@ -526,7 +529,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read!.ElapsedMilliseconds}ms, Set: {sw_set!.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read!.ElapsedMilliseconds}ms, Set: {sw_set!.ElapsedMilliseconds}ms, Deadlock timer: {sw_deadlock!.ElapsedMilliseconds}ms");
                         }
 
                         // Cancel any remaining readers - although there shouldn't be any.
