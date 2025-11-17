@@ -74,9 +74,9 @@ namespace Duplicati.Library.Snapshots
         {
             // MacOS implementation only handles photo libraries specially if requested
             // Otherwise, it behaves like the Linux implementation
-            if (OperatingSystem.IsMacOS() && macOSPhotosHandling != MacOSPhotosHandling.LibraryOnly)
+            if (OperatingSystem.IsMacOS())
                 return new NoSnapshotMacOS(paths, ignoreAdvisoryLocking, followSymlinks, macOSPhotosHandling, photosLibraryPath);
-            else if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+            else if (OperatingSystem.IsLinux())
                 return new NoSnapshotLinux(paths, ignoreAdvisoryLocking, followSymlinks);
             else if (OperatingSystem.IsWindows())
                 return new NoSnapshotWindows(paths, followSymlinks, useSeBackup);
