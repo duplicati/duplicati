@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
-using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.SourceProvider;
 

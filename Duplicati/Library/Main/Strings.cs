@@ -284,7 +284,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ConcurrencyblockhashersShort { get { return LC.L(@"Specify the number of concurrent hashing processes"); } }
         public static string ConcurrencycompressorsLong { get { return LC.L(@"Use this option to set the number of processes that perform compression of output data."); } }
         public static string ConcurrencycompressorsShort { get { return LC.L(@"Specify the number of concurrent compression processes"); } }
-        public static string ConcurrencyfileprocessorsShort { get { return LC.L(@"[EXPERIMENTAL]Specify the number of concurrent files to open"); } }
+        public static string ConcurrencyfileprocessorsShort { get { return LC.L(@"Specify the number of concurrent files to open"); } }
         public static string ConcurrencyfileprocessorsLong { get { return LC.L(@"Use this option to set the number of concurrent files to open. This could accelerate big backups involving lot of files, such as an initial backup"); } }
         public static string DisablesyntehticfilelistLong { get { return LC.L(@"If Duplicati detects that the previous backup did not complete, it will generate a filelist that is a merge of the last completed backup and the contents that were uploaded in the incomplete backup session."); } }
         public static string DisablesyntheticfilelistShort { get { return LC.L(@"Disable synthetic filelist"); } }
@@ -375,6 +375,10 @@ namespace Duplicati.Library.Main.Strings
         public static string InternalProfilingLong { get { return LC.L("Use this option to enable internal profiling. Profiling is used to measure the performance of the internal code. The profiling data is written to the log file and can be used to identify performance bottlenecks."); } }
         public static string IgnoreUpdateIfVersionExistsShort { get { return LC.L("Ignore update if version exists"); } }
         public static string IgnoreUpdateIfVersionExistsLong { get { return LC.L("Use this option to ignore the update if the version already exists. This can be used to avoid errors if asking to update the database with a version that already exists."); } }
+        public static string DisablephotohandlingShort { get { return LC.L("Disable special handling for photo libraries on MacOS"); } }
+        public static string DisablephotohandlingLong { get { return LC.L("Use this option to disable special handling for photo libraries on MacOS. By default, Duplicati will attempt to read the contents of photo libraries and back up the individual photos instead of the on-disk library contents itself. This option disables that behavior and backs up the library as a regular folder."); } }
+        public static string MacosphotoslibrarypathShort { get { return LC.L("Path to the Photos library"); } }
+        public static string MacosphotoslibrarypathLong { get { return LC.L("Use this option to specify the path to the Photos library on MacOS. This option is only relevant if the Photos library is not in the default location."); } }
     }
 
     internal static class Common

@@ -1147,7 +1147,7 @@ namespace Duplicati.Library.Main.Operation
                         continue;
                     }
 
-                    using var snapshot = Snapshots.SnapshotUtility.CreateNoSnapshot([block.Path], true, true, PermissionHelper.HasSeBackupPrivilege());
+                    using var snapshot = Snapshots.SnapshotUtility.CreateNoSnapshot([block.Path], m_options.IgnoreAdvisoryLocking, m_options.SymlinkPolicy == Options.SymlinkStrategy.Follow, PermissionHelper.HasSeBackupPrivilege(), m_options.HandleMacOSPhotoLibrary, m_options.MacOSPhotoLibraryPath);
                     var entry = snapshot.GetFilesystemEntry(block.Path, isDir);
                     if (entry == null)
                     {
