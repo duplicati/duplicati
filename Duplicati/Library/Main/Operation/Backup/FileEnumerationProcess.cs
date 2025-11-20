@@ -119,7 +119,17 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 }
                             }
                         }
-                        worklist = ExpandSources(changedfilelist).WhereAwait(FilterEntry);
+
+                        async IAsyncEnumerable<ISourceProviderEntry> FilterExpandedSources(IAsyncEnumerable<ISourceProviderEntry> source, [EnumeratorCancellation] CancellationToken token)
+                        {
+                            await foreach (var entry in source.WithCancellation(token).ConfigureAwait(false))
+                            {
+                                if (await FilterEntry(entry).ConfigureAwait(false))
+                                    yield return entry;
+                            }
+                        }
+
+                        worklist = FilterExpandedSources(ExpandSources(changedfilelist), token);
                     }
                     else if (journalService != null)
                     {

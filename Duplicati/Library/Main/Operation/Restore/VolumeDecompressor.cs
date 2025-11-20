@@ -43,15 +43,6 @@ namespace Duplicati.Library.Main.Operation.Restore
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecompressor>();
 
         /// <summary>
-        /// Id of the next decompressor. Used to give each decompressor a unique index.
-        /// </summary>
-        public static int IdCounter = -1;
-        /// <summary>
-        /// Maximum processing times for each active decompressor.
-        /// </summary>
-        public static int[] MaxProcessingTimes = [];
-
-        /// <summary>
         /// Runs the volume decompressor process.
         /// </summary>
         /// <param name="channels">The named channels for the restore operation.</param>
@@ -74,9 +65,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 Stopwatch? sw_decompress_read = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_verify = options.InternalProfiling ? new() : null;
 
-                Stopwatch sw_processing = new();
-                int id = Interlocked.Increment(ref IdCounter);
-
                 try
                 {
                     using var block_hasher = HashFactory.CreateHasher(options.BlockHashAlgorithm);
@@ -90,7 +78,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_read?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Decompressing block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
-                        sw_processing.Restart();
                         sw_decompress_alloc?.Start();
                         var data = ArrayPool<byte>.Shared.Rent(options.Blocksize);
                         sw_decompress_alloc?.Stop();
@@ -119,9 +106,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                         sw_verify?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Verified block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
-                        sw_processing.Stop();
-                        // This is the only writing process to that int, so an update is safe.
-                        MaxProcessingTimes[id] = Math.Max(MaxProcessingTimes[id], (int)sw_processing.ElapsedMilliseconds);
 
                         sw_write?.Start();
                         // Send the block to the `BlockManager` process.

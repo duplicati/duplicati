@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="../../Duplicati/Library/Compression/Duplicati.Library.Compression.csproj" />
+  <Project Path="../../Duplicati/Library/Interface/Duplicati.Library.Interface.csproj" />
+  <Project Path="../../Duplicati/Library/Localization/Duplicati.Library.Localization.csproj" />
+  <Project Path="../../Duplicati/Library/Logging/Duplicati.Library.Logging.csproj" />
+  <Project Path="../../Duplicati/Library/Utility/Duplicati.Library.Utility.csproj" />
+  <Project Path="ZipFileDebugger.csproj" />
+</Solution>

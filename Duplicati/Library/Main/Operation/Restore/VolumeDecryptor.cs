@@ -43,15 +43,6 @@ namespace Duplicati.Library.Main.Operation.Restore
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecryptor>();
 
         /// <summary>
-        /// Id of the next decryptor. Used to give each decryptor a unique index.
-        /// </summary>
-        public static int IdCounter = -1;
-        /// <summary>
-        /// Maximum processing times for each active decryptor.
-        /// </summary>
-        public static int[] MaxProcessingTimes = [];
-
-        /// <summary>
         /// Runs the volume decryptor process.
         /// </summary>
         /// <param name="channels">The named channels for the restore operation.</param>
@@ -73,9 +64,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 Stopwatch? sw_bvr = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_vw = options.InternalProfiling ? new() : null;
 
-                Stopwatch sw_processing = new();
-                int id = Interlocked.Increment(ref IdCounter);
-
                 try
                 {
                     while (true)
@@ -86,7 +74,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_read?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Decrypting volume {0} (ID: {1})", volume_name, volume_id);
 
-                        sw_processing.Restart();
                         // Decrypt the volume.
                         sw_decrypt?.Start();
                         var tmpfile = backend.DecryptFile(volume, volume_name, options);
@@ -101,9 +88,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                         var volume_wrapper = new VolumeWrapper(tmpfile, bvr);
                         sw_vw?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "BlockVolumeReader", null, "Created BlockVolumeReader for volume {0} (ID: {1})", volume_name, volume_id);
-                        sw_processing.Stop();
-                        // This is the only writing process to that int, so an update is safe.
-                        MaxProcessingTimes[id] = Math.Max(MaxProcessingTimes[id], (int)sw_processing.ElapsedMilliseconds);
 
                         sw_write?.Start();
                         // Pass the decrypted volume to the `VolumeDecompressor` process.

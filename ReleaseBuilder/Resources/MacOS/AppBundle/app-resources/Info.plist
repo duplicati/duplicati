@@ -34,6 +34,8 @@
 	<!-- Privacy usage descriptions -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Duplicati needs access to your Photos Library to back up your images.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs to add items to your photo library for restoring your images.</string>	
 	<key>NSDownloadsFolderUsageDescription</key>
 	<string>Duplicati needs access to your Downloads folder to include files in your backups.</string>
 	<key>NSDocumentsFolderUsageDescription</key>

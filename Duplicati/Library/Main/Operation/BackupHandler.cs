@@ -124,7 +124,7 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
-            return SnapshotUtility.CreateNoSnapshot(sources, options.IgnoreAdvisoryLocking, options.SymlinkPolicy == Options.SymlinkStrategy.Follow, useSeBackup);
+            return SnapshotUtility.CreateNoSnapshot(sources, options.IgnoreAdvisoryLocking, options.SymlinkPolicy == Options.SymlinkStrategy.Follow, useSeBackup, options.HandleMacOSPhotoLibrary, options.MacOSPhotoLibraryPath);
         }
 
         /// <summary>
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Main.Operation
             // all of the local database classes handle this), as the constructor
             // is not async and shouldn't be executing "heavy" code, such as
             // database queries.
-            var journalData = m_database.GetChangeJournalData(lastfilesetid, m_taskReader.ProgressToken).ToEnumerable();
+            var journalData = m_database.GetChangeJournalData(lastfilesetid, m_taskReader.ProgressToken).ToBlockingEnumerable();
             var service = new UsnJournalService(fileProvider.SnapshotService, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,
                 journalData, cancellationTokenSource.Token);
 
@@ -586,11 +586,11 @@ namespace Duplicati.Library.Main.Operation
                 .ConfigureAwait(false);
 
             // Calculate the number of samples to test, using the largest number of file of a given type
-            long remoteVolumeCount = await m_database
+            var remoteVolumeCount = await m_database
                 .GetRemoteVolumes(m_result.TaskControl.ProgressToken)
                 .Where(x => x.State == RemoteVolumeState.Verified)
                 .GroupBy(x => x.Type)
-                .SelectAwait(async x => await x.LongCountAsync())
+                .Select(x => x.LongCount())
                 .MaxAsync()
                 .ConfigureAwait(false);
 

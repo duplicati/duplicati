@@ -26,6 +26,7 @@ using System.IO;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Snapshots.MacOS;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -65,11 +66,17 @@ namespace Duplicati.Library.Snapshots
         /// <param name="ignoreAdvisoryLocking">Flag to ignore advisory locking</param>
         /// <param name="followSymlinks">Whether to follow symlinks</param>
         /// <param name="useSeBackup">Whether to use SeBackupPrivilege on Windows</param>
+        /// <param name="macOSPhotosHandling">Whether to handle MacOS Photos libraries specially</param>
+        /// <param name="photosLibraryPath">The user specified MacOS Photos library path</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        public static ISnapshotService CreateNoSnapshot(IEnumerable<string> paths, bool ignoreAdvisoryLocking, bool followSymlinks, bool useSeBackup)
+        public static ISnapshotService CreateNoSnapshot(IEnumerable<string> paths, bool ignoreAdvisoryLocking, bool followSymlinks, bool useSeBackup, MacOSPhotosHandling macOSPhotosHandling, string photosLibraryPath)
         {
-            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            // MacOS implementation only handles photo libraries specially if requested
+            // Otherwise, it behaves like the Linux implementation
+            if (OperatingSystem.IsMacOS())
+                return new NoSnapshotMacOS(paths, ignoreAdvisoryLocking, followSymlinks, macOSPhotosHandling, photosLibraryPath);
+            else if (OperatingSystem.IsLinux())
                 return new NoSnapshotLinux(paths, ignoreAdvisoryLocking, followSymlinks);
             else if (OperatingSystem.IsWindows())
                 return new NoSnapshotWindows(paths, followSymlinks, useSeBackup);

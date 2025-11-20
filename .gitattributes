@@ -26,6 +26,7 @@
 ###############################################################################
 
 *.sln        text eol=lf
+*.slnx       text eol=lf
 *.csproj     text eol=lf
 *.vbproj     text eol=lf
 *.vcxproj    text eol=lf
@@ -45,6 +46,7 @@
 
 
 #*.sln       merge=binary
+#*.slnx      merge=binary
 #*.csproj    merge=binary
 #*.vbproj    merge=binary
 #*.vcxproj   merge=binary

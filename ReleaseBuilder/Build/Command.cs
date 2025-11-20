@@ -222,8 +222,8 @@ public static partial class Command
 
         var solutionFileOption = new Option<FileInfo>(
             name: "--solution-file",
-            description: "Path to the Duplicati.sln file",
-            getDefaultValue: () => new FileInfo(Path.GetFullPath(Path.Combine("..", "Duplicati.sln")))
+            description: "Path to the Duplicati.slnx file",
+            getDefaultValue: () => new FileInfo(Path.GetFullPath(Path.Combine("..", "Duplicati.slnx")))
         );
 
         var disableAuthenticodeOption = new Option<bool>(
@@ -481,7 +481,7 @@ public static partial class Command
         if (!File.Exists(versionFilePath))
             throw new FileNotFoundException($"Version file not found: {versionFilePath}");
 
-        var sourceProjects = Directory.EnumerateDirectories(Path.Combine(baseDir, "Executables", "net8"), "*", SearchOption.TopDirectoryOnly)
+        var sourceProjects = Directory.EnumerateDirectories(Path.Combine(baseDir, "Executables"), "*", SearchOption.TopDirectoryOnly)
             .SelectMany(x => Directory.EnumerateFiles(x, "*.csproj", SearchOption.TopDirectoryOnly))
             .Where(x => !ExcludedProjects.Contains(Path.GetFileName(x)))
             .ToList();
@@ -568,9 +568,13 @@ public static partial class Command
             changelogNews,
             input);
 
-        rtcfg.ToggleAuthenticodeSigning();
-        rtcfg.ToggleSignCodeSigning();
-        rtcfg.ToggleNotarizeSigning();
+        if (buildTargets.Any(x => x.OS == OSType.Windows))
+            rtcfg.ToggleAuthenticodeSigning();
+        if (buildTargets.Any(x => x.OS == OSType.MacOS))
+        {
+            rtcfg.ToggleSignCodeSigning();
+            rtcfg.ToggleNotarizeSigning();
+        }
         rtcfg.ToggleGpgSigning();
         rtcfg.ToggleS3Upload();
         rtcfg.ToggleGithubUpload(rtcfg.ReleaseInfo.Channel);

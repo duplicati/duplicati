@@ -237,8 +237,8 @@ public static class WebServerLoader
         var webroot = Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
 #if DEBUG
-        //For debug we go "../../../../../.." to get out of "Executables/net8/Duplicati.GUI.TrayIcon/bin/debug/net8.0"
-        string tmpwebroot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", "..", "..", "..", "..", ".."));
+        //For debug we go "../../../../.." to get out of "Executables/Duplicati.GUI.TrayIcon/bin/debug/net10.0"
+        string tmpwebroot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", "..", "..", "..", ".."));
         tmpwebroot = System.IO.Path.Combine(tmpwebroot, "Duplicati", "Server");
         if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
             webroot = tmpwebroot;

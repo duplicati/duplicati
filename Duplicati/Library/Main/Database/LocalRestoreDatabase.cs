@@ -2024,9 +2024,9 @@ namespace Duplicati.Library.Main.Database
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new FileRequest(
                         rd.ConvertValueToInt64(0),
-                        rd.ConvertValueToString(1),
-                        rd.ConvertValueToString(2),
-                        rd.ConvertValueToString(3),
+                        rd.ConvertValueToString(1) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
+                        rd.ConvertValueToString(2) ?? throw new InvalidOperationException("TargetPath cannot be null"),
+                        rd.ConvertValueToString(3) ?? throw new InvalidOperationException("Hash cannot be null"),
                         rd.ConvertValueToInt64(4),
                         rd.ConvertValueToInt64(5)
                     );
@@ -2071,9 +2071,9 @@ namespace Duplicati.Library.Main.Database
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new FileRequest(
                         rd.ConvertValueToInt64(0),
-                        rd.ConvertValueToString(1),
-                        rd.ConvertValueToString(2),
-                        rd.ConvertValueToString(3),
+                        rd.ConvertValueToString(1) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
+                        rd.ConvertValueToString(2) ?? throw new InvalidOperationException("TargetPath cannot be null"),
+                        rd.ConvertValueToString(3) ?? throw new InvalidOperationException("Hash cannot be null"),
                         rd.ConvertValueToInt64(4),
                         rd.ConvertValueToInt64(5)
                     );
@@ -2171,7 +2171,7 @@ namespace Duplicati.Library.Main.Database
                     yield return new BlockRequest(
                         reader.ConvertValueToInt64(0),
                         i,
-                        reader.ConvertValueToString(1),
+                        reader.ConvertValueToString(1) ?? throw new InvalidOperationException("Block hash cannot be null"),
                         reader.ConvertValueToInt64(2),
                         reader.ConvertValueToInt64(3),
                         BlockRequestType.Download
@@ -2222,7 +2222,7 @@ namespace Duplicati.Library.Main.Database
                     yield return new BlockRequest(
                         reader.ConvertValueToInt64(0),
                         i,
-                        reader.ConvertValueToString(1),
+                        reader.ConvertValueToString(1) ?? throw new InvalidOperationException("Block hash cannot be null"),
                         reader.ConvertValueToInt64(2),
                         reader.ConvertValueToInt64(3),
                         BlockRequestType.Download
@@ -2234,6 +2234,30 @@ namespace Duplicati.Library.Main.Database
                 // Return the connection to the pool
                 m_connection_pool.Add((connection, transaction));
             }
+        }
+
+        /// <summary>
+        /// Finds the largest volume size among all 'Blocks' type remote volumes.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>The size of the largest volume, in bytes, or -1 if no volumes are found.</returns>
+        public async Task<long> GetLargestVolumeAsync(CancellationToken token)
+        {
+            using var cmd = m_connection.CreateCommand(@"
+                SELECT
+                    MAX(""Size"")
+                FROM ""RemoteVolume""
+                WHERE ""Type"" = 'Blocks'
+            ")
+                .SetTransaction(m_rtr);
+
+            var result = await cmd.ExecuteScalarAsync(token)
+                .ConfigureAwait(false);
+
+            if (result == DBNull.Value || result == null)
+                return -1;
+
+            return Convert.ToInt64(result);
         }
 
         /// <summary>

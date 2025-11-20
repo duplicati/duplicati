@@ -60,6 +60,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     public async Task ServerBackupLifecycle()
     {
         var backupPassphrase = "integration-passphrase";
+        var backupName = $"API integration backup {Guid.NewGuid():N}";
         var importRestoreFolder = Path.Combine(BASEFOLDER, "restored-from-import");
         Directory.CreateDirectory(importRestoreFolder);
 
@@ -71,15 +72,26 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         {
             await WithAuthenticatedServerAsync(async httpClient =>
             {
-                var backupId = await CreateBackupAsync(httpClient, backupPassphrase).ConfigureAwait(false);
-                await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+                var backupId = await CreateBackupAsync(httpClient, backupPassphrase, backupName).ConfigureAwait(false);
+                var listedBackup = await AssertBackupListedAsync(httpClient, backupId, backupName).ConfigureAwait(false);
+                var expectedTargetUrl = BuildFileBackendUrl(this.TARGETFOLDER);
+                Assert.That(listedBackup.TargetURL, Is.EqualTo(expectedTargetUrl), "Backup list should report the configured target");
+
+                var runTask = await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+                Assert.That(runTask.ID, Is.GreaterThan(0), "Running the backup should return a task identifier");
 
                 await DirectoryDeleteSafeAsync(this.RESTOREFOLDER).ConfigureAwait(false);
                 Directory.CreateDirectory(this.RESTOREFOLDER);
                 await RestoreAndVerifyAsync(httpClient, backupId, backupPassphrase, this.RESTOREFOLDER, expectedContents).ConfigureAwait(false);
 
                 var exportBytes = await ExportConfigurationAsync(httpClient, backupId).ConfigureAwait(false);
+                Assert.That(exportBytes.Length, Is.GreaterThan(0), "Export configuration should produce a payload");
                 var importedBackupId = await ImportConfigurationAsync(httpClient, exportBytes).ConfigureAwait(false);
+                Assert.That(importedBackupId, Is.Not.Empty.And.Not.EqualTo(backupId), "Import should register a distinct backup");
+
+                var backupsAfterImport = await GetBackupsAsync(httpClient).ConfigureAwait(false);
+                Assert.That(backupsAfterImport.Select(entry => entry.Backup.ID), Does.Contain(backupId), "Original backup should remain listed after import");
+                Assert.That(backupsAfterImport.Select(entry => entry.Backup.ID), Does.Contain(importedBackupId), "Imported backup should be listed");
 
                 await DirectoryDeleteSafeAsync(importRestoreFolder).ConfigureAwait(false);
                 Directory.CreateDirectory(importRestoreFolder);
@@ -89,6 +101,90 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         finally
         {
             SafeDeleteDirectory(importRestoreFolder);
+        }
+    }
+
+    [Test]
+    [Category("Integration")]
+    public async Task ServerMetadataEndpointsReturnData()
+    {
+        var entryAssemblyLocation = Duplicati.Library.Utility.Utility.getEntryAssembly().Location;
+        var installationRoot = Path.GetDirectoryName(entryAssemblyLocation) ?? ".";
+        var licensesRoot = Path.Combine(installationRoot, "licenses");
+        var integrationLicenseFolder = Path.Combine(licensesRoot, $"integration-{Guid.NewGuid():N}");
+        var licenseTitle = Path.GetFileName(integrationLicenseFolder);
+        var licensesRootAlreadyExists = Directory.Exists(licensesRoot);
+
+        Directory.CreateDirectory(integrationLicenseFolder);
+        await File.WriteAllTextAsync(Path.Combine(integrationLicenseFolder, "license.txt"), "Integration test license").ConfigureAwait(false);
+        await File.WriteAllTextAsync(Path.Combine(integrationLicenseFolder, "homepage.txt"), "https://duplicati.com/integration-test").ConfigureAwait(false);
+        await File.WriteAllTextAsync(Path.Combine(integrationLicenseFolder, "licensedata.json"), "{\"license\":\"integration\"}").ConfigureAwait(false);
+
+        try
+        {
+            await WithAuthenticatedServerAsync(async httpClient =>
+            {
+                var systemInfo = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/systeminfo", JsonOptions).ConfigureAwait(false);
+                Assert.That(systemInfo.ValueKind, Is.EqualTo(JsonValueKind.Object), "System info should be returned as a JSON object");
+
+                if (!systemInfo.TryGetProperty("apiVersion", out var apiVersionElement) && !systemInfo.TryGetProperty("APIVersion", out apiVersionElement))
+                    Assert.Fail("System info payload did not contain an API version");
+                Assert.That(apiVersionElement.GetInt32(), Is.GreaterThan(0), "API version should be a positive integer");
+
+                if (!systemInfo.TryGetProperty("serverVersionName", out var serverVersionNameElement) && !systemInfo.TryGetProperty("ServerVersionName", out serverVersionNameElement))
+                    Assert.Fail("System info payload did not contain a server version name");
+                Assert.That(serverVersionNameElement.GetString(), Is.Not.Null.And.Not.Empty, "Server version name should be populated");
+
+                var hasOptionsProperty = systemInfo.TryGetProperty("options", out var optionsElement) || systemInfo.TryGetProperty("Options", out optionsElement);
+                Assert.That(hasOptionsProperty && optionsElement.ValueKind == JsonValueKind.Array, Is.True, "System information should include option metadata");
+
+                var logPollResponse = await httpClient.GetAsync("/api/v1/logdata/poll?level=Warning&id=0&pagesize=25").ConfigureAwait(false);
+                logPollResponse.EnsureSuccessStatusCode();
+                var logPoll = await logPollResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOptions).ConfigureAwait(false);
+                Assert.That(logPoll.ValueKind, Is.EqualTo(JsonValueKind.Array), "Log poll should return an array result");
+
+                var logResponse = await httpClient.GetAsync("/api/v1/logdata/log?pagesize=25").ConfigureAwait(false);
+                logResponse.EnsureSuccessStatusCode();
+                var logRecords = await logResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOptions).ConfigureAwait(false);
+                Assert.That(logRecords.ValueKind, Is.EqualTo(JsonValueKind.Array), "Log history should be returned as a JSON array");
+                if (logRecords.GetArrayLength() > 0)
+                {
+                    var firstRecord = logRecords.EnumerateArray().First();
+                    Assert.That(firstRecord.ValueKind, Is.EqualTo(JsonValueKind.Object), "Log entries should be JSON objects");
+                    Assert.That(firstRecord.EnumerateObject().Any(), Is.True, "Log entry objects should expose columns");
+                }
+
+                var licenseResponse = await httpClient.GetAsync("/api/v1/licenses").ConfigureAwait(false);
+                licenseResponse.EnsureSuccessStatusCode();
+                var licenses = await licenseResponse.Content.ReadFromJsonAsync<LicenseDto[]>(JsonOptions).ConfigureAwait(false)
+                                ?? throw new InvalidOperationException("License response was empty");
+                Assert.That(licenses.Select(license => license.Title), Does.Contain(licenseTitle), "Licenses endpoint should include the integration license entry");
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            try
+            {
+                if (Directory.Exists(integrationLicenseFolder))
+                    Directory.Delete(integrationLicenseFolder, true);
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
+
+            if (!licensesRootAlreadyExists)
+            {
+                try
+                {
+                    if (Directory.Exists(licensesRoot) && !Directory.EnumerateFileSystemEntries(licensesRoot).Any())
+                        Directory.Delete(licensesRoot, true);
+                }
+                catch
+                {
+                    // Ignore cleanup errors
+                }
+            }
         }
     }
 
@@ -284,6 +380,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
                    ?? throw new InvalidOperationException("Restore start response was empty");
 
         await WaitForTaskCompletionAsync(httpClient, task.ID).ConfigureAwait(false);
+        await AssertTaskCompletedAsync(httpClient, task.ID).ConfigureAwait(false);
 
         var restoredFiles = Directory.GetFiles(restoreFolder, "*", SearchOption.AllDirectories);
         Assert.That(restoredFiles.Length, Is.EqualTo(1), "Expected a single restored file");
@@ -299,6 +396,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         var task = await response.Content.ReadFromJsonAsync<TaskStartedDto>(JsonOptions).ConfigureAwait(false)
                    ?? throw new InvalidOperationException("Task response was empty");
         await WaitForTaskCompletionAsync(httpClient, task.ID).ConfigureAwait(false);
+        await AssertTaskCompletedAsync(httpClient, task.ID).ConfigureAwait(false);
         return task;
     }
 
@@ -307,10 +405,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         var stopwatch = Stopwatch.StartNew();
         while (true)
         {
-            var response = await httpClient.GetAsync($"/api/v1/task/{taskId}").ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-            var state = await response.Content.ReadFromJsonAsync<GetTaskStateDto>(JsonOptions).ConfigureAwait(false)
-                        ?? throw new InvalidOperationException("Task state response was empty");
+            var state = await GetTaskStateAsync(httpClient, taskId).ConfigureAwait(false);
 
             if (string.Equals(state.Status, "Completed", StringComparison.OrdinalIgnoreCase))
                 return;
@@ -353,6 +448,46 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         if (string.IsNullOrWhiteSpace(result.Id))
             throw new InvalidOperationException("Import did not return a backup ID");
         return result.Id;
+    }
+
+    private static async Task<BackupAndScheduleOutputDto[]> GetBackupsAsync(HttpClient httpClient)
+    {
+        var response = await httpClient.GetAsync("/api/v1/backups").ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<BackupAndScheduleOutputDto[]>(JsonOptions).ConfigureAwait(false)
+               ?? throw new InvalidOperationException("Backups list response was empty");
+    }
+
+    private static async Task<BackupDto> AssertBackupListedAsync(HttpClient httpClient, string backupId, string? expectedName = null)
+    {
+        var backups = await GetBackupsAsync(httpClient).ConfigureAwait(false);
+        Assert.That(backups, Is.Not.Null.And.Not.Empty, "Backup list should not be empty");
+        var match = backups
+            .Select(entry => entry.Backup)
+            .FirstOrDefault(backup => string.Equals(backup.ID, backupId, StringComparison.Ordinal));
+
+        Assert.That(match, Is.Not.Null, $"Backup list should contain backup '{backupId}'");
+        if (expectedName != null)
+            Assert.That(match!.Name, Is.EqualTo(expectedName), "Backup list should report the expected name");
+
+        return match!;
+    }
+
+    private static async Task AssertTaskCompletedAsync(HttpClient httpClient, long taskId)
+    {
+        var state = await GetTaskStateAsync(httpClient, taskId).ConfigureAwait(false);
+        Assert.That(state.Status, Is.EqualTo("Completed").IgnoreCase, $"Task {taskId} should be completed");
+        Assert.That(state.TaskFinished, Is.Not.Null, $"Task {taskId} should report a completion time");
+        Assert.That(state.ErrorMessage, Is.Null, $"Task {taskId} should not report an error message");
+        Assert.That(state.Exception, Is.Null, $"Task {taskId} should not report an exception");
+    }
+
+    private static async Task<GetTaskStateDto> GetTaskStateAsync(HttpClient httpClient, long taskId)
+    {
+        var response = await httpClient.GetAsync($"/api/v1/task/{taskId}").ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<GetTaskStateDto>(JsonOptions).ConfigureAwait(false)
+               ?? throw new InvalidOperationException("Task state response was empty");
     }
 
     private static Task<int> RunServerInBackground(ApplicationSettings applicationSettings, string[] args)

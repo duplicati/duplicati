@@ -1581,9 +1581,10 @@ namespace Duplicati.Library.Utility
             if (!File.Exists(pfxPath))
                 throw new FileNotFoundException("The specified PFX file does not exist.", pfxPath);
 
-            var collection = new X509Certificate2Collection();
-            collection.Import(pfxPath, password, X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
-            return collection;
+            return X509CertificateLoader.LoadPkcs12CollectionFromFile(
+                pfxPath,
+                password,
+                X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
         }
 
         /// <summary>

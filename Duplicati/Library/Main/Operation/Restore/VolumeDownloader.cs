@@ -43,16 +43,6 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDownloader>();
 
-
-        /// <summary>
-        /// Id of the next downloader. Used to give each downloader a unique index.
-        /// </summary>
-        public static int IdCounter = -1;
-        /// <summary>
-        /// Maximum processing times for each active downloader.
-        /// </summary>
-        public static int[] MaxProcessingTimes = [];
-
         /// <summary>
         /// Runs the volume downloader process.
         /// </summary>
@@ -75,9 +65,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 Stopwatch? sw_write = options.InternalProfiling ? new() : null;
                 Stopwatch? sw_wait = options.InternalProfiling ? new() : null;
 
-                Stopwatch sw_processing = new();
-                var id = Interlocked.Increment(ref IdCounter);
-
                 try
                 {
                     while (true)
@@ -90,7 +77,6 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         // Trigger the download.
                         sw_wait?.Start();
-                        sw_processing.Restart();
                         TempFile f;
                         var (volume_name, size, hash) = await db
                             .GetVolumeInfo(volume_id, results.TaskControl.ProgressToken)
@@ -107,9 +93,6 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                             throw;
                         }
-                        sw_processing.Stop();
-                        // This is the only writing process to that int, so an update is safe.
-                        MaxProcessingTimes[id] = Math.Max(MaxProcessingTimes[id], (int)sw_processing.ElapsedMilliseconds);
                         sw_wait?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DownloadVolume", null, "Downloaded volume {0} (ID: {1})", volume_name, volume_id);
 

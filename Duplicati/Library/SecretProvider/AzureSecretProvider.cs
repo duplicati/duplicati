@@ -123,11 +123,16 @@ public class AzureSecretProvider : ISecretProvider
         else if (cfg.AuthenticationType == AuthenticationType.UsernamePassword && (string.IsNullOrWhiteSpace(cfg.TenantId) || string.IsNullOrWhiteSpace(cfg.ClientId) || string.IsNullOrWhiteSpace(cfg.Username) || string.IsNullOrWhiteSpace(cfg.Password)))
             throw new UserInformationException($"The settings {ArgName(nameof(AzureSecretProviderConfig.TenantId))}, {ArgName(nameof(AzureSecretProviderConfig.ClientId))}, {ArgName(nameof(AzureSecretProviderConfig.Username))}, and {ArgName(nameof(AzureSecretProviderConfig.Password))} are required for username/password authentication", "MissingUsernamePasswordSettings");
 
+#pragma warning disable CS0618 // Type or member is obsolete
+        // Disable warnings for UsernamePasswordCredential being obsolete as we still want to support it
+        var creds = new UsernamePasswordCredential(cfg.Username, cfg.Password, cfg.TenantId, cfg.ClientId);
+#pragma warning restore CS0618 // Type or member is obsolete
+
         TokenCredential credential = cfg.AuthenticationType switch
         {
             AuthenticationType.ClientSecret => new ClientSecretCredential(cfg.TenantId, cfg.ClientId, cfg.ClientSecret),
             AuthenticationType.ManagedIdentity => new DefaultAzureCredential(),
-            AuthenticationType.UsernamePassword => new UsernamePasswordCredential(cfg.Username, cfg.Password, cfg.TenantId, cfg.ClientId),
+            AuthenticationType.UsernamePassword => creds,
             _ => throw new UserInformationException($"Authentication type {cfg.AuthenticationType} is not supported", "UnsupportedAuthenticationType")
         };
 

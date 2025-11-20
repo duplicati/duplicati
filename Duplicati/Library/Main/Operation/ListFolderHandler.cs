@@ -73,7 +73,7 @@ internal static class ListFolderHandler
         {
             result.Entries = await db
                 .ListFolder(
-                    db.GetPrefixIds(folders, result.TaskControl.ProgressToken).ToEnumerable(),
+                    db.GetPrefixIds(folders, result.TaskControl.ProgressToken).ToBlockingEnumerable(),
                     filesetIds[0],
                     offset,
                     limit,

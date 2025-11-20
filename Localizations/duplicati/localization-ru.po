@@ -22,7 +22,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-07 15:56+0200\n"
+"POT-Creation-Date: 2025-11-10 11:48+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Vadim P <kladzey@gmail.com>, 2025\n"
 "Language-Team: Russian (https://app.transifex.com/duplicati/teams/67655/ru/)\n"
@@ -443,17 +443,17 @@ msgstr ""
 "Этот параметр используется только при создании новых блоков памяти. Используйте параметр, чтобы изменить тип хранилища блока памяти. Расходы и функциональность зависит от класса хранилища блока. Известные классы хранилища:\n"
 "{0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:44
+#: Library/Backend/GoogleServices/Strings.cs:48
 msgid "Google Drive"
 msgstr "Google Диск"
 
-#: Library/Backend/GoogleServices/Strings.cs:46
-#: Library/Backend/File/Strings.cs:40 Library/Compression/Strings.cs:38
+#: Library/Backend/GoogleServices/Strings.cs:50
+#: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Файл не найден: {0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:48
+#: Library/Backend/GoogleServices/Strings.cs:52
 msgid "Team drive ID"
 msgstr "Идентификатор общего диска"
 
@@ -1212,12 +1212,12 @@ msgstr ""
 "имен хостов имеет \"*\", все имена хостов разрешены, а проверка имен хостов "
 "отключена."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:264
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:269
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
 "Указать время, после которого данные журнала будут удаляться из базы данных."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:265
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:270
 msgid "Clean up old log data"
 msgstr "Очистить старые логи"
 
@@ -1244,16 +1244,16 @@ msgstr ""
 "переменной окружения {0}. Используйте опцию --{1}, чтобы отключить "
 "скремблирование базы данных."
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:96
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:97
 msgid "Temporary storage folder"
 msgstr "Папка для временного хранения"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:121
+#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:127
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Сервер запущен и слушает на {0}, порт {1}"
 
-#: Library/RestAPI/Strings.cs:117
+#: Library/RestAPI/Strings.cs:123
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -1262,7 +1262,7 @@ msgstr ""
 "Невозможно найти допустимую дату с учетом даты начала {0}, интервала "
 "повторения {1} и разрешенных дней {2}"
 
-#: Library/RestAPI/Strings.cs:123
+#: Library/RestAPI/Strings.cs:129
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Невозможно открыть сокет для входящих соединений, порты: {0}"
@@ -1377,7 +1377,7 @@ msgstr "Операция {0} завершена"
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Недопустимый путь: «{0}» ({1})"
 
-#: Library/Main/Strings.cs:42
+#: Library/Main/Strings.cs:43
 #, csharp-format
 msgid ""
 "Failed to apply 'force-locale' setting. Please try to update .NET-Framework."
@@ -1386,14 +1386,14 @@ msgstr ""
 "Не удается применить настройку «force-locale». Пожалуйста, попробуйте "
 "обновить .NET Framework. Исключение: «{0}» "
 
-#: Library/Main/Strings.cs:43
+#: Library/Main/Strings.cs:44
 #, csharp-format
 msgid "The source {0} uses an invalid volume name, aborting backup"
 msgstr ""
 "Источник {0} использует недопустимое имя тома, резервное копирование "
 "прервано."
 
-#: Library/Main/Strings.cs:44
+#: Library/Main/Strings.cs:45
 #, csharp-format
 msgid ""
 "The source {0} is on volume {1}, which could not be found, aborting backup"
@@ -1401,7 +1401,7 @@ msgstr ""
 "Источник {0} находится на томе {1}, который не может быть найден, резервное "
 "копирование прервано"
 
-#: Library/Main/Strings.cs:53
+#: Library/Main/Strings.cs:54
 msgid ""
 "A string used to prefix the filenames of the remote volumes, can be used to "
 "store multiple backups in the same remote folder. The prefix cannot contain "
@@ -1413,19 +1413,19 @@ msgstr ""
 "удаленной папке. Префикс не может содержать дефис (-), но может содержать "
 "все другие символы, разрешенные удаленным хранилищем."
 
-#: Library/Main/Strings.cs:54
+#: Library/Main/Strings.cs:55
 msgid "Remote filename prefix"
 msgstr "Префикс имени файла на удаленном сервере"
 
-#: Library/Main/Strings.cs:56
+#: Library/Main/Strings.cs:57
 msgid "Disable checks based on file time"
 msgstr "Отключить проверки на основе времени модификации файлов"
 
-#: Library/Main/Strings.cs:58
+#: Library/Main/Strings.cs:59
 msgid "Restore to another folder"
 msgstr "Восстановить в другую папку"
 
-#: Library/Main/Strings.cs:59
+#: Library/Main/Strings.cs:60
 msgid ""
 "Allow system to enter sleep power modes for inactivity during backup/restore"
 " operations (Windows/OSX only)"
@@ -1433,7 +1433,7 @@ msgstr ""
 "Позволять системе уходить в спящий режим при бездействии во время операций "
 "резервного копирования и восстановления (только для Windows/OSX)"
 
-#: Library/Main/Strings.cs:61
+#: Library/Main/Strings.cs:62
 msgid ""
 "By setting this value you can limit how much bandwidth Duplicati consumes "
 "for downloads. Setting this limit can make the backups take longer, but will"
@@ -1443,11 +1443,11 @@ msgstr ""
 "Duplicati для загрузки. Установка ограничения может привести к более "
 "длительному созданию резервных копии, но сделает Duplicati менее навязчивым."
 
-#: Library/Main/Strings.cs:62
+#: Library/Main/Strings.cs:63
 msgid "Max number of kilobytes to download pr. second"
 msgstr "Максимальная скорость загрузки в кБ/сек"
 
-#: Library/Main/Strings.cs:63
+#: Library/Main/Strings.cs:64
 msgid ""
 "By setting this value you can limit how much bandwidth Duplicati consumes "
 "for uploads. Setting this limit can make the backups take longer, but will "
@@ -1457,11 +1457,11 @@ msgstr ""
 "Duplicati для выгрузки. Установка ограничения может привести к более "
 "длительному созданию резервных копии, но сделает Duplicati менее навязчивым."
 
-#: Library/Main/Strings.cs:64
+#: Library/Main/Strings.cs:65
 msgid "Max number of kilobytes to upload pr. second"
 msgstr "Максимальная скорость выгрузки в кБ/сек"
 
-#: Library/Main/Strings.cs:69
+#: Library/Main/Strings.cs:70
 msgid ""
 "If you store the backups on a local disk, and prefer that they are kept "
 "unencrypted, you can turn of encryption completely by using this switch."
@@ -1470,11 +1470,11 @@ msgstr ""
 "они хранились в незашифрованном виде, то вы можете выключить шифрование "
 "полностью, используя этот переключатель."
 
-#: Library/Main/Strings.cs:70
+#: Library/Main/Strings.cs:71
 msgid "Disable encryption"
 msgstr "Отключить шифрование"
 
-#: Library/Main/Strings.cs:71
+#: Library/Main/Strings.cs:72
 msgid ""
 "If an upload or download fails, Duplicati will retry a number of times "
 "before failing. Use this to handle unstable network connections better."
@@ -1483,11 +1483,11 @@ msgstr ""
 "раз, прежде чем произойдет сбой. Используйте это, чтобы улучшить работу на "
 "нестабильных сетевых соединениях."
 
-#: Library/Main/Strings.cs:72
+#: Library/Main/Strings.cs:73
 msgid "Number of times to retry a failed transmission"
 msgstr "Количество попыток при неудачной передаче"
 
-#: Library/Main/Strings.cs:73
+#: Library/Main/Strings.cs:74
 msgid ""
 "Supply a passphrase that Duplicati will use to encrypt the backup volumes, "
 "making them unreadable without the passphrase. This variable can also be "
@@ -1497,19 +1497,19 @@ msgstr ""
 "сделать их нечитаемыми без этой фразы. Значение также может быть "
 "предоставлено через переменную окружения PASSPHRASE."
 
-#: Library/Main/Strings.cs:74
+#: Library/Main/Strings.cs:75
 msgid "Passphrase used to encrypt backups"
 msgstr "Пароль, использованный для шифрования резервных копий"
 
-#: Library/Main/Strings.cs:76
+#: Library/Main/Strings.cs:77
 msgid "The time to list/restore files"
 msgstr "Время для списка/восстановления файлов"
 
-#: Library/Main/Strings.cs:78
+#: Library/Main/Strings.cs:79
 msgid "The version to list/restore files"
 msgstr "Версия для списка/восстановления файлов"
 
-#: Library/Main/Strings.cs:79
+#: Library/Main/Strings.cs:80
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
@@ -1517,11 +1517,11 @@ msgstr ""
 "По умолчанию, поиск файлов выполняется только в последней резервной копии. "
 "Используйте этот параметр, чтобы показывать все предыдущие версии."
 
-#: Library/Main/Strings.cs:80
+#: Library/Main/Strings.cs:81
 msgid "Show all versions"
 msgstr "Показать все версии"
 
-#: Library/Main/Strings.cs:81
+#: Library/Main/Strings.cs:82
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the largest common prefix path."
@@ -1530,11 +1530,11 @@ msgstr ""
 "Используйте этот параметр, чтобы возвращать только самый большой общий "
 "префикс пути."
 
-#: Library/Main/Strings.cs:82
+#: Library/Main/Strings.cs:83
 msgid "Show largest prefix"
 msgstr "Показать наибольший префикс"
 
-#: Library/Main/Strings.cs:83
+#: Library/Main/Strings.cs:84
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
@@ -1543,11 +1543,11 @@ msgstr ""
 "Используйте этот параметр, чтобы возвращать только записи, найденные в "
 "папке, указанной как фильтр."
 
-#: Library/Main/Strings.cs:84
+#: Library/Main/Strings.cs:85
 msgid "Show folder contents"
 msgstr "Показать содержимое папки"
 
-#: Library/Main/Strings.cs:85
+#: Library/Main/Strings.cs:86
 msgid ""
 "After a failed transmission, Duplicati will wait a short period before "
 "attempting again. This is useful if the network drops out occasionally "
@@ -1557,15 +1557,15 @@ msgstr ""
 "прежде чем повторить попытку. Это полезно, если сеть периодически падает во "
 "время передачи."
 
-#: Library/Main/Strings.cs:86
+#: Library/Main/Strings.cs:87
 msgid "Time to wait between retries"
 msgstr "Интервал времени между повторными попытками"
 
-#: Library/Main/Strings.cs:90
+#: Library/Main/Strings.cs:91
 msgid "Set control files"
 msgstr "Настроить файлы управления"
 
-#: Library/Main/Strings.cs:93
+#: Library/Main/Strings.cs:94
 msgid ""
 "This option allows you to exclude files that are larger than the given "
 "value. Use this to prevent backups becoming extremely large."
@@ -1574,19 +1574,19 @@ msgstr ""
 "величину. Используйте его чтобы резервные копии не становились слишком "
 "большими."
 
-#: Library/Main/Strings.cs:94
+#: Library/Main/Strings.cs:95
 msgid "Limit the size of files being backed up"
 msgstr "Ограничить размер файлов для резервного копирования"
 
-#: Library/Main/Strings.cs:99
+#: Library/Main/Strings.cs:100
 msgid "Thread priority"
 msgstr "Приоритет потока"
 
-#: Library/Main/Strings.cs:101
+#: Library/Main/Strings.cs:102
 msgid "Limit the size of the volumes"
 msgstr "Ограничить размер томов"
 
-#: Library/Main/Strings.cs:108
+#: Library/Main/Strings.cs:109
 msgid ""
 "Duplicati supports pluggable compression modules. Use this option to select "
 "a module to use for compression. This is only applied when creating new "
@@ -1598,11 +1598,11 @@ msgstr ""
 "для чтения существующих файлов модуль сжатия будет выбран исходя из имени "
 "файла."
 
-#: Library/Main/Strings.cs:109
+#: Library/Main/Strings.cs:110
 msgid "Select what module to use for compression"
 msgstr "Выберите модуль шифрования"
 
-#: Library/Main/Strings.cs:110
+#: Library/Main/Strings.cs:111
 msgid ""
 "Duplicati supports pluggable encryption modules. Use this option to select a"
 " module to use for encryption. This is only applied when creating new "
@@ -1614,11 +1614,11 @@ msgstr ""
 "новых томов, при чтении существующего файла применяемый модуль шифрования "
 "определяется именем файла."
 
-#: Library/Main/Strings.cs:111
+#: Library/Main/Strings.cs:112
 msgid "Select what module to use for encryption"
 msgstr "Выбрать модуль шифрования"
 
-#: Library/Main/Strings.cs:116
+#: Library/Main/Strings.cs:117
 msgid ""
 "This setting controls the usage of snapshots, which allows Duplicati to "
 "backup files that are locked by other programs. If this is set to \"off\", "
@@ -1647,15 +1647,11 @@ msgstr ""
 "требуются права администратора. В Linux для этого используется управление "
 "логическими томами (LVM) и требуются привилегии root."
 
-#: Library/Main/Strings.cs:121
+#: Library/Main/Strings.cs:122
 msgid "The path where ready volumes are placed until uploaded"
 msgstr "Путь, по которому готовые тома будут храниться до выгрузки"
 
 #: Library/Main/Strings.cs:123
-msgid "The number of volumes to create ahead of time"
-msgstr "Количество томов для создания заранее"
-
-#: Library/Main/Strings.cs:124
 msgid ""
 "When performing asynchronous uploads, the maximum number of concurrent "
 "uploads allowed. Set to zero to disable the limit."
@@ -1664,19 +1660,19 @@ msgstr ""
 "количество одновременных загрузок. Установите на ноль, чтобы отключить "
 "ограничение."
 
-#: Library/Main/Strings.cs:125
+#: Library/Main/Strings.cs:124
 msgid "The number of concurrent uploads allowed"
 msgstr "Количество одновременных загрузок"
 
-#: Library/Main/Strings.cs:129
+#: Library/Main/Strings.cs:128
 msgid "Log internal information to a file"
 msgstr "Записывать внутреннюю информацию в log-файл"
 
-#: Library/Main/Strings.cs:131
+#: Library/Main/Strings.cs:130
 msgid "Log information level"
 msgstr "Уровень информации журнала"
 
-#: Library/Main/Strings.cs:135
+#: Library/Main/Strings.cs:138
 msgid ""
 "If Duplicati detects that the target folder is missing, it will create it "
 "automatically. Activate this option to prevent automatic folder creation."
@@ -1685,7 +1681,7 @@ msgstr ""
 "создана автоматически. Активируйте эту опцию, чтобы запретить автоматическое"
 " создание папок."
 
-#: Library/Main/Strings.cs:137
+#: Library/Main/Strings.cs:140
 msgid ""
 "Use this option to exclude faulty writers from a snapshot. This is "
 "equivalent to the -wx flag of the vshadow.exe tool, except that it only "
@@ -1696,12 +1692,12 @@ msgstr ""
 "Используйте этот параметр, чтобы исключить ошибочные записи из моментального снимка. Это эквивалентно флагу -wx средства vshadow.exe, за исключением, что принимаются только GUID класса записи, а не имена компонентов или GUID экземпляров. \n"
 "Несколько GUID должны разделяться точкой с запятой; разрешено большинство форм GUID, в том числе с фигурными скобками и без них."
 
-#: Library/Main/Strings.cs:138
+#: Library/Main/Strings.cs:141
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr "Перечень GUID писателей VSS через точку с запятой (только Windows)"
 
-#: Library/Main/Strings.cs:145
+#: Library/Main/Strings.cs:148
 #, csharp-format
 msgid ""
 "When matching timestamps, Duplicati will adjust the times by a small "
@@ -1723,19 +1719,19 @@ msgstr ""
 "добавляет 1% допуска (максимум 1 час). Используйте эту опцию, чтобы "
 "отключить допуск и использовать строгое сравнение времени."
 
-#: Library/Main/Strings.cs:148
+#: Library/Main/Strings.cs:151
 msgid "Verify uploads by listing contents"
 msgstr "Подтверждение выгрузки по перечислению содержимого"
 
-#: Library/Main/Strings.cs:150
+#: Library/Main/Strings.cs:153
 msgid "Upload files synchronously"
 msgstr "Загружать файлы синхронно"
 
-#: Library/Main/Strings.cs:152
+#: Library/Main/Strings.cs:155
 msgid "Do not re-use connections"
 msgstr "Не использовать соединения повторно"
 
-#: Library/Main/Strings.cs:153
+#: Library/Main/Strings.cs:156
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
@@ -1745,23 +1741,23 @@ msgstr ""
 "сообщая только о количестве повторных попыток. Включите эту опцию, чтобы "
 "отображать сообщения об ошибках при повторном выполнении."
 
-#: Library/Main/Strings.cs:154
+#: Library/Main/Strings.cs:157
 msgid "Show error messages when a retry is performed"
 msgstr "Показывать сообщение об ошибке при выполнении повторной попытки"
 
-#: Library/Main/Strings.cs:156
+#: Library/Main/Strings.cs:159
 msgid "Upload empty backup files"
 msgstr "Выгружать пустые файлы резервной копии"
 
-#: Library/Main/Strings.cs:160
+#: Library/Main/Strings.cs:163
 msgid "Threshold for warning about low quota"
 msgstr "Порог для предупреждения о низкой квоте"
 
-#: Library/Main/Strings.cs:164
+#: Library/Main/Strings.cs:167
 msgid "Symlink handling"
 msgstr "Обработка symlink"
 
-#: Library/Main/Strings.cs:165
+#: Library/Main/Strings.cs:168
 #, csharp-format
 msgid ""
 "Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
@@ -1777,15 +1773,15 @@ msgstr ""
 "каждую ссылку как уникальный путь. Опция «{2}» будет игнорировать все "
 "жесткие ссылки с более чем одной связью."
 
-#: Library/Main/Strings.cs:166
+#: Library/Main/Strings.cs:169
 msgid "Hardlink handling"
 msgstr "Обработка жестких ссылок"
 
-#: Library/Main/Strings.cs:168
+#: Library/Main/Strings.cs:171
 msgid "Exclude files by attribute"
 msgstr "Исключить файлы по атрибутам"
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:172
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -1798,19 +1794,19 @@ msgstr ""
 "содержимому моментального снимка. Это обходное решение может ускорить доступ"
 " к файлам в Windows XP."
 
-#: Library/Main/Strings.cs:170
+#: Library/Main/Strings.cs:173
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "Назначить диск для снимков (только для Windows)"
 
-#: Library/Main/Strings.cs:172
+#: Library/Main/Strings.cs:175
 msgid "Name of the backup"
 msgstr "Название резервной копии"
 
-#: Library/Main/Strings.cs:182
+#: Library/Main/Strings.cs:185
 msgid "Manage non-compressible file extensions"
 msgstr "Управление несжимаемыми расширениями файлов"
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:186
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -1822,31 +1818,31 @@ msgstr ""
 "значение приведет к большим издержкам при хранении списков файлов. Обратите "
 "внимание, значение не может быть изменено после создания удаленных файлов."
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:187
 msgid "Block size used in hashing"
 msgstr "Размер блока, используемого для хэширования"
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:189
 msgid "List of files to examine for changes"
 msgstr "Список файлов для проверки на изменения"
 
-#: Library/Main/Strings.cs:188
+#: Library/Main/Strings.cs:191
 msgid "Path to the local state database"
 msgstr "Путь к локальной базе данных состояний"
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:193
 msgid "List of deleted files"
 msgstr "Список удаленных файлов"
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:195
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr "Уменьшить объем памяти, отключив поиск в памяти"
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:198
 msgid "Do not query backend at startup"
 msgstr "Не опрашивать бэкэнд при запуске"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:199
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -1861,7 +1857,7 @@ msgstr ""
 "пространство на удаленном севере, однако, возможно, никогда не будут "
 "использованы."
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:201
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -1874,19 +1870,19 @@ msgstr ""
 "рекуперации. Это значение является процентным соотношением каждого из томов "
 "и суммарного размера хранилища."
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:202
 msgid "The maximum wasted space in percent"
 msgstr "Максимальное неиспользованное место в процентах"
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:206
 msgid "The hash algorithm used on blocks"
 msgstr "Алгоритм хэширования блоков"
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:208
 msgid "The hash algorithm used on files"
 msgstr "Алгоритм хэширования файлов"
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:209
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -1899,11 +1895,11 @@ msgstr ""
 " автоматическое уплотнение и выполнять его только при запуске "
 "соответствующей команды."
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:210
 msgid "Disable automatic compacting"
 msgstr "Отключить автоматическое уплотнение"
 
-#: Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:211
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -1915,11 +1911,11 @@ msgstr ""
 "гарантирует, что большие тома, которые могут иметь несколько байт "
 "неиспользуемого пространства, не бужут загружены и переписаны."
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:212
 msgid "Volume size threshold"
 msgstr "Предельный размер тома"
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:213
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
@@ -1929,11 +1925,11 @@ msgstr ""
 "принудительно группировать небольшие файлы. Небольшие объемы всегда "
 "объединяются, когда могут заполнить весь том."
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:214
 msgid "Maximum number of small volumes"
 msgstr "Максимальное количество маленьких томов"
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:215
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
@@ -1943,25 +1939,25 @@ msgstr ""
 "найти существующие блоки. Это довольно медленная операция, но она может "
 "ограничить размер загрузок."
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:216
 msgid "Use local file data when restoring"
 msgstr "Использовать данные локальных файлов при восстановлении"
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:221
 msgid "Keep a number of versions"
 msgstr "Сохранять определенное количество версий"
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:222
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr ""
 "Используйте эту опцию, чтобы установить промежуток времени, в течение "
 "которого хранятся резервные копии."
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:223
 msgid "Keep all versions within a timespan"
 msgstr "Сохранять все версии в течение периода времени"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:224
 msgid ""
 "Use this option to reduce the number of versions that are kept with "
 "increasing version age by deleting most of the old backups. The expected "
@@ -1982,27 +1978,27 @@ msgstr ""
 " параметр также поддерживает использование спецификатора \"U\" для указания "
 "неограниченного интервала времени."
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:225
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr ""
 "Уменьшить количество версий путём удаления старых промежуточных резервных "
 "копий"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:226
 msgid "Use this option to continue even if some source entries are missing."
 msgstr ""
 "Используйте этот параметр, чтобы продолжить, даже если некоторые исходные "
 "записи отсутствуют."
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:227
 msgid "Ignore missing source elements"
 msgstr "Пропустить отсутствующие исходные элементы"
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:231
 msgid "Overwrite files when restoring"
 msgstr "Перезаписывать файлы при восстановлении"
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:232
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
@@ -2010,11 +2006,11 @@ msgstr ""
 "Используйте эту опцию для увеличения генерируемого вывода. Обычно эта опция "
 "выдает по строке для каждого обработанного файла."
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:233
 msgid "Output more progress information"
 msgstr "Выводить больше информации о прогрессе"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:235
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -2022,11 +2018,11 @@ msgstr ""
 "Используйте этот параметр для увеличения объема вывода в результате "
 "операции, включая все имена файлов."
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:236
 msgid "Output full results"
 msgstr "Вывод всех результатов"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:237
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -2038,31 +2034,31 @@ msgstr ""
 "всех файлов удаленного хранилища и может служить для проверки целостности "
 "этих файлов."
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:238
 msgid "Determine if verification files are uploaded"
 msgstr "Определить, загружены ли файлы верификации"
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:240
 msgid "The number of samples to test after a backup"
 msgstr "Количество образцов для тестирования после создания резервной копии"
 
-#: Library/Main/Strings.cs:237
+#: Library/Main/Strings.cs:242
 msgid "The percentage of samples to test after a backup"
 msgstr "Процент образцов для тестирования после резервного копирования"
 
-#: Library/Main/Strings.cs:243
+#: Library/Main/Strings.cs:248
 msgid "Size of the file read buffer"
 msgstr "Объем буфера чтения файлов"
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:251
 msgid "Allow the passphrase to change"
 msgstr "Разрешить изменение кодовой фразы"
 
-#: Library/Main/Strings.cs:248
+#: Library/Main/Strings.cs:253
 msgid "List only filesets"
 msgstr "Перечислять только наборы файлов"
 
-#: Library/Main/Strings.cs:250
+#: Library/Main/Strings.cs:255
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -2073,7 +2069,7 @@ msgstr ""
 "резервного копирования и восстановления, но не сильно влияет на размер "
 "файла."
 
-#: Library/Main/Strings.cs:252
+#: Library/Main/Strings.cs:257
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
@@ -2082,11 +2078,11 @@ msgstr ""
 "помешать вам получить доступ к этим файлам. Используйте эту опцию, чтобы "
 "восстанавливать разрешения."
 
-#: Library/Main/Strings.cs:253
+#: Library/Main/Strings.cs:258
 msgid "Restore file permissions"
 msgstr "Восстанавливать права доступа файлов"
 
-#: Library/Main/Strings.cs:254
+#: Library/Main/Strings.cs:259
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -2096,11 +2092,11 @@ msgstr ""
 "чтобы убедиться, что восстановление прошло успешно. Используйте этот "
 "параметр, чтобы отключить проверку и не дожидаться подтверждения."
 
-#: Library/Main/Strings.cs:255
+#: Library/Main/Strings.cs:260
 msgid "Skip restored file check"
 msgstr "Пропустить проверку восстановленных файлов"
 
-#: Library/Main/Strings.cs:256
+#: Library/Main/Strings.cs:261
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -2110,11 +2106,11 @@ msgstr ""
 "минимизировать объем загружаемых данных. Используйте эту опцию, чтобы "
 "пропустить данную оптимизацию и использовать только удаленные данные."
 
-#: Library/Main/Strings.cs:257
+#: Library/Main/Strings.cs:262
 msgid "Do not use local data"
 msgstr "Не использовать локальные данные"
 
-#: Library/Main/Strings.cs:262
+#: Library/Main/Strings.cs:267
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
@@ -2123,11 +2119,11 @@ msgstr ""
 "восстановленных файлов, будет проведена сверка хэш блоков, прочитанных с "
 "тома."
 
-#: Library/Main/Strings.cs:263
+#: Library/Main/Strings.cs:268
 msgid "Check block hashes"
 msgstr "Проверить хэши блоков"
 
-#: Library/Main/Strings.cs:266
+#: Library/Main/Strings.cs:271
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -2139,15 +2135,15 @@ msgstr ""
 "содержимого без необходимости восстановления всей информации. Такая база "
 "данных может быть использована для поиска, но не для восстановления данных."
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:272
 msgid "Repair database with paths"
 msgstr "Исправить базу данных с путями"
 
-#: Library/Main/Strings.cs:271
+#: Library/Main/Strings.cs:276
 msgid "Force the locale setting"
 msgstr "Принудительно настроить локаль"
 
-#: Library/Main/Strings.cs:272
+#: Library/Main/Strings.cs:277
 msgid ""
 "By default, dates are displayed in the calendar format, meaning \"Today\" or"
 " \"Last Thursday\". By setting this option, only the actual dates are "
@@ -2157,12 +2153,12 @@ msgstr ""
 "или «Последний четверг». При установке этого параметра отображаются только "
 "фактические даты, например «12 ноября 2018 г., 8:01»."
 
-#: Library/Main/Strings.cs:275
+#: Library/Main/Strings.cs:280
 msgid "Handle file communication with backend using threaded pipes"
 msgstr ""
 "Производить файловое взаимодействие с бэкэндом при помощи потоковых каналов"
 
-#: Library/Main/Strings.cs:276
+#: Library/Main/Strings.cs:281
 msgid ""
 "Use this option to set the maximum number of threads used. Setting this "
 "value to zero or less will dynamically balance the number of active threads "
@@ -2173,22 +2169,22 @@ msgstr ""
 "динамически балансировать количество активных потоков в соответствии с "
 "аппаратным обеспечением."
 
-#: Library/Main/Strings.cs:277
+#: Library/Main/Strings.cs:282
 msgid "Limit number of concurrent threads"
 msgstr "Ограничить количество одновременных потоков"
 
-#: Library/Main/Strings.cs:278
+#: Library/Main/Strings.cs:283
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr ""
 "Используйте этот параметр, чтобы задать количество процессов, выполняющих "
 "хеширование данных."
 
-#: Library/Main/Strings.cs:279
+#: Library/Main/Strings.cs:284
 msgid "Specify the number of concurrent hashing processes"
 msgstr "Укажите количество одновременных процессов хеширования"
 
-#: Library/Main/Strings.cs:280
+#: Library/Main/Strings.cs:285
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
@@ -2196,11 +2192,11 @@ msgstr ""
 "Используйте этот параметр, чтобы задать количество процессов, выполняющих "
 "сжатие выходных данных."
 
-#: Library/Main/Strings.cs:281
+#: Library/Main/Strings.cs:286
 msgid "Specify the number of concurrent compression processes"
 msgstr "Укажите количество одновременных процессов сжатия"
 
-#: Library/Main/Strings.cs:284
+#: Library/Main/Strings.cs:289
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
@@ -2210,11 +2206,11 @@ msgstr ""
 "будет создан список файлов, являющихся слиянием последней завершенной "
 "резервной копии и содержимого, выгруженного во незавершенного сеанса."
 
-#: Library/Main/Strings.cs:291
+#: Library/Main/Strings.cs:296
 msgid "Allow removing all filesets"
 msgstr "Разрешить удаление всех наборов файлов"
 
-#: Library/Main/Strings.cs:292
+#: Library/Main/Strings.cs:297
 msgid ""
 "Some operations that manipulate the local database leave unused entries "
 "behind. These entries are not deleted from a hard drive until a VACUUM "
@@ -2230,11 +2226,11 @@ msgstr ""
 "записей в базе данных. Установка этого значения в true разрешит Duplicati "
 "выполнять операции VACUUM на своё усмотрение."
 
-#: Library/Main/Strings.cs:295
+#: Library/Main/Strings.cs:300
 msgid "Disable the read-ahead scanner"
 msgstr "Отключить сканер упреждающего чтения"
 
-#: Library/Main/Strings.cs:296
+#: Library/Main/Strings.cs:301
 msgid ""
 "In backups with a large number of filesets, the verification can take up a "
 "large part of the backup time. If you disable the checks, make sure you run "
@@ -2245,19 +2241,19 @@ msgstr ""
 "отключите проверки, убедитесь, что вы запускаете регулярные команды "
 "проверки, чтобы убедиться, что все работает должным образом."
 
-#: Library/Main/Strings.cs:297
+#: Library/Main/Strings.cs:302
 msgid "Disable filelist consistency checks"
 msgstr "Отключить проверку согласованности списка файлов"
 
-#: Library/Main/Strings.cs:299
+#: Library/Main/Strings.cs:304
 msgid "Disable the backup when on battery power"
 msgstr "Отключить резервное копирование при питании от батареи"
 
-#: Library/Main/Strings.cs:302
+#: Library/Main/Strings.cs:307
 msgid "Log file information level"
 msgstr "Уровень информирования для файла журнала(log-файла)"
 
-#: Library/Main/Strings.cs:303
+#: Library/Main/Strings.cs:308
 #, csharp-format
 msgid ""
 "This option accepts filters that removes or includes messages regardless of "
@@ -2273,11 +2269,11 @@ msgstr ""
 "поддерживаются в жестких фигурных скобках. Пример: "
 "\"+Path*{0}+*Mail*{0}-[.*DNS]\" "
 
-#: Library/Main/Strings.cs:308
+#: Library/Main/Strings.cs:313
 msgid "Console information level"
 msgstr "Уровень информирования консоли"
 
-#: Library/Main/Strings.cs:319
+#: Library/Main/Strings.cs:324
 msgid ""
 "Use this option to set a filename, or list of filenames, that indicate "
 "exclusion of a folder which contains it. A common use would be to have a "
@@ -2289,11 +2285,11 @@ msgstr ""
 "использованием было бы иметь файл с именем, например «.nobackup», и помещать"
 " этот файл в папки, для которых не следует создавать резервные копии."
 
-#: Library/Main/Strings.cs:320
+#: Library/Main/Strings.cs:325
 msgid "List of filenames that exclude folders"
 msgstr "Список имен файлов, исключающих папки"
 
-#: Library/Main/Strings.cs:326
+#: Library/Main/Strings.cs:331
 #, csharp-format
 msgid ""
 "To improve performance of the backups, frequent database queries are not "
@@ -2306,7 +2302,7 @@ msgstr ""
 "регистрировать все запросы к базе данных, и не забудьте установить либо "
 "--{0}={2}, либо --{1}={2}, чтобы сообщать дополнительные данные журнала."
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:382
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2315,16 +2311,16 @@ msgstr ""
 "Криптографическая библиотека не поддерживает многоразовые преобразования для"
 " алгоритма хеширования {0}"
 
-#: Library/Main/Strings.cs:376
+#: Library/Main/Strings.cs:383
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Криптографическая библиотека не поддерживает алгоритм хэширования {0}"
 
-#: Library/Main/Strings.cs:377
+#: Library/Main/Strings.cs:384
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Кодовая фраза не может быть изменена для существующей резервной копии"
 
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:385
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Не удалось создать снимок: {0}"
@@ -2931,7 +2927,7 @@ msgstr ""
 "Установите эту опцию, если вы хотите автоматически обновлять версию "
 "командной строки"
 
-#: CommandLine/CLI/Strings.cs:69
+#: CommandLine/CLI/Strings.cs:75
 #, csharp-format
 msgid "This link may provide additional information: {0}"
 msgstr "Эта ссылка может предоставить дополнительную информацию: {0}"
