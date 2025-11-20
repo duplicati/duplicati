@@ -21,16 +21,10 @@
 
 namespace Duplicati.Library.Interface
 {
-    public class QuotaInfo : IQuotaInfo
+    public class QuotaInfo(long totalQuotaSpace, long freeQuotaSpace) : IQuotaInfo
     {
-        public QuotaInfo(long totalSpace, long freeSpace)
-        {
-            this.TotalQuotaSpace = totalSpace;
-            this.FreeQuotaSpace = freeSpace;
-        }
+        public long TotalQuotaSpace { get; private set; } = totalQuotaSpace;
 
-        public long TotalQuotaSpace { get; private set; }
-
-        public long FreeQuotaSpace { get; private set; }
+        public long FreeQuotaSpace { get; private set; } = freeQuotaSpace;
     }
 }

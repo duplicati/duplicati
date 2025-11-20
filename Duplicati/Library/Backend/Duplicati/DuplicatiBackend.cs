@@ -61,7 +61,8 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
     public DuplicatiBackend(string url, Dictionary<string, string?> options)
     {
-        var uri = new UriBuilder(url)
+        string decoded = Uri.UnescapeDataString(url);
+        var uri = new UriBuilder(decoded)
         {
             Scheme = "https"
         };
@@ -142,8 +143,9 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
         var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
+        var quotaInfo = await response.Content.ReadFromJsonAsync<QuotaInfo>(cancellationToken: cancelToken).ConfigureAwait(false);
 
-        return await response.Content.ReadFromJsonAsync<QuotaInfo>(cancellationToken: cancelToken).ConfigureAwait(false);
+        return quotaInfo;
     }
 
     public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
