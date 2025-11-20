@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-10 11:48+0100\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Mariusz Wierzbicki <engineer@post.pl>, 2025\n"
 "Language-Team: Polish (https://app.transifex.com/duplicati/teams/67655/pl/)\n"
@@ -3021,7 +3021,7 @@ msgstr ""
 "wszystkie zapytania do bazy danych i pamiętaj, aby ustawić --{0}={2} lub "
 "--{1}={2}, aby raportować dodatkowe dane dziennika"
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:386
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -3030,17 +3030,17 @@ msgstr ""
 "Biblioteka kryptograficzna nie obsługuje przekształceń wielokrotnego użytku "
 "dla algorytmu mieszającego {0}"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:387
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Biblioteka kryptograficzna nie obsługuje algorytmu hash {0}"
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "Hasło szyfrowania nie może być zmienione dla istniejącej kopii zapasowej"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:389
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Nie udało się utworzyć zrzutu: {0}"

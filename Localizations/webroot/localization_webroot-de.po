@@ -158,7 +158,7 @@ msgstr "Pfad direkt eingeben"
 
 #: templates/advancedoptionseditor.html:48
 msgid "Add advanced option"
-msgstr "Option für Profis hinzufügen"
+msgstr "Erweiterte Option hinzufügen"
 
 #: index.html:211
 msgid "Add backup"
@@ -205,6 +205,10 @@ msgstr "Aliyun OSS Dokumente und Ressourcen"
 #: scripts/directives/sourceFolderPicker.js:279
 msgid "All Hyper-V Machines"
 msgstr "Alle Hyper-V Maschinen"
+
+#: scripts/directives/sourceFolderPicker.js:319
+msgid "All Microsoft SQL Servers"
+msgstr "Alle Microsoft SQL-Server"
 
 #: templates/settings.html:175
 msgid ""
@@ -843,9 +847,25 @@ msgstr "Benutzerdefinierte Sicherungsaufbewahrung"
 msgid "Custom bucket storage class"
 msgstr "Benutzerdefinierte Bucket Speicherklasse"
 
+#: templates/backends/gcs.html:18
+msgid "Custom location"
+msgstr "Benutzerdefinierter Standort"
+
 #: templates/backends/s3.html:39
 msgid "Custom region for creating buckets"
 msgstr "Benutzerdefinierte Region, um Buckets zu erstellen"
+
+#: templates/backends/s3.html:34
+msgid "Custom region value"
+msgstr "Benutzerdefinierter Wert für Region"
+
+#: templates/backends/openstack.html:10 templates/backends/s3.html:12
+msgid "Custom server url"
+msgstr "Benutzerdefinierte Server-URL"
+
+#: templates/backends/gcs.html:29 templates/backends/s3.html:50
+msgid "Custom storage class"
+msgstr "Benutzerdefinierte Speicherklasse"
 
 #: templates/advancedoptionseditor.html:43
 msgid "DEPRECATED: {{getDeprecationMessage(item)}}"
@@ -985,7 +1005,7 @@ msgstr "Direkt TCP"
 
 #: templates/restorewizard.html:9
 msgid "Direct restore from backup files …"
-msgstr "Direkte Wiederherstellung von Sicherungsdateien …"
+msgstr "Direkte Wiederherstellung aus Sicherungsdateien …"
 
 #: templates/backends/idrive.html:3
 msgid "Directory path"
@@ -1574,6 +1594,10 @@ msgstr "Wie sollen bestehende Dateien behandelt werden?"
 msgid "Hyper-V Machine"
 msgstr "Hyper-V-Maschine"
 
+#: scripts/directives/sourceFolderPicker.js:279
+msgid "Hyper-V Machine: {{name}}"
+msgstr "Hyper-V Maschine: {{name}}"
+
 #: scripts/services/AppUtils.js:72
 msgid "Hyper-V Machines"
 msgstr "Hyper-V-Maschinen"
@@ -1907,6 +1931,10 @@ msgstr ""
 msgid "Manual"
 msgstr "Handbuch"
 
+#: templates/notificationarea.html:37
+msgid "Manual update found:"
+msgstr "Manuelles Update gefunden:"
+
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
 msgstr "Pfad eingeben"
@@ -1924,6 +1952,14 @@ msgstr "Max. Uploadgeschwindigkeit"
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "Menü"
+
+#: scripts/directives/sourceFolderPicker.js:323
+msgid "Microsoft SQL Database: {{name}}"
+msgstr "Microsoft SQL Datenbank: {{name}}"
+
+#: scripts/directives/sourceFolderPicker.js:323
+msgid "Microsoft SQL Server: {{name}}"
+msgstr "Microsoft SQL Server: {{name}}"
 
 #: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
 #: templates/settings.html:90
@@ -2365,7 +2401,7 @@ msgstr "Bitte eine Datei zum Import auswählen"
 
 #: templates/restorewizard.html:10
 msgid "Point to your backup files and restore from there"
-msgstr "Sicherungsdateien auswählen und wiederherstellen"
+msgstr "Sicherungsdateien auswählen und von dort wiederherstellen"
 
 #: templates/backends/generic.html:9
 msgid "Port"
