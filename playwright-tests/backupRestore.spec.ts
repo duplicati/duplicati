@@ -129,14 +129,13 @@ async function createBackup(page: Page) {
     .click();
   await page.locator("button").filter({ hasText: "Continue" }).click();
 
-  const useScheduleRun = page
-    .locator("sh-toggle")
-    .filter({ hasText: "Automatically run backups" })
-    .locator('input[type="checkbox"]');
+  // Select "Don't run automatically" from schedule
+  await page.locator("sh-select").click();
+  await page
+    .locator("li.option")
+    .filter({ hasText: "Don't run automatically" })
+    .click();
 
-  if (await useScheduleRun.isChecked()) {
-    await useScheduleRun.click();
-  }
   await page.locator("button").filter({ hasText: "Continue" }).click();
   await page.locator("button").filter({ hasText: "Submit" }).click();
 }
@@ -146,11 +145,18 @@ async function deleteBackupIfExists(page: Page) {
   await page.waitForLoadState("networkidle");
 
   try {
-    await page.locator("div.backup").first().waitFor({ timeout: 5000 });
-  } catch (e) {
-    console.log("No backup elements found, skipping deletion.");
-    return;
-  }
+    const el = page.locator("div.backup, div.no-backups").first();
+    await el.waitFor({ timeout: 5000 });
+
+    const classAttr = (await el.getAttribute("class")) ?? "";
+
+    // No backups exist, just return
+    if (classAttr.includes("no-backups")) {
+      return;
+    }
+  } catch (e) {}
+
+  await page.locator("div.backup").first().waitFor();
 
   // Take a screenshot before waiting for backup elements
   await page.screenshot({
