@@ -5,6 +5,7 @@
     <Project Path="Duplicati/Library/Backend/Backblaze/Duplicati.Library.Backend.Backblaze.csproj" />
     <Project Path="Duplicati/Library/Backend/Box/Duplicati.Library.Backend.Box.csproj" />
     <Project Path="Duplicati/Library/Backend/Dropbox/Duplicati.Library.Backend.Dropbox.csproj" />
+    <Project Path="Duplicati/Library/Backend/Duplicati/Duplicati.Library.Backend.Duplicati.csproj" />
     <Project Path="Duplicati/Library/Backend/File/Duplicati.Library.Backend.File.csproj" />
     <Project Path="Duplicati/Library/Backend/Filejump/Duplicati.Library.Backend.Filejump.csproj" />
     <Project Path="Duplicati/Library/Backend/Filen/Duplicati.Library.Backend.Filen.csproj" />
