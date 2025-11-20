@@ -29,11 +29,10 @@ using Duplicati.Library.Utility;
 using System.Globalization;
 using System.Threading;
 using Duplicati.Library.Utility.Options;
-using Duplicati.Library.SQLiteHelper;
 using System.Diagnostics.CodeAnalysis;
 using Duplicati.Library.Snapshots;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using Duplicati.Library.Snapshots.MacOS;
 
 namespace Duplicati.Library.Main
 {
@@ -123,6 +122,11 @@ namespace Duplicati.Library.Main
         /// The default policy for BackupRead
         /// </summary>
         private static readonly OptimizationStrategy DEFAULT_BACKUPREAD_POLICY = OptimizationStrategy.Off;
+
+        /// <summary>
+        /// The default MacOS photos handling strategy
+        /// </summary>
+        private static readonly MacOSPhotosHandling DEFAULT_MACOS_PHOTOS_HANDLING = MacOSPhotosHandling.PhotosAndLibrary;
 
         /// <summary>
         /// The default number of compressor instances
@@ -366,6 +370,12 @@ namespace Duplicati.Library.Main
 
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
                 yield return new CommandLineArgument("ignore-advisory-locking", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreadvisorylockingShort, Strings.Options.IgnoreadvisorylockingLong, "false");
+
+            if (OperatingSystem.IsMacOS())
+            {
+                yield return new CommandLineArgument("photos-handling", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.DisablephotohandlingShort, Strings.Options.DisablephotohandlingLong, DEFAULT_MACOS_PHOTOS_HANDLING.ToString(), null, Enum.GetNames(typeof(MacOSPhotosHandling)));
+                yield return new CommandLineArgument("photos-library-path", CommandLineArgument.ArgumentType.Path, Strings.Options.MacosphotoslibrarypathShort, Strings.Options.MacosphotoslibrarypathLong);
+            }
         }
 
         /// <summary>
@@ -1707,6 +1717,16 @@ namespace Duplicati.Library.Main
         /// Gets whether to preallocate files during restore
         /// </summary>
         public bool RestorePreAllocate => GetBool("restore-pre-allocate");
+
+        /// <summary>
+        /// Gets whether to handle MacOS Photo Libraries specially
+        /// </summary>
+        public MacOSPhotosHandling HandleMacOSPhotoLibrary => GetEnum("photos-handling", DEFAULT_MACOS_PHOTOS_HANDLING);
+
+        /// <summary>
+        /// Gets the path to the MacOS Photos Library
+        /// </summary>
+        public string? MacOSPhotoLibraryPath => GetString("photos-library-path", null);
 
         // <summary>
         // Gets the size of the volume cache used during restore, in MB.

@@ -31,6 +31,9 @@
     <Content Include="lvm-scripts\remove-lvm-snapshot.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="../../../Tools/MacOSPhotosNative/libDuplicatiPhotos.dylib" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

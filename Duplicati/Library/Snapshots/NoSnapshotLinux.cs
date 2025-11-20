@@ -35,7 +35,7 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     [SupportedOSPlatform("linux")]
     [SupportedOSPlatform("macOS")]
-    public sealed class NoSnapshotLinux : SnapshotBase
+    public class NoSnapshotLinux : SnapshotBase
     {
         /// <summary>
         /// PInvoke methods

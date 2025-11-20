@@ -568,9 +568,13 @@ public static partial class Command
             changelogNews,
             input);
 
-        rtcfg.ToggleAuthenticodeSigning();
-        rtcfg.ToggleSignCodeSigning();
-        rtcfg.ToggleNotarizeSigning();
+        if (buildTargets.Any(x => x.OS == OSType.Windows))
+            rtcfg.ToggleAuthenticodeSigning();
+        if (buildTargets.Any(x => x.OS == OSType.MacOS))
+        {
+            rtcfg.ToggleSignCodeSigning();
+            rtcfg.ToggleNotarizeSigning();
+        }
         rtcfg.ToggleGpgSigning();
         rtcfg.ToggleS3Upload();
         rtcfg.ToggleGithubUpload(rtcfg.ReleaseInfo.Channel);
