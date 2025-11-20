@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 13:36+0200\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: joyfuI <jong970105@gmail.com>, 2025\n"
 "Language-Team: Korean (https://app.transifex.com/duplicati/teams/67655/ko/)\n"
@@ -1191,7 +1191,7 @@ msgstr "로그 파일 정보 수준"
 msgid "List of filenames that exclude folders"
 msgstr "폴더를 제외한 파일 이름 목록"
 
-#: Library/Main/Strings.cs:377
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "기존 백업에 대해 암호를 변경할 수 없습니다"
 

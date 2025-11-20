@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 13:36+0200\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Pruebas, 2025\n"
 "Language-Team: Spanish (https://app.transifex.com/duplicati/teams/67655/es/)\n"
@@ -2493,7 +2493,7 @@ msgstr ""
 "configurar --{0}={2} o --{1}={2} para reportar los datos de registro "
 "adicionales"
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:386
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2502,18 +2502,18 @@ msgstr ""
 "La criptolibrería no soporta transformaciones reutilizables para el "
 "algoritmo hash {0}"
 
-#: Library/Main/Strings.cs:376
+#: Library/Main/Strings.cs:387
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "La criptolibrería no soporta el algoritmo hash {0}"
 
-#: Library/Main/Strings.cs:377
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "No se puede cambiar la frase de seguridad de una copia de seguridad "
 "existente"
 
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:389
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Fallo al crear una instantánea: {0}"
