@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 13:36+0200\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Kari Koskinen <kakoskin@gmail.com>, 2025\n"
 "Language-Team: Finnish (https://app.transifex.com/duplicati/teams/67655/fi/)\n"
@@ -1669,7 +1669,7 @@ msgstr "Kommunikoi taustamoduulin kanssa käyttäen säieturvallisia putkia"
 msgid "Allow removing all filesets"
 msgstr "Salli kaikkien tiedostojen poisto"
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:386
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -1677,16 +1677,16 @@ msgid ""
 msgstr ""
 "Salauskirjasto ei tue uudelleenkäytettäviä muunnoksia tiivistefunktiolle {0}"
 
-#: Library/Main/Strings.cs:376
+#: Library/Main/Strings.cs:387
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Salauskirjasto ei tue tiivistefunktiota {0}"
 
-#: Library/Main/Strings.cs:377
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Olemassaolevan varmuuskopion salauslauseketta ei voi vaihtaa"
 
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:389
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Vedoksen luominen epäonnistui: {0}"

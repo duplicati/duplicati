@@ -208,6 +208,7 @@ namespace RemoteSynchronization
                             // Download the file, rename it, and delete the old one
                             using var downloaded = new MemoryStream();
                             await sb.GetAsync(oldname, downloaded, token).ConfigureAwait(false);
+                            downloaded.Seek(0, SeekOrigin.Begin);
                             await sb.PutAsync(newname, downloaded, token).ConfigureAwait(false);
                             await sb.DeleteAsync(oldname, token).ConfigureAwait(false);
                             _anyUploaded = true;
@@ -271,9 +272,12 @@ namespace RemoteSynchronization
                     Dispose(); // Dispose current backend and streaming backend.
 
                     // Reset the stream, as it's in a potentially faulty state.
-                    stream?.Seek(0, SeekOrigin.Begin);
-                    if (resetStream)
-                        stream?.SetLength(0);
+                    if (stream != null && stream.CanSeek)
+                    {
+                        stream.Seek(0, SeekOrigin.Begin);
+                        if (resetStream)
+                            stream.SetLength(0);
+                    }
 
                     // Try to see if we can recover from the error.
                     await TryRecoverFromException(ex, token).ConfigureAwait(false);

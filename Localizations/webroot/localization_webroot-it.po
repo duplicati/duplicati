@@ -222,6 +222,10 @@ msgstr "Tutti i computer Hyper-V"
 msgid "All Microsoft SQL Databases"
 msgstr "Tutti i database Microsoft SQL"
 
+#: scripts/directives/sourceFolderPicker.js:319
+msgid "All Microsoft SQL Servers"
+msgstr "Tutti i Microsoft SQL Server"
+
 #: templates/settings.html:175
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
@@ -859,24 +863,24 @@ msgid "Custom bucket storage class"
 msgstr "Classe di archiviazione personalizzata del bucket"
 
 #: templates/backends/gcs.html:18
-msgid "Custom location ({{server}})"
-msgstr "Posizione personalizzata ({{server}})"
+msgid "Custom location"
+msgstr "Posizione personalizzata"
 
 #: templates/backends/s3.html:39
 msgid "Custom region for creating buckets"
 msgstr "Regione personalizzata per la creazione dei bucket"
 
 #: templates/backends/s3.html:34
-msgid "Custom region value ({{region}})"
-msgstr "Valore personalizzato della regione ({{region}})"
+msgid "Custom region value"
+msgstr "Valore regione personalizzato"
 
 #: templates/backends/openstack.html:10 templates/backends/s3.html:12
-msgid "Custom server url ({{server}})"
-msgstr "URL del server personalizzato ({{server}})"
+msgid "Custom server url"
+msgstr "URL server personalizzato"
 
 #: templates/backends/gcs.html:29 templates/backends/s3.html:50
-msgid "Custom storage class ({{class}})"
-msgstr "Classe di archiviazione personalizzata ({{class}})"
+msgid "Custom storage class"
+msgstr "Classe di archiviazione personalizzata"
 
 #: templates/advancedoptionseditor.html:43
 msgid "DEPRECATED: {{getDeprecationMessage(item)}}"
@@ -1603,11 +1607,10 @@ msgstr "Come vuoi gestire i file esistenti?"
 msgid "Hyper-V Machine"
 msgstr "Sitema Hyper-V"
 
-#: scripts/directives/sourceFolderPicker.js:596
-msgid "Hyper-V Machine:"
-msgstr "Sistema Hyper-V:"
+#: scripts/directives/sourceFolderPicker.js:279
+msgid "Hyper-V Machine: {{name}}"
+msgstr "Macchina Hyper-V: {{name}}"
 
-#: scripts/directives/sourceFolderPicker.js:575
 #: scripts/services/AppUtils.js:72
 msgid "Hyper-V Machines"
 msgstr "Sistemi Hyper-V"
@@ -1967,13 +1970,13 @@ msgstr "Velocità massima per caricare"
 msgid "Menu"
 msgstr "Menu"
 
-#: scripts/directives/sourceFolderPicker.js:629
-msgid "Microsoft SQL Database:"
-msgstr "Microsoft SQL Database:"
+#: scripts/directives/sourceFolderPicker.js:323
+msgid "Microsoft SQL Database: {{name}}"
+msgstr "Database Microsoft SQL: {{name}}"
 
-#: scripts/directives/sourceFolderPicker.js:607
-msgid "Microsoft SQL Databases"
-msgstr "Microsoft SQL Database"
+#: scripts/directives/sourceFolderPicker.js:323
+msgid "Microsoft SQL Server: {{name}}"
+msgstr "Microsoft SQL Server: {{name}}"
 
 #: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
 #: templates/settings.html:90

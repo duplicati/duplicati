@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 13:36+0200\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Matt Dawson <matthewd102@hotmail.com>, 2025\n"
 "Language-Team: English (United Kingdom) (https://app.transifex.com/duplicati/teams/67655/en_GB/)\n"
@@ -1034,10 +1034,24 @@ msgstr "Multiple groups were found with the given email address: {0}"
 msgid "Conflicting group IDs used: given {0} but found {1}"
 msgstr "Conflicting group IDs used: given {0} but found {1}"
 
+#: Library/Backend/AliyunOSS/Strings.cs:30
+#: Library/Backend/Idrivee2/Strings.cs:31
+msgid "Access Key ID"
+msgstr "Access Key ID"
+
+#: Library/Backend/AliyunOSS/Strings.cs:32
+#: Library/Backend/Idrivee2/Strings.cs:29
+msgid "Access Key Secret"
+msgstr "Access Key Secret"
+
 #: Library/Backend/AliyunOSS/Strings.cs:34
 #: Library/Backend/TencentCOS/Strings.cs:36
 msgid "Bucket name"
 msgstr "Bucket name"
+
+#: Library/Backend/AliyunOSS/Strings.cs:36
+msgid "Region"
+msgstr "Region"
 
 #: Library/Backend/AzureBlob/Strings.cs:29
 msgid "Azure blob"
@@ -1448,7 +1462,11 @@ msgstr "Temporary storage folder"
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server has started and is listening on {0}, port {1}"
 
-#: Library/RestAPI/Strings.cs:117
+#: Library/RestAPI/Strings.cs:107
+msgid "Register for remote control"
+msgstr "Register for remote control"
+
+#: Library/RestAPI/Strings.cs:123
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -2449,7 +2467,7 @@ msgstr ""
 "remember to set either --{0}={2} or --{1}={2} to report the additional log "
 "data"
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:386
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2458,16 +2476,16 @@ msgstr ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 
-#: Library/Main/Strings.cs:376
+#: Library/Main/Strings.cs:387
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "The cryptolibrary does not support the hash algorithm {0}"
 
-#: Library/Main/Strings.cs:377
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "The passphrase cannot be changed for an existing backup"
 
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:389
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Failed to create a snapshot: {0}"

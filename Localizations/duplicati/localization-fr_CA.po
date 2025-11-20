@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 13:36+0200\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Francois Lafleur <francois_lafleur@yahoo.ca>, 2025\n"
 "Language-Team: French (Canada) (https://app.transifex.com/duplicati/teams/67655/fr_CA/)\n"
@@ -2164,7 +2164,7 @@ msgstr ""
 "les requêtes de base de données et n'oubliez pas de définir - {0} = {2} ou -"
 " {1} = {2} pour signaler les données de journal supplémentaires."
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:386
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2173,17 +2173,17 @@ msgstr ""
 "La crypto-bibliothèque ne prend pas en charge les transformations "
 "réutilisables pour l'algorithme de hachage {0}"
 
-#: Library/Main/Strings.cs:376
+#: Library/Main/Strings.cs:387
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "La crypto-bibliothèque ne supporte pas l'algorithme de hachage {0}"
 
-#: Library/Main/Strings.cs:377
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "La phrase de passe ne peut pas être modifiée pour une sauvegarde existante"
 
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:389
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Échec de la création d'un instantané: {0}"
