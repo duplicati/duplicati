@@ -218,6 +218,10 @@ msgstr "Documenti e risorse di Aliyun OSS"
 msgid "All Hyper-V Machines"
 msgstr "Tutte le macchine Hyper-V"
 
+#: scripts/directives/sourceFolderPicker.js:319
+msgid "All Microsoft SQL Servers"
+msgstr "Tutti i Microsoft SQL Server"
+
 #: templates/settings.html:175
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
@@ -854,9 +858,25 @@ msgstr "Conservazione backup personalizzato"
 msgid "Custom bucket storage class"
 msgstr "Classe di archiviazione personalizzata del bucket"
 
+#: templates/backends/gcs.html:18
+msgid "Custom location"
+msgstr "Posizione personalizzata"
+
 #: templates/backends/s3.html:39
 msgid "Custom region for creating buckets"
 msgstr "Regione personalizzata per la creazione dei bucket"
+
+#: templates/backends/s3.html:34
+msgid "Custom region value"
+msgstr "Valore regione personalizzato"
+
+#: templates/backends/openstack.html:10 templates/backends/s3.html:12
+msgid "Custom server url"
+msgstr "URL server personalizzato"
+
+#: templates/backends/gcs.html:29 templates/backends/s3.html:50
+msgid "Custom storage class"
+msgstr "Classe di archiviazione personalizzata"
 
 #: templates/advancedoptionseditor.html:43
 msgid "DEPRECATED: {{getDeprecationMessage(item)}}"
@@ -1583,6 +1603,10 @@ msgstr "Come vuoi gestire i file esistenti?"
 msgid "Hyper-V Machine"
 msgstr "Macchina Hyper-V"
 
+#: scripts/directives/sourceFolderPicker.js:279
+msgid "Hyper-V Machine: {{name}}"
+msgstr "Macchina Hyper-V: {{name}}"
+
 #: scripts/services/AppUtils.js:72
 msgid "Hyper-V Machines"
 msgstr "Macchine Hyper-V"
@@ -1940,6 +1964,14 @@ msgstr "Velocità massima per caricare"
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "Menu"
+
+#: scripts/directives/sourceFolderPicker.js:323
+msgid "Microsoft SQL Database: {{name}}"
+msgstr "Database Microsoft SQL: {{name}}"
+
+#: scripts/directives/sourceFolderPicker.js:323
+msgid "Microsoft SQL Server: {{name}}"
+msgstr "Microsoft SQL Server: {{name}}"
 
 #: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
 #: templates/settings.html:90

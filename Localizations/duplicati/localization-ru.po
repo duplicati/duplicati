@@ -22,7 +22,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-10 11:48+0100\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Vadim P <kladzey@gmail.com>, 2025\n"
 "Language-Team: Russian (https://app.transifex.com/duplicati/teams/67655/ru/)\n"
@@ -2302,7 +2302,7 @@ msgstr ""
 "регистрировать все запросы к базе данных, и не забудьте установить либо "
 "--{0}={2}, либо --{1}={2}, чтобы сообщать дополнительные данные журнала."
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:386
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2311,16 +2311,16 @@ msgstr ""
 "Криптографическая библиотека не поддерживает многоразовые преобразования для"
 " алгоритма хеширования {0}"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:387
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Криптографическая библиотека не поддерживает алгоритм хэширования {0}"
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Кодовая фраза не может быть изменена для существующей резервной копии"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:389
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Не удалось создать снимок: {0}"

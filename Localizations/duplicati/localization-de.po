@@ -45,7 +45,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-10 11:48+0100\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: ghChrisHe, 2025\n"
 "Language-Team: German (https://app.transifex.com/duplicati/teams/67655/de/)\n"
@@ -163,8 +163,8 @@ msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
 msgstr ""
-"Nutze diese Option, um die --armor-Option in GPG zu aktivieren. Die Dateien "
-"werden größer, können aber als reine Textdateien verschickt werden."
+"Nutzen Sie diese Option, um die --armor-Option in GPG zu aktivieren. Die "
+"Dateien werden größer, können aber als reine Textdateien verschickt werden."
 
 #: Library/Encryption/Strings.cs:51
 msgid "Use GPG Armor"
@@ -646,8 +646,8 @@ msgid ""
 "make the upload faster but less reliable."
 msgstr ""
 "Jeder Upload wird überpüft um sich vor Netzwerk- oder Serverfehlern zu "
-"schützen. Nutze diese Option um die Überprüfung abzuschalten und den Upload "
-"dadurch schneller, aber weniger verlässlich zu machen."
+"schützen. Nutzen Sie diese Option um die Überprüfung abzuschalten und den "
+"Upload dadurch schneller, aber weniger verlässlich zu machen."
 
 #: Library/Backend/FTP/Strings.cs:44
 msgid "Disable upload verification"
@@ -862,7 +862,7 @@ msgid ""
 "This option is only used when creating new buckets. Use this option to change what region the data is stored in. Charges vary with bucket location. Known bucket locations:\n"
 "{0}"
 msgstr ""
-"Diese Option wird nur beim Erstellen neuer Buckets genutzt. Verwende diese Option um die Region wo sich die Daten befinden zu ändern. Die Kosten variieren je nach Ort des Buckets. Bekannte Bucket Orte:\n"
+"Diese Option wird nur beim Erstellen neuer Buckets genutzt. Verwenden Sie diese Option um die Region wo sich die Daten befinden zu ändern. Die Kosten variieren je nach Ort des Buckets. Bekannte Bucket Orte:\n"
 "{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:33
@@ -875,7 +875,7 @@ msgid ""
 "This option is only used when creating new buckets. Use this option to change what storage type the bucket has. Charges and functionality vary with bucket storage class. Known storage classes:\n"
 "{0}"
 msgstr ""
-"Diese Option wird nur beim Anlegen eines neuen Buckets verwendet. Verwende diese Option zum ändern des Speichertypes vom Bucket. Ladung und Funktionalität variieren mit der Bucket-Speicherklasse. Bekannte Speicherklassen:\n"
+"Diese Option wird nur beim Anlegen eines neuen Buckets verwendet. Verwenden Sie diese Option zum ändern des Speichertypes vom Bucket. Ladung und Funktionalität variieren mit der Bucket-Speicherklasse. Bekannte Speicherklassen:\n"
 "{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:36
@@ -1018,7 +1018,7 @@ msgid ""
 "This option is only used when creating new buckets. Use this option to change what region the data is stored in. Amazon charges slightly more for non-US buckets. Known bucket locations:\n"
 "{0}"
 msgstr ""
-"Diese Option wird nur beim Erstellen neuer Buckets genutzt. Verwende diese Option um die Region wo sich die Daten befinden zu ändern. Amazon berechnet etwas mehr für Nicht-US Buckets. Bekannte Bucket Orte:\n"
+"Diese Option wird nur beim Erstellen neuer Buckets genutzt. Verwenden Sie diese Option um die Region wo sich die Daten befinden zu ändern. Amazon berechnet etwas mehr für Nicht-US Buckets. Bekannte Bucket Orte:\n"
 "{0}"
 
 #: Library/Backend/S3/Strings.cs:40
@@ -1031,7 +1031,7 @@ msgid ""
 "Companies other than Amazon are now supporting the S3 API, meaning that this backend can read and write data to those providers as well. Use this option to set the hostname. Currently known providers are:\n"
 "{0}"
 msgstr ""
-"Andere Unternehmen außer Amazon unterstützen nun die S3-API, das heißt, dass das Backend auch Daten zu diesen Anbietern lesen und schreiben kann. Verwende diese Option um den Hostnamen zu setzen. Aktuell unterstütze Provider:\n"
+"Andere Unternehmen außer Amazon unterstützen nun die S3-API, das heißt, dass das Backend auch Daten zu diesen Anbietern lesen und schreiben kann. Verwenden Sie diese Option um den Hostnamen zu setzen. Aktuell unterstütze Provider:\n"
 "{0}"
 
 #: Library/Backend/S3/Strings.cs:43
@@ -1123,6 +1123,10 @@ msgstr ""
 #, csharp-format
 msgid "Unknown S3 client: {0}"
 msgstr "Unbekannter S3 Client: {0}"
+
+#: Library/Backend/S3/Strings.cs:61
+msgid "No path allowed in endpoint"
+msgstr "Kein Pfad erlaubt im Endpunkt"
 
 #: Library/Backend/S3/Strings.cs:66
 msgid "S3 configuration module"
@@ -1361,8 +1365,8 @@ msgid ""
 "Please add --{1}=\"{0}\" to trust this host. Optionally you can use --{2} "
 "(NOT SECURE) for testing!"
 msgstr ""
-"Bitte füge -{1}=\"{0}\" um diesem Host zu vertrauen. Optional kann --{2} "
-"(NICHT SICHER) zum Testen verwendet werden!"
+"Bitte fügen Sie -{1}=\"{0}\" um diesem Host zu vertrauen. Optional kann "
+"--{2} (NICHT SICHER) zum Testen verwendet werden!"
 
 #: Library/Backend/SSHv2/Strings.cs:73
 #, csharp-format
@@ -2024,6 +2028,22 @@ msgstr "Das SAS-Token"
 #: Library/Backend/AzureBlob/Strings.cs:39
 msgid "No Azure access key or SAS token given"
 msgstr "Kein Azure-Zugriffsschlüssel oder SAS-Token angegeben"
+
+#: Library/Backend/AzureBlob/Strings.cs:40
+msgid "Specify the access tier"
+msgstr "Zugriffsebene angeben"
+
+#: Library/Backend/AzureBlob/Strings.cs:41
+msgid ""
+"Use this option to specify the access tier. If this option is not used, the "
+"server will choose a default access tier."
+msgstr ""
+"Verwenden Sie diese Option um eine Zugriffsebene anzugeben. Bei nicht "
+"Verwendung dieser Option wählt der Server die Standard-Zugriffsebene aus."
+
+#: Library/Backend/AzureBlob/Strings.cs:42
+msgid "The storage classes that are considered archive classes"
+msgstr "Die Speicherklassen, die als Archivklassen angesehen werden"
 
 #: Library/Backend/Filen/Strings.cs:26
 msgid ""
@@ -3499,6 +3519,55 @@ msgstr ""
 msgid "The server registration failed: {0}"
 msgstr "Die Server-Registrierung ist fehlgeschlagen: {0}"
 
+#: Library/RestAPI/Strings.cs:114
+msgid "Set the allowed backends for remote control"
+msgstr "Erlaubte Backends für Fernzugriff einstellen"
+
+#: Library/RestAPI/Strings.cs:115
+msgid ""
+"Set the allowed backends for remote control. The value is a comma-separated "
+"list of backend names. If this option is not set, all backends are allowed. "
+"Use this option to restrict the backends that can be used to store data."
+msgstr ""
+"Erlaubte Backends für Fernzugriff einstellen. Der Wert ist eine Komma-"
+"getrennte Liste von Backend-Namen. Wenn diese Option nicht gesetzt ist, sind"
+" alle Backends erlaubt. Verwenden Sie diese Option, um die Backends zu "
+"begrenzen, die zum Speichern von Daten benutzt werden können."
+
+#: Library/RestAPI/Strings.cs:116
+msgid "Set the allowed encryption modules for remote control"
+msgstr "Erlaubte Verschlüsselungsmodule für Fernzugriff einstellen"
+
+#: Library/RestAPI/Strings.cs:117
+msgid ""
+"Set the allowed encryption modules for remote control. The value is a comma-"
+"separated list of encryption module names. If this option is not set, all "
+"encryption modules are allowed. Use this option to restrict the encryption "
+"modules that can be used to encrypt data."
+msgstr ""
+"Erlaubte Verschlüsselungsmodule für Fernzugriff einstellen. Der Wert ist "
+"eine Komma-getrennte Liste von Verschlüsselungsmodul-Namen. Wenn diese "
+"Option nicht gesetzt ist, sind alle Verschlüsselungsmodule erlaubt. "
+"Verwenden Sie diese Option, um die Verschlüsselungsmodule zu begrenzen, die "
+"zum Verschlüsseln von Daten benutzt werden können."
+
+#: Library/RestAPI/Strings.cs:118
+msgid "Set the allowed compression modules for remote control"
+msgstr "Erlaubte Kompressionsmodule für Fernzugriff einstellen"
+
+#: Library/RestAPI/Strings.cs:119
+msgid ""
+"Set the allowed compression modules for remote control. The value is a "
+"comma-separated list of compression module names. If this option is not set,"
+" all compression modules are allowed. Use this option to restrict the "
+"compression modules that can be used to compress data."
+msgstr ""
+"Erlaubte Kompressionsmodule für Fernzugriff einstellen. Der Wert ist eine "
+"Komma-getrennte Liste von Kompressionsmodule-Namen. Wenn diese Option nicht "
+"gesetzt ist, sind alle Kompressionsmodule erlaubt. Verwenden Sie diese "
+"Option, um die Kompressionsmodule zu begrenzen, die zum Komprimieren von "
+"Daten benutzt werden können."
+
 #: Library/RestAPI/Strings.cs:123
 #, csharp-format
 msgid ""
@@ -3604,6 +3673,19 @@ msgid ""
 msgstr ""
 "ZIP64-Verwendung ist nun immer aktiviert. Diese Option ist veraltet und wird"
 " in zukünftigen Versionen entfernt."
+
+#: Library/Compression/Strings.cs:36
+msgid ""
+"This option changes the compression library used to read and write files. "
+"The SharpCompress library has more features and is more resilient where the "
+"built-in library is faster. When Auto is chosen, the built-in library will "
+"be used unless an option is added that requires SharpCompress."
+msgstr ""
+"Diess Option ändert die Kompressions-Bibliothek für das Lesen und Schreiben "
+"von Dateien. Die SharpCompress-Bibliothek hat mehr Features und ist robuster"
+" während die eingebaute Bibliothek schneller ist. Wenn Auto gewählt ist, "
+"wird die eingebaute Bibliothek benutzt außer eine Option ist aktiviert, die "
+"SharpCompress erfordert."
 
 #: Library/Compression/Strings.cs:37
 msgid "Toggles the zip library to use"
@@ -3792,6 +3874,11 @@ msgstr "Die Operation {0} ist fehlgeschlagen"
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Ungültiger Pfad: \"{0}\" ({1})"
+
+#: Library/Main/Strings.cs:42
+#, csharp-format
+msgid "The source folder {0} is empty, aborting backup"
+msgstr "Der Quellordner {0} ist leer, Sicherung wird abgebrochen"
 
 #: Library/Main/Strings.cs:43
 #, csharp-format
@@ -5366,11 +5453,6 @@ msgstr ""
 msgid "Specify the number of concurrent compression processes"
 msgstr "Gebe die Anzahl gleichzeitiger Komprimierungsprozesse an"
 
-#: Library/Main/Strings.cs:287
-msgid "[EXPERIMENTAL]Specify the number of concurrent files to open"
-msgstr ""
-"[EXPERIMENTELL] Geben Sie die Anzahl gleichzeitig zu öffnender Dateien an"
-
 #: Library/Main/Strings.cs:288
 msgid ""
 "Use this option to set the number of concurrent files to open. This could "
@@ -5791,7 +5873,7 @@ msgstr ""
 " bereits existiert. Dies soll Fehler zu vermeiden, falls eine Datenbank "
 "aktualisiert werden soll, die bereits existiert."
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:386
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -5800,23 +5882,23 @@ msgstr ""
 "Die Verschlüsselungs-Bibliothek unterstützt wiederverwendbare "
 "Transformationen für den Hash-Algorithmus {0} nicht"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:387
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 "Die Verschlüsselungs-Bibliothek unterstützt den Hash-Algorithmus {0} nicht"
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "Die Passphrase für eine existierende Sicherung kann nicht geändert werden"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:389
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Fehler beim Erstellen des Snapshots: {0}"
 
-#: Library/Main/Strings.cs:386
+#: Library/Main/Strings.cs:390
 msgid ""
 "Failed to activate BackupRead as the current process does not have "
 "sufficient permissions"
@@ -5824,7 +5906,7 @@ msgstr ""
 "Aktivierung von BackupRead fehlgeschlagen, da der laufende Prozess keine "
 "ausreichenden Berechtigungen hat"
 
-#: Library/Main/Strings.cs:391
+#: Library/Main/Strings.cs:395
 #, csharp-format
 msgid "The encryption module {0} was not found"
 msgstr "Das Verschlüsselungs-Modul {0} wurde nicht gefunden"
@@ -7119,6 +7201,18 @@ msgid ""
 msgstr ""
 "Der Ordner, wo Daten gespeichert werden. Dies ist der Ordner, in dem die "
 "Datenbank und andere Dateien gespeichert werden."
+
+#: CommandLine/CLI/Strings.cs:63
+msgid "Allowed backends"
+msgstr "Erlaubte Backends"
+
+#: CommandLine/CLI/Strings.cs:65
+msgid "Allowed encryption modules"
+msgstr "Erlaubte Verschlüsselungs-Module"
+
+#: CommandLine/CLI/Strings.cs:67
+msgid "Allowed compression modules"
+msgstr "Erlaubte Kompressions-Module"
 
 #: CommandLine/CLI/Strings.cs:75
 #, csharp-format

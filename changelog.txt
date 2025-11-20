@@ -1,3 +1,46 @@
+2025-11-20 - 2.2.0.101_canary_2025-11-20
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+This version now runs on .NET10! Apart from some speedup, the transition should not be noticeable.
+
+This version also adds initial support for MacOS Photos, where it can now read photos, even if they are stored in iCloud.
+Previous versions would back up the folder, which might not include all photos.
+Use the option `--photos-handling` to disable or tweak this feature.
+
+When using advanced options, the human-readable description is now displayed with the option name, and you can search for either.
+
+
+## Detailed list of changes:
+- Fixed an issue with SyncTool and retries that would fail on some backends
+- Improved support for OEM injection
+- Return status of backup in ServerUtil, thanks @greyxr
+- Updated to run on .NET10
+- Improved deadlock detection for restore with fewer false positives
+- Updated Uplink.NET to v2.14.3623 (for Storj backend)
+- Added support for MacOS Photos
+- Disabled internal timeout in AzureBlobStorage
+- Updated localizations, thanks to all translators!
+
+## ngclient changes:
+- Updated to latest ShipUI
+- Preload modules for better desktop performance
+- Fixed some issues with localization not being applied
+- Updates to the options list
+- Updated localizations, thanks to all translators!
+- Fixed an issue with Rclone not maintaining letter-case for remote
+- Simplified the schedule setup page
+- Improved AuthID picking
+- Improved integration with console
+- Cleaned the sidebar slightly
+- Fixed an issue with styling in settings
+- Restore flow will now default to not overwrite existing files
+- Added both option name and short description to advanced options
+- Fixed not showing "Verifying" at the start of the backup operation
+- Handle global settings with and without `--` prefix
+- Upgraded to Anguler 21
+
 2025-11-05 - 2.2.0.100_canary_2025-11-05
 ==========
 This release is a canary release intended to be used for testing.

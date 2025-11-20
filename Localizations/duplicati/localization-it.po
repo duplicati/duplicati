@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-10 11:48+0100\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2025\n"
 "Language-Team: Italian (https://app.transifex.com/duplicati/teams/67655/it/)\n"
@@ -156,7 +156,8 @@ msgid ""
 "request asymetric encryption with the setting {1}."
 msgstr ""
 "Sovrascrivi il comando di crittografia GPG predefinito \"{0}\". L'uso "
-"normale è richiedere la crittografia asimmetrica con l'impostazione {1}."
+"normale consiste nel richiedere la crittografia asimmetrica con "
+"l'impostazione {1}."
 
 #: Library/Encryption/Strings.cs:55
 msgid "The GPG encryption command"
@@ -169,15 +170,15 @@ msgstr "Decrittazione non riuscita: {0}"
 
 #: Library/Encryption/Strings.cs:60
 msgid "Failure while invoking GnuPG, program won't flush output"
-msgstr "Errore durante la chiamata di GnuPG, programma non svuota l'uscita"
+msgstr "Errore durante la chiamata di GnuPG, il programma non svuota l'output"
 
 #: Library/Encryption/Strings.cs:61
 msgid "Failure while invoking GnuPG, program won't terminate"
-msgstr "Errore durante la chiamata di GnuPG, programma non terminto"
+msgstr "Errore durante la chiamata di GnuPG, il programma non si chiude"
 
 #: Library/Encryption/Strings.cs:65
 msgid "Key must be at least 8 characters long"
-msgstr "La chiave deve essere almeno 8 caratteri"
+msgstr "La chiave deve essere lunga almeno 8 caratteri"
 
 #: Library/Encryption/Strings.cs:66
 msgid "Key must not be empty"
@@ -233,7 +234,11 @@ msgstr "Stringa"
 
 #: Library/Interface/Strings.cs:40
 msgid "Timespan"
-msgstr "Arco di tempo"
+msgstr "Intervallo di tempo"
+
+#: Library/Interface/Strings.cs:41
+msgid "DateTime"
+msgstr "DateTime"
 
 #: Library/Interface/Strings.cs:42
 msgid "Password"
@@ -263,7 +268,7 @@ msgstr "Cancellato"
 msgid ""
 "Encryption key used to encrypt target settings does not match current key."
 msgstr ""
-"La chiave di crittografia utilizzata per crittografare le impostazioni di "
+"La chiave di crittografia usata per crittografare le impostazioni di "
 "destinazione non corrisponde alla chiave corrente."
 
 #: Library/Interface/Strings.cs:52
@@ -332,7 +337,7 @@ msgid ""
 "Script returned successfully, but the output was missing the {0} parameter: "
 "{1}"
 msgstr ""
-"Lo script ha restituito esito corretto, ma nell'uscita mancava il {0} "
+"Lo script ha restituito esito corretto, ma nell'output mancava il {0} "
 "parametro: {1}"
 
 #: Library/Snapshots/Strings.cs:35
@@ -382,6 +387,14 @@ msgstr "Il prossimo USN è zero"
 #: Library/Snapshots/Strings.cs:45
 msgid "Backup configuration changed"
 msgstr "Configurazione del backup modificata"
+
+#: Library/Backend/OpenStack/Strings.cs:27
+msgid ""
+"This backend can read and write data to Swift (OpenStack Object Storage). "
+"Allowed format is \"openstack://container/folder\"."
+msgstr ""
+"Questo backend può leggere e scrivere dati su Swift. (OpenStack Object "
+"Storage). Il formato consentito è \"openstack://container/folder\"."
 
 #: Library/Backend/OpenStack/Strings.cs:28
 msgid "OpenStack Simple Storage"
@@ -509,6 +522,14 @@ msgstr "Registra la finestra di dialogo FTP sulla console del terminale"
 #: Library/Backend/FTP/Strings.cs:37
 msgid "Log FTP PRIVATE info to console"
 msgstr "Log FTP PRIVATE info to console"
+
+#: Library/Backend/FTP/Strings.cs:39
+msgid ""
+"Use this option to log diagnostics information to the log output. This can "
+"be useful for debugging purposes."
+msgstr ""
+"Usa questa opzione per registrare le informazioni diagnostiche nell'output "
+"del registro. Questo può essere utile per scopi di debug."
 
 #: Library/Backend/FTP/Strings.cs:40
 #, csharp-format
@@ -1845,6 +1866,14 @@ msgstr ""
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
 msgstr "Impossibile leggere il file dei parametri \"{0}\", motivo: {1}"
 
+#: Library/RestAPI/Strings.cs:42
+msgid "Output log information to the file given"
+msgstr "Invia le informazioni del registro al file specificato"
+
+#: Library/RestAPI/Strings.cs:44
+msgid "Output log information to the console"
+msgstr "Invia le informazioni del registro alla console"
+
 #: Library/RestAPI/Strings.cs:46
 #, csharp-format
 msgid "A serious error occurred in Duplicati: {0}"
@@ -2483,6 +2512,10 @@ msgstr ""
 msgid "The number of concurrent uploads allowed"
 msgstr "Il numero di caricamenti simultanei consentiti"
 
+#: Library/Main/Strings.cs:126
+msgid "Enable debugging output"
+msgstr "Abilita l'output di debug"
+
 #: Library/Main/Strings.cs:128
 msgid "Log internal information to a file"
 msgstr "Registra le informazioni interne in un file"
@@ -2490,6 +2523,28 @@ msgstr "Registra le informazioni interne in un file"
 #: Library/Main/Strings.cs:130
 msgid "Log information level"
 msgstr "Livello registro informazioni"
+
+#: Library/Main/Strings.cs:134
+#, csharp-format
+msgid ""
+"Enable logging of HTTP request diagnostics. Messages are logged at the {0} "
+"level, so make sure the log outputs at that level."
+msgstr ""
+"Abilita la registrazione della diagnostica delle richieste HTTP. I messaggi "
+"sono registrati al livello {0}, quindi assicurati che il registro sia "
+"generato a quel livello."
+
+#: Library/Main/Strings.cs:136
+#, csharp-format
+msgid ""
+"Enable logging of socket data. A value of 0 logs only event messages, a "
+"positive value includes that many bytes of data. Use -1 to disable. Messages"
+" are logged at the {0} level, so make sure the log outputs at that level."
+msgstr ""
+"Abilita la registrazione dei dati dei socket. Un valore di 0 registra solo i"
+" messaggi di evento, un valore positivo include quel numero di byte di dati."
+" Usa -1 per disabilitare. I messaggi sono registrati al livello {0}, quindi "
+"assicurati che il registro sia generato a quel livello."
 
 #: Library/Main/Strings.cs:138
 msgid ""
@@ -2811,9 +2866,9 @@ msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
 msgstr ""
-"Usa questa opzione per aumentare la quantità di dati generati in uscita "
-"durante l'esecuzione di un'opzione. Generalmente questa opzione produrrà una"
-" linea per ogni file elaborato."
+"Usa questa opzione per aumentare la quantità di output generato durante "
+"l'esecuzione di un'opzione. In generale, questa opzione produrrà una riga "
+"per ogni file elaborato."
 
 #: Library/Main/Strings.cs:233
 msgid "Output more progress information"
@@ -2824,8 +2879,8 @@ msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
 msgstr ""
-"Usa questa opzione per aumentare la quantità di dati generati in uscita come"
-" risultato dell'operazione, includendo tutti i nomi dei file."
+"Usa questa opzione per aumentare la quantità di output generata a seguito "
+"dell'operazione, inclusi tutti i nomi dei file."
 
 #: Library/Main/Strings.cs:236
 msgid "Output full results"
@@ -3027,8 +3082,8 @@ msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
 msgstr ""
-"Utilizza questa opzione per impostare il numero di processi che eseguono la "
-"compressione dei dati di uscita."
+"Usa questa opzione per impostare il numero di processi che eseguono la "
+"compressione dei dati di output."
 
 #: Library/Main/Strings.cs:286
 msgid "Specify the number of concurrent compression processes"
@@ -3121,6 +3176,11 @@ msgstr ""
 "regolari sono supportate all'interno di parentesi graffe. Esempio: "
 "\"+Path*{0}+*Mail*{0}-[.*DNS]\" "
 
+#: Library/Main/Strings.cs:312
+msgid "Specify the amount of log information to output to the console."
+msgstr ""
+"Specifica la quantità di informazioni del registro da inviare alla console."
+
 #: Library/Main/Strings.cs:313
 msgid "Console information level"
 msgstr "Livello informazioni console"
@@ -3171,7 +3231,7 @@ msgstr ""
 "volume alla volta e aumentare il numero di FileDecryptor può migliorare le "
 "prestazioni di ripristino se il collo di bottiglia è la decrittazione."
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:386
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -3180,21 +3240,21 @@ msgstr ""
 "La libreria di crittografia non supporta le trasformazioni riutilizzabili "
 "per l'algoritmo hash {0}"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:387
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "La libreria di crittografia non supporta l'algoritmo hash {0}"
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "La passphrase non può essere modificata per un backup esistente"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:389
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Impossibile creare un'istantanea: {0}"
 
-#: Library/Main/Strings.cs:391
+#: Library/Main/Strings.cs:395
 #, csharp-format
 msgid "The encryption module {0} was not found"
 msgstr "Il modulo di crittografia {0} non è stato trovato."
@@ -3292,6 +3352,21 @@ msgstr "Lo script \"{0}\" ha restituito con il codice di uscita {1}{2}"
 msgid "Run a required script on startup"
 msgstr "Esegui lo script richiesto all'avvio"
 
+#: Library/Modules/Builtin/Strings.cs:65
+#: Library/Modules/Builtin/Strings.cs:239
+#, csharp-format
+msgid ""
+"Use this option to select the output format for results. Available formats: "
+"{0}"
+msgstr ""
+"Usa questa opzione per selezionare il formato di output dei risultati. "
+"Formati disponibili: {0}"
+
+#: Library/Modules/Builtin/Strings.cs:66
+#: Library/Modules/Builtin/Strings.cs:240
+msgid "Select the output format for results"
+msgstr "Selezionare il formato di output per i risultati"
+
 #: Library/Modules/Builtin/Strings.cs:67
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
@@ -3310,6 +3385,17 @@ msgstr "Esegui uno script all'avvio"
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Lo script \"{0}\" ha segnalato i messaggi di errore: {1}"
+
+#: Library/Modules/Builtin/Strings.cs:72
+msgid ""
+"Set the maximum time a script is allowed to execute. If the script has not "
+"completed within this time, it will continue to execute but the operation "
+"will continue too, and no script output will be processed."
+msgstr ""
+"Imposta il tempo massimo consentito per l'esecuzione di uno script. Se lo "
+"script non viene completato entro questo tempo, continuerà a essere "
+"eseguito, ma anche l'operazione proseguirà e nessun output dello script sarà"
+" elaborato."
 
 #: Library/Modules/Builtin/Strings.cs:73
 msgid "Set the script timeout"
@@ -3552,6 +3638,11 @@ msgstr "Identificatore non valido: {0}"
 #, csharp-format
 msgid "Unparsed data: {0}"
 msgstr "Dati non analizzati: {0}"
+
+#: Library/Utility/Strings.cs:46
+#, csharp-format
+msgid "The string \"{0}\" could not be parsed into a DateTime"
+msgstr "La stringa \"{0}\" non può essere analizzata in un valore DateTime"
 
 #: Library/Utility/Strings.cs:50
 #, csharp-format
@@ -3810,7 +3901,7 @@ msgstr ""
 
 #: CommandLine/CLI/Strings.cs:55
 msgid "Disable console output"
-msgstr "Disabilita la console di output"
+msgstr "Disabilita l'output della console"
 
 #: CommandLine/CLI/Strings.cs:57
 msgid "Toggle automatic updates"
