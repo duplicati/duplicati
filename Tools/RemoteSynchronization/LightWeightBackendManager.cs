@@ -300,7 +300,7 @@ namespace RemoteSynchronization
         /// </summary>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result is true if the folder was created successfully, false otherwise.</returns>
-        private async Task<bool> TryCreateFolder(CancellationToken token)
+        public async Task<bool> TryCreateFolder(CancellationToken token)
         {
             bool created = false;
             await RetryWithDelay("CreateFolder", async () =>
