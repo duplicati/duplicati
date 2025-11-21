@@ -83,15 +83,17 @@ namespace Duplicati.Library.Backend
             { "Infomaniak Public Cloud 1", "s3.pub1.infomaniak.cloud" },
             { "Infomaniak Public Cloud 2", "s3.pub2.infomaniak.cloud" },
             { "さくらのクラウド (Sakura Cloud)", "s3.isk01.sakurastorage.jp" },
-            { "Seagate Lyve - US-East-1", "https://s3.us-east-1.lyvecloud.seagate.com" },
-            { "Seagate Lyve - US-West-1", "https://s3.us-west-1.lyvecloud.seagate.com" },
-            { "Seagate Lyve - AP-Southeast-1", "https://s3.ap-southeast-1.lyvecloud.seagate.com" },
-            { "Seagate Lyve - EU-West-1", "https://s3.eu-west-1.lyvecloud.seagate.com" },
-            { "Seagate Lyve - US-Central-2", "https://s3.us-central-2.lyvecloud.seagate.com" },
+            { "Seagate Lyve - US-East-1", "s3.us-east-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - US-West-1", "s3.us-west-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - AP-Southeast-1", "s3.ap-southeast-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - EU-West-1", "s3.eu-west-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - US-Central-2", "s3.us-central-2.lyvecloud.seagate.com" },
             { "Mega S4 - Amsterdam", "eu-central-1.s4.mega.io" },
             { "Mega S4 - Bettembourg", "eu-central-2.s4.mega.io" },
             { "Mega S4 - Montreal", "ca-central-1.s4.mega.io" },
-            { "Mega S4 - Vancouver", "ca-west-1.s4.mega.io" }
+            { "Mega S4 - Vancouver", "ca-west-1.s4.mega.io" },
+            {"Rabata US East 1 (Washington)", "s3.us-east-1.rabata.io" },
+            {"Rabata EU West 2 (Netherlands)", "s3.eu-west-2.rabata.io" },
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
