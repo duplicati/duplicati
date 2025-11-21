@@ -1,26 +1,150 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+
+using System;
+using System.Buffers;
+using System.Threading;
+using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
+
+#nullable enable
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
+
+    /// <summary>
+    /// Represents the type of block request.
+    /// </summary>
+    public enum BlockRequestType
+    {
+        Download, // Request to download a block
+        CacheEvict, // Request to evict a block from cache
+    }
+
+    /// <summary>
+    /// Represents a block of data where the byte[] buffer is returned to the ArrayPool when the DataBlock is finalized.
+    /// </summary>
+    public class DataBlock(byte[] data) : IDisposable
+    {
+        /// <summary>
+        /// The data buffer for this block. This buffer is returned to the ArrayPool when the DataBlock is finalized, which will make this field null.
+        /// </summary>
+        public byte[]? Data = data;
+
+        /// <summary>
+        /// The reference count for this DataBlock. When the reference count reaches zero, the byte[] buffer is returned to the ArrayPool.
+        /// </summary>
+        private int references = 1;
+
+        /// <summary>
+        /// References this DataBlock, incrementing the reference count.
+        /// </summary>
+        /// <remarks>The method returns the DataBlock instance for `using` statements.</remarks>
+        /// <returns>This DataBlock instance.</returns>
+        public DataBlock Reference(int count = 1)
+        {
+            Interlocked.Add(ref references, count);
+            return this;
+        }
+
+        public void Dispose()
+        {
+            Dereference();
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Dereferences this DataBlock, returning the byte[] buffer to the ArrayPool if the reference count reaches zero.
+        /// </summary>
+        /// <returns>true if the buffer was returned to the ArrayPool; otherwise, false.</returns>
+        private void Dereference()
+        {
+            if (Interlocked.Decrement(ref references) == 0)
+            {
+                if (Data != null)
+                {
+                    ArrayPool<byte>.Shared.Return(Data);
+                    Data = null;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Represents a block of data where the byte[] buffer is returned to the ArrayPool when the DataBlock is finalized.
+    /// </summary>
+    public class VolumeWrapper(TempFile file, BlockVolumeReader reader) : IDisposable
+    {
+        /// <summary>
+        /// The TempFile for this volume.
+        /// </summary>
+        private TempFile? File = file;
+
+        /// <summary>
+        /// The BlockVolumeReader for this volume.
+        /// </summary>
+        public BlockVolumeReader? Reader = reader;
+
+        /// <summary>
+        /// The size of the volume file in bytes.
+        /// </summary>
+        public long Size { init; get; } = new System.IO.FileInfo(file).Length;
+
+        /// <summary>
+        /// The reference count for this DataBlock. When the reference count reaches zero, the byte[] buffer is returned to the ArrayPool.
+        /// </summary>
+        private int references = 1;
+
+        /// <summary>
+        /// References this DataBlock, incrementing the reference count.
+        /// </summary>
+        /// <remarks>The method returns the DataBlock instance for `using` statements.</remarks>
+        /// <returns>This DataBlock instance.</returns>
+        public VolumeWrapper Reference(int count = 1)
+        {
+            Interlocked.Add(ref references, count);
+            return this;
+        }
+
+        public void Dispose()
+        {
+            Dereference();
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Dereferences this DataBlock, returning the byte[] buffer to the ArrayPool if the reference count reaches zero.
+        /// </summary>
+        /// <returns>true if the buffer was returned to the ArrayPool; otherwise, false.</returns>
+        private void Dereference()
+        {
+            if (Interlocked.Decrement(ref references) == 0)
+            {
+                Reader?.Dispose();
+                Reader = null;
+                File?.Dispose();
+                File = null;
+            }
+        }
+    }
 
     /// <summary>
     /// Represents a block request that the `VolumeDownloader` process will use to download a block from the backend.
@@ -31,14 +155,14 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// <param name="blockSize">The size of the block.</param>
     /// <param name="volumeID">The ID of the volume in which the block is stored remotely.</param>
     /// <param name="cacheDecrEvict">Flag indicating that this block request should either decrement the block counter for BlockID (for BlockManager) or evict the VolumeID (for VolumeDownloader).</param>
-    public class BlockRequest(long blockID, long blockOffset, string blockHash, long blockSize, long volumeID, bool cacheDecrEvict)
+    public class BlockRequest(long blockID, long blockOffset, string blockHash, long blockSize, long volumeID, BlockRequestType requestType)
     { // Total = 77 bytes
         public long BlockID { get; } = blockID;
         public long BlockOffset { get; } = blockOffset;
         public string BlockHash { get; } = blockHash;
         public long BlockSize { get; } = blockSize;
         public long VolumeID { get; } = volumeID;
-        public bool CacheDecrEvict { get; set; } = cacheDecrEvict;
+        public BlockRequestType RequestType { get; set; } = requestType;
     }
 
     /// <summary>
