@@ -47,7 +47,6 @@ namespace Duplicati.Library.Backend
 
         public static readonly Dictionary<string, string?> KNOWN_S3_PROVIDERS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
-            { "MyCloudyPlace (EU)", "s3.mycloudyplace.com" },
             { "Impossible Cloud (US)", "us-west-1.storage.impossibleapi.net" },
             { "Scaleway (Amsterdam, The Netherlands)", "s3.nl-ams.scw.cloud" },
             { "Scaleway (Paris, France)", "s3.fr-par.scw.cloud" },
@@ -55,8 +54,6 @@ namespace Duplicati.Library.Backend
             { "Hosteurope", "cs.hosteurope.de" },
             { "Dunkel", "dcs.dunkel.de" },
             { "DreamHost", "objects.dreamhost.com" },
-            { "dinCloud - Chicago", "d3-ord.dincloud.com" },
-            { "dinCloud - Los Angeles", "d3-lax.dincloud.com" },
             { "Poli Systems - 02 (CH)", "s3-02.polisystems.ch" },
             { "Poli Systems - 03 (CH)", "s3-03.polisystems.ch" },
             { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
@@ -249,6 +246,18 @@ namespace Duplicati.Library.Backend
             // Auto-disable DNS lookup for non-AWS configurations
             if (!options.ContainsKey("s3-ext-forcepathstyle") && !hostname.EndsWith(".amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
+
+            // Check if hostname is actually an URL
+            if (System.Uri.IsWellFormedUriString(hostname, UriKind.Absolute))
+            {
+                var hosturi = new System.Uri(hostname);
+                if (hosturi.PathAndQuery.Length > 1)
+                    throw new UserInformationException(Strings.S3Backend.NoPathAllowedInEndpointError, "S3NoPathInEndpoint");
+
+                hostname = hosturi.Host;
+                if (!options.ContainsKey(SSL_OPTION))
+                    useSSL = hosturi.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase);
+            }
 
             // Validate that hostname doesn't contain a path
             hostname = hostname.Trim('/').Trim('\\');
