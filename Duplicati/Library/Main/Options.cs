@@ -371,6 +371,9 @@ namespace Duplicati.Library.Main
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
                 yield return new CommandLineArgument("ignore-advisory-locking", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreadvisorylockingShort, Strings.Options.IgnoreadvisorylockingLong, "false");
 
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+                yield return new CommandLineArgument("disable-backup-exclusion-xattr", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablebackupexclusionxattrShort, Strings.Options.DisablebackupexclusionxattrLong, "false");
+
             if (OperatingSystem.IsMacOS())
             {
                 yield return new CommandLineArgument("photos-handling", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.DisablephotohandlingShort, Strings.Options.DisablephotohandlingLong, DEFAULT_MACOS_PHOTOS_HANDLING.ToString(), null, Enum.GetNames(typeof(MacOSPhotosHandling)));
@@ -1237,6 +1240,14 @@ namespace Duplicati.Library.Main
         /// Gets a flag indicating if empty folders should be ignored
         /// </summary>
         public bool ExcludeEmptyFolders => GetBool("exclude-empty-folders");
+
+        /// <summary>
+        /// Gets a flag indicating if backup exclusion extended attributes should be ignored
+        /// </summary>
+        public bool DisableBackupExclusionXattr =>
+            OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()
+                ? GetBool("disable-backup-exclusion-xattr")
+                : true; // Windows does not support xattrs, so disable looking for them
 
         /// <summary>
         /// Gets a flag indicating if during restores metadata should be applied to the symlink target.

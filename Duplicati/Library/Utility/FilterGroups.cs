@@ -21,10 +21,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
 using System.Xml.Linq;
-using Duplicati.Library.Common;
 
 using Duplicati.Library.Localization.Short;
 
@@ -186,7 +186,7 @@ namespace Duplicati.Library.Utility
             }
 
             var ind = new string(' ', indentation);
-            
+
             var sb = new System.Text.StringBuilder();
             sb.AppendLine(ind + LC.L("{0}: Selects no filters.", nameof(FilterGroup.None)));
             sb.AppendLine(ind + LC.L("{0}: A set of default exclude filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultExcludes), string.Join(",", defaultExcludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
@@ -213,7 +213,7 @@ namespace Duplicati.Library.Utility
                     }
                 }
             };
-            
+
             sb.AppendLine(ind + LC.L("{0}: Files that are owned by the system or not suited to be backed up. This includes any operating system reported protected files. Most users should at least apply these filters.", nameof(FilterGroup.SystemFiles)));
             appendAliasesAndValues(FilterGroup.SystemFiles, false);
             sb.AppendLine(ind + LC.L("{0}: Files that belong to the operating system. These files are restored when the operating system is re-installed.", nameof(FilterGroup.OperatingSystem)));
@@ -238,7 +238,7 @@ namespace Duplicati.Library.Utility
             IEnumerable<string> osFilters;
 
             if (OperatingSystem.IsMacOS())
-                osFilters = CreateOSXFilters(group);
+                osFilters = CreateMacOSFilters(group);
             else if (OperatingSystem.IsLinux())
                 osFilters = CreateLinuxFilters(group);
             else if (OperatingSystem.IsWindows())
@@ -441,11 +441,11 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Creates OSX filters
+        /// Creates MacOS filters
         /// </summary>
         /// <param name="group">The groups to create the filters for</param>
-        /// <returns>OSX filters</returns>
-        private static IEnumerable<string> CreateOSXFilters(FilterGroup group)
+        /// <returns>MacOS filters</returns>
+        private static IEnumerable<string> CreateMacOSFilters(FilterGroup group)
         {
             if (group.HasFlag(FilterGroup.SystemFiles))
             {
@@ -468,7 +468,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"/private/var/spool/postfix/");
                 yield return FilterGroups.CreateWildcardFilter(@"/private/var/vm/");
 
-                foreach (var p in GetOSXExcludeFiles() ?? new string[0])
+                foreach (var p in GetMacOSExcludeFiles() ?? new string[0])
                     yield return p;
             }
 
@@ -637,57 +637,67 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Gets a list of exclude paths from the MacOS system
         /// </summary>
-        /// <returns>The list of paths to exclude on OSX backups.</returns>
-        private static IEnumerable<string> GetOSXExcludeFiles()
+        /// <returns>The list of paths to exclude on MacOS backups.</returns>
+        private static IEnumerable<string> GetMacOSExcludeFiles()
         {
-            var res = new List<string>();
-            if (OperatingSystem.IsMacOS())
+            if (!OperatingSystem.IsMacOS())
+                return null;
+
+            try
             {
-                try
+                //TODO: Consider the dynamic list:
+                // ~> sudo mdfind "com_apple_backup_excludeItem = 'com.apple.backupd'"
+
+                var doc = XDocument.Load("/System/Library/CoreServices/backupd.bundle/Contents/Resources/StdExclusions.plist");
+                var toplevel = doc.Element("plist")?.Element("dict")?.Elements("key");
+                var res = new List<string>();
+                var excludes = new HashSet<string>(StringComparer.Ordinal)
                 {
-                    //TODO: Consider the dynamic list:
-                    // ~> sudo mdfind "com_apple_backup_excludeItem = 'com.apple.backupd'"
+                    "PathsExcluded",
+                    "ContentsExcluded",
+                    "FileContentsExcluded"
+                };
 
-                    var doc = System.Xml.Linq.XDocument.Load("/System/Library/CoreServices/backupd.bundle/Contents/Resources/StdExclusions.plist");
-                    var toplevel = doc.Element("plist")?.Element("dict")?.Elements("key");
-
-                    foreach (var n in toplevel)
+                foreach (var n in toplevel)
+                {
+                    if (excludes.Contains(n.Value))
                     {
-                        if (new string[] { "PathsExcluded", "ContentsExcluded", "FileContentsExcluded" }.Contains(n.Value, StringComparer.Ordinal))
-                        {
-                            if (n.NextNode is XContainer container)
-                                foreach (var p in container.Elements("string"))
-                                {
-                                    if (System.IO.File.Exists(p.Value))
-                                        res.Add(p.Value);
-                                    else if (System.IO.Directory.Exists(p.Value))
-                                        res.Add(p.Value + "/");
-                                    else
-                                        res.Add(p.Value);
-                                }
-                                
-                        }
-                        else if (string.Equals(n.Value, "UserPathsExcluded", StringComparison.Ordinal))
-                        {
-                            // TODO: We need to figure out how to map the paths to either a file or a folder.
-                            // alternatively, we can use a regex with an optional trailing slash,
-                            // but this has a large performance overhead, so for now the code below
-                            // works but has been commented out
+                        if (n.NextNode is XContainer container)
+                            foreach (var p in container.Elements("string"))
+                            {
+                                if (p?.Value == null)
+                                    continue;
 
-                            /*
-                            if (n.NextNode is System.Xml.Linq.XContainer)
-                                foreach (var p in ((System.Xml.Linq.XContainer)n.NextNode).Elements("string"))
-                                    res.Add("[/Users/[^/]+/" + System.Text.RegularExpressions.Regex.Escape(p.Value) + "/?]");
-                            */
-                        }
+                                if (File.Exists(p.Value))
+                                    res.Add(p.Value);
+                                else if (Directory.Exists(p.Value))
+                                    res.Add(p.Value + "/");
+                                else
+                                    res.Add(p.Value);
+                            }
+
                     }
+                    else if (string.Equals(n.Value, "UserPathsExcluded", StringComparison.Ordinal))
+                    {
+                        // TODO: We need to figure out how to map the paths to either a file or a folder.
+                        // alternatively, we can use a regex with an optional trailing slash,
+                        // but this has a large performance overhead, so for now the code below
+                        // works but has been commented out
 
-                    return res;
+                        /*
+                        if (n.NextNode is System.Xml.Linq.XContainer)
+                            foreach (var p in ((System.Xml.Linq.XContainer)n.NextNode).Elements("string"))
+                                res.Add("[/Users/[^/]+/" + System.Text.RegularExpressions.Regex.Escape(p.Value) + "/?]");
+                        */
+                    }
                 }
-                catch
-                {
-                }
+
+                return res;
             }
+            catch
+            {
+            }
+
 
             return null;
         }

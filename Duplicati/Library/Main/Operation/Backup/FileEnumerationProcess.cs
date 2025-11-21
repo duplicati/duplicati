@@ -33,6 +33,7 @@ using Duplicati.Library.Interface;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.SourceProvider;
 using Duplicati.Library.Snapshots.USN;
+using System.Collections.ObjectModel;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -56,6 +57,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             Library.Utility.IFilter emitfilter,
             Options.SymlinkStrategy symlinkPolicy,
             Options.HardlinkStrategy hardlinkPolicy,
+            bool disableBackupExclusionXattr,
             bool excludeemptyfolders,
             string[]? ignorenames,
             HashSet<string> blacklistPaths,
@@ -99,7 +101,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     // Shared filter function with bound variables
                     ValueTask<bool> FilterEntry(ISourceProviderEntry entry)
-                        => SourceFileEntryFilter(entry, blacklistPaths, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributeFilter, enumeratefilter, ignorenames, mixinqueue, token);
+                        => SourceFileEntryFilter(entry, blacklistPaths, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributeFilter, enumeratefilter, ignorenames, mixinqueue, disableBackupExclusionXattr, token);
 
                     // Prepare the work list
                     IAsyncEnumerable<ISourceProviderEntry> worklist;
@@ -415,7 +417,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="ignorenames">The ignore names.</param>
         /// <param name="mixinqueue">The mixin queue.</param>
         /// <returns>True if the path should be returned, false otherwise.</returns>
-        private static async ValueTask<bool> SourceFileEntryFilter(ISourceProviderEntry entry, HashSet<string> blacklistPaths, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[]? ignorenames, Queue<ISourceProviderEntry> mixinqueue, CancellationToken cancellationToken)
+        private static async ValueTask<bool> SourceFileEntryFilter(ISourceProviderEntry entry, HashSet<string> blacklistPaths, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[]? ignorenames, Queue<ISourceProviderEntry> mixinqueue, bool disableBackupExclusionXattr, CancellationToken cancellationToken)
         {
             // Do the course pre-filtering first
             if (!PreFilterSourceEntry(entry, blacklistPaths))
@@ -500,6 +502,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                 return false;
             }
 
+            // Filter entries that are marked as excluded from backups via filesystem extended attributes
+            if (!disableBackupExclusionXattr && HasBackupExclusionAttribute(entry))
+            {
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromBackupAttribute", "Excluding path marked as excluded from backups via filesystem attribute: {0}", entry.Path);
+                return false;
+            }
+
             // Then check if the filename is not explicitly excluded by a filter
             var filtermatch = false;
             if (!Library.Utility.FilterExpression.Matches(enumeratefilter, entry.Path, out var match))
@@ -555,6 +564,43 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             // All the way through, yes!
             return true;
+        }
+
+        /// <summary>
+        /// Extended attribute prefix for files that should be excluded from backup.
+        /// The "unix-ext:" prefix is added when reading the xattrs via the ISourceProviderEntry interface.
+        /// </summary>
+        private static readonly ReadOnlySet<string> ExcludedBackupAttributes = new HashSet<string>(StringComparer.Ordinal)
+        {
+            // macOS common backup exclusion attributes
+            "unix-ext:com.apple.metadata:com_apple_backup_excludeItem",
+            // Linux custom attributes
+            "unix-ext:duplicati.exclude",
+            "unix-ext:user.duplicati.exclude"
+        }.AsReadOnly();
+
+        /// <summary>
+        /// Checks if the entry has an attribute marking it as excluded from backups
+        /// </summary>
+        /// <param name="entry">The entry to check.</param>
+        /// <returns>True if the entry has the attribute, false otherwise.</returns>
+        private static bool HasBackupExclusionAttribute(ISourceProviderEntry entry)
+        {
+            try
+            {
+                var metadata = entry.MinorMetadata;
+                if (metadata == null || metadata.Count == 0)
+                    return false;
+
+                if (metadata.Keys.Any(k => ExcludedBackupAttributes.Contains(k)))
+                    return true;
+            }
+            catch (Exception ex)
+            {
+                LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorMetadata", entry.Path, "Failed to process extended attributes for path: {0}");
+            }
+
+            return false;
         }
     }
 }
