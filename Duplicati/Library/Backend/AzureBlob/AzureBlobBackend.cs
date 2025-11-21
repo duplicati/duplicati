@@ -97,7 +97,7 @@ namespace Duplicati.Library.Backend.AzureBlob
             var uri = new Utility.Uri(url);
             uri.RequireHost();
 
-            var containerName = uri.Host.ToLowerInvariant();
+            var containerName = (uri.Host ?? "").ToLowerInvariant();
 
             var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AZURE_ACCOUNT_NAME_OPTION, AZURE_ACCESS_KEY_OPTION);
             var timeouts = TimeoutOptionsHelper.Parse(options);
@@ -194,9 +194,9 @@ namespace Duplicati.Library.Backend.AzureBlob
                         CommandLineArgument.ArgumentType.Flags,
                         Strings.AzureBlobBackend.ArchiveClassesDescriptionShort,
                         Strings.AzureBlobBackend.ArchiveClassesDescriptionLong,
-                        string.Join(",", DEFAULT_ARCHIVE_CLASSES.Select(x => Library.Utility.Utility.FormatInvariantValue(x))),
+                        string.Join(",", DEFAULT_ARCHIVE_CLASSES.Select(x => x.ToString())),
                         null,
-                        ACCESS_TIERS.Select(x => Library.Utility.Utility.FormatInvariantValue(x)).ToArray()),
+                        ACCESS_TIERS.Select(x => x.ToString()).ToArray()),
                     new CommandLineArgument(AZURE_ACCESS_TIER_OPTION,
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.AccessTierDescriptionShort,
@@ -208,7 +208,7 @@ namespace Duplicati.Library.Backend.AzureBlob
                         CommandLineArgument.ArgumentType.Integer,
                         Strings.AzureBlobBackend.InternalRetriesDescriptionShort,
                         Strings.AzureBlobBackend.InternalRetriesDescriptionLong,
-                        Library.Utility.Utility.FormatInvariantValue(DEFAULT_INTERNAL_RETRIES)),
+                        DEFAULT_INTERNAL_RETRIES.ToString()),
                     .. TimeoutOptionsHelper.GetOptions()
                 ];
             }
