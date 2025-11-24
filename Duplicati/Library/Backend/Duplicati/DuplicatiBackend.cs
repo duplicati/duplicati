@@ -89,8 +89,8 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     private HttpRequestMessage CreateRequest(HttpMethod method, string path)
     {
         var request = new HttpRequestMessage(method, path);
-        request.Headers.Add("Authorization", _api_key);
-        request.Headers.Add("X-Org-Id", _org_id);
+        request.Headers.Add("X-Api-Key", _api_key);
+        request.Headers.Add("X-Organization-Id", _org_id);
         request.Headers.Add("X-Backup-Id", BackupId);
         return request;
     }
