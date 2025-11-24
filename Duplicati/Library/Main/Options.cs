@@ -573,6 +573,7 @@ namespace Duplicati.Library.Main
             // TODO actual descriptions
             new CommandLineArgument("duplicati-auth-apikey", CommandLineArgument.ArgumentType.String, "some short description", "some long description"),
             new CommandLineArgument("duplicati-auth-orgid", CommandLineArgument.ArgumentType.String, "some short description", "some long description"),
+            new CommandLineArgument("duplicati-auth-machineid", CommandLineArgument.ArgumentType.String, "some short description", "some long description"),
             new CommandLineArgument("duplicati-backup-id", CommandLineArgument.ArgumentType.String, "some short description", "some long description"),
 
             .. GetOSConditionalCommands()
