@@ -80,6 +80,10 @@ namespace Duplicati.Server.Database
             public const string DISABLE_API_EXTENSIONS = "disable-api-extensions";
             public const string POWER_MODE_PROVIDER = "power-mode-provider";
             public const string DISABLE_CONSOLE_CONTROL = "disable-console-control";
+            public const string REMOTE_CONTROL_DASHBOARD_URL = "remote-control-dashboard-url";
+            public const string REMOTE_CONTROL_STORAGE_API_ID = "remote-control-storage-api-id";
+            public const string REMOTE_CONTROL_STORAGE_API_KEY = "remote-control-storage-api-key";
+            public const string REMOTE_CONTROL_STORAGE_ENDPOINT_URL = "remote-control-storage-endpoint-url";
         }
 
         private readonly Dictionary<string, string?> settings;
@@ -171,12 +175,7 @@ namespace Duplicati.Server.Database
             {
                 return settings[CONST.STARTUP_DELAY];
             }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.STARTUP_DELAY] = value;
-                SaveSettings();
-            }
+            set => SetAndSaveSetting(CONST.STARTUP_DELAY, value);
         }
 
         public DateTime? PausedUntil
@@ -188,110 +187,49 @@ namespace Duplicati.Server.Database
                 else
                     return null;
             }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.PAUSED_UNTIL] = value?.ToUniversalTime().Ticks.ToString();
-                SaveSettings();
-            }
+            set => SetAndSaveSetting(CONST.PAUSED_UNTIL, value?.ToUniversalTime().Ticks.ToString());
         }
 
         public string? DownloadSpeedLimit
         {
-            get
-            {
-                return settings[CONST.DOWNLOAD_SPEED_LIMIT];
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.DOWNLOAD_SPEED_LIMIT] = value;
-                SaveSettings();
-            }
+            get => settings[CONST.DOWNLOAD_SPEED_LIMIT];
+            set => SetAndSaveSetting(CONST.DOWNLOAD_SPEED_LIMIT, value);
         }
 
         public string? UploadSpeedLimit
         {
-            get
-            {
-                return settings[CONST.UPLOAD_SPEED_LIMIT];
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.UPLOAD_SPEED_LIMIT] = value;
-                SaveSettings();
-            }
+            get => settings[CONST.UPLOAD_SPEED_LIMIT];
+            set => SetAndSaveSetting(CONST.UPLOAD_SPEED_LIMIT, value);
         }
 
         public bool IsFirstRun
         {
-            get
-            {
-                return Utility.ParseBoolOption(settings, CONST.IS_FIRST_RUN);
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.IS_FIRST_RUN] = value.ToString();
-                SaveSettings();
-            }
+            get => Utility.ParseBoolOption(settings, CONST.IS_FIRST_RUN);
+            set => SetAndSaveSetting(CONST.IS_FIRST_RUN, value.ToString());
         }
 
         public bool UnackedError
         {
-            get
-            {
-                return Utility.ParseBool(settings[CONST.UNACKED_ERROR], false);
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.UNACKED_ERROR] = value.ToString();
-                SaveSettings();
-            }
+            get => Utility.ParseBool(settings[CONST.UNACKED_ERROR], false);
+            set => SetAndSaveSetting(CONST.UNACKED_ERROR, value.ToString());
         }
 
         public bool UnackedWarning
         {
-            get
-            {
-                return Utility.ParseBool(settings[CONST.UNACKED_WARNING], false);
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.UNACKED_WARNING] = value.ToString();
-                SaveSettings();
-            }
+            get => Utility.ParseBool(settings[CONST.UNACKED_WARNING], false);
+            set => SetAndSaveSetting(CONST.UNACKED_WARNING, value.ToString());
         }
 
         public bool ServerPortChanged
         {
-            get
-            {
-                return Utility.ParseBool(settings[CONST.SERVER_PORT_CHANGED], false);
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.SERVER_PORT_CHANGED] = value.ToString();
-                SaveSettings();
-            }
+            get => Utility.ParseBool(settings[CONST.SERVER_PORT_CHANGED], false);
+            set => SetAndSaveSetting(CONST.SERVER_PORT_CHANGED, value.ToString());
         }
 
         public bool DisableTrayIconLogin
         {
-            get
-            {
-                return Utility.ParseBool(settings[CONST.DISABLE_TRAY_ICON_LOGIN], false);
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.DISABLE_TRAY_ICON_LOGIN] = value.ToString();
-                SaveSettings();
-            }
+            get => Utility.ParseBool(settings[CONST.DISABLE_TRAY_ICON_LOGIN], false);
+            set => SetAndSaveSetting(CONST.DISABLE_TRAY_ICON_LOGIN, value.ToString());
         }
 
         public bool AutogeneratedPassphrase
@@ -437,12 +375,7 @@ namespace Duplicati.Server.Database
         public string? JWTConfig
         {
             get => settings[CONST.JWT_CONFIG];
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.JWT_CONFIG] = value;
-                SaveSettings();
-            }
+            set => SetAndSaveSetting(CONST.JWT_CONFIG, value);
         }
 
         /// <summary>
@@ -489,23 +422,13 @@ namespace Duplicati.Server.Database
         public string? RemoteControlConfig
         {
             get => settings[CONST.REMOTE_CONTROL_CONFIG];
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.REMOTE_CONTROL_CONFIG] = value;
-                SaveSettings();
-            }
+            set => SetAndSaveSetting(CONST.REMOTE_CONTROL_CONFIG, value);
         }
 
         public bool RemoteControlEnabled
         {
             get => Utility.ParseBool(settings[CONST.REMOTE_CONTROL_ENABLED], false);
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.REMOTE_CONTROL_ENABLED] = value.ToString();
-                SaveSettings();
-            }
+            set => SetAndSaveSetting(CONST.REMOTE_CONTROL_ENABLED, value.ToString());
         }
 
         public DateTime LastUpdateCheck
@@ -520,9 +443,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.UPDATE_CHECK_LAST] = value.ToUniversalTime().Ticks.ToString();
-                SaveSettings();
+                SetAndSaveSetting(CONST.UPDATE_CHECK_LAST, value.ToUniversalTime().Ticks.ToString());
             }
         }
 
@@ -604,16 +525,8 @@ namespace Duplicati.Server.Database
 
         public string? ServerListenInterface
         {
-            get
-            {
-                return settings[CONST.SERVER_LISTEN_INTERFACE];
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.SERVER_LISTEN_INTERFACE] = value;
-                SaveSettings();
-            }
+            get => settings[CONST.SERVER_LISTEN_INTERFACE];
+            set => SetAndSaveSetting(CONST.SERVER_LISTEN_INTERFACE, value);
         }
 
         public IReadOnlySet<string> DisabledAPIExtensions
@@ -626,9 +539,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.DISABLE_API_EXTENSIONS] = string.Join(",", value ?? Enumerable.Empty<string>());
-                SaveSettings();
+                SetAndSaveSetting(CONST.DISABLE_API_EXTENSIONS, string.Join(",", value ?? Enumerable.Empty<string>()));
             }
         }
 
@@ -656,16 +567,8 @@ namespace Duplicati.Server.Database
 
         public bool DisableConsoleControl
         {
-            get
-            {
-                return Utility.ParseBool(settings[CONST.DISABLE_CONSOLE_CONTROL], false);
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.DISABLE_CONSOLE_CONTROL] = value.ToString();
-                SaveSettings();
-            }
+            get => Utility.ParseBool(settings[CONST.DISABLE_CONSOLE_CONTROL], false);
+            set => SetAndSaveSetting(CONST.DISABLE_CONSOLE_CONTROL, value.ToString());
         }
 
 
@@ -716,16 +619,8 @@ namespace Duplicati.Server.Database
 
         public bool FixedInvalidBackupId
         {
-            get
-            {
-                return Utility.ParseBool(settings[CONST.HAS_FIXED_INVALID_BACKUPID], false);
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.HAS_FIXED_INVALID_BACKUPID] = value.ToString();
-                SaveSettings();
-            }
+            get => Utility.ParseBool(settings[CONST.HAS_FIXED_INVALID_BACKUPID], false);
+            set => SetAndSaveSetting(CONST.HAS_FIXED_INVALID_BACKUPID, value.ToString());
         }
 
         public string? UpdateChannel
@@ -749,44 +644,20 @@ namespace Duplicati.Server.Database
 
         public string? UsageReporterLevel
         {
-            get
-            {
-                return settings[CONST.USAGE_REPORTER_LEVEL];
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.USAGE_REPORTER_LEVEL] = value;
-                SaveSettings();
-            }
+            get => settings[CONST.USAGE_REPORTER_LEVEL];
+            set => SetAndSaveSetting(CONST.USAGE_REPORTER_LEVEL, value);
         }
 
         public bool EncryptedFields
         {
-            get
-            {
-                return Utility.ParseBool(settings[CONST.ENCRYPTED_FIELDS], false);
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.ENCRYPTED_FIELDS] = value.ToString();
-                SaveSettings();
-            }
+            get => Utility.ParseBool(settings[CONST.ENCRYPTED_FIELDS], false);
+            set => SetAndSaveSetting(CONST.ENCRYPTED_FIELDS, value.ToString());
         }
 
         public string? PreloadSettingsHash
         {
-            get
-            {
-                return settings[CONST.PRELOAD_SETTINGS_HASH];
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.PRELOAD_SETTINGS_HASH] = value;
-                SaveSettings();
-            }
+            get => settings[CONST.PRELOAD_SETTINGS_HASH];
+            set => SetAndSaveSetting(CONST.PRELOAD_SETTINGS_HASH, value);
         }
 
         public TimeZoneInfo Timezone
@@ -820,30 +691,38 @@ namespace Duplicati.Server.Database
 
         public string? LastConfigIssueCheckVersion
         {
-            get
-            {
-                return settings[CONST.LAST_UPDATE_CHECK_VERSION];
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.LAST_UPDATE_CHECK_VERSION] = value;
-                SaveSettings();
-            }
+            get => settings[CONST.LAST_UPDATE_CHECK_VERSION];
+            set => SetAndSaveSetting(CONST.LAST_UPDATE_CHECK_VERSION, value);
         }
 
         public string? AdditionalReportUrl
         {
-            get
-            {
-                return settings[CONST.ADDITIONAL_REPORT_URL];
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.ADDITIONAL_REPORT_URL] = value;
-                SaveSettings();
-            }
+            get => settings[CONST.ADDITIONAL_REPORT_URL];
+            set => SetAndSaveSetting(CONST.ADDITIONAL_REPORT_URL, value);
+        }
+
+        public string? RemoteControlDashboardUrl
+        {
+            get => settings[CONST.REMOTE_CONTROL_DASHBOARD_URL];
+            set => SetAndSaveSetting(CONST.REMOTE_CONTROL_DASHBOARD_URL, value);
+        }
+
+        public string? RemoteControlStorageApiId
+        {
+            get => settings[CONST.REMOTE_CONTROL_STORAGE_API_ID];
+            set => SetAndSaveSetting(CONST.REMOTE_CONTROL_STORAGE_API_ID, value);
+        }
+
+        public string? RemoteControlStorageApiKey
+        {
+            get => settings[CONST.REMOTE_CONTROL_STORAGE_API_KEY];
+            set => SetAndSaveSetting(CONST.REMOTE_CONTROL_STORAGE_API_KEY, value);
+        }
+
+        public string? RemoteControlStorageEndpointUrl
+        {
+            get => settings[CONST.REMOTE_CONTROL_STORAGE_ENDPOINT_URL];
+            set => SetAndSaveSetting(CONST.REMOTE_CONTROL_STORAGE_ENDPOINT_URL, value);
         }
 
         public string? BackupListSortOrder
@@ -854,9 +733,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.BACKUP_LIST_SORT_ORDER] = value;
-                SaveSettings();
+                SetAndSaveSetting(CONST.BACKUP_LIST_SORT_ORDER, value);
             }
         }
 
@@ -872,10 +749,15 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.POWER_MODE_PROVIDER] = value == PowerModeProvider.Default ? null : value.ToString();
-                SaveSettings();
+                SetAndSaveSetting(CONST.POWER_MODE_PROVIDER, value == PowerModeProvider.Default ? null : value.ToString());
             }
+        }
+
+        private void SetAndSaveSetting(string key, string? value)
+        {
+            lock (databaseConnection.m_lock)
+                settings[key] = value;
+            SaveSettings();
         }
 
     }

@@ -93,6 +93,10 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
                 };
 
                 connection.ApplicationSettings.AdditionalReportUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ReportUrlKey);
+                connection.ApplicationSettings.RemoteControlDashboardUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.DashboardUrlKey);
+                connection.ApplicationSettings.RemoteControlStorageApiId = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageApiIdKey);
+                connection.ApplicationSettings.RemoteControlStorageApiKey = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageApiKeyKey);
+                connection.ApplicationSettings.RemoteControlStorageEndpointUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageEndpointUrlKey);
 
                 var backupConfigs = message.ControlRequestMessage.Parameters
                     .Where(kv => kv.Key.StartsWith(ControlRequestMessage.BackupConfigKeyPrefix, StringComparison.OrdinalIgnoreCase))

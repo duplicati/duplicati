@@ -74,7 +74,8 @@ namespace Duplicati.Server.Database
                     ServerSettings.CONST.PBKDF_CONFIG,
                     ServerSettings.CONST.REMOTE_CONTROL_CONFIG,
                     ServerSettings.CONST.SERVER_SSL_CERTIFICATE,
-                    ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD
+                    ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD,
+                    ServerSettings.CONST.REMOTE_CONTROL_STORAGE_API_KEY
                 ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 

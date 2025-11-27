@@ -97,6 +97,22 @@ public sealed record ControlRequestMessage(string Command, Dictionary<string, st
     /// </summary>
     public const string ReportUrlKey = "reportingurl";
     /// <summary>
+    /// The key that contains the dashboard URL
+    /// </summary>
+    public const string DashboardUrlKey = "dashboardurl";
+    /// <summary>
+    /// The key that contains the storage API ID
+    /// </summary>
+    public const string StorageApiIdKey = "storageapiid";
+    /// <summary>
+    /// The key that contains the storage API key
+    /// </summary>
+    public const string StorageApiKeyKey = "storageapikey";
+    /// <summary>
+    /// The key that contains the storage endpoint URL
+    /// </summary>
+    public const string StorageEndpointUrlKey = "storageendpointurl";
+    /// <summary>
     /// The prefix used for backup config keys
     /// </summary>
     public const string BackupConfigKeyPrefix = "backupconfig:";
