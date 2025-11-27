@@ -570,12 +570,6 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
             new CommandLineArgument("ignore-update-if-version-exists", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreUpdateIfVersionExistsShort, Strings.Options.IgnoreUpdateIfVersionExistsLong, "false"),
 
-            // TODO actual descriptions
-            new CommandLineArgument("duplicati-auth-apikey", CommandLineArgument.ArgumentType.String, "some short description", "some long description"),
-            new CommandLineArgument("duplicati-auth-orgid", CommandLineArgument.ArgumentType.String, "some short description", "some long description"),
-            new CommandLineArgument("duplicati-auth-machineid", CommandLineArgument.ArgumentType.String, "some short description", "some long description"),
-            new CommandLineArgument("duplicati-backup-id", CommandLineArgument.ArgumentType.String, "some short description", "some long description"),
-
             .. GetOSConditionalCommands()
         ];
 
