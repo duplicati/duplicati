@@ -25,6 +25,14 @@ namespace Duplicati.Library.Backend.Strings;
 
 internal static class DuplicatiBackend
 {
-    public static string Description { get { return LC.L(@"This backend is used for internal Duplicati operations and is not intended for direct use."); } }
+    public static string Description { get { return LC.L(@"This backend can read and write data to Duplicati Storage."); } }
     public static string DisplayName { get { return LC.L(@"Duplicati Storage Backend"); } }
+
+    public static string AuthIdOptionsShort { get { return LC.L(@"The API ID for authenticating with the Duplicati storage server."); } }
+    public static string AuthIdOptionsLong { get { return LC.L(@"Specifies the API ID to use when authenticating with the Duplicati storage server."); } }
+    public static string AuthKeyOptionsShort { get { return LC.L(@"The API Key for authenticating with the Duplicati storage server."); } }
+    public static string AuthKeyOptionsLong { get { return LC.L(@"Specifies the API Key to use when authenticating with the Duplicati storage server."); } }
+    public static string BackupIdOptionsShort { get { return LC.L(@"The Backup ID to use on the Duplicati storage server."); } }
+    public static string BackupIdOptionsLong { get { return LC.L(@"Each backupID identifies a separate backup set on the Duplicati storage server."); } }
+    public static string ErrorMissingBackupId { get { return LC.L(@"A unique backup id must be specified"); } }
 }

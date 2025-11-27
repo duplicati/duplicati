@@ -23,76 +23,148 @@ using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility.Options;
+using Duplicati.Library.Utility;
+using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend;
 
 public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
 {
-    //
-    // Constants
-    //
-    private const string AUTH_API_KEY_OPTION = "duplicati-auth-apikey";
-    private const string AUTH_ORG_ID_OPTION = "duplicati-auth-orgid";
-    private const string BACKUP_ID_OPTION = "duplicati-backup-id";
+    /// <summary>
+    /// The authentication API key option name
+    /// </summary>
+    public const string AUTH_API_KEY_OPTION = "duplicati-auth-apikey";
+    /// <summary>
+    /// The authentication API id option name
+    /// </summary>
+    public const string AUTH_API_ID_OPTION = "duplicati-auth-apiid";
+    /// <summary>
+    /// The backup ID option name
+    /// </summary>
+    public const string BACKUP_ID_OPTION = "duplicati-backup-id";
 
-    //
-    // Fields
-    //
+    /// <summary>
+    /// The protocol key for this backend
+    /// </summary>
+    public const string PROTOCOL = "duplicati";
+
+    /// <summary>
+    /// The default endpoint URL
+    /// </summary>
+    private const string DEFAULT_ENDPOINT = "https://storage.duplicati.com";
+
+    /// <inheritdoc />
     public string DisplayName => Strings.DuplicatiBackend.DisplayName;
-    public string ProtocolKey => "duplicati";
+    /// <inheritdoc />
+    public string ProtocolKey => PROTOCOL;
+    /// <inheritdoc />
     public bool SupportsStreaming => true;
+    /// <inheritdoc />
     public string Description => Strings.DuplicatiBackend.Description;
 
-    private readonly string _api_key;
-    private readonly string _org_id;
-    private readonly HttpClient _client;
-    private string BackupId { get; set; } = string.Empty;
+    /// <summary>
+    /// The authentication settings
+    /// </summary>
+    private readonly AuthOptionsHelper.AuthOptions _auth;
+    /// <summary>
+    /// The timeout settings
+    /// </summary>
+    private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+    /// <summary>
+    /// The backup id
+    /// </summary>
+    private readonly string _backup_id;
 
-    //
-    // Constructors
-    //
+    /// <summary>
+    /// The HttpClient used for requests
+    /// </summary>
+    private readonly HttpClient _client;
+
+    /// <summary>
+    /// Constructor used for dynamic loading
+    /// </summary>
     public DuplicatiBackend()
     {
         // Parameterless constructor for dynamic loading
-        _api_key = string.Empty;
-        _org_id = string.Empty;
-        _client = new HttpClient();
+        _auth = null!;
+        _timeouts = null!;
+        _backup_id = null!;
+        _client = null!;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DuplicatiBackend"/> class.
+    /// </summary>
+    /// <param name="url">The backend URL</param>
+    /// <param name="options">The backend options</param>
     public DuplicatiBackend(string url, Dictionary<string, string?> options)
     {
-        string decoded = Uri.UnescapeDataString(url);
-        var uri = new UriBuilder(decoded)
-        {
-            Scheme = "https"
-        };
+        var uri = new Utility.Uri(url);
+        if (string.IsNullOrWhiteSpace(uri.HostAndPath))
+            uri = new Utility.Uri(DEFAULT_ENDPOINT);
+
         _client = new HttpClient
         {
-            BaseAddress = uri.Uri,
+            BaseAddress = new System.Uri(uri.SetScheme("https").SetQuery(null).ToString()),
+            DefaultRequestHeaders =
+            {
+                Accept = { new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json") },
+            }
         };
-        BackupId = options.GetValueOrDefault(BACKUP_ID_OPTION) ?? string.Empty;
-        _api_key = options.GetValueOrDefault(AUTH_API_KEY_OPTION) ?? string.Empty;
-        _org_id = options.GetValueOrDefault(AUTH_ORG_ID_OPTION) ?? string.Empty;
+
+        _backup_id = options.GetValueOrDefault(BACKUP_ID_OPTION) ?? string.Empty;
+        if (string.IsNullOrEmpty(_backup_id))
+            throw new ArgumentException(Strings.DuplicatiBackend.ErrorMissingBackupId, BACKUP_ID_OPTION);
+        if (_backup_id.Length < 6 || _backup_id.Length > 100)
+            throw new ArgumentOutOfRangeException(BACKUP_ID_OPTION, "Backup ID must be between 6 and 100 characters");
+        if (!Regex.IsMatch(_backup_id, @"^[a-zA-Z0-9_-]+$"))
+            throw new ArgumentException("Backup ID must only contain alphanumeric characters, hyphens, and underscores", BACKUP_ID_OPTION);
+
+        _auth = AuthOptionsHelper.ParseWithAlias(options, new Utility.Uri(url), AUTH_API_ID_OPTION, AUTH_API_KEY_OPTION)
+            .RequireCredentials();
+
+        _client.DefaultRequestHeaders.Add("X-Api-Key", _auth.Password);
+        _client.DefaultRequestHeaders.Add("X-Organization-Id", _auth.Username);
+        _client.DefaultRequestHeaders.Add("X-Backup-Id", _backup_id);
+
+        _timeouts = TimeoutOptionsHelper.Parse(options);
     }
 
-    //
-    // Cleanup
-    //
+    /// <summary>
+    /// Merges the provided arguments into the URL
+    /// </summary>
+    /// <param name="url">The base URL</param>
+    /// <param name="apiId">The API ID</param>
+    /// <param name="apiKey">The API key</param>
+    /// <param name="endpoint">The endpoint</param>
+    /// <returns>The merged URL</returns>
+    public static string MergeArgsIntoUrl(string url, string? apiId, string? apiKey, string? endpoint)
+    {
+        var uri = new Utility.Uri(url);
+        var opts = new Dictionary<string, string?>
+        {
+            [AUTH_API_ID_OPTION] = apiId,
+            [AUTH_API_KEY_OPTION] = apiKey,
+        };
+
+        var qp = uri.QueryParameters;
+        foreach (var kvp in opts)
+            if (!string.IsNullOrWhiteSpace(kvp.Value))
+                qp[kvp.Key] = Utility.Uri.UrlEncode(kvp.Value);
+
+        var query = Utility.Uri.BuildUriQuery(qp);
+
+        if (string.IsNullOrWhiteSpace(uri.HostAndPath) && !string.IsNullOrWhiteSpace(endpoint))
+            uri = new Utility.Uri(endpoint).SetScheme(uri.Scheme).SetQuery(null);
+
+        return uri.SetQuery(query).ToString();
+    }
+
+    /// <inheritdoc />
     public void Dispose()
     {
         _client.Dispose();
-    }
-
-    //
-    // Helper methods
-    //
-    private HttpRequestMessage CreateRequest(HttpMethod method, string path)
-    {
-        var request = new HttpRequestMessage(method, path);
-        request.Headers.Add("X-Api-Key", _api_key);
-        request.Headers.Add("X-Organization-Id", _org_id);
-        request.Headers.Add("X-Backup-Id", BackupId);
-        return request;
     }
 
     private record RenameRequest(
@@ -100,59 +172,75 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         string Destination
     );
 
-    //
-    // IBackend methods
-    //
+    /// <inheritdoc />
     public async Task CreateFolderAsync(CancellationToken cancelToken)
     {
-        var request = CreateRequest(HttpMethod.Get, "/createfolder");
-
-        var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/createfolder");
+        using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
+            ct => _client.SendAsync(request, ct))
+            .ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
     }
 
+    /// <inheritdoc />
     public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
     {
-        var request = CreateRequest(HttpMethod.Get, $"/delete/{remotename}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"/delete/{remotename}");
 
-        var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
+        using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
+            ct => _client.SendAsync(request, ct))
+            .ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
     }
 
+    /// <inheritdoc />
     public async Task GetAsync(string remotename, Stream destination, CancellationToken token)
     {
-        var request = CreateRequest(HttpMethod.Get, $"/get/{remotename}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"/get/{remotename}");
 
-        var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+        using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, token,
+            ct => _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
         await using var responseStream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
-        await responseStream.CopyToAsync(destination, token).ConfigureAwait(false);
+
+        using (var timeoutStream = destination.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false))
+            await Utility.Utility.CopyStreamAsync(responseStream, timeoutStream, token).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
     public Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
     {
         return GetAsync(remotename, File.OpenWrite(filename), cancelToken);
     }
 
-    public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
+    /// <inheritdoc />
+    public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { _client.BaseAddress?.Host ?? string.Empty });
 
+    /// <inheritdoc />
     public async Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
     {
-        var request = CreateRequest(HttpMethod.Get, "/quota");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/quota");
 
-        var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
+        using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
+            ct => _client.SendAsync(request, ct))
+            .ConfigureAwait(false);
+
         response.EnsureSuccessStatusCode();
         var quotaInfo = await response.Content.ReadFromJsonAsync<QuotaInfo>(cancellationToken: cancelToken).ConfigureAwait(false);
 
         return quotaInfo;
     }
 
+    /// <inheritdoc />
     public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
     {
-        var request = CreateRequest(HttpMethod.Get, "/list");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/list");
 
-        var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
+        using var response = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken,
+            ct => _client.SendAsync(request, ct))
+            .ConfigureAwait(false);
+
         response.EnsureSuccessStatusCode();
 
         var entries = await response.Content.ReadFromJsonAsync<List<FileEntry>>(cancellationToken: cancelToken).ConfigureAwait(false) ?? [];
@@ -163,48 +251,47 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         }
     }
 
+    /// <inheritdoc />
     public async Task PutAsync(string remotename, Stream source, CancellationToken token)
     {
-        var request = CreateRequest(HttpMethod.Post, $"/put/{remotename}");
-        request.Content = new StreamContent(source);
+        using var timeoutStream = source.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
 
-        var response = await _client.SendAsync(request, token).ConfigureAwait(false);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/put/{remotename}");
+        request.Content = new StreamContent(timeoutStream);
+
+        using var response = await _client.SendAsync(request, token).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
     }
 
+    /// <inheritdoc />
     public async Task PutAsync(string targetFilename, string sourceFilePath, CancellationToken cancelToken)
     {
         await using var fileStream = File.OpenRead(sourceFilePath);
         await PutAsync(targetFilename, fileStream, cancelToken).ConfigureAwait(false);
     }
 
-    public Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
     {
-        var request = CreateRequest(HttpMethod.Post, "/rename");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/rename");
         var renameRequest = new RenameRequest(oldname, newname);
         request.Content = JsonContent.Create(renameRequest);
 
-        return _client.SendAsync(request, cancellationToken).ContinueWith(task =>
-        {
-            var response = task.Result;
-            response.EnsureSuccessStatusCode();
-        }, cancellationToken);
+        using var response = await _client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
     }
 
+    /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands
-    {
-        get
-        {
-            var lst = new List<ICommandLineArgument>();
+        => [
+            new CommandLineArgument(AUTH_API_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.DuplicatiBackend.AuthIdOptionsShort, Strings.DuplicatiBackend.AuthIdOptionsLong, null, [AuthOptionsHelper.AuthUsernameOption]),
+            new CommandLineArgument(AUTH_API_KEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.DuplicatiBackend.AuthKeyOptionsShort, Strings.DuplicatiBackend.AuthKeyOptionsLong, null, [AuthOptionsHelper.AuthPasswordOption]),
+            new CommandLineArgument(BACKUP_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.DuplicatiBackend.BackupIdOptionsShort, Strings.DuplicatiBackend.BackupIdOptionsLong),
+            .. TimeoutOptionsHelper.GetOptions()
+        ];
 
-            return lst;
-        }
-    }
-
-    public async Task TestAsync(CancellationToken cancelToken)
-    {
-        // No specific test operation, just ensure we can list
-        await ListAsync(cancelToken).ToListAsync(cancelToken);
-    }
+    /// <inheritdoc />
+    public Task TestAsync(CancellationToken cancelToken)
+        => this.TestReadWritePermissionsAsync(cancelToken);
 
 }
