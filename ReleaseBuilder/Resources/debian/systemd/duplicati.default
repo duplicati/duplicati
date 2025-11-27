@@ -8,3 +8,6 @@
 
 # Additional options that are passed to the Daemon.
 DAEMON_OPTS=""
+
+# Supplemantary groups to inherit if not running as root
+SUPPLIMENTARY_GROUPS=

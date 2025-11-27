@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-10 11:48+0100\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>, 2025\n"
 "Language-Team: Czech (https://app.transifex.com/duplicati/teams/67655/cs/)\n"
@@ -2276,7 +2276,7 @@ msgstr ""
 " tuto volbu. Dále nezapomeňte pro vykazování dalších dat nastavit buď "
 "--{0}={2} nebo --{1}={2}"
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:386
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2285,18 +2285,18 @@ msgstr ""
 "Kryptografická knihovna nepodporuje znovupoužitelné transformace pro "
 "hashovací algoritmus {0}"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:387
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 "Kryptografická knihovna nepodporuje tento algoritmus tvorby otisku (hash) "
 "{0}"
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Heslo existující zálohy nemůže být změněno"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:389
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Zachycený stav se nepodařilo vytvořit: {0}"

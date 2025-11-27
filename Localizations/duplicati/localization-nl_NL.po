@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-10 11:48+0100\n"
+"POT-Creation-Date: 2025-11-20 13:45+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Kees Zaaijer, 2025\n"
 "Language-Team: Dutch (Netherlands) (https://app.transifex.com/duplicati/teams/67655/nl_NL/)\n"
@@ -880,6 +880,22 @@ msgstr "Geef project op voor het aanmaken van een bucket"
 msgid "Service account JSON"
 msgstr "Serviceaccount-JSON"
 
+#: Library/Backend/GoogleServices/Strings.cs:40
+msgid ""
+"String with JSON credentials for a Google Cloud service account. When set, "
+"AuthID is not required."
+msgstr ""
+"String met JSON-referenties voor een Google Cloud-serviceaccount. Indien "
+"ingesteld, is AuthID niet vereist."
+
+#: Library/Backend/GoogleServices/Strings.cs:42
+msgid ""
+"Path to a file with JSON credentials for a Google Cloud service account. "
+"When set, AuthID is not required."
+msgstr ""
+"Pad naar een bestand met JSON-referenties voor een Google Cloud-"
+"serviceaccount. Indien ingesteld, is AuthID niet vereist."
+
 #: Library/Backend/GoogleServices/Strings.cs:47
 msgid ""
 "This backend can read and write data to Google Drive. Allowed format is "
@@ -1126,6 +1142,10 @@ msgstr ""
 #, csharp-format
 msgid "Unknown S3 client: {0}"
 msgstr "Onbekende S3-client: {0}"
+
+#: Library/Backend/S3/Strings.cs:61
+msgid "No path allowed in endpoint"
+msgstr "Geen pad toegestaan in eindpunt"
 
 #: Library/Backend/S3/Strings.cs:66
 msgid "S3 configuration module"
@@ -1617,6 +1637,21 @@ msgstr ""
 #: Library/Backend/File/Strings.cs:39
 msgid "Disable length verification"
 msgstr "Lengteverificatie uitschakelen"
+
+#: Library/Backend/File/Strings.cs:40
+msgid ""
+"When this option is set, the backend will not sanitize filenames. This may "
+"lead to issues with certain characters in the filename, but is necessary for"
+" some mounted storage that returns incorrect paths."
+msgstr ""
+"Wanneer deze optie is ingeschakeld, worden bestandsnamen niet opgeschoond "
+"door de backend. Dit kan leiden tot problemen met bepaalde tekens in de "
+"bestandsnaam, maar is noodzakelijk voor sommige gekoppelde opslagmedia die "
+"onjuiste paden retourneren."
+
+#: Library/Backend/File/Strings.cs:41
+msgid "Disable filename sanitization"
+msgstr "Opschonen van bestandsnamen uitschakelen"
 
 #: Library/Backend/Backblaze/Strings.cs:27
 msgid ""
@@ -2113,6 +2148,16 @@ msgstr "Filen.io"
 #: Library/Backend/Filen/Strings.cs:28
 msgid "Optional 2-factor code"
 msgstr "Optionele 2-factor-code"
+
+#: Library/Backend/Filen/Strings.cs:29
+msgid ""
+"The 2-factor code to use for authentication, leave empty if the account is "
+"not MFA protected. Note that a new code must be provided by the user for "
+"each authentication attempt."
+msgstr ""
+"De 2-factorcode die voor authenticatie wordt gebruikt, laat deze leeg als "
+"het account niet MFA-beveiligd is. Houd er rekening mee dat de gebruiker "
+"voor elke authenticatiepoging een nieuwe code moet opgeven."
 
 #: Library/Backend/Filen/Strings.cs:30
 msgid "Move to trash"
@@ -2745,6 +2790,14 @@ msgid ""
 msgstr ""
 "Gebruik een uitgebreide PROPFIND-body om lijsten met bestanden en mappen op "
 "te vragen. Dit is vereist voor sommige servers."
+
+#: Library/Backend/WEBDAV/Strings.cs:42
+msgid "Use legacy PROPFIND parsing"
+msgstr "Gebruik oude PROPFIND-parsing"
+
+#: Library/Backend/WEBDAV/Strings.cs:43
+msgid "Use the legacy PROPFIND response parsing logic."
+msgstr "Gebruik de oude PROPFIND-responsparseerlogica."
 
 #: Library/Backend/pCloud/Strings.cs:28
 msgid ""
@@ -4000,6 +4053,55 @@ msgstr ""
 msgid "The server registration failed: {0}"
 msgstr "De serverregistratie is mislukt: {0}"
 
+#: Library/RestAPI/Strings.cs:114
+msgid "Set the allowed backends for remote control"
+msgstr "De toegestane backends voor externe besturing instellen"
+
+#: Library/RestAPI/Strings.cs:115
+msgid ""
+"Set the allowed backends for remote control. The value is a comma-separated "
+"list of backend names. If this option is not set, all backends are allowed. "
+"Use this option to restrict the backends that can be used to store data."
+msgstr ""
+"Stel de toegestane backends voor beheer op afstand in. De waarde is een door"
+" komma's gescheiden lijst met backendnamen. Als deze optie niet is "
+"ingesteld, zijn alle backends toegestaan. Gebruik deze optie om de backends "
+"te beperken die kunnen worden gebruikt voor gegevensopslag."
+
+#: Library/RestAPI/Strings.cs:116
+msgid "Set the allowed encryption modules for remote control"
+msgstr "De toegestane encryptiemodules voor externe besturing instellen"
+
+#: Library/RestAPI/Strings.cs:117
+msgid ""
+"Set the allowed encryption modules for remote control. The value is a comma-"
+"separated list of encryption module names. If this option is not set, all "
+"encryption modules are allowed. Use this option to restrict the encryption "
+"modules that can be used to encrypt data."
+msgstr ""
+"Stel de toegestane encryptiemodules voor besturing op afstand in. De waarde "
+"is een door komma's gescheiden lijst met namen van encryptiemodules. Als "
+"deze optie niet is ingesteld, zijn alle encryptiemodules toegestaan. Gebruik"
+" deze optie om de encryptiemodules te beperken die kunnen worden gebruikt om"
+" gegevens te versleutelen."
+
+#: Library/RestAPI/Strings.cs:118
+msgid "Set the allowed compression modules for remote control"
+msgstr "De toegestane compressiemodules voor besturing op afstand instellen"
+
+#: Library/RestAPI/Strings.cs:119
+msgid ""
+"Set the allowed compression modules for remote control. The value is a "
+"comma-separated list of compression module names. If this option is not set,"
+" all compression modules are allowed. Use this option to restrict the "
+"compression modules that can be used to compress data."
+msgstr ""
+"Stel de toegestane compressiemodules voor besturing op afstand in. De waarde"
+" is een door komma's gescheiden lijst met namen van compressiemodules. Als "
+"deze optie niet is ingesteld, zijn alle compressiemodules toegestaan. "
+"Gebruik deze optie om de compressiemodules te beperken die kunnen worden "
+"gebruikt om gegevens te comprimeren."
+
 #: Library/RestAPI/Strings.cs:123
 #, csharp-format
 msgid ""
@@ -4340,6 +4442,11 @@ msgstr "De bewerking {0} is mislukt"
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Ongeldig pad: \"{0}\" ({1})"
+
+#: Library/Main/Strings.cs:42
+#, csharp-format
+msgid "The source folder {0} is empty, aborting backup"
+msgstr "De bronmap {0} is leeg, back-up wordt afgebroken"
 
 #: Library/Main/Strings.cs:43
 #, csharp-format
@@ -4955,6 +5062,37 @@ msgstr ""
 #: Library/Main/Strings.cs:133
 msgid "Suppress specific warnings"
 msgstr "Onderdruk specifieke waarschuwingen"
+
+#: Library/Main/Strings.cs:134
+#, csharp-format
+msgid ""
+"Enable logging of HTTP request diagnostics. Messages are logged at the {0} "
+"level, so make sure the log outputs at that level."
+msgstr ""
+"Schakel loggen van HTTP-verzoekdiagnostiek in. Berichten worden gelogd op "
+"{0}-niveau, dus zorg ervoor dat het logbestand op dat niveau wordt "
+"uitgevoerd."
+
+#: Library/Main/Strings.cs:135
+msgid "Log HTTP requests"
+msgstr "Log HTTP-verzoeken"
+
+#: Library/Main/Strings.cs:136
+#, csharp-format
+msgid ""
+"Enable logging of socket data. A value of 0 logs only event messages, a "
+"positive value includes that many bytes of data. Use -1 to disable. Messages"
+" are logged at the {0} level, so make sure the log outputs at that level."
+msgstr ""
+"Schakel het loggen van socketgegevens in. Een waarde van 0 registreert "
+"alleen gebeurtenisberichten, een positieve waarde bevat zoveel bytes aan "
+"gegevens. Gebruik -1 om uit te schakelen. Berichten worden geregistreerd op "
+"{0}-niveau, dus zorg ervoor dat de loggegevens op dat niveau worden "
+"weergegeven."
+
+#: Library/Main/Strings.cs:137
+msgid "Log socket data"
+msgstr "Log socketgegevens"
 
 #: Library/Main/Strings.cs:138
 msgid ""
@@ -5666,6 +5804,23 @@ msgstr ""
 msgid "Ignore missing source elements"
 msgstr "Negeer ontbrekende bronelementen"
 
+#: Library/Main/Strings.cs:228
+msgid ""
+"Use this option to prevent backups from running if one or more source "
+"folders are empty. This is useful to prevent backups from running when the "
+"source is not available, such as when a USB drive is not mounted. This only "
+"works for filesystem source paths."
+msgstr ""
+"Gebruik deze optie om te voorkomen dat back-ups worden uitgevoerd als een of"
+" meer bronmappen leeg zijn. Dit is handig om te voorkomen dat back-ups "
+"worden uitgevoerd wanneer de bron niet beschikbaar is, bijvoorbeeld wanneer "
+"een USB-stick niet is gekoppeld. Dit werkt alleen voor bronpaden in het "
+"bestandssysteem."
+
+#: Library/Main/Strings.cs:229
+msgid "Prevent backups from running if source folders are empty"
+msgstr "Voorkom dat back-ups worden uitgevoerd als bronmappen leeg zijn"
+
 #: Library/Main/Strings.cs:230
 msgid ""
 "Use this option to overwrite target files when restoring. If this option is "
@@ -6051,10 +6206,6 @@ msgstr ""
 #: Library/Main/Strings.cs:286
 msgid "Specify the number of concurrent compression processes"
 msgstr "Geef het aantal gelijktijdige compressieprocessen op"
-
-#: Library/Main/Strings.cs:287
-msgid "[EXPERIMENTAL]Specify the number of concurrent files to open"
-msgstr "[EXPERIMENTEEL]Geef het aantal gelijktijdig te openen bestanden op"
 
 #: Library/Main/Strings.cs:288
 msgid ""
@@ -6562,6 +6713,27 @@ msgstr ""
 "helpen fragmentatie te verminderen en de prestaties op sommige "
 "bestandssystemen te verbeteren."
 
+#: Library/Main/Strings.cs:364
+msgid "Hints to the desired maximum size of the restore volume cache"
+msgstr "Aanwijzing voor de gewenste grootte van de cache voor herstelvolumes"
+
+#: Library/Main/Strings.cs:365
+msgid ""
+"Use this option to hint the maximum desired size of the restore volume "
+"cache. The restore volume cache is used to store the volumes from the remote"
+" storage on local disk. When this number is exceeded, the client tries to "
+"evict the least recently used volume(s). This means that the number of "
+"volumes kept on disk can exceed this value if they are still being "
+"downloaded or are in use."
+msgstr ""
+"Gebruik deze optie om de maximaal gewenste grootte van de cache voor het "
+"herstelvolume aan te geven. De cache voor het herstelvolume wordt gebruikt "
+"om de volumes van de externe opslag op de lokale schijf op te slaan. Wanneer"
+" dit aantal wordt overschreden, probeert de client de volumes die het langst"
+" geleden gebruikt zijn te verwijderen. Dit betekent dat het aantal volumes "
+"op schijf deze waarde kan overschrijden als ze nog worden gedownload of in "
+"gebruik zijn."
+
 #: Library/Main/Strings.cs:366
 msgid "Number of concurrent FileDecompressor processes used during restore"
 msgstr ""
@@ -6664,7 +6836,7 @@ msgstr ""
 " gebruikt worden om fouten te voorkomen als gevraagd wordt de database te "
 "updaten met een versie die al bestaat."
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:386
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -6673,22 +6845,22 @@ msgstr ""
 "De cryptobibliotheek ondersteunt geen herbruikbare transformaties voor het "
 "hash algoritme {0}"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:387
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "De cryptobibliotheek ondersteunt het hash algoritme {0} niet"
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:388
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "De wachtwoordzin kan niet veranderd worden voor een al bestaande back-up"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:389
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Het maken van een momentopname is mislukt: {0}"
 
-#: Library/Main/Strings.cs:386
+#: Library/Main/Strings.cs:390
 msgid ""
 "Failed to activate BackupRead as the current process does not have "
 "sufficient permissions"
@@ -6696,7 +6868,7 @@ msgstr ""
 "BackupRead activeren is mislukt omdat het huidige proces niet over voldoende"
 " machtigingen beschikt"
 
-#: Library/Main/Strings.cs:391
+#: Library/Main/Strings.cs:395
 #, csharp-format
 msgid "The encryption module {0} was not found"
 msgstr "De encryptiemodule {0} is niet gevonden"
@@ -7996,6 +8168,60 @@ msgid ""
 msgstr ""
 "De map waarin gegevens worden opgeslagen. Dit is de map waarin de database "
 "en andere bestanden zijn opgeslagen."
+
+#: CommandLine/CLI/Strings.cs:63
+msgid "Allowed backends"
+msgstr "Toegestane backends"
+
+#: CommandLine/CLI/Strings.cs:64
+msgid ""
+"Comma-separated list of backend protocol keys that are allowed to be used. "
+"If this option is not specified, all available backends are allowed. Use "
+"this option to restrict the backends that can be used, for example in a "
+"managed environment. Example: --allowed-backend-modules=file,ftp,s3"
+msgstr ""
+"Een door komma's gescheiden lijst met backendprotocolsleutels die mogen "
+"worden gebruikt. Als deze optie niet is opgegeven, zijn alle beschikbare "
+"backends toegestaan. Gebruik deze optie om de backends die mogen worden "
+"gebruikt te beperken, bijvoorbeeld in een beheerde omgeving. Voorbeeld: "
+"--allowed-backend-modules=file,ftp,s3"
+
+#: CommandLine/CLI/Strings.cs:65
+msgid "Allowed encryption modules"
+msgstr "Toegestane encryptiemodules"
+
+#: CommandLine/CLI/Strings.cs:66
+msgid ""
+"Comma-separated list of encryption module file extensions that are allowed "
+"to be used. If this option is not specified, all available encryption "
+"modules are allowed. Use this option to restrict the encryption modules that"
+" can be used, for example in a managed environment. Example: --allowed-"
+"encryption-modules=aes,gpg"
+msgstr ""
+"Een door komma's gescheiden lijst met bestandsextensies voor "
+"encryptiemodules die mogen worden gebruikt. Als deze optie niet is "
+"opgegeven, zijn alle beschikbare encryptiemodules toegestaan. Gebruik deze "
+"optie om de te gebruiken encryptiemodules te beperken, bijvoorbeeld in een "
+"beheerde omgeving. Voorbeeld: --allowed-encryption-modules=aes,gpg"
+
+#: CommandLine/CLI/Strings.cs:67
+msgid "Allowed compression modules"
+msgstr "Toegestane compressiemodules"
+
+#: CommandLine/CLI/Strings.cs:68
+msgid ""
+"Comma-separated list of compression module file extensions that are allowed "
+"to be used. If this option is not specified, all available compression "
+"modules are allowed. Use this option to restrict the compression modules "
+"that can be used, for example in a managed environment. Example: --allowed-"
+"compression-modules=zip"
+msgstr ""
+"Een door komma's gescheiden lijst met bestandsextensies voor "
+"compressiemodules die mogen worden gebruikt. Als deze optie niet is "
+"opgegeven, zijn alle beschikbare compressiemodules toegestaan. Gebruik deze "
+"optie om de compressiemodules die mogen worden gebruikt te beperken, "
+"bijvoorbeeld in een beheerde omgeving. Voorbeeld: --allowed-compression-"
+"modules=zip"
 
 #: CommandLine/CLI/Strings.cs:75
 #, csharp-format
