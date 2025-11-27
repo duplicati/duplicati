@@ -20,10 +20,9 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
-using Duplicati.Library.Utility;
-using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Endpoints.Shared;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using InvalidCertificateException = Duplicati.Library.Utility.SslCertificateValidator.InvalidCertificateException;
@@ -55,98 +54,19 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             return new Dto.GetDbPathDto(!string.IsNullOrWhiteSpace(path), path);
         }
 
-        private static Dictionary<string, string?> ParseUrlOptions(Connection connection, Library.Utility.Uri uri)
-        {
-            var qp = uri.QueryParameters;
-
-            var opts = Runner.GetCommonOptions(connection);
-            foreach (var k in qp.Keys.Cast<string>())
-                opts[k] = qp[k];
-
-            return opts;
-        }
-
-        private static IEnumerable<IGenericModule> ConfigureModules(IDictionary<string, string?> opts)
-        {
-            var modules = Library.DynamicLoader.GenericLoader.Modules.OfType<IConnectionModule>()
-                .Select(x => Library.DynamicLoader.GenericLoader.GetModule(x.Key))
-                .WhereNotNull()
-                .ToArray();
-
-            foreach (var n in modules)
-                n.Configure(opts);
-
-            return modules;
-        }
-        private record TupleDisposeWrapper(IBackend Backend, IEnumerable<IGenericModule> Modules) : IDisposable
-        {
-            public void Dispose()
-            {
-                Backend.Dispose();
-                foreach (var n in Modules)
-                    if (n is IDisposable disposable)
-                        disposable.Dispose();
-            }
-        }
-
-        private static async Task<TupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, CancellationToken cancelToken)
-        {
-            var uri = new Library.Utility.Uri(url);
-            var opts = ParseUrlOptions(connection, uri);
-
-            var tmp = new[] { uri };
-            await SecretProviderHelper.ApplySecretProviderAsync([], tmp, opts, Library.Utility.TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancelToken);
-            url = tmp[0].ToString();
-
-            var modules = ConfigureModules(opts);
-            var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>());
-            return new TupleDisposeWrapper(backend, modules);
-        }
-
-        private static Exception GetInnerException<T>(Exception ex) where T : Exception
-        {
-            var original = ex;
-            while (true)
-            {
-                if (ex == null)
-                    return original;
-
-                if (ex is T)
-                    return (T)ex;
-
-                if (ex.InnerException == null)
-                    throw new ArgumentNullException(nameof(ex.InnerException));
-
-                ex = ex.InnerException;
-            }
-        }
-
-        private static string UnmaskUrl(Connection connection, string maskedurl, string? backupId)
-        {
-            var previousUrl = !string.IsNullOrWhiteSpace(backupId) ? connection.GetBackup(backupId)?.TargetURL : null;
-            var unmasked = string.IsNullOrWhiteSpace(previousUrl)
-                ? maskedurl
-                : QuerystringMasking.Unmask(maskedurl, previousUrl);
-
-            if (Connection.UrlContainsPasswordPlaceholder(unmasked))
-                throw new ArgumentException("Unmasked URL contains password placeholder");
-
-            return unmasked;
-        }
-
         private static async Task ExecuteTest(Connection connection, IApplicationSettings applicationSettings, string maskedurl, string? backupId, bool autoCreate, CancellationToken cancelToken)
         {
             TupleDisposeWrapper? wrapper = null;
 
             try
             {
-                var url = UnmaskUrl(connection, maskedurl, backupId);
-                wrapper = await GetBackend(connection, applicationSettings, url, cancelToken);
+                var url = SharedRemoteOperation.UnmaskUrl(connection, maskedurl, backupId);
+                wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, url, cancelToken);
 
                 using (var b = wrapper.Backend)
                 {
                     try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
-                    catch (Exception ex) when (GetInnerException<FolderMissingException>(ex) is FolderMissingException)
+                    catch (Exception ex) when (SharedRemoteOperation.GetInnerException<FolderMissingException>(ex) is FolderMissingException)
                     {
                         if (!autoCreate)
                             throw;
@@ -158,20 +78,20 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                     return;
                 }
             }
-            catch (Exception ex) when (GetInnerException<FolderMissingException>(ex) is FolderMissingException)
+            catch (Exception ex) when (SharedRemoteOperation.GetInnerException<FolderMissingException>(ex) is FolderMissingException)
             {
                 if (autoCreate)
                     throw new ServerErrorException("error-creating-folder");
                 throw new ServerErrorException("missing-folder");
             }
-            catch (Exception ex) when (GetInnerException<InvalidCertificateException>(ex) is InvalidCertificateException icex)
+            catch (Exception ex) when (SharedRemoteOperation.GetInnerException<InvalidCertificateException>(ex) is InvalidCertificateException icex)
             {
                 if (string.IsNullOrWhiteSpace(icex.Certificate))
                     throw new ServerErrorException(icex.Message);
                 else
                     throw new ServerErrorException("incorrect-cert:" + icex.Certificate);
             }
-            catch (Exception ex) when (GetInnerException<Library.Utility.HostKeyException>(ex) is Library.Utility.HostKeyException hex)
+            catch (Exception ex) when (SharedRemoteOperation.GetInnerException<Library.Utility.HostKeyException>(ex) is Library.Utility.HostKeyException hex)
             {
                 if (string.IsNullOrWhiteSpace(hex.ReportedHostKey))
                     throw new ServerErrorException(hex.Message);
@@ -199,7 +119,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
         {
             try
             {
-                var url = UnmaskUrl(connection, maskedurl, backupId);
+                var url = SharedRemoteOperation.UnmaskUrl(connection, maskedurl, backupId);
                 using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>()))
                     await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
             }
