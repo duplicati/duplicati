@@ -56,12 +56,14 @@ namespace Duplicati.Library.Backend
             { "DreamHost", "objects.dreamhost.com" },
             { "Poli Systems - 02 (CH)", "s3-02.polisystems.ch" },
             { "Poli Systems - 03 (CH)", "s3-03.polisystems.ch" },
-            { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
+            { "IBM COS (S3) Public US (legacy SoftLayer)", "s3-api.us-geo.objectstorage.softlayer.net" },
+            { "IBM COS (S3) Public US (appdomain)", "s3.us.cloud-object-storage.appdomain.cloud" },
             { "Storadera", "eu-east-1.s3.storadera.com" },
             { "Wasabi US East 1 (N. Virginia)", "s3.wasabisys.com" },
             { "Wasabi US East 2 (N. Virginia)", "s3.us-east-2.wasabisys.com" },
             { "Wasabi US Central 1 (Texas)", "s3.us-central-1.wasabisys.com" },
             { "Wasabi US West 1 (Oregon)", "s3.us-west-1.wasabisys.com" },
+            { "Wasabi US West 2 (San Jose)", "s3.us-west-2.wasabisys.com" },
             { "Wasabi CA Central 1 (Toronto)", "s3.ca-central-1.wasabisys.com" },
             { "Wasabi EU Central 1 (Amsterdam)", "s3.eu-central-1.wasabisys.com" },
             { "Wasabi EU Central 2 (Frankfurt)", "s3.eu-central-2.wasabisys.com" },
@@ -89,8 +91,8 @@ namespace Duplicati.Library.Backend
             { "Mega S4 - Bettembourg", "eu-central-2.s4.mega.io" },
             { "Mega S4 - Montreal", "ca-central-1.s4.mega.io" },
             { "Mega S4 - Vancouver", "ca-west-1.s4.mega.io" },
-            {"Rabata US East 1 (Washington)", "s3.us-east-1.rabata.io" },
-            {"Rabata EU West 2 (Netherlands)", "s3.eu-west-2.rabata.io" },
+            { "Rabata US East 1 (Washington)", "s3.us-east-1.rabata.io" },
+            { "Rabata EU West 2 (Netherlands)", "s3.eu-west-2.rabata.io" },
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
