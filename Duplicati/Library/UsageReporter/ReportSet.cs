@@ -22,6 +22,7 @@
 using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.UsageReporter
 {
