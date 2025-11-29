@@ -48,6 +48,11 @@ internal partial class BackendManager : IBackendManager
     private bool isDisposed = false;
 
     /// <summary>
+    /// Indicates whether the backend manager is in dry-run mode
+    /// </summary>
+    private readonly bool isDryRun;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="BackendManager"/> class.
     /// </summary>
     /// <param name="backendUrl">The backend URL</param>
@@ -59,6 +64,7 @@ internal partial class BackendManager : IBackendManager
         if (string.IsNullOrWhiteSpace(backendUrl))
             throw new ArgumentNullException(nameof(backendUrl));
 
+        isDryRun = options.Dryrun;
         var isThrottleDisabled = options.DisableThrottle || options.ThrottleDisabledBackends.Contains(Library.Utility.Utility.GuessScheme(backendUrl) ?? string.Empty);
 
         // To avoid excessive parameter passing, the context is captured here
@@ -250,6 +256,9 @@ internal partial class BackendManager : IBackendManager
     {
         volume.Close();
 
+        if (isDryRun)
+            throw new InvalidOperationException("Cannot put files in dry-run mode");
+
         var op = new PutOperation(volume.RemoteFilename, context, waitForComplete, cancelToken)
         {
             LocalTempfile = volume.TempFile,
@@ -275,6 +284,9 @@ internal partial class BackendManager : IBackendManager
     /// <returns>An awaitable task</returns>
     public async Task PutVerificationFileAsync(string remotename, TempFile tempFile, CancellationToken cancelToken)
     {
+        if (isDryRun)
+            throw new InvalidOperationException("Cannot put files in dry-run mode");
+
         var op = new PutOperation(remotename, context, true, cancelToken)
         {
             LocalTempfile = tempFile,
