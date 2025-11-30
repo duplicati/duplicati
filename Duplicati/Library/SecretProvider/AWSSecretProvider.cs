@@ -45,6 +45,12 @@ public class AWSSecretProvider : ISecretProvider
     /// <inheritdoc/>
     public string Description => Strings.AWSSecretProvider.Description;
 
+    /// <inheritdoc />
+    public bool IsSupported => true;
+
+    /// <inheritdoc />
+    public bool IsSetSupported => true;
+
     /// <summary>
     /// Constants for environment variables
     /// </summary>
@@ -213,8 +219,9 @@ public class AWSSecretProvider : ISecretProvider
         if (_client == null)
             throw new InvalidOperationException("The secret provider has not been initialized");
 
-        var result = new Dictionary<string, string>();
-        var missing = new HashSet<string>(keys);
+        var comparer = _caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+        var result = new Dictionary<string, string>(comparer);
+        var missing = new HashSet<string>(keys, comparer);
 
         foreach (var secret in _secrets)
         {
@@ -226,12 +233,12 @@ public class AWSSecretProvider : ISecretProvider
             var secretString = response.SecretString;
             if (string.IsNullOrWhiteSpace(secretString) && response.SecretBinary != null)
             {
-                using (var ms = response.SecretBinary)
-                using (var sr = new StreamReader(ms))
-                    secretString = await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+                using var ms = response.SecretBinary;
+                using var sr = new StreamReader(ms);
+                secretString = await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            var values = string.IsNullOrWhiteSpace(secretString) ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(response.SecretString);
+            var values = string.IsNullOrWhiteSpace(secretString) ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(secretString);
             if (values != null)
             {
                 if (!_caseSensitive)
@@ -239,12 +246,11 @@ public class AWSSecretProvider : ISecretProvider
                         .GroupBy(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase)
                         .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
 
-
-                foreach (var key in missing)
+                foreach (var key in missing.ToList())
                 {
-                    if (values.TryGetValue(key, out var value) && value is string stringValue)
+                    if (values.TryGetValue(key, out var value))
                     {
-                        result[key] = stringValue;
+                        result[key] = value;
                         missing.Remove(key);
                     }
                 }
@@ -254,7 +260,78 @@ public class AWSSecretProvider : ISecretProvider
             }
         }
 
-        throw new KeyNotFoundException("The following keys were not found: " + string.Join(", ", missing));
+        foreach (var key in missing.ToList())
+        {
+            try
+            {
+                var response = await _client.GetSecretValueAsync(new GetSecretValueRequest
+                {
+                    SecretId = key
+                }, cancellationToken).ConfigureAwait(false);
 
+                var secretString = response.SecretString;
+                if (string.IsNullOrEmpty(secretString) && response.SecretBinary != null)
+                {
+                    using var ms = response.SecretBinary;
+                    using var sr = new StreamReader(ms);
+                    secretString = await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                if (!string.IsNullOrEmpty(secretString))
+                {
+                    result[key] = secretString;
+                    missing.Remove(key);
+                }
+            }
+            catch (ResourceNotFoundException)
+            {
+                // Ignore and continue looking for other keys
+            }
+        }
+
+        if (missing.Count > 0)
+            throw new KeyNotFoundException("The following keys were not found: " + string.Join(", ", missing));
+
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (_client is null)
+            throw new InvalidOperationException("The secret provider has not been initialized");
+
+        var exists = true;
+        try
+        {
+            await _client.DescribeSecretAsync(new DescribeSecretRequest
+            {
+                SecretId = key
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (ResourceNotFoundException)
+        {
+            exists = false;
+        }
+
+        if (exists && !overwrite)
+            throw new InvalidOperationException($"The key '{key}' already exists");
+
+        if (exists)
+        {
+            await _client.PutSecretValueAsync(new PutSecretValueRequest
+            {
+                SecretId = key,
+                SecretString = value
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            await _client.CreateSecretAsync(new CreateSecretRequest
+            {
+                Name = key,
+                SecretString = value
+            }, cancellationToken).ConfigureAwait(false);
+        }
     }
 }

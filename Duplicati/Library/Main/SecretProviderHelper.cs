@@ -395,6 +395,12 @@ public static class SecretProviderHelper
         /// <inheritdoc/>
         public string Description => _provider.Description;
 
+        /// <inheritdoc />
+        public bool IsSupported => _provider.IsSupported;
+
+        /// <inheritdoc />
+        public bool IsSetSupported => _provider.IsSetSupported;
+
         /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands => _provider.SupportedCommands;
 
@@ -570,6 +576,29 @@ public static class SecretProviderHelper
 
 
             return result;
+        }
+
+        /// <inheritdoc />
+        public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+        {
+            if (!_initialized)
+                throw new InvalidOperationException("The provider has not been initialized");
+
+            await _provider.SetSecretAsync(key, value, overwrite, cancellationToken).ConfigureAwait(false);
+
+            if (_cachingLevel == CachingLevel.InMemory || _cachingLevel == CachingLevel.Persistent)
+            {
+                lock (_lock)
+                {
+                    if (!_cache.ContainsKey(_config))
+                        _cache[_config] = new Dictionary<string, string>();
+
+                    _cache[_config][key] = value;
+                }
+
+                if (_cachingLevel == CachingLevel.Persistent)
+                    await SaveCacheAsync(cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 }

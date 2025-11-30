@@ -47,9 +47,9 @@ public static class Import
             {
                 if (output.JsonOutputMode)
                     throw new UserReportedException("No password provided with json mode.");
-                
+
                 if (string.IsNullOrWhiteSpace(passphrase))
-                    passphrase = HelperMethods.ReadPasswordFromConsole("The file is encrypted. Please provide the encryption password: ");
+                    passphrase = Library.Utility.Utility.ReadSecretFromConsole("The file is encrypted. Please provide the encryption password: ");
 
                 if (string.IsNullOrWhiteSpace(passphrase))
                     throw new UserReportedException("No password provided");
@@ -66,7 +66,7 @@ public static class Import
             var result = await connection.ImportBackup(file.FullName, passphrase, importMetadata);
 
             output.AppendConsoleMessage($"Imported \"{result.Name}\" with ID {result.ID}");
-            output.AppendCustomObject( "Imported",new {Id = result.ID, Name = result.Name});
+            output.AppendCustomObject("Imported", new { Id = result.ID, Name = result.Name });
             output.SetResult(true);
         }));
 

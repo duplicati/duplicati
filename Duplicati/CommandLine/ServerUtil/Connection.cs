@@ -273,7 +273,7 @@ public class Connection
         {
             // Try obtaining the password from the user
             if (string.IsNullOrWhiteSpace(settings.Password))
-                settings = settings with { Password = HelperMethods.ReadPasswordFromConsole("Enter server password: ") };
+                settings = settings with { Password = Library.Utility.Utility.ReadSecretFromConsole("Enter server password: ") };
 
             if (string.IsNullOrWhiteSpace(settings.Password))
                 throw new UserReportedException("Password is required");

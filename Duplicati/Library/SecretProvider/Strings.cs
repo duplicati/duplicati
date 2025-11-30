@@ -46,6 +46,8 @@ The file should be a JSON-encoded object with the secrets as key-value pairs.
 If the file is not encrypted with a passphrase, the passphrase parameter can be omitted.
 The file must be encrypted with AESCrypt if encryption is desired.
 For file-based secrets, the lookup is case-insensitive.
+
+If the file is encrypted, this provider can also write secrets back to the file.
 ");
 
     public static string PassphraseDescriptionShort => LC.L(@"The decryption passphrase");
@@ -56,7 +58,7 @@ internal static class AWSSecretProvider
 {
     public static string DisplayName => LC.L("Secrets from AWS Secrets Manager");
     public static string Description => LC.L(
-@"Secret provider that reads secrets from AWS Secrets Manager
+@"Secret provider that reads and writes secrets from AWS Secrets Manager
 Example use:
     aws://?access-key=...&secret-key=...&region-endpoint=us-east-1&secrets=secret1,secret2
 
@@ -82,7 +84,7 @@ internal static class HCVaultSecretProvider
 {
     public static string DisplayName => LC.L("Secrets from HashiCorp Vault");
     public static string Description => LC.L(
-@"Secret provider that reads secrets from HashiCorp Vault
+@"Secret provider that reads and writes secrets from HashiCorp Vault
 Example use:
     hcv://localhost:1234?token=...&mount=secret&secrets=secret1,secret2
 
@@ -109,7 +111,7 @@ internal static class GCSSecretProvider
 {
     public static string DisplayName => LC.L("Secrets from Google Cloud Storage Secret Manager");
     public static string Description => LC.L(
-@"Secret provider that reads secrets from Google Cloud Storage Secret Manager
+@"Secret provider that reads and writes secrets from Google Cloud Storage Secret Manager
 Example use:
     gcs://?project-id=...&version=latest
 
@@ -131,7 +133,7 @@ internal static class AzureSecretProvider
 {
     public static string DisplayName => LC.L("Secrets from Azure Key Vault");
     public static string Description => LC.L(
-@"Secret provider that reads secrets from Azure Key Vault
+@"Secret provider that reads and writes secrets from Azure Key Vault
 Example use:
     az://?keyvault-name=...&auth-type=ManagedIdentity
 
@@ -166,7 +168,7 @@ If the vault-uri parameter is not provided, the keyvault-name parameter will be 
 internal static class MacOSKeyChainProvider
 {
     public static string DisplayName => LC.L("Secrets from macOS Keychain");
-    public static string Description => LC.L("Secret provider that reads secrets from the macOS Keychain");
+    public static string Description => LC.L("Secret provider that reads and writes secrets from the macOS Keychain");
     public static string ServiceDescriptionShort => LC.L("The service name");
     public static string ServiceDescriptionLong => LC.L("The service name to use for retrieving secrets from the macOS Keychain");
     public static string AccountDescriptionShort => LC.L("The account name");
@@ -178,7 +180,7 @@ internal static class MacOSKeyChainProvider
 internal static class UnixPassProvider
 {
     public static string DisplayName => LC.L("Secrets from Unix pass");
-    public static string Description => LC.L("Secret provider that reads secrets from the Unix pass password manager");
+    public static string Description => LC.L("Secret provider that reads and writes secrets from the Unix pass password manager");
     public static string PassCommandDescriptionShort => LC.L("The pass command");
     public static string PassCommandDescriptionLong => LC.L("The command to use for retrieving secrets from the Unix pass password manager");
 }
@@ -186,13 +188,13 @@ internal static class UnixPassProvider
 internal static class WindowsCredentialManagerProvider
 {
     public static string DisplayName => LC.L("Secrets from Windows Credential Manager");
-    public static string Description => LC.L("Secret provider that reads secrets from the Windows Credential Manager");
+    public static string Description => LC.L("Secret provider that reads and writes secrets from the Windows Credential Manager");
 }
 
 internal static class LibSecretLinuxProvider
 {
     public static string DisplayName => LC.L("Secrets from libsecret");
-    public static string Description => LC.L("Secret provider that reads secrets from the libsecret password manager");
+    public static string Description => LC.L("Secret provider that reads and writes secrets from the libsecret password manager");
     public static string CollectionDescriptionShort => LC.L("The collection name");
     public static string CollectionDescriptionLong => LC.L("The collection name to use for retrieving secrets from the libsecret password manager");
     public static string CaseSensitiveDescriptionShort => LC.L("Case sensitivity");

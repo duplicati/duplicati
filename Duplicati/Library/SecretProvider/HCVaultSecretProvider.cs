@@ -24,6 +24,7 @@ using System.Web;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using VaultSharp;
+using VaultSharp.Core;
 using VaultSharp.V1.AuthMethods;
 using VaultSharp.V1.AuthMethods.AppRole;
 using VaultSharp.V1.AuthMethods.Token;
@@ -43,6 +44,12 @@ public class HCVaultSecretProvider : ISecretProvider
 
     /// <inheritdoc />
     public string Description => Strings.HCVaultSecretProvider.Description;
+
+    /// <inheritdoc />
+    public bool IsSupported => true;
+
+    /// <inheritdoc />
+    public bool IsSetSupported => true;
 
     /// <summary>
     /// The configuration for the secret provider; null if not initialized
@@ -215,38 +222,96 @@ public class HCVaultSecretProvider : ISecretProvider
         if (_client is null || _secrets is null)
             throw new InvalidOperationException("The secret provider has not been initialized");
 
-        using var client = HttpClientHelper.CreateClient();
-        // We will not set the timeout here, keeping the 100s default one
-        var result = new Dictionary<string, string>();
-        var missing = new HashSet<string>(keys);
+        var comparer = _caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+        var result = new Dictionary<string, string>(comparer);
+        var missing = new HashSet<string>(keys, comparer);
 
-        // Keep trying to get the secrets from each URL until all keys are found
         foreach (var secret in _secrets)
         {
-            var data = await _client.V1.Secrets.KeyValue.V2.ReadSecretAsync(path: secret, mountPoint: _mountPoint).ConfigureAwait(false); //mssing cancellationToken
-            if (data is null || data.Data is null)
-                continue;
-
-            var lookupDict = data.Data.Data;
-
-            if (!_caseSensitive)
-                lookupDict = lookupDict
-                    .GroupBy(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
-
-            foreach (var key in missing)
+            try
             {
-                if (lookupDict.TryGetValue(key, out var value) && value is string stringValue)
+                var data = await _client.V1.Secrets.KeyValue.V2.ReadSecretAsync(secret, mountPoint: _mountPoint).ConfigureAwait(false);
+                var lookup = data?.Data?.Data;
+                if (lookup is null)
+                    continue;
+
+                foreach (var kvp in lookup)
                 {
-                    result[key] = stringValue;
+                    if (kvp.Value is string value)
+                        result[kvp.Key] = value;
+                }
+
+                foreach (var key in missing.ToList())
+                {
+                    if (result.ContainsKey(key))
+                        missing.Remove(key);
+                }
+
+                if (missing.Count == 0)
+                    return result;
+            }
+            catch (VaultApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                continue;
+            }
+        }
+
+        foreach (var key in missing.ToList())
+        {
+            try
+            {
+                var response = await _client.V1.Secrets.KeyValue.V2.ReadSecretAsync(key, mountPoint: _mountPoint).ConfigureAwait(false);
+                var data = response?.Data?.Data;
+                if (data is null)
+                    continue;
+
+                if (data.TryGetValue(key, out var value) && value is string strValue)
+                {
+                    result[key] = strValue;
+                    missing.Remove(key);
+                }
+                else if (data.Count == 1 && data.First().Value is string onlyValue)
+                {
+                    result[key] = onlyValue;
                     missing.Remove(key);
                 }
             }
-
-            if (missing.Count == 0)
-                return result;
+            catch (VaultApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                // Ignore and continue looking for other keys
+            }
         }
 
-        throw new KeyNotFoundException("The following keys were not found: " + string.Join(", ", missing));
+        if (missing.Count > 0)
+            throw new KeyNotFoundException("The following keys were not found: " + string.Join(", ", missing));
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (_client is null || string.IsNullOrWhiteSpace(_mountPoint))
+            throw new InvalidOperationException("The secret provider has not been initialized");
+
+        var exists = true;
+        try
+        {
+            await _client.V1.Secrets.KeyValue.V2.ReadSecretMetadataAsync(key, _mountPoint).ConfigureAwait(false);
+        }
+        catch (VaultApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            exists = false;
+        }
+
+        if (exists && !overwrite)
+            throw new InvalidOperationException($"The key '{key}' already exists");
+
+        var payload = new Dictionary<string, object>
+        {
+            [key] = value
+        };
+
+        await _client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, payload, null, _mountPoint).ConfigureAwait(false);
     }
 }

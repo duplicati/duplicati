@@ -32,6 +32,11 @@ public class FileSecretProvider : ISecretProvider
 {
     private const string PASSPHRASE_OPTION = "passphrase";
 
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        WriteIndented = true
+    };
+
     /// <inheritdoc />
     public string Key => "file-secret";
 
@@ -42,7 +47,22 @@ public class FileSecretProvider : ISecretProvider
     public string Description => Strings.FileSecretProvider.Description;
 
     /// <inheritdoc />
-    private IReadOnlyDictionary<string, string>? _secrets;
+    public bool IsSupported => true;
+
+    /// <inheritdoc />
+    public bool IsSetSupported => !string.IsNullOrWhiteSpace(_passphrase);
+
+    /// <inheritdoc />
+    private Dictionary<string, string>? _secrets;
+
+    /// <summary>
+    /// The file path to read/write secrets from
+    /// </summary>
+    private string? _filePath;
+    /// <summary>
+    /// The passphrase to use for encrypting/decrypting the file
+    /// </summary>
+    private string? _passphrase;
 
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => [
@@ -52,17 +72,17 @@ public class FileSecretProvider : ISecretProvider
     /// <inheritdoc />
     public async Task InitializeAsync(Uri config, CancellationToken cancellationToken)
     {
-        var path = config.LocalPath;
-        if (!File.Exists(path))
-            throw new FileNotFoundException($"File not found: {path}");
+        _filePath = config.LocalPath;
+        if (_filePath is null || !File.Exists(_filePath))
+            throw new FileNotFoundException($"File not found: {_filePath}");
 
         // Get the passphrase from the secrets-passphrase query parameter
         var args = HttpUtility.ParseQueryString(config.Query);
-        var passphrase = args[PASSPHRASE_OPTION];
-        using var fs = File.OpenRead(path);
+        _passphrase = args[PASSPHRASE_OPTION];
+        using var fs = File.OpenRead(_filePath);
         Dictionary<string, string> secrets;
 
-        if (string.IsNullOrEmpty(passphrase))
+        if (string.IsNullOrEmpty(_passphrase))
         {
             secrets = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(fs, cancellationToken: cancellationToken).ConfigureAwait(false)
                 ?? throw new UserInformationException("The file does not contain any secrets", "NoSecrets");
@@ -70,14 +90,14 @@ public class FileSecretProvider : ISecretProvider
         else
         {
             using var ms = new MemoryStream();
-            await SharpAESCrypt.AESCrypt.DecryptAsync(passphrase, fs, ms, SharpAESCrypt.DecryptionOptions.Default with { LeaveOpen = true }, cancellationToken).ConfigureAwait(false);
+            await SharpAESCrypt.AESCrypt.DecryptAsync(_passphrase, fs, ms, SharpAESCrypt.DecryptionOptions.Default with { LeaveOpen = true }, cancellationToken).ConfigureAwait(false);
             ms.Position = 0;
             secrets = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(ms, cancellationToken: cancellationToken).ConfigureAwait(false)
                 ?? throw new UserInformationException("The file does not contain any secrets", "NoSecrets");
         }
 
-        // Make secrets case-insensitive
-        _secrets = secrets.ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase).AsReadOnly();
+        // Make secret keys case-insensitive
+        _secrets = secrets.ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
     }
 
     /// <inheritdoc />
@@ -87,5 +107,39 @@ public class FileSecretProvider : ISecretProvider
             throw new InvalidOperationException("The secret provider has not been initialized");
 
         return Task.FromResult(keys.ToDictionary(k => k, k => _secrets.TryGetValue(k, out var value) ? value : throw new KeyNotFoundException($"The key '{k}' was not found")));
+    }
+
+    /// <inheritdoc />
+    public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (_secrets is null || string.IsNullOrEmpty(_filePath))
+            throw new InvalidOperationException("The secret provider has not been initialized");
+
+        if (string.IsNullOrEmpty(_passphrase))
+            throw new InvalidOperationException("The secret provider does not support setting secrets without a passphrase");
+
+        if (!overwrite && _secrets.ContainsKey(key))
+            throw new InvalidOperationException($"The key '{key}' already exists");
+
+        _secrets[key] = value;
+
+        var directory = Path.GetDirectoryName(_filePath);
+        if (!string.IsNullOrEmpty(directory))
+            Directory.CreateDirectory(directory);
+
+        if (string.IsNullOrEmpty(_passphrase))
+        {
+            await using var fs = File.Create(_filePath);
+            await JsonSerializer.SerializeAsync(fs, _secrets, SerializerOptions, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            await using var jsonStream = new MemoryStream();
+            await JsonSerializer.SerializeAsync(jsonStream, _secrets, SerializerOptions, cancellationToken).ConfigureAwait(false);
+            jsonStream.Position = 0;
+
+            await using var fs = File.Create(_filePath);
+            await SharpAESCrypt.AESCrypt.EncryptAsync(_passphrase, jsonStream, fs, SharpAESCrypt.EncryptionOptions.Default with { LeaveOpen = true }, cancellationToken).ConfigureAwait(false);
+        }
     }
 }

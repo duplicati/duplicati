@@ -44,6 +44,12 @@ public class AzureSecretProvider : ISecretProvider
     public string Description => Strings.AzureSecretProvider.Description;
 
     /// <inheritdoc />
+    public bool IsSupported => true;
+
+    /// <inheritdoc />
+    public bool IsSetSupported => true;
+
+    /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands
         => CommandLineArgumentMapper.MapArguments(new AzureSecretProviderConfig())
             .ToList();
@@ -155,5 +161,27 @@ public class AzureSecretProvider : ISecretProvider
         }
 
         return secrets;
+    }
+
+    /// <inheritdoc />
+    public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (_client is null)
+            throw new InvalidOperationException("The secret provider has not been initialized");
+
+        if (!overwrite)
+        {
+            try
+            {
+                await _client.GetSecretAsync(key, cancellationToken: cancellationToken).ConfigureAwait(false);
+                throw new InvalidOperationException($"The key '{key}' already exists");
+            }
+            catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+            {
+                // Secret does not exist, continue
+            }
+        }
+
+        await _client.SetSecretAsync(new KeyVaultSecret(key, value), cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 }

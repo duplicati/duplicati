@@ -154,4 +154,28 @@ public class SecretProviderLoader
 
         return provider;
     }
+
+    /// <summary>
+    /// Gets the default secret provider for the current operating system
+    /// </summary>
+    /// <returns>The secret provider or null if none is available</returns>
+    public static ISecretProvider? GetDefaultSecretProviderForOperatingSystem()
+    {
+        if (OperatingSystem.IsWindows())
+            return new WindowsCredentialManagerProvider();
+        if (OperatingSystem.IsMacOS())
+            return new MacOSKeyChainProvider();
+        if (OperatingSystem.IsLinux())
+        {
+            ISecretProvider tmp = new LibSecretLinuxProvider();
+            if (tmp.IsSupported)
+                return tmp;
+
+            tmp = new UnixPassProvider();
+            if (tmp.IsSupported)
+                return tmp;
+        }
+
+        return null;
+    }
 }

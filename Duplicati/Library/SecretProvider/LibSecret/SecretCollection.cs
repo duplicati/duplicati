@@ -99,6 +99,30 @@ public class SecretCollection : IDisposable
     }
 
     /// <summary>
+    /// Checks whether the libsecret DBus service is available on the current platform.
+    /// </summary>
+    /// <returns><c>true</c> when the provider can be used; otherwise <c>false</c>.</returns>
+    public static bool IsSupported()
+    {
+        if (!OperatingSystem.IsLinux())
+            return false;
+
+        try
+        {
+            var connection = Connection.Session;
+            var secretsService = new secretsService(connection, "org.freedesktop.secrets");
+            var service = secretsService.CreateService("/org/freedesktop/secrets");
+            var task = service.GetCollectionsAsync();
+
+            return task.Wait(TimeSpan.FromSeconds(5)) && task.Status == TaskStatus.RanToCompletion;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Unlocks the collection
     /// </summary>
     /// <returns>The task to await</returns>
@@ -183,6 +207,61 @@ public class SecretCollection : IDisposable
             throw new UserInformationException($"Missing secrets: {string.Join(", ", missing)}", "MissingSecrets");
 
         return result;
+    }
+
+    /// <summary>
+    /// Stores or updates a secret in the collection.
+    /// </summary>
+    /// <param name="label">The label of the secret.</param>
+    /// <param name="value">The secret value.</param>
+    /// <param name="overwrite">Indicates whether existing secrets should be overwritten.</param>
+    /// <param name="comparer">The comparer used for label comparison.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>An awaitable task.</returns>
+    public async Task StoreSecretAsync(string label, string value, bool overwrite, StringComparer comparer, CancellationToken cancellationToken)
+    {
+        var collection = _secretsService.CreateCollection(_collection.Path);
+        var entries = await collection.SearchItemsAsync(new Dictionary<string, string>()).ConfigureAwait(false);
+
+        Item? existingItem = null;
+        foreach (var entry in entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var item = _secretsService.CreateItem(entry);
+            try
+            {
+                var existingLabel = await item.GetLabelAsync().ConfigureAwait(false);
+                if (comparer.Equals(existingLabel, label))
+                {
+                    existingItem = item;
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LogTag, "SecretLookupError", ex, "Failed to inspect secret");
+            }
+        }
+
+        if (existingItem != null && !overwrite)
+            throw new InvalidOperationException($"The key '{label}' already exists");
+
+        var secretPayload = (_session.Path, Array.Empty<byte>(), Encoding.UTF8.GetBytes(value), "text/plain");
+
+        if (existingItem != null)
+        {
+            await existingItem.SetSecretAsync(secretPayload).ConfigureAwait(false);
+            await existingItem.SetLabelAsync(label).ConfigureAwait(false);
+            return;
+        }
+
+        var properties = new Dictionary<string, VariantValue>
+        {
+            ["org.freedesktop.Secret.Item.Label"] = VariantValue.String(label)
+        };
+
+        await collection.CreateItemAsync(properties, secretPayload, false).ConfigureAwait(false);
     }
 
     /// <inheritdoc />

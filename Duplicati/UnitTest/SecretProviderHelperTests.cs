@@ -46,6 +46,9 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
         public IList<ICommandLineArgument> SupportedCommands => [];
 
+        public bool IsSupported => true;
+        public bool IsSetSupported => true;
+
         public bool ThrowOnInit { get; set; }
 
         public Task InitializeAsync(System.Uri config, CancellationToken cancellationToken)
@@ -68,6 +71,14 @@ public class SecretProviderHelperTests : BasicSetupHelper
             }
 
             return Task.FromResult(result);
+        }
+
+        public Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+        {
+            if (!overwrite && Secrets.ContainsKey(key))
+                throw new InvalidOperationException($"The key '{key}' already exists");
+            Secrets[key] = value;
+            return Task.CompletedTask;
         }
     }
 

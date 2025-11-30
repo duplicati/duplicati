@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Web;
@@ -31,6 +32,11 @@ namespace Duplicati.Library.SecretProvider;
 /// </summary>
 public class UnixPassProvider : ISecretProvider
 {
+    /// <summary>
+    /// The default pass command
+    /// </summary>
+    private const string DefaultPassCommand = "pass";
+
     /// <inheritdoc />
     public string Key => "pass";
 
@@ -39,6 +45,12 @@ public class UnixPassProvider : ISecretProvider
 
     /// <inheritdoc />
     public string Description => Strings.UnixPassProvider.Description;
+
+    /// <inheritdoc />
+    public bool IsSupported => CheckPassSupport(_config?.PassCommand ?? DefaultPassCommand);
+
+    /// <inheritdoc />
+    public bool IsSetSupported => IsSupported;
 
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands
@@ -51,6 +63,40 @@ public class UnixPassProvider : ISecretProvider
     private UnixPassProviderConfig? _config;
 
     /// <summary>
+    /// Checks whether the pass utility is supported
+    /// </summary>
+    /// <param name="passCommand">The pass command to check</param>
+    /// <returns>True if supported; false otherwise</returns>
+    private static bool CheckPassSupport(string passCommand)
+    {
+        if (!OperatingSystem.IsLinux())
+            return false;
+
+        try
+        {
+            var psi = new ProcessStartInfo(passCommand)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+
+            psi.ArgumentList.Add("--version");
+
+            using var process = Process.Start(psi);
+            if (process is null)
+                return false;
+
+            return process.WaitForExit(5000) && process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// The configuration for the Unix pass provider
     /// </summary>
     private class UnixPassProviderConfig : ICommandLineArgumentMapper
@@ -58,7 +104,7 @@ public class UnixPassProvider : ISecretProvider
         /// <summary>
         /// The command to run to get a password
         /// </summary>
-        public string PassCommand { get; set; } = "pass";
+        public string PassCommand { get; set; } = DefaultPassCommand;
 
         /// <summary>
         /// Gets the command line argument description for a member
@@ -101,6 +147,18 @@ public class UnixPassProvider : ISecretProvider
         return result;
     }
 
+    /// <inheritdoc />
+    public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (_config is null)
+            throw new InvalidOperationException("The UnixPassProvider has not been initialized");
+
+        if (!overwrite && await SecretExistsAsync(key, _config, cancellationToken).ConfigureAwait(false))
+            throw new InvalidOperationException($"The key '{key}' already exists");
+
+        await InsertSecretAsync(key, value, _config, overwrite, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Gets a string from the pass utility
     /// </summary>
@@ -135,5 +193,83 @@ public class UnixPassProvider : ISecretProvider
             throw new UserInformationException("pass returned no output", "PassNoOutput");
 
         return output.Trim();
+    }
+
+    /// <summary>
+    /// Checks whether a secret exists in the pass utility
+    /// </summary>
+    /// <param name="name">The name of the secret</param>
+    /// <param name="config">The configuration for the Unix pass provider</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>True if the secret exists; false otherwise</returns>
+    private static async Task<bool> SecretExistsAsync(string name, UnixPassProviderConfig config, CancellationToken cancellationToken)
+    {
+        var psi = new ProcessStartInfo(config.PassCommand)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+
+        psi.ArgumentList.Add("show");
+        psi.ArgumentList.Add(name);
+
+        using var process = Process.Start(psi);
+        if (process is null)
+            throw new InvalidOperationException("Failed to start pass");
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(cancellationToken)).ConfigureAwait(false);
+
+        return process.ExitCode == 0;
+    }
+
+    /// <summary>
+    /// Inserts a secret into the pass utility
+    /// </summary>
+    /// <param name="name">The name of the secret</param>
+    /// <param name="value">The value of the secret</param>
+    /// <param name="config">The configuration for the Unix pass provider</param>
+    /// <param name="overwrite">Whether to overwrite an existing secret</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private static async Task InsertSecretAsync(string name, string value, UnixPassProviderConfig config, bool overwrite, CancellationToken cancellationToken)
+    {
+        var psi = new ProcessStartInfo(config.PassCommand)
+        {
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+
+        psi.ArgumentList.Add("insert");
+        if (overwrite)
+            psi.ArgumentList.Add("-f");
+        psi.ArgumentList.Add("--multiline");
+        psi.ArgumentList.Add(name);
+
+        using var process = Process.Start(psi);
+        if (process is null)
+            throw new InvalidOperationException("Failed to start pass");
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+
+        await process.StandardInput.WriteAsync(value.AsMemory(), cancellationToken).ConfigureAwait(false);
+        await process.StandardInput.WriteAsync(Environment.NewLine.AsMemory(), cancellationToken).ConfigureAwait(false);
+        await process.StandardInput.FlushAsync().ConfigureAwait(false);
+        process.StandardInput.Close();
+
+        await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(cancellationToken)).ConfigureAwait(false);
+
+        if (process.ExitCode != 0)
+        {
+            var error = await stderrTask.ConfigureAwait(false);
+            throw new UserInformationException($"pass failed with exit code {process.ExitCode}: {error}", "PassInsertFailed");
+        }
     }
 }

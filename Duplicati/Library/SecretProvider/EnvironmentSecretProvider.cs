@@ -38,6 +38,12 @@ public class EnvironmentSecretProvider : ISecretProvider
     public string Description => Strings.EnvironmentSecretProvider.Description;
 
     /// <inheritdoc />
+    public bool IsSupported => true;
+
+    /// <inheritdoc />
+    public bool IsSetSupported => false; // DOn't set env vars as they are not persisted
+
+    /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => [];
 
     /// <inheritdoc />
@@ -62,4 +68,8 @@ public class EnvironmentSecretProvider : ISecretProvider
             )
         );
     }
+
+    /// <inheritdoc />
+    public Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+        => throw new NotSupportedException("Setting secrets is not supported for environment variables");
 }

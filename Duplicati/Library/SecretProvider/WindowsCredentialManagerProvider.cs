@@ -39,6 +39,12 @@ public class WindowsCredentialManagerProvider : ISecretProvider
     public string Description => Strings.WindowsCredentialManagerProvider.Description;
 
     /// <inheritdoc />
+    public bool IsSupported => OperatingSystem.IsWindows();
+
+    /// <inheritdoc />
+    public bool IsSetSupported => IsSupported;
+
+    /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => [];
 
     /// <inheritdoc />
@@ -70,5 +76,28 @@ public class WindowsCredentialManagerProvider : ISecretProvider
         }
 
         return Task.FromResult(result);
+    }
+
+    /// <inheritdoc />
+    public Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (!OperatingSystem.IsWindowsVersionAtLeast(5, 1, 2600))
+            throw new PlatformNotSupportedException("Windows Credential Manager is only supported on Windows");
+
+        var existing = CredentialManager.ReadCredential(key);
+        if (existing is not null && !overwrite)
+            throw new InvalidOperationException($"The key '{key}' already exists");
+
+        var userName = existing?.UserName ?? string.Empty;
+        var comment = existing?.Comment ?? string.Empty;
+
+        CredentialManager.WriteCredential(
+            applicationName: key,
+            userName: userName,
+            secret: value,
+            comment: comment,
+            persistence: CredentialPersistence.LocalMachine);
+
+        return Task.CompletedTask;
     }
 }

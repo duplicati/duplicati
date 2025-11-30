@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Net;
 using System.Reflection;
 using System.Web;
 using Duplicati.Library.Interface;
@@ -27,6 +28,8 @@ using Google.Api.Gax.Grpc;
 using Google.Api.Gax.Grpc.Rest;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.SecretManager.V1;
+using Google.Protobuf;
+using Grpc.Core;
 
 namespace Duplicati.Library.SecretProvider;
 
@@ -48,6 +51,12 @@ public class GCSSecretProvider : ISecretProvider
 
     /// <inheritdoc />
     public string Description => Strings.GCSSecretProvider.Description;
+
+    /// <inheritdoc />
+    public bool IsSupported => true;
+
+    /// <inheritdoc />
+    public bool IsSetSupported => true;
 
     /// <summary>
     /// The API types supported
@@ -151,4 +160,56 @@ public class GCSSecretProvider : ISecretProvider
 
         return res;
     }
+
+    /// <inheritdoc />
+    public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (_client is null || _cfg is null)
+            throw new InvalidOperationException("The secret provider has not been initialized");
+
+        var secretName = new SecretName(_cfg.ProjectId, key);
+        var callSettings = CallSettings.FromCancellationToken(cancellationToken);
+        var exists = false;
+
+        try
+        {
+            await _client.GetSecretAsync(secretName, callSettings).ConfigureAwait(false);
+            exists = true;
+        }
+        catch (Exception ex) when (IsNotFound(ex))
+        {
+        }
+
+        if (exists && !overwrite)
+            throw new InvalidOperationException($"The key '{key}' already exists");
+
+        if (!exists)
+        {
+            await _client.CreateSecretAsync(new CreateSecretRequest
+            {
+                ParentAsProjectName = new Google.Api.Gax.ResourceNames.ProjectName(_cfg.ProjectId),
+                SecretId = key,
+                Secret = new Secret
+                {
+                    Replication = new Replication
+                    {
+                        Automatic = new Replication.Types.Automatic()
+                    }
+                }
+            }, callSettings).ConfigureAwait(false);
+        }
+
+        await _client.AddSecretVersionAsync(new AddSecretVersionRequest
+        {
+            ParentAsSecretName = secretName,
+            Payload = new SecretPayload
+            {
+                Data = ByteString.CopyFromUtf8(value)
+            }
+        }, callSettings).ConfigureAwait(false);
+    }
+
+    private static bool IsNotFound(Exception ex)
+        => ex is RpcException rpc && rpc.StatusCode == StatusCode.NotFound
+            || ex is Google.GoogleApiException api && api.HttpStatusCode == HttpStatusCode.NotFound;
 }

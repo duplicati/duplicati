@@ -40,6 +40,12 @@ public class LibSecretLinuxProvider : ISecretProvider
     /// <inheritdoc />
     public string Description => Strings.LibSecretLinuxProvider.Description;
 
+    /// <inheritdoc />
+    public bool IsSupported => OperatingSystem.IsLinux() && SecretCollection.IsSupported();
+
+    /// <inheritdoc />
+    public bool IsSetSupported => IsSupported;
+
     /// <summary>
     /// The configuration for the secret provider
     /// </summary>
@@ -112,5 +118,17 @@ public class LibSecretLinuxProvider : ISecretProvider
             throw new PlatformNotSupportedException("LibSecret is only supported on Linux");
 
         return _collection.GetSecretsAsync(keys, _cfg.CaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <inheritdoc />
+    public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (_cfg is null || _collection is null)
+            throw new InvalidOperationException("The secret provider has not been initialized");
+        if (!OperatingSystem.IsLinux())
+            throw new PlatformNotSupportedException("LibSecret is only supported on Linux");
+
+        var comparer = _cfg.CaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+        await _collection.StoreSecretAsync(key, value, overwrite, comparer, cancellationToken).ConfigureAwait(false);
     }
 }
