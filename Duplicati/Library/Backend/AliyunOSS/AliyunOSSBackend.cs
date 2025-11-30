@@ -235,7 +235,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
                     throw new Exception("Get failed");
 
                 using (var requestStream = obj.Content)
-                using (var timeoutStream = requestStream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false))
+                using (var timeoutStream = stream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false))
                     await Utility.Utility.CopyStreamAsync(requestStream, timeoutStream, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
