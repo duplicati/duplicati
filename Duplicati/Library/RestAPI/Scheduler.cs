@@ -100,7 +100,6 @@ namespace Duplicati.Server
             m_updateTasks = new Dictionary<Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>>();
             m_thread.IsBackground = true;
             m_thread.Name = "TaskScheduler";
-            m_thread.Start();
         }
 
         public IList<Tuple<string, DateTime>> GetProposedSchedule()
@@ -121,6 +120,8 @@ namespace Duplicati.Server
         /// </summary>
         public void Reschedule()
         {
+            if (!m_thread.IsAlive && !m_terminate)
+                m_thread.Start();
             m_event.Set();
         }
 

@@ -257,6 +257,14 @@ namespace Duplicati.Server
 
                 LiveControl.StateChanged = (e) => { LiveControl_StateChanged(queueRunner, connection, eventPollNotify, scheduler, e); };
 
+                // Invoke it once to set initial state
+                LiveControl_StateChanged(queueRunner, connection, eventPollNotify, scheduler, new LiveControls.LiveControlEvent
+                {
+                    State = LiveControl.State,
+                    TransfersPaused = LiveControl.TransfersPaused,
+                    WaitTimeExpiration = LiveControl.EstimatedPauseEnd
+                });
+
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, PING_PONG_KEEPALIVE_OPTION))
                 {
                     PingPongThread = new Thread(() => PingPongMethod(applicationSettings)) { IsBackground = true };
