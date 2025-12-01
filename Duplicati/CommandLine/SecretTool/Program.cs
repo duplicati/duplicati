@@ -122,14 +122,19 @@ public static class Program
     private static async Task<int> ShowInfo(string? secretUrl)
     {
         string? key = null;
-        Console.WriteLine($"Supported secret providers on {Library.AutoUpdater.UpdaterManager.OperatingSystemName}:");
-        foreach (var k in SecretProviderLoader.Keys)
+
+        if (string.IsNullOrWhiteSpace(secretUrl))
         {
-            var metadata = await SecretProviderLoader.GetProviderMetadata(k, CancellationToken.None);
-            Console.WriteLine($"  {k} - {metadata.DisplayName}{(metadata.IsSupported ? "" : " (not supported)")}");
+            Console.WriteLine($"Supported secret providers on {Library.AutoUpdater.UpdaterManager.OperatingSystemName}:");
+            foreach (var k in SecretProviderLoader.Keys)
+            {
+                var metadata = await SecretProviderLoader.GetProviderMetadata(k, CancellationToken.None);
+                Console.WriteLine($"  {k} - {metadata.DisplayName}{(metadata.IsSupported ? "" : " (not supported)")}");
+            }
+
+            Console.WriteLine();
         }
 
-        Console.WriteLine();
 
         try
         {
