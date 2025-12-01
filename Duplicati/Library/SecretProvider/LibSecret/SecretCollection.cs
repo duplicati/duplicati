@@ -37,7 +37,7 @@ public class SecretCollection : IDisposable
     /// The fallback collection name to use when "default" is requested but doesn't exist.
     /// The "login" collection is automatically unlocked when the user logs in.
     /// </summary>
-    private const string DefaultCollectionActualName = "login";
+    public const string DefaultCollectionActualName = "login";
     /// <summary>
     /// The log tag for the secret collection
     /// </summary>

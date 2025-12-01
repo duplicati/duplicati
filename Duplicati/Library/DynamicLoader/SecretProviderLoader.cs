@@ -185,11 +185,6 @@ public class SecretProviderLoader
                 await res.InitializeAsync(new Uri("libsecret://"), cancellationToken);
                 if (res.DoesCollectionExist())
                     return res;
-
-                res = new LibSecretLinuxProvider();
-                await res.InitializeAsync(new Uri("libsecret://?collection=Login"), cancellationToken);
-                if (res.DoesCollectionExist())
-                    return res;
             }
 
             tmp = new UnixPassProvider();

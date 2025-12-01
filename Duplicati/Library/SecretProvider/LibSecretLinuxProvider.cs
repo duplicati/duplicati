@@ -156,7 +156,12 @@ public class LibSecretLinuxProvider : ISecretProvider
         if (!OperatingSystem.IsLinux())
             throw new PlatformNotSupportedException("LibSecret is only supported on Linux");
 
-        return SecretCollection.CollectionExists(_cfg.Collection);
+        var actual = SecretCollection.CollectionExists(_cfg.Collection);
+        if (actual || !_cfg.Collection.Equals("default", StringComparison.OrdinalIgnoreCase))
+            return actual;
+
+        return SecretCollection.CollectionExists(SecretCollection.DefaultCollectionActualName);
+
     }
 
 }
