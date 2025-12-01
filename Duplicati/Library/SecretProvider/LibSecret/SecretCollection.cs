@@ -168,6 +168,15 @@ public class SecretCollection : IDisposable
         if (!OperatingSystem.IsLinux())
             return false;
 
+        // Heuristic: libsecret prompts require a graphical session to be useful.
+        // If there is no X11/Wayland display, we treat libsecret as unsupported.
+        var hasDisplay =
+            !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")) ||
+            !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY"));
+
+        if (!hasDisplay)
+            return false;
+
         try
         {
             var connection = Connection.Session;
