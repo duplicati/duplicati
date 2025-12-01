@@ -117,6 +117,13 @@ public class SecretCollection : IDisposable
                 var promptInstance = secretsService.CreatePrompt(promptPath);
                 var completedTask = new TaskCompletionSource<bool>();
 
+                // Cancel the wait if the caller cancels
+                using var cancellationRegistration = cancellationToken.Register(() =>
+                {
+                    completedTask.TrySetCanceled(cancellationToken);
+                });
+
+                // Subscribe to completion signal
                 using var _ = await promptInstance.WatchCompletedAsync((exception, result) =>
                 {
                     if (exception != null)
@@ -127,7 +134,15 @@ public class SecretCollection : IDisposable
                         completedTask.TrySetResult(true);
                 }).ConfigureAwait(false);
 
+                // Ask the secrets service to show the prompt
                 await promptInstance.PromptAsync(Guid.NewGuid().ToString()).ConfigureAwait(false);
+
+                // Wait for either completion or a timeout
+                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(60), cancellationToken);
+                var finishedTask = await Task.WhenAny(completedTask.Task, timeoutTask).ConfigureAwait(false);
+
+                if (finishedTask != completedTask.Task)
+                    throw new UserInformationException("Timed out waiting for libsecret collection create prompt. Ensure that a secret service/keyring is running and able to show prompts.", "CreateCollectionPromptTimeout");
 
                 var done = await completedTask.Task.ConfigureAwait(false);
                 if (!done)
@@ -197,7 +212,13 @@ public class SecretCollection : IDisposable
             // Prompt
             await promptInstance.PromptAsync(Guid.NewGuid().ToString()).ConfigureAwait(false);
 
-            // Wait for prompt to be dismissed or completed
+            // Wait for prompt to be dismissed or completed, with timeout safeguard
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
+            var finishedTask = await Task.WhenAny(completedTask.Task, timeoutTask).ConfigureAwait(false);
+
+            if (finishedTask != completedTask.Task)
+                throw new UserInformationException("Timed out waiting for libsecret unlock prompt. Ensure that a secret service/keyring is running and able to show prompts.", "UnlockPromptTimeout");
+
             var done = await completedTask.Task.ConfigureAwait(false);
             if (!done)
                 throw new UserInformationException("Dimissed collection unlock prompt", "UnlockDismissed");
