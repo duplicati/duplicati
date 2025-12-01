@@ -20,8 +20,10 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +39,10 @@ using Azure.Security.KeyVault.Secrets;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.SecretManager.V1;
 using Grpc.Core;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Configurations;
+using DotNet.Testcontainers.Containers;
+using DotNet.Testcontainers.Images;
 
 namespace Duplicati.UnitTest;
 
@@ -304,6 +310,146 @@ public class SecretProviderSetSecretTests
                     {
                     }
                 }
+            }
+        }
+    }
+
+    [Test]
+    [Category("SecretProviders.Remote")]
+    public async Task HcVaultProvider_SetSecret_Works_WithTestcontainers()
+    {
+        const string rootToken = "duplicati-root-token";
+        const string mount = "kv";
+        const string probeSecret = "probe";
+
+        IContainer? container = null;
+        VaultClient? cleanupClient = null;
+        string createdSecretId = string.Empty;
+
+        try
+        {
+            container = new ContainerBuilder()
+                .WithImage("hashicorp/vault:1.17")
+                .WithImagePullPolicy(PullPolicy.Missing)
+                .WithPortBinding(8200, 8200)
+                .WithCommand("vault", "server", "-dev", $"-dev-root-token-id={rootToken}", "-dev-listen-address=0.0.0.0:8200")
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(8200))
+                .Build();
+
+            try
+            {
+                await container.StartAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                NUnit.Framework.Assert.Ignore($"HashiCorp Vault Testcontainers setup failed: {ex.Message}");
+                return;
+            }
+
+            var hostPort = container.GetMappedPublicPort(8200);
+            var host = $"http://localhost:{hostPort}";
+
+            cleanupClient = new VaultClient(new VaultClientSettings(host, new TokenAuthMethodInfo(rootToken)));
+
+            // Ensure the KV v2 secrets engine is available on the configured mount.
+            using (var httpClient = new HttpClient { BaseAddress = new Uri(host) })
+            {
+                httpClient.DefaultRequestHeaders.Add("X-Vault-Token", rootToken);
+
+                var mountConfig = new
+                {
+                    type = "kv",
+                    options = new Dictionary<string, string>
+                    {
+                        ["version"] = "2"
+                    }
+                };
+
+                var json = System.Text.Json.JsonSerializer.Serialize(mountConfig);
+                using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PostAsync($"/v1/sys/mounts/{mount}", content).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode &&
+                    response.StatusCode != System.Net.HttpStatusCode.BadRequest)
+                {
+                    NUnit.Framework.Assert.Ignore($"Failed to configure KV v2 secrets engine on mount '{mount}': {response.StatusCode}");
+                    return;
+                }
+            }
+
+            // Ensure the probe secret exists so that HCVaultSecretProvider.InitializeAsync connectivity check succeeds.
+            var probePayload = new Dictionary<string, object>
+            {
+                ["dummy"] = "value"
+            };
+
+            await cleanupClient.V1.Secrets.KeyValue.V2.WriteSecretAsync(
+                probeSecret,
+                probePayload,
+                null,
+                mount).ConfigureAwait(false);
+
+            var providerUri = new Uri(
+                $"hcv://localhost:{hostPort}/?token={Uri.EscapeDataString(rootToken)}&connection-type=http&mount={mount}&secrets={probeSecret}");
+
+            var provider = new HCVaultSecretProvider();
+            await provider.InitializeAsync(providerUri, CancellationToken.None);
+
+            var key = $"duplicati-hcv-{Guid.NewGuid():N}";
+            createdSecretId = key;
+
+            // Write the secret using the provider under test.
+            await provider.SetSecretAsync(key, "value1", overwrite: false, CancellationToken.None);
+
+            // Verify the secret directly via Vault using the same mount, to avoid relying on ResolveSecretsAsync
+            // semantics in this Testcontainers-based test (those are covered by the environment-based test).
+            var secret1 = await cleanupClient.V1.Secrets.KeyValue.V2
+                .ReadSecretAsync(key, mountPoint: mount)
+                .ConfigureAwait(false);
+
+            var data1 = secret1?.Data?.Data;
+            Assert.IsNotNull(data1, "Vault returned no data for the created secret");
+
+            // Verify that attempting to set without overwrite fails.
+            NUnit.Framework.Assert.ThrowsAsync<Duplicati.Library.Interface.UserInformationException>(() =>
+                provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
+
+            // Overwrite and verify that Vault still returns data for the secret.
+            await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
+
+            var secret2 = await cleanupClient.V1.Secrets.KeyValue.V2
+                .ReadSecretAsync(key, mountPoint: mount)
+                .ConfigureAwait(false);
+
+            var data2 = secret2?.Data?.Data;
+            Assert.IsNotNull(data2, "Vault returned no data for the updated secret");
+        }
+        finally
+        {
+            if (cleanupClient != null && !string.IsNullOrEmpty(createdSecretId))
+            {
+                try
+                {
+                    await cleanupClient.V1.Secrets.KeyValue.V2.DeleteSecretAsync(createdSecretId, mountPoint: mount)
+                        .ConfigureAwait(false);
+                }
+                catch
+                {
+                }
+            }
+
+            if (container != null)
+            {
+                try
+                {
+                    await container.StopAsync().ConfigureAwait(false);
+                }
+                catch
+                {
+                }
+
+                await container.DisposeAsync().ConfigureAwait(false);
             }
         }
     }
