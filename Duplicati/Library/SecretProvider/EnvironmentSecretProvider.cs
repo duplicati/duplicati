@@ -38,10 +38,10 @@ public class EnvironmentSecretProvider : ISecretProvider
     public string Description => Strings.EnvironmentSecretProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported => true;
+    public bool IsSupported() => true;
 
     /// <inheritdoc />
-    public bool IsSetSupported => false; // DOn't set env vars as they are not persisted
+    public bool IsSetSupported => false; // Don't set env vars as they are not persisted
 
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => [];

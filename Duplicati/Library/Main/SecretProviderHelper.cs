@@ -396,7 +396,7 @@ public static class SecretProviderHelper
         public string Description => _provider.Description;
 
         /// <inheritdoc />
-        public bool IsSupported => _provider.IsSupported;
+        public bool IsSupported() => _provider.IsSupported();
 
         /// <inheritdoc />
         public bool IsSetSupported => _provider.IsSetSupported;

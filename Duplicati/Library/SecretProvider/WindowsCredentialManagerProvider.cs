@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.Versioning;
 using Duplicati.Library.Interface;
 using Meziantou.Framework.Win32;
 
@@ -27,6 +28,7 @@ namespace Duplicati.Library.SecretProvider;
 /// <summary>
 /// Secret provider that reads secrets from Windows Credential Manager
 /// </summary>
+[SupportedOSPlatform("windows")]
 public class WindowsCredentialManagerProvider : ISecretProvider
 {
     /// <inheritdoc />
@@ -39,10 +41,10 @@ public class WindowsCredentialManagerProvider : ISecretProvider
     public string Description => Strings.WindowsCredentialManagerProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported => OperatingSystem.IsWindows();
+    public bool IsSupported() => OperatingSystem.IsWindows();
 
     /// <inheritdoc />
-    public bool IsSetSupported => IsSupported;
+    public bool IsSetSupported => IsSupported();
 
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => [];

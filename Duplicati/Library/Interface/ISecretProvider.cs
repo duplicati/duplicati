@@ -63,7 +63,7 @@ public interface ISecretProvider : IDynamicModule
     /// <summary>
     /// Indicates whether the secret provider is supported on the current platform.
     /// </summary>
-    bool IsSupported { get; }
+    bool IsSupported();
     /// <summary>
     /// Indicates whether the secret provider supports setting secrets.
     /// </summary>

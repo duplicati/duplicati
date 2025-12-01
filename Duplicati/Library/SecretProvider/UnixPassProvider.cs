@@ -18,8 +18,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.Versioning;
 using System.Web;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -29,6 +31,7 @@ namespace Duplicati.Library.SecretProvider;
 /// <summary>
 /// Implementation of a secret provider that reads secrets from the Unix pass utility
 /// </summary>
+[SupportedOSPlatform("linux")]
 public class UnixPassProvider : ISecretProvider
 {
     /// <summary>
@@ -45,11 +48,23 @@ public class UnixPassProvider : ISecretProvider
     /// <inheritdoc />
     public string Description => Strings.UnixPassProvider.Description;
 
-    /// <inheritdoc />
-    public bool IsSupported => CheckPassSupport(_config?.PassCommand ?? DefaultPassCommand);
+    /// <summary>
+    /// Cached support detection for the <c>pass</c> utility, using a PATH scan.
+    /// This avoids re-scanning PATH multiple times across different instances.
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, Lazy<bool>> _passSupportCache = new();
 
     /// <inheritdoc />
-    public bool IsSetSupported => IsSupported;
+    public bool IsSupported()
+    {
+        if (string.IsNullOrWhiteSpace(_config?.PassCommand) || _config.PassCommand.ContainsAny(Path.GetInvalidPathChars()) || _config.PassCommand.Contains(Path.PathSeparator))
+            return false;
+
+        return _passSupportCache.GetOrAdd(_config.PassCommand, pc => new Lazy<bool>(() => CheckPassSupport(pc))).Value;
+    }
+
+    /// <inheritdoc />
+    public bool IsSetSupported => IsSupported();
 
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands
@@ -62,32 +77,38 @@ public class UnixPassProvider : ISecretProvider
     private UnixPassProviderConfig? _config;
 
     /// <summary>
-    /// Checks whether the pass utility is supported
+    /// Checks whether the configured <c>pass</c> command is available by scanning PATH.
+    /// This works across platforms (Linux, macOS, Windows) and avoids spawning a process.
     /// </summary>
-    /// <param name="passCommand">The pass command to check</param>
-    /// <returns>True if supported; false otherwise</returns>
+    /// <param name="passCommand">The pass command to check.</param>
+    /// <returns><c>true</c> if the command appears to be available; otherwise <c>false</c>.</returns>
     private static bool CheckPassSupport(string passCommand)
     {
-        if (!OperatingSystem.IsLinux())
+        if (string.IsNullOrWhiteSpace(passCommand))
             return false;
 
         try
         {
-            var psi = new ProcessStartInfo(passCommand)
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
+            // If the command contains a directory separator, treat it as a path and just check for existence.
+            if (passCommand.IndexOfAny(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }) >= 0)
+                return File.Exists(passCommand);
 
-            psi.ArgumentList.Add("--version");
-
-            using var process = Process.Start(psi);
-            if (process is null)
+            var pathEnv = Environment.GetEnvironmentVariable("PATH");
+            if (string.IsNullOrWhiteSpace(pathEnv))
                 return false;
 
-            return process.WaitForExit(5000) && process.ExitCode == 0;
+            foreach (var dir in pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var d = dir.Trim();
+                if (string.IsNullOrEmpty(d))
+                    continue;
+
+                var candidate = Path.Combine(d, passCommand);
+                if (File.Exists(candidate))
+                    return true;
+            }
+
+            return false;
         }
         catch
         {

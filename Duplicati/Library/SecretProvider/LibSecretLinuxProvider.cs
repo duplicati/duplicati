@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Reflection;
+using System.Runtime.Versioning;
 using System.Web;
 using Duplicati.Library.Interface;
 using Duplicati.Library.SecretProvider.LibSecret;
@@ -29,6 +30,7 @@ namespace Duplicati.Library.SecretProvider;
 /// <summary>
 /// Secret provider that reads secrets from libsecret on Linux
 /// </summary>
+[SupportedOSPlatform("linux")]
 public class LibSecretLinuxProvider : ISecretProvider
 {
     /// <inheritdoc />
@@ -40,11 +42,16 @@ public class LibSecretLinuxProvider : ISecretProvider
     /// <inheritdoc />
     public string Description => Strings.LibSecretLinuxProvider.Description;
 
-    /// <inheritdoc />
-    public bool IsSupported => OperatingSystem.IsLinux() && SecretCollection.IsSupported();
+    /// <summary>
+    /// Cached support check for libsecret so we only evaluate availability once.
+    /// </summary>
+    private static readonly Lazy<bool> _isSupported = new(static () => OperatingSystem.IsLinux() && SecretCollection.IsSupported());
 
     /// <inheritdoc />
-    public bool IsSetSupported => IsSupported;
+    public bool IsSupported() => _isSupported.Value;
+
+    /// <inheritdoc />
+    public bool IsSetSupported => IsSupported();
 
     /// <summary>
     /// The configuration for the secret provider

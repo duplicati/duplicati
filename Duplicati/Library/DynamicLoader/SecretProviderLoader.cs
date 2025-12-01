@@ -168,11 +168,11 @@ public class SecretProviderLoader
         if (OperatingSystem.IsLinux())
         {
             ISecretProvider tmp = new LibSecretLinuxProvider();
-            if (tmp.IsSupported)
+            if (tmp.IsSupported())
                 return tmp;
 
             tmp = new UnixPassProvider();
-            if (tmp.IsSupported)
+            if (tmp.IsSupported())
                 return tmp;
         }
 

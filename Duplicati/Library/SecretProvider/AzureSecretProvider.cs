@@ -44,7 +44,7 @@ public class AzureSecretProvider : ISecretProvider
     public string Description => Strings.AzureSecretProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported => true;
+    public bool IsSupported() => true;
 
     /// <inheritdoc />
     public bool IsSetSupported => true;

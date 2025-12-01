@@ -46,7 +46,7 @@ public class AWSSecretProvider : ISecretProvider
     public string Description => Strings.AWSSecretProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported => true;
+    public bool IsSupported() => true;
 
     /// <inheritdoc />
     public bool IsSetSupported => true;

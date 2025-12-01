@@ -46,7 +46,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
         public IList<ICommandLineArgument> SupportedCommands => [];
 
-        public bool IsSupported => true;
+        public bool IsSupported() => true;
         public bool IsSetSupported => true;
 
         public bool ThrowOnInit { get; set; }

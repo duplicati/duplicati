@@ -42,6 +42,5 @@ public static class SecretProviderModules
         OperatingSystem.IsLinux() ? new LibSecretLinuxProvider() : null,
     }
     .WhereNotNull()
-    .Where(sp => sp.IsSupported)
     .ToList();
 }

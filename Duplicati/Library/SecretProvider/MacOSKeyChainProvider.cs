@@ -21,6 +21,7 @@
 
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Web;
 using Duplicati.Library.Interface;
@@ -31,6 +32,7 @@ namespace Duplicati.Library.SecretProvider;
 /// <summary>
 /// Implementation of a secret provider that reads secrets from the MacOS keychain
 /// </summary>
+[SupportedOSPlatform("macos")]
 public class MacOSKeyChainProvider : ISecretProvider
 {
     /// <inheritdoc />
@@ -43,10 +45,10 @@ public class MacOSKeyChainProvider : ISecretProvider
     public string Description => Strings.MacOSKeyChainProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported => OperatingSystem.IsMacOS();
+    public bool IsSupported() => OperatingSystem.IsMacOS();
 
     /// <inheritdoc />
-    public bool IsSetSupported => IsSupported;
+    public bool IsSetSupported => IsSupported();
 
     /// <summary>
     /// The type of password to get

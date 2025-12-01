@@ -53,7 +53,7 @@ public class GCSSecretProvider : ISecretProvider
     public string Description => Strings.GCSSecretProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported => true;
+    public bool IsSupported() => true;
 
     /// <inheritdoc />
     public bool IsSetSupported => true;

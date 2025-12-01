@@ -47,7 +47,7 @@ public class FileSecretProvider : ISecretProvider
     public string Description => Strings.FileSecretProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported => true;
+    public bool IsSupported() => true;
 
     /// <inheritdoc />
     public bool IsSetSupported => !string.IsNullOrWhiteSpace(_passphrase);

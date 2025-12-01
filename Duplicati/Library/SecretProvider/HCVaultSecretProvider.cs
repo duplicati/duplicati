@@ -46,7 +46,7 @@ public class HCVaultSecretProvider : ISecretProvider
     public string Description => Strings.HCVaultSecretProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported => true;
+    public bool IsSupported() => true;
 
     /// <inheritdoc />
     public bool IsSetSupported => true;
