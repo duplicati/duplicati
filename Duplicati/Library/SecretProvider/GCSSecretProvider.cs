@@ -80,6 +80,8 @@ public class GCSSecretProvider : ISecretProvider
         public ApiType? ApiType { get; set; }
         public string? ProjectId { get; set; }
         public string? AccessToken { get; set; }
+        public string? ServiceAccountJson { get; set; }
+        public string? ServiceAccountFile { get; set; }
         public string Version { get; set; } = "latest";
 
         public static CommandLineArgumentDescriptionAttribute? GetCommandLineArgumentDescription(string name)
@@ -88,6 +90,8 @@ public class GCSSecretProvider : ISecretProvider
                 nameof(ApiType) => new CommandLineArgumentDescriptionAttribute() { Name = "api-type", Type = CommandLineArgument.ArgumentType.Enumeration, ShortDescription = Strings.GCSSecretProvider.ApiTypeDescriptionShort, LongDescription = Strings.GCSSecretProvider.ApiTypeDescriptionLong },
                 nameof(ProjectId) => new CommandLineArgumentDescriptionAttribute() { Name = "project-id", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.GCSSecretProvider.ProjectIdDescriptionShort, LongDescription = Strings.GCSSecretProvider.ProjectIdDescriptionLong },
                 nameof(AccessToken) => new CommandLineArgumentDescriptionAttribute() { Name = "access-token", Type = CommandLineArgument.ArgumentType.Password, ShortDescription = Strings.GCSSecretProvider.AccessTokenDescriptionShort, LongDescription = Strings.GCSSecretProvider.AccessTokenDescriptionLong },
+                nameof(ServiceAccountJson) => new CommandLineArgumentDescriptionAttribute() { Name = "service-account-json", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.GCSSecretProvider.ServiceAccountJsonDescriptionShort, LongDescription = Strings.GCSSecretProvider.ServiceAccountJsonDescriptionLong },
+                nameof(ServiceAccountFile) => new CommandLineArgumentDescriptionAttribute() { Name = "service-account-file", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.GCSSecretProvider.ServiceAccountFileDescriptionShort, LongDescription = Strings.GCSSecretProvider.ServiceAccountFileDescriptionLong },
                 nameof(Version) => new CommandLineArgumentDescriptionAttribute() { Name = "version", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.GCSSecretProvider.VersionDescriptionShort, LongDescription = Strings.GCSSecretProvider.VersionDescriptionLong },
                 _ => null
             };
@@ -133,10 +137,17 @@ public class GCSSecretProvider : ISecretProvider
                 _ => throw new UserInformationException($"Unknown API type: {cfg.ApiType}", "UnknownApiType")
             };
 
-        if (!string.IsNullOrWhiteSpace(cfg.AccessToken))
-            builder.Credential = GoogleCredential.FromAccessToken(cfg.AccessToken);
+        GoogleCredential credential;
+        if (!string.IsNullOrWhiteSpace(cfg.ServiceAccountJson))
+            credential = GoogleCredential.FromJson(cfg.ServiceAccountJson);
+        else if (!string.IsNullOrWhiteSpace(cfg.ServiceAccountFile))
+            credential = GoogleCredential.FromFile(cfg.ServiceAccountFile);
+        else if (!string.IsNullOrWhiteSpace(cfg.AccessToken))
+            credential = GoogleCredential.FromAccessToken(cfg.AccessToken);
         else
-            builder.Credential = await GoogleCredential.GetApplicationDefaultAsync(cancellationToken).ConfigureAwait(false);
+            credential = await GoogleCredential.GetApplicationDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+        builder.Credential = credential;
 
         var client = builder.Build();
         var res = client.ListSecretsAsync(new ListSecretsRequest() { ParentAsProjectName = new Google.Api.Gax.ResourceNames.ProjectName(cfg.ProjectId) }, CallSettings.FromCancellationToken(cancellationToken));

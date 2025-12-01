@@ -117,6 +117,7 @@ Example use:
 
 If the access token is not supplied, the default GCS credentials from the machine will be used.
 Use the accesstoken property to specify a custom access token.
+Alternatively, you can supply service-account-json or service-account-file with Google Cloud service account credentials.
 
 ");
     public static string ApiTypeDescriptionShort => LC.L(@"The API type to use");
@@ -125,6 +126,10 @@ Use the accesstoken property to specify a custom access token.
     public static string ProjectIdDescriptionLong => LC.L(@"The ID of the Google Cloud Platform project to use for authentication");
     public static string AccessTokenDescriptionShort => LC.L(@"The access token");
     public static string AccessTokenDescriptionLong => LC.L(@"The access token to use for authentication with Google Cloud Storage. If not supplied, the default GCS credentials from the machine will be used.");
+    public static string ServiceAccountJsonDescriptionShort => LC.L(@"Service account JSON");
+    public static string ServiceAccountJsonDescriptionLong => LC.L(@"String with JSON credentials for a Google Cloud service account. When set, access-token is not required.");
+    public static string ServiceAccountFileDescriptionShort => LC.L(@"Service account JSON file");
+    public static string ServiceAccountFileDescriptionLong => LC.L(@"Path to a file with JSON credentials for a Google Cloud service account. When set, access-token is not required.");
     public static string VersionDescriptionShort => LC.L(@"The secret version to get (or alias)");
     public static string VersionDescriptionLong => LC.L(@"The version of the secret to retrieve from Google Cloud Storage. If not supplied, the latest version will be used.");
 }
