@@ -57,10 +57,11 @@ public class UnixPassProvider : ISecretProvider
     /// <inheritdoc />
     public bool IsSupported()
     {
-        if (string.IsNullOrWhiteSpace(_config?.PassCommand) || _config.PassCommand.ContainsAny(Path.GetInvalidPathChars()) || _config.PassCommand.Contains(Path.PathSeparator))
+        var cmd = _config?.PassCommand ?? DefaultPassCommand;
+        if (string.IsNullOrWhiteSpace(cmd) || cmd.ContainsAny(Path.GetInvalidPathChars()) || cmd.Contains(Path.PathSeparator))
             return false;
 
-        return _passSupportCache.GetOrAdd(_config.PassCommand, pc => new Lazy<bool>(() => CheckPassSupport(pc))).Value;
+        return _passSupportCache.GetOrAdd(cmd, pc => new Lazy<bool>(() => CheckPassSupport(pc))).Value;
     }
 
     /// <inheritdoc />

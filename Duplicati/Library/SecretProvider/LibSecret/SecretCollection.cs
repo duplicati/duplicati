@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System.Runtime.Versioning;
 using System.Text;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using secrets.DBus;
@@ -187,7 +188,7 @@ public class SecretCollection : IDisposable
     /// Checks whether the libsecret DBus service is available on the current platform.
     /// </summary>
     /// <returns><c>true</c> when the provider can be used; otherwise <c>false</c>.</returns>
-    public static bool IsSupported()
+    public static async Task<bool> IsSupported()
     {
         if (!OperatingSystem.IsLinux())
             return false;
@@ -208,7 +209,13 @@ public class SecretCollection : IDisposable
             var service = secretsService.CreateService("/org/freedesktop/secrets");
             var task = service.GetCollectionsAsync();
 
-            return task.Wait(TimeSpan.FromSeconds(5)) && task.Status == TaskStatus.RanToCompletion;
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
+            var finishedTask = Task.WhenAny(task, timeoutTask);
+
+            if (await finishedTask.ConfigureAwait(false) != task)
+                return false;
+
+            return true;
         }
         catch
         {
