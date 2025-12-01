@@ -119,7 +119,7 @@ public static class Program
     /// </summary>
     /// <param name="secretUrl">The secret provider URL.</param>
     /// <returns>The exit code.</returns>
-    private static Task<int> ShowInfo(string? secretUrl)
+    private static async Task<int> ShowInfo(string? secretUrl)
     {
         string? key = null;
         Console.WriteLine($"Supported secret providers on {Library.AutoUpdater.UpdaterManager.OperatingSystemName}:");
@@ -132,7 +132,7 @@ public static class Program
         {
             if (string.IsNullOrWhiteSpace(secretUrl))
             {
-                var defaultProvider = SecretProviderLoader.GetDefaultSecretProviderForOperatingSystem();
+                var defaultProvider = await SecretProviderLoader.GetDefaultSecretProviderForOperatingSystem(CancellationToken.None);
                 if (defaultProvider == null)
                     throw new UserInformationException("No working default secret provider found", "NoDefaultSecretProvider");
 
@@ -172,10 +172,10 @@ public static class Program
         catch (Exception ex) when (ex is not UserInformationException)
         {
             Console.WriteLine($"No information found for secret provider '{key}': {ex.Message}");
-            return Task.FromResult(1);
+            return 1;
         }
 
-        return Task.FromResult(0);
+        return 0;
     }
 
     /// <summary>
