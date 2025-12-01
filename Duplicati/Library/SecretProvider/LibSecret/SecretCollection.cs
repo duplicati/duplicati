@@ -77,19 +77,65 @@ public class SecretCollection : IDisposable
     /// <param name="collectionName">The collection name</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The created secret collection</returns>
-    public static async Task<SecretCollection> CreateAsync(string collectionName, CancellationToken cancellationToken)
+    public static Task<SecretCollection> CreateAsync(string collectionName, CancellationToken cancellationToken)
+        => CreateAsync(collectionName, autoCreateCollection: false, cancellationToken);
+
+    /// <summary>
+    /// Creates a new secret collection and optionally auto-creates it if it does not exist.
+    /// </summary>
+    /// <param name="collectionName">The collection name</param>
+    /// <param name="autoCreateCollection">If set, the collection will be created when it does not exist</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The created secret collection</returns>
+    public static async Task<SecretCollection> CreateAsync(string collectionName, bool autoCreateCollection, CancellationToken cancellationToken)
     {
         var connection = Connection.Session;
         var secretsService = new secretsService(connection, "org.freedesktop.secrets");
         var service = secretsService.CreateService("/org/freedesktop/secrets");
         var (_, sessionPath) = await service.OpenSessionAsync("plain", "").ConfigureAwait(false);
-        collectionName ??= "";
+        collectionName ??= string.Empty;
 
-        var collectionPath = (await service.GetCollectionsAsync().ConfigureAwait(false))
+        var collections = await service.GetCollectionsAsync().ConfigureAwait(false);
+        var collectionPath = collections
             .FirstOrDefault(c => c.ToString().EndsWith(collectionName, StringComparison.OrdinalIgnoreCase));
 
         if (!collectionPath.ToString().EndsWith(collectionName, StringComparison.OrdinalIgnoreCase))
-            throw new UserInformationException($"Collection {collectionName} not found", "CollectionNotFound");
+        {
+            if (!autoCreateCollection)
+                throw new UserInformationException($"Collection {collectionName} not found", "CollectionNotFound");
+
+            // Auto-create the collection
+            var properties = new Dictionary<string, VariantValue>
+            {
+                ["org.freedesktop.Secret.Collection.Label"] = VariantValue.String(collectionName)
+            };
+
+            var (createdCollectionPath, promptPath) = await service.CreateCollectionAsync(properties, collectionName).ConfigureAwait(false);
+
+            if (promptPath != null && promptPath != "/")
+            {
+                var promptInstance = secretsService.CreatePrompt(promptPath);
+                var completedTask = new TaskCompletionSource<bool>();
+
+                using var _ = await promptInstance.WatchCompletedAsync((exception, result) =>
+                {
+                    if (exception != null)
+                        completedTask.TrySetException(exception);
+                    else if (result.Dismissed)
+                        completedTask.TrySetResult(false);
+                    else
+                        completedTask.TrySetResult(true);
+                }).ConfigureAwait(false);
+
+                await promptInstance.PromptAsync(Guid.NewGuid().ToString()).ConfigureAwait(false);
+
+                var done = await completedTask.Task.ConfigureAwait(false);
+                if (!done)
+                    throw new UserInformationException("Dimissed collection create prompt", "CreateCollectionDismissed");
+            }
+
+            collectionPath = createdCollectionPath;
+        }
 
         var session = secretsService.CreateSession(sessionPath);
         var collection = secretsService.CreateCollection(collectionPath.ToString());

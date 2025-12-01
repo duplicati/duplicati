@@ -199,5 +199,7 @@ internal static class LibSecretLinuxProvider
     public static string CollectionDescriptionLong => LC.L("The collection name to use for retrieving secrets from the libsecret password manager");
     public static string CaseSensitiveDescriptionShort => LC.L("Case sensitivity");
     public static string CaseSensitiveDescriptionLong => LC.L("Whether to use case-sensitive matching for secret names");
+    public static string NoAutoCreateCollectionDescriptionShort => LC.L("Disable auto-create collection");
+    public static string NoAutoCreateCollectionDescriptionLong => LC.L("Disables the automatic creation of the collection if it does not exist when accessing libsecret");
 }
 
