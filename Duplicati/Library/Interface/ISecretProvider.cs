@@ -63,7 +63,8 @@ public interface ISecretProvider : IDynamicModule
     /// <summary>
     /// Indicates whether the secret provider is supported on the current platform.
     /// </summary>
-    bool IsSupported();
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task<bool> IsSupported(CancellationToken cancellationToken);
     /// <summary>
     /// Indicates whether the secret provider supports setting secrets.
     /// </summary>

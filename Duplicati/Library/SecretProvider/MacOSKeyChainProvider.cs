@@ -45,10 +45,10 @@ public class MacOSKeyChainProvider : ISecretProvider
     public string Description => Strings.MacOSKeyChainProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported() => OperatingSystem.IsMacOS();
+    public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(OperatingSystem.IsMacOS());
 
     /// <inheritdoc />
-    public bool IsSetSupported => IsSupported();
+    public bool IsSetSupported => true;
 
     /// <summary>
     /// The type of password to get

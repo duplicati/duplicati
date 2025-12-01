@@ -55,17 +55,17 @@ public class UnixPassProvider : ISecretProvider
     private static readonly ConcurrentDictionary<string, Lazy<bool>> _passSupportCache = new();
 
     /// <inheritdoc />
-    public bool IsSupported()
+    public Task<bool> IsSupported(CancellationToken cancellationToken)
     {
         var cmd = _config?.PassCommand ?? DefaultPassCommand;
         if (string.IsNullOrWhiteSpace(cmd) || cmd.ContainsAny(Path.GetInvalidPathChars()) || cmd.Contains(Path.PathSeparator))
-            return false;
+            return Task.FromResult(false);
 
-        return _passSupportCache.GetOrAdd(cmd, pc => new Lazy<bool>(() => CheckPassSupport(pc))).Value;
+        return Task.FromResult(_passSupportCache.GetOrAdd(cmd, pc => new Lazy<bool>(() => CheckPassSupport(pc))).Value);
     }
 
     /// <inheritdoc />
-    public bool IsSetSupported => IsSupported();
+    public bool IsSetSupported => true;
 
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands

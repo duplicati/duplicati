@@ -41,10 +41,10 @@ public class WindowsCredentialManagerProvider : ISecretProvider
     public string Description => Strings.WindowsCredentialManagerProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported() => OperatingSystem.IsWindows();
+    public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(OperatingSystem.IsWindows());
 
     /// <inheritdoc />
-    public bool IsSetSupported => IsSupported();
+    public bool IsSetSupported => true;
 
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => [];

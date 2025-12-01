@@ -46,7 +46,8 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
         public IList<ICommandLineArgument> SupportedCommands => [];
 
-        public bool IsSupported() => true;
+        public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(true);
+
         public bool IsSetSupported => true;
 
         public bool ThrowOnInit { get; set; }

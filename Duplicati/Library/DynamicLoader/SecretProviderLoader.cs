@@ -104,13 +104,13 @@ public class SecretProviderLoader
     /// </summary>
     /// <param name="key">The key to get metadata for</param>
     /// <returns>The key, description, and supported commands</returns>
-    public static (string Key, string DisplayName, string Description, IReadOnlyList<ICommandLineArgument> SupportedCommands, bool IsSupported) GetProviderMetadata(string key)
+    public static async Task<(string Key, string DisplayName, string Description, IReadOnlyList<ICommandLineArgument> SupportedCommands, bool IsSupported)> GetProviderMetadata(string key, CancellationToken cancellationToken)
     {
         var provider = _loader.Value.Interfaces.FirstOrDefault(p => p.Key == key);
         if (provider == null)
             throw new ArgumentException($"No secret provider found for key {key}");
 
-        return (provider.Key, provider.DisplayName, provider.Description, provider.SupportedCommands.AsReadOnly(), provider.IsSupported());
+        return (provider.Key, provider.DisplayName, provider.Description, provider.SupportedCommands.AsReadOnly(), await provider.IsSupported(cancellationToken));
     }
 
     /// <summary>
@@ -179,16 +179,16 @@ public class SecretProviderLoader
         if (OperatingSystem.IsLinux())
         {
             ISecretProvider tmp = new LibSecretLinuxProvider();
-            if (tmp.IsSupported())
+            if (await tmp.IsSupported(cancellationToken))
             {
                 var res = new LibSecretLinuxProvider();
                 await res.InitializeAsync(new Uri("libsecret://"), cancellationToken);
-                if (res.DoesCollectionExist())
+                if (await res.DoesCollectionExist(cancellationToken))
                     return res;
             }
 
             tmp = new UnixPassProvider();
-            if (tmp.IsSupported())
+            if (await tmp.IsSupported(cancellationToken))
             {
                 await tmp.InitializeAsync(new Uri("pass://"), cancellationToken);
                 return tmp;

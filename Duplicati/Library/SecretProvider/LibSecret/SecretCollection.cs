@@ -187,8 +187,9 @@ public class SecretCollection : IDisposable
     /// <summary>
     /// Checks whether the libsecret DBus service is available on the current platform.
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns><c>true</c> when the provider can be used; otherwise <c>false</c>.</returns>
-    public static async Task<bool> IsSupported()
+    public static async Task<bool> IsSupported(CancellationToken cancellationToken)
     {
         if (!OperatingSystem.IsLinux())
             return false;
@@ -209,7 +210,7 @@ public class SecretCollection : IDisposable
             var service = secretsService.CreateService("/org/freedesktop/secrets");
             var task = service.GetCollectionsAsync();
 
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
             var finishedTask = Task.WhenAny(task, timeoutTask);
 
             if (await finishedTask.ConfigureAwait(false) != task)
@@ -229,13 +230,10 @@ public class SecretCollection : IDisposable
     /// to determine if the provider should be considered supported for a given collection.
     /// </summary>
     /// <param name="collectionName">The collection name to check. If null or empty, the default collection name is used.</param>
+    /// param name="cancellationToken">The cancellation token.</param>
     /// <returns><c>true</c> if the collection exists and libsecret is available; otherwise <c>false</c>.</returns>
-    public static bool CollectionExists(string collectionName)
+    public static async Task<bool> CollectionExists(string collectionName, CancellationToken cancellationToken)
     {
-        // First verify that libsecret itself is available and usable.
-        if (!IsSupported())
-            return false;
-
         try
         {
             var connection = Connection.Session;
@@ -245,10 +243,11 @@ public class SecretCollection : IDisposable
             collectionName ??= string.Empty;
 
             var task = service.GetCollectionsAsync();
-            if (!task.Wait(TimeSpan.FromSeconds(5)) || task.Status != TaskStatus.RanToCompletion)
+
+            if (await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(5), cancellationToken)).ConfigureAwait(false) != task)
                 return false;
 
-            var collections = task.Result;
+            var collections = await task.ConfigureAwait(false);
             return collections.Any(c => c.ToString().EndsWith(collectionName, StringComparison.OrdinalIgnoreCase));
         }
         catch

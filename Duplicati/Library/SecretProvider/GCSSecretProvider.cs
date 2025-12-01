@@ -53,7 +53,7 @@ public class GCSSecretProvider : ISecretProvider
     public string Description => Strings.GCSSecretProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported() => true;
+    public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(true);
 
     /// <inheritdoc />
     public bool IsSetSupported => true;

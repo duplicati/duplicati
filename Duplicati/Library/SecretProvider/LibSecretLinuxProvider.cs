@@ -45,13 +45,18 @@ public class LibSecretLinuxProvider : ISecretProvider
     /// <summary>
     /// Cached support check for libsecret so we only evaluate availability once.
     /// </summary>
-    private static readonly Lazy<bool> _isSupported = new(static () => OperatingSystem.IsLinux() && SecretCollection.IsSupported());
+    private static readonly Lazy<Task<bool>> _isSupported = new(static () =>
+    {
+        if (!OperatingSystem.IsLinux())
+            return Task.FromResult(false);
+        return SecretCollection.IsSupported(CancellationToken.None);
+    });
 
     /// <inheritdoc />
-    public bool IsSupported() => _isSupported.Value;
+    public Task<bool> IsSupported(CancellationToken cancellationToken) => _isSupported.Value;
 
     /// <inheritdoc />
-    public bool IsSetSupported => IsSupported();
+    public bool IsSetSupported => true;
 
     /// <summary>
     /// The configuration for the secret provider
@@ -148,20 +153,20 @@ public class LibSecretLinuxProvider : ISecretProvider
     /// <summary>
     /// Checks whether the specified collection exists
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>>True if the collection exists; otherwise false</returns>
-    public bool DoesCollectionExist()
+    public async Task<bool> DoesCollectionExist(CancellationToken cancellationToken)
     {
         if (_cfg is null)
             throw new InvalidOperationException("The secret provider has not been initialized");
         if (!OperatingSystem.IsLinux())
             throw new PlatformNotSupportedException("LibSecret is only supported on Linux");
 
-        var actual = SecretCollection.CollectionExists(_cfg.Collection);
+        var actual = await SecretCollection.CollectionExists(_cfg.Collection, cancellationToken);
         if (actual || !_cfg.Collection.Equals("default", StringComparison.OrdinalIgnoreCase))
             return actual;
 
-        return SecretCollection.CollectionExists(SecretCollection.DefaultCollectionActualName);
-
+        return await SecretCollection.CollectionExists(SecretCollection.DefaultCollectionActualName, cancellationToken);
     }
 
 }

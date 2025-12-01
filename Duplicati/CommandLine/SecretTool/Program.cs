@@ -125,7 +125,7 @@ public static class Program
         Console.WriteLine($"Supported secret providers on {Library.AutoUpdater.UpdaterManager.OperatingSystemName}:");
         foreach (var k in SecretProviderLoader.Keys)
         {
-            var metadata = SecretProviderLoader.GetProviderMetadata(k);
+            var metadata = await SecretProviderLoader.GetProviderMetadata(k, CancellationToken.None);
             Console.WriteLine($"  {k} - {metadata.DisplayName}{(metadata.IsSupported ? "" : " (not supported)")}");
         }
 
@@ -146,7 +146,7 @@ public static class Program
                 var p = secretUrl.IndexOf(':');
                 key = p >= 0 ? secretUrl.Substring(0, p) : secretUrl;
             }
-            var metadata = SecretProviderLoader.GetProviderMetadata(key);
+            var metadata = await SecretProviderLoader.GetProviderMetadata(key, CancellationToken.None);
             if (string.IsNullOrWhiteSpace(secretUrl))
                 Console.WriteLine($"Default secret provider is '{key}'");
             else

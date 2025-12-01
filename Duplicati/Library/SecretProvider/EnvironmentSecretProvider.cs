@@ -38,7 +38,7 @@ public class EnvironmentSecretProvider : ISecretProvider
     public string Description => Strings.EnvironmentSecretProvider.Description;
 
     /// <inheritdoc />
-    public bool IsSupported() => true;
+    public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(true);
 
     /// <inheritdoc />
     public bool IsSetSupported => false; // Don't set env vars as they are not persisted
