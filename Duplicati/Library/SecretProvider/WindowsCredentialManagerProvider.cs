@@ -50,7 +50,7 @@ public class WindowsCredentialManagerProvider : ISecretProvider
     public IList<ICommandLineArgument> SupportedCommands => [];
 
     /// <inheritdoc />
-    public Task InitializeAsync(System.Uri config, CancellationToken cancellationToken)
+    public Task InitializeAsync(Uri config, CancellationToken cancellationToken)
     {
         if (!OperatingSystem.IsWindows())
             throw new PlatformNotSupportedException("Windows Credential Manager is only supported on Windows");

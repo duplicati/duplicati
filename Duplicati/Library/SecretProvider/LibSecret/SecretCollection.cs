@@ -33,6 +33,14 @@ namespace Duplicati.Library.SecretProvider.LibSecret;
 [SupportedOSPlatform("Linux")]
 public class SecretCollection : IDisposable
 {
+    /// <summary>
+    /// The fallback collection name to use when "default" is requested but doesn't exist.
+    /// The "login" collection is automatically unlocked when the user logs in.
+    /// </summary>
+    private const string DefaultCollectionActualName = "login";
+    /// <summary>
+    /// The log tag for the secret collection
+    /// </summary>
     private static readonly string LogTag = Log.LogTagFromType<SecretCollection>();
     /// <summary>
     /// The secrets service
@@ -99,6 +107,17 @@ public class SecretCollection : IDisposable
         var collectionPath = collections
             .FirstOrDefault(c => c.ToString().EndsWith(collectionName, StringComparison.OrdinalIgnoreCase));
 
+        // If "default" collection doesn't exist, fall back to "login" collection
+        if (!collectionPath.ToString().EndsWith(collectionName, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(collectionName, "default", StringComparison.OrdinalIgnoreCase))
+        {
+            collectionPath = collections
+                .FirstOrDefault(c => c.ToString().EndsWith(DefaultCollectionActualName, StringComparison.OrdinalIgnoreCase));
+
+            if (collectionPath.ToString().EndsWith(DefaultCollectionActualName, StringComparison.OrdinalIgnoreCase))
+                collectionName = DefaultCollectionActualName;
+        }
+
         if (!collectionPath.ToString().EndsWith(collectionName, StringComparison.OrdinalIgnoreCase))
         {
             if (!autoCreateCollection)
@@ -110,12 +129,12 @@ public class SecretCollection : IDisposable
                 ["org.freedesktop.Secret.Collection.Label"] = VariantValue.String(collectionName)
             };
 
-            var (createdCollectionPath, promptPath) = await service.CreateCollectionAsync(properties, collectionName).ConfigureAwait(false);
+            var (createdCollectionPath, promptPath) = await service.CreateCollectionAsync(properties, string.Empty).ConfigureAwait(false);
 
             if (promptPath != null && promptPath != "/")
             {
                 var promptInstance = secretsService.CreatePrompt(promptPath);
-                var completedTask = new TaskCompletionSource<bool>();
+                var completedTask = new TaskCompletionSource<string>();
 
                 // Cancel the wait if the caller cancels
                 using var cancellationRegistration = cancellationToken.Register(() =>
@@ -129,27 +148,32 @@ public class SecretCollection : IDisposable
                     if (exception != null)
                         completedTask.TrySetException(exception);
                     else if (result.Dismissed)
-                        completedTask.TrySetResult(false);
+                        completedTask.TrySetException(new UserInformationException("Dismissed collection create prompt", "CreateCollectionDismissed"));
                     else
-                        completedTask.TrySetResult(true);
+                    {
+                        // The result contains the path to the created collection
+                        var resultPath = result.Result.GetObjectPathAsString();
+                        completedTask.TrySetResult(resultPath);
+                    }
                 }).ConfigureAwait(false);
 
                 // Ask the secrets service to show the prompt
-                await promptInstance.PromptAsync(Guid.NewGuid().ToString()).ConfigureAwait(false);
+                await promptInstance.PromptAsync(string.Empty).ConfigureAwait(false);
 
                 // Wait for either completion or a timeout
-                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(60), cancellationToken);
+                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(120), cancellationToken);
                 var finishedTask = await Task.WhenAny(completedTask.Task, timeoutTask).ConfigureAwait(false);
 
                 if (finishedTask != completedTask.Task)
                     throw new UserInformationException("Timed out waiting for libsecret collection create prompt. Ensure that a secret service/keyring is running and able to show prompts.", "CreateCollectionPromptTimeout");
 
-                var done = await completedTask.Task.ConfigureAwait(false);
-                if (!done)
-                    throw new UserInformationException("Dimissed collection create prompt", "CreateCollectionDismissed");
+                var resultPathString = await completedTask.Task.ConfigureAwait(false);
+                collectionPath = new ObjectPath(resultPathString);
             }
-
-            collectionPath = createdCollectionPath;
+            else
+            {
+                collectionPath = createdCollectionPath;
+            }
         }
 
         var session = secretsService.CreateSession(sessionPath);
@@ -193,6 +217,42 @@ public class SecretCollection : IDisposable
     }
 
     /// <summary>
+    /// Checks whether a specific libsecret collection exists.
+    /// This is a non-throwing, best-effort check used by <see cref="Duplicati.Library.SecretProvider.LibSecretLinuxProvider"/>
+    /// to determine if the provider should be considered supported for a given collection.
+    /// </summary>
+    /// <param name="collectionName">The collection name to check. If null or empty, the default collection name is used.</param>
+    /// <returns><c>true</c> if the collection exists and libsecret is available; otherwise <c>false</c>.</returns>
+    public static bool CollectionExists(string collectionName)
+    {
+        // First verify that libsecret itself is available and usable.
+        if (!IsSupported())
+            return false;
+
+        try
+        {
+            var connection = Connection.Session;
+            var secretsService = new secretsService(connection, "org.freedesktop.secrets");
+            var service = secretsService.CreateService("/org/freedesktop/secrets");
+
+            collectionName ??= string.Empty;
+
+            var task = service.GetCollectionsAsync();
+            if (!task.Wait(TimeSpan.FromSeconds(5)) || task.Status != TaskStatus.RanToCompletion)
+                return false;
+
+            var collections = task.Result;
+            return collections.Any(c => c.ToString().EndsWith(collectionName, StringComparison.OrdinalIgnoreCase));
+        }
+        catch
+        {
+            // Any failure in talking to the secrets service or enumerating collections
+            // is treated as the collection not being available.
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Unlocks the collection
     /// </summary>
     /// <returns>The task to await</returns>
@@ -219,7 +279,7 @@ public class SecretCollection : IDisposable
             }).ConfigureAwait(false);
 
             // Prompt
-            await promptInstance.PromptAsync(Guid.NewGuid().ToString()).ConfigureAwait(false);
+            await promptInstance.PromptAsync(string.Empty).ConfigureAwait(false);
 
             // Wait for prompt to be dismissed or completed, with timeout safeguard
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));

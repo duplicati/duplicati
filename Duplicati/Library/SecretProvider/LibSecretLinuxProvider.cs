@@ -144,4 +144,19 @@ public class LibSecretLinuxProvider : ISecretProvider
         var comparer = _cfg.CaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
         await _collection.StoreSecretAsync(key, value, overwrite, comparer, cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Checks whether the specified collection exists
+    /// </summary>
+    /// <returns>>True if the collection exists; otherwise false</returns>
+    public bool DoesCollectionExist()
+    {
+        if (_cfg is null)
+            throw new InvalidOperationException("The secret provider has not been initialized");
+        if (!OperatingSystem.IsLinux())
+            throw new PlatformNotSupportedException("LibSecret is only supported on Linux");
+
+        return SecretCollection.CollectionExists(_cfg.Collection);
+    }
+
 }

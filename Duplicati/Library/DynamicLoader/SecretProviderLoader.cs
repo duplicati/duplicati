@@ -24,6 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.SecretProvider;
 
@@ -159,21 +161,43 @@ public class SecretProviderLoader
     /// Gets the default secret provider for the current operating system
     /// </summary>
     /// <returns>The secret provider or null if none is available</returns>
-    public static ISecretProvider? GetDefaultSecretProviderForOperatingSystem()
+    public static async Task<ISecretProvider?> GetDefaultSecretProviderForOperatingSystem(CancellationToken cancellationToken)
     {
         if (OperatingSystem.IsWindows())
-            return new WindowsCredentialManagerProvider();
+        {
+            var res = new WindowsCredentialManagerProvider();
+            await res.InitializeAsync(new Uri("wincred://"), cancellationToken);
+            return res;
+        }
         if (OperatingSystem.IsMacOS())
-            return new MacOSKeyChainProvider();
+        {
+            var res = new MacOSKeyChainProvider();
+            await res.InitializeAsync(new Uri("keychain://"), cancellationToken);
+            return res;
+        }
+
         if (OperatingSystem.IsLinux())
         {
             ISecretProvider tmp = new LibSecretLinuxProvider();
             if (tmp.IsSupported())
-                return tmp;
+            {
+                var res = new LibSecretLinuxProvider();
+                await res.InitializeAsync(new Uri("libsecret://"), cancellationToken);
+                if (res.DoesCollectionExist())
+                    return res;
+
+                res = new LibSecretLinuxProvider();
+                await res.InitializeAsync(new Uri("libsecret://?collection=Login"), cancellationToken);
+                if (res.DoesCollectionExist())
+                    return res;
+            }
 
             tmp = new UnixPassProvider();
             if (tmp.IsSupported())
+            {
+                await tmp.InitializeAsync(new Uri("pass://"), cancellationToken);
                 return tmp;
+            }
         }
 
         return null;
