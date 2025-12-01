@@ -175,7 +175,7 @@ public class UnixPassProvider : ISecretProvider
             throw new InvalidOperationException("The UnixPassProvider has not been initialized");
 
         if (!overwrite && await SecretExistsAsync(key, _config, cancellationToken).ConfigureAwait(false))
-            throw new InvalidOperationException($"The key '{key}' already exists");
+            throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
 
         await InsertSecretAsync(key, value, _config, overwrite, cancellationToken).ConfigureAwait(false);
     }

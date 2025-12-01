@@ -174,7 +174,7 @@ public class AzureSecretProvider : ISecretProvider
             try
             {
                 await _client.GetSecretAsync(key, cancellationToken: cancellationToken).ConfigureAwait(false);
-                throw new InvalidOperationException($"The key '{key}' already exists");
+                throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
             }
             catch (Azure.RequestFailedException ex) when (ex.Status == 404)
             {

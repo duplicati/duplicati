@@ -387,7 +387,7 @@ public class SecretCollection : IDisposable
         }
 
         if (existingItem != null && !overwrite)
-            throw new InvalidOperationException($"The key '{label}' already exists");
+            throw new UserInformationException($"The key '{label}' already exists", "KeyAlreadyExists");
 
         var secretPayload = (_session.Path, Array.Empty<byte>(), Encoding.UTF8.GetBytes(value), "text/plain");
 

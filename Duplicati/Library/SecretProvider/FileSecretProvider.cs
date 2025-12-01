@@ -106,7 +106,7 @@ public class FileSecretProvider : ISecretProvider
         if (_secrets is null)
             throw new InvalidOperationException("The secret provider has not been initialized");
 
-        return Task.FromResult(keys.ToDictionary(k => k, k => _secrets.TryGetValue(k, out var value) ? value : throw new KeyNotFoundException($"The key '{k}' was not found")));
+        return Task.FromResult(keys.ToDictionary(k => k, k => _secrets.TryGetValue(k, out var value) ? value : throw new UserInformationException($"The key '{k}' was not found", "KeyNotFound")));
     }
 
     /// <inheritdoc />
@@ -116,10 +116,10 @@ public class FileSecretProvider : ISecretProvider
             throw new InvalidOperationException("The secret provider has not been initialized");
 
         if (string.IsNullOrEmpty(_passphrase))
-            throw new InvalidOperationException("The secret provider does not support setting secrets without a passphrase");
+            throw new UserInformationException("The secret provider does not support setting secrets without a passphrase", "PassphraseRequired");
 
         if (!overwrite && _secrets.ContainsKey(key))
-            throw new InvalidOperationException($"The key '{key}' already exists");
+            throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
 
         _secrets[key] = value;
 

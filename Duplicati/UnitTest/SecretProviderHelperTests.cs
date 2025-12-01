@@ -66,7 +66,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
             foreach (var key in keys)
             {
                 if (!Secrets.TryGetValue(key, out var value))
-                    throw new KeyNotFoundException($"The key '{key}' was not found");
+                    throw new UserInformationException($"The key '{key}' was not found", "KeyNotFound");
 
                 result[key] = value;
             }
@@ -77,7 +77,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         public Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
         {
             if (!overwrite && Secrets.ContainsKey(key))
-                throw new InvalidOperationException($"The key '{key}' already exists");
+                throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
             Secrets[key] = value;
             return Task.CompletedTask;
         }

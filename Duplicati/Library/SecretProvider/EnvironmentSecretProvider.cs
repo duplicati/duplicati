@@ -62,7 +62,7 @@ public class EnvironmentSecretProvider : ISecretProvider
                 {
                     var value = envLookup.GetValueOrDefault(k);
                     if (string.IsNullOrWhiteSpace(value))
-                        throw new KeyNotFoundException($"The key '{k}' was not found");
+                        throw new UserInformationException($"The key '{k}' was not found", "KeyNotFound");
                     return value;
                 }
             )

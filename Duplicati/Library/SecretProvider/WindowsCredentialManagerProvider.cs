@@ -72,7 +72,7 @@ public class WindowsCredentialManagerProvider : ISecretProvider
             var cred = CredentialManager.ReadCredential(key);
             var value = cred?.Password;
             if (string.IsNullOrWhiteSpace(value))
-                throw new KeyNotFoundException($"The key '{key}' was not found");
+                throw new UserInformationException($"The key '{key}' was not found", "KeyNotFound");
 
             result[key] = value;
         }
@@ -88,7 +88,7 @@ public class WindowsCredentialManagerProvider : ISecretProvider
 
         var existing = CredentialManager.ReadCredential(key);
         if (existing is not null && !overwrite)
-            throw new InvalidOperationException($"The key '{key}' already exists");
+            throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
 
         var userName = existing?.UserName ?? string.Empty;
         var comment = existing?.Comment ?? string.Empty;

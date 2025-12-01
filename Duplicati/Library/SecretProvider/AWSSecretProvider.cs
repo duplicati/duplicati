@@ -315,7 +315,7 @@ public class AWSSecretProvider : ISecretProvider
         }
 
         if (exists && !overwrite)
-            throw new InvalidOperationException($"The key '{key}' already exists");
+            throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
 
         if (exists)
         {

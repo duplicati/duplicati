@@ -305,7 +305,7 @@ public class HCVaultSecretProvider : ISecretProvider
         }
 
         if (exists && !overwrite)
-            throw new InvalidOperationException($"The key '{key}' already exists");
+            throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
 
         var payload = new Dictionary<string, object>
         {
