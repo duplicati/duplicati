@@ -21,6 +21,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +32,11 @@ using VaultSharp;
 using VaultSharp.V1.AuthMethods.Token;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.SecretManager.V1;
+using Grpc.Core;
 
 namespace Duplicati.UnitTest;
 
@@ -72,29 +78,27 @@ public class SecretProviderSetSecretTests
     [Category("SecretProviders.Remote")]
     public async Task AwsProvider_SetSecret_Works()
     {
-        var accessKey = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AWSSM_ACCESS_KEY");
-        var secretKey = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AWSSM_SECRET_KEY");
-        var region = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AWSSM_REGION");
-        var secretName = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AWSSM_SECRET_NAME");
+        var url = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AWSSM_URL");
 
-        if (string.IsNullOrWhiteSpace(accessKey) || string.IsNullOrWhiteSpace(secretKey) || string.IsNullOrWhiteSpace(region) || string.IsNullOrWhiteSpace(secretName))
-            Assert.Ignore("AWS secret provider tests require DUPLICATI_TEST_AWSSM_* environment variables");
+        if (string.IsNullOrWhiteSpace(url))
+            Assert.Ignore("AWS secret provider tests require DUPLICATI_TEST_AWSSM_URL environment variable");
+
+        var uri = new Uri(url);
+        var queryParams = uri.Query.TrimStart('?').Split('&').Select(p => p.Split('=')).ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
+        var accessKey = queryParams["access-key"];
+        var secretKey = queryParams["secret-key"];
+        var region = queryParams["region"];
+        var secretName = queryParams["secrets"];
 
         AmazonSecretsManagerClient cleanupClient = null;
         string createdSecretId = string.Empty;
 
         try
         {
-            var awsConfig = new AmazonSecretsManagerConfig
-            {
-                RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(region)
-            };
+            cleanupClient = new AmazonSecretsManagerClient(accessKey, secretKey, Amazon.RegionEndpoint.GetBySystemName(region));
 
-            cleanupClient = new AmazonSecretsManagerClient(accessKey, secretKey, awsConfig);
-
-            var query = $"access-key={Uri.EscapeDataString(accessKey)}&secret-key={Uri.EscapeDataString(secretKey)}&region={Uri.EscapeDataString(region)}&secrets={Uri.EscapeDataString(secretName)}";
             var provider = new AWSSecretProvider();
-            await provider.InitializeAsync(new Uri($"awssm://localhost/?{query}"), CancellationToken.None);
+            await provider.InitializeAsync(uri, CancellationToken.None);
 
             var key = $"duplicati-aws-{Guid.NewGuid():N}";
             createdSecretId = key;
@@ -117,7 +121,7 @@ public class SecretProviderSetSecretTests
                 {
                     try
                     {
-                        await cleanupClient.DeleteSecretAsync(new DeleteSecretRequest
+                        await cleanupClient.DeleteSecretAsync(new Amazon.SecretsManager.Model.DeleteSecretRequest
                         {
                             SecretId = createdSecretId,
                             ForceDeleteWithoutRecovery = true
@@ -137,89 +141,137 @@ public class SecretProviderSetSecretTests
     [Category("SecretProviders.Remote")]
     public async Task AzureProvider_SetSecret_Works()
     {
-        var vaultUri = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AZKV_VAULT_URI");
-        var tenantId = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AZKV_TENANT_ID");
-        var clientId = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AZKV_CLIENT_ID");
-        var clientSecret = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AZKV_CLIENT_SECRET");
+        var url = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AZKV_URL");
 
-        if (string.IsNullOrWhiteSpace(vaultUri) || string.IsNullOrWhiteSpace(tenantId) || string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-            Assert.Ignore("Azure secret provider tests require DUPLICATI_TEST_AZKV_* environment variables");
+        if (string.IsNullOrWhiteSpace(url))
+            Assert.Ignore("Azure secret provider tests require DUPLICATI_TEST_AZKV_URL environment variable");
 
-        var query = string.Join('&', new[]
+        var uri = new Uri(url);
+        var queryParams = uri.Query.TrimStart('?').Split('&').Select(p => p.Split('=')).ToDictionary(p => p[0], p => System.Uri.UnescapeDataString(p[1]));
+        var tenantId = queryParams["tenant-id"];
+        var clientId = queryParams["client-id"];
+        var clientSecret = queryParams["client-secret"];
+        var keyVaultName = queryParams["keyvault-name"];
+        var vaultUri = queryParams.TryGetValue("vault-uri", out var vu) ? vu : $"https://{keyVaultName}.vault.azure.net";
+
+        SecretClient cleanupClient = null;
+        string createdSecretId = string.Empty;
+
+        try
         {
-            $"vault-uri={Uri.EscapeDataString(vaultUri)}",
-            "auth-type=clientsecret",
-            $"tenant-id={Uri.EscapeDataString(tenantId)}",
-            $"client-id={Uri.EscapeDataString(clientId)}",
-            $"client-secret={Uri.EscapeDataString(clientSecret)}"
-        });
+            var credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+            cleanupClient = new SecretClient(new System.Uri(vaultUri), credential);
 
-        var provider = new AzureSecretProvider();
-        await provider.InitializeAsync(new Uri($"azkv://localhost/?{query}"), CancellationToken.None);
+            var provider = new AzureSecretProvider();
+            await provider.InitializeAsync(uri, CancellationToken.None);
 
-        var key = $"duplicati-az-{Guid.NewGuid():N}";
-        await provider.SetSecretAsync(key, "value1", overwrite: false, CancellationToken.None);
-        var secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
-        Assert.AreEqual("value1", secrets[key]);
+            var key = $"duplicati-az-{Guid.NewGuid():N}";
+            createdSecretId = key;
+            await provider.SetSecretAsync(key, "value1", overwrite: false, CancellationToken.None);
+            var secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
+            Assert.AreEqual("value1", secrets[key]);
 
-        NUnit.Framework.Assert.ThrowsAsync<InvalidOperationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
+            NUnit.Framework.Assert.ThrowsAsync<InvalidOperationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
 
-        await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
-        var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
-        Assert.AreEqual("value3", updated[key]);
+            await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
+            var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
+            Assert.AreEqual("value3", updated[key]);
+        }
+        finally
+        {
+            if (cleanupClient != null)
+            {
+                if (!string.IsNullOrEmpty(createdSecretId))
+                {
+                    try
+                    {
+                        var operation = await cleanupClient.StartDeleteSecretAsync(createdSecretId).ConfigureAwait(false);
+                        await operation.WaitForCompletionAsync().ConfigureAwait(false);
+                    }
+                    catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+                    {
+                    }
+                }
+            }
+        }
     }
 
     [Test]
     [Category("SecretProviders.Remote")]
     public async Task GcsProvider_SetSecret_Works()
     {
-        var projectId = Environment.GetEnvironmentVariable("DUPLICATI_TEST_GCS_PROJECT_ID");
-        var accessToken = Environment.GetEnvironmentVariable("DUPLICATI_TEST_GCS_ACCESS_TOKEN");
-        var secretId = Environment.GetEnvironmentVariable("DUPLICATI_TEST_GCS_SECRET_ID");
+        var url = Environment.GetEnvironmentVariable("DUPLICATI_TEST_GCS_URL");
 
-        if (string.IsNullOrWhiteSpace(projectId) || string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(secretId))
-            Assert.Ignore("GCS secret provider tests require DUPLICATI_TEST_GCS_* environment variables");
+        if (string.IsNullOrWhiteSpace(url))
+            Assert.Ignore("GCS secret provider tests require DUPLICATI_TEST_GCS_URL environment variable");
 
-        var query = string.Join('&', new[]
+        var uri = new Uri(url);
+        var queryParams = uri.Query.TrimStart('?').Split('&').Select(p => p.Split('=')).ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
+        var projectId = queryParams["project-id"];
+        var accessToken = queryParams["access-token"];
+
+        SecretManagerServiceClient cleanupClient = null;
+        string createdSecretId = string.Empty;
+
+        try
         {
-            $"project-id={Uri.EscapeDataString(projectId)}",
-            $"access-token={Uri.EscapeDataString(accessToken)}",
-            $"version=latest"
-        });
+            var builder = new SecretManagerServiceClientBuilder();
+            builder.Credential = GoogleCredential.FromAccessToken(accessToken);
+            cleanupClient = builder.Build();
 
-        var provider = new GCSSecretProvider();
-        await provider.InitializeAsync(new Uri($"gcsm://localhost/?{query}"), CancellationToken.None);
+            var provider = new GCSSecretProvider();
+            await provider.InitializeAsync(uri, CancellationToken.None);
 
-        var key = $"duplicati-gcs-{Guid.NewGuid():N}";
-        await provider.SetSecretAsync(key, "value1", overwrite: false, CancellationToken.None);
-        var secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
-        Assert.AreEqual("value1", secrets[key]);
+            var key = $"duplicati-gcs-{Guid.NewGuid():N}";
+            createdSecretId = key;
+            await provider.SetSecretAsync(key, "value1", overwrite: false, CancellationToken.None);
+            var secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
+            Assert.AreEqual("value1", secrets[key]);
 
-        NUnit.Framework.Assert.ThrowsAsync<InvalidOperationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
+            NUnit.Framework.Assert.ThrowsAsync<InvalidOperationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
 
-        await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
-        var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
-        Assert.AreEqual("value3", updated[key]);
+            await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
+            var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
+            Assert.AreEqual("value3", updated[key]);
+        }
+        finally
+        {
+            if (cleanupClient != null)
+            {
+                if (!string.IsNullOrEmpty(createdSecretId))
+                {
+                    try
+                    {
+                        await cleanupClient.DeleteSecretAsync(new SecretName(projectId, createdSecretId)).ConfigureAwait(false);
+                    }
+                    catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
+                    {
+                    }
+                }
+            }
+        }
     }
 
     [Test]
     [Category("SecretProviders.Remote")]
     public async Task HcVaultProvider_SetSecret_Works()
     {
-        var host = Environment.GetEnvironmentVariable("DUPLICATI_TEST_HCV_HOST");
-        var token = Environment.GetEnvironmentVariable("DUPLICATI_TEST_HCV_TOKEN");
-        var mount = Environment.GetEnvironmentVariable("DUPLICATI_TEST_HCV_MOUNT") ?? "secret";
-        var secretList = Environment.GetEnvironmentVariable("DUPLICATI_TEST_HCV_SECRETS");
+        var url = Environment.GetEnvironmentVariable("DUPLICATI_TEST_HCV_URL");
 
-        if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(secretList))
-            Assert.Ignore("HashiCorp Vault provider tests require DUPLICATI_TEST_HCV_* environment variables");
+        if (string.IsNullOrWhiteSpace(url))
+            Assert.Ignore("HashiCorp Vault provider tests require DUPLICATI_TEST_HCV_URL environment variable");
+
+        var uri = new Uri(url);
+        var queryParams = uri.Query.TrimStart('?').Split('&').Select(p => p.Split('=')).ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
+        var host = uri.GetLeftPart(UriPartial.Authority);
+        var token = queryParams["token"];
+        var mount = queryParams.TryGetValue("mount", out var m) ? m : "secret";
 
         VaultClient cleanupClient = null;
         string createdSecretId = string.Empty;
 
         try
         {
-            var uri = new Uri($"{host}?token={Uri.EscapeDataString(token)}&secrets={Uri.EscapeDataString(secretList)}&mount={Uri.EscapeDataString(mount)}");
             var provider = new HCVaultSecretProvider();
             await provider.InitializeAsync(uri, CancellationToken.None);
 
