@@ -124,7 +124,7 @@ public static class Program
         string? key = null;
         Console.WriteLine($"Supported secret providers on {Library.AutoUpdater.UpdaterManager.OperatingSystemName}:");
         foreach (var k in SecretProviderLoader.Keys)
-            Console.WriteLine($"  {k}");
+            Console.WriteLine($"  {k}{(SecretProviderLoader.GetProviderMetadata(k).IsSupported ? "" : " (not supported)")}");
 
         Console.WriteLine();
 

@@ -102,13 +102,13 @@ public class SecretProviderLoader
     /// </summary>
     /// <param name="key">The key to get metadata for</param>
     /// <returns>The key, description, and supported commands</returns>
-    public static (string Key, string DisplayName, string Description, IReadOnlyList<ICommandLineArgument> SupportedCommands) GetProviderMetadata(string key)
+    public static (string Key, string DisplayName, string Description, IReadOnlyList<ICommandLineArgument> SupportedCommands, bool IsSupported) GetProviderMetadata(string key)
     {
         var provider = _loader.Value.Interfaces.FirstOrDefault(p => p.Key == key);
         if (provider == null)
             throw new ArgumentException($"No secret provider found for key {key}");
 
-        return (provider.Key, provider.DisplayName, provider.Description, provider.SupportedCommands.AsReadOnly());
+        return (provider.Key, provider.DisplayName, provider.Description, provider.SupportedCommands.AsReadOnly(), provider.IsSupported());
     }
 
     /// <summary>

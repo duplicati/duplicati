@@ -266,7 +266,7 @@ namespace Duplicati.CommandLine
                     foreach (var module in SecretProviderLoader.Keys)
                     {
                         var metadata = SecretProviderLoader.GetProviderMetadata(module);
-                        lines.Add($"- {module}: {metadata.DisplayName}");
+                        lines.Add($"- {module}: {metadata.DisplayName}{(metadata.IsSupported ? "" : " (not supported)")}");
                     }
 
                     tp = tp.Replace("%SECRETPROVIDERS%", string.Join(Environment.NewLine, lines.ToArray()));
