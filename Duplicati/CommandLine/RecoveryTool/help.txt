@@ -91,7 +91,7 @@ Recompress
 
 1) Downloads whole remote storage to <localfolder>.
 2) Recompress from existing compression type to <targetcompression>
-3) If --reencrypt is supplied, again reencrypts using same passphrase (needs to be decrypted for compression type change)
+3) If --reencrypt is supplied, again reencrypts using same passphrase. If the --new-passphrase option is present, encryption happens using the new passphrase instead (needs to be decrypted for compression type change)
 4) If --reupload is supplied, files with old compression are deleted and recompressed files are uploaded back to remote storage (it is recommended to take at least temporary copy of remote storage before enabling this switch)
 
 If --reupload is supplied it is advisable to specify --reencrypt for perfect security.
