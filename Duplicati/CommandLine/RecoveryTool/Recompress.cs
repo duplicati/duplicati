@@ -260,8 +260,9 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                         if (reencrypt && remoteFile.EncryptionModule != null)
                         {
+                            var reencryptPassphrase = string.IsNullOrWhiteSpace(m_Options.NewPassphrase) ? m_Options.Passphrase : m_Options.NewPassphrase;
                             Console.Write(" reencrypting ...");
-                            using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(remoteFile.EncryptionModule, m_Options.Passphrase, options))
+                            using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(remoteFile.EncryptionModule, reencryptPassphrase, options))
                             {
                                 m.Encrypt(localFileTarget, localFileTarget + "." + localFileSourceEncryption);
                                 File.Delete(localFileTarget);

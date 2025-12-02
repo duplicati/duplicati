@@ -414,6 +414,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("prefix", CommandLineArgument.ArgumentType.String, Strings.Options.PrefixShort, Strings.Options.PrefixLong, "duplicati"),
 
             new CommandLineArgument("passphrase", CommandLineArgument.ArgumentType.Password, Strings.Options.PassphraseShort, Strings.Options.PassphraseLong),
+            new CommandLineArgument("new-passphrase", CommandLineArgument.ArgumentType.Password, Strings.Options.PassphraseShort, Strings.Options.PassphraseLong),
             new CommandLineArgument("no-encryption", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoencryptionShort, Strings.Options.NoencryptionLong, "false"),
 
             new CommandLineArgument("number-of-retries", CommandLineArgument.ArgumentType.Integer, Strings.Options.NumberofretriesShort, Strings.Options.NumberofretriesLong, DEFAULT_NUMBER_OF_RETRIES.ToString()),
@@ -827,6 +828,11 @@ namespace Duplicati.Library.Main
         /// Gets the encryption passphrase
         /// </summary>
         public string? Passphrase => GetString("passphrase", null);
+
+        /// <summary>
+        /// Gets the new encryption passphrase
+        /// </summary>
+        public string? NewPassphrase => GetString("new-passphrase", null);
 
         /// <summary>
         /// A value indicating if backups are not encrypted
