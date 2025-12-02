@@ -322,7 +322,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
             new Library.Utility.Uri("test://host?pass=$key2&user=$key1&other=123"),
         };
 
-        Assert.ThrowsAsync<KeyNotFoundException>(() => SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None));
+        Assert.ThrowsAsync<UserInformationException>(() => SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None));
     }
 
     [Test]
