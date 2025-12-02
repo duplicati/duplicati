@@ -121,7 +121,7 @@ public class BackupListService(Connection connection) : IBackupListService
     }
 
     /// <inheritdoc/>
-    public ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile)
+    public ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile, Dictionary<string, string>? replace_settings)
     {
         try
         {
@@ -129,6 +129,32 @@ public class BackupListService(Connection connection) : IBackupListService
                 throw new BadRequestException("Import from commandline not yet implemented");
 
             var ipx = BackupImportExportHandler.LoadConfiguration(tempfile, import_metadata, () => passphrase);
+            if (replace_settings != null)
+            {
+                foreach (var kvp in replace_settings.Where(k => k.Value != null && k.Key.StartsWith("settings.", StringComparison.OrdinalIgnoreCase)).ToDictionary(k => k.Key.Substring("settings.".Length), v => v.Value))
+                {
+                    var setting = ipx.Backup.Settings?.FirstOrDefault(x => string.Equals(x.Name, kvp.Key, StringComparison.OrdinalIgnoreCase));
+                    if (setting == null)
+                    {
+                        ipx.Backup.Settings = (ipx.Backup.Settings ?? []).Append(new Duplicati.Server.Serialization.Implementations.Setting { Name = kvp.Key, Value = kvp.Value, Filter = string.Empty }).ToArray();
+                    }
+                    else
+                    {
+                        setting.Value = kvp.Value;
+                    }
+                }
+
+                if (replace_settings.TryGetValue("name", out var name) && !string.IsNullOrWhiteSpace(name))
+                    ipx.Backup.Name = name;
+                if (replace_settings.TryGetValue("targeturl", out var url) && !string.IsNullOrWhiteSpace(url))
+                    ipx.Backup.TargetURL = url;
+                if (replace_settings.TryGetValue("dbpath", out var dbpath) && !string.IsNullOrWhiteSpace(dbpath))
+                    ipx.Backup.SetDBPath(dbpath);
+                if (replace_settings.TryGetValue("description", out var desc) && !string.IsNullOrWhiteSpace(desc))
+                    ipx.Backup.Description = desc;
+                if (replace_settings.TryGetValue("sources", out var sources) && !string.IsNullOrWhiteSpace(sources))
+                    ipx.Backup.Sources = sources.Split([Path.PathSeparator], StringSplitOptions.RemoveEmptyEntries);
+            }
             if (direct)
             {
                 lock (connection.m_lock)
