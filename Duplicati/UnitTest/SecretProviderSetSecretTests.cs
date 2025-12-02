@@ -40,9 +40,9 @@ using Google.Apis.Auth.OAuth2;
 using Google.Cloud.SecretManager.V1;
 using Grpc.Core;
 using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.UnitTest;
 
@@ -53,10 +53,11 @@ public class SecretProviderSetSecretTests
     public async Task FileProvider_SetSecret_WritesToFile()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"duplicati-secrets-{Guid.NewGuid():N}.json");
-        await File.WriteAllTextAsync(tempFile, "{}", CancellationToken.None);
+        var passphrase = "test1234";
+        await SharpAESCrypt.AESCrypt.EncryptAsync(passphrase, new MemoryStream(System.Text.Encoding.UTF8.GetBytes("{}")), File.Create(tempFile));
 
         var provider = new FileSecretProvider();
-        await provider.InitializeAsync(new Uri(tempFile), CancellationToken.None);
+        await provider.InitializeAsync(new Uri($"file://{tempFile}?passphrase={passphrase}"), CancellationToken.None);
 
         try
         {
@@ -64,13 +65,17 @@ public class SecretProviderSetSecretTests
             var secrets = await provider.ResolveSecretsAsync(new[] { "alpha" }, CancellationToken.None);
             Assert.AreEqual("bravo", secrets["alpha"]);
 
-            NUnit.Framework.Assert.ThrowsAsync<InvalidOperationException>(() => provider.SetSecretAsync("alpha", "charlie", overwrite: false, CancellationToken.None));
+            NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => provider.SetSecretAsync("alpha", "charlie", overwrite: false, CancellationToken.None));
 
             await provider.SetSecretAsync("alpha", "charlie", overwrite: true, CancellationToken.None);
             var updated = await provider.ResolveSecretsAsync(new[] { "alpha" }, CancellationToken.None);
             Assert.AreEqual("charlie", updated["alpha"]);
 
-            using var document = JsonDocument.Parse(await File.ReadAllTextAsync(tempFile, CancellationToken.None));
+            using var ms = new MemoryStream();
+            using var fs = File.OpenRead(tempFile);
+            await SharpAESCrypt.AESCrypt.DecryptAsync(passphrase, fs, ms, SharpAESCrypt.DecryptionOptions.Default with { LeaveOpen = true }, CancellationToken.None);
+            ms.Position = 0;
+            using var document = JsonDocument.Parse(ms);
             Assert.AreEqual("charlie", document.RootElement.GetProperty("alpha").GetString());
         }
         finally
