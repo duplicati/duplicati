@@ -570,10 +570,17 @@ public static partial class Command
 
         if (buildTargets.Any(x => x.OS == OSType.Windows))
             rtcfg.ToggleAuthenticodeSigning();
+        else
+            rtcfg.DisableAuthenticodeSigning();
         if (buildTargets.Any(x => x.OS == OSType.MacOS))
         {
             rtcfg.ToggleSignCodeSigning();
             rtcfg.ToggleNotarizeSigning();
+        }
+        else
+        {
+            rtcfg.DisableSignCodeSigning();
+            rtcfg.DisableNotarizeSigning();
         }
         rtcfg.ToggleGpgSigning();
         rtcfg.ToggleS3Upload();
