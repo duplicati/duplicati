@@ -79,7 +79,12 @@ public class FileSecretProvider : ISecretProvider
         // Get the passphrase from the secrets-passphrase query parameter
         var args = HttpUtility.ParseQueryString(config.Query);
         _passphrase = args[PASSPHRASE_OPTION];
+
         using var fs = File.OpenRead(_filePath);
+
+        if (fs.Length == 0)
+            throw new UserInformationException("The secret file is empty", "EmptySecretFile");
+
         Dictionary<string, string> secrets;
 
         if (string.IsNullOrEmpty(_passphrase))
