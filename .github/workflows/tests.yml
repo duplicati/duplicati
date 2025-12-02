@@ -33,13 +33,13 @@ jobs:
       - name: Run unit tests with coverage
         run: |
           mkdir -p "$GITHUB_WORKSPACE/TestResults/unit"
-          dotnet test --no-build --verbosity minimal --filter "Category!=Integration&ClassName!=SecretProviderSetSecretTests" --collect:"XPlat Code Coverage" --results-directory "$GITHUB_WORKSPACE/TestResults/unit" Duplicati.slnx
+          dotnet test --no-build --verbosity minimal --filter "Category!=Integration&ClassName!~SecretProviderSetSecretTests" --collect:"XPlat Code Coverage" --results-directory "$GITHUB_WORKSPACE/TestResults/unit" Duplicati.slnx
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ${{ github.workspace }}/TestResults/integration/**/coverage.cobertura.xml
+          files: ${{ github.workspace }}/TestResults/unit/**/coverage.cobertura.xml
           flags: unittest,${{ matrix.os }}
 
   integration_tests:
