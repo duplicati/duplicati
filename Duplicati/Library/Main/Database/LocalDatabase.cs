@@ -919,6 +919,21 @@ namespace Duplicati.Library.Main.Database
             if (names == null || !names.Any()) return;
 
             await using var deletecmd = m_connection.CreateCommand(m_rtr);
+
+            var nonAttachedFilesPre = await deletecmd.ExecuteScalarInt64Async(@"
+                SELECT COUNT(*)
+                FROM ""FilesetEntry""
+                WHERE ""FileID"" NOT IN (
+                    SELECT ""ID""
+                    FROM ""FileLookup""
+                )
+            ", token)
+                .ConfigureAwait(false);
+
+            if (nonAttachedFilesPre > 0)
+                throw new ConstraintException($"Refusing to remove remote volumes, detected {nonAttachedFilesPre} file(s) in FilesetEntry without corresponding FileLookup entry");
+
+
             string temptransguid = Library.Utility.Utility.GetHexGuid();
             var volidstable = $"DelVolSetIds-{temptransguid}";
             var blocksetidstable = $"DelBlockSetIds-{temptransguid}";
@@ -1247,7 +1262,7 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
 
             if (nonAttachedFiles > 0)
-                throw new ConstraintException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry");
+                throw new ConstraintException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry after removing remote volumes, rolling back changes");
         }
 
         /// <summary>
