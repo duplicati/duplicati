@@ -96,7 +96,7 @@ public class SecretProviderSetSecretTests
 
         var uri = new Uri(url);
         var queryParams = uri.Query.TrimStart('?').Split('&').Select(p => p.Split('=')).ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
-        var accessKey = queryParams["access-key"];
+        var accessKey = queryParams["access-id"];
         var secretKey = queryParams["secret-key"];
         var region = queryParams["region"];
         var secretName = queryParams["secrets"];
@@ -182,7 +182,7 @@ public class SecretProviderSetSecretTests
             var secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
             Assert.AreEqual("value1", secrets[key]);
 
-            NUnit.Framework.Assert.ThrowsAsync<InvalidOperationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
+            NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
 
             await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
             var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
@@ -219,7 +219,7 @@ public class SecretProviderSetSecretTests
         var uri = new Uri(url);
         var queryParams = uri.Query.TrimStart('?').Split('&').Select(p => p.Split('=')).ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
         var projectId = queryParams["project-id"];
-        var accessToken = queryParams["access-token"];
+        var serviceAccountJson = queryParams["service-account-json"];
 
         SecretManagerServiceClient cleanupClient = null;
         string createdSecretId = string.Empty;
@@ -227,7 +227,7 @@ public class SecretProviderSetSecretTests
         try
         {
             var builder = new SecretManagerServiceClientBuilder();
-            builder.Credential = GoogleCredential.FromAccessToken(accessToken);
+            builder.Credential = GoogleCredential.FromJson(serviceAccountJson);
             cleanupClient = builder.Build();
 
             var provider = new GCSSecretProvider();
