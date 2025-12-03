@@ -96,7 +96,7 @@ jobs:
         run: dotnet publish -c Debug -o published Duplicati.slnx
       - name: Start server
         run: |
-          ./published/Duplicati.Server --disable-database-encryption --webservice-password=easy1234 > server.log 2>&1 &
+          ./published/Duplicati.Server --disable-db-encryption --webservice-password=easy1234 > server.log 2>&1 &
           SERVER_PID=$!
           echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
           timeout 30 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/127.0.0.1/8200; do sleep 1; echo waiting; done'
