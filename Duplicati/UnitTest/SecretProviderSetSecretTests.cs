@@ -40,9 +40,11 @@ using Google.Apis.Auth.OAuth2;
 using Google.Cloud.SecretManager.V1;
 using Grpc.Core;
 using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
 using Duplicati.Library.Interface;
+using Docker.DotNet;
 
 namespace Duplicati.UnitTest;
 
@@ -319,10 +321,28 @@ public class SecretProviderSetSecretTests
         }
     }
 
+    private static async Task<bool> IsDockerAvailable()
+    {
+        try
+        {
+            // Uses default env/OS docker endpoint resolution.
+            using var client = new DockerClientConfiguration().CreateClient();
+            await client.System.PingAsync().ConfigureAwait(false);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     [Test]
     [Category("SecretProviders.Remote")]
     public async Task HcVaultProvider_SetSecret_Works_WithTestcontainers()
     {
+        if (!await IsDockerAvailable())
+            Assert.Ignore("Testcontainers not available");
+
         const string rootToken = "duplicati-root-token";
         const string mount = "kv";
         const string probeSecret = "probe";
