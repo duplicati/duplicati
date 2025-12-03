@@ -118,7 +118,7 @@ public class SecretProviderSetSecretTests
             var secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
             Assert.AreEqual("value1", secrets[key]);
 
-            NUnit.Framework.Assert.ThrowsAsync<InvalidOperationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
+            NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
 
             await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
             var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
@@ -239,7 +239,7 @@ public class SecretProviderSetSecretTests
             var secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
             Assert.AreEqual("value1", secrets[key]);
 
-            NUnit.Framework.Assert.ThrowsAsync<InvalidOperationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
+            NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
 
             await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
             var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
