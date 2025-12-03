@@ -73,9 +73,11 @@
       <!-- Note: This is suboptimal, but the ref counting is not working, so we use Early REP -->
       <RemoveExistingProducts After="FindRelatedProducts" />
 
-      <!-- Stop the service before install. Skip during nested uninstall (UPGRADINGPRODUCTCODE is set when old product is being removed during upgrade) -->
-      <Custom Action="StopService" Before="RemoveExistingProducts">NOSCRIPT &lt;&gt; "true" AND NOT UPGRADINGPRODUCTCODE</Custom>
-      <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_STOPPED=1 AND NOSCRIPT &lt;&gt; "true" AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <!-- Check service status early (immediate action, can run anytime) -->
+      <Custom Action="CheckService" After="FindRelatedProducts">NOSCRIPT &lt;&gt; "true" AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <!-- Stop and start service must be deferred actions between InstallInitialize and InstallFinalize -->
+      <Custom Action="StopService" After="InstallInitialize">SERVICE_WAS_STOPPED=1 AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_STOPPED=1 AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
     </InstallExecuteSequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
@@ -86,15 +88,22 @@
     <Icon Id="DuplicatiIcon.exe" SourceFile="$(var.HarvestPath)Duplicati.GUI.TrayIcon.exe" />
     
     <!-- Service restart code below -->
+    <Binary Id="CheckServiceScript" SourceFile="CheckService.js" />
     <Binary Id="StopServiceScript" SourceFile="StopService.js" />
     <Binary Id="StartServiceScript" SourceFile="StartService.js" />
+
+    <CustomAction Id="CheckService"
+              BinaryKey="CheckServiceScript"
+              JScriptCall="CustomAction"
+              Execute="immediate"
+              Return="ignore" />
 
     <CustomAction Id="StopService"
               BinaryKey="StopServiceScript"
               JScriptCall="CustomAction"
-              Execute="immediate"
-              Return="ignore"
-              Property="SERVICE_WAS_STOPPED" />
+              Execute="deferred"
+              Impersonate="no"
+              Return="ignore" />
 
     <CustomAction Id="StartService"
               BinaryKey="StartServiceScript"
