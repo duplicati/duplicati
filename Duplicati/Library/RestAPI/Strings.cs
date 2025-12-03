@@ -82,7 +82,7 @@ Error message: {0}", error); }
                 public static string WebserverTokenDurationDescription { get { return LC.L(@"The duration of the refresh tokens issued by the server. This value indicates how much time can pass without activity before the user is asked to log in again. The value must be greater than zero and is capped at 30 days."); } }
                 public static string DisabledbencryptionLong { get { return LC.L(@"Use this option to disable database encryption of sensitive fields"); } }
                 public static string DisabledbencryptionShort { get { return LC.L(@"Disable database encryption"); } }
-                public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log. The provided name is in the format Log:Source. If no log name is provided, Duplicati is used."); } }
+                public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log. The provided name is in the format Log:Source. If no log name is provided, ""Duplicati 2"" is used."); } }
                 public static string LogwindowseventlogShort { get { return LC.L(@"Log to the Windows event log"); } }
                 public static string LogwindowseventloglevelLong { get { return LC.L(@"Use this option to set the log level for the Windows event log."); } }
                 public static string LogwindowseventloglevelShort { get { return LC.L(@"Set the log level for the Windows event log"); } }
