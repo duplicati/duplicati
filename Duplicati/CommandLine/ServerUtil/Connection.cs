@@ -562,15 +562,17 @@ public class Connection
     /// <param name="file">The file to import</param>
     /// <param name="password">The password to use</param>
     /// <param name="importMetadata">Whether to import metadata</param>
+    /// <param name="extraSettings">Extra settings to apply to the imported backup</param>
     /// <returns>The backup</returns>
-    public async Task<BackupEntry> ImportBackup(string file, string? password, bool importMetadata)
+    public async Task<BackupEntry> ImportBackup(string file, string? password, bool importMetadata, Dictionary<string, string> extraSettings)
     {
         var payload = JsonContent.Create(new
         {
             config = Convert.ToBase64String(await File.ReadAllBytesAsync(file)),
             import_metadata = importMetadata,
             passphrase = password,
-            direct = true
+            direct = true,
+            replace_settings = extraSettings
         });
         var response = await client.PostAsync("backups/import", payload);
         await EnsureSuccessStatusCodeWithParsing(response);

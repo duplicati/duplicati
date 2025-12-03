@@ -106,6 +106,40 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task ImportSupportsProvidingPassphraseOverride()
+    {
+        var backupPassphrase = "integration-passphrase";
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase).ConfigureAwait(false);
+            var exportBytes = await ExportConfigurationAsync(httpClient, backupId, exportPasswords: false).ConfigureAwait(false);
+            Assert.That(exportBytes.Length, Is.GreaterThan(0), "Export configuration should produce a payload");
+
+            var importRequest = new ImportBackupInputDto(
+                Convert.ToBase64String(exportBytes),
+                cmdline: false,
+                import_metadata: true,
+                direct: true,
+                temporary: false,
+                passphrase: null,
+                replace_settings: new Dictionary<string, string>() { { "settings.passphrase", backupPassphrase } }
+            );
+
+            var response = await httpClient.PostAsJsonAsync("/api/v1/backups/import", importRequest, JsonOptions).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<ImportBackupOutputDto>(JsonOptions).ConfigureAwait(false)
+                         ?? throw new InvalidOperationException("Import response was empty");
+
+            Assert.That(result.Id, Is.Not.Null.And.Not.Empty, "Import should return a backup ID");
+
+            var importedBackup = await AssertBackupListedAsync(httpClient, result.Id).ConfigureAwait(false);
+            Assert.That(importedBackup.IsUnencryptedOrPassphraseStored, Is.True, "Imported backup should be ready to run without prompting for a passphrase");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task ServerMetadataEndpointsReturnData()
     {
         var entryAssemblyLocation = Duplicati.Library.Utility.Utility.getEntryAssembly().Location;
@@ -419,14 +453,14 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }
     }
 
-    private static async Task<byte[]> ExportConfigurationAsync(HttpClient httpClient, string backupId)
+    private static async Task<byte[]> ExportConfigurationAsync(HttpClient httpClient, string backupId, bool exportPasswords = true)
     {
         var tokenResponse = await httpClient.PostAsync("/api/v1/auth/issuetoken/export", null).ConfigureAwait(false);
         tokenResponse.EnsureSuccessStatusCode();
         var token = await tokenResponse.Content.ReadFromJsonAsync<SingleOperationTokenOutputDto>(JsonOptions).ConfigureAwait(false)
                     ?? throw new InvalidOperationException("Token response was empty");
 
-        var exportResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}/export?token={Uri.EscapeDataString(token.Token)}&export-passwords=true").ConfigureAwait(false);
+        var exportResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}/export?token={Uri.EscapeDataString(token.Token)}&export-passwords={exportPasswords.ToString().ToLowerInvariant()}").ConfigureAwait(false);
         exportResponse.EnsureSuccessStatusCode();
         return await exportResponse.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
     }
@@ -439,7 +473,8 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             import_metadata: true,
             direct: true,
             temporary: false,
-            passphrase: null);
+            passphrase: null,
+            replace_settings: null);
 
         var response = await httpClient.PostAsJsonAsync("/api/v1/backups/import", importRequest, JsonOptions).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
