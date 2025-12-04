@@ -296,6 +296,46 @@ jobs:
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
 
+  test_webdav:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    name: WebDAV Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
+      - name: Setup Testcontainers Cloud Client
+        uses: atomicjar/testcontainers-cloud-setup-action@v1
+        with:
+          token: "${{ secrets.TC_CLOUD_TOKEN }}"
+      - name: Run WebDAV tests
+        env:
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~WebDavTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
+
   test_pcloud:
     needs: check_secrets
     if: needs.check_secrets.outputs.pcloud_secrets_available == 'true'

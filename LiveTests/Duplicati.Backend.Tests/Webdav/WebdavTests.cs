@@ -138,4 +138,57 @@ public sealed class WebDavTests : BaseSftpgoTest
         await container.StopAsync();
 
     }
+
+    [TestMethod]
+    public async Task TestWebdavHttpDestinationWithSpaces()
+    {
+        var outputConsumer = new OutputConsumer();
+        var filePermissions = UnixFileModes.UserRead | UnixFileModes.UserWrite | UnixFileModes.UserExecute |
+                                        UnixFileModes.GroupRead | UnixFileModes.GroupWrite | UnixFileModes.GroupExecute |
+                                        UnixFileModes.OtherRead | UnixFileModes.OtherWrite | UnixFileModes.OtherExecute;
+
+        var temporaryKeysDir = CreateHttpsCertificates();
+
+        CreateUsersFile(temporaryKeysDir);
+
+        var container = new ContainerBuilder()
+            .WithImage("drakkan/sftpgo")
+            .WithEnvironment("SFTPGO_LOG_LEVEL", "debug")
+            .WithEnvironment("SFTPGO_WEBDAVD__BINDINGS__0__PORT", "8090")
+            .WithEnvironment("SFTPGO_LOADDATA_FROM", "/var/lib/sftpgo/users.json")
+            .WithEnvironment("SFTPGO_LOADDATA_CLEAN", "0")
+            .WithResourceMapping(temporaryKeysDir, "/var/lib/sftpgo/", filePermissions)
+            .WithPortBinding(8092, 8090)
+            .WithOutputConsumer(outputConsumer)
+            .Build();
+
+        Console.WriteLine("Starting container");
+        await container.StartAsync();
+
+        // Once started we will already cleanup temporary directory
+        temporaryKeysDir.Delete(true);
+
+        Console.WriteLine("Waiting X seconds");
+        await Task.Delay(TimeSpan.FromSeconds(5));
+
+        // Print logs
+        Console.WriteLine("Fetching logs...");
+        var containerStartupLogs = await outputConsumer.GetStreamsOutput();
+        Console.WriteLine(containerStartupLogs);
+
+        var destinationWithSpaces = Uri.EscapeDataString("folder with spaces");
+
+        var exitCode = CommandLine.BackendTester.Program.Main(
+            new[] { $"webdav://{TEST_USER_NAME}:{TEST_USER_PASSWORD}@localhost:8092/{destinationWithSpaces}/", "--auto-create-folder=true" }
+                .Concat(Parameters.GlobalTestParameters)
+                .ToArray());
+
+        if (exitCode != 0)
+        {
+            Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
+        }
+
+        Console.WriteLine("Stopping container");
+        await container.StopAsync();
+    }
 }
