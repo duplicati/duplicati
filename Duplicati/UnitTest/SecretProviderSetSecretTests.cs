@@ -40,7 +40,6 @@ using Google.Apis.Auth.OAuth2;
 using Google.Cloud.SecretManager.V1;
 using Grpc.Core;
 using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
 using Duplicati.Library.Interface;
@@ -123,7 +122,7 @@ public class SecretProviderSetSecretTests
             NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
 
             await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
-            var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
+            var updated = await ResolveSecretWithRetryAsync(provider, key, "value3");
             Assert.AreEqual("value3", updated[key]);
         }
         finally
@@ -187,7 +186,7 @@ public class SecretProviderSetSecretTests
             NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
 
             await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
-            var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
+            var updated = await ResolveSecretWithRetryAsync(provider, key, "value3");
             Assert.AreEqual("value3", updated[key]);
         }
         finally
@@ -244,7 +243,7 @@ public class SecretProviderSetSecretTests
             NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
 
             await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
-            var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
+            var updated = await ResolveSecretWithRetryAsync(provider, key, "value3");
             Assert.AreEqual("value3", updated[key]);
         }
         finally
@@ -300,7 +299,7 @@ public class SecretProviderSetSecretTests
             NUnit.Framework.Assert.ThrowsAsync<InvalidOperationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
 
             await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
-            var updated = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
+            var updated = await ResolveSecretWithRetryAsync(provider, key, "value3");
             Assert.AreEqual("value3", updated[key]);
         }
         finally
@@ -319,6 +318,32 @@ public class SecretProviderSetSecretTests
                 }
             }
         }
+    }
+
+    private static async Task<IDictionary<string, string>> ResolveSecretWithRetryAsync(ISecretProvider provider, string key, string expected)
+    {
+        var delays = new[]
+        {
+            TimeSpan.Zero,
+            TimeSpan.FromSeconds(1),
+            TimeSpan.FromSeconds(5),
+            TimeSpan.FromSeconds(10)
+        };
+
+        IDictionary<string, string>? secrets = null;
+
+        foreach (var delay in delays)
+        {
+            if (delay > TimeSpan.Zero)
+                await Task.Delay(delay).ConfigureAwait(false);
+
+            secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None).ConfigureAwait(false);
+
+            if (secrets.TryGetValue(key, out var actual) && actual == expected)
+                break;
+        }
+
+        return secrets ?? new Dictionary<string, string>();
     }
 
     private static async Task<bool> IsDockerAvailable()
