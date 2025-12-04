@@ -146,6 +146,15 @@ public static partial class Command
         }
 
         /// <summary>
+        /// Disables Authenticode signing
+        /// </summary>
+        public void DisableAuthenticodeSigning()
+        {
+            _useAuthenticodeSigning = false;
+            _useJsignToolForAuthenticode = false;
+        }
+
+        /// <summary>
         /// Cache value for checking if codesign is possible
         /// </summary>
         private bool? _useCodeSignSigning;
@@ -178,6 +187,22 @@ public static partial class Command
                     throw new Exception("Configuration is not set up for signcode");
                 }
             }
+        }
+
+        /// <summary>
+        /// Disables codesign signing
+        /// </summary>
+        public void DisableSignCodeSigning()
+        {
+            _useCodeSignSigning = false;
+        }
+
+        /// <summary>
+        /// Disables notarize signing
+        /// </summary>
+        public void DisableNotarizeSigning()
+        {
+            _useNotarizeSigning = false;
         }
 
         /// <summary>

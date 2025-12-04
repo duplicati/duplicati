@@ -252,7 +252,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             DefaultUpdateChannel = AutoUpdateSettings.DefaultUpdateChannel.ToString(),
             DefaultUsageReportLevel = Library.UsageReporter.Reporter.DefaultReportLevel,
             OSType = UpdaterManager.OperatingSystemName,
-            OSVersion = Library.UsageReporter.OSInfoHelper.PlatformString,
+            OSVersion = Library.Utility.OSInfoHelper.PlatformString,
             DirectorySeparator = Path.DirectorySeparatorChar,
             PathSeparator = Path.PathSeparator,
             CaseSensitiveFilesystem = Library.Utility.Utility.IsFSCaseSensitive,

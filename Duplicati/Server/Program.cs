@@ -257,6 +257,14 @@ namespace Duplicati.Server
 
                 LiveControl.StateChanged = (e) => { LiveControl_StateChanged(queueRunner, connection, eventPollNotify, scheduler, e); };
 
+                // Invoke it once to set initial state
+                LiveControl_StateChanged(queueRunner, connection, eventPollNotify, scheduler, new LiveControls.LiveControlEvent
+                {
+                    State = LiveControl.State,
+                    TransfersPaused = LiveControl.TransfersPaused,
+                    WaitTimeExpiration = LiveControl.EstimatedPauseEnd
+                });
+
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, PING_PONG_KEEPALIVE_OPTION))
                 {
                     PingPongThread = new Thread(() => PingPongMethod(applicationSettings)) { IsBackground = true };
@@ -1039,7 +1047,7 @@ namespace Duplicati.Server
         /// </summary>
         private static readonly ICommandLineArgument[] WindowsOptions = OperatingSystem.IsWindows()
             ? [
-                new CommandLineArgument(WINDOWS_EVENTLOG_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.LogwindowseventlogShort, Strings.Program.LogwindowseventlogLong),
+                new CommandLineArgument(WINDOWS_EVENTLOG_OPTION, CommandLineArgument.ArgumentType.String, Strings.Program.LogwindowseventlogShort, Strings.Program.LogwindowseventlogLong),
                 new CommandLineArgument(WINDOWS_EVENTLOG_LEVEL_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LogwindowseventloglevelShort, Strings.Program.LogwindowseventloglevelLong, Library.Logging.LogMessageType.Information.ToString(), null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
             ]
             : [];

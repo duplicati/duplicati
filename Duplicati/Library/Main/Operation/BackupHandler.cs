@@ -460,7 +460,7 @@ namespace Duplicati.Library.Main.Operation
                                 Backup.StreamBlockSplitter.Run(channels, options, database, taskreader),
                                 Backup.FileEnumerationProcess.Run(channels, source, journalService,
                                     options.FileAttributeFilter, filter, options.SymlinkPolicy,
-                                    options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames,
+                                    options.HardlinkPolicy, options.DisableBackupExclusionXattr, options.ExcludeEmptyFolders, options.IgnoreFilenames,
                                     GetBlacklistedPaths(options), options.ChangedFilelist, taskreader,
                                     () => result.PartialBackup = true, CancellationToken.None),
                                 Backup.FilePreFilterProcess.Run(channels, options, stats, database, taskreader),

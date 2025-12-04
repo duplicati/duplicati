@@ -377,6 +377,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string OPERATING_SYSTEM = "operating-system";
         /// <summary>
+        /// The operating system detailed template key
+        /// </summary>
+        private const string OPERATING_SYSTEM_DETAILED = "operating-system-detailed";
+        /// <summary>
         /// The installation type template key
         /// </summary>
         private const string INSTALLATION_TYPE = "installation-type";
@@ -384,6 +388,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// The destination type template key
         /// </summary>
         private const string DESTINATION_TYPE = "destination-type";
+        /// <summary>
+        /// The destination host suffix template key
+        /// </summary>
+        private const string DESTINATION_HOST_SUFFIX = "destination-host-suffix";
         /// <summary>
         /// The next scheduled run template key
         /// </summary>
@@ -406,7 +414,7 @@ namespace Duplicati.Library.Modules.Builtin
         private static readonly IReadOnlySet<string> EXTRA_TEMPLATE_KEYS = new HashSet<string>([
             MACHINE_ID, BACKUP_ID, BACKUP_NAME, MACHINE_NAME,
             OPERATING_SYSTEM, INSTALLATION_TYPE, DESTINATION_TYPE, NEXT_SCHEDULED_RUN,
-            UPDATE_CHANNEL
+            UPDATE_CHANNEL, OPERATING_SYSTEM_DETAILED, DESTINATION_HOST_SUFFIX
         ], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
@@ -436,12 +444,16 @@ namespace Duplicati.Library.Modules.Builtin
                     return DataFolderManager.MachineName;
                 case OPERATING_SYSTEM:
                     return UpdaterManager.OperatingSystemName;
+                case OPERATING_SYSTEM_DETAILED:
+                    return OSInfoHelper.PlatformString;
                 case INSTALLATION_TYPE:
                     return UpdaterManager.PackageTypeId;
                 case DESTINATION_TYPE:
                     // Only return the url scheme, as the rest could contain sensitive information
                     var ix = m_remoteurl?.IndexOf("://", StringComparison.OrdinalIgnoreCase) ?? -1;
                     return Utility.Utility.GuessScheme(m_remoteurl) ?? "file";
+                case DESTINATION_HOST_SUFFIX:
+                    return GuessHostSuffixSafe(m_remoteurl);
                 case UPDATE_CHANNEL:
                     return UpdaterManager.CurrentChannel.ToString();
                 default:
@@ -615,5 +627,81 @@ namespace Duplicati.Library.Modules.Builtin
 
         }
 
+        /// <summary>
+        /// Regex used to extract the host from a URL
+        /// </summary>
+        private static readonly Regex hostSuffixRegex = new Regex(@"^(?:[a-zA-Z][a-zA-Z0-9+\-.]*://)?([^/:]+)", RegexOptions.Compiled);
+
+        /// <summary>
+        /// List of host suffixes that are considered public cloud and safe to report
+        /// </summary>
+        private static readonly IEnumerable<string> safeHostSuffixes = new HashSet<string>([
+            ".amazonaws.com",
+            ".impossibleapi.net",
+            ".scw.cloud",
+            ".hosteurope.de",
+            ".dunkel.de",
+            ".dreamhost.com",
+            ".dincloud.com",
+            ".polisystems.ch",
+            ".softlayer.net",
+            ".storadera.com",
+            ".wasabisys.com",
+            ".infomaniak.com",
+            ".infomaniak.cloud",
+            ".sakurastorage.jp",
+            ".lyvecloud.seagate.com",
+            ".digitaloceanspaces.com",
+            ".backblazeb2.com",
+            ".cloudian.com",
+            ".min.io",
+            ".linodeobjects.com",
+            ".bunnycdn.com",
+            ".azure.com",
+            ".googleapis.com",
+            ".ibm.com",
+            ".oracle.com",
+            ".cloudflare.com",
+            ".alibaba.com",
+            ".huawei.com",
+            ".tencent.com",
+            ".baidu.com",
+            ".jd.com",
+            ".ucloud.cn",
+            ".qiniu.com",
+            ".aliyuncs.com",
+            ".tcloud.com",
+            ".tencentcloudapi.com",
+            ".rabata.io",
+        ], StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Attempts to guess a safe host suffix from a URL.
+        /// This attempts to avoid reporting private or sensitive hostnames, and only returns known public cloud suffixes.
+        /// </summary>
+        /// <param name="url">The URL to analyze</param>
+        /// <returns>The host suffix, or null if not found or not safe to report</returns>
+        private static string GuessHostSuffixSafe(string url)
+        {
+            var scheme = Utility.Utility.GuessScheme(url);
+
+            // For now, only report S3 host suffixes
+            if (!string.Equals(scheme, "s3", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            try
+            {
+                var hostname = hostSuffixRegex.Match(url).Groups[1].Value;
+                if (string.IsNullOrEmpty(hostname))
+                    return null;
+
+                // Return the first matching safe suffix
+                return safeHostSuffixes.FirstOrDefault(suffix => hostname.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) ?? null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }

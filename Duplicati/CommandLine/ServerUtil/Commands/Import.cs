@@ -32,12 +32,14 @@ public static class Import
             new Argument<FileInfo>("file", "The file to import, may be encrypted") {
                 Arity = ArgumentArity.ExactlyOne
             },
-            new Argument<string>("passphrase", "The passphrase to use for decryption") {
+            new Argument<string>("passphrase", "The passphrase to use for decryption of the configuration file, if encrypted") {
                 Arity = ArgumentArity.ZeroOrOne
             },
-            new Option<bool>(name: "--import-metadata", description: "Import metadata from the backup", getDefaultValue: () => false)
+            new Option<bool>(name: "--import-metadata", description: "Import metadata from the backup", getDefaultValue: () => false),
+            new Option<string>(name: "--backup-passphrase", description: "The passphrase to inject into the backup configuration after import. Use this option if the configuration was exported without secrets.", getDefaultValue: () => string.Empty),
+            new Option<string>(name: "--backup-url", description: "The url to inject into the backup configuration after import. Use this option to replace the storage URL.", getDefaultValue: () => string.Empty)
         }
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, FileInfo, string, bool>(async (settings, output, file, passphrase, importMetadata) =>
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, FileInfo, string, bool, string, string>(async (settings, output, file, passphrase, importMetadata, backupPassphrase, backupUrl) =>
         {
             if (!file.Exists)
                 throw new UserReportedException($"File {file.FullName} does not exist");
@@ -47,7 +49,7 @@ public static class Import
             {
                 if (output.JsonOutputMode)
                     throw new UserReportedException("No password provided with json mode.");
-                
+
                 if (string.IsNullOrWhiteSpace(passphrase))
                     passphrase = HelperMethods.ReadPasswordFromConsole("The file is encrypted. Please provide the encryption password: ");
 
@@ -62,11 +64,17 @@ public static class Import
                 }
             }
 
+            var extraSettings = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(backupPassphrase))
+                extraSettings.Add("settings.passphrase", backupPassphrase);
+            if (!string.IsNullOrWhiteSpace(backupUrl))
+                extraSettings.Add("targeturl", backupUrl);
+
             var connection = await settings.GetConnection(output);
-            var result = await connection.ImportBackup(file.FullName, passphrase, importMetadata);
+            var result = await connection.ImportBackup(file.FullName, passphrase, importMetadata, extraSettings);
 
             output.AppendConsoleMessage($"Imported \"{result.Name}\" with ID {result.ID}");
-            output.AppendCustomObject( "Imported",new {Id = result.ID, Name = result.Name});
+            output.AppendCustomObject("Imported", new { Id = result.ID, Name = result.Name });
             output.SetResult(true);
         }));
 

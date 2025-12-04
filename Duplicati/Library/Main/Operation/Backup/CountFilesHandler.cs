@@ -47,7 +47,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 Channels channels = new();
                 var enumeratorTask = FileEnumerationProcess.Run(
                     channels, sources, journalService, options.FileAttributeFilter, filter,
-                    options.SymlinkPolicy, options.HardlinkPolicy,
+                    options.SymlinkPolicy, options.HardlinkPolicy, options.DisableBackupExclusionXattr,
                     options.ExcludeEmptyFolders, options.IgnoreFilenames,
                     blacklistPaths, options.ChangedFilelist, taskreader, null, token);
 

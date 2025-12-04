@@ -47,7 +47,6 @@ namespace Duplicati.Library.Backend
 
         public static readonly Dictionary<string, string?> KNOWN_S3_PROVIDERS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
-            { "MyCloudyPlace (EU)", "s3.mycloudyplace.com" },
             { "Impossible Cloud (US)", "us-west-1.storage.impossibleapi.net" },
             { "Scaleway (Amsterdam, The Netherlands)", "s3.nl-ams.scw.cloud" },
             { "Scaleway (Paris, France)", "s3.fr-par.scw.cloud" },
@@ -55,16 +54,16 @@ namespace Duplicati.Library.Backend
             { "Hosteurope", "cs.hosteurope.de" },
             { "Dunkel", "dcs.dunkel.de" },
             { "DreamHost", "objects.dreamhost.com" },
-            { "dinCloud - Chicago", "d3-ord.dincloud.com" },
-            { "dinCloud - Los Angeles", "d3-lax.dincloud.com" },
             { "Poli Systems - 02 (CH)", "s3-02.polisystems.ch" },
             { "Poli Systems - 03 (CH)", "s3-03.polisystems.ch" },
-            { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
+            { "IBM COS (S3) Public US (legacy SoftLayer)", "s3-api.us-geo.objectstorage.softlayer.net" },
+            { "IBM COS (S3) Public US (appdomain)", "s3.us.cloud-object-storage.appdomain.cloud" },
             { "Storadera", "eu-east-1.s3.storadera.com" },
             { "Wasabi US East 1 (N. Virginia)", "s3.wasabisys.com" },
             { "Wasabi US East 2 (N. Virginia)", "s3.us-east-2.wasabisys.com" },
             { "Wasabi US Central 1 (Texas)", "s3.us-central-1.wasabisys.com" },
             { "Wasabi US West 1 (Oregon)", "s3.us-west-1.wasabisys.com" },
+            { "Wasabi US West 2 (San Jose)", "s3.us-west-2.wasabisys.com" },
             { "Wasabi CA Central 1 (Toronto)", "s3.ca-central-1.wasabisys.com" },
             { "Wasabi EU Central 1 (Amsterdam)", "s3.eu-central-1.wasabisys.com" },
             { "Wasabi EU Central 2 (Frankfurt)", "s3.eu-central-2.wasabisys.com" },
@@ -92,8 +91,8 @@ namespace Duplicati.Library.Backend
             { "Mega S4 - Bettembourg", "eu-central-2.s4.mega.io" },
             { "Mega S4 - Montreal", "ca-central-1.s4.mega.io" },
             { "Mega S4 - Vancouver", "ca-west-1.s4.mega.io" },
-            {"Rabata US East 1 (Washington)", "s3.us-east-1.rabata.io" },
-            {"Rabata EU West 2 (Netherlands)", "s3.eu-west-2.rabata.io" },
+            { "Rabata US East 1 (Washington)", "s3.us-east-1.rabata.io" },
+            { "Rabata EU West 2 (Netherlands)", "s3.eu-west-2.rabata.io" },
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
@@ -249,6 +248,18 @@ namespace Duplicati.Library.Backend
             // Auto-disable DNS lookup for non-AWS configurations
             if (!options.ContainsKey("s3-ext-forcepathstyle") && !hostname.EndsWith(".amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
+
+            // Check if hostname is actually an URL
+            if (System.Uri.IsWellFormedUriString(hostname, UriKind.Absolute))
+            {
+                var hosturi = new System.Uri(hostname);
+                if (hosturi.PathAndQuery.Length > 1)
+                    throw new UserInformationException(Strings.S3Backend.NoPathAllowedInEndpointError, "S3NoPathInEndpoint");
+
+                hostname = hosturi.Host;
+                if (!options.ContainsKey(SSL_OPTION))
+                    useSSL = hosturi.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase);
+            }
 
             // Validate that hostname doesn't contain a path
             hostname = hostname.Trim('/').Trim('\\');

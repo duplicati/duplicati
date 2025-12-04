@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.Operation
             yield return string.Format("Version name: \"{0}\" ({1})", AutoUpdater.UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
             yield return string.Format("Current Version folder {0}", System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
 
-            yield return string.Format("OS: {0}", Library.UsageReporter.OSInfoHelper.PlatformString);
+            yield return string.Format("OS: {0}", Library.Utility.OSInfoHelper.PlatformString);
             yield return string.Format("OSType: {0}", AutoUpdater.UpdaterManager.OperatingSystemName);
 
             yield return string.Format("64bit: {0} ({1})", Environment.Is64BitOperatingSystem, Environment.Is64BitProcess);
