@@ -47,6 +47,8 @@ using Docker.DotNet;
 
 namespace Duplicati.UnitTest;
 
+#nullable enable
+
 [TestFixture]
 public class SecretProviderSetSecretTests
 {
@@ -102,7 +104,7 @@ public class SecretProviderSetSecretTests
         var region = queryParams["region"];
         var secretName = queryParams["secrets"];
 
-        AmazonSecretsManagerClient cleanupClient = null;
+        AmazonSecretsManagerClient? cleanupClient = null;
         string createdSecretId = string.Empty;
 
         try
@@ -124,6 +126,22 @@ public class SecretProviderSetSecretTests
             await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
             var updated = await ResolveSecretWithRetryAsync(provider, key, "value3");
             Assert.AreEqual("value3", updated[key]);
+
+            // Verify direct-secret lookup path and missing-key behavior in AWSSecretProvider.ResolveSecretsAsync.
+            var directSecretId = $"duplicati-aws-direct-{Guid.NewGuid():N}";
+            createdSecretId = directSecretId;
+
+            await cleanupClient.CreateSecretAsync(new Amazon.SecretsManager.Model.CreateSecretRequest
+            {
+                Name = directSecretId,
+                SecretString = "direct-value"
+            }).ConfigureAwait(false);
+
+            var directSecrets = await provider.ResolveSecretsAsync(new[] { directSecretId }, CancellationToken.None);
+            Assert.AreEqual("direct-value", directSecrets[directSecretId]);
+
+            NUnit.Framework.Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                provider.ResolveSecretsAsync(new[] { "duplicati-aws-missing-" + Guid.NewGuid().ToString("N") }, CancellationToken.None));
         }
         finally
         {
@@ -166,7 +184,7 @@ public class SecretProviderSetSecretTests
         var keyVaultName = queryParams["keyvault-name"];
         var vaultUri = queryParams.TryGetValue("vault-uri", out var vu) ? vu : $"https://{keyVaultName}.vault.azure.net";
 
-        SecretClient cleanupClient = null;
+        SecretClient? cleanupClient = null;
         string createdSecretId = string.Empty;
 
         try
@@ -222,7 +240,7 @@ public class SecretProviderSetSecretTests
         var projectId = queryParams["project-id"];
         var serviceAccountJson = queryParams["service-account-json"];
 
-        SecretManagerServiceClient cleanupClient = null;
+        SecretManagerServiceClient? cleanupClient = null;
         string createdSecretId = string.Empty;
 
         try
@@ -279,7 +297,7 @@ public class SecretProviderSetSecretTests
         var token = queryParams["token"];
         var mount = queryParams.TryGetValue("mount", out var m) ? m : "secret";
 
-        VaultClient cleanupClient = null;
+        VaultClient? cleanupClient = null;
         string createdSecretId = string.Empty;
 
         try
@@ -375,6 +393,7 @@ public class SecretProviderSetSecretTests
         IContainer? container = null;
         VaultClient? cleanupClient = null;
         string createdSecretId = string.Empty;
+        string secondCreatedSecretId = string.Empty;
 
         try
         {
@@ -474,18 +493,59 @@ public class SecretProviderSetSecretTests
 
             var data2 = secret2?.Data?.Data;
             Assert.IsNotNull(data2, "Vault returned no data for the updated secret");
+
+            // Verify ResolveSecretsAsync direct-secret lookup and missing-key behavior.
+            var resolved = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
+            Assert.AreEqual("value3", resolved[key]);
+
+            // Create a secret where the dictionary key does not match the secret path,
+            // so ResolveSecretsAsync uses the single-entry fallback branch.
+            var singleEntryKey = $"duplicati-hcv-single-{Guid.NewGuid():N}";
+            secondCreatedSecretId = singleEntryKey;
+
+            var singlePayload = new Dictionary<string, object>
+            {
+                ["other"] = "single-value"
+            };
+
+            await cleanupClient.V1.Secrets.KeyValue.V2.WriteSecretAsync(
+                singleEntryKey,
+                singlePayload,
+                null,
+                mount).ConfigureAwait(false);
+
+            var resolvedSingle = await provider.ResolveSecretsAsync(new[] { singleEntryKey }, CancellationToken.None);
+            Assert.AreEqual("single-value", resolvedSingle[singleEntryKey]);
+
+            NUnit.Framework.Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                provider.ResolveSecretsAsync(new[] { "duplicati-hcv-missing-" + Guid.NewGuid().ToString("N") }, CancellationToken.None));
         }
         finally
         {
-            if (cleanupClient != null && !string.IsNullOrEmpty(createdSecretId))
+            if (cleanupClient != null)
             {
-                try
+                if (!string.IsNullOrEmpty(createdSecretId))
                 {
-                    await cleanupClient.V1.Secrets.KeyValue.V2.DeleteSecretAsync(createdSecretId, mountPoint: mount)
-                        .ConfigureAwait(false);
+                    try
+                    {
+                        await cleanupClient.V1.Secrets.KeyValue.V2.DeleteSecretAsync(createdSecretId, mountPoint: mount)
+                            .ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                    }
                 }
-                catch
+
+                if (!string.IsNullOrEmpty(secondCreatedSecretId))
                 {
+                    try
+                    {
+                        await cleanupClient.V1.Secrets.KeyValue.V2.DeleteSecretAsync(secondCreatedSecretId, mountPoint: mount)
+                            .ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                    }
                 }
             }
 
