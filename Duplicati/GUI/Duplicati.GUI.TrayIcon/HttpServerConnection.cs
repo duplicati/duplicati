@@ -87,8 +87,9 @@ namespace Duplicati.GUI.TrayIcon
 
         private record BackgroundRequest(string Method, string Endpoint, string? Body, TimeSpan? Timeout = null);
 
-        private readonly string m_apiUri;
-        private readonly string m_baseUri;
+        private Uri m_serverUri;
+        private string m_apiUri;
+        private string m_baseUri;
         private string m_password;
         private string? m_accesstoken;
         private bool m_isTryingWithPassword;
@@ -114,18 +115,44 @@ namespace Duplicati.GUI.TrayIcon
         private Task m_pollThread;
         private readonly CancellationTokenSource m_stopToken = new CancellationTokenSource();
 
-        private readonly Dictionary<string, string> m_options;
         private readonly Program.PasswordSource m_passwordSource;
+        private readonly TaskCompletionSource<string> m_passwordUpdatedTcs = new TaskCompletionSource<string>();
 
         public IServerStatus Status
         {
             get { return m_status; }
         }
 
+        public void UpdatePassword(string newpassword)
+        {
+            m_password = newpassword;
+            m_accesstoken = null;
+            m_passwordUpdatedTcs.TrySetResult(newpassword);
+        }
+
+        public void UpdateServerUri(Uri newServer)
+        {
+            if (newServer == null)
+                throw new ArgumentNullException(nameof(newServer));
+
+            m_serverUri = newServer;
+            m_baseUri = Util.AppendDirSeparator(m_serverUri.ToString(), "/");
+            m_apiUri = m_baseUri + "api/v1";
+
+            // Reset state to ensure clean reconnection to the new server
+            m_lastEventId = 0;
+            m_lastDataUpdateId = -1;
+            m_lastNotificationId = -1;
+        }
+
         private readonly IChannel<BackgroundRequest> m_workQueue =
             Channel.Create<BackgroundRequest>(name: "TrayIconRequestQueue");
 
         private readonly CancellationToken _applicationExitEvent;
+
+        public Program.PasswordSource PasswordSource => m_passwordSource;
+
+        public Uri ServerUri => m_serverUri;
 
         public HttpServerConnection(IApplicationSettings? applicationSettings, System.Uri server, string password,
             Program.PasswordSource passwordSource, bool disableTrayIconLogin, string acceptedHostCertificate,
@@ -134,7 +161,8 @@ namespace Duplicati.GUI.TrayIcon
             _applicationExitEvent = applicationSettings?.ApplicationExit
                 ?? CancellationToken.None;
 
-            m_baseUri = Util.AppendDirSeparator(server.ToString(), "/");
+            m_serverUri = server;
+            m_baseUri = Util.AppendDirSeparator(m_serverUri.ToString(), "/");
 
             m_apiUri = m_baseUri + "api/v1";
 
@@ -143,7 +171,6 @@ namespace Duplicati.GUI.TrayIcon
             m_firstNotificationTime = DateTime.Now;
 
             m_password = password;
-            m_options = options;
             m_passwordSource = passwordSource;
 
             var acceptedCertificates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -208,8 +235,11 @@ namespace Duplicati.GUI.TrayIcon
             });
         }
 
-        public Task UpdateStatus()
-            => UpdateStatusAsync(false);
+        public async Task UpdateStatus()
+        {
+            await PasswordAvailableIfNeeded().ConfigureAwait(false);
+            await UpdateStatusAsync(false).ConfigureAwait(false);
+        }
 
         private async Task UpdateStatusAsync(bool longpoll)
         {
@@ -258,6 +288,15 @@ namespace Duplicati.GUI.TrayIcon
                 m_disableTrayIconLogin = Library.Utility.Utility.ParseBool(str, false);
         }
 
+        private async Task PasswordAvailableIfNeeded()
+        {
+            if (string.IsNullOrWhiteSpace(m_password) && m_passwordSource == Program.PasswordSource.SuppliedPassword)
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(m_stopToken.Token, _applicationExitEvent);
+                await m_passwordUpdatedTcs.Task.WaitAsync(cts.Token).ConfigureAwait(false);
+            }
+        }
+
         private async Task LongPollRunner()
         {
             var started = DateTime.Now;
@@ -275,6 +314,8 @@ namespace Duplicati.GUI.TrayIcon
                         using var cts = CancellationTokenSource.CreateLinkedTokenSource(m_stopToken.Token, _applicationExitEvent);
                         await Task.Delay(waitTime, cts.Token).ConfigureAwait(false);
                     }
+
+                    await PasswordAvailableIfNeeded().ConfigureAwait(false);
 
                     started = DateTime.Now;
                     await UpdateStatusAsync(true).ConfigureAwait(false);
