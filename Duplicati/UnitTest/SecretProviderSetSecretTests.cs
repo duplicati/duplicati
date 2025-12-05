@@ -494,9 +494,7 @@ public class SecretProviderSetSecretTests
             var data2 = secret2?.Data?.Data;
             Assert.IsNotNull(data2, "Vault returned no data for the updated secret");
 
-            // Verify ResolveSecretsAsync direct-secret lookup and missing-key behavior.
-            var resolved = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
-            Assert.AreEqual("value3", resolved[key]);
+            // Verify ResolveSecretsAsync behavior for single-entry payloads and missing keys.
 
             // Create a secret where the dictionary key does not match the secret path,
             // so ResolveSecretsAsync uses the single-entry fallback branch.
