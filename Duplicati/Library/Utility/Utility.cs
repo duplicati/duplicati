@@ -1972,5 +1972,56 @@ namespace Duplicati.Library.Utility
                         hasher.Dispose();
             }
         }
+        /// <summary>
+        /// Reads a secret value from the console, masking the input.
+        /// </summary>
+        /// <param name="prompt">The prompt to display.</param>
+        /// <returns>The value entered by the user.</returns>
+        /// <remarks>
+        /// Behavior:
+        /// - Input is masked with '*'.
+        /// - Backspace removes the last character and erases the mask.
+        /// - Pressing Escape cancels input and throws <see cref="Interface.CancelException"/>.
+        /// - Control characters (other than Enter/Escape/Backspace) are ignored and not added to the value.
+        /// </remarks>
+        public static string ReadSecretFromConsole(string prompt)
+        {
+            Console.Write(prompt);
+            var value = string.Empty;
+            while (true)
+            {
+                var keyInfo = Console.ReadKey(true);
+
+                // Allow cancellation with ESC
+                if (keyInfo.Key == ConsoleKey.Escape)
+                {
+                    throw new Interface.CancelException("Console secret input canceled by user.");
+                }
+
+                if (keyInfo.Key == ConsoleKey.Enter)
+                {
+                    break;
+                }
+
+                if (keyInfo.Key == ConsoleKey.Backspace)
+                {
+                    if (value.Length > 0)
+                    {
+                        value = value.Substring(0, value.Length - 1);
+                        Console.Write("\b \b");
+                    }
+                }
+                else if (keyInfo.KeyChar != '\u0000' && !char.IsControl(keyInfo.KeyChar))
+                {
+                    // Only accept printable characters; ignore other control characters
+                    value += keyInfo.KeyChar;
+                    Console.Write("*");
+                }
+            }
+
+            Console.WriteLine();
+            return value;
+        }
+
     }
 }

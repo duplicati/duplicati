@@ -46,6 +46,8 @@ The file should be a JSON-encoded object with the secrets as key-value pairs.
 If the file is not encrypted with a passphrase, the passphrase parameter can be omitted.
 The file must be encrypted with AESCrypt if encryption is desired.
 For file-based secrets, the lookup is case-insensitive.
+
+If the file is encrypted, this provider can also write secrets back to the file.
 ");
 
     public static string PassphraseDescriptionShort => LC.L(@"The decryption passphrase");
@@ -56,7 +58,7 @@ internal static class AWSSecretProvider
 {
     public static string DisplayName => LC.L("Secrets from AWS Secrets Manager");
     public static string Description => LC.L(
-@"Secret provider that reads secrets from AWS Secrets Manager
+@"Secret provider that reads and writes secrets from AWS Secrets Manager
 Example use:
     aws://?access-key=...&secret-key=...&region-endpoint=us-east-1&secrets=secret1,secret2
 
@@ -82,7 +84,7 @@ internal static class HCVaultSecretProvider
 {
     public static string DisplayName => LC.L("Secrets from HashiCorp Vault");
     public static string Description => LC.L(
-@"Secret provider that reads secrets from HashiCorp Vault
+@"Secret provider that reads and writes secrets from HashiCorp Vault
 Example use:
     hcv://localhost:1234?token=...&mount=secret&secrets=secret1,secret2
 
@@ -109,12 +111,13 @@ internal static class GCSSecretProvider
 {
     public static string DisplayName => LC.L("Secrets from Google Cloud Storage Secret Manager");
     public static string Description => LC.L(
-@"Secret provider that reads secrets from Google Cloud Storage Secret Manager
+@"Secret provider that reads and writes secrets from Google Cloud Storage Secret Manager
 Example use:
     gcs://?project-id=...&version=latest
 
 If the access token is not supplied, the default GCS credentials from the machine will be used.
 Use the accesstoken property to specify a custom access token.
+Alternatively, you can supply service-account-json or service-account-file with Google Cloud service account credentials.
 
 ");
     public static string ApiTypeDescriptionShort => LC.L(@"The API type to use");
@@ -123,6 +126,10 @@ Use the accesstoken property to specify a custom access token.
     public static string ProjectIdDescriptionLong => LC.L(@"The ID of the Google Cloud Platform project to use for authentication");
     public static string AccessTokenDescriptionShort => LC.L(@"The access token");
     public static string AccessTokenDescriptionLong => LC.L(@"The access token to use for authentication with Google Cloud Storage. If not supplied, the default GCS credentials from the machine will be used.");
+    public static string ServiceAccountJsonDescriptionShort => LC.L(@"Service account JSON");
+    public static string ServiceAccountJsonDescriptionLong => LC.L(@"String with JSON credentials for a Google Cloud service account. When set, access-token is not required.");
+    public static string ServiceAccountFileDescriptionShort => LC.L(@"Service account JSON file");
+    public static string ServiceAccountFileDescriptionLong => LC.L(@"Path to a file with JSON credentials for a Google Cloud service account. When set, access-token is not required.");
     public static string VersionDescriptionShort => LC.L(@"The secret version to get (or alias)");
     public static string VersionDescriptionLong => LC.L(@"The version of the secret to retrieve from Google Cloud Storage. If not supplied, the latest version will be used.");
 }
@@ -131,7 +138,7 @@ internal static class AzureSecretProvider
 {
     public static string DisplayName => LC.L("Secrets from Azure Key Vault");
     public static string Description => LC.L(
-@"Secret provider that reads secrets from Azure Key Vault
+@"Secret provider that reads and writes secrets from Azure Key Vault
 Example use:
     az://?keyvault-name=...&auth-type=ManagedIdentity
 
@@ -166,7 +173,7 @@ If the vault-uri parameter is not provided, the keyvault-name parameter will be 
 internal static class MacOSKeyChainProvider
 {
     public static string DisplayName => LC.L("Secrets from macOS Keychain");
-    public static string Description => LC.L("Secret provider that reads secrets from the macOS Keychain");
+    public static string Description => LC.L("Secret provider that reads and writes secrets from the macOS Keychain");
     public static string ServiceDescriptionShort => LC.L("The service name");
     public static string ServiceDescriptionLong => LC.L("The service name to use for retrieving secrets from the macOS Keychain");
     public static string AccountDescriptionShort => LC.L("The account name");
@@ -178,7 +185,7 @@ internal static class MacOSKeyChainProvider
 internal static class UnixPassProvider
 {
     public static string DisplayName => LC.L("Secrets from Unix pass");
-    public static string Description => LC.L("Secret provider that reads secrets from the Unix pass password manager");
+    public static string Description => LC.L("Secret provider that reads and writes secrets from the Unix pass password manager");
     public static string PassCommandDescriptionShort => LC.L("The pass command");
     public static string PassCommandDescriptionLong => LC.L("The command to use for retrieving secrets from the Unix pass password manager");
 }
@@ -186,16 +193,18 @@ internal static class UnixPassProvider
 internal static class WindowsCredentialManagerProvider
 {
     public static string DisplayName => LC.L("Secrets from Windows Credential Manager");
-    public static string Description => LC.L("Secret provider that reads secrets from the Windows Credential Manager");
+    public static string Description => LC.L("Secret provider that reads and writes secrets from the Windows Credential Manager");
 }
 
 internal static class LibSecretLinuxProvider
 {
     public static string DisplayName => LC.L("Secrets from libsecret");
-    public static string Description => LC.L("Secret provider that reads secrets from the libsecret password manager");
+    public static string Description => LC.L("Secret provider that reads and writes secrets from the libsecret password manager");
     public static string CollectionDescriptionShort => LC.L("The collection name");
-    public static string CollectionDescriptionLong => LC.L("The collection name to use for retrieving secrets from the libsecret password manager");
+    public static string CollectionDescriptionLong => LC.L("The collection name to use for retrieving secrets from the libsecret password manager. The value \"default\" can be used to access the default collection, and will resolve to \"login\" if the system does not have a default collection.");
     public static string CaseSensitiveDescriptionShort => LC.L("Case sensitivity");
     public static string CaseSensitiveDescriptionLong => LC.L("Whether to use case-sensitive matching for secret names");
+    public static string NoAutoCreateCollectionDescriptionShort => LC.L("Disable auto-create collection");
+    public static string NoAutoCreateCollectionDescriptionLong => LC.L("Disables the automatic creation of the collection if it does not exist when accessing libsecret");
 }
 

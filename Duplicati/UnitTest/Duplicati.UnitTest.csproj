@@ -17,6 +17,8 @@
     <PackageReference Include="nunit" Version="4.3.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Testcontainers" Version="3.4.0" />
+    <PackageReference Include="TestContainers.Container.Abstractions" Version="1.5.4" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,6 +52,6 @@
     </ItemGroup>
 
     <Copy SourceFiles="@(_WinMods)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-  </Target>  
+  </Target>
 
 </Project>

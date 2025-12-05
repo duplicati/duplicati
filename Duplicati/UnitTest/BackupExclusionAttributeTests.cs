@@ -29,6 +29,8 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Backup;
 using NUnit.Framework;
 
+#nullable enable
+
 namespace Duplicati.UnitTest;
 
 public class BackupExclusionAttributeTests : BasicSetupHelper

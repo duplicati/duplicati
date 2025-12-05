@@ -42,8 +42,8 @@ public static class ChangePassword
             {
                 if (output.JsonOutputMode)
                     throw new UserReportedException("No password provided with json mode.");
-                
-                newPassword = HelperMethods.ReadPasswordFromConsole("Please provide the new password: ");
+
+                newPassword = Library.Utility.Utility.ReadSecretFromConsole("Please provide the new password: ");
             }
 
             if (string.IsNullOrWhiteSpace(newPassword))

@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.Versioning;
 using Duplicati.Library.Interface;
 using Meziantou.Framework.Win32;
 
@@ -27,6 +28,7 @@ namespace Duplicati.Library.SecretProvider;
 /// <summary>
 /// Secret provider that reads secrets from Windows Credential Manager
 /// </summary>
+[SupportedOSPlatform("windows")]
 public class WindowsCredentialManagerProvider : ISecretProvider
 {
     /// <inheritdoc />
@@ -39,10 +41,16 @@ public class WindowsCredentialManagerProvider : ISecretProvider
     public string Description => Strings.WindowsCredentialManagerProvider.Description;
 
     /// <inheritdoc />
+    public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(OperatingSystem.IsWindows());
+
+    /// <inheritdoc />
+    public bool IsSetSupported => true;
+
+    /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => [];
 
     /// <inheritdoc />
-    public Task InitializeAsync(System.Uri config, CancellationToken cancellationToken)
+    public Task InitializeAsync(Uri config, CancellationToken cancellationToken)
     {
         if (!OperatingSystem.IsWindows())
             throw new PlatformNotSupportedException("Windows Credential Manager is only supported on Windows");
@@ -64,11 +72,34 @@ public class WindowsCredentialManagerProvider : ISecretProvider
             var cred = CredentialManager.ReadCredential(key);
             var value = cred?.Password;
             if (string.IsNullOrWhiteSpace(value))
-                throw new KeyNotFoundException($"The key '{key}' was not found");
+                throw new UserInformationException($"The key '{key}' was not found", "KeyNotFound");
 
             result[key] = value;
         }
 
         return Task.FromResult(result);
+    }
+
+    /// <inheritdoc />
+    public Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (!OperatingSystem.IsWindowsVersionAtLeast(5, 1, 2600))
+            throw new PlatformNotSupportedException("Windows Credential Manager is only supported on Windows");
+
+        var existing = CredentialManager.ReadCredential(key);
+        if (existing is not null && !overwrite)
+            throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
+
+        var userName = existing?.UserName ?? string.Empty;
+        var comment = existing?.Comment ?? string.Empty;
+
+        CredentialManager.WriteCredential(
+            applicationName: key,
+            userName: userName,
+            secret: value,
+            comment: comment,
+            persistence: CredentialPersistence.LocalMachine);
+
+        return Task.CompletedTask;
     }
 }

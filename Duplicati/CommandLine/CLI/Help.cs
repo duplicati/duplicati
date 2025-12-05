@@ -25,6 +25,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.DynamicLoader;
 using FilterGroup = Duplicati.Library.Utility.FilterGroup;
@@ -265,8 +266,8 @@ namespace Duplicati.CommandLine
                     var lines = new List<string>();
                     foreach (var module in SecretProviderLoader.Keys)
                     {
-                        var metadata = SecretProviderLoader.GetProviderMetadata(module);
-                        lines.Add($"- {module}: {metadata.DisplayName}");
+                        var metadata = SecretProviderLoader.GetProviderMetadata(module, CancellationToken.None).Result;
+                        lines.Add($"- {module}: {metadata.DisplayName}{(metadata.IsSupported ? "" : " (not supported)")}");
                     }
 
                     tp = tp.Replace("%SECRETPROVIDERS%", string.Join(Environment.NewLine, lines.ToArray()));

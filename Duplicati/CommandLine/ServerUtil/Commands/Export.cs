@@ -75,7 +75,7 @@ public static class Export
                 {
                     if (output.JsonOutputMode)
                         throw new UserReportedException("No passphrase provided in json mode, cannot proceed");
-                    encryptionPassphrase = HelperMethods.ReadPasswordFromConsole("Please provide a passphrase to encrypt the backup configuration: ");
+                    encryptionPassphrase = Library.Utility.Utility.ReadSecretFromConsole("Please provide a passphrase to encrypt the backup configuration: ");
                     if (string.IsNullOrWhiteSpace(encryptionPassphrase))
                         throw new UserReportedException("No passphrase provided, use --unencrypted to export unencrypted configurations");
                 }
@@ -93,7 +93,7 @@ public static class Export
             output.AppendConsoleMessage($"Exporting {targetbackups.Length} backup{(targetbackups.Length == 1 ? "" : "s")} to {destination.FullName}");
 
             List<dynamic> exportedBackups = [];
-            
+
             foreach (var backup in targetbackups)
             {
                 var name = backup.Name;
@@ -115,6 +115,6 @@ public static class Export
             }
             output.AppendCustomObject("ExportedBackups", exportedBackups);
             output.SetResult(true);
-            
+
         }));
 }
