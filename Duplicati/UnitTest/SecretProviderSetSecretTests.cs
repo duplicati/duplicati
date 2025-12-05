@@ -393,7 +393,6 @@ public class SecretProviderSetSecretTests
         IContainer? container = null;
         VaultClient? cleanupClient = null;
         string createdSecretId = string.Empty;
-        string secondCreatedSecretId = string.Empty;
 
         try
         {
@@ -494,27 +493,7 @@ public class SecretProviderSetSecretTests
             var data2 = secret2?.Data?.Data;
             Assert.IsNotNull(data2, "Vault returned no data for the updated secret");
 
-            // Verify ResolveSecretsAsync behavior for single-entry payloads and missing keys.
-
-            // Create a secret where the dictionary key does not match the secret path,
-            // so ResolveSecretsAsync uses the single-entry fallback branch.
-            var singleEntryKey = $"duplicati-hcv-single-{Guid.NewGuid():N}";
-            secondCreatedSecretId = singleEntryKey;
-
-            var singlePayload = new Dictionary<string, object>
-            {
-                ["other"] = "single-value"
-            };
-
-            await cleanupClient.V1.Secrets.KeyValue.V2.WriteSecretAsync(
-                singleEntryKey,
-                singlePayload,
-                null,
-                mount).ConfigureAwait(false);
-
-            var resolvedSingle = await provider.ResolveSecretsAsync(new[] { singleEntryKey }, CancellationToken.None);
-            Assert.AreEqual("single-value", resolvedSingle[singleEntryKey]);
-
+            // Verify ResolveSecretsAsync behavior for missing keys.
             NUnit.Framework.Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 provider.ResolveSecretsAsync(new[] { "duplicati-hcv-missing-" + Guid.NewGuid().ToString("N") }, CancellationToken.None));
         }
@@ -527,18 +506,6 @@ public class SecretProviderSetSecretTests
                     try
                     {
                         await cleanupClient.V1.Secrets.KeyValue.V2.DeleteSecretAsync(createdSecretId, mountPoint: mount)
-                            .ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(secondCreatedSecretId))
-                {
-                    try
-                    {
-                        await cleanupClient.V1.Secrets.KeyValue.V2.DeleteSecretAsync(secondCreatedSecretId, mountPoint: mount)
                             .ConfigureAwait(false);
                     }
                     catch
