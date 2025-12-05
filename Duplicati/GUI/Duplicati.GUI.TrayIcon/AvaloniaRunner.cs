@@ -34,7 +34,9 @@ using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Themes.Fluent;
+using Avalonia.Styling;
 using Avalonia.Threading;
+using CoCoL;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Logging;
 
@@ -178,6 +180,10 @@ namespace Duplicati.GUI.TrayIcon
 
             if (tcs.Task.IsCompletedSuccessfully)
             {
+                // Check if we need to show the password prompt
+                if (Program.NeedsPasswordPrompt)
+                    ShowPasswordPromptAsync(lifetime).FireAndForget();
+
                 actionDelayer.SignalStart();
             }
             else
@@ -191,6 +197,42 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     Log.WriteErrorMessage(LOGTAG, "AvaloniaShutdownFailed", shutdownEx, "Failed to shutdown Avalonia app");
                 }
+            }
+        }
+
+        private async Task ShowPasswordPromptAsync(IClassicDesktopStyleApplicationLifetime lifetime)
+        {
+            try
+            {
+                var password = await PasswordPrompt.ShowPasswordDialogAsync(isChangePassword: false).ConfigureAwait(false);
+
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    RunOnUIThreadInternal(() =>
+                    {
+                        try
+                        {
+                            lifetime.Shutdown();
+                        }
+                        catch { }
+                    });
+                    return;
+                }
+
+                // Password received, notify the callback
+                Program.Connection.UpdatePassword(password);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteErrorMessage(LOGTAG, "PasswordPromptFailed", ex, "Failed to show password prompt");
+                RunOnUIThreadInternal(() =>
+                {
+                    try
+                    {
+                        lifetime.Shutdown();
+                    }
+                    catch { }
+                });
             }
         }
 
@@ -348,6 +390,8 @@ namespace Duplicati.GUI.TrayIcon
                 MenuIcons.Quit => AvaloniaRunner.LoadBitmap("context-menu-quit.png"),
                 MenuIcons.Pause => AvaloniaRunner.LoadBitmap("context-menu-pause.png"),
                 MenuIcons.Resume => AvaloniaRunner.LoadBitmap("context-menu-resume.png"),
+                MenuIcons.Reconnect => AvaloniaRunner.LoadBitmap("context-menu-reconnect.png"),
+                MenuIcons.ChangePassword => AvaloniaRunner.LoadBitmap("context-menu-change-password.png"),
                 _ => null
             };
         }
@@ -490,6 +534,8 @@ namespace Duplicati.GUI.TrayIcon
 
         public override void OnFrameworkInitializationCompleted()
         {
+            RequestedThemeVariant = ThemeVariant.Default;
+
             Styles.Add(new FluentTheme());
 
             var icon = AvaloniaRunner.LoadIcon("normal.png");

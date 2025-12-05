@@ -23,7 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
 using CoCoL;
@@ -61,6 +60,11 @@ namespace Duplicati.GUI.TrayIcon
         }
 
         public static HttpServerConnection Connection;
+
+        /// <summary>
+        /// Indicates that a password is needed and should be requested via GUI after Avalonia starts
+        /// </summary>
+        public static bool NeedsPasswordPrompt { get; private set; }
 
         private const string HOSTURL_OPTION = "hosturl";
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
@@ -224,14 +228,7 @@ namespace Duplicati.GUI.TrayIcon
                 serverURL = new Uri(url);
 
             if (string.IsNullOrWhiteSpace(password) && passwordSource == PasswordSource.SuppliedPassword)
-            {
-                Console.WriteLine($@"
-When running the TrayIcon without a hosted server, you must provide the server password via the option --{WebServerLoader.OPTION_WEBSERVICE_PASSWORD}=<password>.
-If the TrayIcon instance has read access to the server database, you can also or use the option --{READCONFIGFROMDB_OPTION}, possibly with --server-datafolder=<path>.
-
-No password provided, unable to connect to server, exiting");
-                return 1;
-            }
+                NeedsPasswordPrompt = true;
 
             StartTray(_args, options, hosted, passwordSource, password, acceptedHostCertificate);
 
@@ -255,7 +252,6 @@ No password provided, unable to connect to server, exiting");
                         {
                             // Make sure we have the latest status, but don't care if it fails
                             Connection.UpdateStatus().FireAndForget();
-
                             using (var tk = RunTrayIcon())
                             {
                                 if (Server.Program.ApplicationInstance != null)

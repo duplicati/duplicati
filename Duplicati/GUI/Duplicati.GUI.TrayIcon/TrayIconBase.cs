@@ -24,6 +24,7 @@ using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using CoCoL;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -34,6 +35,8 @@ namespace Duplicati.GUI.TrayIcon
         Quit,
         Pause,
         Resume,
+        Reconnect,
+        ChangePassword
     }
 
     public enum TrayIcons
@@ -73,6 +76,7 @@ namespace Duplicati.GUI.TrayIcon
     public abstract class TrayIconBase : IDisposable
     {
         protected IMenuItem m_reconnectMenu;
+        protected IMenuItem m_changePasswordMenu;
         protected IMenuItem m_openMenu;
         protected IMenuItem m_pauseMenu;
         protected IMenuItem m_quitMenu;
@@ -161,16 +165,39 @@ namespace Duplicati.GUI.TrayIcon
 
         protected IEnumerable<IMenuItem> BuildMenu()
         {
-            m_reconnectMenu = CreateMenuItem("Reconnect", MenuIcons.Resume, Reconnect, null);
+            m_reconnectMenu = CreateMenuItem("Reconnect", MenuIcons.Reconnect, Reconnect, null);
             m_reconnectMenu.SetHidden(true);
+            m_changePasswordMenu = CreateMenuItem("Change Password", MenuIcons.ChangePassword, OnChangePasswordClicked, null);
+            m_changePasswordMenu.SetHidden(true);
             m_openMenu = CreateMenuItem("Open", MenuIcons.Status, OnStatusClicked, null);
             m_openMenu.SetDefault(true);
             return [
                 m_reconnectMenu,
+                m_changePasswordMenu,
                 m_openMenu,
                 m_pauseMenu = CreateMenuItem("Pause", MenuIcons.Pause, OnPauseClicked, null ),
                 m_quitMenu = CreateMenuItem("Quit", MenuIcons.Quit, OnQuitClicked, null),
             ];
+        }
+
+        private void OnChangePasswordClicked()
+        {
+            PasswordPrompt.ShowPasswordDialogAsync(isChangePassword: true)
+                .ContinueWith(t =>
+                {
+                    OnStatusUpdated(Program.Connection.Status);
+                    if (t.IsFaulted)
+                        return;
+
+                    if (string.IsNullOrWhiteSpace(t.Result))
+                        return;
+
+                    Program.Connection.UpdatePassword(t.Result);
+                })
+                .FireAndForget();
+
+            OnStatusUpdated(Program.Connection.Status);
+
         }
 
         private void Reconnect()
@@ -269,7 +296,8 @@ namespace Duplicati.GUI.TrayIcon
 
                 m_openMenu.SetHidden(status.SuggestedStatusIcon == SuggestedStatusIcon.Disconnected);
                 m_pauseMenu.SetHidden(status.SuggestedStatusIcon == SuggestedStatusIcon.Disconnected);
-                m_reconnectMenu.SetHidden(status.SuggestedStatusIcon != SuggestedStatusIcon.Disconnected);
+                m_reconnectMenu.SetHidden(status.SuggestedStatusIcon != SuggestedStatusIcon.Disconnected || PasswordPrompt.IsShowingDialog);
+                m_changePasswordMenu.SetHidden(status.SuggestedStatusIcon != SuggestedStatusIcon.Disconnected || Program.Connection?.PasswordSource != Program.PasswordSource.SuppliedPassword || PasswordPrompt.IsShowingDialog);
             });
 
         #region IDisposable implementation
