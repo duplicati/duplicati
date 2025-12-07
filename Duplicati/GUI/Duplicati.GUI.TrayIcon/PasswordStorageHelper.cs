@@ -99,7 +99,7 @@ public class PasswordStorageHelper
                     await m_secretProvider.SetSecretAsync(
                         HOSTURL_SECRET_NAME,
                         hostUrl ?? string.Empty,
-                        false,
+                        true,
                         cancellationToken);
                 }
 
@@ -108,7 +108,7 @@ public class PasswordStorageHelper
                     await m_secretProvider.SetSecretAsync(
                         PASSWORD_SECRET_NAME,
                         password ?? string.Empty,
-                        false,
+                        true,
                         cancellationToken);
                 }
 
