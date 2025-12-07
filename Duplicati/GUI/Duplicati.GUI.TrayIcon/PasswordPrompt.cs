@@ -22,12 +22,14 @@
 #nullable enable
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.GUI.TrayIcon;
 
@@ -38,15 +40,17 @@ internal static class PasswordPrompt
     /// Shows a password prompt dialog within an already-running Avalonia application.
     /// Must be called from the UI thread or will dispatch to it.
     /// </summary>
+    /// <param name="hostUrl">The host URL to show in the prompt</param>
+    /// <param name="password">The current password to pre-fill, if any</param
     /// <param name="isChangePassword">Whether this is a change password prompt</param>
     /// <returns>A task that completes with the password, or null if cancelled</returns>
-    public static Task<string?> ShowPasswordDialogAsync(bool isChangePassword)
+    public static Task<bool> ShowPasswordDialogAsync(bool isChangePassword)
     {
         if (IsShowingDialog)
             throw new InvalidOperationException("A password prompt dialog is already showing.");
 
         IsShowingDialog = true;
-        var tcs = new TaskCompletionSource<string?>();
+        var tcs = new TaskCompletionSource<bool>();
 
         if (Dispatcher.UIThread.CheckAccess())
         {
@@ -64,27 +68,27 @@ internal static class PasswordPrompt
         });
     }
 
-    private static void ShowDialogInternal(TaskCompletionSource<string?> tcs, bool isChangePassword)
+    private static void ShowDialogInternal(TaskCompletionSource<bool> tcs, bool isChangePassword)
     {
         try
         {
             var window = new PasswordPromptWindow(isChangePassword);
             window.PasswordSubmitted += (_, pwd) =>
             {
-                tcs.TrySetResult(pwd);
+                tcs.TrySetResult(true);
                 window.Close();
             };
 
             window.Cancelled += (_, _) =>
             {
-                tcs.TrySetResult(null);
+                tcs.TrySetResult(false);
                 window.Close();
             };
 
             window.Closed += (_, _) =>
             {
                 // Ensure the task completes even if window is closed another way
-                tcs.TrySetResult(null);
+                tcs.TrySetResult(false);
             };
 
             window.Show();
@@ -92,7 +96,7 @@ internal static class PasswordPrompt
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Failed to show password prompt window: {ex.Message}");
-            tcs.TrySetResult(null);
+            tcs.TrySetResult(false);
         }
     }
 }
@@ -101,6 +105,7 @@ internal class PasswordPromptWindow : Window
 {
     private readonly TextBox passwordBox;
     private readonly TextBox hostUrlBox;
+    private readonly CheckBox saveConfigurationCheckBox;
 
     public event EventHandler<string?>? PasswordSubmitted;
 
@@ -127,6 +132,7 @@ internal class PasswordPromptWindow : Window
         {
             Watermark = "Server password",
             PasswordChar = '•',
+            Text = Program.PasswordStorage.Password ?? string.Empty,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Margin = new Thickness(0, 0, 0, 10)
         };
@@ -140,10 +146,19 @@ internal class PasswordPromptWindow : Window
 
         hostUrlBox = new TextBox
         {
-            Text = Program.Connection?.ServerUri?.ToString() ?? string.Empty,
+            Text = Program.PasswordStorage.HostUrl ?? string.Empty,
             Watermark = "http://localhost:8200",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Margin = new Thickness(0, 0, 0, 10)
+        };
+
+        saveConfigurationCheckBox = new CheckBox
+        {
+            Content = "Save configuration",
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(0, 0, 0, 10),
+            IsChecked = Program.PasswordStorage.ShouldSavePassword,
+            IsVisible = Program.PasswordStorage.IsSetSupported == true,
         };
 
         var okButton = new Button
@@ -183,7 +198,8 @@ internal class PasswordPromptWindow : Window
                 description,
                 passwordBox,
                 hostUrlLabel,
-                hostUrlBox
+                hostUrlBox,
+                saveConfigurationCheckBox
             }
         };
 
@@ -207,22 +223,8 @@ internal class PasswordPromptWindow : Window
         var password = passwordBox.Text;
         var hostUrlText = hostUrlBox.Text?.Trim();
 
-        if (!string.IsNullOrWhiteSpace(hostUrlText) && Program.Connection != null)
-        {
-            try
-            {
-                var uri = new Uri(hostUrlText, UriKind.Absolute);
-
-                if (!uri.Equals(Program.Connection.ServerUri))
-                {
-                    Program.Connection.UpdateServerUri(uri);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Invalid host URL '{hostUrlText}': {ex.Message}");
-            }
-        }
+        Program.PasswordStorage.UpdatePasswordAsync(hostUrlText, password, saveConfigurationCheckBox.IsChecked ?? false, CancellationToken.None)
+            .Await();
 
         PasswordSubmitted?.Invoke(this, password);
     }

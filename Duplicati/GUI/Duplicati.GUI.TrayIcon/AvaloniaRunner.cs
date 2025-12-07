@@ -181,7 +181,7 @@ namespace Duplicati.GUI.TrayIcon
             if (tcs.Task.IsCompletedSuccessfully)
             {
                 // Check if we need to show the password prompt
-                if (Program.NeedsPasswordPrompt)
+                if (Program.PasswordStorage.NeedsPasswordPrompt)
                     ShowPasswordPromptAsync(lifetime).FireAndForget();
 
                 actionDelayer.SignalStart();
@@ -204,9 +204,9 @@ namespace Duplicati.GUI.TrayIcon
         {
             try
             {
-                var password = await PasswordPrompt.ShowPasswordDialogAsync(isChangePassword: false).ConfigureAwait(false);
+                var res = await PasswordPrompt.ShowPasswordDialogAsync(isChangePassword: false).ConfigureAwait(false);
 
-                if (string.IsNullOrWhiteSpace(password))
+                if (!res)
                 {
                     RunOnUIThreadInternal(() =>
                     {
@@ -218,9 +218,6 @@ namespace Duplicati.GUI.TrayIcon
                     });
                     return;
                 }
-
-                // Password received, notify the callback
-                Program.Connection.UpdatePassword(password);
             }
             catch (Exception ex)
             {

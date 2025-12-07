@@ -180,24 +180,11 @@ namespace Duplicati.GUI.TrayIcon
             ];
         }
 
-        private void OnChangePasswordClicked()
+        private async void OnChangePasswordClicked()
         {
-            PasswordPrompt.ShowPasswordDialogAsync(isChangePassword: true)
-                .ContinueWith(t =>
-                {
-                    OnStatusUpdated(Program.Connection.Status);
-                    if (t.IsFaulted)
-                        return;
-
-                    if (string.IsNullOrWhiteSpace(t.Result))
-                        return;
-
-                    Program.Connection.UpdatePassword(t.Result);
-                })
-                .FireAndForget();
-
-            OnStatusUpdated(Program.Connection.Status);
-
+            var res = await PasswordPrompt.ShowPasswordDialogAsync(isChangePassword: true);
+            if (res)
+                await OnStatusUpdated(Program.Connection.Status);
         }
 
         private void Reconnect()
