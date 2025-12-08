@@ -46,7 +46,7 @@ public class PasswordStorageHelper
             {
                 try
                 {
-                    hostUrl = await secretProvider.ResolveSecretAsync(HOSTURL_SECRET_NAME, CancellationToken.None);
+                    hostUrl = await secretProvider.ResolveSecretAsync(HOSTURL_SECRET_NAME, CancellationToken.None).ConfigureAwait(false);
                     shouldSavePassword = true;
                 }
                 catch (Exception ex)
@@ -60,7 +60,7 @@ public class PasswordStorageHelper
             {
                 try
                 {
-                    password = await secretProvider.ResolveSecretAsync(PASSWORD_SECRET_NAME, CancellationToken.None);
+                    password = await secretProvider.ResolveSecretAsync(PASSWORD_SECRET_NAME, CancellationToken.None).ConfigureAwait(false);
                     shouldSavePassword = true;
                 }
                 catch (Exception ex)
@@ -100,7 +100,7 @@ public class PasswordStorageHelper
                         HOSTURL_SECRET_NAME,
                         hostUrl ?? string.Empty,
                         true,
-                        cancellationToken);
+                        cancellationToken).ConfigureAwait(false);
                 }
 
                 if (!string.IsNullOrWhiteSpace(password) && password != m_password)
@@ -109,7 +109,7 @@ public class PasswordStorageHelper
                         PASSWORD_SECRET_NAME,
                         password ?? string.Empty,
                         true,
-                        cancellationToken);
+                        cancellationToken).ConfigureAwait(false);
                 }
 
                 res = true;
