@@ -238,8 +238,19 @@ namespace Duplicati.GUI.TrayIcon
                 Program.Connection.Pause();
         }
 
-        protected Task OnStatusUpdated(IServerStatus status)
-            => this.UpdateUIState(() =>
+        /// <summary>
+        /// A delay to allow the GUI to startup properly on Linux before updating the tray icon.
+        /// </summary>
+        private readonly Task m_startupDelay =
+            OperatingSystem.IsLinux()
+            ? Task.Delay(1000)
+            : Task.CompletedTask;
+
+        protected async Task OnStatusUpdated(IServerStatus status)
+        {
+            await m_startupDelay;
+            await this.UpdateUIState(()
+            =>
             {
                 switch (status.SuggestedStatusIcon)
                 {
@@ -285,7 +296,8 @@ namespace Duplicati.GUI.TrayIcon
                 m_pauseMenu.SetHidden(status.SuggestedStatusIcon == SuggestedStatusIcon.Disconnected);
                 m_reconnectMenu.SetHidden(status.SuggestedStatusIcon != SuggestedStatusIcon.Disconnected || PasswordPrompt.IsShowingDialog);
                 m_changePasswordMenu.SetHidden(status.SuggestedStatusIcon != SuggestedStatusIcon.Disconnected || Program.Connection?.PasswordSource != Program.PasswordSource.SuppliedPassword || PasswordPrompt.IsShowingDialog);
-            });
+            }).ConfigureAwait(false);
+        }
 
         #region IDisposable implementation
         public abstract void Dispose();
