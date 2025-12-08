@@ -194,6 +194,15 @@ public class MacOSKeyChainProvider : ISecretProvider
         /// </summary>
         private const string CoreFoundationLib = "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation";
 
+        /// <summary>
+        /// Success status code
+        /// </summary>
+        public const int errSecSuccess = 0;
+        /// <summary>
+        /// Duplicate item status code
+        /// </summary>
+        public const int errSecDuplicateItem = -25299;
+
         // Classic exact-match APIs (fast path)
         /// <summary>
         /// Finds a generic password item in the keychain.
@@ -392,12 +401,29 @@ public class MacOSKeyChainProvider : ISecretProvider
         /// </summary>
         private const string LibSystem = "/usr/lib/libSystem.B.dylib";
 
+        /// <summary>
+        /// Loads a dynamic library.
+        /// </summary>
+        /// <param name="path">The path to the library.</param>
+        /// <param name="mode">The loading mode.</param>
+        /// <returns>Handle to the loaded library.</returns>
         [DllImport(LibSystem, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr dlopen(string path, int mode);
 
+        /// <summary>
+        /// Resolves a symbol from a dynamic library.
+        /// </summary>
+        /// <param name="handle">Handle to the loaded library.</param>
+        /// <param name="symbol">The symbol to resolve.</param>
+        /// <returns>Pointer to the resolved symbol.</returns>
         [DllImport(LibSystem, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr dlsym(IntPtr handle, string symbol);
 
+        /// <summary>
+        /// Closes a dynamic library.
+        /// </summary>
+        /// <param name="handle">Handle to the loaded library.</param>
+        /// <returns>Zero on success.</returns>
         [DllImport(LibSystem, CallingConvention = CallingConvention.Cdecl)]
         private static extern int dlclose(IntPtr handle);
 
@@ -453,6 +479,9 @@ public class MacOSKeyChainProvider : ISecretProvider
         /// </summary>
         internal static readonly IntPtr CFBooleanTrue;
 
+        /// <summary>
+        /// Static constructor to load native libraries and resolve constant symbols.
+        /// </summary>
         static KeychainNative()
         {
             const int RTLD_LAZY = 0x1;
@@ -477,6 +506,12 @@ public class MacOSKeyChainProvider : ISecretProvider
             CFBooleanTrue = GetSymbol(_coreFoundationHandle, "kCFBooleanTrue");
         }
 
+        /// <summary>
+        /// Resolves a symbol and reads its pointer value.
+        /// </summary>
+        /// <param name="handle">Handle to the loaded library.</param>
+        /// <param name="name">The symbol to resolve.</param>
+        /// <returns>Pointer to the resolved symbol.</returns>
         private static IntPtr GetSymbol(IntPtr handle, string name)
         {
             var symbolPtr = dlsym(handle, name);
@@ -553,17 +588,38 @@ public class MacOSKeyChainProvider : ISecretProvider
     /// <param name="overwrite">Whether to overwrite an existing item.</param>
     /// <param name="settings">The keychain settings.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    private static async Task SetStringAsync(string name, string secret, bool overwrite, KeyChainSettings settings, CancellationToken cancellationToken)
+    private static Task SetStringAsync(string name, string secret, bool overwrite, KeyChainSettings settings, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Use SecItem* for both classes so label is always set and updateable.
-        if (settings.Type == PasswordType.Generic)
-            SetGeneric(name, secret, overwrite, settings);
-        else
-            SetInternet(name, secret, overwrite, settings);
+        SetItem(name, secret, overwrite, settings, isInternet: settings.Type == PasswordType.Internet);
+        return Task.CompletedTask;
+    }
 
-        await Task.CompletedTask.ConfigureAwait(false);
+    /// <summary>
+    /// Returns the service name to use for the given name and settings.
+    /// </summary>
+    /// <param name="name">The name of the secret.</param>
+    /// <param name="settings">The keychain settings.</param>
+    /// <returns>The service name to use.</returns>
+    private static string GetServiceName(string name, KeyChainSettings settings)
+    {
+        if (string.IsNullOrWhiteSpace(settings.Service))
+            return name;
+        return $"{settings.Service}.{name}";
+    }
+
+    /// <summary>
+    /// Returns the account name to use for the given name and settings.
+    /// </summary>
+    /// <param name="name">The name of the secret.</param>
+    /// <param name="settings">The keychain settings.</param>
+    /// <returns>The account name to use.</returns>
+    private static string GetAccountName(string name, KeyChainSettings settings)
+    {
+        if (string.IsNullOrWhiteSpace(settings.Account))
+            return name;
+        return settings.Account;
     }
 
     /// <summary>
@@ -573,142 +629,84 @@ public class MacOSKeyChainProvider : ISecretProvider
     /// <param name="secret">The secret value.</param>
     /// <param name="overwrite">Whether to overwrite if exists.</param>
     /// <param name="settings">The keychain settings.</param>
-    private static void SetGeneric(string label, string secret, bool overwrite, KeyChainSettings settings)
+    private static void SetItem(string label, string secret, bool overwrite, KeyChainSettings settings, bool isInternet)
     {
-        var service = settings.Service ?? label;
-        var account = settings.Account ?? label;
+        var serviceOrServer = GetServiceName(label, settings);
+        var account = GetAccountName(label, settings);
 
-        IntPtr q = IntPtr.Zero, attrs = IntPtr.Zero, upd = IntPtr.Zero;
-        IntPtr cfService = IntPtr.Zero, cfAccount = IntPtr.Zero, cfLabel = IntPtr.Zero, cfSecret = IntPtr.Zero;
+        IntPtr attrs = IntPtr.Zero, q = IntPtr.Zero, upd = IntPtr.Zero;
+        IntPtr cfServiceOrServer = IntPtr.Zero, cfAccount = IntPtr.Zero, cfLabel = IntPtr.Zero, cfSecret = IntPtr.Zero;
 
         try
         {
-            cfService = KeychainNative.CFString(service);
+            cfServiceOrServer = KeychainNative.CFString(serviceOrServer);
             cfAccount = KeychainNative.CFString(account);
             cfLabel = KeychainNative.CFString(label);
             cfSecret = KeychainNative.CFData(Encoding.UTF8.GetBytes(secret));
 
-            // Query for exact (service,account)
+            // Build attributes for add
+            attrs = KeychainNative.NewMutableDict();
+            KeychainNative.DictSet(attrs, KeychainNative.SecClass,
+                isInternet ? KeychainNative.SecClassInternetPassword
+                           : KeychainNative.SecClassGenericPassword);
+
+            if (isInternet)
+                KeychainNative.DictSet(attrs, KeychainNative.SecAttrServer, cfServiceOrServer);
+            else
+                KeychainNative.DictSet(attrs, KeychainNative.SecAttrService, cfServiceOrServer);
+
+            KeychainNative.DictSet(attrs, KeychainNative.SecAttrAccount, cfAccount);
+            KeychainNative.DictSet(attrs, KeychainNative.SecAttrLabel, cfLabel);
+            KeychainNative.DictSet(attrs, KeychainNative.SecValueData, cfSecret);
+
+            var status = KeychainNative.SecItemAdd(attrs, out var added);
+            if (added != IntPtr.Zero) KeychainNative.CFRelease(added);
+
+            if (status == KeychainNative.errSecSuccess)
+                return;
+
+            if (status != KeychainNative.errSecDuplicateItem)
+                throw new UserInformationException(
+                    $"Failed to store secret in keychain (status {status})",
+                    "KeyChainInsertFailed");
+
+            // Duplicate item
+            if (!overwrite)
+                throw new UserInformationException(
+                    $"Item already exists in keychain: {label}",
+                    "KeyChainInsertFailed");
+
+            // Query for the existing item to update (exact key)
             q = KeychainNative.NewMutableDict();
-            KeychainNative.DictSet(q, KeychainNative.SecClass, KeychainNative.SecClassGenericPassword);
-            KeychainNative.DictSet(q, KeychainNative.SecAttrService, cfService);
+            KeychainNative.DictSet(q, KeychainNative.SecClass,
+                isInternet ? KeychainNative.SecClassInternetPassword
+                           : KeychainNative.SecClassGenericPassword);
+
+            if (isInternet)
+                KeychainNative.DictSet(q, KeychainNative.SecAttrServer, cfServiceOrServer);
+            else
+                KeychainNative.DictSet(q, KeychainNative.SecAttrService, cfServiceOrServer);
+
             KeychainNative.DictSet(q, KeychainNative.SecAttrAccount, cfAccount);
 
-            var status = KeychainNative.SecItemCopyMatching(q, out var existing);
+            // Update dictionary
+            upd = KeychainNative.NewMutableDict();
+            KeychainNative.DictSet(upd, KeychainNative.SecValueData, cfSecret);
+            KeychainNative.DictSet(upd, KeychainNative.SecAttrLabel, cfLabel);
 
-            if (status == 0)
-            {
-                if (existing != IntPtr.Zero) KeychainNative.CFRelease(existing);
-
-                if (!overwrite)
-                    throw new UserInformationException($"Item already exists in keychain: {label}", "KeyChainInsertFailed");
-
-                upd = KeychainNative.NewMutableDict();
-                KeychainNative.DictSet(upd, KeychainNative.SecValueData, cfSecret);
-                KeychainNative.DictSet(upd, KeychainNative.SecAttrLabel, cfLabel);
-
-                status = KeychainNative.SecItemUpdate(q, upd);
-                if (status != 0)
-                    throw new UserInformationException($"Failed to update secret in keychain (status {status})", "KeyChainInsertFailed");
-            }
-            else
-            {
-                attrs = KeychainNative.NewMutableDict();
-                KeychainNative.DictSet(attrs, KeychainNative.SecClass, KeychainNative.SecClassGenericPassword);
-                KeychainNative.DictSet(attrs, KeychainNative.SecAttrService, cfService);
-                KeychainNative.DictSet(attrs, KeychainNative.SecAttrAccount, cfAccount);
-                KeychainNative.DictSet(attrs, KeychainNative.SecAttrLabel, cfLabel);
-                KeychainNative.DictSet(attrs, KeychainNative.SecValueData, cfSecret);
-
-                status = KeychainNative.SecItemAdd(attrs, out var added);
-                if (added != IntPtr.Zero) KeychainNative.CFRelease(added);
-
-                if (status != 0)
-                    throw new UserInformationException($"Failed to store secret in keychain (status {status})", "KeyChainInsertFailed");
-            }
+            status = KeychainNative.SecItemUpdate(q, upd);
+            if (status != KeychainNative.errSecSuccess)
+                throw new UserInformationException(
+                    $"Failed to update secret in keychain (status {status})",
+                    "KeyChainInsertFailed");
         }
         finally
         {
-            if (q != IntPtr.Zero) KeychainNative.CFRelease(q);
             if (attrs != IntPtr.Zero) KeychainNative.CFRelease(attrs);
+            if (q != IntPtr.Zero) KeychainNative.CFRelease(q);
             if (upd != IntPtr.Zero) KeychainNative.CFRelease(upd);
 
-            if (cfService != IntPtr.Zero) KeychainNative.CFRelease(cfService);
-            if (cfAccount != IntPtr.Zero) KeychainNative.CFRelease(cfAccount);
-            if (cfLabel != IntPtr.Zero) KeychainNative.CFRelease(cfLabel);
-            if (cfSecret != IntPtr.Zero) KeychainNative.CFRelease(cfSecret);
-        }
-    }
-
-    /// <summary>
-    /// Stores an internet password in the keychain.
-    /// </summary>
-    /// <param name="label">The label for the item.</param>
-    /// <param name="secret">The secret value.</param>
-    /// <param name="overwrite">Whether to overwrite if exists.</param>
-    /// <param name="settings">The keychain settings.</param>
-    private static void SetInternet(string label, string secret, bool overwrite, KeyChainSettings settings)
-    {
-        // Preserve earlier semantics: "service" maps to serverName.
-        var server = settings.Service ?? label;
-        var account = settings.Account ?? label;
-
-        IntPtr q = IntPtr.Zero, attrs = IntPtr.Zero, upd = IntPtr.Zero;
-        IntPtr cfServer = IntPtr.Zero, cfAccount = IntPtr.Zero, cfLabel = IntPtr.Zero, cfSecret = IntPtr.Zero;
-
-        try
-        {
-            cfServer = KeychainNative.CFString(server);
-            cfAccount = KeychainNative.CFString(account);
-            cfLabel = KeychainNative.CFString(label);
-            cfSecret = KeychainNative.CFData(Encoding.UTF8.GetBytes(secret));
-
-            // Query for exact (server,account)
-            q = KeychainNative.NewMutableDict();
-            KeychainNative.DictSet(q, KeychainNative.SecClass, KeychainNative.SecClassInternetPassword);
-            KeychainNative.DictSet(q, KeychainNative.SecAttrServer, cfServer);
-            KeychainNative.DictSet(q, KeychainNative.SecAttrAccount, cfAccount);
-
-            var status = KeychainNative.SecItemCopyMatching(q, out var existing);
-
-            if (status == 0)
-            {
-                if (existing != IntPtr.Zero) KeychainNative.CFRelease(existing);
-
-                if (!overwrite)
-                    throw new UserInformationException($"Item already exists in keychain: {label}", "KeyChainInsertFailed");
-
-                upd = KeychainNative.NewMutableDict();
-                KeychainNative.DictSet(upd, KeychainNative.SecValueData, cfSecret);
-                KeychainNative.DictSet(upd, KeychainNative.SecAttrLabel, cfLabel);
-
-                status = KeychainNative.SecItemUpdate(q, upd);
-                if (status != 0)
-                    throw new UserInformationException($"Failed to update secret in keychain (status {status})", "KeyChainInsertFailed");
-            }
-            else
-            {
-                attrs = KeychainNative.NewMutableDict();
-                KeychainNative.DictSet(attrs, KeychainNative.SecClass, KeychainNative.SecClassInternetPassword);
-                KeychainNative.DictSet(attrs, KeychainNative.SecAttrServer, cfServer);
-                KeychainNative.DictSet(attrs, KeychainNative.SecAttrAccount, cfAccount);
-                KeychainNative.DictSet(attrs, KeychainNative.SecAttrLabel, cfLabel);
-                KeychainNative.DictSet(attrs, KeychainNative.SecValueData, cfSecret);
-
-                status = KeychainNative.SecItemAdd(attrs, out var added);
-                if (added != IntPtr.Zero) KeychainNative.CFRelease(added);
-
-                if (status != 0)
-                    throw new UserInformationException($"Failed to store secret in keychain (status {status})", "KeyChainInsertFailed");
-            }
-        }
-        finally
-        {
-            if (q != IntPtr.Zero) KeychainNative.CFRelease(q);
-            if (attrs != IntPtr.Zero) KeychainNative.CFRelease(attrs);
-            if (upd != IntPtr.Zero) KeychainNative.CFRelease(upd);
-
-            if (cfServer != IntPtr.Zero) KeychainNative.CFRelease(cfServer);
+            if (cfServiceOrServer != IntPtr.Zero) KeychainNative.CFRelease(cfServiceOrServer);
             if (cfAccount != IntPtr.Zero) KeychainNative.CFRelease(cfAccount);
             if (cfLabel != IntPtr.Zero) KeychainNative.CFRelease(cfLabel);
             if (cfSecret != IntPtr.Zero) KeychainNative.CFRelease(cfSecret);
@@ -722,7 +720,7 @@ public class MacOSKeyChainProvider : ISecretProvider
     /// <param name="settings">The keychain settings.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The retrieved secret value.</returns>
-    private static async Task<string> GetStringAsync(string name, KeyChainSettings settings, CancellationToken cancellationToken)
+    private static Task<string> GetStringAsync(string name, KeyChainSettings settings, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -731,11 +729,7 @@ public class MacOSKeyChainProvider : ISecretProvider
         {
             try
             {
-                var exact = settings.Type == PasswordType.Internet
-                    ? GetInternetExact(name, settings)
-                    : GetGenericExact(name, settings);
-
-                return await Task.FromResult(exact).ConfigureAwait(false);
+                return Task.FromResult(GetByLabelCore(name, settings, settings.Type == PasswordType.Internet));
             }
             catch (UserInformationException ex) when (ex.HelpID == "KeyChainItemMissing")
             {
@@ -743,101 +737,7 @@ public class MacOSKeyChainProvider : ISecretProvider
             }
         }
 
-        // If no service/account set, or exact failed: label-only.
-        var byLabel = settings.Type == PasswordType.Internet
-            ? GetInternetByLabel(name)
-            : GetGenericByLabel(name);
-
-        return await Task.FromResult(byLabel).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Retrieves a generic password using exact service and account match.
-    /// </summary>
-    /// <param name="name">The name/key.</param>
-    /// <param name="settings">The keychain settings.</param>
-    /// <returns>The password value.</returns>
-    private static string GetGenericExact(string name, KeyChainSettings settings)
-    {
-        var service = settings.Service ?? name;
-        var account = settings.Account ?? name;
-
-        var sBytes = Encoding.UTF8.GetBytes(service);
-        var aBytes = Encoding.UTF8.GetBytes(account);
-
-        int status = KeychainNative.SecKeychainFindGenericPassword(
-            IntPtr.Zero,
-            (uint)sBytes.Length, sBytes,
-            (uint)aBytes.Length, aBytes,
-            out var pwLen, out var pwData, out var _);
-
-        if (status != 0)
-            throw new UserInformationException($"Item not found in keychain: {name}", "KeyChainItemMissing");
-
-        try
-        {
-            return DecodePassword(name, pwLen, pwData);
-        }
-        finally
-        {
-            try { KeychainNative.SecKeychainItemFreeContent(IntPtr.Zero, pwData); } catch { }
-        }
-    }
-
-    /// <summary>
-    /// Retrieves an internet password using exact server and account match.
-    /// </summary>
-    /// <param name="name">The name/key.</param>
-    /// <param name="settings">The keychain settings.</param>
-    /// <returns>The password value.</returns>
-    private static string GetInternetExact(string name, KeyChainSettings settings)
-    {
-        var server = settings.Service ?? name;
-        var account = settings.Account ?? name;
-
-        var sBytes = Encoding.UTF8.GetBytes(server);
-        var aBytes = Encoding.UTF8.GetBytes(account);
-
-        int status = KeychainNative.SecKeychainFindInternetPassword(
-            IntPtr.Zero,
-            (uint)sBytes.Length, sBytes,
-            0, Array.Empty<byte>(),
-            (uint)aBytes.Length, aBytes,
-            0, Array.Empty<byte>(),
-            0, 0, 0,
-            out var pwLen, out var pwData, out var _);
-
-        if (status != 0)
-            throw new UserInformationException($"Item not found in keychain: {name}", "KeyChainItemMissing");
-
-        try
-        {
-            return DecodePassword(name, pwLen, pwData);
-        }
-        finally
-        {
-            try { KeychainNative.SecKeychainItemFreeContent(IntPtr.Zero, pwData); } catch { }
-        }
-    }
-
-    /// <summary>
-    /// Retrieves a generic password by label.
-    /// </summary>
-    /// <param name="label">The label of the item.</param>
-    /// <returns>The password value.</returns>
-    private static string GetGenericByLabel(string label)
-    {
-        return GetByLabelCore(label, isInternet: false);
-    }
-
-    /// <summary>
-    /// Retrieves an internet password by label.
-    /// </summary>
-    /// <param name="label">The label of the item.</param>
-    /// <returns>The password value.</returns>
-    private static string GetInternetByLabel(string label)
-    {
-        return GetByLabelCore(label, isInternet: true);
+        return Task.FromResult(GetByLabelCore(name, null, settings.Type == PasswordType.Internet));
     }
 
     /// <summary>
@@ -846,41 +746,63 @@ public class MacOSKeyChainProvider : ISecretProvider
     /// <param name="label">The label of the item.</param>
     /// <param name="isInternet">Whether it's an internet password.</param>
     /// <returns>The password value.</returns>
-    private static string GetByLabelCore(string label, bool isInternet)
+    private static string GetByLabelCore(string name, KeyChainSettings? settings, bool isInternet)
     {
         IntPtr q = IntPtr.Zero;
         IntPtr cfLabel = IntPtr.Zero;
+        IntPtr cfService = IntPtr.Zero;
+        IntPtr cfAccount = IntPtr.Zero;
         IntPtr result = IntPtr.Zero;
 
         try
         {
-            cfLabel = KeychainNative.CFString(label);
+            cfLabel = KeychainNative.CFString(name);
 
             q = KeychainNative.NewMutableDict();
             KeychainNative.DictSet(q, KeychainNative.SecClass,
                 isInternet ? KeychainNative.SecClassInternetPassword
                            : KeychainNative.SecClassGenericPassword);
+
+            // Always constrain by label/name
             KeychainNative.DictSet(q, KeychainNative.SecAttrLabel, cfLabel);
+
+            // Optionally constrain by service + account as well
+            if (settings != null && (!string.IsNullOrWhiteSpace(settings.Service) || !string.IsNullOrWhiteSpace(settings.Account)))
+            {
+                var service = GetServiceName(name, settings);
+                var account = GetAccountName(name, settings);
+
+                cfService = KeychainNative.CFString(service);
+                cfAccount = KeychainNative.CFString(account);
+
+                KeychainNative.DictSet(q, KeychainNative.SecAttrService, cfService);
+                KeychainNative.DictSet(q, KeychainNative.SecAttrAccount, cfAccount);
+            }
+
             KeychainNative.DictSet(q, KeychainNative.SecReturnData, KeychainNative.CFBooleanTrue);
             KeychainNative.DictSet(q, KeychainNative.SecMatchLimit, KeychainNative.SecMatchLimitOne);
 
             var status = KeychainNative.SecItemCopyMatching(q, out result);
 
             if (status != 0 || result == IntPtr.Zero)
-                throw new UserInformationException(
-                    $"Item not found in keychain by label: {label}",
-                    "KeyChainItemMissing");
+            {
+                var msg = settings != null
+                    ? $"Item not found in keychain: label={name}, service={GetServiceName(name, settings)}, account={GetAccountName(name, settings)}"
+                    : $"Item not found in keychain by label: {name}";
+
+                throw new UserInformationException(msg, "KeyChainItemMissing");
+            }
 
             var len = (int)KeychainNative.CFDataGetLength(result);
             if (len <= 0)
-                throw new UserInformationException($"The key '{label}' returned an empty value", "KeyChainItemEmpty");
+                throw new UserInformationException($"The key '{name}' returned an empty value", "KeyChainItemEmpty");
 
             var ptr = KeychainNative.CFDataGetBytePtr(result);
             var managed = new byte[len];
             Marshal.Copy(ptr, managed, 0, len);
 
             var output = Encoding.UTF8.GetString(managed).Trim();
-            ValidateOutput(label, output);
+            ValidateOutput(name, output);
             return output;
         }
         finally
@@ -888,27 +810,9 @@ public class MacOSKeyChainProvider : ISecretProvider
             if (result != IntPtr.Zero) KeychainNative.CFRelease(result);
             if (q != IntPtr.Zero) KeychainNative.CFRelease(q);
             if (cfLabel != IntPtr.Zero) KeychainNative.CFRelease(cfLabel);
+            if (cfService != IntPtr.Zero) KeychainNative.CFRelease(cfService);
+            if (cfAccount != IntPtr.Zero) KeychainNative.CFRelease(cfAccount);
         }
-    }
-
-    /// <summary>
-    /// Decodes password data from native memory.
-    /// </summary>
-    /// <param name="name">The name/key for error messages.</param>
-    /// <param name="pwLen">Length of the password data.</param>
-    /// <param name="pwData">Pointer to the password data.</param>
-    /// <returns>The decoded password string.</returns>
-    private static string DecodePassword(string name, uint pwLen, IntPtr pwData)
-    {
-        if (pwLen == 0 || pwData == IntPtr.Zero)
-            throw new UserInformationException($"The key '{name}' returned an empty value", "KeyChainItemEmpty");
-
-        var managed = new byte[pwLen];
-        Marshal.Copy(pwData, managed, 0, (int)pwLen);
-        var output = Encoding.UTF8.GetString(managed).Trim();
-
-        ValidateOutput(name, output);
-        return output;
     }
 
     /// <summary>
