@@ -203,9 +203,18 @@ public class UnixPassProvider : ISecretProvider
         using var process = Process.Start(psi);
         if (process is null)
             throw new InvalidOperationException("Failed to start pass");
+        using var _ = new ProcessDisposer(process);
 
-        var output = await process.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-        var error = await process.StandardError.ReadToEndAsync().ConfigureAwait(false);
+        using var ct = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        ct.CancelAfter(TimeSpan.FromSeconds(10));
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(ct.Token);
+        var stderrTask = process.StandardError.ReadToEndAsync(ct.Token);
+
+        await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(ct.Token)).ConfigureAwait(false);
+
+        var output = await stdoutTask.ConfigureAwait(false);
+        var error = await stderrTask.ConfigureAwait(false);
+
         if (!string.IsNullOrWhiteSpace(error))
             throw new UserInformationException($"Error running pass: {error}", "PassError");
         if (process.ExitCode != 0)
@@ -239,10 +248,14 @@ public class UnixPassProvider : ISecretProvider
         using var process = Process.Start(psi);
         if (process is null)
             throw new InvalidOperationException("Failed to start pass");
+        using var _ = new ProcessDisposer(process);
 
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
-        await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(cancellationToken)).ConfigureAwait(false);
+        using var ct = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        ct.CancelAfter(TimeSpan.FromSeconds(10));
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(ct.Token);
+        var stderrTask = process.StandardError.ReadToEndAsync(ct.Token);
+        await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(ct.Token)).ConfigureAwait(false);
 
         return process.ExitCode == 0;
     }
@@ -276,17 +289,20 @@ public class UnixPassProvider : ISecretProvider
         using var process = Process.Start(psi);
         if (process is null)
             throw new InvalidOperationException("Failed to start pass");
+        using var _ = new ProcessDisposer(process);
 
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        using var ct = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        ct.CancelAfter(TimeSpan.FromSeconds(10));
 
-        await process.StandardInput.WriteAsync(value.AsMemory(), cancellationToken).ConfigureAwait(false);
-        await process.StandardInput.WriteAsync(Environment.NewLine.AsMemory(), cancellationToken).ConfigureAwait(false);
-        await process.StandardInput.FlushAsync().ConfigureAwait(false);
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(ct.Token);
+        var stderrTask = process.StandardError.ReadToEndAsync(ct.Token);
+
+        await process.StandardInput.WriteAsync(value.AsMemory(), ct.Token).ConfigureAwait(false);
+        await process.StandardInput.WriteAsync(Environment.NewLine.AsMemory(), ct.Token).ConfigureAwait(false);
+        await process.StandardInput.FlushAsync(ct.Token).ConfigureAwait(false);
         process.StandardInput.Close();
 
-        await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(cancellationToken)).ConfigureAwait(false);
-
+        await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(ct.Token)).ConfigureAwait(false);
         if (process.ExitCode != 0)
         {
             var error = await stderrTask.ConfigureAwait(false);

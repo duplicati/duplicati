@@ -117,6 +117,8 @@ Error message: {0}", error); }
         public static string AllowedEncryptionModulesLong { get { return LC.L(@"Set the allowed encryption modules for remote control. The value is a comma-separated list of encryption module names. If this option is not set, all encryption modules are allowed. Use this option to restrict the encryption modules that can be used to encrypt data."); } }
         public static string AllowedCompressionModulesShort { get { return LC.L(@"Set the allowed compression modules for remote control"); } }
         public static string AllowedCompressionModulesLong { get { return LC.L(@"Set the allowed compression modules for remote control. The value is a comma-separated list of compression module names. If this option is not set, all compression modules are allowed. Use this option to restrict the compression modules that can be used to compress data."); } }
+        public static string SecretProviderFailedToGetEncryptionKey { get { return LC.L(@"Failed to get encryption key from secret provider"); } }
+        public static string SecretProviderFailedToSetEncryptionKey { get { return LC.L(@"Failed to set encryption key in secret provider"); } }
     }
     internal static class Scheduler
     {

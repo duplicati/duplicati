@@ -59,12 +59,15 @@ namespace Duplicati.GUI.TrayIcon
             SuppliedPassword
         }
 
+        /// <summary>
+        /// The connection to the server
+        /// </summary>
         public static HttpServerConnection Connection;
 
         /// <summary>
-        /// Indicates that a password is needed and should be requested via GUI after Avalonia starts
+        /// The default secret provider
         /// </summary>
-        public static bool NeedsPasswordPrompt { get; private set; }
+        public static PasswordStorageHelper PasswordStorage;
 
         private const string HOSTURL_OPTION = "hosturl";
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
@@ -87,7 +90,6 @@ namespace Duplicati.GUI.TrayIcon
         private static string _browser_command = null;
         private static bool disableTrayIconLogin = false;
         private static bool openui = false;
-        private static Uri serverURL = new(DEFAULT_HOSTURL);
         public static string BrowserCommand { get { return _browser_command; } }
         public static Server.Database.Connection databaseConnection = null;
 
@@ -148,6 +150,8 @@ namespace Duplicati.GUI.TrayIcon
             // Validate options, and log to console
             using (var logger = new ConsoleOutput(Console.Out, options))
                 CommandLineArgumentValidator.ValidateArguments(supportedCommands, options, Server.Program.KnownDuplicateOptions, new HashSet<string>());
+
+            Uri serverURL = new Uri(DEFAULT_HOSTURL);
 
             if (!detached)
             {
@@ -221,22 +225,29 @@ namespace Duplicati.GUI.TrayIcon
                 password = pwd;
 
             // Let the user specify the port, if they are not providing a hosturl
+            var customUrl = false;
             if (!options.ContainsKey(HOSTURL_OPTION) && options.TryGetValue(WebServerLoader.OPTION_PORT, out var portString) && int.TryParse(portString, out var port))
+            {
                 serverURL = new UriBuilder(serverURL) { Port = port }.Uri;
+                customUrl = true;
+            }
 
             if (options.TryGetValue(HOSTURL_OPTION, out var url))
+            {
                 serverURL = new Uri(url);
+                customUrl = true;
+            }
 
-            if (string.IsNullOrWhiteSpace(password) && passwordSource == PasswordSource.SuppliedPassword)
-                NeedsPasswordPrompt = true;
-
-            StartTray(_args, options, hosted, passwordSource, password, acceptedHostCertificate);
+            StartTray(_args, options, hosted, passwordSource, password, serverURL, customUrl, acceptedHostCertificate);
 
             return 0;
         }
 
-        private static void StartTray(string[] _args, Dictionary<string, string> options, HostedInstanceKeeper hosted, PasswordSource passwordSource, string password, string acceptedHostCertificate)
+        private static void StartTray(string[] _args, Dictionary<string, string> options, HostedInstanceKeeper hosted, PasswordSource passwordSource, string password, Uri serverURL, bool customUrl, string acceptedHostCertificate)
         {
+            PasswordStorage = PasswordStorageHelper.CreateAsync(serverURL.ToString(), customUrl, password, passwordSource, options)
+                .Await();
+
             using (hosted)
             {
                 var reSpawn = 0;
@@ -248,7 +259,7 @@ namespace Duplicati.GUI.TrayIcon
 
                     try
                     {
-                        using (Connection = new HttpServerConnection(hosted?.applicationSettings, serverURL, password, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options))
+                        using (Connection = new HttpServerConnection(hosted?.applicationSettings, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options, PasswordStorage))
                         {
                             // Make sure we have the latest status, but don't care if it fails
                             Connection.UpdateStatus().FireAndForget();
