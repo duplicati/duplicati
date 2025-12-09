@@ -101,7 +101,23 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
     public void DeleteRegistration()
     {
         Disable();
+
+        // Clear all remote control related settings
         connection.ApplicationSettings.RemoteControlConfig = string.Empty;
         connection.ApplicationSettings.AdditionalReportUrl = string.Empty;
+        connection.ApplicationSettings.RemoteControlDashboardUrl = string.Empty;
+        connection.ApplicationSettings.RemoteControlStorageApiId = string.Empty;
+        connection.ApplicationSettings.RemoteControlStorageApiKey = string.Empty;
+        connection.ApplicationSettings.RemoteControlStorageEndpointUrl = string.Empty;
+
+        // Remove remotely configured backups
+        var remoteBackupIds = connection.Backups.Where(x => !string.IsNullOrWhiteSpace(x.ExternalID) && x.ExternalID.StartsWith(ControlRequestMessage.BackupConfigKeyPrefix, StringComparison.OrdinalIgnoreCase))
+            .Select(x => x.ID)
+            .Where(x => long.TryParse(x, out _))
+            .Select(x => long.Parse(x))
+            .ToList();
+
+        foreach (var id in remoteBackupIds)
+            connection.DeleteBackup(id);
     }
 }

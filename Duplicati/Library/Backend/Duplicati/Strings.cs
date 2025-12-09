@@ -21,7 +21,7 @@
 
 using Duplicati.Library.Localization.Short;
 
-namespace Duplicati.Library.Backend.Strings;
+namespace Duplicati.Library.Backend.Duplicati.Strings;
 
 internal static class DuplicatiBackend
 {
@@ -35,4 +35,16 @@ internal static class DuplicatiBackend
     public static string BackupIdOptionsShort { get { return LC.L(@"The Backup ID to use on the Duplicati storage server."); } }
     public static string BackupIdOptionsLong { get { return LC.L(@"Each backupID identifies a separate backup set on the Duplicati storage server."); } }
     public static string ErrorMissingBackupId { get { return LC.L(@"A unique backup id must be specified"); } }
+}
+
+internal static class ListFoldersModule
+{
+    public static string Description { get { return LC.L(@"Lists the backup folders on a Duplicati storage server."); } }
+    public static string DisplayName { get { return LC.L(@"List Duplicati Backup Folders"); } }
+
+    public static string ActionDescriptionShort { get { return LC.L(@"The action to perform."); } }
+    public static string ActionDescriptionLong { get { return LC.L(@"Specifies the action to perform."); } }
+
+    public static string UrlDescriptionShort { get { return LC.L(@"The URL of the Duplicati storage server."); } }
+    public static string UrlDescriptionLong { get { return LC.L(@"Specifies the URL of the Duplicati storage server."); } }
 }

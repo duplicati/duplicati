@@ -25,9 +25,8 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Library.Utility;
-using System.Text.RegularExpressions;
 
-namespace Duplicati.Library.Backend;
+namespace Duplicati.Library.Backend.Duplicati;
 
 public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
 {
@@ -116,17 +115,12 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         _backup_id = options.GetValueOrDefault(BACKUP_ID_OPTION) ?? string.Empty;
         if (string.IsNullOrEmpty(_backup_id))
             throw new ArgumentException(Strings.DuplicatiBackend.ErrorMissingBackupId, BACKUP_ID_OPTION);
-        if (_backup_id.Length < 6 || _backup_id.Length > 100)
-            throw new ArgumentOutOfRangeException(BACKUP_ID_OPTION, "Backup ID must be between 6 and 100 characters");
-        if (!Regex.IsMatch(_backup_id, @"^[a-zA-Z0-9_-]+$"))
-            throw new ArgumentException("Backup ID must only contain alphanumeric characters, hyphens, and underscores", BACKUP_ID_OPTION);
-
         _auth = AuthOptionsHelper.ParseWithAlias(options, new Utility.Uri(url), AUTH_API_ID_OPTION, AUTH_API_KEY_OPTION)
             .RequireCredentials();
 
         _client.DefaultRequestHeaders.Add("X-Api-Key", _auth.Password);
         _client.DefaultRequestHeaders.Add("X-Organization-Id", _auth.Username);
-        _client.DefaultRequestHeaders.Add("X-Backup-Id", _backup_id);
+        _client.DefaultRequestHeaders.Add("X-Backup-Id", System.Uri.EscapeDataString(_backup_id));
 
         _timeouts = TimeoutOptionsHelper.Parse(options);
     }
@@ -159,6 +153,30 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             uri = new Utility.Uri(endpoint).SetScheme(uri.Scheme).SetQuery(null);
 
         return uri.SetQuery(query).ToString();
+    }
+
+    /// <summary>
+    /// Lists the backup folders on the destination
+    /// </summary>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The list of backup folders</returns>
+    public async IAsyncEnumerable<string> ListBackupFolders([EnumeratorCancellation] CancellationToken cancelToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/listbackups");
+        using var response = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken,
+            ct => _client.SendAsync(request, ct))
+            .ConfigureAwait(false);
+
+        response.EnsureSuccessStatusCode();
+
+        var entries = await response.Content.ReadFromJsonAsync<List<string>>(cancellationToken: cancelToken).ConfigureAwait(false) ?? [];
+
+        foreach (var entry in entries)
+        {
+            if (cancelToken.IsCancellationRequested)
+                yield break;
+            yield return entry;
+        }
     }
 
     /// <inheritdoc />
@@ -247,6 +265,8 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
         foreach (var entry in entries)
         {
+            if (cancelToken.IsCancellationRequested)
+                yield break;
             yield return entry;
         }
     }

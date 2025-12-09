@@ -75,7 +75,6 @@ public class DayOfWeekStringEnumConverter : JsonConverterFactory
                 default:
                     throw new JsonException($"Invalid day of week: {value}");
             }
-            writer.WriteStringValue(value.ToString());
         }
     }
 

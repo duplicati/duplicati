@@ -101,6 +101,11 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         public required string RemoteControlRegistrationUrl { get; init; }
 
         /// <summary>
+        /// The default URL to present for remote control dashboard
+        /// </summary>
+        public required string RemoteControlDashboardUrl { get; init; }
+
+        /// <summary>
         /// Gets or sets the default update channel.
         /// </summary>
         public required string DefaultUpdateChannel { get; init; }
@@ -249,6 +254,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             ServerVersionName = License.VersionNumbers.VERSION_NAME,
             ServerVersionType = UpdaterManager.SelfVersion.ReleaseType,
             RemoteControlRegistrationUrl = Library.RemoteControl.RegisterForRemote.DefaultRegisterationUrl,
+            RemoteControlDashboardUrl = Library.RemoteControl.RegisterForRemote.DefaultDashboardUrl,
             DefaultUpdateChannel = AutoUpdateSettings.DefaultUpdateChannel.ToString(),
             DefaultUsageReportLevel = Library.UsageReporter.Reporter.DefaultReportLevel,
             OSType = UpdaterManager.OperatingSystemName,
@@ -332,6 +338,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             ServerVersionName = systeminfo.ServerVersionName,
             ServerVersionType = systeminfo.ServerVersionType,
             RemoteControlRegistrationUrl = systeminfo.RemoteControlRegistrationUrl,
+            RemoteControlDashboardUrl = systeminfo.RemoteControlDashboardUrl,
             StartedBy = applicationSettings.Origin,
             DefaultUpdateChannel = systeminfo.DefaultUpdateChannel,
             DefaultUsageReportLevel = systeminfo.DefaultUsageReportLevel,

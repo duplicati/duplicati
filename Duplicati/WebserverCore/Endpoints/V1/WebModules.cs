@@ -23,6 +23,7 @@ using Duplicati.Library.Main;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Endpoints.Shared;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -49,6 +50,15 @@ public record WebModules : IEndpointV1
         var options = Runner.GetCommonOptions(connection);
         foreach (var k in inputOptions.Keys)
             options[k] = inputOptions[k];
+
+        var url = options.GetValueOrDefault("url");
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            var (newUrl, opts) = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, url, cancellationToken);
+            options["url"] = newUrl;
+            foreach (var k in opts.Keys)
+                options[k] = opts[k];
+        }
 
         await SecretProviderHelper.ApplySecretProviderAsync([], [], options, Library.Utility.TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancellationToken);
 

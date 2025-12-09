@@ -44,7 +44,7 @@ public class SharedRemoteOperation
         return modules;
     }
 
-    public static async Task<TupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, CancellationToken cancelToken)
+    public static async Task<(string Url, Dictionary<string, string?> Options)> ExpandUrl(Connection connection, IApplicationSettings applicationSettings, string url, CancellationToken cancelToken)
     {
         var uri = new Library.Utility.Uri(url);
         var opts = ParseUrlOptions(connection, uri);
@@ -53,14 +53,20 @@ public class SharedRemoteOperation
         await SecretProviderHelper.ApplySecretProviderAsync([], tmp, opts, Library.Utility.TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancelToken);
         url = tmp[0].ToString();
 
-        if (uri.Scheme.Equals(Library.Backend.DuplicatiBackend.PROTOCOL, StringComparison.OrdinalIgnoreCase))
-            url = Library.Backend.DuplicatiBackend.MergeArgsIntoUrl(
+        if (uri.Scheme.Equals(Library.Backend.Duplicati.DuplicatiBackend.PROTOCOL, StringComparison.OrdinalIgnoreCase))
+            url = Library.Backend.Duplicati.DuplicatiBackend.MergeArgsIntoUrl(
                 url,
                 connection.ApplicationSettings.RemoteControlStorageApiId,
                 connection.ApplicationSettings.RemoteControlStorageApiKey,
                 connection.ApplicationSettings.RemoteControlStorageEndpointUrl
             );
 
+        return (url, opts);
+    }
+
+    public static async Task<TupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, CancellationToken cancelToken)
+    {
+        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, cancelToken);
         var modules = ConfigureModules(opts);
         var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, opts);
         return new TupleDisposeWrapper(backend, modules);
