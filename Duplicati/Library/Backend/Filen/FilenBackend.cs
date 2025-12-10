@@ -39,6 +39,10 @@ public class FilenBackend : IStreamingBackend
     /// </summary>
     private const string MoveToTrashOption = "move-to-trash";
     /// <summary>
+    /// The API key option name
+    /// </summary>
+    private const string ApiKeyOption = "api-key";
+    /// <summary>
     /// The Filen client instance
     /// </summary>
     private FilenClient? _client;
@@ -58,6 +62,10 @@ public class FilenBackend : IStreamingBackend
     /// The two-factor code, if any
     /// </summary>
     private readonly string? _twoFactorCode;
+    /// <summary>
+    /// The API key, if any
+    /// </summary>
+    private readonly string? _apiKey;
     /// <summary>
     /// Whether to move files to the trash instead of deleting them
     /// </summary>
@@ -93,6 +101,7 @@ public class FilenBackend : IStreamingBackend
 
         _moveToTrash = Utility.Utility.ParseBoolOption(options, MoveToTrashOption);
         _twoFactorCode = options.GetValueOrDefault(TwoFactorOption);
+        _apiKey = options.GetValueOrDefault(ApiKeyOption);
         _timeout = TimeoutOptionsHelper.Parse(options);
     }
 
@@ -109,7 +118,7 @@ public class FilenBackend : IStreamingBackend
             _client = null;
             var httpClient = HttpClientHelper.CreateClient();
             httpClient.Timeout = Timeout.InfiniteTimeSpan;
-            _client = await FilenClient.CreateClientAsync(httpClient, _auth.Username!, _auth.Password!, _twoFactorCode, cancellationToken).ConfigureAwait(false);
+            _client = await FilenClient.CreateClientAsync(httpClient, _auth.Username!, _auth.Password!, _twoFactorCode, _apiKey, cancellationToken).ConfigureAwait(false);
         }
 
         return _client;
@@ -126,9 +135,18 @@ public class FilenBackend : IStreamingBackend
     public IList<ICommandLineArgument> SupportedCommands => [
         .. AuthOptionsHelper.GetOptions(),
         new CommandLineArgument(TwoFactorOption, CommandLineArgument.ArgumentType.String, Strings.FilenBackend.TwoFactorShort, Strings.FilenBackend.TwoFactorLong),
+        new CommandLineArgument(ApiKeyOption, CommandLineArgument.ArgumentType.Password, Strings.FilenBackend.ApiKeyShort, Strings.FilenBackend.ApiKeyLong),
         new CommandLineArgument(MoveToTrashOption, CommandLineArgument.ArgumentType.Boolean, Strings.FilenBackend.MoveToTrashShort, Strings.FilenBackend.MoveToTrashLong),
         .. TimeoutOptionsHelper.GetOptions()
     ];
+
+    /// <summary>
+    /// Gets an API key for the account
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to use</param>
+    /// <returns>The API key</returns>
+    internal async Task<string?> GetApiKey(CancellationToken cancellationToken)
+        => (await GetClientAsync(cancellationToken))?.ApiKey;
 
     /// <summary>
     /// Gets the folder uuid for the folder this backend is working in

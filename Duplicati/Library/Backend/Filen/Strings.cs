@@ -21,13 +21,15 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings
 {
-    internal static class FilenBackend
-    {
-        public static string Description => LC.L(@"This backend can read and write data to Filen.io using its REST protocol. Supported format is ""filen://folder/subfolder"".");
-        public static string DisplayName => LC.L(@"Filen.io");
-        public static string TwoFactorShort => LC.L(@"Optional 2-factor code");
-        public static string TwoFactorLong => LC.L(@"The 2-factor code to use for authentication, leave empty if the account is not MFA protected. Not that a new code must be provided by the user for each authentication attempt.");
-        public static string MoveToTrashShort => LC.L(@"Move to trash");
-        public static string MoveToTrashLong => LC.L(@"If set, files will be moved to the trash instead of being deleted permanently.");
-    }
+        internal static class FilenBackend
+        {
+                public static string Description => LC.L(@"This backend can read and write data to Filen.io using its REST protocol. Supported format is ""filen://folder/subfolder"".");
+                public static string DisplayName => LC.L(@"Filen.io");
+                public static string TwoFactorShort => LC.L(@"Optional 2-factor code");
+                public static string TwoFactorLong => LC.L(@"The 2-factor code to use for authentication, leave empty if the account is not MFA protected. Note that a new code must be provided by the user for each authentication attempt.");
+                public static string ApiKeyShort => LC.L(@"Optional API key");
+                public static string ApiKeyLong => LC.L(@"The API key to use for authentication, which will work even if the account is MFA protected. Obtain the API key via the Filen CLI tool.");
+                public static string MoveToTrashShort => LC.L(@"Move to trash");
+                public static string MoveToTrashLong => LC.L(@"If set, files will be moved to the trash instead of being deleted permanently.");
+        }
 }
