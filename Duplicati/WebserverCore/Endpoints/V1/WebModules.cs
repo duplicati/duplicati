@@ -41,6 +41,19 @@ public record WebModules : IEndpointV1
     private static IEnumerable<IWebModule> ExecuteGet()
         => Library.DynamicLoader.WebLoader.Modules;
 
+    private static string UnmaskUrl(Connection connection, string maskedurl, string? backupId)
+    {
+        var previousUrl = !string.IsNullOrWhiteSpace(backupId) ? connection.GetBackup(backupId)?.TargetURL : null;
+        var unmasked = string.IsNullOrWhiteSpace(previousUrl)
+            ? maskedurl
+            : QuerystringMasking.Unmask(maskedurl, previousUrl);
+
+        if (Connection.UrlContainsPasswordPlaceholder(unmasked))
+            throw new ArgumentException("Unmasked URL contains password placeholder");
+
+        return unmasked;
+    }
+
     private static async Task<Dto.WebModuleOutputDto> ExecutePost(Connection connection, IApplicationSettings applicationSettings, string modulekey, Dictionary<string, string> inputOptions, CancellationToken cancellationToken)
     {
         var m = Library.DynamicLoader.WebLoader.Modules.FirstOrDefault(x => x.Key.Equals(modulekey, StringComparison.OrdinalIgnoreCase))
@@ -51,6 +64,12 @@ public record WebModules : IEndpointV1
             options[k] = inputOptions[k];
 
         await SecretProviderHelper.ApplySecretProviderAsync([], [], options, Library.Utility.TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancellationToken);
+
+        if (options.TryGetValue("url", out var maskedurl) && !string.IsNullOrEmpty(maskedurl))
+        {
+            var unmasked = UnmaskUrl(connection, maskedurl, options.GetValueOrDefault("backup-id"));
+            options["url"] = unmasked;
+        }
 
         return new Dto.WebModuleOutputDto(
             Status: "OK",

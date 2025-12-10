@@ -53,9 +53,24 @@ public class GetApiKeyModule : IWebModule
     ];
 
     /// <inheritdoc/>
-    public IDictionary<string, string> Execute(IDictionary<string, string> options)
+    public IDictionary<string, string> Execute(IDictionary<string, string?> options)
     {
-        var backend = new FilenBackend(options["url"], new Dictionary<string, string?>());
+        options.TryGetValue("filen-operation", out var operation);
+        if (operation != "GetApiKey")
+            throw new UserInformationException("Invalid operation", "InvalidOperation");
+
+        options.TryGetValue("url", out var url);
+        if (string.IsNullOrEmpty(url))
+            throw new UserInformationException("URL is required", "UrlOptionMissing");
+
+        var uri = new Utility.Uri(url);
+
+        var newOpts = new Dictionary<string, string?>(options);
+        foreach (var key in uri.QueryParameters.AllKeys)
+            if (key != null)
+                newOpts[key] = uri.QueryParameters[key];
+
+        var backend = new FilenBackend(url, newOpts);
         var apiKey = backend.GetApiKey(CancellationToken.None).Await();
         return new Dictionary<string, string> { { "api-key", apiKey ?? string.Empty } };
     }

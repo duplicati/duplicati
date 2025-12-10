@@ -138,7 +138,7 @@ public class FilenBackend : IStreamingBackend
     public IList<ICommandLineArgument> SupportedCommands => [
         .. AuthOptionsHelper.GetOptions(),
         new CommandLineArgument(TwoFactorOption, CommandLineArgument.ArgumentType.String, Strings.FilenBackend.TwoFactorShort, Strings.FilenBackend.TwoFactorLong),
-        new CommandLineArgument(ApiKeyOption, CommandLineArgument.ArgumentType.String, Strings.FilenBackend.ApiKeyShort, Strings.FilenBackend.ApiKeyLong),
+        new CommandLineArgument(ApiKeyOption, CommandLineArgument.ArgumentType.Password, Strings.FilenBackend.ApiKeyShort, Strings.FilenBackend.ApiKeyLong),
         new CommandLineArgument(MoveToTrashOption, CommandLineArgument.ArgumentType.Boolean, Strings.FilenBackend.MoveToTrashShort, Strings.FilenBackend.MoveToTrashLong),
         .. TimeoutOptionsHelper.GetOptions()
     ];
