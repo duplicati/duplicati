@@ -42,6 +42,7 @@ public record WebModules : IEndpointV1
     private static IEnumerable<IWebModule> ExecuteGet()
         => Library.DynamicLoader.WebLoader.Modules;
 
+
     private static async Task<Dto.WebModuleOutputDto> ExecutePost(Connection connection, IApplicationSettings applicationSettings, string modulekey, Dictionary<string, string> inputOptions, CancellationToken cancellationToken)
     {
         var m = Library.DynamicLoader.WebLoader.Modules.FirstOrDefault(x => x.Key.Equals(modulekey, StringComparison.OrdinalIgnoreCase))
@@ -54,13 +55,11 @@ public record WebModules : IEndpointV1
         var url = options.GetValueOrDefault("url");
         if (!string.IsNullOrWhiteSpace(url))
         {
-            var (newUrl, opts) = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, url, cancellationToken);
+            var (newUrl, opts) = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, url, options.GetValueOrDefault("backup-id"), cancellationToken);
             options["url"] = newUrl;
             foreach (var k in opts.Keys)
                 options[k] = opts[k];
         }
-
-        await SecretProviderHelper.ApplySecretProviderAsync([], [], options, Library.Utility.TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancellationToken);
 
         return new Dto.WebModuleOutputDto(
             Status: "OK",

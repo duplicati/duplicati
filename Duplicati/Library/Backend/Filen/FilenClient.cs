@@ -183,80 +183,147 @@ public class FilenClient : IDisposable
     public DateTime ValidUntil => _validUntil;
 
     /// <summary>
+    /// The API key for the client
+    /// </summary>
+    internal string ApiKey => _authResult.ApiKey;
+
+    /// <summary>
     /// Creates a new Filen client and authenticates
     /// </summary>
     /// <param name="httpClient">The HTTP client to use for requests</param>
     /// <param name="email">The email address to use for login</param>
     /// <param name="password">The password to use for login</param>
     /// <param name="twoFactorCode">The two-factor code to use for login</param>
+    /// <param name="apiKey">The API key to use for login</param>
     /// <param name="cancellationToken">The cancellation token to use for the operation</param>
     /// <returns>The authenticated Filen client</returns>
-    public static async Task<FilenClient> CreateClientAsync(HttpClient httpClient, string email, string password, string? twoFactorCode, CancellationToken cancellationToken)
+    public static async Task<FilenClient> CreateClientAsync(HttpClient httpClient, string email, string password, string? twoFactorCode, string? apiKey, CancellationToken cancellationToken)
     {
         var baseUrl = GatewayUrls[Random.Shared.Next(0, GatewayUrls.Count)];
-        var authResult = await FilenLogin.AuthenticateAsync(httpClient, baseUrl, email, password, twoFactorCode, cancellationToken).ConfigureAwait(false);
+        var authResult = await AuthenticateAsync(httpClient, baseUrl, email, password, twoFactorCode, apiKey, cancellationToken).ConfigureAwait(false);
         return new FilenClient(httpClient, authResult, baseUrl);
     }
 
     /// <summary>
-    /// Methods used for the initial login
+    /// Returns the authentication information for the user
     /// </summary>
-    private static class FilenLogin
+    /// <param name="httpClient">The HTTP client to use for requests</param>
+    /// <param name="baseUrl">The base url for all requests</param>
+    /// <param name="email">The email address to use for login</param>
+    /// <param name="cancellationToken">The cancellation token to use for the operation</param>
+    /// <returns>The authentication information for the user</returns>
+    private static async Task<AuthInfo> GetAuthInfoAsync(HttpClient httpClient, string baseUrl, string email, CancellationToken cancellationToken)
     {
-        /// <summary>
-        /// Returns the authentication information for the user
-        /// </summary>
-        /// <param name="httpClient">The HTTP client to use for requests</param>
-        /// <param name="baseUrl">The base url for all requests</param>
-        /// <param name="email">The email address to use for login</param>
-        /// <param name="cancellationToken">The cancellation token to use for the operation</param>
-        /// <returns>The authentication information for the user</returns>
-        private static async Task<AuthInfo> GetAuthInfoAsync(HttpClient httpClient, string baseUrl, string email, CancellationToken cancellationToken)
+        var loginUrl = $"{baseUrl}/v3/auth/info";
+        using var request = new HttpRequestMessage(HttpMethod.Post, loginUrl);
+        request.Content = new StringContent(JsonSerializer.Serialize(new { email }), Encoding.UTF8, "application/json");
+
+        var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        return await ExtractDataFromResponse<AuthInfo>(response, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Authenticates the user with the Filen API
+    /// </summary>
+    /// <param name="httpClient">The HTTP client to use for requests</param>
+    /// <param name="baseUrl">The base url for all requests</param>
+    /// <param name="email">The email address to use for login</param>
+    /// <param name="password">The password to use for login</param>
+    /// <param name="twoFactorCode">The two-factor code to use for login</param>
+    /// <param name="apiKey">The API key to use for login</param>
+    /// <param name="cancellationToken">The cancellation token to use for the operation</param>
+    /// <returns>The authentication result from the initial login</returns>
+    private static async Task<FilenAuthResult> AuthenticateAsync(
+        HttpClient httpClient,
+        string baseUrl,
+        string email,
+        string password,
+        string? twoFactorCode,
+        string? apiKey,
+        CancellationToken cancellationToken)
+    {
+        // Always need authInfo to derive the account master key from password
+        var authInfo = await GetAuthInfoAsync(httpClient, baseUrl, email, cancellationToken)
+            .ConfigureAwait(false);
+
+        var rootKeys = FilenCrypto.GeneratePasswordAndMasterKeyBasedOnAuthVersion(
+            password, authInfo.AuthVersion, authInfo.Salt);
+
+        // 1) Fast-path: if apiKey is provided, try to use it to fetch master keys first
+        if (!string.IsNullOrWhiteSpace(apiKey))
         {
-            var loginUrl = $"{baseUrl}/v3/auth/info";
-            using var request = new HttpRequestMessage(HttpMethod.Post, loginUrl);
-            request.Content = new StringContent(JsonSerializer.Serialize(new { email }), Encoding.UTF8, "application/json");
-
-            var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            return await ExtractDataFromResponse<AuthInfo>(response, cancellationToken).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Authenticates the user with the Filen API
-        /// </summary>
-        /// <param name="httpClient">The HTTP client to use for requests</param>
-        /// <param name="baseUrl">The base url for all requests</param>
-        /// <param name="email">The email address to use for login</param>
-        /// <param name="password">The password to use for login</param>
-        /// <param name="twoFactorCode">The two-factor code to use for login</param>
-        /// <param name="cancellationToken">The cancellation token to use for the operation</param>
-        /// <returns>The authentication result from the initial login</returns>
-        public static async Task<FilenAuthResult> AuthenticateAsync(HttpClient httpClient, string baseUrl, string email, string password, string? twoFactorCode, CancellationToken cancellationToken)
-        {
-            var authInfo = await GetAuthInfoAsync(httpClient, baseUrl, email, cancellationToken).ConfigureAwait(false);
-
-            if (string.IsNullOrWhiteSpace(twoFactorCode))
-                twoFactorCode = "XXXXXX";
-
-            var rootKeys = FilenCrypto.GeneratePasswordAndMasterKeyBasedOnAuthVersion(password, authInfo.AuthVersion, authInfo.Salt);
-            var loginUrl = $"{baseUrl}/v3/login";
-            using var request = new HttpRequestMessage(HttpMethod.Post, loginUrl);
-            request.Content = new StringContent(JsonSerializer.Serialize(new { email, password = rootKeys.Password, twoFactorCode, authVersion = authInfo.AuthVersion }), Encoding.UTF8, "application/json");
-
-            using var response = await httpClient.SendAsync(request, cancellationToken);
-            var result = await ExtractDataFromResponse<AuthResponse>(response, cancellationToken).ConfigureAwait(false);
-
-            // var mk = await GetAllMasterKeys(masterKey1, result.ApiKey, cancellationToken).ConfigureAwait(false);
-
-            var masterKeys = rootKeys.MasterKey.DecryptMetadata(result.MasterKeys);
-
-            return new FilenAuthResult
+            try
             {
-                ApiKey = result.ApiKey,
-                AccountMasterKey = rootKeys.MasterKey,
-                MasterKeys = masterKeys.Split('|').Select(DerivedKey.Create).ToList()
-            };
+                var mkUrl = $"{baseUrl}/v3/user/masterKeys";
+                using var mkReq = new HttpRequestMessage(HttpMethod.Post, mkUrl);
+                mkReq.Headers.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+
+                // For retrieval, Filen accepts an empty/placeholder body
+                mkReq.Content = new StringContent(
+                    JsonSerializer.Serialize(new { masterKeys = "" }),
+                    Encoding.UTF8,
+                    "application/json");
+
+                using var mkResp = await httpClient.SendAsync(mkReq, cancellationToken)
+                    .ConfigureAwait(false);
+
+                mkResp.EnsureSuccessStatusCode();
+
+                var mkResult = await ExtractDataFromResponse<MasterKeysResponse>(mkResp, cancellationToken)
+                    .ConfigureAwait(false);
+
+                var masterKeysPlain = rootKeys.MasterKey.DecryptMetadata(mkResult.MasterKeys);
+
+                return new FilenAuthResult
+                {
+                    ApiKey = apiKey,
+                    AccountMasterKey = rootKeys.MasterKey,
+                    MasterKeys = masterKeysPlain.Split('|').Select(DerivedKey.Create).ToList()
+                };
+            }
+            catch
+            {
+                // Any failure (invalid/expired apiKey, network, schema, decrypt) -> fall back to login
+            }
         }
+
+        // 2) Fallback: login endpoint (requires MFA if enabled)
+        if (string.IsNullOrWhiteSpace(twoFactorCode))
+            twoFactorCode = "XXXXXX";
+
+        var loginUrl = $"{baseUrl}/v3/login";
+        using var loginReq = new HttpRequestMessage(HttpMethod.Post, loginUrl);
+        loginReq.Content = new StringContent(
+            JsonSerializer.Serialize(new
+            {
+                email,
+                password = rootKeys.Password,
+                twoFactorCode,
+                authVersion = authInfo.AuthVersion
+            }),
+            Encoding.UTF8,
+            "application/json");
+
+        using var loginResp = await httpClient.SendAsync(loginReq, cancellationToken)
+            .ConfigureAwait(false);
+
+        var loginResult = await ExtractDataFromResponse<AuthResponse>(loginResp, cancellationToken)
+            .ConfigureAwait(false);
+
+        var masterKeys = rootKeys.MasterKey.DecryptMetadata(loginResult.MasterKeys);
+
+        return new FilenAuthResult
+        {
+            ApiKey = loginResult.ApiKey,
+            AccountMasterKey = rootKeys.MasterKey,
+            MasterKeys = masterKeys.Split('|').Select(DerivedKey.Create).ToList()
+        };
+    }
+
+    private sealed class MasterKeysResponse
+    {
+        public string MasterKeys { get; set; } = "";
     }
 
     /// <summary>

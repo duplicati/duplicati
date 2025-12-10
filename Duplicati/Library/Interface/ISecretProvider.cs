@@ -49,9 +49,26 @@ public interface ISecretProvider : IDynamicModule
     /// <returns>A dictionary of resolved secrets. The dictionary has all requested keys or the call fails.</returns>
     Task<Dictionary<string, string>> ResolveSecretsAsync(IEnumerable<string> keys, CancellationToken cancellationToken);
     /// <summary>
+    /// Stores a secret value.
+    /// </summary>
+    /// <param name="key">The secret key.</param>
+    /// <param name="value">The secret value.</param>
+    /// <param name="overwrite">If set to <c>true</c>, existing secrets are overwritten.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken);
+    /// <summary>
     /// The key for the secret provider
     /// </summary>
     string Key { get; }
+    /// <summary>
+    /// Indicates whether the secret provider is supported on the current platform.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task<bool> IsSupported(CancellationToken cancellationToken);
+    /// <summary>
+    /// Indicates whether the secret provider supports setting secrets.
+    /// </summary>
+    bool IsSetSupported { get; }
     /// <summary>
     /// The display name of the secret provider
     /// </summary>

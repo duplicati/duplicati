@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Net;
 using System.Reflection;
 using System.Web;
 using Duplicati.Library.Interface;
@@ -27,6 +28,8 @@ using Google.Api.Gax.Grpc;
 using Google.Api.Gax.Grpc.Rest;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.SecretManager.V1;
+using Google.Protobuf;
+using Grpc.Core;
 
 namespace Duplicati.Library.SecretProvider;
 
@@ -48,6 +51,12 @@ public class GCSSecretProvider : ISecretProvider
 
     /// <inheritdoc />
     public string Description => Strings.GCSSecretProvider.Description;
+
+    /// <inheritdoc />
+    public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(true);
+
+    /// <inheritdoc />
+    public bool IsSetSupported => true;
 
     /// <summary>
     /// The API types supported
@@ -71,6 +80,8 @@ public class GCSSecretProvider : ISecretProvider
         public ApiType? ApiType { get; set; }
         public string? ProjectId { get; set; }
         public string? AccessToken { get; set; }
+        public string? ServiceAccountJson { get; set; }
+        public string? ServiceAccountFile { get; set; }
         public string Version { get; set; } = "latest";
 
         public static CommandLineArgumentDescriptionAttribute? GetCommandLineArgumentDescription(string name)
@@ -79,6 +90,8 @@ public class GCSSecretProvider : ISecretProvider
                 nameof(ApiType) => new CommandLineArgumentDescriptionAttribute() { Name = "api-type", Type = CommandLineArgument.ArgumentType.Enumeration, ShortDescription = Strings.GCSSecretProvider.ApiTypeDescriptionShort, LongDescription = Strings.GCSSecretProvider.ApiTypeDescriptionLong },
                 nameof(ProjectId) => new CommandLineArgumentDescriptionAttribute() { Name = "project-id", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.GCSSecretProvider.ProjectIdDescriptionShort, LongDescription = Strings.GCSSecretProvider.ProjectIdDescriptionLong },
                 nameof(AccessToken) => new CommandLineArgumentDescriptionAttribute() { Name = "access-token", Type = CommandLineArgument.ArgumentType.Password, ShortDescription = Strings.GCSSecretProvider.AccessTokenDescriptionShort, LongDescription = Strings.GCSSecretProvider.AccessTokenDescriptionLong },
+                nameof(ServiceAccountJson) => new CommandLineArgumentDescriptionAttribute() { Name = "service-account-json", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.GCSSecretProvider.ServiceAccountJsonDescriptionShort, LongDescription = Strings.GCSSecretProvider.ServiceAccountJsonDescriptionLong },
+                nameof(ServiceAccountFile) => new CommandLineArgumentDescriptionAttribute() { Name = "service-account-file", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.GCSSecretProvider.ServiceAccountFileDescriptionShort, LongDescription = Strings.GCSSecretProvider.ServiceAccountFileDescriptionLong },
                 nameof(Version) => new CommandLineArgumentDescriptionAttribute() { Name = "version", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.GCSSecretProvider.VersionDescriptionShort, LongDescription = Strings.GCSSecretProvider.VersionDescriptionLong },
                 _ => null
             };
@@ -124,10 +137,17 @@ public class GCSSecretProvider : ISecretProvider
                 _ => throw new UserInformationException($"Unknown API type: {cfg.ApiType}", "UnknownApiType")
             };
 
-        if (!string.IsNullOrWhiteSpace(cfg.AccessToken))
-            builder.Credential = GoogleCredential.FromAccessToken(cfg.AccessToken);
+        GoogleCredential credential;
+        if (!string.IsNullOrWhiteSpace(cfg.ServiceAccountJson))
+            credential = GoogleCredential.FromJson(cfg.ServiceAccountJson);
+        else if (!string.IsNullOrWhiteSpace(cfg.ServiceAccountFile))
+            credential = GoogleCredential.FromFile(cfg.ServiceAccountFile);
+        else if (!string.IsNullOrWhiteSpace(cfg.AccessToken))
+            credential = GoogleCredential.FromAccessToken(cfg.AccessToken);
         else
-            builder.Credential = await GoogleCredential.GetApplicationDefaultAsync(cancellationToken).ConfigureAwait(false);
+            credential = await GoogleCredential.GetApplicationDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+        builder.Credential = credential;
 
         var client = builder.Build();
         var res = client.ListSecretsAsync(new ListSecretsRequest() { ParentAsProjectName = new Google.Api.Gax.ResourceNames.ProjectName(cfg.ProjectId) }, CallSettings.FromCancellationToken(cancellationToken));
@@ -151,4 +171,56 @@ public class GCSSecretProvider : ISecretProvider
 
         return res;
     }
+
+    /// <inheritdoc />
+    public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (_client is null || _cfg is null)
+            throw new InvalidOperationException("The secret provider has not been initialized");
+
+        var secretName = new SecretName(_cfg.ProjectId, key);
+        var callSettings = CallSettings.FromCancellationToken(cancellationToken);
+        var exists = false;
+
+        try
+        {
+            await _client.GetSecretAsync(secretName, callSettings).ConfigureAwait(false);
+            exists = true;
+        }
+        catch (Exception ex) when (IsNotFound(ex))
+        {
+        }
+
+        if (exists && !overwrite)
+            throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
+
+        if (!exists)
+        {
+            await _client.CreateSecretAsync(new CreateSecretRequest
+            {
+                ParentAsProjectName = new Google.Api.Gax.ResourceNames.ProjectName(_cfg.ProjectId),
+                SecretId = key,
+                Secret = new Secret
+                {
+                    Replication = new Replication
+                    {
+                        Automatic = new Replication.Types.Automatic()
+                    }
+                }
+            }, callSettings).ConfigureAwait(false);
+        }
+
+        await _client.AddSecretVersionAsync(new AddSecretVersionRequest
+        {
+            ParentAsSecretName = secretName,
+            Payload = new SecretPayload
+            {
+                Data = ByteString.CopyFromUtf8(value)
+            }
+        }, callSettings).ConfigureAwait(false);
+    }
+
+    private static bool IsNotFound(Exception ex)
+        => ex is RpcException rpc && rpc.StatusCode == StatusCode.NotFound
+            || ex is Google.GoogleApiException api && api.HttpStatusCode == HttpStatusCode.NotFound;
 }

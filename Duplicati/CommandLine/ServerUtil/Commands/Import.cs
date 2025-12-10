@@ -51,7 +51,7 @@ public static class Import
                     throw new UserReportedException("No password provided with json mode.");
 
                 if (string.IsNullOrWhiteSpace(passphrase))
-                    passphrase = HelperMethods.ReadPasswordFromConsole("The file is encrypted. Please provide the encryption password: ");
+                    passphrase = Library.Utility.Utility.ReadSecretFromConsole("The file is encrypted. Please provide the encryption password: ");
 
                 if (string.IsNullOrWhiteSpace(passphrase))
                     throw new UserReportedException("No password provided");

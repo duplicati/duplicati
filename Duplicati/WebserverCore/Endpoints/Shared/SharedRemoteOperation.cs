@@ -44,8 +44,9 @@ public class SharedRemoteOperation
         return modules;
     }
 
-    public static async Task<(string Url, Dictionary<string, string?> Options)> ExpandUrl(Connection connection, IApplicationSettings applicationSettings, string url, CancellationToken cancelToken)
+    public static async Task<(string Url, Dictionary<string, string?> Options)> ExpandUrl(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
     {
+        url = UnmaskUrl(connection, url, backupId);
         var uri = new Library.Utility.Uri(url);
         var opts = ParseUrlOptions(connection, uri);
 
@@ -64,9 +65,9 @@ public class SharedRemoteOperation
         return (url, opts);
     }
 
-    public static async Task<TupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, CancellationToken cancelToken)
+    public static async Task<TupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
     {
-        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, cancelToken);
+        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, cancelToken);
         var modules = ConfigureModules(opts);
         var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, opts);
         return new TupleDisposeWrapper(backend, modules);
@@ -90,7 +91,7 @@ public class SharedRemoteOperation
         }
     }
 
-    public static string UnmaskUrl(Connection connection, string maskedurl, string? backupId)
+    private static string UnmaskUrl(Connection connection, string maskedurl, string? backupId)
     {
         var previousUrl = !string.IsNullOrWhiteSpace(backupId) ? connection.GetBackup(backupId)?.TargetURL : null;
         var unmasked = string.IsNullOrWhiteSpace(previousUrl)

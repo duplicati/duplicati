@@ -45,8 +45,7 @@ public class DestinationVerify : IEndpointV2
 
         try
         {
-            var url = SharedRemoteOperation.UnmaskUrl(connection, input.DestinationUrl, input.BackupId);
-            wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, url, cancelToken);
+            wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
 
             using (var b = wrapper.Backend)
             {

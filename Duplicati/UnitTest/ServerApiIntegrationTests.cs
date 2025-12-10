@@ -133,7 +133,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
             Assert.That(result.Id, Is.Not.Null.And.Not.Empty, "Import should return a backup ID");
 
-            var importedBackup = await AssertBackupListedAsync(httpClient, result.Id).ConfigureAwait(false);
+            var importedBackup = await AssertBackupListedAsync(httpClient, result.Id!).ConfigureAwait(false);
             Assert.That(importedBackup.IsUnencryptedOrPassphraseStored, Is.True, "Imported backup should be ready to run without prompting for a passphrase");
         }).ConfigureAwait(false);
     }

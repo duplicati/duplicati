@@ -37,6 +37,7 @@ public static class WebModules
         new KeyGenerator(),
         new KeyUploader(),
         new Storj.StorjConfig(),
-        new Duplicati.ListBackupsModule()
+        new Duplicati.ListBackupsModule(),
+        new Filen.GetApiKeyModule(),
     ];
 }

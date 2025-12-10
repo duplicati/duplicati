@@ -43,8 +43,8 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                 => ExecuteTest(connection, applicationSettings, input.path, input.backupId, autocreate ?? false, cancelToken))
                 .RequireAuthorization();
 
-            group.MapPost("/remoteoperation/create", ([FromServices] Connection connection, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
-                => ExecuteCreate(connection, input.path, input.backupId, cancelToken))
+            group.MapPost("/remoteoperation/create", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
+                => ExecuteCreate(connection, applicationSettings, input.path, input.backupId, cancelToken))
                 .RequireAuthorization();
         }
 
@@ -56,13 +56,9 @@ namespace Duplicati.WebserverCore.Endpoints.V1
 
         private static async Task ExecuteTest(Connection connection, IApplicationSettings applicationSettings, string maskedurl, string? backupId, bool autoCreate, CancellationToken cancelToken)
         {
-            TupleDisposeWrapper? wrapper = null;
-
             try
             {
-                var url = SharedRemoteOperation.UnmaskUrl(connection, maskedurl, backupId);
-                wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, url, cancelToken);
-
+                using var wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, maskedurl, backupId, cancelToken);
                 using (var b = wrapper.Backend)
                 {
                     try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
@@ -108,19 +104,15 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             {
                 throw new ServerErrorException(ex.Message);
             }
-            finally
-            {
-                wrapper?.Dispose();
-            }
         }
 
 
-        private static async Task ExecuteCreate(Connection connection, string maskedurl, string? backupId, CancellationToken cancelToken)
+        private static async Task ExecuteCreate(Connection connection, IApplicationSettings applicationSettings, string maskedurl, string? backupId, CancellationToken cancelToken)
         {
             try
             {
-                var url = SharedRemoteOperation.UnmaskUrl(connection, maskedurl, backupId);
-                using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>()))
+                using var wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, maskedurl, backupId, cancelToken);
+                using (var b = wrapper.Backend)
                     await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
             }
             catch (UserInformationException uex)

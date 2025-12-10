@@ -38,6 +38,12 @@ public class EnvironmentSecretProvider : ISecretProvider
     public string Description => Strings.EnvironmentSecretProvider.Description;
 
     /// <inheritdoc />
+    public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(true);
+
+    /// <inheritdoc />
+    public bool IsSetSupported => false; // Don't set env vars as they are not persisted
+
+    /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => [];
 
     /// <inheritdoc />
@@ -56,10 +62,14 @@ public class EnvironmentSecretProvider : ISecretProvider
                 {
                     var value = envLookup.GetValueOrDefault(k);
                     if (string.IsNullOrWhiteSpace(value))
-                        throw new KeyNotFoundException($"The key '{k}' was not found");
+                        throw new UserInformationException($"The key '{k}' was not found", "KeyNotFound");
                     return value;
                 }
             )
         );
     }
+
+    /// <inheritdoc />
+    public Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+        => throw new NotSupportedException("Setting secrets is not supported for environment variables");
 }
