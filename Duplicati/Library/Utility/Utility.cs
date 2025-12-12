@@ -1521,6 +1521,20 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Utility method that emulates C#'s built in await keyword without requiring the calling method to be async.
+        /// This method should be preferred over using Task.Result, as it doesn't wrap singular exceptions in AggregateExceptions.
+        /// (It uses Task.GetAwaiter().GetResult(), which is the same thing that await uses under the covers.)
+        /// https://stackoverflow.com/questions/17284517/is-task-result-the-same-as-getawaiter-getresult
+        /// </summary>
+        /// <typeparam name="T">Result type</typeparam>
+        /// <param name="task">Task to await</param>
+        /// <returns>Task result</returns>
+        public static T Await<T>(this ValueTask<T> task)
+        {
+            return task.ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// Utility that computes the delay before the next retry of an operation, optionally using exponential backoff.
         /// Note: when using exponential backoff, the exponent is clamped at 10.
         /// </summary>

@@ -65,6 +65,20 @@ public class RegisterForRemote : IDisposable
     }
 
     /// <summary>
+    /// The default URL to register the machine with
+    /// </summary>
+    public static string DefaultDashboardUrl
+    {
+        get
+        {
+            var envvalue = Environment.GetEnvironmentVariable("DUPLICATI_DASHBOARD_URL");
+            return string.IsNullOrWhiteSpace(envvalue)
+                ? "https://app.duplicati.com/app/machines"
+                : envvalue;
+        }
+    }
+
+    /// <summary>
     /// The Json options to use for serialization
     /// </summary>
     internal static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions

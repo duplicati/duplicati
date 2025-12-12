@@ -36,7 +36,7 @@ namespace RemoteSynchronization
         //private int _instantiations = 0;
         private readonly int _maxRetries = maxRetries;
         private readonly Dictionary<string, string> _options = options;
-        private int _retryDelay = retryDelay;
+        private readonly int _retryDelay = retryDelay;
         private int _currentRetryDelay = retryDelay;
         private IStreamingBackend? _streamingBackend = null;
 
@@ -235,6 +235,13 @@ namespace RemoteSynchronization
             };
         }
 
+        public async Task Reset()
+        {
+            _anyDownloaded = false;
+            _anyUploaded = false;
+            _currentRetryDelay = _retryDelay;
+        }
+
         /// <summary>
         /// Retries an operation with a delay if it fails.
         /// This method will instantiate the backend if it has not been instantiated yet.
@@ -293,7 +300,7 @@ namespace RemoteSynchronization
         /// </summary>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result is true if the folder was created successfully, false otherwise.</returns>
-        private async Task<bool> TryCreateFolder(CancellationToken token)
+        public async Task<bool> TryCreateFolder(CancellationToken token)
         {
             bool created = false;
             await RetryWithDelay("CreateFolder", async () =>

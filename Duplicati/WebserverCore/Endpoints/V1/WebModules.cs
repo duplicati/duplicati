@@ -23,6 +23,7 @@ using Duplicati.Library.Main;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Endpoints.Shared;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -41,18 +42,6 @@ public record WebModules : IEndpointV1
     private static IEnumerable<IWebModule> ExecuteGet()
         => Library.DynamicLoader.WebLoader.Modules;
 
-    private static string UnmaskUrl(Connection connection, string maskedurl, string? backupId)
-    {
-        var previousUrl = !string.IsNullOrWhiteSpace(backupId) ? connection.GetBackup(backupId)?.TargetURL : null;
-        var unmasked = string.IsNullOrWhiteSpace(previousUrl)
-            ? maskedurl
-            : QuerystringMasking.Unmask(maskedurl, previousUrl);
-
-        if (Connection.UrlContainsPasswordPlaceholder(unmasked))
-            throw new ArgumentException("Unmasked URL contains password placeholder");
-
-        return unmasked;
-    }
 
     private static async Task<Dto.WebModuleOutputDto> ExecutePost(Connection connection, IApplicationSettings applicationSettings, string modulekey, Dictionary<string, string> inputOptions, CancellationToken cancellationToken)
     {
@@ -63,12 +52,13 @@ public record WebModules : IEndpointV1
         foreach (var k in inputOptions.Keys)
             options[k] = inputOptions[k];
 
-        await SecretProviderHelper.ApplySecretProviderAsync([], [], options, Library.Utility.TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancellationToken);
-
-        if (options.TryGetValue("url", out var maskedurl) && !string.IsNullOrEmpty(maskedurl))
+        var url = options.GetValueOrDefault("url");
+        if (!string.IsNullOrWhiteSpace(url))
         {
-            var unmasked = UnmaskUrl(connection, maskedurl, options.GetValueOrDefault("backup-id"));
-            options["url"] = unmasked;
+            var (newUrl, opts) = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, url, options.GetValueOrDefault("backup-id"), cancellationToken);
+            options["url"] = newUrl;
+            foreach (var k in opts.Keys)
+                options[k] = opts[k];
         }
 
         return new Dto.WebModuleOutputDto(

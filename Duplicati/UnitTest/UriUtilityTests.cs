@@ -37,6 +37,21 @@ namespace Duplicati.UnitTest
             query.Add(new NameValueCollection { { "c", "d" } });
             queryUrl = Library.Utility.Uri.BuildUriQuery(query);
             Assert.AreEqual("a=b&c=d", queryUrl);
+
+            // Test with space in value
+            query = new NameValueCollection { { "key", "value with space" } };
+            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
+            Assert.AreEqual("key=value with space", queryUrl);
+
+            // Test with + in value
+            query = new NameValueCollection { { "key", "value+plus" } };
+            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
+            Assert.AreEqual("key=value+plus", queryUrl);
+
+            // Test with % in value
+            query = new NameValueCollection { { "key", "value%percent" } };
+            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
+            Assert.AreEqual("key=value%percent", queryUrl);
         }
 
         [Test]
@@ -45,9 +60,9 @@ namespace Duplicati.UnitTest
         {
             var baseUrl = "http://localhost";
             var path = "files";
-            var query = new NameValueCollection { { "a", "b" }, { "c", "d" } };
+            var query = new NameValueCollection { { "a", "b" }, { "c", "d" }, { "e", "+ %" } };
             var url = Library.Utility.Uri.UriBuilder(baseUrl, path, query);
-            Assert.AreEqual(baseUrl + "/" + path + "?a=b&c=d", url);
+            Assert.AreEqual(baseUrl + "/" + path + "?a=b&c=d&e=+%20%25", url);
         }
 
         [Test]

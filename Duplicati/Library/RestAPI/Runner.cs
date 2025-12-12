@@ -470,7 +470,7 @@ namespace Duplicati.Server
             if (backup == null)
                 throw new ArgumentNullException(nameof(backup));
 
-            var options = ApplyOptions(databaseConnection, backup, GetCommonOptions(databaseConnection));
+            var options = ApplyOptions(databaseConnection, backup, GetCommonOptions(databaseConnection), out var url);
             if (data.ExtraOptions != null)
                 foreach (var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
@@ -490,7 +490,7 @@ namespace Duplicati.Server
             );
 
             var cmd = new System.Text.StringBuilder();
-            cmd.Append(Utility.WrapAsCommandLine([exe, "backup", backup.TargetURL], false));
+            cmd.Append(Utility.WrapAsCommandLine([exe, "backup", url], false));
 
             cmd.Append(" ");
             cmd.Append(Utility.WrapAsCommandLine(sources, true));
@@ -516,7 +516,7 @@ namespace Duplicati.Server
             if (backup == null)
                 throw new ArgumentNullException(nameof(backup));
 
-            var options = ApplyOptions(databaseConnection, backup, GetCommonOptions(databaseConnection));
+            var options = ApplyOptions(databaseConnection, backup, GetCommonOptions(databaseConnection), out var url);
             if (data.ExtraOptions != null)
                 foreach (var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
@@ -532,7 +532,7 @@ namespace Duplicati.Server
 
             var parts = new List<string>
             {
-                backup.TargetURL
+                url
             };
             parts.AddRange(sources);
 
@@ -636,7 +636,7 @@ namespace Duplicati.Server
                     });
                 }
 
-                var options = ApplyOptions(databaseConnection, backup, GetCommonOptions(databaseConnection));
+                var options = ApplyOptions(databaseConnection, backup, GetCommonOptions(databaseConnection), out var url);
                 if (data.ExtraOptions != null)
                     foreach (var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
@@ -653,7 +653,7 @@ namespace Duplicati.Server
                 }))
 
                 using (tempfolder)
-                using (var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
+                using (var controller = new Duplicati.Library.Main.Controller(url, options, sink))
                 {
                     try
                     {
@@ -1117,8 +1117,9 @@ namespace Duplicati.Server
             options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.OrdinalIgnoreCase));
         }
 
-        internal static Dictionary<string, string?> ApplyOptions(Connection databaseConnection, Serialization.Interface.IBackup backup, Dictionary<string, string?> options)
+        internal static Dictionary<string, string?> ApplyOptions(Connection databaseConnection, Serialization.Interface.IBackup backup, Dictionary<string, string?> options, out string url)
         {
+            url = backup.TargetURL;
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
             options["backup-id"] = $"DB-{backup.ID}";
@@ -1147,6 +1148,15 @@ namespace Duplicati.Server
                     }.Where(x => !string.IsNullOrWhiteSpace(x))
                 );
             }
+
+            var uri = new Library.Utility.Uri(backup.TargetURL);
+            if (uri.Scheme.Equals(Library.Backend.Duplicati.DuplicatiBackend.PROTOCOL, StringComparison.OrdinalIgnoreCase))
+                url = Library.Backend.Duplicati.DuplicatiBackend.MergeArgsIntoUrl(
+                    url,
+                    databaseConnection.ApplicationSettings.RemoteControlStorageApiId,
+                    databaseConnection.ApplicationSettings.RemoteControlStorageApiKey,
+                    databaseConnection.ApplicationSettings.RemoteControlStorageEndpointUrl
+                );
 
             return options;
         }

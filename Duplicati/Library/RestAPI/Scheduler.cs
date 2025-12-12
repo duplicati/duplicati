@@ -327,7 +327,7 @@ namespace Duplicati.Server
                                     if (entry != null)
                                     {
                                         var options = Server.Runner.GetCommonOptions(m_dataConnection);
-                                        Server.Runner.ApplyOptions(m_dataConnection, entry, options);
+                                        Server.Runner.ApplyOptions(m_dataConnection, entry, options, out var _);
                                         if (new Library.Main.Options(options).DisableOnBattery &&
                                             (Library.Utility.Power.PowerSupply.GetSource() ==
                                              Library.Utility.Power.PowerSupply.Source.Battery))

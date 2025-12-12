@@ -55,6 +55,11 @@ public sealed record SystemInfoDto
     public required string RemoteControlRegistrationUrl { get; init; }
 
     /// <summary>
+    /// The default URL to present for remote control dashboard
+    /// </summary>
+    public required string RemoteControlDashboardUrl { get; init; }
+
+    /// <summary>
     /// Gets or sets the started by.
     /// </summary>
     public required string StartedBy { get; init; }
