@@ -243,9 +243,13 @@ async function directRestoreFromFiles(page: Page) {
   restoreDirectCard.locator("button").filter({ hasText: "Start" }).click();
 
   page
-    .locator("div.tile")
+    .locator("app-destination-list-item")
     .filter({
-      hasText: "File system",
+      has: page.locator("div.name").filter({ hasText: "File system" }),
+    })
+    .locator("button")
+    .filter({
+      hasText: "Choose",
     })
     .click();
 
