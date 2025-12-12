@@ -12,6 +12,7 @@ RUN dnf -y install --allowerasing @buildsys-build yum-utils rpm-sign gnupg rpmde
 RUN dnf -y update
 
 # Install build things
+RUN dnf -y install systemd systemd-rpm-macros
 RUN dnf -y install desktop-file-utils
 
 LABEL org.label-schema.name="duplicati/fedora-build" \

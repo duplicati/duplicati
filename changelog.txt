@@ -1,3 +1,83 @@
+2025-12-12 - 2.2.0.102_canary_2025-12-12
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+This release makes the S3 providers simpler to use by providing fewer options, and only showing relevant endpoints.
+
+The release also adds support for excluding files based on extended attributes on Linux and MacOS, and adds support for supplementary access groups on Linux.
+
+For Windows, the installer now supports `NOSCRIPT=true` which will prevent the installer from running scripts that start/stop the Windows service.
+
+It is now also possible to change the encryption passphrase for a backup, using the RecoveryTool.
+
+## Change to default database encryption
+This release now has a "default secret provider" for the current OS.
+The mapping is:
+- Windows: Windows Credential Manager
+- MacOS: Keychain
+- Linux: libSecret (Gnome Keyring), or commandline `pass` if available
+
+If no secret provider is given, the default secret provider for the current OS will be used.
+The secret provider is then used to store secrets, inclduing the encryption password for the database and the password for the server, if using the TrayIcon to connect to the server.
+
+**Warning**: This change will cause the **database to be encrypted** with a random password, and the password will be stored in the default secret provider for the current OS.
+
+If you rely on getting the database contents for something, you need to ensure you also have a copy of the random password.
+
+If you want to opt-out of this change, you can use the `--disable-db-encryption` option when starting the Server/TrayIcon.
+If you already have an encryption password set, this change will not affect you.
+
+If you are already using database encryption, and want to switch to the new managed way of storing the encryption password, you need to:
+- Stop the server/TrayIcon
+- Start the server/TrayIcon with the `--disable-db-encryption` option to remove the database encryption
+- Remove the `--disable-db-encryption` option
+- Remove the `--webservice-password` option or environment variable
+- Start the server/TrayIcon again
+
+## Detailed list of changes:
+- Added Rabata.io to list of support S3 providers
+- Added support for supplementary access groups on Linux
+- Added support for excluding files based on extended attributes (MacOS / Linux)
+- Added support for providing a URL for the servername for S3
+- Added a whitelist of public S3 providers, and include hostname in backup reports if the hostname is in the whitelist
+- Updated SSH.NET to latest version (2025.1.0)
+- Fixed an issue with startup delay not working correctly
+- Fixed a timeout issue with AliyunOSS
+- Updated RecoveryTool to also allow changing a backup's encryption password, thansk @greyxr
+- Added support for providing the target URL and encryption passphrase in ServerUtil when importing a configuration
+- Fixed a warning on Windows with the EventLog commandline argument type
+- Updated MSI installer to support `NOSCRIPT=true` which will prevent the installer from running scripts that start/stop the Windows service
+- Updated MSI installer to ignore errors when stopping the service
+- Added a guard code to check that the database is in a good state before attempting removal
+- Added support for writing secrets with the secret providers and the secret tool
+- Added a dialog to TrayIcon that asks for the password to the server, if not using a hosted server instance
+- Added support for saving the TrayIcon password in the default secret provider for the current OS
+- Added automatic encryption of the Server database, using the default secret provider for the current OS, if possible
+- Added support for getting an authentication token for Filen.io when using MFA
+- Automatically run `VACUUM` on the database if the encryption settings are changed, so existing data is scrubbed
+- Added a Duplicati Storage backend that supports the Duplicati Storage service
+
+## ngclient changes:
+- Fixed an issue with loading Chinese language
+- Added support for custom bucket validation rules on B2 buckets
+- Added support for hiding the console connection indicator
+- Merged settings for remote control on the settings page
+- Fixed an issue with some default empty url not working on the destination page
+- Fixed supporting Storj Access Grant & Storj API key
+- More accurate display of destination type on the overview page
+- Added custom UIs for supported S3 providers
+- Added improved field validation for providers
+- Updated the "Direct restore" flow to use the same destination picker as when setting up a backup
+- Added some functionality to swap UI and choose the default UI (ngax vs ngclient)
+- Fixed startup delay settings not being saved
+- Fixed an issue with the data not being selectable in a custom schedule
+- Fixed back button not working on Schedule page
+- Now pushing serversettings via websocket instead of polling
+- Added a button for getting API token for Filen.io when using MFA
+- Allow finding deprecated backends by typing their full protocol key
+- Added support for Duplicati storage backend
+
 2025-11-20 - 2.2.0.101_canary_2025-11-20
 ==========
 This release is a canary release intended to be used for testing.
