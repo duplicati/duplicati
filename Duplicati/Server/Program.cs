@@ -84,6 +84,10 @@ namespace Duplicati.Server
         /// <summary>The commandline argument name for help.</summary>
         private const string HELP_OPTION = "help";
 
+        /// <summary>
+        /// The name used in the secret provider for the database encryption key
+        /// </summary>
+        private const string DATABASE_SECRET_VALUE_NAME = "duplicati-server-encryption-key";
 
 #if DEBUG
         private const bool DEBUG_MODE = true;
@@ -128,6 +132,11 @@ namespace Duplicati.Server
         /// Duplicati webserver instance
         /// </summary>
         public static DuplicatiWebserver DuplicatiWebserver { get; set; }
+
+        /// <summary>
+        /// The default secret provider
+        /// </summary>
+        public static ISecretProvider DefaultSecretProvider { get; set; }
 
         /// <summary>
         /// Callback to shutdown the modern webserver
@@ -194,6 +203,8 @@ namespace Duplicati.Server
 
             ApplyEnvironmentVariables(commandlineOptions);
             ApplySecretProvider(applicationSettings, commandlineOptions, CancellationToken.None).Await();
+            DefaultSecretProvider = SecretProviderHelper.GetDefaultSecretProvider(commandlineOptions, CancellationToken.None)
+                .Await();
 
             var parameterFileOption = PARAMETERS_FILE_OPTION_EXTRAS.Prepend(PARAMETERS_FILE_OPTION)
                 .FirstOrDefault(x => commandlineOptions.ContainsKey(x));
@@ -907,10 +918,64 @@ namespace Duplicati.Server
             var usingBlacklistedKey = encKey?.IsBlacklisted ?? false;
             var hasValidEncryptionKey = encKey != null;
 
-            applicationSettings.SettingsEncryptionKeyProvidedExternally = hasValidEncryptionKey;
+            // Don't encrypt the database in debug mode, unless explicitly requested
+            if (DEBUG_MODE)
+            {
+                if (string.IsNullOrWhiteSpace(commandlineOptions.GetValueOrDefault(DISABLE_DB_ENCRYPTION_OPTION)))
+                    disableDbEncryption = true;
+            }
+
+            // If we are supposed to have an encryption key, but do not, try to get it from the (default) secret provider
+            if (!hasValidEncryptionKey && DefaultSecretProvider != null)
+            {
+                string encryptionKey = null;
+                try
+                {
+                    encryptionKey = DefaultSecretProvider.ResolveSecretAsync(DATABASE_SECRET_VALUE_NAME, CancellationToken.None).Await();
+                }
+                catch
+                {
+                    Log.WriteInformationMessage(LOGTAG, "SecretProviderFailedToGetEncryptionKey", null, Strings.Program.SecretProviderFailedToGetEncryptionKey);
+                }
+
+                // If there is no encryption key, and the secret provider supports setting secrets, try to set the encryption key
+                if (!disableDbEncryption && string.IsNullOrWhiteSpace(encryptionKey) && DefaultSecretProvider.IsSetSupported)
+                {
+                    var tmpkey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+                    try
+                    {
+                        DefaultSecretProvider.SetSecretAsync(
+                            DATABASE_SECRET_VALUE_NAME, tmpkey, false,
+                            CancellationToken.None).Await();
+
+                        // For some cloud providers, this can sometimes fail due to eventual consistency
+                        // For now, the solution is that settings will be encrypted in the next run
+                        var tmp = DefaultSecretProvider.ResolveSecretAsync(DATABASE_SECRET_VALUE_NAME, CancellationToken.None).Await();
+
+                        if (tmp != tmpkey)
+                            throw new Exception("Secret provider did not return the expected value");
+
+                        encryptionKey = tmpkey;
+                    }
+                    catch
+                    {
+                        Log.WriteVerboseMessage(LOGTAG, "SecretProviderFailedToSetEncryptionKey", null, Strings.Program.SecretProviderFailedToSetEncryptionKey);
+                    }
+                }
+
+                // If we got an encryption key (or created one), apply it
+                if (!string.IsNullOrWhiteSpace(encryptionKey))
+                {
+                    encKey = EncryptedFieldHelper.KeyInstance.CreateKeyIfValid(encryptionKey);
+                    hasValidEncryptionKey = encKey != null;
+                }
+            }
+
 
             if (requireDbEncryptionKey && !(hasValidEncryptionKey || disableDbEncryption))
                 throw new UserInformationException(Strings.Program.DatabaseEncryptionKeyRequired(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION), "RequireDbEncryptionKey");
+
+            applicationSettings.SettingsEncryptionKeyProvidedExternally = hasValidEncryptionKey;
 
             var hasEncryptedFields = false;
             try

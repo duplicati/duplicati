@@ -33,7 +33,6 @@ using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
-using Google.Protobuf.WellKnownTypes;
 
 namespace Duplicati.Library.Main;
 
@@ -103,6 +102,26 @@ public static class SecretProviderHelper
     /// <returns>The wrapped secret provider</returns>
     public static ISecretProvider WrapWithCache(string config, ISecretProvider provider, CachingLevel cachingLevel, string persistedFolder, string salt, string? pattern)
         => new SecretProviderCached(config, provider, cachingLevel, persistedFolder, salt, pattern);
+
+
+    /// <summary>
+    /// Gets the default secret provider, if any
+    /// </summary>
+    /// <param name="options">The options passed</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns></returns>
+    public static async Task<ISecretProvider?> GetDefaultSecretProvider(Dictionary<string, string?> options, CancellationToken cancellationToken)
+    {
+        var providerConfig = options.GetValueOrDefault("secret-provider");
+        if (!string.IsNullOrWhiteSpace(providerConfig))
+        {
+            var provider = SecretProviderLoader.CreateInstance(providerConfig);
+            if (provider?.IsSetSupported == true)
+                return provider;
+        }
+
+        return await SecretProviderLoader.GetDefaultSecretProviderForOperatingSystem(cancellationToken).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// Applies the secret provider to the arguments.
@@ -265,6 +284,16 @@ public static class SecretProviderHelper
     }
 
     /// <summary>
+    /// Resolves a single secret from the provider
+    /// </summary>
+    /// <param name="provider">The secret provider</param>
+    /// <param name="name">The name of the secret</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The resolved secret</returns>
+    public static async Task<string> ResolveSecretAsync(this ISecretProvider provider, string name, CancellationToken cancelToken)
+        => (await provider.ResolveSecretsAsync([name], cancelToken).ConfigureAwait(false))[name];
+
+    /// <summary>
     /// Gets the key from a value using the pattern, and also collects partial matches
     /// </summary>
     /// <param name="value">The value to get the key from</param>
@@ -394,6 +423,12 @@ public static class SecretProviderHelper
 
         /// <inheritdoc/>
         public string Description => _provider.Description;
+
+        /// <inheritdoc />
+        public Task<bool> IsSupported(CancellationToken cancellationToken) => _provider.IsSupported(cancellationToken);
+
+        /// <inheritdoc />
+        public bool IsSetSupported => _provider.IsSetSupported;
 
         /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands => _provider.SupportedCommands;
@@ -570,6 +605,29 @@ public static class SecretProviderHelper
 
 
             return result;
+        }
+
+        /// <inheritdoc />
+        public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+        {
+            if (!_initialized)
+                throw new InvalidOperationException("The provider has not been initialized");
+
+            await _provider.SetSecretAsync(key, value, overwrite, cancellationToken).ConfigureAwait(false);
+
+            if (_cachingLevel == CachingLevel.InMemory || _cachingLevel == CachingLevel.Persistent)
+            {
+                lock (_lock)
+                {
+                    if (!_cache.ContainsKey(_config))
+                        _cache[_config] = new Dictionary<string, string>();
+
+                    _cache[_config][key] = value;
+                }
+
+                if (_cachingLevel == CachingLevel.Persistent)
+                    await SaveCacheAsync(cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 }

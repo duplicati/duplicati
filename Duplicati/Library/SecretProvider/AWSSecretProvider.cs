@@ -45,6 +45,12 @@ public class AWSSecretProvider : ISecretProvider
     /// <inheritdoc/>
     public string Description => Strings.AWSSecretProvider.Description;
 
+    /// <inheritdoc />
+    public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(true);
+
+    /// <inheritdoc />
+    public bool IsSetSupported => true;
+
     /// <summary>
     /// Constants for environment variables
     /// </summary>
@@ -106,7 +112,7 @@ public class AWSSecretProvider : ISecretProvider
         /// <summary>
         /// The access key
         /// </summary>
-        public string? AccessKey { get; set; }
+        public string? AccessId { get; set; }
         /// <summary>
         /// The secret key
         /// </summary>
@@ -136,7 +142,7 @@ public class AWSSecretProvider : ISecretProvider
         public static CommandLineArgumentDescriptionAttribute? GetCommandLineArgumentDescription(string name)
             => name switch
             {
-                nameof(AccessKey) => new CommandLineArgumentDescriptionAttribute() { Name = "access-key", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.AWSSecretProvider.AccessKeyDescriptionShort, LongDescription = Strings.AWSSecretProvider.AccessKeyDescriptionLong(EnvConstants.AWS_ACCESS_KEY_ID) },
+                nameof(AccessId) => new CommandLineArgumentDescriptionAttribute() { Name = "access-id", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.AWSSecretProvider.AccessKeyDescriptionShort, LongDescription = Strings.AWSSecretProvider.AccessKeyDescriptionLong(EnvConstants.AWS_ACCESS_KEY_ID) },
                 nameof(SecretKey) => new CommandLineArgumentDescriptionAttribute() { Name = "secret-key", Type = CommandLineArgument.ArgumentType.Password, ShortDescription = Strings.AWSSecretProvider.SecretKeyDescriptionShort, LongDescription = Strings.AWSSecretProvider.SecretKeyDescriptionLong(EnvConstants.AWS_SECRET_ACCESS_KEY) },
                 nameof(RegionEndpoint) => new CommandLineArgumentDescriptionAttribute() { Name = "region", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.AWSSecretProvider.RegionEndpointDescriptionShort, LongDescription = Strings.AWSSecretProvider.RegionEndpointDescriptionLong(EnvConstants.AWS_DEFAULT_REGION) },
                 nameof(ServiceURL) => new CommandLineArgumentDescriptionAttribute() { Name = "service-url", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.AWSSecretProvider.ServiceURLDescriptionShort, LongDescription = Strings.AWSSecretProvider.ServiceURLDescriptionLong(EnvConstants.AWS_ENDPOINT_URL) },
@@ -163,8 +169,8 @@ public class AWSSecretProvider : ISecretProvider
         var args = HttpUtility.ParseQueryString(config.Query);
         var cred = CommandLineArgumentMapper.ApplyArguments(new AWSSettings(), args);
 
-        if (string.IsNullOrWhiteSpace(cred.AccessKey))
-            cred.AccessKey = Environment.GetEnvironmentVariable(EnvConstants.AWS_ACCESS_KEY_ID);
+        if (string.IsNullOrWhiteSpace(cred.AccessId))
+            cred.AccessId = Environment.GetEnvironmentVariable(EnvConstants.AWS_ACCESS_KEY_ID);
         if (string.IsNullOrWhiteSpace(cred.SecretKey))
             cred.SecretKey = Environment.GetEnvironmentVariable(EnvConstants.AWS_SECRET_ACCESS_KEY);
         if (string.IsNullOrWhiteSpace(cred.RegionEndpoint))
@@ -172,8 +178,8 @@ public class AWSSecretProvider : ISecretProvider
         if (string.IsNullOrWhiteSpace(cred.ServiceURL))
             cred.ServiceURL = Environment.GetEnvironmentVariable(EnvConstants.AWS_ENDPOINT_URL);
 
-        if (string.IsNullOrWhiteSpace(cred.AccessKey) || string.IsNullOrWhiteSpace(cred.SecretKey))
-            throw new UserInformationException($"{ArgName(nameof(AWSSettings.AccessKey))} and {ArgName(nameof(AWSSettings.AccessKey))} are required for {DisplayName}", "AwssmMissingCredentials");
+        if (string.IsNullOrWhiteSpace(cred.AccessId) || string.IsNullOrWhiteSpace(cred.SecretKey))
+            throw new UserInformationException($"{ArgName(nameof(AWSSettings.AccessId))} and {ArgName(nameof(AWSSettings.SecretKey))} are required for {DisplayName}", "AwssmMissingCredentials");
 
         if (string.IsNullOrWhiteSpace(cred.RegionEndpoint) && string.IsNullOrWhiteSpace(cred.ServiceURL))
             throw new UserInformationException($"Either {ArgName(nameof(AWSSettings.RegionEndpoint))} or {ArgName(nameof(AWSSettings.ServiceURL))} is required for {DisplayName}", "AwssmMissingRegionOrUrl");
@@ -195,7 +201,7 @@ public class AWSSecretProvider : ISecretProvider
             OPTION_PREFIX_EXTRA
         );
 
-        var credentials = new Amazon.Runtime.BasicAWSCredentials(cred.AccessKey, cred.SecretKey);
+        var credentials = new Amazon.Runtime.BasicAWSCredentials(cred.AccessId, cred.SecretKey);
         var client = new AmazonSecretsManagerClient(credentials, scconfig);
 
         // Test the connection
@@ -213,8 +219,9 @@ public class AWSSecretProvider : ISecretProvider
         if (_client == null)
             throw new InvalidOperationException("The secret provider has not been initialized");
 
-        var result = new Dictionary<string, string>();
-        var missing = new HashSet<string>(keys);
+        var comparer = _caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+        var result = new Dictionary<string, string>(comparer);
+        var missing = new HashSet<string>(keys, comparer);
 
         foreach (var secret in _secrets)
         {
@@ -226,12 +233,12 @@ public class AWSSecretProvider : ISecretProvider
             var secretString = response.SecretString;
             if (string.IsNullOrWhiteSpace(secretString) && response.SecretBinary != null)
             {
-                using (var ms = response.SecretBinary)
-                using (var sr = new StreamReader(ms))
-                    secretString = await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+                using var ms = response.SecretBinary;
+                using var sr = new StreamReader(ms);
+                secretString = await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            var values = string.IsNullOrWhiteSpace(secretString) ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(response.SecretString);
+            var values = string.IsNullOrWhiteSpace(secretString) ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(secretString);
             if (values != null)
             {
                 if (!_caseSensitive)
@@ -239,12 +246,11 @@ public class AWSSecretProvider : ISecretProvider
                         .GroupBy(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase)
                         .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
 
-
-                foreach (var key in missing)
+                foreach (var key in missing.ToList())
                 {
-                    if (values.TryGetValue(key, out var value) && value is string stringValue)
+                    if (values.TryGetValue(key, out var value))
                     {
-                        result[key] = stringValue;
+                        result[key] = value;
                         missing.Remove(key);
                     }
                 }
@@ -254,7 +260,127 @@ public class AWSSecretProvider : ISecretProvider
             }
         }
 
-        throw new KeyNotFoundException("The following keys were not found: " + string.Join(", ", missing));
+        foreach (var key in missing.ToList())
+        {
+            try
+            {
+                var response = await _client.GetSecretValueAsync(new GetSecretValueRequest
+                {
+                    SecretId = key
+                }, cancellationToken).ConfigureAwait(false);
 
+                var secretString = response.SecretString;
+                if (string.IsNullOrEmpty(secretString) && response.SecretBinary != null)
+                {
+                    using var ms = response.SecretBinary;
+                    using var sr = new StreamReader(ms);
+                    secretString = await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                if (!string.IsNullOrEmpty(secretString))
+                {
+                    result[key] = secretString;
+                    missing.Remove(key);
+                }
+            }
+            catch (ResourceNotFoundException)
+            {
+                // Ignore and continue looking for other keys
+            }
+        }
+
+        if (missing.Count > 0)
+            throw new KeyNotFoundException("The following keys were not found: " + string.Join(", ", missing));
+
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public async Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+    {
+        if (_client is null)
+            throw new InvalidOperationException("The secret provider has not been initialized");
+
+        if (_secrets is null || _secrets.Length == 0)
+            throw new InvalidOperationException("No base secret has been configured for the AWS secret provider");
+
+        // Use the first configured secret as the backing store for all keys.
+        var containerSecretId = _secrets[0];
+
+        GetSecretValueResponse? existingResponse = null;
+        var containerExists = true;
+
+        try
+        {
+            existingResponse = await _client.GetSecretValueAsync(new GetSecretValueRequest
+            {
+                SecretId = containerSecretId
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (ResourceNotFoundException)
+        {
+            containerExists = false;
+        }
+
+        var comparer = _caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+        var values = new Dictionary<string, string>(comparer);
+
+        if (containerExists && existingResponse is not null)
+        {
+            var secretString = existingResponse.SecretString;
+            if (string.IsNullOrWhiteSpace(secretString) && existingResponse.SecretBinary is not null)
+            {
+                using var ms = existingResponse.SecretBinary;
+                using var sr = new StreamReader(ms);
+                secretString = await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            if (!string.IsNullOrWhiteSpace(secretString))
+            {
+                try
+                {
+                    var deserialized = JsonSerializer.Deserialize<Dictionary<string, string>>(secretString)
+                                       ?? new Dictionary<string, string>(comparer);
+
+                    if (!_caseSensitive)
+                    {
+                        deserialized = deserialized
+                            .GroupBy(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase)
+                            .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
+                    }
+
+                    values = new Dictionary<string, string>(deserialized, comparer);
+                }
+                catch (JsonException)
+                {
+                    // If the existing payload is not JSON, start fresh with an empty dictionary.
+                    values = new Dictionary<string, string>(comparer);
+                }
+            }
+        }
+
+        if (!overwrite && values.ContainsKey(key))
+            throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
+
+        values[key] = value;
+
+        var newSecretString = JsonSerializer.Serialize(values);
+
+        if (containerExists)
+        {
+            await _client.PutSecretValueAsync(new PutSecretValueRequest
+            {
+                SecretId = containerSecretId,
+                SecretString = newSecretString
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            await _client.CreateSecretAsync(new CreateSecretRequest
+            {
+                Name = containerSecretId,
+                SecretString = newSecretString
+            }, cancellationToken).ConfigureAwait(false);
+        }
     }
 }

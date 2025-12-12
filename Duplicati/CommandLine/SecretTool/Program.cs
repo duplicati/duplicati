@@ -47,18 +47,30 @@ public static class Program
             new Argument<string>("secret-url", description: "The connection string to the secret provider"),
             new Argument<string[]>("secrets", description: "The secrets to fetch") { Arity = ArgumentArity.OneOrMore }
         };
-        testcmd.Handler = CommandHandler.Create((string secretUrl, string[] secrets) => RunTest(secretUrl, secrets));
+        testcmd.Handler = CommandHandler.Create(RunTest);
 
         var infocmd = new Command("info", "Displays information about the secret provider")
         {
-            new Argument<string>("secret-url", description: "The connection string to the secret provider, or just the leading part of the URL")
+            new Argument<string>("secret-url", description: "The connection string to the secret provider, or just the leading part of the URL") { Arity = ArgumentArity.ZeroOrOne }
         };
-        infocmd.Handler = CommandHandler.Create((string secretUrl) => ShowInfo(secretUrl));
+        infocmd.Handler = CommandHandler.Create(ShowInfo);
+
+        var setcmd = new Command("set", "Stores a secret value in the configured provider")
+        {
+            new Argument<string>("secret-url", description: "The connection string to the secret provider"),
+            new Argument<string>("key", description: "The secret key to store"),
+            new Argument<string?>("value", description: "The secret value to store", getDefaultValue: () => null) { Arity = ArgumentArity.ZeroOrOne }
+        };
+
+        var overwriteOption = new Option<bool>("--overwrite", "Overwrite the secret if it already exists");
+        setcmd.AddOption(overwriteOption);
+        setcmd.Handler = CommandHandler.Create<string, string, string?, bool>(SetSecret);
 
         var cmd = new RootCommand("Duplicati Secret Tool")
         {
             testcmd,
-            infocmd
+            infocmd,
+            setcmd
         };
 
         return new CommandLineBuilder(cmd)
@@ -82,6 +94,12 @@ public static class Program
             .InvokeAsync(args);
     }
 
+    /// <summary>
+    /// Runs the test command, which tests fetching secrets from the specified secret provider.
+    /// </summary>
+    /// <param name="secretUrl">The secret provider URL.</param>
+    /// <param name="secrets">The secrets to fetch.</param>
+    /// <returns>The exit code.</returns>
     private static async Task<int> RunTest(string secretUrl, string[] secrets)
     {
         var secretProvider = SecretProviderLoader.CreateInstance(secretUrl);
@@ -96,15 +114,48 @@ public static class Program
         return 0;
     }
 
-    private static Task<int> ShowInfo(string secretUrl)
+    /// <summary>
+    /// Shows information about the specified secret provider.
+    /// </summary>
+    /// <param name="secretUrl">The secret provider URL.</param>
+    /// <returns>The exit code.</returns>
+    private static async Task<int> ShowInfo(string? secretUrl)
     {
-        var p = secretUrl.IndexOf(':');
-        var key = p >= 0 ? secretUrl.Substring(0, p) : secretUrl;
+        string? key = null;
+
+        if (string.IsNullOrWhiteSpace(secretUrl))
+        {
+            Console.WriteLine($"Supported secret providers on {Library.AutoUpdater.UpdaterManager.OperatingSystemName}:");
+            foreach (var k in SecretProviderLoader.Keys)
+            {
+                var metadata = await SecretProviderLoader.GetProviderMetadata(k, CancellationToken.None);
+                Console.WriteLine($"  {k} - {metadata.DisplayName}{(metadata.IsSupported ? "" : " (not supported)")}");
+            }
+
+            Console.WriteLine();
+        }
+
 
         try
         {
-            var metadata = SecretProviderLoader.GetProviderMetadata(key);
-            Console.WriteLine($"Secret provider '{key}'");
+            if (string.IsNullOrWhiteSpace(secretUrl))
+            {
+                var defaultProvider = await SecretProviderLoader.GetDefaultSecretProviderForOperatingSystem(CancellationToken.None);
+                if (defaultProvider == null)
+                    throw new UserInformationException("No working default secret provider found", "NoDefaultSecretProvider");
+
+                key = defaultProvider.Key;
+            }
+            else
+            {
+                var p = secretUrl.IndexOf(':');
+                key = p >= 0 ? secretUrl.Substring(0, p) : secretUrl;
+            }
+            var metadata = await SecretProviderLoader.GetProviderMetadata(key, CancellationToken.None);
+            if (string.IsNullOrWhiteSpace(secretUrl))
+                Console.WriteLine($"Default secret provider is '{key}'");
+            else
+                Console.WriteLine($"Secret provider '{key}'");
             var lines = metadata.Description.Trim().Split(new char[] { '\r', '\n' }, StringSplitOptions.None);
             foreach (var line in lines)
                 Console.WriteLine($"  {line.Trim()}");
@@ -126,13 +177,44 @@ public static class Program
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not UserInformationException)
         {
             Console.WriteLine($"No information found for secret provider '{key}': {ex.Message}");
-            return Task.FromResult(1);
+            return 1;
         }
 
-        return Task.FromResult(0);
+        return 0;
+    }
+
+    /// <summary>
+    /// Sets a secret value in the specified secret provider.
+    /// </summary>
+    /// <param name="secretUrl">The secret provider URL.</param>
+    /// <param name="key">The key of the secret.</param>
+    /// <param name="value">The value of the secret.</param>
+    /// <param name="overwrite">Whether to overwrite an existing secret.</param>
+    /// <returns>The exit code.</returns>
+    private static async Task<int> SetSecret(string secretUrl, string key, string? value, bool overwrite)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            value = Utility.ReadSecretFromConsole("Enter secret value: ");
+            var confirm = Utility.ReadSecretFromConsole("Confirm secret value: ");
+            if (value != confirm)
+                throw new UserInformationException("Secret values do not match", "SecretMismatch");
+        }
+
+        var secretProvider = SecretProviderLoader.CreateInstance(secretUrl);
+        await secretProvider.InitializeAsync(new Uri(secretUrl), CancellationToken.None);
+        await secretProvider.SetSecretAsync(key, value, overwrite, CancellationToken.None);
+
+        // Verify that the secret was stored correctly
+        var result = await secretProvider.ResolveSecretsAsync([key], CancellationToken.None);
+        if (!result.ContainsKey(key) || result[key] != value)
+            throw new UserInformationException("Failed to verify that the secret was stored correctly", "SecretVerificationFailed");
+        Console.WriteLine($"Secret '{key}' stored.");
+
+        return 0;
     }
 }
 

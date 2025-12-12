@@ -46,6 +46,10 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
         public IList<ICommandLineArgument> SupportedCommands => [];
 
+        public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(true);
+
+        public bool IsSetSupported => true;
+
         public bool ThrowOnInit { get; set; }
 
         public Task InitializeAsync(System.Uri config, CancellationToken cancellationToken)
@@ -62,12 +66,20 @@ public class SecretProviderHelperTests : BasicSetupHelper
             foreach (var key in keys)
             {
                 if (!Secrets.TryGetValue(key, out var value))
-                    throw new KeyNotFoundException($"The key '{key}' was not found");
+                    throw new UserInformationException($"The key '{key}' was not found", "KeyNotFound");
 
                 result[key] = value;
             }
 
             return Task.FromResult(result);
+        }
+
+        public Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+        {
+            if (!overwrite && Secrets.ContainsKey(key))
+                throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
+            Secrets[key] = value;
+            return Task.CompletedTask;
         }
     }
 
@@ -310,7 +322,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
             new Library.Utility.Uri("test://host?pass=$key2&user=$key1&other=123"),
         };
 
-        Assert.ThrowsAsync<KeyNotFoundException>(() => SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None));
+        Assert.ThrowsAsync<UserInformationException>(() => SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None));
     }
 
     [Test]

@@ -24,6 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.SecretProvider;
 
@@ -102,13 +104,13 @@ public class SecretProviderLoader
     /// </summary>
     /// <param name="key">The key to get metadata for</param>
     /// <returns>The key, description, and supported commands</returns>
-    public static (string Key, string DisplayName, string Description, IReadOnlyList<ICommandLineArgument> SupportedCommands) GetProviderMetadata(string key)
+    public static async Task<(string Key, string DisplayName, string Description, IReadOnlyList<ICommandLineArgument> SupportedCommands, bool IsSupported)> GetProviderMetadata(string key, CancellationToken cancellationToken)
     {
         var provider = _loader.Value.Interfaces.FirstOrDefault(p => p.Key == key);
         if (provider == null)
             throw new ArgumentException($"No secret provider found for key {key}");
 
-        return (provider.Key, provider.DisplayName, provider.Description, provider.SupportedCommands.AsReadOnly());
+        return (provider.Key, provider.DisplayName, provider.Description, provider.SupportedCommands.AsReadOnly(), await provider.IsSupported(cancellationToken));
     }
 
     /// <summary>
@@ -153,5 +155,46 @@ public class SecretProviderLoader
             throw new InvalidOperationException($"Failed to create an instance of {providerType}");
 
         return provider;
+    }
+
+    /// <summary>
+    /// Gets the default secret provider for the current operating system
+    /// </summary>
+    /// <returns>The secret provider or null if none is available</returns>
+    public static async Task<ISecretProvider?> GetDefaultSecretProviderForOperatingSystem(CancellationToken cancellationToken)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var res = new WindowsCredentialManagerProvider();
+            await res.InitializeAsync(new Uri("wincred://"), cancellationToken);
+            return res;
+        }
+        if (OperatingSystem.IsMacOS())
+        {
+            var res = new MacOSKeyChainProvider();
+            await res.InitializeAsync(new Uri("keychain://"), cancellationToken);
+            return res;
+        }
+
+        if (OperatingSystem.IsLinux())
+        {
+            ISecretProvider tmp = new LibSecretLinuxProvider();
+            if (await tmp.IsSupported(cancellationToken))
+            {
+                var res = new LibSecretLinuxProvider();
+                await res.InitializeAsync(new Uri("libsecret://"), cancellationToken);
+                if (await res.DoesCollectionExist(cancellationToken))
+                    return res;
+            }
+
+            tmp = new UnixPassProvider();
+            if (await tmp.IsSupported(cancellationToken))
+            {
+                await tmp.InitializeAsync(new Uri("pass://"), cancellationToken);
+                return tmp;
+            }
+        }
+
+        return null;
     }
 }
