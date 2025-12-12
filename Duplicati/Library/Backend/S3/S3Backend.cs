@@ -93,6 +93,8 @@ namespace Duplicati.Library.Backend
             { "Mega S4 - Vancouver", "ca-west-1.s4.mega.io" },
             { "Rabata US East 1 (Washington)", "s3.us-east-1.rabata.io" },
             { "Rabata EU West 2 (Netherlands)", "s3.eu-west-2.rabata.io" },
+            { "Internxt US Central 1 (Texas)", "s3.us-central-1.internxt.com" },
+            { "Internxt EU Central 1 (Amsterdam)", "s3.eu-central-1.internxt.com" },
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
