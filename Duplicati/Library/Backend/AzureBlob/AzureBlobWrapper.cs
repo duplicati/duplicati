@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using System.Runtime.CompilerServices;
@@ -215,6 +216,61 @@ namespace Duplicati.Library.Backend.AzureBlob
                         IsFolder = false,
                     };
                 }
+            }
+        }
+
+        public async Task<DateTime?> GetObjectLockUntilAsync(string keyName, CancellationToken cancellationToken)
+        {
+            var blobClient = _container.GetBlobClient(keyName);
+
+            try
+            {
+                var properties = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct
+                    => blobClient.GetPropertiesAsync(cancellationToken: ct)
+                ).ConfigureAwait(false);
+
+                return properties.Value.ImmutabilityPolicy?.ExpiresOn?.UtcDateTime;
+            }
+            catch (RequestFailedException e) when (e.Status == 404
+                                                    || e.ErrorCode == BlobErrorCode.BlobNotFound
+                                                    || e.ErrorCode == BlobErrorCode.ResourceNotFound)
+            {
+                throw new FileMissingException(e.Message, e);
+            }
+            catch (RequestFailedException e) when (e.ErrorCode == BlobErrorCode.ContainerNotFound
+                                                    || e.ErrorCode == BlobErrorCode.ContainerBeingDeleted
+                                                    || e.ErrorCode == BlobErrorCode.ContainerDisabled)
+            {
+                throw new FolderMissingException(e.Message, e);
+            }
+        }
+
+        public async Task SetObjectLockUntilAsync(string keyName, DateTime lockUntilUtc, CancellationToken cancellationToken)
+        {
+            var blobClient = _container.GetBlobClient(keyName);
+            var policy = new BlobImmutabilityPolicy
+            {
+                ExpiresOn = new DateTimeOffset(lockUntilUtc.ToUniversalTime(), TimeSpan.Zero),
+                PolicyMode = BlobImmutabilityPolicyMode.Unlocked
+            };
+
+            try
+            {
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+                    => await blobClient.SetImmutabilityPolicyAsync(policy, cancellationToken: ct).ConfigureAwait(false)
+                ).ConfigureAwait(false);
+            }
+            catch (RequestFailedException e) when (e.Status == 404
+                                                    || e.ErrorCode == BlobErrorCode.BlobNotFound
+                                                    || e.ErrorCode == BlobErrorCode.ResourceNotFound)
+            {
+                throw new FileMissingException(e.Message, e);
+            }
+            catch (RequestFailedException e) when (e.ErrorCode == BlobErrorCode.ContainerNotFound
+                                                    || e.ErrorCode == BlobErrorCode.ContainerBeingDeleted
+                                                    || e.ErrorCode == BlobErrorCode.ContainerDisabled)
+            {
+                throw new FolderMissingException(e.Message, e);
             }
         }
     }

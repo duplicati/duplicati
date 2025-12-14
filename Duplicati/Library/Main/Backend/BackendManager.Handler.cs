@@ -521,6 +521,12 @@ partial class BackendManager
                     case WaitForEmptyOperation waitOp:
                         waitOp.SetComplete(true);
                         return;
+                    case SetObjectLockOperation setLockOp:
+                        await Execute(setLockOp, cancellationToken).ConfigureAwait(false);
+                        return;
+                    case GetObjectLockOperation getLockOp:
+                        await Execute(getLockOp, cancellationToken).ConfigureAwait(false);
+                        return;
                     default:
                         throw new NotImplementedException($"Operation type {op.GetType()} is not supported");
                 }

@@ -520,6 +520,7 @@ namespace Duplicati.Library.Main
 
             new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
             new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
+            new CommandLineArgument("file-lock-duration", CommandLineArgument.ArgumentType.Timespan, Strings.Options.FilelockdurationShort, Strings.Options.FilelockdurationLong),
             new CommandLineArgument("retention-policy", CommandLineArgument.ArgumentType.String, Strings.Options.RetentionPolicyShort, Strings.Options.RetentionPolicyLong),
             new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
             new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
@@ -552,6 +553,8 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
             new CommandLineArgument("disable-partial-dblock-recovery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablePartialDblockRecoveryShort, Strings.Options.DisablePartialDblockRecoveryLong, "false"),
             new CommandLineArgument("disable-replace-missing-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableReplaceMissingMetadataShort, Strings.Options.DisableReplaceMissingMetadataLong, "false"),
+            new CommandLineArgument("repair-refresh-lock-info", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepairRefreshLockInfoShort, Strings.Options.RepairRefreshLockInfoLong, "false"),
+            new CommandLineArgument("refresh-lock-info-complete", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RefreshLockInfoCompleteShort, Strings.Options.RefreshLockInfoCompleteLong, "false"),
 
             new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0m"),
             new CommandLineArgument("auto-vacuum-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoVacuumIntervalShort, Strings.Options.AutoVacuumIntervalLong, "0m"),
@@ -799,6 +802,22 @@ namespace Duplicati.Library.Main
                     TimeSpan.FromSeconds(Math.Min(Library.Utility.Timeparser.ParseTimeSpan(v).TotalSeconds / 100, 60.0 * 60.0));
 
                 return Library.Utility.Timeparser.ParseTimeInterval(v, DateTime.Now, true) - tolerance;
+            }
+        }
+
+        /// <summary>
+        /// Gets the configured object lock duration for uploaded files, if specified
+        /// </summary>
+        public TimeSpan? FileLockDuration
+        {
+            get
+            {
+                m_options.TryGetValue("file-lock-duration", out var value);
+
+                if (string.IsNullOrWhiteSpace(value))
+                    return null;
+
+                return Library.Utility.Timeparser.ParseTimeSpan(value);
             }
         }
 
@@ -1462,6 +1481,17 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <value><c>true</c> if repair process always use blocks; otherwise, <c>false</c>.</value>
         public bool RepairForceBlockUse => GetBool("repair-force-block-use");
+
+        /// <summary>
+        /// Gets a flag indicating if the repair process should refresh lock information from the backend
+        /// </summary>
+        /// <value><c>true</c> if repair process should refresh lock information; otherwise, <c>false</c>.</value>
+        public bool RepairRefreshLockInfo => GetBool("repair-refresh-lock-info");
+
+        /// <summary>
+        /// Gets a flag indicating if the repair process should refresh lock information for all volumes
+        /// </summary>
+        public bool RefreshLockInfoComplete => GetBool("refresh-lock-info-complete");
 
         /// <summary>
         /// Gets a flag indicating whether the VACUUM operation should ever be run automatically.

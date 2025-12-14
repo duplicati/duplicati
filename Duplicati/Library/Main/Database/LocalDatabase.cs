@@ -341,7 +341,8 @@ namespace Duplicati.Library.Main.Database
                     ""Hash"",
                     ""State"",
                     ""DeleteGraceTime"",
-                    ""ArchiveTime""
+                    ""ArchiveTime"",
+                    ""LockExpirationTime""
                 FROM ""Remotevolume""
             ";
 
@@ -509,6 +510,80 @@ namespace Duplicati.Library.Main.Database
         public static DateTime ParseFromEpochSeconds(long seconds)
         {
             return Library.Utility.Utility.EPOCH.AddSeconds(seconds);
+        }
+
+        /// <summary>
+        /// Returns remote volumes referenced by the provided filesets.
+        /// This is a shared helper used by delete/lock operations to avoid duplicating the CTEs.
+        /// </summary>
+        /// <param name="filesetIds">Fileset IDs to resolve.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>An async sequence of remote volume name, type, and lock expiration time (UTC) if present.</returns>
+        public async IAsyncEnumerable<(string Name, DateTime? LockExpirationTime)> GetRemoteVolumesDependingOnFilesets(
+            IEnumerable<long> filesetIds,
+            [EnumeratorCancellation] CancellationToken token)
+        {
+            var ids = filesetIds?.ToArray();
+            if (ids == null || ids.Length == 0)
+                yield break;
+
+            await using var cmd = m_connection.CreateCommand();
+            cmd.SetTransaction(m_rtr);
+
+            cmd.SetCommandAndParameters($@"
+                WITH
+                    fileset_blocks AS (
+                        SELECT DISTINCT ""VolumeID"" AS ""VolumeID""
+                        FROM ""Block""
+                        WHERE ""ID"" IN (
+                            SELECT ""BlockID""
+                            FROM ""BlocksetEntry""
+                            WHERE ""BlocksetID"" IN (
+                                SELECT ""BlocksetID""
+                                FROM ""FileLookup""
+                                WHERE ""ID"" IN (
+                                    SELECT ""FileID""
+                                    FROM ""FilesetEntry""
+                                    WHERE ""FilesetID"" IN (@FilesetIds)
+                                )
+                            )
+                        )
+                    ),
+                    index_volumes AS (
+                        SELECT DISTINCT ""IndexVolumeID"" AS ""VolumeID""
+                        FROM ""IndexBlockLink""
+                        WHERE ""BlockVolumeID"" IN (SELECT ""VolumeID"" FROM fileset_blocks)
+                    )
+                    ,
+                    fileset_volumes AS (
+                        SELECT DISTINCT ""VolumeID"" AS ""VolumeID""
+                        FROM ""Fileset""
+                        WHERE ""ID"" IN (@FilesetIds)
+                    )
+                    ,combined AS (
+                        SELECT ""VolumeID"" FROM fileset_blocks
+                        UNION
+                        SELECT ""VolumeID"" FROM index_volumes
+                        UNION
+                        SELECT ""VolumeID"" FROM fileset_volumes
+                    )
+                SELECT DISTINCT ""Name"", ""LockExpirationTime""
+                FROM ""RemoteVolume""
+                WHERE ""ID"" IN (SELECT * FROM combined)
+            ");
+
+            cmd.ExpandInClauseParameterMssqlite("@FilesetIds", ids);
+
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+            {
+                var name = rd.ConvertValueToString(0) ?? string.Empty;
+                var lockUntil = rd.IsDBNull(1)
+                    ? (DateTime?)null
+                    : ParseFromEpochSeconds(rd.ConvertValueToInt64(2));
+
+                yield return (name, lockUntil);
+            }
         }
 
         /// <summary>
@@ -773,7 +848,8 @@ namespace Duplicati.Library.Main.Database
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.ConvertValueToString(2) ?? ""),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.ConvertValueToString(5) ?? ""),
                         ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0)),
-                        ParseFromEpochSeconds(rd.ConvertValueToInt64(7, 0))
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(7, 0)),
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(8, 0))
                     );
 
             return RemoteVolumeEntry.Empty;
@@ -821,7 +897,8 @@ namespace Duplicati.Library.Main.Database
                     (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.ConvertValueToString(2) ?? ""),
                     (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.ConvertValueToString(5) ?? ""),
                     ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0)),
-                    ParseFromEpochSeconds(rd.ConvertValueToInt64(7, 0))
+                    ParseFromEpochSeconds(rd.ConvertValueToInt64(7, 0)),
+                    ParseFromEpochSeconds(rd.ConvertValueToInt64(8, 0))
                 );
             }
         }
@@ -3020,7 +3097,8 @@ namespace Duplicati.Library.Main.Database
                     ""Hash"",
                     ""State"",
                     ""DeleteGraceTime"",
-                    ""ArchiveTime""
+                    ""ArchiveTime"",
+                    ""LockExpirationTime""
                 FROM
                     ""RemoteVolume"",
                     ""Fileset""
@@ -3044,7 +3122,8 @@ namespace Duplicati.Library.Main.Database
                     (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.ConvertValueToString(2) ?? ""),
                     (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.ConvertValueToString(5) ?? ""),
                     ParseFromEpochSeconds(rd.ConvertValueToInt64(6)).ToLocalTime(),
-                    ParseFromEpochSeconds(rd.ConvertValueToInt64(7)).ToLocalTime()
+                    ParseFromEpochSeconds(rd.ConvertValueToInt64(7)).ToLocalTime(),
+                    ParseFromEpochSeconds(rd.ConvertValueToInt64(8)).ToLocalTime()
                 );
             else
                 return default(RemoteVolumeEntry);

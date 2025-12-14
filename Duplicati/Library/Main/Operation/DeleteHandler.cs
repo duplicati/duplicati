@@ -24,8 +24,6 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
-using Duplicati.Library.Utility;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
@@ -103,6 +101,60 @@ namespace Duplicati.Library.Main.Operation
             }
             else
             {
+                // If any of the block/index volumes referenced by a candidate fileset are locked,
+                // keep the fileset (we cannot remove it while its dependencies are locked).
+                var nowEpochSeconds = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow);
+                var deletionCandidates = new List<IListResultFileset>(versionsToDelete.Count);
+                foreach (var fileset in versionsToDelete)
+                {
+                    var filesetId = await db.GetFilesetIdByTimeAsync(fileset.Time, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    if (filesetId <= 0)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FilesetNotFound", null, "Fileset {0} not found in database", fileset.Time);
+                        continue;
+                    }
+
+                    // Skip deleting a fileset if the fileset volume itself is currently locked.
+                    var filesetVolume = await db.GetRemoteVolumeFromFilesetID(filesetId, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    if (HasActiveLock(filesetVolume.LockExpirationTime))
+                    {
+                        Logging.Log.WriteWarningMessage(
+                            LOGTAG,
+                            "SkipDeleteFilesetDueToLockedFilesetVolume",
+                            null,
+                            "Skipping deletion of fileset version {0} ({1}) because the fileset volume has an active lock until {2:u}",
+                            fileset.Version,
+                            fileset.Time,
+                            filesetVolume.LockExpirationTime!.Value
+                        );
+                        continue;
+                    }
+
+                    if (await db.HasAnyLockedFiles(filesetId, DateTime.UtcNow, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    {
+                        Logging.Log.WriteWarningMessage(
+                            LOGTAG,
+                            "SkipDeleteFilesetDueToLockedDependency",
+                            null,
+                            "Skipping deletion of fileset version {0} ({1}) because one or more related block/index volumes have an active lock",
+                            fileset.Version,
+                            fileset.Time
+                        );
+                        continue;
+                    }
+
+                    deletionCandidates.Add(fileset);
+                }
+
+                versionsToDelete = deletionCandidates;
+
+                if (versionsToDelete.Count == 0)
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesetsToDelete", "No remote filesets should be deleted");
+                    m_result.SetResults([], m_options.Dryrun);
+                    return;
+                }
+
                 Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", versionsToDelete.Count);
 
                 var lst = await db
@@ -171,6 +223,9 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.SetResults(versionsToDelete.Select(v => new Tuple<long, DateTime>(v.Version, v.Time)), m_options.Dryrun);
         }
+
+        private static bool HasActiveLock(DateTime? lockExpirationTimeUtc)
+            => lockExpirationTimeUtc.HasValue && lockExpirationTimeUtc.Value > DateTime.UtcNow;
     }
 
     public abstract class FilesetRemover

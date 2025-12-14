@@ -30,7 +30,9 @@ namespace Duplicati.Library.Main
         Delete,
         CreateFolder,
         QuotaInfo,
-        WaitForEmpty
+        WaitForEmpty,
+        SetObjectLock,
+        GetObjectLock
     }
 
     public enum BackendEventType
@@ -71,6 +73,8 @@ namespace Duplicati.Library.Main
         ListFolder,
         ListFileVersions,
         SearchFiles,
+        SetLock,
+        ReadLockInfo
     }
 
     /// <summary>
