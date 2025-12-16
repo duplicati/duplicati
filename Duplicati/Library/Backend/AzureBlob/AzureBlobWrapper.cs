@@ -256,9 +256,12 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             try
             {
-                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+                var result = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
                     => await blobClient.SetImmutabilityPolicyAsync(policy, cancellationToken: ct).ConfigureAwait(false)
                 ).ConfigureAwait(false);
+
+                if (result.Value.ExpiresOn == null)
+                    throw new Exception("Failed to set object lock, call succeeded but no immutability policy returned");
             }
             catch (RequestFailedException e) when (e.Status == 404
                                                     || e.ErrorCode == BlobErrorCode.BlobNotFound
