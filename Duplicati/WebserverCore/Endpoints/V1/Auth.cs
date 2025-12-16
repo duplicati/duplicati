@@ -126,6 +126,7 @@ public partial class Auth : IEndpointV1
             {
                 case "export":
                 case "bugreport":
+                case "websocket":
                     break;
 
                 default:
@@ -145,6 +146,30 @@ public partial class Auth : IEndpointV1
 
             return new Dto.AccessTokenOutputDto(tokenProvider.CreateForeverToken(), null);
         }).RequireAuthorization();
+
+        group.MapPost("auth/status", ([FromServices] IHttpContextAccessor httpContextAccessor, [FromServices] IJWTTokenProvider tokenProvider) =>
+        {
+            var httpContext = httpContextAccessor.HttpContext;
+            var user = httpContext?.User;
+            var isAuthenticated = user?.Identity?.IsAuthenticated ?? false;
+
+            // Return 200, to avoid showing this probe as an error in browser devtools and logs
+            if (!isAuthenticated)
+                return Results.Ok(new
+                {
+                    authorized = false,
+                    message = "Not authorized",
+                });
+
+
+            // If we are authenticated, we can return the socket token
+            return Results.Ok(new
+            {
+                authorized = true,
+                message = "Authorized",
+                socketToken = tokenProvider.CreateSingleOperationToken("web-api", "websocket"),
+            });
+        });
     }
 
     private static void AddCookie(HttpContext context, string name, string value, DateTimeOffset expires)
