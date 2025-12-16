@@ -32,6 +32,16 @@ internal class FileRetention
     public long? RetainUntilTimestamp { get; set; }
 }
 
+internal class FileRetentionAccess
+{
+    [JsonProperty("isClientAuthorizedToRead")]
+    public bool isClientAuthorizedToRead { get; set; }
+
+    [JsonProperty("value")]
+    public FileRetention? Value { get; set; }
+
+}
+
 internal class GetFileInfoRequest
 {
     [JsonProperty("fileId")]
@@ -41,8 +51,15 @@ internal class GetFileInfoRequest
 internal class GetFileInfoResponse
 {
     [JsonProperty("fileRetention")]
+    public FileRetentionAccess? FileRetention { get; set; }
+}
+
+internal class UpdateFileRetentionResponse
+{
+    [JsonProperty("fileRetention")]
     public FileRetention? FileRetention { get; set; }
 }
+
 
 internal class UpdateFileRetentionRequest
 {
@@ -52,8 +69,8 @@ internal class UpdateFileRetentionRequest
     [JsonProperty("fileName")]
     public string? FileName { get; set; }
 
-    [JsonProperty("retention")]
-    public FileRetention? Retention { get; set; }
+    [JsonProperty("fileRetention")]
+    public FileRetention? FileRetention { get; set; }
 
     [JsonProperty("bypassGovernance")]
     public bool BypassGovernance { get; set; }

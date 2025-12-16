@@ -465,7 +465,7 @@ public class B2 : IStreamingBackend, ILockingBackend
             ).ConfigureAwait(false)
         ).ConfigureAwait(false);
 
-        if (response?.FileRetention?.RetainUntilTimestamp is long timestamp && timestamp > 0)
+        if (response?.FileRetention?.Value?.RetainUntilTimestamp is long timestamp && timestamp > 0)
             return Utility.Utility.EPOCH.AddMilliseconds(timestamp);
 
         return null;
@@ -631,14 +631,14 @@ public class B2 : IStreamingBackend, ILockingBackend
         var fileId = await GetFileId(remotename, cancellationToken).ConfigureAwait(false);
         var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
 
-        await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
-            => await _b2AuthHelper.PostAndGetJsonDataAsync<GetFileInfoResponse>(
+        var res = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+            => await _b2AuthHelper.PostAndGetJsonDataAsync<UpdateFileRetentionResponse>(
                 $"{config.APIUrl}/b2api/v2/b2_update_file_retention",
                 new UpdateFileRetentionRequest
                 {
                     FileId = fileId,
                     FileName = _prefix + remotename,
-                    Retention = new FileRetention
+                    FileRetention = new FileRetention
                     {
                         Mode = _lockMode.ToString().ToLower(),
                         RetainUntilTimestamp = (long)(lockUntilUtc.ToUniversalTime() - Utility.Utility.EPOCH).TotalMilliseconds
@@ -648,6 +648,9 @@ public class B2 : IStreamingBackend, ILockingBackend
                 ct
             ).ConfigureAwait(false)
         ).ConfigureAwait(false);
+
+        if (res.FileRetention?.RetainUntilTimestamp == null)
+            throw new Exception("Failed to set object lock, call succeeded but no retention info returned");
     }
 
     /// <summary>
