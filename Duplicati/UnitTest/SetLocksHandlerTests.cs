@@ -129,7 +129,7 @@ namespace Duplicati.UnitTest
 
             var targetFileset = filesets.Last();
             var expectedVolumes = new List<string>();
-            await foreach ((var volume, _) in db.GetVolumeNamesForFilesets(new[] { targetFileset.Key }, CancellationToken.None).ConfigureAwait(false))
+            await foreach ((var volume, _) in db.GetRemoteVolumesDependingOnFilesets(new[] { targetFileset.Key }, CancellationToken.None).ConfigureAwait(false))
                 expectedVolumes.Add(volume);
 
             var lockingOptions = new Options(new Dictionary<string, string?>(options.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value))
@@ -168,7 +168,7 @@ namespace Duplicati.UnitTest
 
             var latestFileset = filesets.Last();
             var expectedVolumes = new List<string>();
-            await foreach ((var volume, _) in db.GetVolumeNamesForFilesets(new[] { latestFileset.Key }, CancellationToken.None).ConfigureAwait(false))
+            await foreach ((var volume, _) in db.GetRemoteVolumesDependingOnFilesets(new[] { latestFileset.Key }, CancellationToken.None).ConfigureAwait(false))
                 expectedVolumes.Add(volume);
 
             var lockingOptions = new Options(new Dictionary<string, string?>(options.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value))
