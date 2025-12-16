@@ -1,0 +1,12 @@
+{
+    "web-config": {
+        "nginx-static-config": {
+            "enable": [
+                {
+                    "type": "dsm",
+                    "relpath": "nginx/duplicati.conf"
+                }
+            ]
+        }
+    }
+}

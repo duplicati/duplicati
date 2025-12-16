@@ -62,6 +62,8 @@
                 "--targets", "linux-arm64-agent.docker",
                 "--targets", "win-x64-agent.zip",
                 "--targets", "win-arm64-agent.zip",
+                "--targets", "linux-x64-cli.spk",
+                "--targets", "linux-arm64-cli.spk",                
                 "--disable-docker-push", "true",
                 "--keep-builds", "true",
                 "--disable-authenticode", "true",

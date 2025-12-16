@@ -1,0 +1,18 @@
+[
+    {
+        "step_title": "Duplicati setup",
+        "items": [
+            {
+                "type": "multiselect",
+                "desc": "Uninstall Options",
+                "subitems": [
+                    {
+                        "key": "pkgwizard_purge_on_uninstall",
+                        "desc": "Remove all settings (this includes all backup configurations!)",
+                        "defaultValue": false
+                    }
+                ]
+            }
+        ]
+    }
+]

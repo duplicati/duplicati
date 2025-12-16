@@ -327,6 +327,8 @@ public class DuplicatiWebserver
         app.UseAuthentication();
         app.UseAuthorization();
 
+        app.UseSynologyDsmAuthIfEnabled();
+
         if (EnableSwagger)
         {
             app.UseSwagger();
