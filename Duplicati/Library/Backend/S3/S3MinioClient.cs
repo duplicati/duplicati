@@ -224,25 +224,6 @@ namespace Duplicati.Library.Backend
 
         public async Task<DateTime?> GetObjectLockUntilAsync(string bucketName, string keyName, CancellationToken cancelToken)
         {
-            // For MinIO, object retention depends on bucket object-lock configuration.
-            // If the bucket is not configured for object locking, treat it as "no lock".
-            try
-            {
-                _ = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct
-                        => m_client.GetObjectLockConfigurationAsync(new GetObjectLockConfigurationArgs().WithBucket(bucketName), ct)
-                    )
-                    .ConfigureAwait(false);
-            }
-            catch (MissingObjectLockConfigurationException)
-            {
-                return null;
-            }
-            catch (MinioException e)
-            {
-                ParseAndThrowNotFoundException(e, keyName, bucketName);
-                throw;
-            }
-
             try
             {
                 var retention = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct
@@ -271,6 +252,9 @@ namespace Duplicati.Library.Backend
             }
             catch (MinioException e)
             {
+                if (e.Response?.Code == "NoSuchObjectLockConfiguration")
+                    return null;
+
                 ParseAndThrowNotFoundException(e, keyName, bucketName);
                 throw;
             }
@@ -283,28 +267,18 @@ namespace Duplicati.Library.Backend
 
             await ThrowExceptionIfBucketDoesNotExist(bucketName, cancelToken).ConfigureAwait(false);
 
-            async Task ApplyRetentionAsync(CancellationToken ct)
-            {
-                await m_client.SetObjectRetentionAsync(
-                    new SetObjectRetentionArgs()
-                        .WithBucket(bucketName)
-                        .WithObject(keyName)
-                        .WithRetentionMode(mode)
-                        .WithRetentionUntilDate(lockUntil)
-                        .WithBypassGovernanceMode(false),
-                    ct
-                ).ConfigureAwait(false);
-            }
-
             try
             {
-                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ApplyRetentionAsync).ConfigureAwait(false);
-            }
-            catch (MissingObjectLockConfigurationException)
-            {
-                // Bucket is missing object-lock configuration; attempt to enable it and retry once.
-                await EnsureBucketObjectLockConfigurationAsync(bucketName, cancelToken).ConfigureAwait(false);
-                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ApplyRetentionAsync).ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct =>
+                    m_client.SetObjectRetentionAsync(
+                        new SetObjectRetentionArgs()
+                            .WithBucket(bucketName)
+                            .WithObject(keyName)
+                            .WithRetentionMode(mode)
+                            // Bug in MinIO SDK: compares with local time
+                            .WithRetentionUntilDate(lockUntil.ToLocalTime()),
+                    ct
+                )).ConfigureAwait(false);
             }
             catch (MinioException e)
             {
