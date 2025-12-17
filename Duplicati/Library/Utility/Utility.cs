@@ -1901,11 +1901,6 @@ namespace Duplicati.Library.Utility
 
             } while (stream != previousStream);
 
-#if DEBUG
-            if (!_basicStreamTypes.Contains(stream.GetType()))
-                throw new InvalidOperationException($"The unwrapped stream is not a basic stream, but a {stream.GetType()}");
-#endif
-
             return stream;
         }
 
