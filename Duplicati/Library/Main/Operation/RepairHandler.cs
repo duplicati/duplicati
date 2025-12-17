@@ -58,6 +58,11 @@ namespace Duplicati.Library.Main.Operation
             {
                 await RunRepairLocalAsync(backendManager, filter).ConfigureAwait(false);
                 await RunRepairCommon().ConfigureAwait(false);
+
+                // Optionally refresh lock information from the backend
+                if (m_options.RepairRefreshLockInfo)
+                    await RunRefreshLockInfoAsync(backendManager).ConfigureAwait(false);
+
                 m_result.EndTime = DateTime.UtcNow;
                 return;
             }
@@ -103,11 +108,11 @@ namespace Duplicati.Library.Main.Operation
                 await RunRepairCommon().ConfigureAwait(false);
                 await RunRepairBrokenFilesets(backendManager).ConfigureAwait(false);
                 await RunRepairRemoteAsync(backendManager, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-
-                // Optionally refresh lock information from the backend
-                if (m_options.RepairRefreshLockInfo)
-                    await RunRefreshLockInfoAsync(backendManager).ConfigureAwait(false);
             }
+
+            // Optionally refresh lock information from the backend
+            if (m_options.RepairRefreshLockInfo)
+                await RunRefreshLockInfoAsync(backendManager).ConfigureAwait(false);
 
             m_result.EndTime = DateTime.UtcNow;
 

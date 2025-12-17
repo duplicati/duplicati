@@ -113,6 +113,8 @@ namespace Duplicati.Library.Main.Operation
             }
 
             await backendManager.WaitForEmptyAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await backendManager.FlushPendingMessagesAsync(database, m_result.TaskControl.ProgressToken);
+            await database.Transaction.CommitAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             m_result.VolumesRead = readCount;
             m_result.VolumesUpdated = updatedCount;

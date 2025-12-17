@@ -97,7 +97,7 @@ namespace Duplicati.UnitTest
             public Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
             public IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken) => throw new NotImplementedException();
-            public Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken) => throw new NotImplementedException();
+            public Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken) => Task.CompletedTask;
             public void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond) => throw new NotImplementedException();
             #endregion
         }
@@ -135,7 +135,7 @@ namespace Duplicati.UnitTest
             var lockingOptions = new Options(new Dictionary<string, string?>(options.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value))
             {
                 ["dbpath"] = lockDbPath,
-                ["file-lock-duration"] = "1D",
+                ["remote-file-lock-duration"] = "1D",
             });
 
             var backend = new FakeLockingBackendManager();
@@ -174,7 +174,7 @@ namespace Duplicati.UnitTest
             var lockingOptions = new Options(new Dictionary<string, string?>(options.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value))
             {
                 ["dbpath"] = lockDbPath,
-                ["file-lock-duration"] = "1D",
+                ["remote-file-lock-duration"] = "1D",
             });
 
             var backend = new FakeLockingBackendManager(failFirstLock: true);

@@ -223,8 +223,8 @@ namespace Duplicati.Library.Main.Strings
         public static string KeepversionsShort { get { return LC.L(@"Keep a number of versions"); } }
         public static string KeeptimeLong { get { return LC.L(@"Use this option to set the timespan in which backups are kept."); } }
         public static string KeeptimeShort { get { return LC.L(@"Keep all versions within a timespan"); } }
-        public static string FilelockdurationLong { get { return LC.L(@"Sets how long uploaded backup files should be protected with an immutable object lock (for example, 30d). If this option is not set, the files will not be protected with an object lock. Not all destinations support object locking."); } }
-        public static string FilelockdurationShort { get { return LC.L(@"Object lock duration for uploaded files"); } }
+        public static string RemotefilelockdurationLong { get { return LC.L(@"Sets how long uploaded backup files should be protected with an immutable object lock (for example, 30d). If this option is not set, the files will not be protected with an object lock. Not all destinations support object locking."); } }
+        public static string RemotefilelockdurationShort { get { return LC.L(@"Lock duration for remote backup files"); } }
         public static string RetentionPolicyLong { get { return LC.L(@"Use this option to reduce the number of versions that are kept with increasing version age by deleting most of the old backups. The expected format is a comma separated list of colon separated time frame and interval pairs. For example the value ""7D:0s,3M:1D,10Y:2M"" means ""For 7 day keep all backups, for 3 months keep one backup every day, for 10 years one backup every 2nd month and delete every backup older than this."". This option also supports using the specifier ""U"" to indicate an unlimited time interval."); } }
         public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
         public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing."); } }

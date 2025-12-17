@@ -520,7 +520,7 @@ namespace Duplicati.Library.Main
 
             new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
             new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
-            new CommandLineArgument("file-lock-duration", CommandLineArgument.ArgumentType.Timespan, Strings.Options.FilelockdurationShort, Strings.Options.FilelockdurationLong),
+            new CommandLineArgument("remote-file-lock-duration", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RemotefilelockdurationShort, Strings.Options.RemotefilelockdurationLong),
             new CommandLineArgument("retention-policy", CommandLineArgument.ArgumentType.String, Strings.Options.RetentionPolicyShort, Strings.Options.RetentionPolicyLong),
             new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
             new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
@@ -808,11 +808,11 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the configured object lock duration for uploaded files, if specified
         /// </summary>
-        public TimeSpan? FileLockDuration
+        public TimeSpan? RemoteFileLockDuration
         {
             get
             {
-                m_options.TryGetValue("file-lock-duration", out var value);
+                m_options.TryGetValue("remote-file-lock-duration", out var value);
 
                 if (string.IsNullOrWhiteSpace(value))
                     return null;

@@ -350,7 +350,7 @@ namespace Duplicati.Library.Main.Database
         internal async Task<bool> HasAnyLockedFiles(long filesetId, DateTime nowUtc, CancellationToken token)
         {
             await foreach (var (_, lockUntil) in GetRemoteVolumesDependingOnFilesets([filesetId], token).ConfigureAwait(false))
-                if (lockUntil.HasValue && lockUntil.Value > nowUtc)
+                if (lockUntil.HasValue && lockUntil.Value.ToUniversalTime() > nowUtc)
                     return true;
 
             return false;

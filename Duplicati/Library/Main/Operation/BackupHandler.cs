@@ -577,9 +577,15 @@ namespace Duplicati.Library.Main.Operation
 
         private async Task RunLockOperationAsync(IBackendManager backendManager, IEnumerable<DateTime> versionTimestamps)
         {
-            if (m_options.FileLockDuration is null || m_options.FileLockDuration.Value == TimeSpan.Zero)
+            if (m_options.RemoteFileLockDuration is null || m_options.RemoteFileLockDuration.Value == TimeSpan.Zero)
             {
                 Log.WriteVerboseMessage(LOGTAG, "FileLockDurationNotSpecified", "No file-lock-duration provided; skipping lock operation.");
+                return;
+            }
+
+            if (!versionTimestamps.Any())
+            {
+                Log.WriteVerboseMessage(LOGTAG, "NoVersionsToLock", "No versions to lock; skipping lock operation.");
                 return;
             }
 
@@ -844,7 +850,7 @@ namespace Duplicati.Library.Main.Operation
                         .ConfigureAwait(false);
 
                     // Send the actual filelist
-                    await Backup.UploadRealFilelist.Run(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete)
+                    var uploadedNewFileset = await Backup.UploadRealFilelist.Run(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete)
                         .ConfigureAwait(false);
 
                     // Wait for upload completion
@@ -869,7 +875,8 @@ namespace Duplicati.Library.Main.Operation
                         if (syntheticFilesetTimestamp.HasValue)
                             versionsToLock.Add(syntheticFilesetTimestamp.Value);
 
-                        versionsToLock.Add(VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time);
+                        if (uploadedNewFileset)
+                            versionsToLock.Add(VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time);
 
                         await RunLockOperationAsync(backendManager, versionsToLock)
                             .ConfigureAwait(false);

@@ -24,14 +24,51 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Operation;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
 {
     public class LockingDeleteAndCompactTests : BasicSetupHelper
     {
+        private sealed class FakeLockingBackendManager : IBackendManager
+        {
+            public bool SupportsObjectLocking => true;
+
+            public Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken)
+                => Task.CompletedTask;
+
+            public Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancelToken)
+                => Task.FromResult<DateTime?>(null);
+
+            public Task WaitForEmptyAsync(CancellationToken cancellationToken)
+                => Task.CompletedTask;
+
+            public Task WaitForEmptyAsync(LocalDatabase database, CancellationToken cancellationToken)
+                => Task.CompletedTask;
+
+            public void Dispose() { }
+
+            #region Unused interface members
+            public Task PutAsync(Duplicati.Library.Main.Volumes.VolumeWriterBase blockVolume, Duplicati.Library.Main.Volumes.IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task PutVerificationFileAsync(string remotename, TempFile tempFile, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task<System.Collections.Generic.IEnumerable<Duplicati.Library.Interface.IFileEntry>> ListAsync(CancellationToken cancelToken) => throw new NotImplementedException();
+            public TempFile DecryptFile(TempFile volume, string volume_name, Options options) => throw new NotImplementedException();
+            public Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
+            public System.Collections.Generic.IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(System.Collections.Generic.IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken) => Task.CompletedTask;
+            public void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond) => throw new NotImplementedException();
+            #endregion
+        }
+
         private static void SleepUntilNextSecond(DateTime prevTimestamp)
         {
             // Sleep until the next second to make sure the next backup is not the same.
@@ -110,71 +147,113 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("DeleteHandler")]
-        public async Task DeleteSkipsFilesetIfBlockOrIndexVolumeLocked()
+        public async Task DeleteHonorsFilesetLocksFromBackupUntilExpiration()
         {
-            var backupOpts = TestOptions;
-            var target = "file://" + TARGETFOLDER;
+            // These values are chosen to give the backup and delete operations enough time to complete
+            // while still leaving a window where the lock is active. They can be adjusted in CI if
+            // the environment is significantly slower or faster.
+            const string LockDurationOptionValue = "10s";
+            var delayBetweenBackups = TimeSpan.FromSeconds(5);
+            var lockPollInterval = TimeSpan.FromSeconds(1);
+            var lockWaitTimeout = TimeSpan.FromSeconds(60);
 
+            var backupOpts = new System.Collections.Generic.Dictionary<string, string>(TestOptions);
+            backupOpts["remote-file-lock-duration"] = LockDurationOptionValue;
+            backupOpts["no-auto-compact"] = "true";
+
+            var target = "file://" + TARGETFOLDER;
             var file1 = Path.Combine(DATAFOLDER, "f1");
             var file2 = Path.Combine(DATAFOLDER, "f2");
 
-            TestUtils.WriteTestFile(file1, 2048);
+            TestUtils.WriteTestFile(file1, 1024);
 
             long oldestFilesetId;
-            string oldestFilesetVolumeName;
-            string lockedBlockOrIndexVolume;
+            DateTime oldestFilesetTime;
+            var token = CancellationToken.None;
 
-            using (var c = new Controller(target, backupOpts, null))
+            var fakeLockingBackend = new FakeLockingBackendManager();
+
+            async Task ApplyLocksForFilesetTimestamp(DateTime filesetTimeLocal, CancellationToken ct)
             {
-                var b1 = c.Backup(new[] { DATAFOLDER });
+                var lockOptionsDict = new System.Collections.Generic.Dictionary<string, string?>(
+                    backupOpts.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value)
+                );
+                // Make sure the lock options are present with exact keys.
+                lockOptionsDict["remote-file-lock-duration"] = LockDurationOptionValue;
+                lockOptionsDict["dbpath"] = DBFILE;
+
+                var lockingOptions = new Options(lockOptionsDict);
+                Assert.That(lockingOptions.RemoteFileLockDuration, Is.Not.Null, "Expected remote-file-lock-duration to be set for lock operation");
+
+                await using var lockDb = await LocalLockDatabase.CreateAsync(DBFILE, null, ct).ConfigureAwait(false);
+
+                // Apply locks to all volumes associated with this fileset. Because the file:// backend
+                // does not implement ILockingBackend, we simulate the backend lock operation and
+                // only verify the database lock state.
+                var handler = new SetLocksHandler(lockingOptions, new SetLockResults(), new[] { filesetTimeLocal });
+                await handler.RunAsync(fakeLockingBackend, lockDb, new[] { filesetTimeLocal }).ConfigureAwait(false);
+            }
+
+            var b1BeginTime = DateTime.MinValue;
+            using (var c1 = new Controller(target, backupOpts, null))
+            {
+                var b1 = c1.Backup(new[] { DATAFOLDER });
                 Assert.That(b1.Errors, Is.Empty, "Backup 1 had errors");
+                b1BeginTime = b1.BeginTime;
+            }
 
-                SleepUntilNextSecond(b1.BeginTime);
-                TestUtils.WriteTestFile(file2, 2048);
-
-                var b2 = c.Backup(new[] { DATAFOLDER });
-                Assert.That(b2.Errors, Is.Empty, "Backup 2 had errors");
-
-                var token = CancellationToken.None;
-                await using var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, null, true, null, token).ConfigureAwait(false);
-
+            // Capture the latest fileset (the one created by backup 1) and apply locks.
+            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, null, true, null, token).ConfigureAwait(false))
+            {
                 var filesets = await db.FilesetTimes(token)
                     .ToArrayAsync(cancellationToken: token)
                     .ConfigureAwait(false);
 
-                Assert.That(filesets.Length, Is.GreaterThanOrEqualTo(2), "Expected at least 2 filesets");
-                oldestFilesetId = filesets.Last().Key;
+                Assert.That(filesets.Length, Is.GreaterThanOrEqualTo(1), "Expected at least 1 fileset after first backup");
+                var latest = filesets.First();
+                oldestFilesetId = latest.Key;
+                oldestFilesetTime = latest.Value;
+            }
 
-                var filesetVolume = await db.GetRemoteVolumeFromFilesetID(oldestFilesetId, token).ConfigureAwait(false);
-                oldestFilesetVolumeName = filesetVolume.Name;
+            await ApplyLocksForFilesetTimestamp(oldestFilesetTime, token).ConfigureAwait(false);
 
-                // Find a referenced block or index volume for this fileset.
-                await using var lockDb = await LocalLockDatabase.CreateAsync(DBFILE, null, token).ConfigureAwait(false);
-                var referencedVolumeNames = await lockDb
-                    .GetRemoteVolumesDependingOnFilesets([oldestFilesetId], token)
-                    .Select(x => x.Name)
+            // Ensure the second backup has a distinct fileset timestamp.
+            SleepUntilNextSecond(b1BeginTime);
+
+            // Optional delay between backups to more clearly separate their lock windows.
+            await Task.Delay(delayBetweenBackups).ConfigureAwait(false);
+
+            TestUtils.WriteTestFile(file2, 1024);
+            using (var c2 = new Controller(target, backupOpts, null))
+            {
+                var b2 = c2.Backup(new[] { DATAFOLDER });
+                Assert.That(b2.Errors, Is.Empty, "Backup 2 had errors");
+            }
+
+            // Apply locks for the second backup as well.
+            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, null, true, null, token).ConfigureAwait(false))
+            {
+                var filesets = await db.FilesetTimes(token)
                     .ToArrayAsync(cancellationToken: token)
                     .ConfigureAwait(false);
 
-                lockedBlockOrIndexVolume = null;
-                foreach (var name in referencedVolumeNames)
-                {
-                    var rv = await db.GetRemoteVolume(name, token).ConfigureAwait(false);
-                    if (rv.Type == RemoteVolumeType.Blocks || rv.Type == RemoteVolumeType.Index)
-                    {
-                        lockedBlockOrIndexVolume = name;
-                        break;
-                    }
-                }
-
-                Assert.That(lockedBlockOrIndexVolume, Is.Not.Null.And.Not.Empty, "Failed to locate a block/index volume for the oldest fileset");
-
-                // Lock the dependency volume.
-                await lockDb.UpdateRemoteVolumeLockExpiration(lockedBlockOrIndexVolume, DateTime.UtcNow.AddHours(1), token).ConfigureAwait(false);
-                await lockDb.Transaction.CommitAsync(token: token).ConfigureAwait(false);
+                Assert.That(filesets.Length, Is.GreaterThanOrEqualTo(2), "Expected at least 2 filesets after second backup");
+                var newest = filesets.First().Value;
+                await ApplyLocksForFilesetTimestamp(newest, token).ConfigureAwait(false);
             }
 
-            // Run delete with retention, but expect it to be blocked by the locked dependency.
+            async Task<bool> IsFilesetLockedAsync(long filesetId, CancellationToken ct)
+            {
+                await using var deleteDb = await LocalDeleteDatabase.CreateAsync(DBFILE, "LockCheck", null, ct).ConfigureAwait(false);
+                return await deleteDb.HasAnyLockedFiles(filesetId, DateTime.UtcNow, ct).ConfigureAwait(false);
+            }
+
+            // Verify that the oldest fileset has at least one active lock immediately after the backups.
+            Assert.That(await IsFilesetLockedAsync(oldestFilesetId, token).ConfigureAwait(false),
+                Is.True,
+                "Expected oldest fileset to have an active lock after backup when file-lock-duration is configured");
+
+            // First delete attempt while the lock is still active should skip deleting the oldest fileset.
             var deleteOpts = new System.Collections.Generic.Dictionary<string, string>(backupOpts)
             {
                 ["keep-versions"] = "1",
@@ -184,20 +263,45 @@ namespace Duplicati.UnitTest
             using (var cdelete = new Controller(target, deleteOpts, null))
             {
                 var deleteResults = cdelete.Delete();
-                Assert.That(deleteResults.Errors, Is.Empty, "Delete had errors");
-                Assert.That(deleteResults.DeletedSets, Is.Empty, "Expected no filesets to be deleted due to locked dependency");
+                Assert.That(deleteResults.Errors, Is.Empty, "Delete (with active lock) had errors");
+                Assert.That(deleteResults.DeletedSets, Is.Empty, "Expected no filesets to be deleted while lock is active");
                 Assert.That(deleteResults.Warnings.Any(x => x.Contains("Skipping deletion of fileset version", StringComparison.Ordinal)),
                     Is.True,
-                    "Expected warning about skipping fileset deletion due to locked block/index dependency");
+                    "Expected warning about skipping fileset deletion due to active lock");
+            }
 
-                var remotePath = Path.Combine(TARGETFOLDER, oldestFilesetVolumeName);
-                Assert.That(File.Exists(remotePath), Is.True, $"Expected fileset volume to remain on backend: {remotePath}");
+            // Wait until the lock for the oldest fileset has expired before attempting deletion again.
+            var startWait = DateTime.UtcNow;
+            while (await IsFilesetLockedAsync(oldestFilesetId, token).ConfigureAwait(false))
+            {
+                if (DateTime.UtcNow - startWait > lockWaitTimeout)
+                    Assert.Fail($"Timed out waiting for lock on fileset {oldestFilesetId} to expire");
+
+                await Task.Delay(lockPollInterval).ConfigureAwait(false);
+            }
+
+            // Second delete attempt after the lock has expired should now delete the oldest fileset.
+            var finalDeleteOpts = new System.Collections.Generic.Dictionary<string, string>(backupOpts)
+            {
+                ["keep-versions"] = "1",
+                ["no-auto-compact"] = "true",
+            };
+
+            using (var cdelete = new Controller(target, finalDeleteOpts, null))
+            {
+                var deleteResults = cdelete.Delete();
+                Assert.That(deleteResults.Errors, Is.Empty, "Delete (after lock expiration) had errors");
+
+                var deletedSets = deleteResults.DeletedSets?.ToArray() ?? Array.Empty<Tuple<long, DateTime>>();
+                Assert.That(deletedSets.Length, Is.EqualTo(1), "Expected exactly one fileset to be deleted after lock expiration");
+                Assert.That(deletedSets[0].Item2, Is.EqualTo(oldestFilesetTime),
+                    "Expected the deleted fileset to be the oldest (initial) version");
             }
         }
 
         [Test]
         [Category("Compact")]
-        public async Task CompactWarnsOnLockedCompactableVolume()
+        public async Task CompactDetectsAndAvoidsLockedCompactableVolume()
         {
             var testopts = TestOptions;
             testopts["backup-test-samples"] = "0";
@@ -273,7 +377,7 @@ namespace Duplicati.UnitTest
 
                 var compactResults = c.Compact();
                 Assert.That(compactResults.Errors, Is.Empty, "Compact had errors");
-                Assert.That(compactResults.Warnings.Any(x => x.Contains("selected for compaction but has an active lock", StringComparison.Ordinal) && x.Contains(lockedCandidateName, StringComparison.Ordinal)),
+                Assert.That(compactResults.Messages.Any(x => x.Contains("selected for compaction but has an active lock", StringComparison.Ordinal) && x.Contains(lockedCandidateName, StringComparison.Ordinal)),
                     Is.True,
                     "Expected warning about compacting a locked volume");
             }

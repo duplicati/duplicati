@@ -52,10 +52,10 @@ namespace Duplicati.Library.Main.Operation
 
         internal async Task RunAsync(IBackendManager backendManager, Database.LocalLockDatabase? databaseOverride, IEnumerable<DateTime>? versionTimestamps = null)
         {
-            if (m_options.FileLockDuration is null)
+            if (m_options.RemoteFileLockDuration is null)
                 throw new UserInformationException("No lock duration specified", "MissingLockDuration");
 
-            if (m_options.FileLockDuration.Value.TotalSeconds < 5)
+            if (m_options.RemoteFileLockDuration.Value.TotalSeconds < 5)
                 throw new UserInformationException("Lock duration must be at least 5 seconds", "LockDurationTooShort");
 
             if (!backendManager.SupportsObjectLocking)
@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main.Operation
             if (filesetIds.Count == 0)
                 throw new UserInformationException("No version specified", "NoVersionForLockOperation");
 
-            var lockUntilUtc = DateTime.UtcNow + m_options.FileLockDuration.Value;
+            var lockUntilUtc = DateTime.UtcNow + m_options.RemoteFileLockDuration.Value;
 
             long readCount = 0;
             long updatedCount = 0;
@@ -97,10 +97,17 @@ namespace Duplicati.Library.Main.Operation
                             continue;
                         }
 
-                        await backendManager.SetObjectLockUntilAsync(volumeName, lockUntilUtc, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-                        // Update the lock expiration time in the database
-                        await database.UpdateRemoteVolumeLockExpiration(volumeName, lockUntilUtc, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-
+                        if (m_options.Dryrun)
+                        {
+                            Log.WriteDryrunMessage(LOGTAG, "DryRunSetObjectLock", "Would set object lock for {0} in fileset {1} until {2:u}", volumeName, filesetId, lockUntilUtc);
+                        }
+                        else
+                        {
+                            Log.WriteInformationMessage(LOGTAG, "SetObjectLock", "Setting object lock for {0} in fileset {1} until {2:u}", volumeName, filesetId, lockUntilUtc);
+                            await backendManager.SetObjectLockUntilAsync(volumeName, lockUntilUtc, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                            // Update the lock expiration time in the database
+                            await database.UpdateRemoteVolumeLockExpiration(volumeName, lockUntilUtc, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                        }
                         updatedCount++;
                     }
                     catch (Exception ex)
@@ -111,6 +118,8 @@ namespace Duplicati.Library.Main.Operation
             }
 
             await backendManager.WaitForEmptyAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await backendManager.FlushPendingMessagesAsync(database, m_result.TaskControl.ProgressToken);
+            await database.Transaction.CommitAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             m_result.VolumesRead = readCount;
             m_result.VolumesUpdated = updatedCount;
@@ -136,6 +145,8 @@ namespace Duplicati.Library.Main.Operation
                         .ToArrayAsync(cancellationToken: token)
                         .ConfigureAwait(false);
 
+                    if (matched.Length > 1)
+                        throw new UserInformationException($"Multiple filesets found for version {versionTime}", "MultipleFilesetsFound");
                     if (matched.Length > 0)
                         filesetIds.AddRange(matched);
                 }

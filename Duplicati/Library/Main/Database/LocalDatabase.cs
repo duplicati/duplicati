@@ -518,7 +518,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="filesetIds">Fileset IDs to resolve.</param>
         /// <param name="token">Cancellation token.</param>
-        /// <returns>An async sequence of remote volume name, type, and lock expiration time (UTC) if present.</returns>
+        /// <returns>An async sequence of remote volume name and lock expiration time (UTC) if present.</returns>
         public async IAsyncEnumerable<(string Name, DateTime? LockExpirationTime)> GetRemoteVolumesDependingOnFilesets(
             IEnumerable<long> filesetIds,
             [EnumeratorCancellation] CancellationToken token)
@@ -532,44 +532,54 @@ namespace Duplicati.Library.Main.Database
 
             cmd.SetCommandAndParameters($@"
                 WITH
-                    fileset_blocks AS (
-                        SELECT DISTINCT ""VolumeID"" AS ""VolumeID""
-                        FROM ""Block""
-                        WHERE ""ID"" IN (
-                            SELECT ""BlockID""
-                            FROM ""BlocksetEntry""
-                            WHERE ""BlocksetID"" IN (
-                                SELECT ""BlocksetID""
-                                FROM ""FileLookup""
-                                WHERE ""ID"" IN (
-                                    SELECT ""FileID""
-                                    FROM ""FilesetEntry""
-                                    WHERE ""FilesetID"" IN (@FilesetIds)
-                                )
-                            )
-                        )
-                    ),
-                    index_volumes AS (
-                        SELECT DISTINCT ""IndexVolumeID"" AS ""VolumeID""
-                        FROM ""IndexBlockLink""
-                        WHERE ""BlockVolumeID"" IN (SELECT ""VolumeID"" FROM fileset_blocks)
-                    )
-                    ,
-                    fileset_volumes AS (
-                        SELECT DISTINCT ""VolumeID"" AS ""VolumeID""
-                        FROM ""Fileset""
-                        WHERE ""ID"" IN (@FilesetIds)
-                    )
-                    ,combined AS (
-                        SELECT ""VolumeID"" FROM fileset_blocks
-                        UNION
-                        SELECT ""VolumeID"" FROM index_volumes
-                        UNION
-                        SELECT ""VolumeID"" FROM fileset_volumes
-                    )
-                SELECT DISTINCT ""Name"", ""LockExpirationTime""
-                FROM ""RemoteVolume""
-                WHERE ""ID"" IN (SELECT * FROM combined)
+                selected_files AS (
+                    SELECT ""FileID""
+                    FROM ""FilesetEntry""
+                    WHERE ""FilesetID"" IN (@FilesetIds)
+                ),
+
+                fileset_blocks AS (
+                    -- data blocks
+                    SELECT b.""VolumeID""
+                    FROM selected_files sf
+                    JOIN ""FileLookup"" fl ON fl.""ID"" = sf.""FileID""
+                    JOIN ""BlocksetEntry"" be ON be.""BlocksetID"" = fl.""BlocksetID""
+                    JOIN ""Block"" b ON b.""ID"" = be.""BlockID""
+
+                    UNION
+
+                    -- metadata blocks
+                    SELECT b.""VolumeID""
+                    FROM selected_files sf
+                    JOIN ""FileLookup"" fl ON fl.""ID"" = sf.""FileID""
+                    JOIN ""Metadataset"" ms ON ms.""ID"" = fl.""MetadataID""
+                    JOIN ""BlocksetEntry"" be ON be.""BlocksetID"" = ms.""BlocksetID""
+                    JOIN ""Block"" b ON b.""ID"" = be.""BlockID""
+                ),
+
+                index_volumes AS (
+                    SELECT ""IndexVolumeID"" AS ""VolumeID""
+                    FROM ""IndexBlockLink""
+                    WHERE ""BlockVolumeID"" IN (SELECT ""VolumeID"" FROM fileset_blocks)
+                ),
+
+                fileset_volumes AS (
+                    SELECT ""VolumeID""
+                    FROM ""Fileset""
+                    WHERE ""ID"" IN (@FilesetIds)
+                ),
+
+                combined AS (
+                    SELECT ""VolumeID"" FROM fileset_blocks
+                    UNION
+                    SELECT ""VolumeID"" FROM index_volumes
+                    UNION
+                    SELECT ""VolumeID"" FROM fileset_volumes
+                )
+
+                SELECT rv.""Name"", rv.""LockExpirationTime""
+                FROM ""Remotevolume"" rv
+                WHERE rv.""ID"" IN (SELECT ""VolumeID"" FROM combined);
             ");
 
             cmd.ExpandInClauseParameterMssqlite("@FilesetIds", ids);
@@ -580,7 +590,7 @@ namespace Duplicati.Library.Main.Database
                 var name = rd.ConvertValueToString(0) ?? string.Empty;
                 var lockUntil = rd.IsDBNull(1)
                     ? (DateTime?)null
-                    : ParseFromEpochSeconds(rd.ConvertValueToInt64(2));
+                    : ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
 
                 yield return (name, lockUntil);
             }

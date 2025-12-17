@@ -46,8 +46,8 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        private static bool HasActiveLock(DateTime? lockExpirationTimeUtc)
-            => lockExpirationTimeUtc.HasValue && lockExpirationTimeUtc.Value > DateTime.UtcNow;
+        private static bool HasActiveLock(DateTime? lockExpirationTime)
+            => lockExpirationTime.HasValue && lockExpirationTime.Value.ToUniversalTime() > DateTime.UtcNow;
 
         public async Task RunAsync(IBackendManager backendManager)
         {
@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.Operation
                         .ToArray();
 
                     foreach (var locked in candidates.Where(x => HasActiveLock(x.LockExpirationTime)))
-                        Logging.Log.WriteWarningMessage(LOGTAG, "SkipDeleteLockedRemoteVolume", null,
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipDeleteLockedRemoteVolume", null,
                             "Skipping deletion of remote volume {0} because it has an active lock until {1:u}",
                             locked.Name,
                             locked.LockExpirationTime!.Value);
@@ -179,7 +179,7 @@ namespace Duplicati.Library.Main.Operation
                             .ToArray();
 
                         foreach (var locked in candidates.Where(x => HasActiveLock(x.LockExpirationTime)))
-                            Logging.Log.WriteWarningMessage(LOGTAG, "SkipCompactLockedRemoteVolume", null,
+                            Logging.Log.WriteInformationMessage(LOGTAG, "SkipCompactLockedRemoteVolume", null,
                                 "Remote volume {0} was selected for compaction but has an active lock until {1:u}",
                                 locked.Name,
                                 locked.LockExpirationTime!.Value);

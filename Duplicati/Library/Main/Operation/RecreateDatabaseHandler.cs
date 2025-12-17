@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
-//using System.Data;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -29,7 +28,6 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
-using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Operation
 {

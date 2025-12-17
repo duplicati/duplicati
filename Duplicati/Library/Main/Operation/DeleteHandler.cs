@@ -130,19 +130,6 @@ namespace Duplicati.Library.Main.Operation
                         continue;
                     }
 
-                    if (await db.HasAnyLockedFiles(filesetId, DateTime.UtcNow, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
-                    {
-                        Logging.Log.WriteWarningMessage(
-                            LOGTAG,
-                            "SkipDeleteFilesetDueToLockedDependency",
-                            null,
-                            "Skipping deletion of fileset version {0} ({1}) because one or more related block/index volumes have an active lock",
-                            fileset.Version,
-                            fileset.Time
-                        );
-                        continue;
-                    }
-
                     deletionCandidates.Add(fileset);
                 }
 
@@ -224,8 +211,8 @@ namespace Duplicati.Library.Main.Operation
             m_result.SetResults(versionsToDelete.Select(v => new Tuple<long, DateTime>(v.Version, v.Time)), m_options.Dryrun);
         }
 
-        private static bool HasActiveLock(DateTime? lockExpirationTimeUtc)
-            => lockExpirationTimeUtc.HasValue && lockExpirationTimeUtc.Value > DateTime.UtcNow;
+        private static bool HasActiveLock(DateTime? lockExpirationTime)
+            => lockExpirationTime.HasValue && lockExpirationTime.Value.ToUniversalTime() > DateTime.UtcNow;
     }
 
     public abstract class FilesetRemover
