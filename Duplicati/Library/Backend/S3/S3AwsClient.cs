@@ -218,16 +218,24 @@ namespace Duplicati.Library.Backend
         {
             return m_dnsHost;
         }
-
-        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source,
-            CancellationToken cancelToken)
+        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, CancellationToken cancelToken)
         {
+            // Precalculate the hashes to avoid calculating them in the PutObjectAsync call where the stream could be throttled
             (source, var hashes, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(source, ["MD5", "SHA256"], cancelToken).ConfigureAwait(false);
             using var _ = tmp;
 
-            // Precalculate the hashes to avoid calculating them in the PutObjectAsync call where the stream could be throttled
-            var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0]));
-            var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1]));
+            var converted_hashes = hashes
+                .Select(h => Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(h)))
+                .ToArray();
+
+            await AddFileStreamAsync(bucketName, keyName, source, converted_hashes, cancelToken)
+                .ConfigureAwait(false);
+        }
+
+        public async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, string[] hashes, CancellationToken cancelToken)
+        {
+            var md5 = hashes[0];
+            var sha256 = hashes[1];
 
             using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
             var objectAddRequest = new PutObjectRequest

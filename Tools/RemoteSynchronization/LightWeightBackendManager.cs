@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Backend;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -169,14 +170,25 @@ namespace RemoteSynchronization
         /// <param name="remotename">The name of the remote file to put.</param>
         /// <param name="stream">The stream containing the file data to put.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <param name="hashes">Optional precomputed hashes to forward to the backend.</param>
         /// <returns>A task representing the asynchronous put operation.</returns>
-        public Task PutAsync(string remotename, Stream stream, CancellationToken token)
+        public Task PutAsync(string remotename, Stream stream, CancellationToken token, string[]? hashes = null)
         {
             return RetryWithDelay(
                 $"Put {remotename}",
                 async () =>
                 {
-                    await _streamingBackend!.PutAsync(remotename, stream, token).ConfigureAwait(false);
+                    // Shortcut for forwarding precomputed hashes to S3AwsClient
+                    if (hashes is not null && _streamingBackend is S3AwsClient s3client)
+                    {
+                        var bucketname = Directory.GetParent(remotename)!.Name;
+                        var keyname = Path.GetFileName(remotename);
+                        await s3client.AddFileStreamAsync(bucketname, keyname, stream, hashes, token).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await _streamingBackend!.PutAsync(remotename, stream, token).ConfigureAwait(false);
+                    }
                     _anyUploaded = true;
                 },
                 stream,

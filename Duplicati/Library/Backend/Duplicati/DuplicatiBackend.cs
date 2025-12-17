@@ -274,10 +274,16 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <inheritdoc />
     public async Task PutAsync(string remotename, Stream source, CancellationToken token)
     {
+        (source, var hashes, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(source, ["MD5", "SHA256"], token).ConfigureAwait(false);
+        using var _ = tmp;
+        var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0]));
+        var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1]));
         using var timeoutStream = source.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, $"/put/{remotename}");
         request.Content = new StreamContent(timeoutStream);
+        request.Headers.Add("X-Content-MD5", md5 ?? string.Empty);
+        request.Headers.Add("X-Content-SHA256", sha256 ?? string.Empty);
 
         using var response = await _client.SendAsync(request, token).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
