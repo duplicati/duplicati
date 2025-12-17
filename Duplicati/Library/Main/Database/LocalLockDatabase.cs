@@ -81,16 +81,16 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Gets all remote volumes with their lock expiration times.
         /// </summary>
-        /// <param name="onlyNullLockExpiration">If true, only returns volumes with null lock expiration.</param>
+        /// <param name="onlyWithoutLockInformation">If true, only returns volumes without lock expiration</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>An asynchronous sequence of tuples containing the volume name and lock expiration time.</returns>
-        public async IAsyncEnumerable<(string Name, DateTime? LockExpirationTime)> GetRemoteVolumesWithLockExpiration(bool onlyNullLockExpiration, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<(string Name, DateTime? LockExpirationTime)> GetRemoteVolumesWithLockExpiration(bool onlyWithoutLockInformation, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand();
             cmd.SetTransaction(m_rtr);
 
-            var whereClause = onlyNullLockExpiration
-                ? @"WHERE ""LockExpirationTime"" IS NULL"
+            var whereClause = onlyWithoutLockInformation
+                ? @"WHERE ""LockExpirationTime"" = 0"
                 : "";
 
             cmd.SetCommandAndParameters($@"
@@ -103,9 +103,7 @@ namespace Duplicati.Library.Main.Database
             while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 var name = rd.ConvertValueToString(0) ?? string.Empty;
-                var lockExpiration = rd.IsDBNull(1)
-                    ? (DateTime?)null
-                    : ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
+                var lockExpiration = ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
                 yield return (name, lockExpiration);
             }
         }

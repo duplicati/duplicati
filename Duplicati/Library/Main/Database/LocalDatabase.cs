@@ -457,7 +457,8 @@ namespace Duplicati.Library.Main.Database
                     ""Size"",
                     ""VerificationCount"",
                     ""DeleteGraceTime"",
-                    ""ArchiveTime""
+                    ""ArchiveTime"",
+                    ""LockExpirationTime""
                 )
                 VALUES (
                     @OperationID,
@@ -467,7 +468,8 @@ namespace Duplicati.Library.Main.Database
                     @Size,
                     @VerificationCount,
                     @DeleteGraceTime,
-                    @ArchiveTime
+                    @ArchiveTime,
+                    @LockExpirationTime
                 );
                 SELECT last_insert_rowid();
             ", token)
@@ -1434,6 +1436,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@VerificationCount", 0)
                 .SetParameterValue("@DeleteGraceTime", deleteGraceTime.Ticks <= 0 ? 0 : (DateTime.UtcNow + deleteGraceTime).Ticks)
                 .SetParameterValue("@ArchiveTime", 0)
+                .SetParameterValue("@LockExpirationTime", 0)
                 .ExecuteScalarInt64Async(token)
                 .ConfigureAwait(false);
 
