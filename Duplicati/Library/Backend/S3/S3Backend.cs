@@ -273,16 +273,16 @@ namespace Duplicati.Library.Backend
             var s3ClientOptionValue = options.GetValueOrDefault(S3_CLIENT_OPTION);
 
             (var awsID, var awsKey) = auth.GetCredentials();
+            var lockMode = options.GetValueOrDefault(S3_LOCK_MODE_OPTION, "governance") ?? "governance";
+
             if (string.IsNullOrWhiteSpace(s3ClientOptionValue) || string.Equals(s3ClientOptionValue, "aws", StringComparison.OrdinalIgnoreCase))
             {
                 var disableChunkEncoding = Utility.Utility.ParseBoolOption(options, S3_DISABLE_CHUNK_ENCODING_OPTION);
                 var disablePayloadSigning = Utility.Utility.ParseBoolOption(options, S3_DISABLE_PAYLOAD_SIGNING_OPTION);
-                var lockMode = options.GetValueOrDefault(S3_LOCK_MODE_OPTION, "governance") ?? "governance";
                 m_s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, disablePayloadSigning, timeout, options, lockMode);
             }
             else if (string.Equals(s3ClientOptionValue, "minio", StringComparison.OrdinalIgnoreCase))
             {
-                var lockMode = options.GetValueOrDefault(S3_LOCK_MODE_OPTION, "governance") ?? "governance";
                 m_s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, timeout, options, lockMode);
             }
             else
