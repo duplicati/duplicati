@@ -55,6 +55,7 @@ public static class StaticFilesExtensions
     private const string FORWARDED_PREFIX_HEADER_NGCLIENT = "X-Forwarded-Prefix-Ngclient";
     private const string ENABLE_IFRAME_HOSTING_HEADER = "X-Allow-Iframe-Hosting";
     private const string ENABLE_IFRAME_HOSTING_ENVIRONMENT_VARIABLE = "DUPLICATI_ENABLE_IFRAME_HOSTING";
+    private const string XSRF_FORWARDING_CONFIG_ENVIRONMENT_VARIABLE = "DUPLICATI_XSRF_FORWARDING_CONFIG";
     private const string NGCLIENT_LOCATION = "ngclient/";
 
     private sealed record SpaConfig(string Prefix, string FileContent, string BasePath);
@@ -67,7 +68,7 @@ public static class StaticFilesExtensions
         @"(</head\s*>)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline);
 
-    private static string PatchIndexContent(string fileContent, string prefix, string ngclientPrefix, bool enableIframeHosting)
+    private static string PatchIndexContent(string fileContent, string prefix, string ngclientPrefix, bool enableIframeHosting, (string HeaderName, string QueryName)? xsrfForwardingConfig)
     {
         if (!prefix.EndsWith("/"))
             prefix += "/";
@@ -84,6 +85,8 @@ public static class StaticFilesExtensions
             headContent += $@"<meta name=""duplicati-proxy-config"" content=""{prefix}""/> ";
         if (enableIframeHosting)
             headContent += $@"<meta name=""duplicati-enable-iframe-hosting"" content=""true""/> ";
+        if (xsrfForwardingConfig is not null)
+            headContent += $@"<meta name=""duplicati-xsrf-config"" data-header-name=""{xsrfForwardingConfig.Value.HeaderName}"" data-query-name=""{xsrfForwardingConfig.Value.QueryName}"" /> ";
 
         fileContent = _headInjectRegex.Replace(fileContent, headContent + "</head>");
 
@@ -176,7 +179,9 @@ public static class StaticFilesExtensions
                     var enableIframeHosting = Library.Utility.Utility.ParseBool(context.Request.Headers[ENABLE_IFRAME_HOSTING_HEADER].FirstOrDefault(), false)
                         || Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(ENABLE_IFRAME_HOSTING_ENVIRONMENT_VARIABLE), false);
 
-                    await context.Response.WriteAsync(PatchIndexContent(indexContent, forwardedPrefix, ngclientPrefix, enableIframeHosting), context.RequestAborted);
+                    var xsrfForwardingConfig = GetXsrfForwardingConfig();
+
+                    await context.Response.WriteAsync(PatchIndexContent(indexContent, forwardedPrefix, ngclientPrefix, enableIframeHosting, xsrfForwardingConfig), context.RequestAborted);
                     await context.Response.CompleteAsync();
                     return;
                 }
@@ -243,6 +248,19 @@ public static class StaticFilesExtensions
         });
 
         return app;
+    }
+
+    private static (string HeaderName, string QueryName)? GetXsrfForwardingConfig()
+    {
+        var configStr = Environment.GetEnvironmentVariable(XSRF_FORWARDING_CONFIG_ENVIRONMENT_VARIABLE);
+        if (string.IsNullOrWhiteSpace(configStr))
+            return null;
+
+        var parts = configStr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length != 2)
+            return null;
+
+        return (parts[0], parts[1]);
     }
 
     private static DefaultFilesOptions GetDefaultFiles(PhysicalFileProvider fileProvider)
