@@ -1,5 +1,5 @@
 {
-    "Duplicati.js": {
+    "Duplicati.cgi": {
         "SYNO.SDS.Duplicati.Application": {
             "type": "app",
             "title": "Duplicati",

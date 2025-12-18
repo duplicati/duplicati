@@ -28,8 +28,15 @@ namespace Duplicati.WebserverCore.Middlewares;
 
 public sealed class SynologyDsmAuthOptions
 {
-    /// <summary>Path to DSM authenticate.cgi</summary>
-    public string AuthenticateCgi { get; set; } = GetEnvArg("SYNO_AUTHENTICATE_CGI", "/usr/syno/synoman/webman/modules/authenticate.cgi");
+    /// <summary>
+    /// Path to DSM authenticate.cgi
+    /// </summary>
+    public string AuthenticateCgi { get; set; } = GetEnvArg("SYNO_AUTHENTICATE_CGI", "/usr/syno/synoman/webman/authenticate.cgi");
+
+    /// <summary>
+    /// Path to DSM login.cgi
+    /// </summary>
+    public string LoginCgi { get; set; } = GetEnvArg("SYNO_LOGIN_CGI", "/usr/syno/synoman/webman/login.cgi");
 
     /// <summary>
     /// If set, use this username instead of invoking authenticate.cgi (mostly for testing).
@@ -47,6 +54,12 @@ public sealed class SynologyDsmAuthOptions
     public bool AdminOnly { get; set; } = !(GetEnvArg("SYNO_ALL_USERS", "0") == "1");
 
     /// <summary>
+    /// A flag indicating if the XSRF token should be fetched automatically
+    /// </summary>
+    /// <remarks>Enabling this disables XSRF protection, so use with caution.</remarks>
+    public readonly bool AutoXsrf = GetEnvArg("SYNO_AUTO_XSRF", "0") == "1";
+
+    /// <summary>
     /// If true, enable the middleware. Controlled by SYNO_DSM_AUTH_ENABLED=1/0.
     /// </summary>
     public bool Enabled { get; set; } = GetEnvArg("SYNO_DSM_AUTH_ENABLED", "0") == "1";
@@ -61,7 +74,7 @@ public sealed class SynologyDsmAuthOptions
     /// Set SYNO_PROTECT_PREFIXES to override (comma-separated).
     /// </summary>
     public string[] ProtectedPathPrefixes { get; set; } =
-        (GetEnvArg("SYNO_PROTECT_PREFIXES") ?? "/api")
+        (GetEnvArg("SYNO_PROTECT_PREFIXES") ?? "/api,/notfications")
             .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Trim())
             .Where(x => x.Length > 0)
@@ -101,6 +114,7 @@ public sealed class SynologyDsmAuthOptions
 
 public sealed class SynologyDsmAuthMiddleware
 {
+    private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<SynologyDsmAuthMiddleware>();
     private readonly RequestDelegate _next;
     private readonly SynologyDsmAuthOptions _opt;
     private readonly ConcurrentDictionary<string, DateTime> _loginCache = new ConcurrentDictionary<string, DateTime>();
@@ -114,7 +128,7 @@ public sealed class SynologyDsmAuthMiddleware
         _opt = options ?? throw new ArgumentNullException(nameof(options));
 
         // Validate scripts exist; if not, disable with 503.
-        if (!File.Exists(_opt.AuthenticateCgi))
+        if (!File.Exists(_opt.AuthenticateCgi) || !File.Exists(_opt.LoginCgi))
             _fullyDisabled = true;
     }
 
@@ -141,8 +155,42 @@ public sealed class SynologyDsmAuthMiddleware
         if (!string.IsNullOrWhiteSpace(loginId))
             env["HTTP_COOKIE"] = "id=" + loginId;
 
+        string? xsrftoken = context.Request.Headers["X-Syno-Token"];
+        if (string.IsNullOrWhiteSpace(xsrftoken) && context.Request.Query.TryGetValue("SynoToken", out var qt))
+            xsrftoken = qt.ToString();
 
-        var cacheKey = BuildCacheKey(env);
+        var cacheKey = BuildCacheKey(env, xsrftoken);
+
+        // Check cache so we do not need to call authenticate.cgi for every request
+        if (!string.IsNullOrWhiteSpace(cacheKey) && _loginCache.TryGetValue(cacheKey, out var cacheExpires) && cacheExpires > DateTime.Now)
+        {
+            await _next(context);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(xsrftoken) && _opt.AutoXsrf)
+        {
+            try
+            {
+                var resp = ShellExec(_opt.LoginCgi, env: env).Result;
+
+                var m = _synoTokenRegex.Match(resp);
+                if (m.Success)
+                    xsrftoken = m.Groups["token"].Value;
+                else
+                    throw new Exception("Unable to get XSRF token");
+            }
+            catch (Exception)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsync("Request not authorized");
+                return;
+            }
+        }
+
+        // Include XSRF token if available
+        if (!string.IsNullOrWhiteSpace(xsrftoken))
+            env["HTTP_X_SYNO_TOKEN"] = xsrftoken;
 
         // Authenticate
         var username = _opt.ForcedUsername;
@@ -154,8 +202,8 @@ public sealed class SynologyDsmAuthMiddleware
             }
             catch
             {
-                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                await context.Response.WriteAsync("The system is incorrectly configured");
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsync("Request not authorized");
                 return;
             }
         }
@@ -229,7 +277,7 @@ public sealed class SynologyDsmAuthMiddleware
         return env;
     }
 
-    private static string? BuildCacheKey(Dictionary<string, string> env)
+    private static string? BuildCacheKey(Dictionary<string, string> env, string? xsrfToken)
     {
         if (env == null)
             return null;
@@ -242,7 +290,7 @@ public sealed class SynologyDsmAuthMiddleware
             string.IsNullOrWhiteSpace(cookie))
             return null;
 
-        return $"{addr}:{port}/{cookie}";
+        return $"{addr}:{port}/{cookie}?{xsrfToken}";
     }
 
     private async Task<bool> IsAdminUser(string username, CancellationToken ct)
@@ -320,12 +368,6 @@ public sealed class SynologyDsmAuthMiddleware
                 foreach (var kv in env)
                     psi.EnvironmentVariables[kv.Key] = kv.Value;
 
-            Console.WriteLine($"Executing: {psi.FileName} {psi.Arguments}");
-            if (shell && args != null)
-                Console.WriteLine($"Shell input: {args}");
-            if (env != null)
-                Console.WriteLine($"Environment: {string.Join(", ", env.Select(kv => $"{kv.Key}={kv.Value}"))}");
-
             using var p = Process.Start(psi);
             if (p == null)
                 throw new Exception($"Failed to start process: {command}");
@@ -350,17 +392,11 @@ public sealed class SynologyDsmAuthMiddleware
             if (exitcode != -1 && p.ExitCode != exitcode)
                 throw new Exception($"Exit code was: {p.ExitCode}, stdout: {stdout}, stderr: {stderr}");
 
-            Console.WriteLine($"Process exited with code {p.ExitCode}");
-            if (!string.IsNullOrEmpty(stderr))
-                Console.WriteLine($"stderr: {stderr}");
-            if (!string.IsNullOrEmpty(stdout))
-                Console.WriteLine($"stdout: {stdout}");
-
             return stdout;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"ShellExec exception: {ex}");
+            Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "ShellExecError", ex, $"Error executing command '{command} {args}'");
             throw;
         }
     }

@@ -93,6 +93,7 @@ start_daemon() {
         DUPLICATI_ENABLE_IFRAME_HOSTING="true" \
         SETTINGS_ENCRYPTION_KEY="${DATABASE_PASSWORD}" \
         SYNO_DSM_AUTH_ENABLED="1" \
+        DUPLICATI_XSRF_FORWARDING_CONFIG="X-Syno-Token,SynoToken" \
 		"${DAEMON_BIN}" \
         --webservice-allowed-hostnames="*" \
         --server-datafolder="${DATA_DIR}" \

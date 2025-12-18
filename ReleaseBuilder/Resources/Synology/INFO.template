@@ -33,5 +33,4 @@ group="duplicati"
 [application]
 name="Duplicati"
 service_port="443"
-service_path="/webman/3rdparty/Duplicati/index.cgi"
 icon="PACKAGE_ICON.PNG"

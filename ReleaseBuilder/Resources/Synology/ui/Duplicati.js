@@ -8,7 +8,17 @@
   // Small helper bucket
   SYNO.SDS.Duplicati.Utils = SYNO.SDS.Duplicati.Utils || {
     getIframeUrl: function () {
-      return "/webman/3rdparty/Duplicati/index.cgi";
+      var base = "/duplicati/ngclient/";
+      var token =
+        typeof window !== "undefined" && window.SYNO_SDS_DUPLICATI_SYNOTOKEN
+          ? String(window.SYNO_SDS_DUPLICATI_SYNOTOKEN)
+          : "";
+
+      if (!token) return base;
+
+      // Token is already URL-encoded from CGI query string; forward as-is.
+      var sep = base.indexOf("?") >= 0 ? "&" : "?";
+      return base + sep + "SynoToken=" + token;
     },
   };
 
