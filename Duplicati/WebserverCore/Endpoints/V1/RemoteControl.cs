@@ -55,25 +55,46 @@ public class RemoteControl : IEndpointV1
             => BeginRegisterMachine(registration, remoteController, input.RegistrationUrl, cancellationToken))
             .RequireAuthorization();
 
+        group.MapPost("/remotecontrol/register/wait", ([FromServices] IRemoteControllerRegistration registration, [FromServices] IRemoteController remoteController, CancellationToken cancellationToken)
+            => WaitForRegistration(registration, remoteController, cancellationToken))
+            .RequireAuthorization();
+
         group.MapDelete("/remotecontrol/register", ([FromServices] IRemoteControllerRegistration registration, [FromServices] IRemoteController remoteController)
             => CancelRegistration(registration, remoteController))
             .RequireAuthorization();
     }
 
-    private static async Task<Dto.RemoteControlStatusOutput> BeginRegisterMachine(IRemoteControllerRegistration registration, IRemoteController remoteController, string registrationUrl, CancellationToken cancellationToken)
+    private static async Task<Dto.RemoteControlStatusOutput> BeginRegisterMachine(IRemoteControllerRegistration registration, IRemoteController remoteController, string? registrationUrl, CancellationToken cancellationToken)
     {
         if (remoteController.CanEnable)
             throw new BadRequestException("Existing remote control must be removed before registering");
 
-        if (!registration.IsRegistering && string.IsNullOrWhiteSpace(registrationUrl))
-            throw new BadRequestException("Registration URL must be provided");
-
         var task = registration.IsRegistering
             ? registration.WaitForRegistration()
-            : registration.RegisterMachine(registrationUrl);
+            : registration.RegisterMachine(registrationUrl ?? throw new BadRequestException("Registration URL must be provided"));
 
         // Wait for registration, or at most 5 seconds
         // Client must poll if the registration is not completed by then
+        await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(4.5), cancellationToken));
+
+        // Rethrow any exceptions
+        if (task.IsCompleted)
+            await task;
+
+        return GetStatus(registration, remoteController);
+    }
+
+    private static async Task<Dto.RemoteControlStatusOutput> WaitForRegistration(IRemoteControllerRegistration registration, IRemoteController remoteController, CancellationToken cancellationToken)
+    {
+        if (remoteController.CanEnable)
+            throw new BadRequestException("Existing remote control must be removed before waiting for registration");
+
+        if (!registration.IsRegistering)
+            throw new BadRequestException("No ongoing registration to wait for");
+
+        var task = registration.WaitForRegistration();
+
+        // Wait for registration, or at most 5 seconds
         await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(4.5), cancellationToken));
 
         // Rethrow any exceptions
