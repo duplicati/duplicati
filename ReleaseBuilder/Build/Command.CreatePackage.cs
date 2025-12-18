@@ -1130,9 +1130,8 @@ public static partial class Command
             );
 
             // Icons for Synology package metadata
-            var iconSource = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "shared", "pixmaps", "duplicati.png");
-            File.Copy(iconSource, Path.Combine(spkRoot, "PACKAGE_ICON.PNG"), overwrite: true);
-            File.Copy(iconSource, Path.Combine(spkRoot, "PACKAGE_ICON_256.PNG"), overwrite: true);
+            File.Copy(Path.Combine(synologyResourcesDir, "PACKAGE_ICON.PNG"), Path.Combine(spkRoot, "PACKAGE_ICON.PNG"), overwrite: true);
+            File.Copy(Path.Combine(synologyResourcesDir, "PACKAGE_ICON_256.PNG"), Path.Combine(spkRoot, "PACKAGE_ICON_256.PNG"), overwrite: true);
 
             // scripts + conf
             EnvHelper.CopyDirectory(Path.Combine(synologyResourcesDir, "scripts"), Path.Combine(spkRoot, "scripts"), recursive: true);
