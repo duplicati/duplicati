@@ -142,8 +142,15 @@ public class WebsocketAuthenticator(
         Exception? exception = null;
         try
         {
+            try
+            {
+                isValid = jWTTokenProvider.ReadSingleOperationToken(message.Token).Operation == "websocket";
+            }
+            catch
+            {
+            }
             // Validate the token against the allowed tokens
-            isValid = config.AllowedTokens.Contains(message.Token) ||
+            isValid = isValid || config.AllowedTokens.Contains(message.Token) ||
                       jWTTokenProvider.ReadAccessToken(message.Token) != null;
         }
         catch (Exception ex)
