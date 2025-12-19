@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Debug logging setup (uncomment to enable)
+# LOGDIR="${SYNOPKG_PKGVAR:-/tmp}"
+# mkdir -p "$LOGDIR" 2>/dev/null || LOGDIR="/tmp"
+# exec >>"$LOGDIR/postuninst.log" 2>&1
+# set -x
+
+# echo "==== postuninst $(date -Iseconds) ===="
+# id
+# echo "SYNOPKG_PKGDEST=${SYNOPKG_PKGDEST}"
+# echo "SYNOPKG_PKGVAR=${SYNOPKG_PKGVAR}"
+
+# PKGROOT="/var/packages/${SYNOPKG_PKGNAME}"
+# echo "PKGROOT=${PKGROOT}"
+
+# if [ ! -d "${PKGROOT}" ]; then
+#   echo "PKGROOT ${PKGROOT} does not exist"
+# fi
+
+if [ "${pkgwizard_purge_on_uninstall}" = "true" ]; then
+    echo "Purging all application data as per user request."
+
+    # Remove package variable directory
+    [ -n "$SYNOPKG_PKGVAR" ] && rm -rf "$SYNOPKG_PKGVAR"
+
+    # Best-effort for the rest
+    # We don't use these directories, but we should remove them anyway
+    # But something looks odd when trying to remove them, so commenting out for now
+    # rm -rf "$PKGROOT/etc" "$PKGROOT/home" "$PKGROOT/shares" "$PKGROOT/share"
+fi
+
+exit 0

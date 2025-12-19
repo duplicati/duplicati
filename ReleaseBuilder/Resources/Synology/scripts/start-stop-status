@@ -1,0 +1,174 @@
+#!/bin/sh
+
+PACKAGE="Duplicati"
+DAEMON_BIN="${SYNOPKG_PKGDEST}/duplicati-server"
+PID_FILE="${SYNOPKG_PKGVAR}/duplicati.pid"
+LOG_FILE="${SYNOPKG_PKGVAR}/duplicati.log"
+AUTHKEY_FILE="${SYNOPKG_PKGVAR}/preauth.key"
+DATA_DIR="${SYNOPKG_PKGVAR}/data"
+DB_ENC_KEY="${SYNOPKG_PKGVAR}/db_enc_key"
+
+NGINX_SNIPPET_DIR="${SYNOPKG_PKGVAR}/nginx"
+NGINX_SNIPPET_FILE="${NGINX_SNIPPET_DIR}/duplicati_auth_header.conf"
+NGINX_TEMPLATE="${SYNOPKG_PKGDEST}/nginx/duplicati_auth_header.conf.template"
+
+# Debug logging setup (uncomment to enable)
+# LOGDIR="${SYNOPKG_PKGVAR:-/tmp}"
+# mkdir -p "$LOGDIR" 2>/dev/null || LOGDIR="/tmp"
+# exec >>"$LOGDIR/start-stop-status.log" 2>&1
+# set -x
+
+# echo "==== start-stop-status $(date -Iseconds) ===="
+# id
+# echo "SYNOPKG_PKGDEST=${SYNOPKG_PKGDEST}"
+# echo "SYNOPKG_PKGVAR=${SYNOPKG_PKGVAR}"
+
+
+# Generate a random password
+generate_random_password() {
+	if command -v openssl >/dev/null 2>&1; then
+		openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
+	else
+		head -c 32 /dev/urandom | base64 | tr '+/' '-_' | tr -d '='
+	fi
+}
+
+ensure_nginx_snippet() {
+    local PREAUTH_KEY="$1"
+    if [ ! -f "${NGINX_TEMPLATE}" ]; then
+        return 0
+    fi
+
+    if [ -z "${PREAUTH_KEY}" ]; then
+        return 0
+    fi
+
+    mkdir -p "${NGINX_SNIPPET_DIR}"
+    sed "s/__DUPLICATI_AUTHKEY__/${PREAUTH_KEY}/g" "${NGINX_TEMPLATE}" >"${NGINX_SNIPPET_FILE}.tmp" && \
+        mv "${NGINX_SNIPPET_FILE}.tmp" "${NGINX_SNIPPET_FILE}"
+
+    chown duplicati:duplicati "${NGINX_SNIPPET_FILE}" 2>/dev/null || true
+    chmod 600 "${NGINX_SNIPPET_FILE}" 2>/dev/null || true
+}
+
+ensure_db_enc_key() {
+    if [ -f "${DB_ENC_KEY}" ]; then
+        return 0
+    fi
+
+    echo "$(generate_random_password)" >"${DB_ENC_KEY}"
+
+    chown duplicati:duplicati "${DB_ENC_KEY}" 2>/dev/null || true
+    chmod 600 "${DB_ENC_KEY}" 2>/dev/null || true
+}   
+
+start_daemon() {
+    if [ ! -x "${DAEMON_BIN}" ]; then
+        echo "${PACKAGE}: binary not found: ${DAEMON_BIN}" >&2
+        return 1
+    fi
+
+    mkdir -p "${SYNOPKG_PKGVAR}"
+
+    # Make a random authentication key for the web UI, so DSM-forwarded requests are accepted
+    PREAUTH_KEY="$(generate_random_password)"
+
+    # Configure the nginx snippet so nginx can forward requests to the web UI with the pre-auth key
+    ensure_nginx_snippet "${PREAUTH_KEY}"
+
+    # Generate a random web UI password, we rely on DSM auth, so this should not be user accessible
+	WEBSERVICE_PASSWORD="$(generate_random_password)"
+
+    ensure_db_enc_key  
+    DATABASE_PASSWORD=""
+    if [ -f "${DB_ENC_KEY}" ]; then
+        DATABASE_PASSWORD="$(cat "${DB_ENC_KEY}")"
+    fi
+    
+	echo "Starting ${PACKAGE} ..."
+	# Pass the pre-auth token and random web UI password via environment variables
+	# rather than command-line so they do not appear in process listings.
+	DUPLICATI__WEBSERVICE_PRE_AUTH_TOKENS="${PREAUTH_KEY}" \
+		DUPLICATI__WEBSERVICE_PASSWORD="${WEBSERVICE_PASSWORD}" \
+        DUPLICATI_ENABLE_IFRAME_HOSTING="true" \
+        SETTINGS_ENCRYPTION_KEY="${DATABASE_PASSWORD}" \
+        SYNO_DSM_AUTH_ENABLED="1" \
+        DUPLICATI_XSRF_FORWARDING_CONFIG="X-Syno-Token,SynoToken" \
+		"${DAEMON_BIN}" \
+        --webservice-allowed-hostnames="*" \
+        --server-datafolder="${DATA_DIR}" \
+        --webservice-interface=loopback \
+        --webservice-port=8200 \
+        --tempdir="${SYNOPKG_PKGTMP}" \
+        >"${LOG_FILE}" 2>&1 &
+
+    echo $! >"${PID_FILE}"
+}
+
+stop_daemon() {
+    if [ ! -f "${PID_FILE}" ]; then
+        return 0
+    fi
+
+    PID="$(cat "${PID_FILE}" 2>/dev/null)"
+    if [ -n "${PID}" ] && kill -0 "${PID}" 2>/dev/null; then
+        echo "Stopping ${PACKAGE} (pid=${PID}) ..."
+        kill "${PID}" 2>/dev/null || true
+        # Give it a few seconds to exit gracefully
+        for i in 1 2 3 4 5 6 7 8 9 10; do
+            if ! kill -0 "${PID}" 2>/dev/null; then
+                break
+            fi
+            sleep 2
+        done
+        if kill -0 "${PID}" 2>/dev/null; then
+            echo "${PACKAGE}: process did not exit, sending SIGKILL" >&2
+            kill -9 "${PID}" 2>/dev/null || true
+        fi
+    fi
+
+    rm -f "${NGINX_SNIPPET_FILE}"
+	rm -f "${PID_FILE}"
+}
+
+status_daemon() {
+    if [ ! -f "${PID_FILE}" ]; then
+        return 1
+    fi
+
+    PID="$(cat "${PID_FILE}" 2>/dev/null)"
+    if [ -n "${PID}" ] && kill -0 "${PID}" 2>/dev/null; then
+        return 0
+    fi
+
+    return 1
+}
+
+case "$1" in
+    start)
+        start_daemon
+        exit $?
+        ;;
+    stop)
+        stop_daemon
+        exit $?
+        ;;
+    restart)
+        stop_daemon
+        start_daemon
+        exit $?
+        ;;
+    status)
+        if status_daemon; then
+            echo "${PACKAGE} is running"
+            exit 0
+        else
+            echo "${PACKAGE} is not running"
+            exit 1
+        fi
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}" >&2
+        exit 1
+        ;;
+esac

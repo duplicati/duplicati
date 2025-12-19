@@ -299,6 +299,9 @@ public class WebsocketAccessor : IWebsocketAccessor
             case "ping":
                 await SendRequestSuccessReply(socket, message, "pong");
                 return;
+            case "auth":
+                await SendRequestSuccessReply(socket, message, "Already authenticated");
+                return;
             case "sub":
             case "unsub":
                 {

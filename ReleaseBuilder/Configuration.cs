@@ -243,7 +243,7 @@ public record Configuration(
     /// Determines if creating a Synology package is possible.
     /// </summary>
     /// <returns><c>true</c> if creating a Synology package is possible; otherwise, <c>false</c>.</returns>
-    public bool IsSynologyPkgPossible() => false;
+    public bool IsSynologyPkgPossible() => true;
 }
 
 /// <summary>

@@ -1,0 +1,34 @@
+#!/bin/sh
+
+PACKAGE="Duplicati"
+
+DATA_DIR="${SYNOPKG_PKGVAR}/data"
+
+# Debug logging setup (uncomment to enable)
+# LOGDIR="${SYNOPKG_PKGVAR:-/tmp}"
+# mkdir -p "$LOGDIR" 2>/dev/null || LOGDIR="/tmp"
+# exec >>"$LOGDIR/postinst.log" 2>&1
+# set -x
+
+# echo "==== postinst $(date -Iseconds) ===="
+# id
+# echo "SYNOPKG_PKGDEST=${SYNOPKG_PKGDEST}"
+# echo "SYNOPKG_PKGVAR=${SYNOPKG_PKGVAR}"
+
+echo "Post-install script for ${PACKAGE}" >&2
+
+# Ensure runtime folders exist
+mkdir -p "${SYNOPKG_PKGVAR}" "${DATA_DIR}"
+
+# Best-effort permission tightening; DSM may override based on [privilege] in INFO
+if command -v chown >/dev/null 2>&1; then
+	chown -R duplicati:duplicati "${SYNOPKG_PKGVAR}" 2>/dev/null || true
+    chown -R duplicati:duplicati "${DATA_DIR}" 2>/dev/null || true
+fi
+
+# Best-effort permission tightening; DSM may override based on [privilege] in INFO
+if command -v chmod >/dev/null 2>&1; then
+    chmod -R 700 "${DATA_DIR}" 2>/dev/null || true
+fi
+
+exit 0

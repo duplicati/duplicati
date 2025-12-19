@@ -38,8 +38,8 @@ class Program
         "win-x86-gui.msi",
         "win-arm64-gui.zip",
         "win-arm64-gui.msi",
-        "win-x64-agent.msi", // Missing window service support
-        "win-arm64-agent.msi", // Missing window service support
+        "win-x64-agent.msi",
+        "win-arm64-agent.msi",
         "win-x64-agent.zip",
         "win-arm64-agent.zip",
 
@@ -50,7 +50,7 @@ class Program
         "linux-x64-cli.deb",
         "linux-x64-cli.rpm",
         "linux-x64-cli.docker",
-        // "linux-x64-cli.spk", // Need to add new integration with DSM WebUI
+        "linux-x64-cli.spk",
         "linux-x64-agent.zip",
         "linux-x64-agent.deb",
         "linux-x64-agent.rpm",
@@ -61,6 +61,7 @@ class Program
         "linux-arm7-cli.zip",
         "linux-arm7-cli.deb",
         "linux-arm7-cli.docker",
+        "linux-arm7-cli.spk",
         "linux-arm7-agent.zip",
         "linux-arm7-agent.deb",
 
@@ -71,7 +72,7 @@ class Program
         "linux-arm64-cli.deb",
         "linux-arm64-cli.rpm",
         "linux-arm64-cli.docker",
-        // "linux-arm64-cli.spk",  // Need to add new integration with DSM WebUI
+        "linux-arm64-cli.spk",
         "linux-arm64-agent.zip",
         "linux-arm64-agent.deb",
         "linux-arm64-agent.rpm",

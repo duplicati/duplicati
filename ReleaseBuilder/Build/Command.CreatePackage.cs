@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.Globalization;
+using System.Formats.Tar;
 using System.IO.Compression;
 using System.Text;
 
@@ -162,10 +163,9 @@ public static partial class Command
                     await BuildRpmPackage(baseDir, buildRoot, tempFile, target, rtcfg);
                     break;
 
-                // case PackageType.SynologySpk:
-                //     await BuildZipPackage(buildRoot, tempFile, target, rtcfg);
-                //     await SignSynologyPackage(Path.Combine(outputFolder, target.PackageTargetString), rtcfg);
-                //     break;
+                case PackageType.SynologySpk:
+                    await BuildSynologySpkPackage(baseDir, buildRoot, tempFile, target, rtcfg);
+                    break;
 
                 default:
                     throw new Exception($"Unsupported package type: {target.Package}");
@@ -1007,6 +1007,155 @@ public static partial class Command
             File.Move(Path.Combine(debroot, debpkgname), debFile);
             Directory.Delete(debroot, true);
         }
+
+        /// <summary>
+        /// Builds a Synology SPK package.
+        /// </summary>
+        /// <remarks>
+        /// Synology SPK packages are tar archives containing an INFO file, scripts, ui assets and a package.tgz payload.
+        /// The payload is extracted to <c>/var/packages/<PKG>/target</c>.
+        /// </remarks>
+        static async Task BuildSynologySpkPackage(string baseDir, string buildRoot, string spkFile, PackageTarget target, RuntimeConfig rtcfg)
+        {
+            if (target.OS != OSType.Linux)
+                throw new Exception($"Synology SPK is only supported for Linux targets, got: {target.OS}");
+
+            // Synology package is a server-style package (Duplicati.Server)
+            if (target.Interface != InterfaceType.Cli)
+                throw new Exception($"Synology SPK is only supported for CLI/server interface, got: {target.Interface}");
+
+            var synologyResourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Synology");
+            if (!Directory.Exists(synologyResourcesDir))
+                throw new DirectoryNotFoundException($"Synology resources folder not found: {synologyResourcesDir}");
+
+            var filemode755 = UnixFileMode.UserRead
+                | UnixFileMode.UserWrite
+                | UnixFileMode.UserExecute
+                | UnixFileMode.GroupRead
+                | UnixFileMode.GroupExecute
+                | UnixFileMode.OtherRead
+                | UnixFileMode.OtherExecute;
+
+            var tmpRoot = Path.Combine(buildRoot, "tmp-synology");
+            if (Directory.Exists(tmpRoot))
+                Directory.Delete(tmpRoot, true);
+            Directory.CreateDirectory(tmpRoot);
+
+            var payloadRoot = Path.Combine(tmpRoot, "payload"); // contents for package.tgz (Synology 'target' dir)
+            Directory.CreateDirectory(payloadRoot);
+
+            // Copy build output into payload
+            EnvHelper.CopyDirectory(Path.Combine(buildRoot, target.BuildTargetString), payloadRoot, recursive: true);
+
+            // Make the payload consistent with other Linux packages
+            await PackageSupport.InstallPackageIdentifier(payloadRoot, target);
+            await PackageSupport.RenameExecutables(payloadRoot);
+            await PackageSupport.SetPermissionFlags(payloadRoot, rtcfg);
+
+            // Install Synology-specific runtime templates into the payload
+            EnvHelper.CopyDirectory(Path.Combine(synologyResourcesDir, "nginx"), Path.Combine(payloadRoot, "nginx"), recursive: true);
+
+            // Include license file in the payload so it is available in the installed target directory
+            File.Copy(
+                Path.Combine(baseDir, "LICENSE"),
+                Path.Combine(payloadRoot, "LICENSE"),
+                overwrite: true
+            );
+
+            // Copy in the UI configuration
+            EnvHelper.CopyDirectory(
+                Path.Combine(synologyResourcesDir, "ui"),
+                Path.Combine(payloadRoot, "ui"),
+                recursive: true
+            );
+
+            // Copy in the nginx files
+            EnvHelper.CopyDirectory(
+                Path.Combine(synologyResourcesDir, "nginx"),
+                Path.Combine(payloadRoot, "nginx"),
+                recursive: true
+            );
+
+            if (!Directory.Exists(Path.Combine(payloadRoot, "webroot", "ngclient")))
+                throw new DirectoryNotFoundException($"Expected web UI folder not found in payload: {Path.Combine(payloadRoot, "webroot", "ngclient")}");
+
+            // Ensure executable flags on cgi scripts
+            if (!OperatingSystem.IsWindows())
+                foreach (var f in Directory.EnumerateFiles(Path.Combine(payloadRoot, "ui"), "*.cgi", SearchOption.TopDirectoryOnly))
+                    File.SetUnixFileMode(f, filemode755);
+
+            // Create package.tgz (payload) using System.Formats.Tar + GZip
+            var payloadTar = Path.Combine(tmpRoot, "package.tar");
+            var payloadTgz = Path.Combine(tmpRoot, "package.tgz");
+            if (File.Exists(payloadTar))
+                File.Delete(payloadTar);
+            if (File.Exists(payloadTgz))
+                File.Delete(payloadTgz);
+
+            TarFile.CreateFromDirectory(payloadRoot, payloadTar, includeBaseDirectory: false);
+            using (var inStream = File.OpenRead(payloadTar))
+            using (var outStream = File.Create(payloadTgz))
+            using (var gzip = new GZipStream(outStream, CompressionLevel.SmallestSize))
+                await inStream.CopyToAsync(gzip);
+
+            File.Delete(payloadTar);
+
+            // Stage SPK root contents
+            var spkRoot = Path.Combine(tmpRoot, "spkroot");
+            Directory.CreateDirectory(spkRoot);
+
+            // INFO
+            var synoArch = target.Arch switch
+            {
+                ArchType.x64 => "x86_64",
+                ArchType.Arm64 => "armv8",
+                ArchType.Arm7 => "armv7",
+                _ => throw new Exception($"Unsupported Synology architecture: {target.Arch}")
+            };
+
+            var spkVersion = $"{rtcfg.ReleaseInfo.Version}-1";
+
+            var infoTemplateFile = Path.Combine(synologyResourcesDir, "INFO.template");
+            var infoText = File.ReadAllText(infoTemplateFile)
+                .Replace("%VERSION%", spkVersion)
+                .Replace("%ARCH%", synoArch);
+
+            File.WriteAllText(Path.Combine(spkRoot, "INFO"), infoText);
+
+            // Include license file in the SPK root so it is visible in the distributed package
+            File.Copy(
+                Path.Combine(baseDir, "LICENSE"),
+                Path.Combine(spkRoot, "LICENSE"),
+                overwrite: true
+            );
+
+            // Icons for Synology package metadata
+            File.Copy(Path.Combine(synologyResourcesDir, "PACKAGE_ICON.PNG"), Path.Combine(spkRoot, "PACKAGE_ICON.PNG"), overwrite: true);
+            File.Copy(Path.Combine(synologyResourcesDir, "PACKAGE_ICON_256.PNG"), Path.Combine(spkRoot, "PACKAGE_ICON_256.PNG"), overwrite: true);
+
+            // scripts + conf
+            EnvHelper.CopyDirectory(Path.Combine(synologyResourcesDir, "scripts"), Path.Combine(spkRoot, "scripts"), recursive: true);
+            EnvHelper.CopyDirectory(Path.Combine(synologyResourcesDir, "conf"), Path.Combine(spkRoot, "conf"), recursive: true);
+            EnvHelper.CopyDirectory(Path.Combine(synologyResourcesDir, "WIZARD_UIFILES"), Path.Combine(spkRoot, "WIZARD_UIFILES"), recursive: true);
+
+            // Payload
+            File.Copy(payloadTgz, Path.Combine(spkRoot, "package.tgz"), overwrite: true);
+
+            // Ensure executable flags (important for scripts)
+            if (!OperatingSystem.IsWindows())
+                foreach (var f in Directory.EnumerateFiles(Path.Combine(spkRoot, "scripts"), "*", SearchOption.AllDirectories))
+                    File.SetUnixFileMode(f, filemode755);
+
+            // Create the final .spk (tar archive)
+            if (File.Exists(spkFile))
+                File.Delete(spkFile);
+
+            using (var outStream = File.Create(spkFile))
+                TarFile.CreateFromDirectory(spkRoot, outStream, includeBaseDirectory: false);
+
+            Directory.Delete(tmpRoot, true);
+        }
+
     }
 
     /// <summary>
