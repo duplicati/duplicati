@@ -1288,6 +1288,58 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
+        public static int SetLocks(
+            TextWriter outwriter,
+            Action<Duplicati.Library.Main.Controller> setup,
+            List<string> args,
+            Dictionary<string, string> options,
+            Library.Utility.IFilter filter)
+        {
+            if (args.Count != 1)
+                return PrintWrongNumberOfArguments(outwriter, args, 1);
+
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var controller = new Library.Main.Controller(args[0], options, console))
+            {
+                setup(controller);
+                var res = controller.SetLocks();
+
+                if (console.FullResults)
+                {
+                    Library.Utility.Utility.PrintSerializeObject(res, outwriter);
+                    outwriter.WriteLine();
+                }
+            }
+
+            return 0;
+        }
+
+        public static int ReadLockInfo(
+            TextWriter outwriter,
+            Action<Duplicati.Library.Main.Controller> setup,
+            List<string> args,
+            Dictionary<string, string> options,
+            Library.Utility.IFilter filter)
+        {
+            if (args.Count != 1)
+                return PrintWrongNumberOfArguments(outwriter, args, 1);
+
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var controller = new Library.Main.Controller(args[0], options, console))
+            {
+                setup(controller);
+                var res = controller.ReadLockInfo();
+
+                if (console.FullResults)
+                {
+                    Library.Utility.Utility.PrintSerializeObject(res, outwriter);
+                    outwriter.WriteLine();
+                }
+            }
+
+            return 0;
+        }
+
         public static int Vacuum(
             TextWriter outwriter,
             Action<Duplicati.Library.Main.Controller> setup,

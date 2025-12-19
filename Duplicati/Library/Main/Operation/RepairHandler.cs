@@ -58,6 +58,11 @@ namespace Duplicati.Library.Main.Operation
             {
                 await RunRepairLocalAsync(backendManager, filter).ConfigureAwait(false);
                 await RunRepairCommon().ConfigureAwait(false);
+
+                // Optionally refresh lock information from the backend
+                if (m_options.RepairRefreshLockInfo)
+                    await RunRefreshLockInfoAsync(backendManager).ConfigureAwait(false);
+
                 m_result.EndTime = DateTime.UtcNow;
                 return;
             }
@@ -104,6 +109,10 @@ namespace Duplicati.Library.Main.Operation
                 await RunRepairBrokenFilesets(backendManager).ConfigureAwait(false);
                 await RunRepairRemoteAsync(backendManager, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
+
+            // Optionally refresh lock information from the backend
+            if (m_options.RepairRefreshLockInfo)
+                await RunRefreshLockInfoAsync(backendManager).ConfigureAwait(false);
 
             m_result.EndTime = DateTime.UtcNow;
 
@@ -1403,6 +1412,21 @@ namespace Duplicati.Library.Main.Operation
             await db
                 .FixEmptyMetadatasets(m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Runs the refresh lock info operation to update lock expiration times from the backend.
+        /// </summary>
+        /// <param name="backendManager">The backend manager to use for reading lock info.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the operation is finished.</returns>
+        private async Task RunRefreshLockInfoAsync(IBackendManager backendManager)
+        {
+            Logging.Log.WriteInformationMessage(LOGTAG, "RefreshingLockInfo", "Refreshing lock information from backend");
+
+            var result = new ReadLockInfoResults(m_result);
+            var handler = new ReadLockInfoHandler(m_options, result);
+            await handler.RunAsync(backendManager).ConfigureAwait(false);
         }
     }
 }

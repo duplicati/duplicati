@@ -85,6 +85,11 @@ namespace Duplicati.Library.Backend
         private readonly IReadOnlySet<S3StorageClass> m_archiveClasses;
 
         /// <summary>
+        /// The lock mode to use for object locking
+        /// </summary>
+        private readonly string m_lockMode;
+
+        /// <summary>
         /// The option to specify the archive classes
         /// </summary>
         public const string S3_ARCHIVE_CLASSES_OPTION = "s3-archive-classes";
@@ -97,7 +102,7 @@ namespace Duplicati.Library.Backend
         ]);
 
         public S3AwsClient(string awsID, string awsKey, string? locationConstraint, string servername,
-            string? storageClass, bool useSSL, bool disableChunkEncoding, bool disablePayloadSigning, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options)
+            string? storageClass, bool useSSL, bool disableChunkEncoding, bool disablePayloadSigning, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options, string lockMode)
         {
             var cfg = GetDefaultAmazonS3Config();
             cfg.UseHttp = !useSSL;
@@ -115,6 +120,7 @@ namespace Duplicati.Library.Backend
             m_useChunkEncoding = !disableChunkEncoding;
             m_disablePayloadSigning = disablePayloadSigning;
             m_archiveClasses = ParseStorageClasses(options.GetValueOrDefault(S3_ARCHIVE_CLASSES_OPTION));
+            m_lockMode = lockMode;
         }
 
         /// <summary>
@@ -131,7 +137,7 @@ namespace Duplicati.Library.Backend
         }
 
         /// <inheritdoc/>
-        public Task AddBucketAsync(string bucketName, CancellationToken cancelToken)
+        public async Task AddBucketAsync(string bucketName, CancellationToken cancelToken)
         {
             var request = new PutBucketRequest
             {
@@ -141,7 +147,15 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(m_locationConstraint))
                 request.BucketRegionName = m_locationConstraint;
 
-            return Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.PutBucketAsync(request, ct));
+            try
+            {
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.PutBucketAsync(request, ct)).ConfigureAwait(false);
+            }
+            catch (AmazonS3Exception s3ex)
+            {
+                TranslateException(s3ex, bucketName);
+                throw;
+            }
         }
 
         /// <summary>
@@ -208,8 +222,8 @@ namespace Duplicati.Library.Backend
             }
             catch (AmazonS3Exception s3Ex)
             {
-                if (s3Ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    throw new FileMissingException(string.Format("File {0} not found", keyName), s3Ex);
+                TranslateException(s3Ex, keyName);
+                throw;
             }
 
         }
@@ -254,18 +268,14 @@ namespace Duplicati.Library.Backend
             {
                 await m_client.PutObjectAsync(objectAddRequest, cancelToken);
             }
-            catch (AmazonS3Exception e)
+            catch (AmazonS3Exception s3Ex)
             {
-                //Catch "non-existing" buckets
-                if (e.StatusCode == System.Net.HttpStatusCode.NotFound ||
-                    "NoSuchBucket".Equals(e.ErrorCode))
-                    throw new FolderMissingException(e);
-
+                TranslateException(s3Ex, keyName);
                 throw;
             }
         }
 
-        public Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancellationToken)
+        public async Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancellationToken)
         {
             var objectDeleteRequest = new DeleteObjectRequest
             {
@@ -273,7 +283,69 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            return Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct => m_client.DeleteObjectAsync(objectDeleteRequest, ct));
+            try
+            {
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct => m_client.DeleteObjectAsync(objectDeleteRequest, ct)).ConfigureAwait(false);
+            }
+            catch (AmazonS3Exception s3Ex)
+            {
+                TranslateException(s3Ex, keyName);
+                throw;
+            }
+        }
+
+        public async Task<DateTime?> GetObjectLockUntilAsync(string bucketName, string keyName, CancellationToken cancelToken)
+        {
+            var request = new GetObjectRetentionRequest
+            {
+                BucketName = bucketName,
+                Key = keyName
+            };
+
+            try
+            {
+                var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.GetObjectRetentionAsync(request, ct)).ConfigureAwait(false);
+                return response.Retention?.RetainUntilDate?.ToUniversalTime();
+            }
+            catch (AmazonS3Exception s3Ex)
+            {
+                if ("NoSuchObjectLockConfiguration".Equals(s3Ex.ErrorCode, StringComparison.OrdinalIgnoreCase))
+                    return null;
+
+                TranslateException(s3Ex, keyName);
+                throw;
+            }
+        }
+
+        public async Task SetObjectLockUntilAsync(string bucketName, string keyName, DateTime lockUntilUtc, CancellationToken cancelToken)
+        {
+            var lockMode = typeof(ObjectLockRetentionMode)
+                .GetProperties(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
+                .FirstOrDefault(x => x.Name.Equals(m_lockMode, StringComparison.OrdinalIgnoreCase))?
+                .GetValue(null) as ObjectLockRetentionMode
+                    ?? new ObjectLockRetentionMode(m_lockMode);
+
+            var request = new PutObjectRetentionRequest
+            {
+                BucketName = bucketName,
+                Key = keyName,
+                Retention = new ObjectLockRetention
+                {
+                    Mode = lockMode,
+                    RetainUntilDate = lockUntilUtc.ToUniversalTime(),
+                }
+            };
+
+            try
+            {
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct =>
+                    m_client.PutObjectRetentionAsync(request, ct)).ConfigureAwait(false);
+            }
+            catch (AmazonS3Exception s3Ex)
+            {
+                TranslateException(s3Ex, keyName);
+                throw;
+            }
         }
 
         /// <summary>
@@ -338,14 +410,9 @@ namespace Duplicati.Library.Backend
                         };
                     }
                 }
-                catch (AmazonS3Exception e)
+                catch (AmazonS3Exception s3ex)
                 {
-                    if (e.StatusCode == System.Net.HttpStatusCode.NotFound ||
-                        "NoSuchBucket".Equals(e.ErrorCode))
-                    {
-                        throw new FolderMissingException(e);
-                    }
-
+                    TranslateException(s3ex, prefix ?? "");
                     throw;
                 }
 
@@ -398,8 +465,29 @@ namespace Duplicati.Library.Backend
                 DestinationKey = target
             };
 
-            await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, ct => m_client.CopyObjectAsync(copyObjectRequest, ct)).ConfigureAwait(false);
-            await DeleteObjectAsync(bucketName, source, cancelToken).ConfigureAwait(false);
+            try
+            {
+                await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, ct => m_client.CopyObjectAsync(copyObjectRequest, ct)).ConfigureAwait(false);
+                await DeleteObjectAsync(bucketName, source, cancelToken).ConfigureAwait(false);
+            }
+            catch (AmazonS3Exception s3Ex)
+            {
+                TranslateException(s3Ex, source);
+                throw;
+            }
+        }
+
+        private static void TranslateException(AmazonS3Exception s3Ex, string keyName)
+        {
+            if ("NoSuchKey".Equals(s3Ex.ErrorCode, StringComparison.OrdinalIgnoreCase))
+                throw new FileMissingException(string.Format("File {0} not found", keyName), s3Ex);
+
+            if ("NoSuchBucket".Equals(s3Ex.ErrorCode, StringComparison.OrdinalIgnoreCase))
+                throw new FolderMissingException(s3Ex);
+
+            // Fallback for non-AWS servers
+            if (s3Ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                throw new FileMissingException(string.Format("File {0} not found", keyName), s3Ex);
         }
 
         #region IDisposable Members

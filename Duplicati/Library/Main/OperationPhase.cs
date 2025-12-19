@@ -33,6 +33,7 @@ namespace Duplicati.Library.Main
         Backup_WaitForUpload,
         Backup_Delete,
         Backup_Compact,
+        Backup_Lock,
         Backup_VerificationUpload,
         Backup_PostBackupVerify,
         Backup_Complete,
@@ -50,6 +51,7 @@ namespace Duplicati.Library.Main
         Restore_Complete,
 
         Recreate_Running,
+        ReadLockInfo_Running,
         Vacuum_Running,
         Verify_Running,
 

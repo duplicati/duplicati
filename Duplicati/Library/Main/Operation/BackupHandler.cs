@@ -575,6 +575,32 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        private async Task RunLockOperationAsync(IBackendManager backendManager, IEnumerable<DateTime> versionTimestamps)
+        {
+            if (m_options.RemoteFileLockDuration is null || m_options.RemoteFileLockDuration.Value == TimeSpan.Zero)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "FileLockDurationNotSpecified", "No file-lock-duration provided; skipping lock operation.");
+                return;
+            }
+
+            if (!versionTimestamps.Any())
+            {
+                Log.WriteVerboseMessage(LOGTAG, "NoVersionsToLock", "No versions to lock; skipping lock operation.");
+                return;
+            }
+
+            if (!backendManager.SupportsObjectLocking)
+            {
+                Log.WriteWarningMessage(LOGTAG, "BackendDoesNotSupportLocking", null, "Backend does not support object locking; skipping lock operation.");
+                return;
+            }
+
+            m_result.LockResults = new SetLockResults(m_result);
+            await new SetLocksHandler(m_options, (SetLockResults)m_result.LockResults)
+                .RunAsync(backendManager, versionTimestamps)
+                .ConfigureAwait(false);
+        }
+
         private async Task PostBackupVerification(string currentFilelistVolume, string previousTemporaryFilelist, IBackendManager backendManager)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
@@ -732,6 +758,7 @@ namespace Duplicati.Library.Main.Operation
                         .TerminatedWithActiveUploads(m_result.TaskControl.ProgressToken, true)
                         .ConfigureAwait(false);
 
+                DateTime? syntheticFilesetTimestamp = null;
                 await using (m_database = database)
                 using (var db = new Backup.BackupDatabase(m_database, m_options))
                 // Setup runners and instances here
@@ -744,7 +771,7 @@ namespace Duplicati.Library.Main.Operation
                         try
                         {
                             // If the previous backup was interrupted, send a synthetic list
-                            await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskControl, backendManager, lastTempFilelist)
+                            syntheticFilesetTimestamp = await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskControl, backendManager, lastTempFilelist)
                                 .ConfigureAwait(false);
 
                             // Grab the previous backup ID, if any
@@ -823,7 +850,7 @@ namespace Duplicati.Library.Main.Operation
                         .ConfigureAwait(false);
 
                     // Send the actual filelist
-                    await Backup.UploadRealFilelist.Run(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete)
+                    var uploadedNewFileset = await Backup.UploadRealFilelist.Run(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete)
                         .ConfigureAwait(false);
 
                     // Wait for upload completion
@@ -844,9 +871,23 @@ namespace Duplicati.Library.Main.Operation
                     // If this throws, we should roll back the transaction
                     if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                     {
-                        var lastVolumeSize = await m_database
-                            .GetLastWrittenDBlockVolumeSize(m_result.TaskControl.ProgressToken)
+                        var versionsToLock = new List<DateTime>();
+                        if (syntheticFilesetTimestamp.HasValue)
+                            versionsToLock.Add(syntheticFilesetTimestamp.Value);
+
+                        if (uploadedNewFileset)
+                            versionsToLock.Add(VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time);
+
+                        await RunLockOperationAsync(backendManager, versionsToLock)
                             .ConfigureAwait(false);
+                    }
+
+                    // If this throws, we should roll back the transaction
+                    if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                    {
+                        var lastVolumeSize = await m_database
+                        .GetLastWrittenDBlockVolumeSize(m_result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false);
 
                         await CompactIfRequired(backendManager, lastVolumeSize)
                             .ConfigureAwait(false);

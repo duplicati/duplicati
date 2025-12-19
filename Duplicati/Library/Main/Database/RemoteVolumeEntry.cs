@@ -54,10 +54,16 @@ namespace Duplicati.Library.Main.Database
         public DateTime ArchiveTime { get; private set; }
 
         /// <summary>
+        /// The time when an object lock expires for this remote volume, if known.
+        /// A <c>null</c> value indicates that the expiration time is not known or not set.
+        /// </summary>
+        public DateTime? LockExpirationTime { get; private set; }
+
+        /// <summary>
         /// Represents an empty remote volume entry with default values.
         /// This is useful for initializing or resetting remote volume entries.
         /// </summary>
-        public static readonly RemoteVolumeEntry Empty = new RemoteVolumeEntry(-1, null, null, -1, (RemoteVolumeType)(-1), (RemoteVolumeState)(-1), default(DateTime), default(DateTime));
+        public static readonly RemoteVolumeEntry Empty = new RemoteVolumeEntry(-1, null, null, -1, (RemoteVolumeType)(-1), (RemoteVolumeState)(-1), default, default, null);
 
         /// <summary>
         /// Initializes a new instance of the RemoteVolumeEntry struct with specified values.
@@ -70,7 +76,8 @@ namespace Duplicati.Library.Main.Database
         /// <param name="state">The state of the remote volume entry.</param>
         /// <param name="deleteGracePeriod">The delete grace period for the remote volume entry.</param>
         /// <param name="archiveTime">The archive time for the remote volume entry.</param>
-        public RemoteVolumeEntry(long id, string name, string hash, long size, RemoteVolumeType type, RemoteVolumeState state, DateTime deleteGracePeriod, DateTime archiveTime)
+        /// <param name="lockExpirationTime">The lock expiration time for the remote volume entry, if known.</param>
+        public RemoteVolumeEntry(long id, string name, string hash, long size, RemoteVolumeType type, RemoteVolumeState state, DateTime deleteGracePeriod, DateTime archiveTime, DateTime? lockExpirationTime)
         {
             ID = id;
             Name = name;
@@ -80,6 +87,7 @@ namespace Duplicati.Library.Main.Database
             Hash = hash;
             DeleteGracePeriod = deleteGracePeriod;
             ArchiveTime = archiveTime;
+            LockExpirationTime = lockExpirationTime;
         }
     }
 }

@@ -97,6 +97,10 @@ namespace Duplicati.CommandLine
                         ["test-filter"] = Commands.TestFilters,
                         ["affected"] = Commands.Affected,
                         ["vacuum"] = Commands.Vacuum,
+                        ["set-locks"] = Commands.SetLocks,
+                        ["setlocks"] = Commands.SetLocks,
+                        ["read-lock-info"] = Commands.ReadLockInfo,
+                        ["readlockinfo"] = Commands.ReadLockInfo,
                         ["system-info"] = Commands.SystemInfo,
                         ["systeminfo"] = Commands.SystemInfo,
                         ["send-mail"] = Commands.SendMail

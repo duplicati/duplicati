@@ -333,6 +333,7 @@ namespace Duplicati.Library.Interface
         ICompactResults CompactResults { get; }
         IDeleteResults DeleteResults { get; }
         IRepairResults RepairResults { get; }
+        ISetLockResults LockResults { get; }
     }
 
     public interface IRestoreResults : IBasicResults
@@ -518,5 +519,30 @@ namespace Duplicati.Library.Interface
     public interface IVacuumResults : IBasicResults
     {
     }
-}
 
+    public interface ISetLockResults : IBasicResults
+    {
+        /// <summary>
+        /// Number of remote volumes that were considered for setting an object lock.
+        /// </summary>
+        long VolumesRead { get; }
+
+        /// <summary>
+        /// Number of remote volumes that had their object lock updated.
+        /// </summary>
+        long VolumesUpdated { get; }
+    }
+
+    public interface IReadLockInfoResults : IBasicResults
+    {
+        /// <summary>
+        /// Number of remote volumes that were queried for object lock information.
+        /// </summary>
+        long VolumesRead { get; }
+
+        /// <summary>
+        /// Number of remote volumes whose lock information was updated in the local database.
+        /// </summary>
+        long VolumesUpdated { get; }
+    }
+}

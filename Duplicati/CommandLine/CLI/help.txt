@@ -15,6 +15,7 @@ See %CLI_EXE% help <topic> for more information.
   Commands: backup, find, restore, delete, compact, test, compare, purge, vacuum
   Searching: list-filesets, list-folder-contents, list-file-versions, search-files
   Repair: repair, affected, list-broken-files, purge-broken-files
+  Locking: set-locks, read-lock-info
   Debug: debug, logging, create-report, test-filters, system-info, send-mail
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
@@ -354,6 +355,41 @@ Usage: %CLI_EXE% affected <storage-URL> <remote-filename> [<remote-filenames>] [
 Usage: %CLI_EXE% vacuum <storage-URL> [<options>]
 
   Rebuilds the local database, repacking it into a minimal amount of disk space.
+
+# =============================================================================
+> duplicati.commandline.exe help set-locks
+> duplicati.commandline.exe help setlocks
+
+Usage: %CLI_EXE% set-locks <storage-URL> [<options>]
+
+  Applies object locks to remote volumes belonging to the selected fileset(s).
+  This operation requires:
+    - A local database (set --dbpath if it is not found automatically)
+    - A backend that supports object locking
+
+  You must specify which version(s) to lock using one of:
+    --version=<int>
+    --time=<time>
+    --all-versions=true
+
+  --file-lock-duration=<time>
+    Sets how long the remote volumes should be protected (for example, 30D).
+    The lock expiration is computed as: now + file-lock-duration.
+
+# =============================================================================
+> duplicati.commandline.exe help read-lock-info
+> duplicati.commandline.exe help readlockinfo
+
+Usage: %CLI_EXE% read-lock-info <storage-URL> [<options>]
+
+  Reads object lock expiration times from the backend and updates the local database.
+  This operation requires:
+    - A local database (set --dbpath if it is not found automatically)
+    - A backend that supports object locking
+
+  --refresh-lock-info-complete=<boolean>
+    If true, refresh lock information for all known remote volumes.
+    If false (default), only refresh volumes where the lock information is missing.
 
 # =============================================================================
 > duplicati.commandline.exe help debug

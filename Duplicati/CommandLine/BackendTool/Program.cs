@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -68,6 +69,10 @@ namespace Duplicati.CommandLine.BackendTool
                         command = "put";
                     else if (args[0].Equals("delete", StringComparison.OrdinalIgnoreCase))
                         command = "delete";
+                    else if (args[0].Equals("get-lock", StringComparison.OrdinalIgnoreCase) || args[0].Equals("getlock", StringComparison.OrdinalIgnoreCase))
+                        command = "get-lock";
+                    else if (args[0].Equals("set-lock", StringComparison.OrdinalIgnoreCase) || args[0].Equals("setlock", StringComparison.OrdinalIgnoreCase))
+                        command = "set-lock";
                     else if (args[0].Equals("create-folder", StringComparison.OrdinalIgnoreCase))
                         command = "create";
                     else if (args[0].Equals("createfolder", StringComparison.OrdinalIgnoreCase))
@@ -83,11 +88,14 @@ namespace Duplicati.CommandLine.BackendTool
                         Console.WriteLine();
                     }
 
-                    Console.WriteLine("Usage: <command> <protocol>://<username>:<password>@<path> [filename]");
+                    Console.WriteLine("Usage: <command> <protocol>://<username>:<password>@<path> [filename] [lock-duration]");
                     Console.WriteLine("Example: LIST ftp://user:pass@server/folder");
                     Console.WriteLine();
                     Console.WriteLine("Supported backends: " + string.Join(",", Duplicati.Library.DynamicLoader.BackendLoader.Keys));
-                    Console.WriteLine("Supported commands: GET PUT LIST DELETE CREATEFOLDER");
+                    Console.WriteLine("Supported commands: GET PUT LIST DELETE CREATEFOLDER GET-LOCK SET-LOCK");
+                    Console.WriteLine();
+                    Console.WriteLine("GET-LOCK requires a filename argument and prints the object lock expiration in ISO 8601 UTC (or 'null' if unset/unknown)");
+                    Console.WriteLine("SET-LOCK requires a filename and a lock duration timespan (e.g. 30D or 12h)");
 
                     return 200;
                 }
@@ -169,6 +177,51 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
 
                         backend.PutAsync(Path.GetFileName(args[2]), args[2], CancellationToken.None).Await();
+
+                        return 0;
+                    }
+                    else if (command == "get-lock")
+                    {
+                        if (args.Count < 3)
+                            throw new UserInformationException("GET-LOCK requires a filename argument", "BackendToolGetLockRequiresAnArgument");
+                        if (args.Count > 3)
+                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
+
+                        if (backend is not ILockingBackend lockingBackend)
+                            throw new UserInformationException("Backend does not support object locking operations", "BackendToolObjectLockNotSupported");
+
+                        var lockUntilUtc = lockingBackend.GetObjectLockUntilAsync(Path.GetFileName(args[2]), CancellationToken.None).Await();
+                        Console.WriteLine(lockUntilUtc.HasValue
+                            ? lockUntilUtc.Value.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture)
+                            : "null");
+
+                        return 0;
+                    }
+                    else if (command == "set-lock")
+                    {
+                        if (args.Count < 4)
+                            throw new UserInformationException("SET-LOCK requires a filename and a lock duration argument", "BackendToolSetLockRequiresArguments");
+                        if (args.Count > 4)
+                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
+
+                        if (backend is not ILockingBackend lockingBackend)
+                            throw new UserInformationException("Backend does not support object locking operations", "BackendToolObjectLockNotSupported");
+
+                        TimeSpan lockDuration;
+                        try
+                        {
+                            lockDuration = Timeparser.ParseTimeSpan(args[3]);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new UserInformationException($"Invalid lock duration: {ex.Message}", "BackendToolInvalidLockTimespan");
+                        }
+
+                        if (lockDuration < TimeSpan.Zero)
+                            throw new UserInformationException("Lock duration must not be negative", "BackendToolNegativeLockTimespan");
+
+                        var lockUntilUtc = DateTime.UtcNow.Add(lockDuration);
+                        lockingBackend.SetObjectLockUntilAsync(Path.GetFileName(args[2]), lockUntilUtc, CancellationToken.None).Await();
 
                         return 0;
                     }

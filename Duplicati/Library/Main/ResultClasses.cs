@@ -475,12 +475,14 @@ namespace Duplicati.Library.Main
         public IDeleteResults DeleteResults { get; internal set; }
         public IRepairResults RepairResults { get; internal set; }
         public ITestResults TestResults { get; internal set; }
+        public ISetLockResults LockResults { get; internal set; }
 
         public override ParsedResultType ParsedResult
         {
             get
             {
                 if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Fatal) ||
+                    (LockResults != null && LockResults.ParsedResult == ParsedResultType.Fatal) ||
                     (VacuumResults != null && VacuumResults.ParsedResult == ParsedResultType.Fatal) ||
                     (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Fatal) ||
                     (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Fatal) ||
@@ -490,6 +492,7 @@ namespace Duplicati.Library.Main
                     return ParsedResultType.Fatal;
                 }
                 else if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Error) ||
+                    (LockResults != null && LockResults.ParsedResult == ParsedResultType.Error) ||
                     (VacuumResults != null && VacuumResults.ParsedResult == ParsedResultType.Error) ||
                     (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Error) ||
                     (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Error) ||
@@ -499,6 +502,7 @@ namespace Duplicati.Library.Main
                     return ParsedResultType.Error;
                 }
                 else if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Warning) ||
+                         (LockResults != null && LockResults.ParsedResult == ParsedResultType.Warning) ||
                          (VacuumResults != null && VacuumResults.ParsedResult == ParsedResultType.Warning) ||
                          (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Warning) ||
                          (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Warning) ||
@@ -748,6 +752,28 @@ namespace Duplicati.Library.Main
         public void SetResult(IEnumerable<IFileEntry> files) { this.Files = files; }
     }
 
+    internal class SetLockResults : BasicResults, ISetLockResults
+    {
+        public override OperationMode MainOperation => OperationMode.SetLock;
+
+        public long VolumesRead { get; internal set; }
+        public long VolumesUpdated { get; internal set; }
+
+        public SetLockResults() : base() { }
+        public SetLockResults(BasicResults p) : base(p) { }
+    }
+
+    internal class ReadLockInfoResults : BasicResults, IReadLockInfoResults
+    {
+        public override OperationMode MainOperation => OperationMode.ReadLockInfo;
+
+        public long VolumesRead { get; internal set; }
+        public long VolumesUpdated { get; internal set; }
+
+        public ReadLockInfoResults() : base() { }
+        public ReadLockInfoResults(BasicResults p) : base(p) { }
+    }
+
     internal class RepairResults : BasicResults, IRepairResults
     {
         public override OperationMode MainOperation { get { return OperationMode.Repair; } }
@@ -956,4 +982,3 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.Vacuum; } }
     }
 }
-

@@ -317,6 +317,24 @@ namespace Duplicati.Library.Main
             );
         }
 
+        public ISetLockResults SetLocks()
+        {
+            return RunAction(new SetLockResults(), (result, backendManager) =>
+                new Operation.SetLocksHandler(m_options, result)
+                    .RunAsync(backendManager)
+            );
+        }
+
+        public IReadLockInfoResults ReadLockInfo()
+        {
+            return RunAction(new ReadLockInfoResults(), (result, backendManager) =>
+                new Operation.ReadLockInfoHandler(m_options, result)
+                    .RunAsync(backendManager)
+            );
+        }
+
+
+
         public IRecreateDatabaseResults UpdateDatabaseWithVersions(IFilter filter = null)
         {
             var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version, singleTimeMatch: true);

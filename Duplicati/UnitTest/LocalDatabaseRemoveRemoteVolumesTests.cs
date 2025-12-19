@@ -67,14 +67,14 @@ namespace Duplicati.UnitTest
 
             // Insert a block volume (ID=1) - this is the volume we will delete
             cmd.CommandText = @"
-                INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"")
-                VALUES (1, 1, 'block-volume.zip', 'Blocks', 'Verified', 0, 0, 0)";
+                INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
+                VALUES (1, 1, 'block-volume.zip', 'Blocks', 'Verified', 0, 0, 0, 0)";
             cmd.ExecuteNonQuery();
 
             // Insert a fileset volume (ID=2) - this volume is NOT being deleted
             cmd.CommandText = @"
-                INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"")
-                VALUES (2, 1, 'fileset-volume.zip', 'Files', 'Verified', 0, 0, 0)";
+                INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
+                VALUES (2, 1, 'fileset-volume.zip', 'Files', 'Verified', 0, 0, 0, 0)";
             cmd.ExecuteNonQuery();
 
             // Insert a fileset that references the fileset volume (NOT being deleted)
@@ -143,8 +143,8 @@ namespace Duplicati.UnitTest
 
             // Insert a remote volume that we will try to remove
             cmd.CommandText = @"
-                INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"")
-                VALUES (1, 'test-volume.zip', 'Blocks', 'Verified', 0, 0, 0)";
+                INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
+                VALUES (1, 'test-volume.zip', 'Blocks', 'Verified', 0, 0, 0, 0)";
             cmd.ExecuteNonQuery();
 
             // Close the connection so LocalDatabase can open it
@@ -192,14 +192,14 @@ namespace Duplicati.UnitTest
 
             // Insert a block volume (ID=1) - this is the volume we will delete
             cmd.CommandText = @"
-                INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"")
-                VALUES (1, 1, 'block-volume.zip', 'Blocks', 'Verified', 0, 0, 0)";
+                INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
+                VALUES (1, 1, 'block-volume.zip', 'Blocks', 'Verified', 0, 0, 0, 0)";
             cmd.ExecuteNonQuery();
 
             // Insert a fileset volume (ID=2) - this volume is NOT being deleted
             cmd.CommandText = @"
-                INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"")
-                VALUES (2, 1, 'fileset-volume.zip', 'Files', 'Verified', 0, 0, 0)";
+                INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
+                VALUES (2, 1, 'fileset-volume.zip', 'Files', 'Verified', 0, 0, 0, 0)";
             cmd.ExecuteNonQuery();
 
             // Insert a fileset that references the fileset volume (NOT being deleted)

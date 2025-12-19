@@ -43,6 +43,11 @@ internal partial class BackendManager : IBackendManager
     private readonly ExecuteContext context;
 
     /// <summary>
+    /// Indicates whether the backend supports object locking
+    /// </summary>
+    private readonly Lazy<bool> supportsObjectLocking;
+
+    /// <summary>
     /// Flag keeping track of whether the object has been disposed
     /// </summary>
     private bool isDisposed = false;
@@ -73,6 +78,21 @@ internal partial class BackendManager : IBackendManager
             options ?? throw new ArgumentNullException(nameof(options))
         );
 
+        supportsObjectLocking = new Lazy<bool>(() =>
+        {
+            var backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
+            if (backend == null)
+                return false;
+            try
+            {
+                return backend is ILockingBackend;
+            }
+            finally
+            {
+                (backend as IDisposable)?.Dispose();
+            }
+        }, isThreadSafe: true);
+
         // The BackendManager class is a wrapper that essentially sends
         // requests into a queue and processes them in order.
         // The Handler class is the one that actually processes the requests.
@@ -81,6 +101,11 @@ internal partial class BackendManager : IBackendManager
             backendUrl,
             context);
     }
+
+    /// <summary>
+    /// Gets a value indicating whether the configured backend supports object locking
+    /// </summary>
+    public bool SupportsObjectLocking => supportsObjectLocking.Value;
 
     /// <summary>
     /// Enters a task into the queue for processing.
@@ -150,6 +175,33 @@ internal partial class BackendManager : IBackendManager
         var op = new DeleteOperation(remotename, size, context, waitForComplete, cancelToken);
         await QueueTask(op).ConfigureAwait(false);
         await op.GetResult().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Applies or updates an object lock on a remote file
+    /// </summary>
+    /// <param name="remotename">The name of the remote file</param>
+    /// <param name="lockUntilUtc">The UTC time until which the lock should remain in effect</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    public async Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken)
+    {
+        var op = new SetObjectLockOperation(remotename, lockUntilUtc, context, cancelToken);
+        await QueueTask(op).ConfigureAwait(false);
+        await op.GetResult().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets the object lock expiration time for a remote file
+    /// </summary>
+    /// <param name="remotename">The name of the remote file</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The UTC time the lock expires, or null if no lock is set</returns>
+    public async Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancelToken)
+    {
+        var op = new GetObjectLockOperation(remotename, context, cancelToken);
+        await QueueTask(op).ConfigureAwait(false);
+        return await op.GetResult().ConfigureAwait(false);
     }
 
     /// <summary>
