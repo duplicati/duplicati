@@ -19,10 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Duplicati.WebserverCore.Middlewares;
 
@@ -67,7 +67,12 @@ public sealed class SynologyDsmAuthOptions
     /// <summary>
     /// Cache validity per (remote ip/port, cookie, token) to avoid hitting DSM on every request.
     /// </summary>
-    public TimeSpan CacheTimeout { get; set; } = TimeSpan.FromMinutes(3);
+    public TimeSpan LoginCacheTimeout { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// Cache validity per login id cookie to avoid hitting DSM on every request.
+    /// </summary>
+    public TimeSpan AuthCacheTimeout { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
     /// Prefixes to protect. Defaults to /api, /login, /logout.
@@ -112,19 +117,38 @@ public sealed class SynologyDsmAuthOptions
     }
 }
 
+/// <summary>
+/// Middleware for Synology DSM integrated authentication.
+/// </summary>
+/// <remarks>
+/// The DSM on Synology NAS devices uses CGI scripts to handle authentication and authorization.
+/// This middleware integrates with those scripts to authenticate users based on DSM's user management.
+/// It checks for a valid login session using the "id" cookie and optionally an XSRF token.
+/// The middleware works by forwarding requests to the DSM's authenticate.cgi script to verify user credentials.
+/// If the user is authenticated, the request proceeds; otherwise, a 401 Unauthorized response is returned.
+/// For endpoints that involve non-static content (i.e., API calls), the middleware ensures the user is authenticated, including the XSRF token.
+/// For endpoints that involve static content (i.e., html, js, css), the middleware checks that the user has a valid cookie, but does not require the XSRF token.
+/// To avoid slowdowns, the middleware caches authentication results for a short period of time.
+/// </remarks>  
 public sealed class SynologyDsmAuthMiddleware
 {
     private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<SynologyDsmAuthMiddleware>();
     private readonly RequestDelegate _next;
+    private readonly IMemoryCache _cache;
     private readonly SynologyDsmAuthOptions _opt;
-    private readonly ConcurrentDictionary<string, DateTime> _loginCache = new ConcurrentDictionary<string, DateTime>();
     private readonly Regex _synoTokenRegex = new Regex(@"""SynoToken""\s?\:\s?""(?<token>[^""]+)""", RegexOptions.Compiled);
 
     private readonly bool _fullyDisabled;
 
-    public SynologyDsmAuthMiddleware(RequestDelegate next, SynologyDsmAuthOptions options)
+    public SynologyDsmAuthMiddleware(RequestDelegate next, IMemoryCache cache, SynologyDsmAuthOptions options)
     {
+        // WARNING: This module is written for Duplicati which does not have a concept of "users" or "roles".
+        // If the code is adapted for other uses, care must be taken to ensure that user identities and roles
+        // are handled securely and appropriately. Specifically, the caching mechanism needs to be revised to
+        // support multiple users and roles.
+
         _next = next ?? throw new ArgumentNullException(nameof(next));
+        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _opt = options ?? throw new ArgumentNullException(nameof(options));
 
         // Validate scripts exist; if not, disable with 503.
@@ -134,6 +158,7 @@ public sealed class SynologyDsmAuthMiddleware
 
     public async Task Invoke(HttpContext context)
     {
+        // If scripts are missing, return 503, the system is not looking as expected
         if (_fullyDisabled)
         {
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
@@ -141,37 +166,57 @@ public sealed class SynologyDsmAuthMiddleware
             return;
         }
 
-        if (!IsProtectedPath(context.Request.Path))
-        {
-            await _next(context);
-            return;
-        }
+        // Check if this is an API call, or a static content call
+        var isApiCall = IsProtectedPath(context.Request.Path);
 
-        // Build env for DSM scripts
-        var env = BuildEnv(context);
+        // Static content calls are GET or HEAD requests to non-API paths
+        var isStaticContentCall = !isApiCall && new[] { "GET", "HEAD" }.Contains(context.Request.Method.ToUpperInvariant());
 
         // Cookie "id" is required for authenticate.cgi
         var loginId = context.Request.Cookies.TryGetValue("id", out var idVal) ? idVal : null;
+
+        // Static content calls require a valid cookie, but does not (usually) have an XSRF token,
+        // so we cannot call authenticate.cgi, but instead check if the token itself has been authenticated recently
+        // giving "authenticated but no XSRF protection" for static content
+        if (isStaticContentCall)
+        {
+            if (!string.IsNullOrWhiteSpace(loginId) && _cache.TryGetValue(BuildAuthCacheKey(loginId), out _))
+            {
+                // Authenticated recently, allow
+                await _next(context);
+                return;
+            }
+        }
+
+        // Build env for DSM scripts, prepare for invocation of CGI scripts
+        var env = BuildEnv(context);
         if (!string.IsNullOrWhiteSpace(loginId))
             env["HTTP_COOKIE"] = "id=" + loginId;
 
+        // Get XSRF token from header or query
+        // API calls supply a header, but some calls (like static content or websockets) use query
         string? xsrftoken = context.Request.Headers["X-Syno-Token"];
         if (string.IsNullOrWhiteSpace(xsrftoken) && context.Request.Query.TryGetValue("SynoToken", out var qt))
             xsrftoken = qt.ToString();
 
-        var cacheKey = BuildCacheKey(env, xsrftoken);
+        // Build cache key for the login from this specific client
+        var loginCacheKey = BuildLoginCacheKey(env, xsrftoken);
 
         // Check cache so we do not need to call authenticate.cgi for every request
-        if (!string.IsNullOrWhiteSpace(cacheKey) && _loginCache.TryGetValue(cacheKey, out var cacheExpires) && cacheExpires > DateTime.Now)
+        if (!string.IsNullOrWhiteSpace(loginCacheKey) && _cache.TryGetValue(loginCacheKey, out _))
         {
             await _next(context);
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(xsrftoken) && _opt.AutoXsrf)
+        // Auto-fetch happens when AutoXsrf is enabled or when serving static content
+        // It is possible to enable this for API requests as well by environment variable, but that is not recommended for security reasons
+        // If we get a request for static content, we auto-fetch the token to allow static content to load (still protected by cookie)
+        if (string.IsNullOrWhiteSpace(xsrftoken) && (_opt.AutoXsrf || isStaticContentCall))
         {
             try
             {
+                // Call login.cgi to get XSRF token
                 var resp = ShellExec(_opt.LoginCgi, env: env).Result;
 
                 var m = _synoTokenRegex.Match(resp);
@@ -188,7 +233,7 @@ public sealed class SynologyDsmAuthMiddleware
             }
         }
 
-        // Include XSRF token if available
+        // Include the XSRF token if available
         if (!string.IsNullOrWhiteSpace(xsrftoken))
             env["HTTP_X_SYNO_TOKEN"] = xsrftoken;
 
@@ -198,6 +243,7 @@ public sealed class SynologyDsmAuthMiddleware
         {
             try
             {
+                // Call authenticate.cgi to get username
                 username = await ShellExec(_opt.AuthenticateCgi, shell: false, exitcode: 0, env: env, ct: context.RequestAborted);
             }
             catch
@@ -217,7 +263,7 @@ public sealed class SynologyDsmAuthMiddleware
 
         username = username.Trim();
 
-        // Admin-only check
+        // Admin-only check, look up group membership
         if (_opt.AdminOnly)
         {
             var isAdmin = await IsAdminUser(username, context.RequestAborted);
@@ -230,9 +276,12 @@ public sealed class SynologyDsmAuthMiddleware
         }
 
         // Auth OK: cache (only if cacheKey available)
-        if (cacheKey != null)
-            _loginCache[cacheKey] = DateTime.Now + _opt.CacheTimeout;
+        if (!string.IsNullOrWhiteSpace(loginCacheKey))
+            _cache.Set(loginCacheKey, true, _opt.LoginCacheTimeout);
 
+        // Auth OK: cache loginId too
+        if (!string.IsNullOrWhiteSpace(loginId))
+            _cache.Set(BuildAuthCacheKey(loginId), true, _opt.AuthCacheTimeout);
         await _next(context);
     }
 
@@ -277,7 +326,7 @@ public sealed class SynologyDsmAuthMiddleware
         return env;
     }
 
-    private static string? BuildCacheKey(Dictionary<string, string> env, string? xsrfToken)
+    private static string? BuildLoginCacheKey(Dictionary<string, string> env, string? xsrfToken)
     {
         if (env == null)
             return null;
@@ -290,8 +339,11 @@ public sealed class SynologyDsmAuthMiddleware
             string.IsNullOrWhiteSpace(cookie))
             return null;
 
-        return $"{addr}:{port}/{cookie}?{xsrfToken}";
+        return $"{nameof(SynologyDsmAuthMiddleware)}:login:{addr}:{port}/{cookie}?{xsrfToken}";
     }
+
+    private static string BuildAuthCacheKey(string loginId)
+        => $"{nameof(SynologyDsmAuthMiddleware)}:auth:{loginId}";
 
     private async Task<bool> IsAdminUser(string username, CancellationToken ct)
     {
