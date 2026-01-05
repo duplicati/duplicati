@@ -32,9 +32,25 @@ using FileEntry = Duplicati.Library.Common.IO.FileEntry;
 namespace Duplicati.Library.Backend.Backblaze;
 
 /// <summary>
+/// Lock mode options for B2 object lock
+/// </summary>
+public enum B2LockMode
+{
+    /// <summary>
+    /// Governance mode - allows privileged users to bypass retention
+    /// </summary>
+    Governance,
+
+    /// <summary>
+    /// Compliance mode - strict retention that cannot be bypassed
+    /// </summary>
+    Compliance
+}
+
+/// <summary>
 /// Backblaze B2 Backend
 /// </summary>
-public class B2 : IStreamingBackend
+public class B2 : IStreamingBackend, ILockingBackend
 {
     /// <summary>
     /// The option key for specifying the Backblaze B2 account ID
@@ -60,6 +76,11 @@ public class B2 : IStreamingBackend
     /// The option key for specifying the bucket type when creating new buckets
     /// </summary>
     private const string B2_CREATE_BUCKET_TYPE_OPTION = "b2-create-bucket-type";
+
+    /// <summary>
+    /// The option key for specifying the lock mode for the backend
+    /// </summary>
+    private const string B2_LOCK_MODE_OPTION = "b2-lock-mode";
 
     /// <summary>
     /// The default bucket type for new buckets - set to private access
@@ -105,6 +126,11 @@ public class B2 : IStreamingBackend
     /// Custom download URL for the B2 service, if specified
     /// </summary>
     private readonly string? _downloadUrl;
+
+    /// <summary>
+    /// The lock mode to use for the backend
+    /// </summary>
+    private readonly B2LockMode _lockMode;
 
     /// <summary>
     /// Helper class for handling B2 authentication and API requests
@@ -196,6 +222,20 @@ public class B2 : IStreamingBackend
 
         _downloadUrl = null;
         if (options.TryGetValue(B2_DOWNLOAD_URL_OPTION, out var option)) _downloadUrl = option;
+
+        // Parse lock mode option, default to Governance
+        _lockMode = B2LockMode.Governance; // Default to governance
+        if (options.TryGetValue(B2_LOCK_MODE_OPTION, out var lockModeOption))
+        {
+            if (Enum.TryParse<B2LockMode>(lockModeOption, true, out var parsedMode))
+            {
+                _lockMode = parsedMode;
+            }
+            else
+            {
+                throw new UserInformationException(Strings.B2.InvalidLockModeError(B2_LOCK_MODE_OPTION, lockModeOption), "B2InvalidLockMode");
+            }
+        }
 
         _httpClient = HttpClientHelper.CreateClient();
         _httpClient.Timeout = Timeout.InfiniteTimeSpan;
@@ -298,6 +338,7 @@ public class B2 : IStreamingBackend
             new CommandLineArgument(B2_CREATE_BUCKET_TYPE_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2createbuckettypeDescriptionShort, Strings.B2.B2createbuckettypeDescriptionLong, DEFAULT_BUCKET_TYPE),
             new CommandLineArgument(B2_PAGESIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.B2.B2pagesizeDescriptionShort, Strings.B2.B2pagesizeDescriptionLong, DEFAULT_PAGE_SIZE.ToString()),
             new CommandLineArgument(B2_DOWNLOAD_URL_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2downloadurlDescriptionShort, Strings.B2.B2downloadurlDescriptionLong),
+            new CommandLineArgument(B2_LOCK_MODE_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.B2.B2lockmodeDescriptionShort, Strings.B2.B2lockmodeDescriptionLong, B2LockMode.Governance.ToString()),
             ..TimeoutOptionsHelper.GetOptions()
         ]);
 
@@ -405,6 +446,29 @@ public class B2 : IStreamingBackend
         {
             response?.Dispose();
         }
+    }
+
+    /// <inheritdoc />
+    public async Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancellationToken)
+    {
+        var fileId = await GetFileId(remotename, cancellationToken).ConfigureAwait(false);
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+
+        var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+            => await _b2AuthHelper.PostAndGetJsonDataAsync<GetFileInfoResponse>(
+                $"{config.APIUrl}/b2api/v2/b2_get_file_info",
+                new GetFileInfoRequest
+                {
+                    FileId = fileId
+                },
+                ct
+            ).ConfigureAwait(false)
+        ).ConfigureAwait(false);
+
+        if (response?.FileRetention?.Value?.RetainUntilTimestamp is long timestamp && timestamp > 0)
+            return Utility.Utility.EPOCH.AddMilliseconds(timestamp);
+
+        return null;
     }
 
     /// <summary>
@@ -559,6 +623,34 @@ public class B2 : IStreamingBackend
             _filecache = null;
             throw;
         }
+    }
+
+    /// <inheritdoc />
+    public async Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancellationToken)
+    {
+        var fileId = await GetFileId(remotename, cancellationToken).ConfigureAwait(false);
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+
+        var res = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+            => await _b2AuthHelper.PostAndGetJsonDataAsync<UpdateFileRetentionResponse>(
+                $"{config.APIUrl}/b2api/v2/b2_update_file_retention",
+                new UpdateFileRetentionRequest
+                {
+                    FileId = fileId,
+                    FileName = _prefix + remotename,
+                    FileRetention = new FileRetention
+                    {
+                        Mode = _lockMode.ToString().ToLower(),
+                        RetainUntilTimestamp = (long)(lockUntilUtc.ToUniversalTime() - Utility.Utility.EPOCH).TotalMilliseconds
+                    },
+                    BypassGovernance = false
+                },
+                ct
+            ).ConfigureAwait(false)
+        ).ConfigureAwait(false);
+
+        if (res.FileRetention?.RetainUntilTimestamp == null)
+            throw new Exception("Failed to set object lock, call succeeded but no retention info returned");
     }
 
     /// <summary>

@@ -92,7 +92,8 @@ namespace Duplicati.GUI.TrayIcon
             RegisterNotificationCallback();
             m_onDoubleClick = ShowStatusWindow;
             m_onNotificationClick = ShowStatusWindow;
-            OnStatusUpdated(Program.Connection.Status);
+            OnStatusUpdated(Program.Connection.Status)
+                .FireAndForget();
             Run(args);
         }
 

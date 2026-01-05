@@ -27,4 +27,5 @@ namespace Duplicati.WebserverCore.Dto;
 /// <param name="time">The time to repair to</param>
 /// <param name="version">The version to repair to</param>
 /// <param name="paths">The paths to repair</param>
-public sealed record RepairInputDto(bool? only_paths, string? time, string? version, string[]? paths);
+/// <param name="refresh_lock_info">Whether to refresh the lock info</param>
+public sealed record RepairInputDto(bool? only_paths, string? time, string? version, string[]? paths, bool? refresh_lock_info);

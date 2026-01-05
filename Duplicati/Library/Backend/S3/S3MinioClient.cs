@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.Runtime.CompilerServices;
+using System.Globalization;
 using System.Threading.Channels;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -26,6 +27,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Minio;
 using Minio.DataModel.Args;
+using Minio.DataModel.ObjectLock;
 using Minio.Exceptions;
 
 namespace Duplicati.Library.Backend
@@ -38,12 +40,14 @@ namespace Duplicati.Library.Backend
         private readonly string? m_locationConstraint;
         private readonly string m_dnsHost;
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
+        private readonly string m_lockMode;
 
         public S3MinioClient(string awsID, string awsKey, string? locationConstraint,
-            string servername, string? storageClass, bool useSSL, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options)
+            string servername, string? storageClass, bool useSSL, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options, string lockMode)
         {
             m_timeouts = timeouts;
             m_locationConstraint = locationConstraint;
+            m_lockMode = lockMode;
             m_client = new MinioClient()
                 .WithEndpoint(servername)
                 .WithCredentials(
@@ -216,6 +220,121 @@ namespace Duplicati.Library.Backend
                     "Error putting object {0} to {1} using Minio: {2}",
                     keyName, bucketName, e.ToString());
             }
+        }
+
+        public async Task<DateTime?> GetObjectLockUntilAsync(string bucketName, string keyName, CancellationToken cancelToken)
+        {
+            try
+            {
+                var retention = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct
+                        => m_client.GetObjectRetentionAsync(new GetObjectRetentionArgs().WithBucket(bucketName).WithObject(keyName), ct)
+                    )
+                    .ConfigureAwait(false);
+
+                if (string.IsNullOrWhiteSpace(retention?.RetainUntilDate))
+                    return null;
+
+                // MinIO returns a timestamp string (typically ISO-8601/RFC3339).
+                if (DateTime.TryParse(retention.RetainUntilDate, CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                    out var parsed))
+                    return parsed;
+
+                // Best-effort fallback parsing
+                if (DateTime.TryParse(retention.RetainUntilDate, out parsed))
+                    return parsed.ToUniversalTime();
+
+                return null;
+            }
+            catch (MissingObjectLockConfigurationException)
+            {
+                return null;
+            }
+            catch (MinioException e)
+            {
+                if (e.Response?.Code == "NoSuchObjectLockConfiguration")
+                    return null;
+
+                ParseAndThrowNotFoundException(e, keyName, bucketName);
+                throw;
+            }
+        }
+
+        public async Task SetObjectLockUntilAsync(string bucketName, string keyName, DateTime lockUntilUtc, CancellationToken cancelToken)
+        {
+            var mode = ParseRetentionMode(m_lockMode);
+            var lockUntil = lockUntilUtc.ToUniversalTime();
+
+            await ThrowExceptionIfBucketDoesNotExist(bucketName, cancelToken).ConfigureAwait(false);
+
+            try
+            {
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct =>
+                    m_client.SetObjectRetentionAsync(
+                        new SetObjectRetentionArgs()
+                            .WithBucket(bucketName)
+                            .WithObject(keyName)
+                            .WithRetentionMode(mode)
+                            // Bug in MinIO SDK: compares with local time
+                            .WithRetentionUntilDate(lockUntil.ToLocalTime()),
+                    ct
+                )).ConfigureAwait(false);
+            }
+            catch (MinioException e)
+            {
+                ParseAndThrowNotFoundException(e, keyName, bucketName);
+                throw;
+            }
+        }
+
+        private static ObjectRetentionMode ParseRetentionMode(string lockMode)
+        {
+            if (Enum.TryParse<ObjectRetentionMode>(lockMode, ignoreCase: true, out var parsed))
+                return parsed;
+
+            // Default to GOVERNANCE
+            return ObjectRetentionMode.GOVERNANCE;
+        }
+
+        private async Task EnsureBucketObjectLockConfigurationAsync(string bucketName, CancellationToken cancelToken)
+        {
+            try
+            {
+                // If configuration exists, do nothing.
+                _ = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct
+                        => m_client.GetObjectLockConfigurationAsync(new GetObjectLockConfigurationArgs().WithBucket(bucketName), ct)
+                    )
+                    .ConfigureAwait(false);
+                return;
+            }
+            catch (MissingObjectLockConfigurationException)
+            {
+                // Fall through and try to set it
+            }
+            catch (MinioException e)
+            {
+                // Bucket missing, etc.
+                if (e is BucketNotFoundException || e.ServerResponse?.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FolderMissingException($"Bucket {bucketName} not found", e);
+
+                throw;
+            }
+
+            var config = new ObjectLockConfiguration
+            {
+                ObjectLockEnabled = ObjectLockConfiguration.LockEnabled,
+                // Do not set a default retention period; Duplicati applies per-object retention.
+                Rule = null
+            };
+
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct
+                    => m_client.SetObjectLockConfigurationAsync(
+                        new SetObjectLockConfigurationArgs()
+                            .WithBucket(bucketName)
+                            .WithLockConfiguration(config),
+                        ct
+                    )
+                ).ConfigureAwait(false);
         }
 
         private void ParseAndThrowNotFoundException(MinioException e, string keyName, string bucketName)

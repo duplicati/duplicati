@@ -163,6 +163,8 @@ public class BackupPost : IEndpointV1
                 extra["version"] = input.version;
                 extra["ignore-update-if-version-exists"] = "true";
             }
+            if (input.refresh_lock_info ?? false)
+                extra["repair-refresh-lock-info"] = "true";
         }
 
         var filters = input?.paths ?? [];
