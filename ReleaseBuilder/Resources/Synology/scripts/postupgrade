@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Nothing special to do after upgrade at this time.
+exit 0

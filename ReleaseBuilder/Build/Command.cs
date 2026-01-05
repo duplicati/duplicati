@@ -465,9 +465,8 @@ public static partial class Command
         if (buildTargets.Any(x => x.Package == PackageType.MSI) && !configuration.IsMSIBuildPossible() && !input.CompileOnly)
             throw new Exception("WiX toolset not configured, cannot build MSI files");
 
-        // This will be fixed in the future, but requires a new http-interface for Synology DSM
         if (buildTargets.Any(x => x.Package == PackageType.SynologySpk) && !configuration.IsSynologyPkgPossible())
-            throw new Exception("Synology SPK files are currently not supported");
+            throw new Exception("Synology SPK files cannot be built with the current configuration");
 
         // This will not work, so to make it easier for non-MacOS developers, we will remove the MacOS packages
         if (buildTargets.Any(x => x.Package == PackageType.MacPkg || x.Package == PackageType.DMG) && !configuration.IsMacPkgBuildPossible() && !input.CompileOnly)

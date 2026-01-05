@@ -1,0 +1,31 @@
+{
+    "Duplicati.cgi": {
+        "SYNO.SDS.Duplicati.Application": {
+            "type": "app",
+            "title": "Duplicati",
+            "appWindow": "SYNO.SDS.Duplicati.MainWindow",
+            "desc": "Duplicati Backup",
+            "icon": "images/icon_{0}.png",
+            "allowMultiInstance": false,
+            "allowStandalone": true,
+            "allowSharing": true,
+            "allUsers": true,
+            "grantPrivilege": "all",
+            "advanceGrantPrivilege": true,
+            "texts": "texts",
+            "depend": [
+                "SYNO.SDS.Duplicati.MainWindow"
+            ]
+        },
+        "SYNO.SDS.Duplicati.MainWindow": {
+            "type": "lib",
+            "title": "Duplicati",
+            "icon": "images/icon_{0}.png",
+            "texts": "texts",
+            "depend": [
+                "SYNO.SDS.Duplicati.Utils"
+            ]
+        },
+        "SYNO.SDS.Duplicati.Utils": []
+    }
+}
