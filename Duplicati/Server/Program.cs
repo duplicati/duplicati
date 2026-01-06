@@ -230,7 +230,7 @@ namespace Duplicati.Server
                 LiveControl.StateChanged = (e) => { LiveControl_StateChanged(queueRunner, connection, eventPollNotify, e); };
 
                 // Invoke it once to set initial state
-                LiveControl_StateChanged(queueRunner, connection, eventPollNotify, scheduler, new LiveControls.LiveControlEvent
+                LiveControl_StateChanged(queueRunner, connection, eventPollNotify, new LiveControls.LiveControlEvent
                 {
                     State = LiveControl.State,
                     TransfersPaused = LiveControl.TransfersPaused,
