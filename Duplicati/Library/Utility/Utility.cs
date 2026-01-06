@@ -1654,7 +1654,7 @@ namespace Duplicati.Library.Utility
             var sepIndex = Math.Max(0, url.IndexOf('|')) + 1;
             var length = url.Length - sepIndex;
             var shown = Math.Min(length, maxShown);
-            var hidden = length - maxShown;
+            var hidden = length - shown;
             var sanitizedUrl = $"{url[sepIndex..(sepIndex + shown)]}{new string('*', hidden)}";
 
             // If we can parse it, this result is better

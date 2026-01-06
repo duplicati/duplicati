@@ -96,6 +96,7 @@ namespace Duplicati.Library.Backend
             { "Rabata EU West 2 (Netherlands)", "s3.eu-west-2.rabata.io" },
             { "Internxt US Central 1 (Texas)", "s3.us-central-1.internxt.com" },
             { "Internxt EU Central 1 (Amsterdam)", "s3.eu-central-1.internxt.com" },
+            { "Cloudflare R2", ".r2.cloudflarestorage.com" }
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
