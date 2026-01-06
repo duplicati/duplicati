@@ -1,3 +1,69 @@
+2026-01-06 - 2.2.0.3_stable_2026-01-06
+==========
+This is a minor patch release to fix some issues uncovered with the latest stable release.
+
+The primary change in this version is an update to the restore algorithm that now has a limit to the cache size so restores can be performed on systems with limited additional space.
+
+## Detailed changes from 2.2.0.1 to 2.2.0.3
+- ServerUtil returns the backup status when waiting for completion, thanks @greyxr
+- Updated the Uplink.NET library to latest version (for Storj)
+- Disabled the built-in retry and timeout for Azure blob storage
+- Updated localizations
+- Added Rabata.io as an S3 provider
+- Added support for supplementary groups for service on Linux
+- Added support for limiting the restore process disk usage
+- Added support for reporting known cloud-hosts in backup reports
+- Updated SSH.NET to 2025.1.0
+- Fixed an issue with the startup delay on the server not being respected
+- Fixed a bug with timeout issues in AliyunOSS backend
+- Added support for changing the backup passphrase with the recovery tool, thanks @greyxr
+- Fixed Windows Eventlog option having the wrong type which could cause warning messages
+- Added a dialog to request the server password when running the TrayIcon without a hosted server
+- Added support for getting a stable authentication token for Filen when using MFA
+- Run VACUUM on the database if the password has changed to purge any sensitive data
+- Added hostnames for Internxt to S3
+- Updated remote management API
+- Added support for custom CSS and js files for ngclient
+- Improved proxy support with ngclient
+- Fixed an edge case with testing on an empty remote destination
+- Added Cloudflare R2 domains to list of public cloud providers
+- Removed AWS specific texts on S3 documentation
+
+## Changes in user interface from 2.2.0.1 to 2.2.0.3
+- Updated to latest ShipUI
+- Preload modules for better desktop performance
+- Fixed some issues with localization not being applied
+- Updates to the options list
+- Updated localizations, thanks to all translators!
+- Fixed an issue with Rclone not maintaining letter-case for remote
+- Simplified the schedule setup page
+- Improved AuthID picking
+- Improved integration with console
+- Cleaned the sidebar slightly
+- Fixed an issue with styling in settings
+- Restore flow will now default to not overwrite existing files
+- Added both option name and short description to advanced options
+- Fixed not showing "Verifying" at the start of the backup operation
+- Handle global settings with and without `--` prefix
+- Upgraded to Anguler 21
+- Fixed an issue with loading Chinese language
+- Added support for custom bucket validation rules on B2 buckets
+- Added support for hiding the console connection indicator
+- Merged settings for remote control on the settings page
+- Fixed an issue with some default empty url not working on the destination page
+- Fixed supporting Storj Access Grant & Storj API key
+- More accurate display of destination type on the overview page
+- Added custom UIs for supported S3 providers
+- Added improved field validation for providers
+- Updated the "Direct restore" flow to use the same destination picker as when setting up a backup
+- Added some functionality to swap UI and choose the default UI (ngax vs ngclient)
+- Fixed startup delay settings not being saved
+- Fixed an issue with the data not being selectable in a custom schedule
+- Fixed back button not working on Schedule page
+- Now pushing serversettings via websocket instead of polling
+- Added a button for getting API token for Filen.io when using MFA
+- Allow finding deprecated backends by typing their full protocol key
+
 2025-11-26 - 2.2.0.2_beta_2025-11-26
 ==========
 This is a beta release that primarily solves an issue with the new restore method, which could use up a significant amout of storage.
