@@ -539,6 +539,7 @@ namespace Duplicati.Library.Main.Operation
                 .Where(x => x.State == RemoteVolumeState.Verified)
                 .GroupBy(x => x.Type)
                 .Select(x => x.LongCount())
+                .Append(0L)
                 .Max();
 
             long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100m), MidpointRounding.AwayFromZero));
