@@ -25,10 +25,10 @@ namespace Duplicati.Library.Backend.Strings
     {
         public static string Description_v2 { get { return LC.L(@"This backend can read and write data to an S3 compatible server. Allowed format is ""s3://bucketname/prefix""."); } }
         public static string DisplayName { get { return LC.L(@"S3 compatible"); } }
-        public static string AMZKeyDescriptionLong { get { return LC.L(@"AWS Secret Access Key can be obtained after logging into your AWS account. This can also be supplied through the option --{0}.", "auth-password"); } }
-        public static string AMZKeyDescriptionShort { get { return LC.L(@"AWS Secret Access Key"); } }
-        public static string AMZUserIDDescriptionLong { get { return LC.L(@"AWS Access Key ID can be obtained after logging into your AWS account. This can also be supplied through the option --{0}.", "auth-username"); } }
-        public static string AMZUserIDDescriptionShort { get { return LC.L(@"AWS Access Key ID"); } }
+        public static string AMZKeyDescriptionLong { get { return LC.L(@"Secret Access Key can be obtained after logging into your account. This can also be supplied through the option --{0}.", "auth-password"); } }
+        public static string AMZKeyDescriptionShort { get { return LC.L(@"Secret Access Key"); } }
+        public static string AMZUserIDDescriptionLong { get { return LC.L(@"Access Key ID can be obtained after logging into your account. This can also be supplied through the option --{0}.", "auth-username"); } }
+        public static string AMZUserIDDescriptionShort { get { return LC.L(@"Access Key ID"); } }
         public static string AuthPasswordDescriptionLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
         public static string AuthPasswordDescriptionShort { get { return LC.L(@"Supply the password used to connect to the server"); } }
         public static string AuthUsernameDescriptionLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }

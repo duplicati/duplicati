@@ -617,6 +617,7 @@ namespace Duplicati.Library.Main.Operation
                 .Where(x => x.State == RemoteVolumeState.Verified)
                 .GroupBy(x => x.Type)
                 .Select(x => x.LongCount())
+                .Append(0L)
                 .MaxAsync()
                 .ConfigureAwait(false);
 
