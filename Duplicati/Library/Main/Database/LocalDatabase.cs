@@ -217,7 +217,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="db">An optional existing <see cref="LocalDatabase"/> instance to use. If not provided, a new instance will be created.</param>
         /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that, when awaited, returns a new instance of <see cref="LocalDatabase"/>.</returns>
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string operation, bool shouldclose, LocalDatabase? db, CancellationToken token)
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string? operation, bool shouldclose, LocalDatabase? db, CancellationToken token)
         {
             db ??= new LocalDatabase();
 
@@ -264,7 +264,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="dbnew">An optional existing <see cref="LocalDatabase"/> instance to use. If not provided, a new instance will be created.</param>
         /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that, when awaited, returns a new instance of <see cref="LocalDatabase"/>.</returns>
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection, string operation, LocalDatabase? dbnew, CancellationToken token)
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection, string? operation, LocalDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalDatabase();
             dbnew = await CreateLocalDatabaseAsync(connection, dbnew, token)
