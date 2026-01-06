@@ -31,6 +31,8 @@ using Duplicati.Library.Main.Operation;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 
+#nullable enable
+
 namespace Duplicati.UnitTest
 {
     public class LockingDeleteAndCompactTests : BasicSetupHelper
@@ -358,7 +360,7 @@ namespace Duplicati.UnitTest
 
                 var token = CancellationToken.None;
                 var optionsObj = new Options(testopts);
-                string lockedCandidateName;
+                string? lockedCandidateName;
 
                 await using (var db = await LocalDeleteDatabase.CreateAsync(DBFILE, "CompactLockTest", null, token).ConfigureAwait(false))
                 {
