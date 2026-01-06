@@ -43,19 +43,22 @@ namespace Duplicati.Library.Backend
         private readonly string m_lockMode;
 
         public S3MinioClient(string awsID, string awsKey, string? locationConstraint,
-            string servername, string? storageClass, bool useSSL, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options, string lockMode)
+            string servername, string? storageClass, bool useSSL, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options, string lockMode, string? authenticationRegion)
         {
             m_timeouts = timeouts;
             m_locationConstraint = locationConstraint;
             m_lockMode = lockMode;
-            m_client = new MinioClient()
+
+            var clientBuilder = new MinioClient()
                 .WithEndpoint(servername)
-                .WithCredentials(
-                    awsID,
-                    awsKey
-                )
-                .WithSSL(useSSL)
-                .Build();
+                .WithCredentials(awsID, awsKey)
+                .WithSSL(useSSL);
+
+            var authRegion = string.IsNullOrWhiteSpace(authenticationRegion) ? locationConstraint : authenticationRegion;
+            if (!string.IsNullOrWhiteSpace(authRegion))
+                clientBuilder = clientBuilder.WithRegion(authRegion);
+
+            m_client = clientBuilder.Build();
 
             m_dnsHost = servername;
         }

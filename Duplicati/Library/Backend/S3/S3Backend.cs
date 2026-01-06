@@ -45,6 +45,7 @@ namespace Duplicati.Library.Backend
         private const string S3_LIST_API_VERSION_OPTION = "s3-list-api-version";
         private const string S3_RECURSIVE_LIST = "s3-recursive-list";
         private const string S3_LOCK_MODE_OPTION = "s3-lock-mode";
+        private const string S3_AUTHENTICATION_REGION_OPTION = "s3-authentication-region";
 
         public static readonly Dictionary<string, string?> KNOWN_S3_PROVIDERS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
@@ -227,6 +228,7 @@ namespace Duplicati.Library.Backend
             var useSSL = Utility.Utility.ParseBoolOption(options, SSL_OPTION);
             options.TryGetValue(LOCATION_OPTION, out var locationConstraint);
             options.TryGetValue(STORAGECLASS_OPTION, out var storageClass);
+            options.TryGetValue(S3_AUTHENTICATION_REGION_OPTION, out var authenticationRegion);
 
             options.TryGetValue(SERVER_NAME, out var hostname);
             if (string.IsNullOrEmpty(hostname))
@@ -279,11 +281,11 @@ namespace Duplicati.Library.Backend
             {
                 var disableChunkEncoding = Utility.Utility.ParseBoolOption(options, S3_DISABLE_CHUNK_ENCODING_OPTION);
                 var disablePayloadSigning = Utility.Utility.ParseBoolOption(options, S3_DISABLE_PAYLOAD_SIGNING_OPTION);
-                m_s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, disablePayloadSigning, timeout, options, lockMode);
+                m_s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, disablePayloadSigning, timeout, options, lockMode, authenticationRegion);
             }
             else if (string.Equals(s3ClientOptionValue, "minio", StringComparison.OrdinalIgnoreCase))
             {
-                m_s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, timeout, options, lockMode);
+                m_s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, timeout, options, lockMode, authenticationRegion);
             }
             else
             {
@@ -376,6 +378,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(S3_LIST_API_VERSION_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionListApiVersionShort, Strings.S3Backend.DescriptionListApiVersionLong, "v1", null, ["v1", "v2"]),
                     new CommandLineArgument(S3_RECURSIVE_LIST, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionRecursiveListShort, Strings.S3Backend.DescriptionRecursiveListLong, "false"),
                     new CommandLineArgument(S3_LOCK_MODE_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionLockModeShort, Strings.S3Backend.DescriptionLockModeLong, nameof(Amazon.S3.ObjectLockRetentionMode.Governance), null, typeof(Amazon.S3.ObjectLockRetentionMode).GetProperties(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public).Select(x => x.Name).ToArray()),
+                    new CommandLineArgument(S3_AUTHENTICATION_REGION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3AuthenticationRegionDescriptionShort, Strings.S3Backend.S3AuthenticationRegionDescriptionLong),
                     .. TimeoutOptionsHelper.GetOptions(),
                     .. exts
                 ];

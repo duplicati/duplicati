@@ -102,11 +102,16 @@ namespace Duplicati.Library.Backend
         ]);
 
         public S3AwsClient(string awsID, string awsKey, string? locationConstraint, string servername,
-            string? storageClass, bool useSSL, bool disableChunkEncoding, bool disablePayloadSigning, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options, string lockMode)
+            string? storageClass, bool useSSL, bool disableChunkEncoding, bool disablePayloadSigning, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options, string lockMode, string? authenticationRegion)
         {
             var cfg = GetDefaultAmazonS3Config();
             cfg.UseHttp = !useSSL;
             cfg.ServiceURL = (useSSL ? "https://" : "http://") + servername;
+            var authRegion = !string.IsNullOrWhiteSpace(authenticationRegion)
+                ? authenticationRegion
+                : locationConstraint;
+            if (!string.IsNullOrWhiteSpace(authRegion))
+                cfg.AuthenticationRegion = authRegion;
 
             CommandLineArgumentMapper.ApplyArguments(cfg, options, EXT_OPTION_PREFIX);
 
