@@ -418,6 +418,7 @@ namespace Duplicati.Library.Main
         {
             m_options.RawOptions["send-mail-level"] = "all";
             m_options.RawOptions["send-mail-any-operation"] = "true";
+            const string sendMailModuleKey = "sendmail";
             string targetmail;
             m_options.RawOptions.TryGetValue("send-mail-to", out targetmail);
             if (string.IsNullOrWhiteSpace(targetmail))
@@ -427,13 +428,13 @@ namespace Duplicati.Library.Main
                 ",",
                 DynamicLoader.GenericLoader.Modules
                          .Where(m =>
-                                !(m is Modules.Builtin.SendMail)
+                                !string.Equals(m.Key, sendMailModuleKey, StringComparison.OrdinalIgnoreCase)
                          )
                 .Select(x => x.Key)
             );
 
             /// Forward all messages from the email module to the message sink
-            var filtertag = Logging.Log.LogTagFromType<Modules.Builtin.SendMail>();
+            var filtertag = "Duplicati.Library.Modules.Builtin.SendMail";
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
                 return RunAction(new SendMailResults(), (result, backendManager) =>
