@@ -322,6 +322,289 @@ namespace Duplicati.UnitTest
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(0, count);
         }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestConfigure_InvalidMode_DefaultsToInline()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2",
+                ["remote-sync-mode"] = "inline,invalidmode"
+            };
+
+            module.Configure(options);
+
+            var modes = module.GetType().GetField("m_modes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<RemoteSyncTriggerMode>;
+            Assert.AreEqual(2, modes.Count);
+            Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[0]);
+            Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[1]); // Invalid defaults to Inline
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestConfigure_InvalidSchedule_DefaultsToZero()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2",
+                ["remote-sync-schedule"] = "1:00:00,invalid"
+            };
+
+            module.Configure(options);
+
+            var schedules = module.GetType().GetField("m_schedules", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<TimeSpan>;
+            Assert.AreEqual(2, schedules.Count);
+            Assert.AreEqual(TimeSpan.FromHours(1), schedules[0]);
+            Assert.AreEqual(TimeSpan.Zero, schedules[1]); // Invalid defaults to Zero
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestConfigure_InvalidCount_DefaultsToZero()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2",
+                ["remote-sync-count"] = "5,invalid"
+            };
+
+            module.Configure(options);
+
+            var counts = module.GetType().GetField("m_counts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<int>;
+            Assert.AreEqual(2, counts.Count);
+            Assert.AreEqual(5, counts[0]);
+            Assert.AreEqual(0, counts[1]); // Invalid defaults to 0
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestShouldTriggerSync_Scheduled_NotDue()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-mode"] = "scheduled",
+                ["remote-sync-schedule"] = "1:00:00",
+                ["dbpath"] = DBFILE
+            };
+            module.Configure(options);
+
+            // Create Operation table and insert recent sync
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "INSERT INTO \"Operation\" (\"Description\", \"Timestamp\") VALUES ('Rsync 0', @ts)";
+            cmd.AddNamedParameter("@ts", Duplicati.Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+            cmd.ExecuteNonQuery();
+
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 });
+            Assert.IsFalse(shouldTrigger);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestShouldTriggerSync_Counting_NotReached()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-mode"] = "counting",
+                ["remote-sync-count"] = "5",
+                ["dbpath"] = DBFILE
+            };
+            module.Configure(options);
+
+            // Create Operation table and simulate 2 backups (less than 5)
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "INSERT INTO \"Operation\" (\"Description\", \"Timestamp\") VALUES ('Backup', @ts)";
+            cmd.AddNamedParameter("@ts", Duplicati.Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+            cmd.ExecuteNonQuery();
+            cmd.ExecuteNonQuery();
+
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 });
+            Assert.IsFalse(shouldTrigger);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestShouldTriggerSync_MissingDbPath_ReturnsFalse()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-mode"] = "inline"
+                // No dbpath
+            };
+            module.Configure(options);
+
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 });
+            Assert.IsFalse(shouldTrigger);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestOnFinish_NonBackupOperation_SkipsSync()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest",
+                ["dbpath"] = DBFILE
+            };
+            module.Configure(options);
+            string remoteurl = "file:///source";
+            string[] localpath = new string[0];
+            module.OnStart("Restore", ref remoteurl, ref localpath); // Non-backup operation
+
+            var result = new TestBasicResults(ParsedResultType.Success);
+            module.OnFinish(result, null);
+
+            // Check if sync was not recorded
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
+            var count = (long)cmd.ExecuteScalar();
+            Assert.AreEqual(0, count);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestOnFinish_ExceptionDuringBackup_SkipsSync()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest",
+                ["dbpath"] = DBFILE
+            };
+            module.Configure(options);
+            string remoteurl = "file:///source";
+            string[] localpath = new string[0];
+            module.OnStart("Backup", ref remoteurl, ref localpath);
+
+            var result = new TestBasicResults(ParsedResultType.Success);
+            var exception = new Exception("Test exception");
+            module.OnFinish(result, exception);
+
+            // Check if sync was not recorded
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
+            var count = (long)cmd.ExecuteScalar();
+            Assert.AreEqual(0, count);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestOnFinish_FatalResult_SkipsSync()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest",
+                ["dbpath"] = DBFILE
+            };
+            module.Configure(options);
+            string remoteurl = "file:///source";
+            string[] localpath = new string[0];
+            module.OnStart("Backup", ref remoteurl, ref localpath);
+
+            var result = new TestBasicResults(ParsedResultType.Fatal);
+            module.OnFinish(result, null);
+
+            // Check if sync was not recorded
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
+            var count = (long)cmd.ExecuteScalar();
+            Assert.AreEqual(0, count);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestBuildArguments_AllOptions()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-force"] = "true",
+                ["remote-sync-retention"] = "true",
+                ["remote-sync-retry"] = "5",
+                ["remote-sync-backend-retries"] = "10"
+            };
+            module.Configure(options);
+
+            // Set m_source
+            module.GetType().GetField("m_source", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(module, "file:///source");
+
+            var args = module.GetType().GetMethod("BuildArguments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { "file:///dest" }) as string[];
+
+            Assert.IsTrue(args.Contains("file:///source"));
+            Assert.IsTrue(args.Contains("file:///dest"));
+            Assert.IsTrue(args.Contains("--force"));
+            Assert.IsTrue(args.Contains("--retention"));
+            Assert.IsTrue(args.Contains("--retry"));
+            Assert.IsTrue(args.Contains("5"));
+            Assert.IsTrue(args.Contains("--backend-retries"));
+            Assert.IsTrue(args.Contains("10"));
+            Assert.IsTrue(args.Contains("--auto-create-folders"));
+            Assert.IsTrue(args.Contains("--backend-retry-delay"));
+            Assert.IsTrue(args.Contains("1000"));
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestRecordSyncOperation_MissingDbPath_NoCrash()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest"
+                // No dbpath
+            };
+            module.Configure(options);
+
+            // Should not throw exception
+            Assert.DoesNotThrow(() => module.GetType().GetMethod("RecordSyncOperation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 }));
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestConfigure_MismatchedParameterCounts_UsesDefaults()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2,file:///test/dest3",
+                ["remote-sync-mode"] = "inline,scheduled" // Only 2 modes for 3 destinations
+            };
+
+            module.Configure(options);
+
+            var destinations = module.GetType().GetField("m_destinations", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<string>;
+            var modes = module.GetType().GetField("m_modes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<RemoteSyncTriggerMode>;
+
+            Assert.AreEqual(3, destinations.Count);
+            Assert.AreEqual(2, modes.Count); // Modes list has the provided values, defaults used for missing indices
+        }
     }
 
     /// <summary>
