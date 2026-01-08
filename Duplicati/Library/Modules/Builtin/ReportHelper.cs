@@ -673,7 +673,8 @@ namespace Duplicati.Library.Modules.Builtin
             ".tcloud.com",
             ".tencentcloudapi.com",
             ".rabata.io",
-            ".internxt.com"
+            ".internxt.com",
+            ".cloudflarestorage.com"
         ], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>

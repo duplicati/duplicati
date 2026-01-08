@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Nothing special to do before uninstall at this time.
+exit 0

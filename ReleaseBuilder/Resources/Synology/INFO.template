@@ -1,0 +1,36 @@
+package="Duplicati"
+version="%VERSION%"
+displayname="Duplicati"
+arch="%ARCH%"
+os_min_ver="7.0-00000"
+description="Duplicati backup for Synology DSM."
+maintainer="Duplicati Inc."
+maintainer_url="https://duplicati.com/"
+support_url="https://forum.duplicati.com/"
+distributor="Duplicati Inc."
+distributor_url="https://duplicati.com/"
+silent_install="yes"
+silent_upgrade="yes"
+thirdparty="yes"
+startable="yes"
+ctl_stop="yes"
+ctl_uninstall="yes"
+install_reboot="no"
+dsmappname="SYNO.SDS.Duplicati.Application"
+dsmuidir="ui"
+instuninst_restart_services="nginx.service"
+startstop_restart_services="nginx.service"
+
+[service]
+cfgshare="dup"
+start_stop_restart="yes"
+
+[privilege]
+run_as="package"
+user="duplicati"
+group="duplicati"
+
+[application]
+name="Duplicati"
+service_port="443"
+icon="PACKAGE_ICON.PNG"

@@ -101,6 +101,22 @@ internal interface IBackendManager : IDisposable
     Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken);
 
     /// <summary>
+    /// Applies or updates an object lock on a remote volume.
+    /// </summary>
+    /// <param name="remotename">The name of the file to lock</param>
+    /// <param name="lockUntilUtc">The UTC time the lock should be in effect until</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken);
+
+    /// <summary>
+    /// Gets the object lock expiration time for a remote volume.
+    /// </summary>
+    /// <param name="remotename">The name of the file to check</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The UTC time the lock expires, or null if no lock is set</returns>
+    Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancelToken);
+
+    /// <summary>
     /// Gets the quota information for the backend
     /// </summary>
     /// <param name="cancelToken">The cancellation token</param>
@@ -159,5 +175,10 @@ internal interface IBackendManager : IDisposable
     /// <param name="maxUploadPrSecond">The maximum upload speed in bytes per second</param>
     /// <param name="maxDownloadPrSecond">The maximum download speed in bytes per second</param>
     void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond);
+
+    /// <summary>
+    /// Indicates whether the backend supports object locking operations.
+    /// </summary>
+    bool SupportsObjectLocking { get; }
 
 }

@@ -330,6 +330,33 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
+        /// Resolves the internal Fileset table ID for a given local fileset timestamp.
+        /// </summary>
+        internal async Task<long> GetFilesetIdByTimeAsync(DateTime filesetTimeLocal, CancellationToken token)
+        {
+            var filesetTimestamp = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTimeLocal);
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+            return await cmd
+                .SetCommandAndParameters(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" = @Timestamp")
+                .SetParameterValue("@Timestamp", filesetTimestamp)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Checks whether any non-fileset volumes (block or index) referenced by the given fileset have an active lock.
+        /// The lock expiration is stored as epoch seconds in the database.
+        /// </summary>
+        internal async Task<bool> HasAnyLockedFiles(long filesetId, DateTime nowUtc, CancellationToken token)
+        {
+            await foreach (var (_, lockUntil) in GetRemoteVolumesDependingOnFilesets([filesetId], token).ConfigureAwait(false))
+                if (lockUntil.HasValue && lockUntil.Value.ToUniversalTime() > nowUtc)
+                    return true;
+
+            return false;
+        }
+
+        /// <summary>
         /// Represents the usage of a volume in the database.
         /// </summary>
         private struct VolumeUsage
@@ -1086,4 +1113,3 @@ namespace Duplicati.Library.Main.Database
 
     }
 }
-

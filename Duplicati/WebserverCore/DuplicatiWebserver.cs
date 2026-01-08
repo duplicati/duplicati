@@ -230,6 +230,7 @@ public class DuplicatiWebserver
 
         builder.Services
             .AddHttpContextAccessor()
+            .AddMemoryCache()
             .AddSingleton<IHostnameValidator>(new HostnameValidator(settings.AllowedHostnames))
             .AddSingleton(jwtConfig)
             .AddSingleton(new PreAuthTokenConfig(settings.PreAuthTokens))
@@ -326,6 +327,8 @@ public class DuplicatiWebserver
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.UseSynologyDsmAuthIfEnabled();
 
         if (EnableSwagger)
         {

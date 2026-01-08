@@ -21,7 +21,6 @@
 
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
-using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -46,6 +45,9 @@ namespace Duplicati.Library.Main.Operation
             m_options = options;
             m_result = result;
         }
+
+        private static bool HasActiveLock(DateTime? lockExpirationTime)
+            => lockExpirationTime.HasValue && lockExpirationTime.Value.ToUniversalTime() > DateTime.UtcNow;
 
         public async Task RunAsync(IBackendManager backendManager)
         {
@@ -134,11 +136,21 @@ namespace Duplicati.Library.Main.Operation
                 if (report.DeleteableVolumes.Any())
                 {
                     var deleteableVolumesAsHashSet = new HashSet<string>(report.DeleteableVolumes);
-                    fullyDeleteable =
-                        remoteList
-                            .Where(n => deleteableVolumesAsHashSet.Contains(n.Name))
-                            .Cast<IRemoteVolume>()
-                            .ToList();
+
+                    var candidates = remoteList
+                        .Where(n => deleteableVolumesAsHashSet.Contains(n.Name))
+                        .ToArray();
+
+                    foreach (var locked in candidates.Where(x => HasActiveLock(x.LockExpirationTime)))
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipDeleteLockedRemoteVolume", null,
+                            "Skipping deletion of remote volume {0} because it has an active lock until {1:u}",
+                            locked.Name,
+                            locked.LockExpirationTime!.Value);
+
+                    fullyDeleteable = candidates
+                        .Where(x => !HasActiveLock(x.LockExpirationTime))
+                        .Cast<IRemoteVolume>()
+                        .ToList();
                 }
                 await foreach (var d in DoDelete(db, backendManager, fullyDeleteable, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     deletedVolumes.Add(d);
@@ -161,11 +173,22 @@ namespace Duplicati.Library.Main.Operation
                     if (report.CompactableVolumes.Any())
                     {
                         var compactableVolumesAsHashSet = new HashSet<string>(report.CompactableVolumes);
-                        volumesToDownload =
-                            remoteList
-                                .Where(n => compactableVolumesAsHashSet.Contains(n.Name))
-                                .Cast<IRemoteVolume>()
-                                .ToList();
+
+                        var candidates = remoteList
+                            .Where(n => compactableVolumesAsHashSet.Contains(n.Name))
+                            .ToArray();
+
+                        foreach (var locked in candidates.Where(x => HasActiveLock(x.LockExpirationTime)))
+                            Logging.Log.WriteInformationMessage(LOGTAG, "SkipCompactLockedRemoteVolume", null,
+                                "Remote volume {0} was selected for compaction but has an active lock until {1:u}",
+                                locked.Name,
+                                locked.LockExpirationTime!.Value);
+
+                        // Do not attempt to compact volumes that are currently locked, as they will later need to be deleted.
+                        volumesToDownload = candidates
+                            .Where(x => !HasActiveLock(x.LockExpirationTime))
+                            .Cast<IRemoteVolume>()
+                            .ToList();
                     }
 
                     using (var q = await db.CreateBlockQueryHelper(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
@@ -388,7 +411,7 @@ namespace Duplicati.Library.Main.Operation
                     .CommitAsync("CommitDelete", token: cancellationToken)
                     .ConfigureAwait(false);
 
-            await foreach (var d in PerformDelete(backend, remoteFilesToRemove, cancellationToken).ConfigureAwait(false))
+            await foreach (var d in PerformDelete(db, backend, remoteFilesToRemove, cancellationToken).ConfigureAwait(false))
                 yield return d;
         }
 
@@ -429,10 +452,20 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
         }
 
-        private async IAsyncEnumerable<KeyValuePair<string, long>> PerformDelete(IBackendManager backendManager, IEnumerable<IRemoteVolume> list, [EnumeratorCancellation] CancellationToken cancelToken)
+        private async IAsyncEnumerable<KeyValuePair<string, long>> PerformDelete(LocalDeleteDatabase db, IBackendManager backendManager, IEnumerable<IRemoteVolume> list, [EnumeratorCancellation] CancellationToken cancelToken)
         {
             foreach (var f in list)
             {
+                var remoteVolume = await db.GetRemoteVolume(f.Name, cancelToken).ConfigureAwait(false);
+                if (HasActiveLock(remoteVolume.LockExpirationTime))
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SkipDeleteLockedRemoteVolume", null,
+                        "Skipping deletion of remote volume {0} because it has an active lock until {1:u}",
+                        f.Name,
+                        remoteVolume.LockExpirationTime!.Value);
+                    continue;
+                }
+
                 if (!m_options.Dryrun)
                     await backendManager.DeleteAsync(f.Name, f.Size, false, cancelToken).ConfigureAwait(false);
                 else

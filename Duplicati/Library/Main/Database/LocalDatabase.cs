@@ -217,7 +217,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="db">An optional existing <see cref="LocalDatabase"/> instance to use. If not provided, a new instance will be created.</param>
         /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that, when awaited, returns a new instance of <see cref="LocalDatabase"/>.</returns>
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string operation, bool shouldclose, LocalDatabase? db, CancellationToken token)
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string? operation, bool shouldclose, LocalDatabase? db, CancellationToken token)
         {
             db ??= new LocalDatabase();
 
@@ -264,7 +264,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="dbnew">An optional existing <see cref="LocalDatabase"/> instance to use. If not provided, a new instance will be created.</param>
         /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that, when awaited, returns a new instance of <see cref="LocalDatabase"/>.</returns>
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection, string operation, LocalDatabase? dbnew, CancellationToken token)
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection, string? operation, LocalDatabase? dbnew, CancellationToken token)
         {
             dbnew ??= new LocalDatabase();
             dbnew = await CreateLocalDatabaseAsync(connection, dbnew, token)
@@ -341,7 +341,8 @@ namespace Duplicati.Library.Main.Database
                     ""Hash"",
                     ""State"",
                     ""DeleteGraceTime"",
-                    ""ArchiveTime""
+                    ""ArchiveTime"",
+                    ""LockExpirationTime""
                 FROM ""Remotevolume""
             ";
 
@@ -456,7 +457,8 @@ namespace Duplicati.Library.Main.Database
                     ""Size"",
                     ""VerificationCount"",
                     ""DeleteGraceTime"",
-                    ""ArchiveTime""
+                    ""ArchiveTime"",
+                    ""LockExpirationTime""
                 )
                 VALUES (
                     @OperationID,
@@ -466,7 +468,8 @@ namespace Duplicati.Library.Main.Database
                     @Size,
                     @VerificationCount,
                     @DeleteGraceTime,
-                    @ArchiveTime
+                    @ArchiveTime,
+                    @LockExpirationTime
                 );
                 SELECT last_insert_rowid();
             ", token)
@@ -509,6 +512,90 @@ namespace Duplicati.Library.Main.Database
         public static DateTime ParseFromEpochSeconds(long seconds)
         {
             return Library.Utility.Utility.EPOCH.AddSeconds(seconds);
+        }
+
+        /// <summary>
+        /// Returns remote volumes referenced by the provided filesets.
+        /// This is a shared helper used by delete/lock operations to avoid duplicating the CTEs.
+        /// </summary>
+        /// <param name="filesetIds">Fileset IDs to resolve.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>An async sequence of remote volume name and lock expiration time (UTC) if present.</returns>
+        public async IAsyncEnumerable<(string Name, DateTime? LockExpirationTime)> GetRemoteVolumesDependingOnFilesets(
+            IEnumerable<long> filesetIds,
+            [EnumeratorCancellation] CancellationToken token)
+        {
+            var ids = filesetIds?.ToArray();
+            if (ids == null || ids.Length == 0)
+                yield break;
+
+            await using var cmd = m_connection.CreateCommand();
+            cmd.SetTransaction(m_rtr);
+
+            cmd.SetCommandAndParameters($@"
+                WITH
+                selected_files AS (
+                    SELECT ""FileID""
+                    FROM ""FilesetEntry""
+                    WHERE ""FilesetID"" IN (@FilesetIds)
+                ),
+
+                fileset_blocks AS (
+                    -- data blocks
+                    SELECT b.""VolumeID""
+                    FROM selected_files sf
+                    JOIN ""FileLookup"" fl ON fl.""ID"" = sf.""FileID""
+                    JOIN ""BlocksetEntry"" be ON be.""BlocksetID"" = fl.""BlocksetID""
+                    JOIN ""Block"" b ON b.""ID"" = be.""BlockID""
+
+                    UNION
+
+                    -- metadata blocks
+                    SELECT b.""VolumeID""
+                    FROM selected_files sf
+                    JOIN ""FileLookup"" fl ON fl.""ID"" = sf.""FileID""
+                    JOIN ""Metadataset"" ms ON ms.""ID"" = fl.""MetadataID""
+                    JOIN ""BlocksetEntry"" be ON be.""BlocksetID"" = ms.""BlocksetID""
+                    JOIN ""Block"" b ON b.""ID"" = be.""BlockID""
+                ),
+
+                index_volumes AS (
+                    SELECT ""IndexVolumeID"" AS ""VolumeID""
+                    FROM ""IndexBlockLink""
+                    WHERE ""BlockVolumeID"" IN (SELECT ""VolumeID"" FROM fileset_blocks)
+                ),
+
+                fileset_volumes AS (
+                    SELECT ""VolumeID""
+                    FROM ""Fileset""
+                    WHERE ""ID"" IN (@FilesetIds)
+                ),
+
+                combined AS (
+                    SELECT ""VolumeID"" FROM fileset_blocks
+                    UNION
+                    SELECT ""VolumeID"" FROM index_volumes
+                    UNION
+                    SELECT ""VolumeID"" FROM fileset_volumes
+                )
+
+                SELECT rv.""Name"", rv.""LockExpirationTime""
+                FROM ""Remotevolume"" rv
+                WHERE rv.""ID"" IN (SELECT ""VolumeID"" FROM combined);
+            ");
+
+            cmd.ExpandInClauseParameterMssqlite("@FilesetIds", ids);
+
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+            {
+                var name = rd.ConvertValueToString(0) ?? string.Empty;
+                var lockUntil = rd.IsDBNull(1)
+                    ? (DateTime?)null
+                    : ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
+
+                yield return (name, lockUntil);
+            }
         }
 
         /// <summary>
@@ -773,7 +860,8 @@ namespace Duplicati.Library.Main.Database
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.ConvertValueToString(2) ?? ""),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.ConvertValueToString(5) ?? ""),
                         ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0)),
-                        ParseFromEpochSeconds(rd.ConvertValueToInt64(7, 0))
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(7, 0)),
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(8, 0))
                     );
 
             return RemoteVolumeEntry.Empty;
@@ -821,7 +909,8 @@ namespace Duplicati.Library.Main.Database
                     (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.ConvertValueToString(2) ?? ""),
                     (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.ConvertValueToString(5) ?? ""),
                     ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0)),
-                    ParseFromEpochSeconds(rd.ConvertValueToInt64(7, 0))
+                    ParseFromEpochSeconds(rd.ConvertValueToInt64(7, 0)),
+                    ParseFromEpochSeconds(rd.ConvertValueToInt64(8, 0))
                 );
             }
         }
@@ -1347,6 +1436,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@VerificationCount", 0)
                 .SetParameterValue("@DeleteGraceTime", deleteGraceTime.Ticks <= 0 ? 0 : (DateTime.UtcNow + deleteGraceTime).Ticks)
                 .SetParameterValue("@ArchiveTime", 0)
+                .SetParameterValue("@LockExpirationTime", 0)
                 .ExecuteScalarInt64Async(token)
                 .ConfigureAwait(false);
 
@@ -3020,7 +3110,8 @@ namespace Duplicati.Library.Main.Database
                     ""Hash"",
                     ""State"",
                     ""DeleteGraceTime"",
-                    ""ArchiveTime""
+                    ""ArchiveTime"",
+                    ""LockExpirationTime""
                 FROM
                     ""RemoteVolume"",
                     ""Fileset""
@@ -3044,7 +3135,8 @@ namespace Duplicati.Library.Main.Database
                     (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.ConvertValueToString(2) ?? ""),
                     (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.ConvertValueToString(5) ?? ""),
                     ParseFromEpochSeconds(rd.ConvertValueToInt64(6)).ToLocalTime(),
-                    ParseFromEpochSeconds(rd.ConvertValueToInt64(7)).ToLocalTime()
+                    ParseFromEpochSeconds(rd.ConvertValueToInt64(7)).ToLocalTime(),
+                    ParseFromEpochSeconds(rd.ConvertValueToInt64(8)).ToLocalTime()
                 );
             else
                 return default(RemoteVolumeEntry);

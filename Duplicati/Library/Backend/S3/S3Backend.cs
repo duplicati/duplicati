@@ -28,7 +28,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
+    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILockingBackend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3>();
 
@@ -44,6 +44,8 @@ namespace Duplicati.Library.Backend
         private const string S3_DISABLE_PAYLOAD_SIGNING_OPTION = "s3-disable-payload-signing";
         private const string S3_LIST_API_VERSION_OPTION = "s3-list-api-version";
         private const string S3_RECURSIVE_LIST = "s3-recursive-list";
+        private const string S3_LOCK_MODE_OPTION = "s3-lock-mode";
+        private const string S3_AUTHENTICATION_REGION_OPTION = "s3-authentication-region";
 
         public static readonly Dictionary<string, string?> KNOWN_S3_PROVIDERS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
@@ -95,6 +97,7 @@ namespace Duplicati.Library.Backend
             { "Rabata EU West 2 (Netherlands)", "s3.eu-west-2.rabata.io" },
             { "Internxt US Central 1 (Texas)", "s3.us-central-1.internxt.com" },
             { "Internxt EU Central 1 (Amsterdam)", "s3.eu-central-1.internxt.com" },
+            { "Cloudflare R2", ".r2.cloudflarestorage.com" }
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
@@ -226,6 +229,7 @@ namespace Duplicati.Library.Backend
             var useSSL = Utility.Utility.ParseBoolOption(options, SSL_OPTION);
             options.TryGetValue(LOCATION_OPTION, out var locationConstraint);
             options.TryGetValue(STORAGECLASS_OPTION, out var storageClass);
+            options.TryGetValue(S3_AUTHENTICATION_REGION_OPTION, out var authenticationRegion);
 
             options.TryGetValue(SERVER_NAME, out var hostname);
             if (string.IsNullOrEmpty(hostname))
@@ -272,15 +276,17 @@ namespace Duplicati.Library.Backend
             var s3ClientOptionValue = options.GetValueOrDefault(S3_CLIENT_OPTION);
 
             (var awsID, var awsKey) = auth.GetCredentials();
+            var lockMode = options.GetValueOrDefault(S3_LOCK_MODE_OPTION, "governance") ?? "governance";
+
             if (string.IsNullOrWhiteSpace(s3ClientOptionValue) || string.Equals(s3ClientOptionValue, "aws", StringComparison.OrdinalIgnoreCase))
             {
                 var disableChunkEncoding = Utility.Utility.ParseBoolOption(options, S3_DISABLE_CHUNK_ENCODING_OPTION);
                 var disablePayloadSigning = Utility.Utility.ParseBoolOption(options, S3_DISABLE_PAYLOAD_SIGNING_OPTION);
-                m_s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, disablePayloadSigning, timeout, options);
+                m_s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, disablePayloadSigning, timeout, options, lockMode, authenticationRegion);
             }
             else if (string.Equals(s3ClientOptionValue, "minio", StringComparison.OrdinalIgnoreCase))
             {
-                m_s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, timeout, options);
+                m_s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, timeout, options, lockMode, authenticationRegion);
             }
             else
             {
@@ -337,6 +343,14 @@ namespace Duplicati.Library.Backend
             => Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancelToken);
 
         /// <inheritdoc/>
+        public Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancelToken)
+            => Connection.GetObjectLockUntilAsync(m_bucket, GetFullKey(remotename), cancelToken);
+
+        /// <inheritdoc/>
+        public Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken)
+            => Connection.SetObjectLockUntilAsync(m_bucket, GetFullKey(remotename), lockUntilUtc, cancelToken);
+
+        /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -364,6 +378,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(S3AwsClient.S3_ARCHIVE_CLASSES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.S3Backend.S3ArchiveClassesDescriptionShort, Strings.S3Backend.S3ArchiveClassesDescriptionLong, string.Join(",", S3AwsClient.DEFAULT_ARCHIVE_CLASSES.Select(x => x.Value)), null, KNOWN_S3_STORAGE_CLASSES.Select(x => x.Value).WhereNotNullOrWhiteSpace().ToArray()),
                     new CommandLineArgument(S3_LIST_API_VERSION_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionListApiVersionShort, Strings.S3Backend.DescriptionListApiVersionLong, "v1", null, ["v1", "v2"]),
                     new CommandLineArgument(S3_RECURSIVE_LIST, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionRecursiveListShort, Strings.S3Backend.DescriptionRecursiveListLong, "false"),
+                    new CommandLineArgument(S3_LOCK_MODE_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionLockModeShort, Strings.S3Backend.DescriptionLockModeLong, nameof(Amazon.S3.ObjectLockRetentionMode.Governance), null, typeof(Amazon.S3.ObjectLockRetentionMode).GetProperties(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public).Select(x => x.Name).ToArray()),
+                    new CommandLineArgument(S3_AUTHENTICATION_REGION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3AuthenticationRegionDescriptionShort, Strings.S3Backend.S3AuthenticationRegionDescriptionLong),
                     .. TimeoutOptionsHelper.GetOptions(),
                     .. exts
                 ];

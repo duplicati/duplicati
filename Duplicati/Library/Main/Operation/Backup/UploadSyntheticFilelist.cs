@@ -48,17 +48,17 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="backendManager">The backend manager to use</param>
         /// <param name="lastTempFilelist">The last temporary file list volume</param>
         /// <returns></returns>
-        public static async Task Run(BackupDatabase database, Options options, BasicResults result, ITaskReader taskreader, IBackendManager backendManager, RemoteVolumeEntry lastTempFilelist)
+        public static async Task<DateTime?> Run(BackupDatabase database, Options options, BasicResults result, ITaskReader taskreader, IBackendManager backendManager, RemoteVolumeEntry lastTempFilelist)
         {
             // Check if we should upload a synthetic filelist
             if (options.DisableSyntheticFilelist || string.IsNullOrWhiteSpace(lastTempFilelist.Name) || lastTempFilelist.ID <= 0)
-                return;
+                return null;
 
             // Files is missing or repaired
             if (lastTempFilelist.State != RemoteVolumeState.Uploading && lastTempFilelist.State != RemoteVolumeState.Temporary)
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "SkippingSyntheticListUpload", "Skipping synthetic upload because temporary fileset appers to be complete: ({0}, {1}, {2})", lastTempFilelist.ID, lastTempFilelist.Name, lastTempFilelist.State);
-                return;
+                return null;
             }
 
             // Ready to build and upload the synthetic list
@@ -66,10 +66,10 @@ namespace Duplicati.Library.Main.Operation.Backup
             var incompleteFilesets = (await database.GetIncompleteFilesetsAsync(taskreader.ProgressToken)).OrderBy(x => x.Value).ToList();
 
             if (!incompleteFilesets.Any())
-                return;
+                return null;
 
             if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
-                return;
+                return null;
 
             result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
             Logging.Log.WriteInformationMessage(LOGTAG, "PreviousBackupFilelistUpload", "Uploading filelist from previous interrupted backup");
@@ -84,11 +84,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                 .ToArray();
 
             var prevId = prevs.Length == 0 ? -1 : prevs.Last();
+            DateTime? syntheticFilelistTime = null;
 
             FilesetVolumeWriter fsw = null;
             try
             {
                 var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameName(database, options, incompleteSet.Value, taskreader.ProgressToken).ConfigureAwait(false);
+                syntheticFilelistTime = fileTime;
                 fsw = new FilesetVolumeWriter(options, fileTime);
                 fsw.VolumeID = await database.RegisterRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, taskreader.ProgressToken).ConfigureAwait(false);
 
@@ -107,7 +109,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 fsw.Close();
 
                 if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
-                    return;
+                    return null;
 
                 await database.UpdateRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, false, default, null, taskreader.ProgressToken).ConfigureAwait(false);
                 // If the previous filelist was not uploaded, we register it for deletion, as we have created a new synthetic one
@@ -123,6 +125,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                 fsw?.Dispose();
                 throw;
             }
+
+            return syntheticFilelistTime?.ToUniversalTime();
         }
     }
 }

@@ -28,7 +28,7 @@ using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend
 {
-    public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend
+    public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend, ILockingBackend
     {
         // Non-standard naming managed with AuthOptionsHelper.ParseWithAlias
         private const string AUTH_USERNAME_OPTION = "access_key_id";
@@ -73,6 +73,8 @@ namespace Duplicati.Library.Backend
         /// All options passed to the backend
         /// </summary>
         private readonly Dictionary<string, string?> _options;
+
+        private const string S3_LOCK_MODE_OPTION = "s3-lock-mode";
 
         /// <inheritdoc />
         public Idrivee2Backend()
@@ -176,10 +178,24 @@ namespace Duplicati.Library.Backend
         }
 
         /// <inheritdoc />
+        public async Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancellationToken)
+        {
+            var con = await GetConnection(cancellationToken).ConfigureAwait(false);
+            return await con.GetObjectLockUntilAsync(_bucket, GetFullKey(remotename), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
         public async Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
             var con = await GetConnection(cancellationToken).ConfigureAwait(false);
             await con.DeleteObjectAsync(_bucket, GetFullKey(remotename), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancellationToken)
+        {
+            var con = await GetConnection(cancellationToken).ConfigureAwait(false);
+            await con.SetObjectLockUntilAsync(_bucket, GetFullKey(remotename), lockUntilUtc, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -188,6 +204,7 @@ namespace Duplicati.Library.Backend
             .. S3AwsClient.GetAwsExtendedOptions(),
             new CommandLineArgument(AUTH_USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.Idrivee2Backend.KeyIDDescriptionShort, Strings.Idrivee2Backend.KeyIDDescriptionLong,null, [AuthOptionsHelper.AuthUsernameOption], null),
             new CommandLineArgument(AUTH_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Idrivee2Backend.KeySecretDescriptionShort, Strings.Idrivee2Backend.KeySecretDescriptionLong, null, [AuthOptionsHelper.AuthPasswordOption ], null),
+            new CommandLineArgument(S3_LOCK_MODE_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Idrivee2Backend.DescriptionLockModeShort, Strings.Idrivee2Backend.DescriptionLockModeLong, "governance", null, new string[] { "governance", "compliance" }),
             .. TimeoutOptionsHelper.GetOptions(),
         ];
 
@@ -224,7 +241,8 @@ namespace Duplicati.Library.Backend
             var (accessKeyId, accessKeySecret) = _auth.GetCredentials();
 
             var host = await GetRegionEndpointAsync("https://api.idrivee2.com/api/service/get_region_end_point/" + accessKeyId, cancellationToken).ConfigureAwait(false);
-            _s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, false, _timeouts, _options);
+            var lockMode = _options.GetValueOrDefault(S3_LOCK_MODE_OPTION, "governance") ?? "governance";
+            _s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, false, _timeouts, _options, lockMode, null);
 
             return _s3Client;
         }
