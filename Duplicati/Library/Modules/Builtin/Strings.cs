@@ -53,6 +53,51 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string Description { get { return LC.L(@"This module works internaly to parse source parameters to backup Microsoft SQL Server databases"); } }
         public static string DisplayName { get { return LC.L(@"Configure Microsoft SQL Server module"); } }
     }
+    internal static class RemoteSynchronization
+    {
+        public static string Description { get { return LC.L(@"This module runs remote synchronization after a successful backup to create a secondary copy (3-2-1)."); } }
+        public static string DisplayName { get { return LC.L(@"Remote synchronization (3-2-1)"); } }
+        public static string BackendSourceShort { get { return LC.L(@"Remote sync source backend"); } }
+        public static string BackendSourceLong { get { return LC.L(@"Specify the source backend string for remote synchronization. If not set, the current backup destination is used."); } }
+        public static string BackendDestinationShort { get { return LC.L(@"Remote sync destination backend"); } }
+        public static string BackendDestinationLong { get { return LC.L(@"Specify the destination backend string for remote synchronization."); } }
+        public static string AutoCreateFoldersShort { get { return LC.L(@"Create destination folders"); } }
+        public static string AutoCreateFoldersLong { get { return LC.L(@"Automatically create folders in the destination backend if they do not exist."); } }
+        public static string BackendRetriesShort { get { return LC.L(@"Backend retries"); } }
+        public static string BackendRetriesLong { get { return LC.L(@"Number of times to recreate a backend on backend errors."); } }
+        public static string BackendRetryDelayShort { get { return LC.L(@"Backend retry delay"); } }
+        public static string BackendRetryDelayLong { get { return LC.L(@"Delay in milliseconds between backend retries."); } }
+        public static string BackendRetryBackoffShort { get { return LC.L(@"Exponential retry backoff"); } }
+        public static string BackendRetryBackoffLong { get { return LC.L(@"Use exponential backoff for backend retries."); } }
+        public static string ConfirmShort { get { return LC.L(@"Auto confirm remote sync"); } }
+        public static string ConfirmLong { get { return LC.L(@"Automatically confirm the remote synchronization plan to avoid interactive prompts."); } }
+        public static string DryRunShort { get { return LC.L(@"Remote sync dry run"); } }
+        public static string DryRunLong { get { return LC.L(@"Do not write or delete files during remote synchronization."); } }
+        public static string DestinationOptionsShort { get { return LC.L(@"Destination backend options"); } }
+        public static string DestinationOptionsLong { get { return LC.L(@"Space-separated key=value pairs for the destination backend, e.g. ""key1=value1 key2=value2""."); } }
+        public static string ForceShort { get { return LC.L(@"Force remote sync"); } }
+        public static string ForceLong { get { return LC.L(@"Force synchronization, skipping comparisons and overwriting the destination."); } }
+        public static string GlobalOptionsShort { get { return LC.L(@"Global backend options"); } }
+        public static string GlobalOptionsLong { get { return LC.L(@"Space-separated key=value pairs applied to both backends unless overridden."); } }
+        public static string LogFileShort { get { return LC.L(@"Remote sync log file"); } }
+        public static string LogFileLong { get { return LC.L(@"The log file to write to. If not set here, the global options are checked."); } }
+        public static string LogLevelShort { get { return LC.L(@"Remote sync log level"); } }
+        public static string LogLevelLong { get { return LC.L(@"The log level to use. If not set here, the global options are checked."); } }
+        public static string ParseArgumentsOnlyShort { get { return LC.L(@"Parse arguments only"); } }
+        public static string ParseArgumentsOnlyLong { get { return LC.L(@"Only parse the arguments and then exit."); } }
+        public static string ProgressShort { get { return LC.L(@"Show progress"); } }
+        public static string ProgressLong { get { return LC.L(@"Print progress to STDOUT."); } }
+        public static string RetentionShort { get { return LC.L(@"Retention mode"); } }
+        public static string RetentionLong { get { return LC.L(@"Keep old files by renaming instead of deleting them."); } }
+        public static string RetryShort { get { return LC.L(@"Operation retries"); } }
+        public static string RetryLong { get { return LC.L(@"Number of times to retry on errors."); } }
+        public static string SourceOptionsShort { get { return LC.L(@"Source backend options"); } }
+        public static string SourceOptionsLong { get { return LC.L(@"Space-separated key=value pairs for the source backend, e.g. ""key1=value1 key2=value2""."); } }
+        public static string VerifyContentsShort { get { return LC.L(@"Verify contents"); } }
+        public static string VerifyContentsLong { get { return LC.L(@"Verify file contents before overwriting destination files."); } }
+        public static string VerifyGetAfterPutShort { get { return LC.L(@"Verify after upload"); } }
+        public static string VerifyGetAfterPutLong { get { return LC.L(@"Verify files after uploading them."); } }
+    }
     internal static class RunScript
     {
         public static string Description { get { return LC.L(@"Execute a script before starting an operation, and again on completion"); } }
