@@ -266,16 +266,16 @@ namespace Duplicati.Library.Modules.Builtin
                 filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-", StringComparison.Ordinal)).Select(x => x.Substring(1)).ToList());
 
             foreach (var dbForBackup in dbsForBackup)
-            foreach (var pathForBackup in dbForBackup.DataPaths)
-            {
-                if (!filterhandler.Matches(pathForBackup, out _, out _))
+                foreach (var pathForBackup in dbForBackup.DataPaths)
                 {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "IncludeDatabase", "For DB {0} - adding {1}", dbForBackup.Name, pathForBackup);
-                    pathsForBackup.Add(pathForBackup);
+                    if (!filterhandler.Matches(pathForBackup, out _, out _))
+                    {
+                        Logging.Log.WriteInformationMessage(LOGTAG, "IncludeDatabase", "For DB {0} - adding {1}", dbForBackup.Name, pathForBackup);
+                        pathsForBackup.Add(pathForBackup);
+                    }
+                    else
+                        Logging.Log.WriteInformationMessage(LOGTAG, "ExcludeByFilter", "Excluding {0} based on excluding filters", pathForBackup);
                 }
-                else
-                    Logging.Log.WriteInformationMessage(LOGTAG, "ExcludeByFilter", "Excluding {0} based on excluding filters", pathForBackup);
-            }
 
             paths = pathsForBackup.Where(x => !x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
                 .Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToArray();
