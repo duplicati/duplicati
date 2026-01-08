@@ -24,6 +24,9 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Modules.Builtin;
 
+/// <summary>
+/// Provides access to built-in generic modules.
+/// </summary>
 public static class GenericModules
 {
     /// <summary>

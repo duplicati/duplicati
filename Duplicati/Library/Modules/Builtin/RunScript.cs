@@ -32,6 +32,9 @@ using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Modules.Builtin
 {
+    /// <summary>
+    /// Module for running scripts before and after operations.
+    /// </summary>
     public class RunScript : IGenericCallbackModule, IGenericPriorityModule
     {
         /// <summary>
@@ -92,11 +95,15 @@ namespace Duplicati.Library.Modules.Builtin
         private FileBackedStringList m_logstorage;
 
         /// <summary>
-        /// The priority of the module, used to determine the order in which modules are executed.
+        /// Gets the priority of the module, used to determine the order in which modules are executed.
         /// </summary>
         public int Priority => 100;
 
         #region IGenericModule implementation
+        /// <summary>
+        /// Configures the module with the provided command line options.
+        /// </summary>
+        /// <param name="commandlineOptions">The command line options dictionary.</param>
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
             commandlineOptions.TryGetValue(STARTUP_OPTION, out m_startScript);
@@ -140,11 +147,26 @@ namespace Duplicati.Library.Modules.Builtin
             });
         }
 
+        /// <summary>
+        /// Gets the key identifier for this module.
+        /// </summary>
         public string Key { get { return "runscript"; } }
+        /// <summary>
+        /// Gets the display name for this module.
+        /// </summary>
         public string DisplayName { get { return Strings.RunScript.DisplayName; } }
+        /// <summary>
+        /// Gets the description of this module.
+        /// </summary>
         public string Description { get { return Strings.RunScript.Description; } }
+        /// <summary>
+        /// Gets whether this module should be loaded by default.
+        /// </summary>
         public bool LoadAsDefault { get { return true; } }
 
+        /// <summary>
+        /// Gets the list of supported command line arguments.
+        /// </summary>
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -173,6 +195,12 @@ namespace Duplicati.Library.Modules.Builtin
 
         #region IGenericCallbackModule implementation
 
+        /// <summary>
+        /// Called when an operation starts.
+        /// </summary>
+        /// <param name="operationname">The name of the operation.</param>
+        /// <param name="remoteurl">The remote URL.</param>
+        /// <param name="localpath">The local paths.</param>
         public void OnStart(string operationname, ref string remoteurl, ref string[] localpath)
         {
             if (!string.IsNullOrEmpty(m_requiredScript))
@@ -188,6 +216,11 @@ namespace Duplicati.Library.Modules.Builtin
             m_localpath = localpath;
         }
 
+        /// <summary>
+        /// Called when an operation finishes.
+        /// </summary>
+        /// <param name="result">The results of the operation.</param>
+        /// <param name="exception">Any exception that occurred.</param>
         public void OnFinish(IBasicResults result, Exception exception)
         {
             // Dispose the current log scope
@@ -238,6 +271,20 @@ namespace Duplicati.Library.Modules.Builtin
         }
         #endregion
 
+        /// <summary>
+        /// Executes the script.
+        /// </summary>
+        /// <param name="scriptpath">The path to the script.</param>
+        /// <param name="eventname">The event name.</param>
+        /// <param name="operationname">The operation name.</param>
+        /// <param name="remoteurl">The remote URL.</param>
+        /// <param name="localpath">The local paths.</param>
+        /// <param name="timeout">The timeout in milliseconds.</param>
+        /// <param name="requiredScript">Whether the script is required.</param>
+        /// <param name="enableArguments">Whether to enable arguments.</param>
+        /// <param name="options">The options dictionary.</param>
+        /// <param name="datafile">The data file.</param>
+        /// <param name="level">The parsed result level.</param>
         private static void Execute(string scriptpath, string eventname, string operationname, ref string remoteurl, ref string[] localpath, int timeout, bool requiredScript, bool enableArguments, IDictionary<string, string> options, string datafile, ParsedResultType? level)
         {
             try

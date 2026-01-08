@@ -418,10 +418,10 @@ namespace Duplicati.Library.Modules.Builtin
         ], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
-        /// Gets the default value for a template key
+        /// Gets the default value for a template key.
         /// </summary>
-        /// <param name="name">The name of the template key</param>
-        /// <returns>The default value</returns>
+        /// <param name="name">The name of the template key.</param>
+        /// <returns>The default value.</returns>
         private string GetDefaultValue(string name)
         {
             switch (name)
@@ -533,7 +533,7 @@ namespace Duplicati.Library.Modules.Builtin
         }
 
         /// <summary>
-        /// Gets the filtered set of log lines
+        /// Gets the filtered set of log lines.
         /// </summary>
         protected IEnumerable<string> LogLines
         {
@@ -680,8 +680,8 @@ namespace Duplicati.Library.Modules.Builtin
         /// Attempts to guess a safe host suffix from a URL.
         /// This attempts to avoid reporting private or sensitive hostnames, and only returns known public cloud suffixes.
         /// </summary>
-        /// <param name="url">The URL to analyze</param>
-        /// <returns>The host suffix, or null if not found or not safe to report</returns>
+        /// <param name="url">The URL to analyze.</param>
+        /// <returns>The host suffix, or null if not found or not safe to report.</returns>
         private static string GuessHostSuffixSafe(string url)
         {
             var scheme = Utility.Utility.GuessScheme(url);

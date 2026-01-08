@@ -24,6 +24,9 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Modules.Builtin
 {
+    /// <summary>
+    /// Module for handling console-based password input.
+    /// </summary>
     public class ConsolePasswordInput : Duplicati.Library.Interface.IGenericModule
     {
         /// <summary>
@@ -39,15 +42,34 @@ namespace Duplicati.Library.Modules.Builtin
 
         #region IGenericModule Members
 
+        /// <summary>
+        /// Gets the key identifier for this module.
+        /// </summary>
         public string Key { get { return "console-password-input"; } }
+        /// <summary>
+        /// Gets the display name for this module.
+        /// </summary>
         public string DisplayName { get { return Strings.ConsolePasswordInput.Displayname; } }
+        /// <summary>
+        /// Gets the description of this module.
+        /// </summary>
         public string Description { get { return Strings.ConsolePasswordInput.Description; } }
+        /// <summary>
+        /// Gets whether this module should be loaded by default.
+        /// </summary>
         public bool LoadAsDefault { get { return true; } }
+        /// <summary>
+        /// Gets the list of supported command line arguments.
+        /// </summary>
         public IList<Interface.ICommandLineArgument> SupportedCommands
             => [
                 new Interface.CommandLineArgument(FORCE_PASSPHRASE_FROM_STDIN_OPTION, Interface.CommandLineArgument.ArgumentType.Boolean, Strings.ConsolePasswordInput.ForcepassphrasefromstdinShort, Strings.ConsolePasswordInput.ForcepassphrasefromstdinLong)
             ];
 
+        /// <summary>
+        /// Configures the module with the provided command line options.
+        /// </summary>
+        /// <param name="commandlineOptions">The command line options dictionary.</param>
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
             //Ensure the setup is valid, could throw an exception
@@ -91,7 +113,11 @@ namespace Duplicati.Library.Modules.Builtin
 
         #endregion
 
-
+        /// <summary>
+        /// Reads the passphrase from standard input.
+        /// </summary>
+        /// <param name="confirm">Whether to confirm the passphrase.</param>
+        /// <returns>The passphrase.</returns>
         private static string ReadPassphraseFromStdin(bool confirm)
         {
             var passphrase = Console.ReadLine();
@@ -110,7 +136,11 @@ namespace Duplicati.Library.Modules.Builtin
             return passphrase;
         }
 
-
+        /// <summary>
+        /// Reads the passphrase from the console.
+        /// </summary>
+        /// <param name="confirm">Whether to confirm the passphrase.</param>
+        /// <returns>The passphrase.</returns>
         private static string ReadPassphraseFromConsole(bool confirm)
         {
             // First entry (includes prompt and masking)

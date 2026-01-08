@@ -519,21 +519,35 @@ destination will be verified before being overwritten (if they seemingly match).
             };
         }
 
+        /// <summary>
+        /// A log destination that writes to multiple destinations.
+        /// </summary>
         private sealed class MultiLogDestination : ILogDestination, IDisposable
         {
             private readonly List<ILogDestination> m_destinations;
 
+            /// <summary>
+            /// Initializes a new instance of the MultiLogDestination class.
+            /// </summary>
+            /// <param name="destinations">The log destinations to write to.</param>
             public MultiLogDestination(IEnumerable<ILogDestination?> destinations)
             {
                 m_destinations = destinations.Where(x => x != null).Cast<ILogDestination>().ToList();
             }
 
+            /// <summary>
+            /// Writes a log entry to all destinations.
+            /// </summary>
+            /// <param name="entry">The log entry to write.</param>
             public void WriteMessage(LogEntry entry)
             {
                 foreach (var destination in m_destinations)
                     destination.WriteMessage(entry);
             }
 
+            /// <summary>
+            /// Disposes of the resources used by this instance.
+            /// </summary>
             public void Dispose()
             {
                 foreach (var destination in m_destinations)

@@ -29,6 +29,9 @@ using RemoteSynchronization;
 
 namespace Duplicati.Library.Modules.Builtin;
 
+/// <summary>
+/// Module for synchronizing backup data to a remote destination after a successful backup operation.
+/// </summary>
 public class RemoteSynchronizationModule : IGenericCallbackModule
 {
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<RemoteSynchronizationModule>();
@@ -50,11 +53,26 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     private string m_operationName;
     private bool m_enabled;
 
+    /// <summary>
+    /// Gets the key identifier for this module.
+    /// </summary>
     public string Key => "remotesync";
+    /// <summary>
+    /// Gets the display name for this module.
+    /// </summary>
     public string DisplayName => Strings.RemoteSynchronization.DisplayName;
+    /// <summary>
+    /// Gets the description of this module.
+    /// </summary>
     public string Description => Strings.RemoteSynchronization.Description;
+    /// <summary>
+    /// Gets whether this module should be loaded by default.
+    /// </summary>
     public bool LoadAsDefault => true;
 
+    /// <summary>
+    /// Gets the list of supported command line arguments.
+    /// </summary>
     public IList<ICommandLineArgument> SupportedCommands =>
     [
         new CommandLineArgument(OPTION_BACKEND_DST, CommandLineArgument.ArgumentType.String, Strings.RemoteSynchronization.BackendDestinationShort, Strings.RemoteSynchronization.BackendDestinationLong),
@@ -64,6 +82,10 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         new CommandLineArgument(OPTION_RETRY, CommandLineArgument.ArgumentType.Integer, Strings.RemoteSynchronization.RetryShort, Strings.RemoteSynchronization.RetryLong, "3"),
     ];
 
+    /// <summary>
+    /// Configures the module with the provided command line options.
+    /// </summary>
+    /// <param name="commandlineOptions">The command line options dictionary.</param>
     public void Configure(IDictionary<string, string> commandlineOptions)
     {
         m_options = commandlineOptions.AsReadOnly();
@@ -71,6 +93,12 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         m_enabled = !string.IsNullOrWhiteSpace(m_destination);
     }
 
+    /// <summary>
+    /// Called when an operation starts.
+    /// </summary>
+    /// <param name="operationname">The name of the operation.</param>
+    /// <param name="remoteurl">The remote URL.</param>
+    /// <param name="localpath">The local paths.</param>
     public void OnStart(string operationname, ref string remoteurl, ref string[] localpath)
     {
         if (!m_enabled)
@@ -82,6 +110,11 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             m_source = remoteurl;
     }
 
+    /// <summary>
+    /// Called when an operation finishes.
+    /// </summary>
+    /// <param name="result">The results of the operation.</param>
+    /// <param name="exception">Any exception that occurred during the operation.</param>
     public void OnFinish(IBasicResults result, Exception exception)
     {
         if (!m_enabled)
@@ -121,6 +154,10 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         }
     }
 
+    /// <summary>
+    /// Builds the arguments for the remote synchronization command.
+    /// </summary>
+    /// <returns>An array of command line arguments.</returns>
     private string[] BuildArguments()
     {
         string[] args = [
@@ -140,6 +177,13 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         return args;
     }
 
+    /// <summary>
+    /// Adds an option to the command line arguments if it is specified.
+    /// </summary>
+    /// <param name="optionKey">The key of the option in the options dictionary.</param>
+    /// <param name="toolOption">The command line flag for the option.</param>
+    /// <param name="defaultvalue">The default value if the option is not specified.</param>
+    /// <returns>An array of strings representing the option and its value, or the default value.</returns>
     private string[] AddOption(string optionKey, string toolOption, string[] defaultvalue)
     {
         if (!m_options.TryGetValue(optionKey, out var value))

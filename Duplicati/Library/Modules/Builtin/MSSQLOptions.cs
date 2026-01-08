@@ -30,6 +30,9 @@ using Duplicati.Library.Snapshots.Windows;
 
 namespace Duplicati.Library.Modules.Builtin
 {
+    /// <summary>
+    /// Provides options for Microsoft SQL Server backup.
+    /// </summary>
     public class MSSQLOptions : Interface.IGenericSourceModule
     {
         /// <summary>
@@ -42,31 +45,50 @@ namespace Duplicati.Library.Modules.Builtin
 
         #region IGenericModule Members
 
+        /// <summary>
+        /// Gets the key identifier for this module.
+        /// </summary>
         public string Key
         {
             get { return "mssql-options"; }
         }
 
+        /// <summary>
+        /// Gets the display name for this module.
+        /// </summary>
         public string DisplayName
         {
             get { return Strings.MSSQLOptions.DisplayName; }
         }
 
+        /// <summary>
+        /// Gets the description of this module.
+        /// </summary>
         public string Description
         {
             get { return Strings.MSSQLOptions.Description; }
         }
 
+        /// <summary>
+        /// Gets whether this module should be loaded by default.
+        /// </summary>
         public bool LoadAsDefault
         {
             get { return OperatingSystem.IsWindows(); }
         }
 
+        /// <summary>
+        /// Gets the list of supported command line arguments.
+        /// </summary>
         public IList<Interface.ICommandLineArgument> SupportedCommands
         {
             get { return null; }
         }
 
+        /// <summary>
+        /// Configures the module with the provided command line options.
+        /// </summary>
+        /// <param name="commandlineOptions">The command line options dictionary.</param>
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
             // Do nothing. Implementation needed for IGenericModule interface.
@@ -76,6 +98,13 @@ namespace Duplicati.Library.Modules.Builtin
 
         #region Implementation of IGenericSourceModule
 
+        /// <summary>
+        /// Parses the source paths for Microsoft SQL Server backups.
+        /// </summary>
+        /// <param name="paths">The source paths.</param>
+        /// <param name="filter">The filter string.</param>
+        /// <param name="commandlineOptions">The command line options.</param>
+        /// <returns>A dictionary of changed options.</returns>
         public Dictionary<string, string> ParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
@@ -100,6 +129,13 @@ namespace Duplicati.Library.Modules.Builtin
             return RealParseSourcePaths(ref paths, ref filter, commandlineOptions);
         }
 
+        /// <summary>
+        /// Parses the source paths for Microsoft SQL Server backups (real implementation).
+        /// </summary>
+        /// <param name="paths">The source paths.</param>
+        /// <param name="filter">The filter string.</param>
+        /// <param name="commandlineOptions">The command line options.</param>
+        /// <returns>A dictionary of changed options.</returns>
         // Make sure the JIT does not attempt to inline this call and thus load
         // referenced types from System.Management here
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
@@ -247,6 +283,11 @@ namespace Duplicati.Library.Modules.Builtin
             return changedOptions;
         }
 
+        /// <summary>
+        /// Determines whether the paths contain files for Microsoft SQL Server backup.
+        /// </summary>
+        /// <param name="paths">The paths to check.</param>
+        /// <returns>True if the paths contain Microsoft SQL Server files for backup.</returns>
         public bool ContainFilesForBackup(string[] paths)
         {
             if (paths == null || !OperatingSystem.IsWindows())

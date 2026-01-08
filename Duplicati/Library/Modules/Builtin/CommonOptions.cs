@@ -25,16 +25,34 @@ using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Modules.Builtin
 {
+    /// <summary>
+    /// Provides common options for modules.
+    /// </summary>
     public class CommonOptions : Interface.IConnectionModule, IDisposable
     {
+        /// <summary>
+        /// Gets the key identifier for this module.
+        /// </summary>
         public string Key => "common-options";
 
+        /// <summary>
+        /// Gets the display name for this module.
+        /// </summary>
         public string DisplayName => Strings.CommonOptions.DisplayName;
 
+        /// <summary>
+        /// Gets the description of this module.
+        /// </summary>
         public string Description => Strings.CommonOptions.Description;
 
+        /// <summary>
+        /// Gets whether this module should be loaded by default.
+        /// </summary>
         public bool LoadAsDefault => true;
 
+        /// <summary>
+        /// Gets the list of supported command line arguments.
+        /// </summary>
         public IList<Interface.ICommandLineArgument> SupportedCommands
             => [
                 .. TimeoutOptionsHelper.GetOptions(),
@@ -42,10 +60,17 @@ namespace Duplicati.Library.Modules.Builtin
                 .. AuthIdOptionsHelper.GetServerOnlyOptions(),
             ];
 
+        /// <summary>
+        /// Configures the module with the provided command line options.
+        /// </summary>
+        /// <param name="commandlineOptions">The command line options dictionary.</param>
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
         }
 
+        /// <summary>
+        /// Disposes of the resources used by this instance.
+        /// </summary>
         public void Dispose()
         {
         }

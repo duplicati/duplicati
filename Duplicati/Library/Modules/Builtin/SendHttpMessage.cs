@@ -305,6 +305,14 @@ namespace Duplicati.Library.Modules.Builtin
 
         #endregion
 
+        /// <summary>
+        /// Sends the message to the specified target.
+        /// </summary>
+        /// <param name="client">The HTTP client.</param>
+        /// <param name="target">The send request target.</param>
+        /// <param name="subject">The subject.</param>
+        /// <param name="body">The body.</param>
+        /// <returns>The exception if any.</returns>
         private async Task<Exception> SendMessage(HttpClient client, SendRequestType target, string subject, string body)
         {
             byte[] data;
