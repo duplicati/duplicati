@@ -275,13 +275,14 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             case RemoteSyncTriggerMode.Scheduled:
                 {
                     using var db = SQLiteLoader.LoadConnection(dbpath);
-                    using var cmd = db.CreateCommand(@"
+                    using var cmd = db.CreateCommand();
+                    cmd.CommandText = @"
                         SELECT ""Timestamp""
                         FROM ""Operation""
                         WHERE ""Description"" = @description
                         ORDER BY ""Timestamp"" DESC
                         LIMIT 1
-                    ");
+                    ";
                     cmd.AddNamedParameter("@description", description);
 
                     var lastSync = cmd.ExecuteScalar();
@@ -294,7 +295,8 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             case RemoteSyncTriggerMode.Counting:
                 {
                     using var db = SQLiteLoader.LoadConnection(dbpath);
-                    using var cmd = db.CreateCommand(@"
+                    using var cmd = db.CreateCommand();
+                    cmd.CommandText = @"
                         SELECT COUNT(*)
                         FROM ""Operation""
                         WHERE ""Description"" = 'Backup'
@@ -306,7 +308,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                                 ORDER BY ""Timestamp"" DESC LIMIT 1
                             ),
                             0
-                        )");
+                        )";
                     cmd.AddNamedParameter("@description", description);
 
                     var backupCount = (long)(cmd.ExecuteScalar() ?? 0L);
@@ -328,17 +330,18 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
 
         using var db = SQLiteLoader.LoadConnection(dbpath);
         using var transaction = db.BeginTransaction();
-        using var cmd = db.CreateCommand(@"
+        using var cmd = db.CreateCommand();
+        cmd.CommandText = @"
             INSERT INTO ""Operation"" (
                 ""Description"", ""Timestamp""
             )
             VALUES (
                 @description,
                 @timestamp
-            )")
-            .SetTransaction(transaction)
-            .AddNamedParameter("@description", $"Rsync {index}")
-            .AddNamedParameter("@timestamp", Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+            )";
+        cmd.SetTransaction(transaction);
+        cmd.AddNamedParameter("@description", $"Rsync {index}");
+        cmd.AddNamedParameter("@timestamp", Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
         cmd.ExecuteNonQuery();
         transaction.Commit();
     }
