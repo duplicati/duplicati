@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Backends;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
-namespace RemoteSynchronization
+#nullable enable
+
+namespace Duplicati.Library.Main.Backend
 {
     /// <summary>
     /// A lightweight backend manager that handles remote synchronization operations.
@@ -26,7 +30,7 @@ namespace RemoteSynchronization
     /// <param name="retryWithExponentialBackoff">Whether to use exponential backoff for retries.</param>
     public class LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false) : IDisposable
     {
-        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Program>();
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<LightWeightBackendManager>();
 
         public IBackend? _backend = null;
 
@@ -128,7 +132,7 @@ namespace RemoteSynchronization
                 return;
             }
 
-            _backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(_backendUrl, _options);
+            _backend = DynamicLoader.BackendLoader.GetBackend(_backendUrl, _options);
             _streamingBackend = _backend as IStreamingBackend;
             if (_streamingBackend == null || !_streamingBackend.SupportsStreaming)
             {
