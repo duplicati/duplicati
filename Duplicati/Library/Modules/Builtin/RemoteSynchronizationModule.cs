@@ -58,11 +58,6 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
 {
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<RemoteSynchronizationModule>();
 
-    private static readonly Regex ARGREGEX = new Regex(
-        @"(?<arg>(?<=\s|^)(""(?<value>[^""\\]*(?:\\.[^""\\]*)*)""|'(?<value>[^'\\]*(?:\\.[^'\\]*)*)'|(?<value>[^\s]+))\s?)",
-        RegexOptions.Compiled | RegexOptions.ExplicitCapture
-    );
-
     private const string OPTION_BACKEND_DST = "remote-sync-dst";
     private const string OPTION_FORCE = "remote-sync-force";
     private const string OPTION_RETENTION = "remote-sync-retention";
