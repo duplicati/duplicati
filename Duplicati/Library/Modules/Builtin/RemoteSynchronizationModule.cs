@@ -25,6 +25,7 @@ using System.Data;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
 using RemoteSynchronization;
@@ -216,33 +217,50 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         if (!m_options.TryGetValue("dbpath", out var dbpath) || string.IsNullOrWhiteSpace(dbpath))
             return false;
 
-        using var db = SQLiteLoader.LoadConnection(dbpath);
-        using var cmd = db.CreateCommand();
-
         switch (m_mode)
         {
             case RemoteSyncTriggerMode.Inline:
                 return true;
             case RemoteSyncTriggerMode.Scheduled:
-                // Find last remote sync operation
-                cmd.CommandText = "SELECT Timestamp FROM Operation WHERE Description = 'Remote Synchronization' ORDER BY Timestamp DESC LIMIT 1";
-                var lastSync = cmd.ExecuteScalar();
-                if (lastSync == null)
-                    return true; // No previous sync, trigger
-                var lastSyncTime = DateTime.FromFileTimeUtc((long)lastSync);
-                var now = DateTime.UtcNow;
-                return (now - lastSyncTime) >= m_schedule;
+                {
+                    using var db = SQLiteLoader.LoadConnection(dbpath);
+                    using var cmd = db.CreateCommand(@"
+                        SELECT ""Timestamp""
+                        FROM ""Operation ""
+                        WHERE ""Description"" = 'Remote Synchronization'
+                        ORDER BY ""Timestamp"" DESC
+                        LIMIT 1
+                    ");
+
+                    // Find last remote sync operation
+                    var lastSync = cmd.ExecuteScalar();
+                    if (lastSync is null)
+                        return true; // No previous sync, trigger
+                    var lastSyncTime = Utility.Utility.EPOCH.AddSeconds((long)lastSync);
+                    var now = DateTime.UtcNow;
+                    return (now - lastSyncTime) >= m_schedule;
+                }
             case RemoteSyncTriggerMode.Counting:
-                // Count backup operations since last sync
-                cmd.CommandText = @"
-                    SELECT COUNT(*) FROM Operation
-                    WHERE Description = 'Backup'
-                    AND Timestamp > COALESCE(
-                        (SELECT Timestamp FROM Operation WHERE Description = 'Remote Synchronization' ORDER BY Timestamp DESC LIMIT 1),
-                        0
-                    )";
-                var count = (long)cmd.ExecuteScalar();
-                return count >= m_count;
+                {
+                    using var db = SQLiteLoader.LoadConnection(dbpath);
+                    using var cmd = db.CreateCommand(@"
+                        SELECT COUNT(*)
+                        FROM ""Operation""
+                        WHERE ""Description"" = 'Backup'
+                        AND ""Timestamp"" > COALESCE(
+                            (
+                                SELECT ""Timestamp""
+                                FROM ""Operation""
+                                WHERE ""Description"" = 'Remote Synchronization'
+                                ORDER BY ""Timestamp"" DESC LIMIT 1
+                            ),
+                            0
+                        )");
+
+                    // Count backup operations since last sync
+                    var count = (long)(cmd.ExecuteScalar() ?? 0L);
+                    return count >= m_count;
+                }
             default:
                 return false;
         }
@@ -257,10 +275,19 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             return;
 
         using var db = SQLiteLoader.LoadConnection(dbpath);
-        using var cmd = db.CreateCommand();
-        cmd.CommandText = "INSERT INTO Operation (Description, Timestamp) VALUES ('Remote Synchronization', @timestamp)";
-        cmd.Parameters.AddWithValue("@timestamp", DateTime.UtcNow.ToFileTimeUtc());
+        using var transaction = db.BeginTransaction();
+        using var cmd = db.CreateCommand(@"
+            INSERT INTO ""Operation"" (
+                ""Description"", ""Timestamp""
+            )
+            VALUES (
+                'Remote Synchronization',
+                @timestamp
+            )")
+            .SetTransaction(transaction)
+            .AddNamedParameter("@timestamp", Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
         cmd.ExecuteNonQuery();
+        transaction.Commit();
     }
 
     /// <summary>
