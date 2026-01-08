@@ -97,6 +97,12 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string VerifyContentsLong { get { return LC.L(@"Verify file contents before overwriting destination files."); } }
         public static string VerifyGetAfterPutShort { get { return LC.L(@"Verify after upload"); } }
         public static string VerifyGetAfterPutLong { get { return LC.L(@"Verify files after uploading them."); } }
+        public static string ModeShort { get { return LC.L(@"Remote sync trigger mode"); } }
+        public static string ModeLong { get { return LC.L(@"Specify the trigger mode for remote synchronization: inline (default, after every backup), scheduled (after schedule has passed), counting (after N backups)."); } }
+        public static string ScheduleShort { get { return LC.L(@"Remote sync schedule"); } }
+        public static string ScheduleLong { get { return LC.L(@"Specify the schedule interval for remote synchronization, e.g. '7.00:00:00' for weekly."); } }
+        public static string CountShort { get { return LC.L(@"Remote sync backup count"); } }
+        public static string CountLong { get { return LC.L(@"Specify the number of backups after which to trigger remote synchronization."); } }
     }
     internal static class RunScript
     {
