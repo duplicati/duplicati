@@ -52,7 +52,7 @@ public enum RemoteSyncTriggerMode
 }
 
 /// <summary>
-/// Module for synchronizing backup data to a remote destination after a successful backup operation.
+/// Module for synchronizing backup data to remote destinations after a successful backup operation.
 /// </summary>
 public class RemoteSynchronizationModule : IGenericCallbackModule
 {
@@ -74,12 +74,12 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
 
     private IReadOnlyDictionary<string, string> m_options = new Dictionary<string, string>();
     private string m_source;
-    private string m_destination;
+    private List<string> m_destinations = [];
     private string m_operationName;
     private bool m_enabled;
-    private RemoteSyncTriggerMode m_mode = RemoteSyncTriggerMode.Inline;
-    private TimeSpan m_schedule = TimeSpan.Zero;
-    private int m_count = 0;
+    private List<RemoteSyncTriggerMode> m_modes = [];
+    private List<TimeSpan> m_schedules = [];
+    private List<int> m_counts = [];
 
     /// <summary>
     /// Gets the key identifier for this module.
@@ -120,23 +120,66 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     public void Configure(IDictionary<string, string> commandlineOptions)
     {
         m_options = commandlineOptions.AsReadOnly();
-        commandlineOptions.TryGetValue(OPTION_BACKEND_DST, out m_destination);
-        m_enabled = !string.IsNullOrWhiteSpace(m_destination);
+        m_destinations =
+            commandlineOptions.TryGetValue(OPTION_BACKEND_DST, out var dstStr)
+            && !string.IsNullOrWhiteSpace(dstStr)
+            ? [.. dstStr
+                .Split(',')
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                ]
+            : [];
+        m_enabled = m_destinations.Any();
 
         if (commandlineOptions.TryGetValue(OPTION_MODE, out var modeStr) && !string.IsNullOrWhiteSpace(modeStr))
         {
-            if (Enum.TryParse<RemoteSyncTriggerMode>(modeStr, true, out var mode))
-                m_mode = mode;
+            m_modes = [.. modeStr
+                .Split(',')
+                .Select(s => s.Trim())
+                .Select(s => Enum.TryParse<RemoteSyncTriggerMode>(s, true, out var mode)
+                ? mode : RemoteSyncTriggerMode.Inline)
+            ];
+        }
+        else
+        {
+            m_modes = [];
         }
 
         if (commandlineOptions.TryGetValue(OPTION_SCHEDULE, out var scheduleStr) && !string.IsNullOrWhiteSpace(scheduleStr))
         {
-            if (TimeSpan.TryParse(scheduleStr, out var schedule))
-                m_schedule = schedule;
+            m_schedules = [.. scheduleStr
+                .Split(',')
+                .Select(s => s.Trim())
+                .Select(s => TimeSpan.TryParse(s, out var ts)
+                ? ts : TimeSpan.Zero)
+            ];
+        }
+        else
+        {
+            m_schedules = [];
         }
 
-        if (commandlineOptions.TryGetValue(OPTION_COUNT, out var countStr) && int.TryParse(countStr, out var count))
-            m_count = count;
+        if (commandlineOptions.TryGetValue(OPTION_COUNT, out var countStr) && !string.IsNullOrWhiteSpace(countStr))
+        {
+            m_counts = [.. countStr
+                .Split(',')
+                .Select(s => s.Trim())
+                .Select(s => int.TryParse(s, out var c) ? c : 0)
+            ];
+        }
+        else
+        {
+            m_counts = new List<int>();
+        }
+
+        // Validate parameter lengths
+        var destCount = m_destinations.Count;
+        if (m_modes.Count != 0 && m_modes.Count != destCount)
+            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncConfigMismatch", null, "Number of modes ({0}) does not match number of destinations ({1}). Using defaults for missing values.", m_modes.Count, destCount);
+        if (m_schedules.Count != 0 && m_schedules.Count != destCount)
+            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncConfigMismatch", null, "Number of schedules ({0}) does not match number of destinations ({1}). Using defaults for missing values.", m_schedules.Count, destCount);
+        if (m_counts.Count != 0 && m_counts.Count != destCount)
+            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncConfigMismatch", null, "Number of counts ({0}) does not match number of destinations ({1}). Using defaults for missing values.", m_counts.Count, destCount);
     }
 
     /// <summary>
@@ -181,43 +224,56 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(m_source) || string.IsNullOrWhiteSpace(m_destination))
+        if (string.IsNullOrWhiteSpace(m_source) || m_destinations.Count == 0)
         {
-            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncMissingBackends", null, "Remote synchronization skipped because source or destination is missing.");
+            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncMissingBackends", null, "Remote synchronization skipped because source or destinations are missing.");
             return;
         }
 
-        if (!ShouldTriggerSync())
+        for (int i = 0; i < m_destinations.Count; i++)
         {
-            Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization skipped due to trigger mode conditions not met.");
-            return;
-        }
+            var dest = m_destinations[i];
+            if (string.IsNullOrWhiteSpace(dest))
+                continue;
 
-        RecordSyncOperation();
+            if (!ShouldTriggerSync(i))
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization to {0} skipped due to trigger mode conditions not met.", dest);
+                continue;
+            }
 
-        var args = BuildArguments();
-        try
-        {
-            var exitCode = RemoteSynchronizationRunner.RunAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
-            if (exitCode != 0)
-                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization failed with exit code {0}.", exitCode);
-        }
-        catch (Exception ex)
-        {
-            Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization failed: {0}", ex.Message);
+            RecordSyncOperation(i);
+
+            var args = BuildArguments(dest);
+
+            try
+            {
+                var exitCode = RemoteSynchronizationRunner.RunAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
+                if (exitCode != 0)
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", dest, ex.Message);
+            }
         }
     }
-
     /// <summary>
-    /// Checks if remote synchronization should be triggered based on the configured mode.
+    /// Checks if remote synchronization should be triggered for the specified destination based on the configured mode.
     /// </summary>
+    /// <param name="index">The index of the destination in the list.</param>
     /// <returns>True if synchronization should be triggered.</returns>
-    private bool ShouldTriggerSync()
+    private bool ShouldTriggerSync(int index)
     {
         if (!m_options.TryGetValue("dbpath", out var dbpath) || string.IsNullOrWhiteSpace(dbpath))
             return false;
 
-        switch (m_mode)
+        var mode = index < m_modes.Count ? m_modes[index] : RemoteSyncTriggerMode.Inline;
+        var schedule = index < m_schedules.Count ? m_schedules[index] : TimeSpan.Zero;
+        var count = index < m_counts.Count ? m_counts[index] : 0;
+        var description = $"Rsync {index}";
+
+        switch (mode)
         {
             case RemoteSyncTriggerMode.Inline:
                 return true;
@@ -226,19 +282,19 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                     using var db = SQLiteLoader.LoadConnection(dbpath);
                     using var cmd = db.CreateCommand(@"
                         SELECT ""Timestamp""
-                        FROM ""Operation ""
-                        WHERE ""Description"" = 'Remote Synchronization'
+                        FROM ""Operation""
+                        WHERE ""Description"" = @description
                         ORDER BY ""Timestamp"" DESC
                         LIMIT 1
                     ");
+                    cmd.AddNamedParameter("@description", description);
 
-                    // Find last remote sync operation
                     var lastSync = cmd.ExecuteScalar();
                     if (lastSync is null)
-                        return true; // No previous sync, trigger
+                        return true;
                     var lastSyncTime = Utility.Utility.EPOCH.AddSeconds((long)lastSync);
                     var now = DateTime.UtcNow;
-                    return (now - lastSyncTime) >= m_schedule;
+                    return (now - lastSyncTime) >= schedule;
                 }
             case RemoteSyncTriggerMode.Counting:
                 {
@@ -251,15 +307,15 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                             (
                                 SELECT ""Timestamp""
                                 FROM ""Operation""
-                                WHERE ""Description"" = 'Remote Synchronization'
+                                WHERE ""Description"" = @description
                                 ORDER BY ""Timestamp"" DESC LIMIT 1
                             ),
                             0
                         )");
+                    cmd.AddNamedParameter("@description", description);
 
-                    // Count backup operations since last sync
-                    var count = (long)(cmd.ExecuteScalar() ?? 0L);
-                    return count >= m_count;
+                    var backupCount = (long)(cmd.ExecuteScalar() ?? 0L);
+                    return backupCount >= count;
                 }
             default:
                 return false;
@@ -269,7 +325,8 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     /// <summary>
     /// Records a remote synchronization operation in the database.
     /// </summary>
-    private void RecordSyncOperation()
+    /// <param name="index">The index of the destination.</param>
+    private void RecordSyncOperation(int index)
     {
         if (!m_options.TryGetValue("dbpath", out var dbpath) || string.IsNullOrWhiteSpace(dbpath))
             return;
@@ -281,10 +338,11 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                 ""Description"", ""Timestamp""
             )
             VALUES (
-                'Remote Synchronization',
+                @description,
                 @timestamp
             )")
             .SetTransaction(transaction)
+            .AddNamedParameter("@description", $"Rsync {index}")
             .AddNamedParameter("@timestamp", Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
         cmd.ExecuteNonQuery();
         transaction.Commit();
@@ -293,12 +351,13 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     /// <summary>
     /// Builds the arguments for the remote synchronization command.
     /// </summary>
+    /// <param name="dest">The destination backend string.</param>
     /// <returns>An array of command line arguments.</returns>
-    private string[] BuildArguments()
+    private string[] BuildArguments(string dest)
     {
         string[] args = [
             m_source,
-            m_destination,
+            dest,
             .. AddOption(OPTION_BACKEND_RETRIES, "--backend-retries", []),
             .. AddOption(OPTION_FORCE, "--force", []),
             .. AddOption(OPTION_RETENTION, "--retention", []),

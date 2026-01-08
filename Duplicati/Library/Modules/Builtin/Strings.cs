@@ -60,7 +60,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string BackendSourceShort { get { return LC.L(@"Remote sync source backend"); } }
         public static string BackendSourceLong { get { return LC.L(@"Specify the source backend string for remote synchronization. If not set, the current backup destination is used."); } }
         public static string BackendDestinationShort { get { return LC.L(@"Remote sync destination backend"); } }
-        public static string BackendDestinationLong { get { return LC.L(@"Specify the destination backend string for remote synchronization."); } }
+        public static string BackendDestinationLong { get { return LC.L(@"Specify the destination backend strings for remote synchronization, comma-separated."); } }
         public static string AutoCreateFoldersShort { get { return LC.L(@"Create destination folders"); } }
         public static string AutoCreateFoldersLong { get { return LC.L(@"Automatically create folders in the destination backend if they do not exist."); } }
         public static string BackendRetriesShort { get { return LC.L(@"Backend retries"); } }
@@ -98,11 +98,11 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string VerifyGetAfterPutShort { get { return LC.L(@"Verify after upload"); } }
         public static string VerifyGetAfterPutLong { get { return LC.L(@"Verify files after uploading them."); } }
         public static string ModeShort { get { return LC.L(@"Remote sync trigger mode"); } }
-        public static string ModeLong { get { return LC.L(@"Specify the trigger mode for remote synchronization: inline (default, after every backup), scheduled (after schedule has passed), counting (after N backups)."); } }
+        public static string ModeLong { get { return LC.L(@"Specify the trigger modes for remote synchronization, comma-separated: inline (default, after every backup), scheduled (after schedule has passed), counting (after N backups)."); } }
         public static string ScheduleShort { get { return LC.L(@"Remote sync schedule"); } }
-        public static string ScheduleLong { get { return LC.L(@"Specify the schedule interval for remote synchronization, e.g. '7.00:00:00' for weekly."); } }
+        public static string ScheduleLong { get { return LC.L(@"Specify the schedule intervals for remote synchronization, comma-separated, e.g. '7.00:00:00,14.00:00:00'."); } }
         public static string CountShort { get { return LC.L(@"Remote sync backup count"); } }
-        public static string CountLong { get { return LC.L(@"Specify the number of backups after which to trigger remote synchronization."); } }
+        public static string CountLong { get { return LC.L(@"Specify the numbers of backups after which to trigger remote synchronization, comma-separated."); } }
     }
     internal static class RunScript
     {
