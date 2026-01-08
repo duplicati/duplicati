@@ -24,8 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Modules.Builtin;
 
 namespace Duplicati.Library.DynamicLoader
 {
@@ -34,6 +34,62 @@ namespace Duplicati.Library.DynamicLoader
     /// </summary>
     public static class GenericLoader
     {
+        private const string BUILTIN_GENERIC_MODULES_ASSEMBLY_NAME = "Duplicati.Library.Modules.Builtin";
+
+        private static IEnumerable<IGenericModule> GetBuiltInGenericModules()
+        {
+            // We avoid a compile-time dependency on Duplicati.Library.Modules.Builtin here to keep
+            // the dependency direction clean (DynamicLoader should not require Builtin modules).
+            //
+            // Instead, we attempt to load the built-in modules assembly by name and reflect its
+            // exported types to find IGenericModule implementations.
+            Assembly? builtinAsm = null;
+            try
+            {
+                builtinAsm = Assembly.Load(BUILTIN_GENERIC_MODULES_ASSEMBLY_NAME);
+            }
+            catch
+            {
+                // Ignore: built-in modules might not be present in all build configurations.
+            }
+
+            if (builtinAsm == null)
+                yield break;
+
+            Type[] types;
+            try
+            {
+                types = builtinAsm.GetExportedTypes();
+            }
+            catch
+            {
+                yield break;
+            }
+
+            foreach (var t in types)
+            {
+                if (!typeof(IGenericModule).IsAssignableFrom(t))
+                    continue;
+                if (t.IsAbstract || !t.IsClass)
+                    continue;
+                if (t.GetConstructor(Type.EmptyTypes) == null)
+                    continue;
+
+                IGenericModule? module = null;
+                try
+                {
+                    module = Activator.CreateInstance(t) as IGenericModule;
+                }
+                catch
+                {
+                    // Ignore misbehaving modules during discovery.
+                }
+
+                if (module != null)
+                    yield return module;
+            }
+        }
+
         /// <summary>
         /// Implementation overrides specific to generic module use
         /// </summary>
@@ -57,7 +113,7 @@ namespace Duplicati.Library.DynamicLoader
             /// The built-in modules
             /// </summary>
             protected override IEnumerable<IGenericModule> BuiltInModules
-                => GenericModules.BuiltInGenericModules;
+                => GetBuiltInGenericModules();
 
             /// <summary>
             /// Creates a new instance of the module based on the key
