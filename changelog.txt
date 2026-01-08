@@ -1,3 +1,60 @@
+2026-01-08 - 2.2.0.103_canary_2026-01-08
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+This version re-introduces the Synology native package, adds support for remote locking of files, and fixes a number of minor issues.
+
+## Synology native package
+The Synology native package has been re-developed to support the new Synology DSM 7.2 and above.
+This package installs as any other Synology package and uses the integrated DSM authentication to guard access, so only system admins can use Duplicati.
+To use the package, you need to grant access to the shared folders that you want to back up.
+
+## Remote locking of files
+This release adds support for remote locking of files, which is useful for example when using Duplicati with a remote storage provider that supports locking, such as S3 or Azure Blob Storage.
+The feature works by completing the backup as usual, and then locking all files that are required to restore the backup.
+The locking is done by asking the remote storage provider to lock the files, such that it is not possible to delete or overwrite the required files until the lock expires.
+Duplicati then keeps track of the locks and avoids attempting to delete or overwrite the locked files.
+
+To use the feature, set the advanced option `--remote-file-lock-duration` to the duration of the lock, for example `30D` for 30 days.
+
+Since locking requires support from the remote storage provider, this feature is only available for certain backends. 
+The locking is currently supported for S3, Azure Blob Storage, Backblaze B2, and iDrive e2.
+
+Each of the backends that currently support locking also have a property to set the locking mode to either `governance` (default) or `compliance`.
+The `governance` mode allows the lock to be removed in the admin console for the storage provider, while the `compliance` mode does not allow the lock to be removed.
+
+If using this feature, note that each provider has different requirements for the bucket, usually requiring versioning to be enabled.
+For S3 and B2, deleting the files after the lock expires will create a delete marker, which means that you will still be billed for the storage of the files, and need to set up lifecycle rules to actually delete the files after the lock expires.
+For Azure Blob Storage, deleting the files after the lock expires will delete the files immediately.
+
+## Change to default database encryption
+Carried over from 2.2.0.102_canary_2025-12-12, this release has a "default secret provider" for the current OS.
+The mapping is:
+- Windows: Windows Credential Manager
+- MacOS: Keychain
+- Linux: libSecret (Gnome Keyring), or commandline `pass` if available
+
+**Warning**: If there is no secret provider set, this change will cause the **database to be encrypted** with a random password, and the password will be stored in the default secret provider for the current OS.
+
+## Detailed list of changes:
+- Added Internxt S3 hostnames
+- Added improved support for hosting ngclient behind a reverse proxy
+- Added support for new API for remote management
+- Added support for remote locking of files
+- Re-introduced the Synology native package
+- Removed AWS specific labels on S3 options
+- Fixed a bug with testing on an empty destination
+- Added support for authentication regions with S3, particularly for Minio
+
+## ngclient changes:
+- Added support for serving behind a reverse proxy
+- Added support for hosting in an iframe, if configured
+- Improved handling auth attempts so successful re-auth is not shown as messages
+- Fixed proxied auth and websocket authentication
+- Fixed advanced options for rclone not working
+- Fixed hide connection status not showing when not connected
+
 2025-12-12 - 2.2.0.102_canary_2025-12-12
 ==========
 This release is a canary release intended to be used for testing.
