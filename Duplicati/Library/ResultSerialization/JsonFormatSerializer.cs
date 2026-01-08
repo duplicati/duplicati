@@ -27,7 +27,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace Duplicati.Library.Modules.Builtin.ResultSerialization
+namespace Duplicati.Library.ResultSerialization
 {
     /// <summary>
     /// Implements serialization of results to JSON

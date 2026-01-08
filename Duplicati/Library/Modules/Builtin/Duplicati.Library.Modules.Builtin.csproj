@@ -24,7 +24,9 @@
     <ProjectReference Include="..\..\Snapshots\Duplicati.Library.Snapshots.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
+    <ProjectReference Include="..\..\ResultSerialization\Duplicati.Library.ResultSerialization.csproj" />
     <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
+    <ProjectReference Include="..\..\RemoteSynchronization\Duplicati.Library.RemoteSynchronization.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" $([System.Text.RegularExpressions.Regex]::IsMatch('$(RuntimeIdentifier)', '^win-')) Or '$(RuntimeIdentifier)' == '' ">

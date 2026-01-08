@@ -68,6 +68,7 @@
     <Project Path="Duplicati/Library/Compression/Duplicati.Library.Compression.csproj" />
     <Project Path="Duplicati/Library/Crashlog/Duplicati.Library.Crashlog.csproj" />
     <Project Path="Duplicati/Library/DynamicLoader/Duplicati.Library.DynamicLoader.csproj" />
+    <Project Path="Duplicati/Library/ResultSerialization/Duplicati.Library.ResultSerialization.csproj" />
     <Project Path="Duplicati/Library/SQLiteHelper/Duplicati.Library.SQLiteHelper.csproj" />
     <Project Path="Duplicati/PackageRef/Duplicati.PackageRef.csproj" />
   </Folder>

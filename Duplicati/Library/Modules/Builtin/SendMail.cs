@@ -24,6 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Duplicati.Library.Interface;
+using Duplicati.Library.ResultSerialization;
 using MailKit.Net.Smtp;
 using MimeKit;
 using DnsClient;

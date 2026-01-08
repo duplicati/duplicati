@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
+using Duplicati.Library.ResultSerialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;

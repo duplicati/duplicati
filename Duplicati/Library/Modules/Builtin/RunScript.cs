@@ -24,7 +24,7 @@ using System.IO;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Modules.Builtin.ResultSerialization;
+using Duplicati.Library.ResultSerialization;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Linq;

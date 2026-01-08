@@ -26,7 +26,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Modules.Builtin.ResultSerialization;
+using Duplicati.Library.ResultSerialization;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Modules.Builtin

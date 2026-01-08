@@ -25,6 +25,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.ResultSerialization;
 using Duplicati.Library.Utility;
 using Uri = System.Uri;
 

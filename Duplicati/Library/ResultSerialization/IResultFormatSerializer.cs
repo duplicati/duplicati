@@ -18,12 +18,29 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System;
+using System.Collections.Generic;
 
-namespace Duplicati.Library.Modules.Builtin
+namespace Duplicati.Library.ResultSerialization
 {
-    public enum ResultExportFormat
+    /// <summary>
+    /// Interface for describing a result serializer
+    /// </summary>
+    public interface IResultFormatSerializer
     {
-        Duplicati,
-        Json
+        /// <summary>
+        /// Serialize the specified result and logLines.
+        /// </summary>
+        /// <returns>The serialized result string.</returns>
+        /// <param name="result">The result to serialize.</param>
+        /// <param name="exception">An optional failure exception, or null</param>
+        /// <param name="loglines">The log lines to serialize.</param>
+        /// <param name="additional">Additional parameters to include</param>
+        string Serialize(object result, Exception exception, IEnumerable<string> loglines, Dictionary<string, string> additional);
+
+        /// <summary>
+        /// Returns the format that the serializer represents
+        /// </summary>
+        ResultExportFormat Format { get; }
     }
 }
