@@ -191,7 +191,7 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
 
-            // Create Operation table
+            // Create Operation table as we're now calling outside of the Controller
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
@@ -478,6 +478,10 @@ namespace Duplicati.UnitTest
         [Category("RemoteSync")]
         public void TestShouldTriggerSync_MissingDbPath_ReturnsFalse()
         {
+            // This case shouldn't occur in normal operation, as a backup will
+            // always have an associated database. However, if such a state
+            // should occur, we want to ensure the module doesn't trigger a sync,
+            // as the state is likely errornous.
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
@@ -670,9 +674,11 @@ namespace Duplicati.UnitTest
             Assert.IsNotEmpty(module.Description);
             Assert.IsTrue(module.LoadAsDefault);
 
+            // Check the number of supported commands. Count should be updated
+            // if commands are added or removed.
             var supportedCommands = module.SupportedCommands;
             Assert.IsNotNull(supportedCommands);
-            Assert.AreEqual(8, supportedCommands.Count); // Check the number of supported commands
+            Assert.AreEqual(8, supportedCommands.Count);
         }
 
         [Test]
