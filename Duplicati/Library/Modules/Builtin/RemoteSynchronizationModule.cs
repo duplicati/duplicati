@@ -331,6 +331,13 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     /// <param name="index">The index of the destination.</param>
     private void RecordSyncOperation(int index)
     {
+        // Validate index
+        if (index < 0 || index >= m_destinations.Count)
+        {
+            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncRecordInvalidIndex", null, "Cannot record remote synchronization operation: invalid index {0}.", index);
+            return;
+        }
+
         if (!m_options.TryGetValue("dbpath", out var dbpath) || string.IsNullOrWhiteSpace(dbpath))
             return;
 

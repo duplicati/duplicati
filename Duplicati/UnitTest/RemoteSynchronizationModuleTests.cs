@@ -889,6 +889,7 @@ namespace Duplicati.UnitTest
         [Category("RemoteSync")]
         public void TestRecordSyncOperation_WithDifferentIndex()
         {
+            // Incorrect index should not record, but throw a warning.
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
@@ -910,7 +911,7 @@ namespace Duplicati.UnitTest
                 WHERE ""Description"" = 'Rsync 2'
             ";
             var count = (long)cmd.ExecuteScalar();
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(0, count);
         }
 
         [Test]
