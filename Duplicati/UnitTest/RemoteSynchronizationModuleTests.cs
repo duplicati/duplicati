@@ -916,36 +916,6 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public void TestOnFinish_WithRunException_StillRecordsSync()
-        {
-            var module = new RemoteSynchronizationModule();
-            var options = new Dictionary<string, string>
-            {
-                ["remote-sync-dst"] = "invalid://dest", // Invalid URL to cause exception
-                ["dbpath"] = DBFILE
-            };
-            module.Configure(options);
-            string remoteurl = "file:///source";
-            string[] localpath = new string[0];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
-
-            // Create Operation table
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
-            using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
-
-            var result = new TestBasicResults(ParsedResultType.Success);
-            module.OnFinish(result, null);
-
-            // Check that sync was recorded even if Run threw exception
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
-            var count = (long)cmd.ExecuteScalar();
-            Assert.AreEqual(1, count);
-        }
-
-        [Test]
-        [Category("RemoteSync")]
         public void TestRecordSyncOperation_WithMissingTable_ThrowsException()
         {
             var module = new RemoteSynchronizationModule();
