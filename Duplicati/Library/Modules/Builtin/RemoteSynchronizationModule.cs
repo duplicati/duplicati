@@ -122,9 +122,9 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                 .Split(',')
                 .Select(s => s.Trim())
                 .Where(s => !string.IsNullOrWhiteSpace(s))
-                ]
+            ]
             : [];
-        m_enabled = m_destinations.Any();
+        m_enabled = m_destinations.Count != 0;
 
         if (commandlineOptions.TryGetValue(OPTION_MODE, out var modeStr) && !string.IsNullOrWhiteSpace(modeStr))
         {
@@ -164,7 +164,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         }
         else
         {
-            m_counts = new List<int>();
+            m_counts = [];
         }
 
         // Validate parameter lengths

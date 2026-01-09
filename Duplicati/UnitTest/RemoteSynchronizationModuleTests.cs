@@ -37,6 +37,18 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class RemoteSynchronizationModuleTests : BasicSetupHelper
     {
+        const System.Reflection.BindingFlags BINDING_FLAGS = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+
+        private static void EnsureOperationTableCreated(Microsoft.Data.Sqlite.SqliteCommand cmd)
+        {
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""Operation"" (
+                    ""Description"" TEXT,
+                    ""Timestamp"" INTEGER
+                )";
+            cmd.ExecuteNonQuery();
+        }
+
         [Test]
         [Category("RemoteSync")]
         public void TestConfigure_SingleDestination()
@@ -49,7 +61,7 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<string>;
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<string>;
             Assert.AreEqual(1, destinations.Count);
             Assert.AreEqual("file:///test/dest", destinations[0]);
         }
@@ -66,7 +78,7 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<string>;
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<string>;
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual("file:///test/dest1", destinations[0]);
             Assert.AreEqual("file:///test/dest2", destinations[1]);
@@ -85,7 +97,7 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var modes = module.GetType().GetField("m_modes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<RemoteSyncTriggerMode>;
+            var modes = module.GetType().GetField("m_modes", BINDING_FLAGS).GetValue(module) as List<RemoteSyncTriggerMode>;
             Assert.AreEqual(2, modes.Count);
             Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[0]);
             Assert.AreEqual(RemoteSyncTriggerMode.Scheduled, modes[1]);
@@ -104,7 +116,7 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var schedules = module.GetType().GetField("m_schedules", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<TimeSpan>;
+            var schedules = module.GetType().GetField("m_schedules", BINDING_FLAGS).GetValue(module) as List<TimeSpan>;
             Assert.AreEqual(2, schedules.Count);
             Assert.AreEqual(TimeSpan.FromHours(1), schedules[0]);
             Assert.AreEqual(TimeSpan.FromHours(2), schedules[1]);
@@ -123,7 +135,7 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var counts = module.GetType().GetField("m_counts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<int>;
+            var counts = module.GetType().GetField("m_counts", BINDING_FLAGS).GetValue(module) as List<int>;
             Assert.AreEqual(2, counts.Count);
             Assert.AreEqual(5, counts[0]);
             Assert.AreEqual(10, counts[1]);
@@ -141,10 +153,10 @@ namespace Duplicati.UnitTest
             module.Configure(options);
 
             string remoteurl = "file:///source";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("Backup", ref remoteurl, ref localpath);
 
-            var source = module.GetType().GetField("m_source", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as string;
+            var source = module.GetType().GetField("m_source", BINDING_FLAGS).GetValue(module) as string;
             Assert.AreEqual("file:///source", source);
         }
 
@@ -161,7 +173,7 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 });
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -182,10 +194,9 @@ namespace Duplicati.UnitTest
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
+            EnsureOperationTableCreated(cmd);
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 });
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -206,14 +217,20 @@ namespace Duplicati.UnitTest
             // Create Operation table and simulate 2 backups
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = "INSERT INTO \"Operation\" (\"Description\", \"Timestamp\") VALUES ('Backup', @ts)";
-            cmd.AddNamedParameter("@ts", Duplicati.Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+            EnsureOperationTableCreated(cmd);
+            cmd.CommandText = @"
+                INSERT INTO ""Operation"" (
+                    ""Description"",
+                    ""Timestamp""
+                ) VALUES (
+                    'Backup',
+                    @ts
+                )";
+            cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             cmd.ExecuteNonQuery();
             cmd.ExecuteNonQuery();
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 });
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -232,12 +249,16 @@ namespace Duplicati.UnitTest
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
+            EnsureOperationTableCreated(cmd);
             cmd.ExecuteNonQuery();
 
-            module.GetType().GetMethod("RecordSyncOperation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 });
+            module.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(module, [0]);
 
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" = 'Rsync 0'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(1, count);
         }
@@ -256,9 +277,9 @@ namespace Duplicati.UnitTest
             module.Configure(options);
 
             // Set m_source
-            module.GetType().GetField("m_source", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(module, "file:///source");
+            module.GetType().GetField("m_source", BINDING_FLAGS).SetValue(module, "file:///source");
 
-            var args = module.GetType().GetMethod("BuildArguments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { "file:///dest" }) as string[];
+            var args = module.GetType().GetMethod("BuildArguments", BINDING_FLAGS).Invoke(module, ["file:///dest"]) as string[];
 
             Assert.IsTrue(args.Contains("file:///source"));
             Assert.IsTrue(args.Contains("file:///dest"));
@@ -279,19 +300,21 @@ namespace Duplicati.UnitTest
             options["dbpath"] = DBFILE;
 
             // Run actual backup
-            using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
-            using (var controller = new Duplicati.Library.Main.Controller("file://" + TARGETFOLDER, options, console))
-            {
-                var result = controller.Backup(new string[] { DATAFOLDER });
+            using var console = new CommandLine.ConsoleOutput(Console.Out, options);
+            using var controller = new Controller("file://" + TARGETFOLDER, options, console);
+            var result = controller.Backup([DATAFOLDER]);
 
-                // Now check if sync was triggered (assuming module was loaded)
-                // But since we can't easily get the module instance, check if Operation table has sync entry
-                using var db = SQLiteLoader.LoadConnection(DBFILE);
-                using var cmd = db.CreateCommand();
-                cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" LIKE 'Rsync %'";
-                var count = (long)cmd.ExecuteScalar();
-                Assert.AreEqual(1, count);
-            }
+            // Now check if sync was triggered (assuming module was loaded)
+            // But since we can't easily get the module instance, check if Operation table has sync entry
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" LIKE 'Rsync %'
+            ";
+            var count = (long)cmd.ExecuteScalar();
+            Assert.AreEqual(1, count);
         }
 
         [Test]
@@ -306,20 +329,23 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
             string remoteurl = "file:///source";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("Backup", ref remoteurl, ref localpath);
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
+            EnsureOperationTableCreated(cmd);
 
             var result = new TestBasicResults(ParsedResultType.Error);
             module.OnFinish(result, null);
 
             // Check if sync was not recorded
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" = 'Rsync 0'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(0, count);
         }
@@ -337,7 +363,7 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var modes = module.GetType().GetField("m_modes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<RemoteSyncTriggerMode>;
+            var modes = module.GetType().GetField("m_modes", BINDING_FLAGS).GetValue(module) as List<RemoteSyncTriggerMode>;
             Assert.AreEqual(2, modes.Count);
             Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[0]);
             Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[1]); // Invalid defaults to Inline
@@ -356,7 +382,7 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var schedules = module.GetType().GetField("m_schedules", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<TimeSpan>;
+            var schedules = module.GetType().GetField("m_schedules", BINDING_FLAGS).GetValue(module) as List<TimeSpan>;
             Assert.AreEqual(2, schedules.Count);
             Assert.AreEqual(TimeSpan.FromHours(1), schedules[0]);
             Assert.AreEqual(TimeSpan.Zero, schedules[1]); // Invalid defaults to Zero
@@ -375,7 +401,7 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var counts = module.GetType().GetField("m_counts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<int>;
+            var counts = module.GetType().GetField("m_counts", BINDING_FLAGS).GetValue(module) as List<int>;
             Assert.AreEqual(2, counts.Count);
             Assert.AreEqual(5, counts[0]);
             Assert.AreEqual(0, counts[1]); // Invalid defaults to 0
@@ -398,13 +424,19 @@ namespace Duplicati.UnitTest
             // Create Operation table and insert recent sync
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = "INSERT INTO \"Operation\" (\"Description\", \"Timestamp\") VALUES ('Rsync 0', @ts)";
-            cmd.AddNamedParameter("@ts", Duplicati.Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+            EnsureOperationTableCreated(cmd);
+            cmd.CommandText = @"
+                INSERT INTO ""Operation"" (
+                    ""Description"",
+                    ""Timestamp""
+                ) VALUES (
+                    'Rsync 0',
+                    @ts
+                )";
+            cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             cmd.ExecuteNonQuery();
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 });
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
             Assert.IsFalse(shouldTrigger);
         }
 
@@ -425,14 +457,20 @@ namespace Duplicati.UnitTest
             // Create Operation table and simulate 2 backups (less than 5)
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = "INSERT INTO \"Operation\" (\"Description\", \"Timestamp\") VALUES ('Backup', @ts)";
-            cmd.AddNamedParameter("@ts", Duplicati.Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+            EnsureOperationTableCreated(cmd);
+            cmd.CommandText = @"
+                INSERT INTO ""Operation"" (
+                    ""Description"",
+                    ""Timestamp""
+                ) VALUES (
+                    'Backup',
+                    @ts
+                )";
+            cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             cmd.ExecuteNonQuery();
             cmd.ExecuteNonQuery();
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 });
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
             Assert.IsFalse(shouldTrigger);
         }
 
@@ -449,7 +487,7 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 });
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
             Assert.IsFalse(shouldTrigger);
         }
 
@@ -465,7 +503,7 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
             string remoteurl = "file:///source";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("Restore", ref remoteurl, ref localpath); // Non-backup operation
 
             var result = new TestBasicResults(ParsedResultType.Success);
@@ -474,9 +512,12 @@ namespace Duplicati.UnitTest
             // Check if sync was not recorded
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
+            EnsureOperationTableCreated(cmd);
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" = 'Rsync 0'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(0, count);
         }
@@ -493,7 +534,7 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
             string remoteurl = "file:///source";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("Backup", ref remoteurl, ref localpath);
 
             var result = new TestBasicResults(ParsedResultType.Success);
@@ -503,9 +544,12 @@ namespace Duplicati.UnitTest
             // Check if sync was not recorded
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
+            EnsureOperationTableCreated(cmd);
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" = 'Rsync 0'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(0, count);
         }
@@ -522,7 +566,7 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
             string remoteurl = "file:///source";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("Backup", ref remoteurl, ref localpath);
 
             var result = new TestBasicResults(ParsedResultType.Fatal);
@@ -531,9 +575,12 @@ namespace Duplicati.UnitTest
             // Check if sync was not recorded
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
+            EnsureOperationTableCreated(cmd);
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" = 'Rsync 0'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(0, count);
         }
@@ -554,9 +601,9 @@ namespace Duplicati.UnitTest
             module.Configure(options);
 
             // Set m_source
-            module.GetType().GetField("m_source", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(module, "file:///source");
+            module.GetType().GetField("m_source", BINDING_FLAGS).SetValue(module, "file:///source");
 
-            var args = module.GetType().GetMethod("BuildArguments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { "file:///dest" }) as string[];
+            var args = module.GetType().GetMethod("BuildArguments", BINDING_FLAGS).Invoke(module, ["file:///dest"]) as string[];
 
             Assert.IsTrue(args.Contains("file:///source"));
             Assert.IsTrue(args.Contains("file:///dest"));
@@ -584,7 +631,7 @@ namespace Duplicati.UnitTest
             module.Configure(options);
 
             // Should not throw exception
-            Assert.DoesNotThrow(() => module.GetType().GetMethod("RecordSyncOperation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 }));
+            Assert.DoesNotThrow(() => module.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(module, [0]));
         }
 
         [Test]
@@ -600,8 +647,8 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<string>;
-            var modes = module.GetType().GetField("m_modes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<RemoteSyncTriggerMode>;
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<string>;
+            var modes = module.GetType().GetField("m_modes", BINDING_FLAGS).GetValue(module) as List<RemoteSyncTriggerMode>;
 
             Assert.AreEqual(3, destinations.Count);
             Assert.AreEqual(2, modes.Count); // Modes list has the provided values, defaults used for missing indices
@@ -637,26 +684,30 @@ namespace Duplicati.UnitTest
             module.Configure(options);
 
             // Manually set destinations including empty and enable
-            var destinationsField = module.GetType().GetField("m_destinations", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var destinationsField = module.GetType().GetField("m_destinations", BINDING_FLAGS);
             destinationsField.SetValue(module, new List<string> { "file:///valid", "", "file:///another" });
-            var enabledField = module.GetType().GetField("m_enabled", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var enabledField = module.GetType().GetField("m_enabled", BINDING_FLAGS);
             enabledField.SetValue(module, true);
 
             string remoteurl = "file:///source";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("Backup", ref remoteurl, ref localpath);
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
+            EnsureOperationTableCreated(cmd);
 
             var result = new TestBasicResults(ParsedResultType.Success);
             module.OnFinish(result, null);
 
             // Check that two syncs were recorded (skipping the empty one)
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" LIKE 'Rsync %'";
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description""
+                LIKE 'Rsync %'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(2, count); // Two valid destinations, empty skipped
         }
@@ -674,7 +725,7 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 1 }); // Index 1, but only 1 destination
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [1]); // Index 1, but only 1 destination
             Assert.IsTrue(shouldTrigger); // Uses default Inline, which is true
         }
 
@@ -689,8 +740,8 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
 
-            var addOptionMethod = module.GetType().GetMethod("AddOption", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var result = (string[])addOptionMethod.Invoke(module, new object[] { "remote-sync-retry", "--retry", new string[0] });
+            var addOptionMethod = module.GetType().GetMethod("AddOption", BINDING_FLAGS);
+            var result = (string[])addOptionMethod.Invoke(module, ["remote-sync-retry", "--retry", Array.Empty<string>()]);
 
             Assert.AreEqual(0, result.Length); // Should return default empty array
         }
@@ -707,13 +758,13 @@ namespace Duplicati.UnitTest
             module.Configure(options);
 
             // Set m_source manually
-            module.GetType().GetField("m_source", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(module, "file:///existing");
+            module.GetType().GetField("m_source", BINDING_FLAGS).SetValue(module, "file:///existing");
 
             string remoteurl = "file:///new";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("Backup", ref remoteurl, ref localpath);
 
-            var source = module.GetType().GetField("m_source", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as string;
+            var source = module.GetType().GetField("m_source", BINDING_FLAGS).GetValue(module) as string;
             Assert.AreEqual("file:///existing", source); // Should not overwrite
         }
 
@@ -731,23 +782,33 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
             string remoteurl = "file:///source";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("Backup", ref remoteurl, ref localpath);
 
             // Create Operation table and insert recent sync for dest2
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = "INSERT INTO \"Operation\" (\"Description\", \"Timestamp\") VALUES ('Rsync 1', @ts)";
-            cmd.AddNamedParameter("@ts", Duplicati.Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+            EnsureOperationTableCreated(cmd);
+            cmd.CommandText = @"
+                INSERT INTO ""Operation"" (
+                    ""Description"",
+                    ""Timestamp""
+                ) VALUES (
+                    'Rsync 1',
+                    @ts
+                )";
+            cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             cmd.ExecuteNonQuery();
 
             var result = new TestBasicResults(ParsedResultType.Success);
             module.OnFinish(result, null);
 
             // Check that one additional sync was recorded (dest1 inline, dest2 scheduled not due)
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" LIKE 'Rsync %'";
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" LIKE 'Rsync %'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(2, count); // Initial 1 + 1 new = 2
         }
@@ -764,20 +825,23 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
             string remoteurl = "file:///source";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("Backup", ref remoteurl, ref localpath);
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
+            EnsureOperationTableCreated(cmd);
 
             var result = new TestBasicResults(ParsedResultType.Warning);
             module.OnFinish(result, null);
 
             // Check that sync was recorded
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" = 'Rsync 0'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(1, count);
         }
@@ -794,7 +858,7 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<string>;
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<string>;
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual("file:///dest1", destinations[0]);
             Assert.AreEqual("file:///dest2", destinations[1]);
@@ -812,7 +876,7 @@ namespace Duplicati.UnitTest
 
             module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module) as List<string>;
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<string>;
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual("file:///dest1", destinations[0]);
             Assert.AreEqual("file:///dest2", destinations[1]);
@@ -833,12 +897,15 @@ namespace Duplicati.UnitTest
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
+            EnsureOperationTableCreated(cmd);
 
-            module.GetType().GetMethod("RecordSyncOperation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 2 });
+            module.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(module, [2]);
 
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 2'";
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" = 'Rsync 2'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(1, count);
         }
@@ -888,7 +955,7 @@ namespace Duplicati.UnitTest
             // Do not create Operation table
 
             Assert.Throws<System.Reflection.TargetInvocationException>(() =>
-                module.GetType().GetMethod("RecordSyncOperation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { 0 }));
+                module.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(module, [0]));
         }
 
         [Test]
@@ -903,24 +970,28 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
 
-            var enabled = module.GetType().GetField("m_enabled", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(module);
+            var enabled = module.GetType().GetField("m_enabled", BINDING_FLAGS).GetValue(module);
             Assert.IsFalse((bool)enabled);
 
             string remoteurl = "file:///source";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("Backup", ref remoteurl, ref localpath);
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
+            EnsureOperationTableCreated(cmd);
 
             var result = new TestBasicResults(ParsedResultType.Success);
             module.OnFinish(result, null);
 
             // Check that no sync was recorded
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" LIKE 'Rsync %'";
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description""
+                LIKE 'Rsync %'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(0, count);
         }
@@ -938,9 +1009,9 @@ namespace Duplicati.UnitTest
             module.Configure(options);
 
             // Set m_source
-            module.GetType().GetField("m_source", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(module, "file:///source");
+            module.GetType().GetField("m_source", BINDING_FLAGS).SetValue(module, "file:///source");
 
-            var args = module.GetType().GetMethod("BuildArguments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(module, new object[] { "file:///dest" }) as string[];
+            var args = module.GetType().GetMethod("BuildArguments", BINDING_FLAGS).Invoke(module, ["file:///dest"]) as string[];
 
             Assert.IsTrue(args.Contains("file:///source"));
             Assert.IsTrue(args.Contains("file:///dest"));
@@ -964,7 +1035,7 @@ namespace Duplicati.UnitTest
             };
             module.Configure(options);
             string remoteurl = "file:///source";
-            string[] localpath = new string[0];
+            string[] localpath = [];
             module.OnStart("List", ref remoteurl, ref localpath); // Non-backup operation
 
             var result = new TestBasicResults(ParsedResultType.Success);
@@ -973,9 +1044,12 @@ namespace Duplicati.UnitTest
             // Check if sync was not recorded
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"Operation\" (\"Description\" TEXT, \"Timestamp\" INTEGER)";
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = "SELECT COUNT(*) FROM \"Operation\" WHERE \"Description\" = 'Rsync 0'";
+            EnsureOperationTableCreated(cmd);
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" = 'Rsync 0'
+            ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(0, count);
         }
@@ -994,9 +1068,9 @@ namespace Duplicati.UnitTest
         public DateTime BeginTime => DateTime.UtcNow;
         public DateTime EndTime => DateTime.UtcNow;
         public TimeSpan Duration => TimeSpan.Zero;
-        public IEnumerable<string> Errors => new string[0];
-        public IEnumerable<string> Warnings => new string[0];
-        public IEnumerable<string> Messages => new string[0];
+        public IEnumerable<string> Errors => [];
+        public IEnumerable<string> Warnings => [];
+        public IEnumerable<string> Messages => [];
         public ParsedResultType ParsedResult { get; }
         public bool Interrupted => false;
     }
