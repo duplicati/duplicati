@@ -678,7 +678,7 @@ namespace Duplicati.UnitTest
             // if commands are added or removed.
             var supportedCommands = module.SupportedCommands;
             Assert.IsNotNull(supportedCommands);
-            Assert.AreEqual(8, supportedCommands.Count);
+            Assert.AreEqual(9, supportedCommands.Count);
         }
 
         [Test]
@@ -853,6 +853,40 @@ namespace Duplicati.UnitTest
             ";
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(1, count);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestOnFinish_WithWarningResult_SkipsSync_WhenDisabled()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-on-warnings"] = "false",
+                ["dbpath"] = DBFILE
+            };
+            module.Configure(options);
+            string remoteurl = "file:///source";
+            string[] localpath = [];
+            module.OnStart("Backup", ref remoteurl, ref localpath);
+
+            // Create Operation table
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            EnsureOperationTableCreated(cmd);
+
+            var result = new TestBasicResults(ParsedResultType.Warning);
+            module.OnFinish(result, null);
+
+            // Check that sync was not recorded
+            cmd.CommandText = @"
+                SELECT COUNT(*)
+                FROM ""Operation""
+                WHERE ""Description"" = 'Rsync 0'
+            ";
+            var count = (long)cmd.ExecuteScalar();
+            Assert.AreEqual(0, count);
         }
 
         [Test]

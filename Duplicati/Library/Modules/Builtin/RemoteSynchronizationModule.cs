@@ -66,12 +66,14 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     private const string OPTION_MODE = "remote-sync-mode";
     private const string OPTION_SCHEDULE = "remote-sync-schedule";
     private const string OPTION_COUNT = "remote-sync-count";
+    private const string OPTION_SYNC_ON_WARNINGS = "remote-sync-on-warnings";
 
     private IReadOnlyDictionary<string, string> m_options = new Dictionary<string, string>();
     private string m_source;
     private List<string> m_destinations = [];
     private string m_operationName;
     private bool m_enabled;
+    private bool m_syncOnWarnings = true;
     private List<RemoteSyncTriggerMode> m_modes = [];
     private List<TimeSpan> m_schedules = [];
     private List<int> m_counts = [];
@@ -106,6 +108,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         new CommandLineArgument(OPTION_MODE, CommandLineArgument.ArgumentType.Enumeration, Strings.RemoteSynchronization.ModeShort, Strings.RemoteSynchronization.ModeLong, "inline", null, ["inline", "scheduled", "counting"]),
         new CommandLineArgument(OPTION_SCHEDULE, CommandLineArgument.ArgumentType.Timespan, Strings.RemoteSynchronization.ScheduleShort, Strings.RemoteSynchronization.ScheduleLong),
         new CommandLineArgument(OPTION_COUNT, CommandLineArgument.ArgumentType.Integer, Strings.RemoteSynchronization.CountShort, Strings.RemoteSynchronization.CountLong),
+        new CommandLineArgument(OPTION_SYNC_ON_WARNINGS, CommandLineArgument.ArgumentType.Boolean, Strings.RemoteSynchronization.SyncOnWarningsShort, Strings.RemoteSynchronization.SyncOnWarningsLong, "true"),
     ];
 
     /// <summary>
@@ -173,6 +176,10 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         // Fill rest of the counts with default values, if the list is shorter than destinations
         m_counts.AddRange(Enumerable.Repeat(0, m_destinations.Count - m_counts.Count));
 
+        m_syncOnWarnings = commandlineOptions.TryGetValue(OPTION_SYNC_ON_WARNINGS, out var syncOnWarningsStr)
+            ? bool.TryParse(syncOnWarningsStr, out var syncOnWarnings) ? syncOnWarnings : true
+            : true;
+
         // Validate parameter lengths
         var destCount = m_destinations.Count;
         if (m_modes.Count != 0 && m_modes.Count != destCount)
@@ -222,6 +229,12 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         if (result != null && (result.ParsedResult == ParsedResultType.Error || result.ParsedResult == ParsedResultType.Fatal))
         {
             Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncSkipped", null, "Remote synchronization skipped because backup reported errors.");
+            return;
+        }
+
+        if (result != null && result.ParsedResult == ParsedResultType.Warning && !m_syncOnWarnings)
+        {
+            Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization skipped because backup reported warnings and sync on warnings is disabled.");
             return;
         }
 

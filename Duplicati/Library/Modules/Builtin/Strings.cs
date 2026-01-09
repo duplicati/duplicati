@@ -103,6 +103,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string ScheduleLong { get { return LC.L(@"Specify the schedule intervals for remote synchronization, comma-separated, e.g. '7.00:00:00,14.00:00:00'."); } }
         public static string CountShort { get { return LC.L(@"Remote sync backup count"); } }
         public static string CountLong { get { return LC.L(@"Specify the numbers of backups after which to trigger remote synchronization, comma-separated."); } }
+        public static string SyncOnWarningsShort { get { return LC.L(@"Sync on warnings"); } }
+        public static string SyncOnWarningsLong { get { return LC.L(@"Enable synchronization when the backup completes with warnings."); } }
     }
     internal static class RunScript
     {
