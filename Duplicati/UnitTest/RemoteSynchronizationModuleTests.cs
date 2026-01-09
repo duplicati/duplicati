@@ -651,7 +651,10 @@ namespace Duplicati.UnitTest
             var modes = module.GetType().GetField("m_modes", BINDING_FLAGS).GetValue(module) as List<RemoteSyncTriggerMode>;
 
             Assert.AreEqual(3, destinations.Count);
-            Assert.AreEqual(2, modes.Count); // Modes list has the provided values, defaults used for missing indices
+            Assert.AreEqual(3, modes.Count); // Modes list has the provided values, defaults used for missing indices
+            Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[0]);
+            Assert.AreEqual(RemoteSyncTriggerMode.Scheduled, modes[1]);
+            Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[2]);
         }
 
         [Test]

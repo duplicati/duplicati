@@ -139,6 +139,8 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         {
             m_modes = [];
         }
+        // Fill rest of the modes with default values, if the list is shorter than destinations
+        m_modes.AddRange(Enumerable.Repeat(RemoteSyncTriggerMode.Inline, m_destinations.Count - m_modes.Count));
 
         if (commandlineOptions.TryGetValue(OPTION_SCHEDULE, out var scheduleStr) && !string.IsNullOrWhiteSpace(scheduleStr))
         {
@@ -153,6 +155,8 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         {
             m_schedules = [];
         }
+        // Fill rest of the schedules with default values, if the list is shorter than destinations
+        m_schedules.AddRange(Enumerable.Repeat(TimeSpan.Zero, m_destinations.Count - m_schedules.Count));
 
         if (commandlineOptions.TryGetValue(OPTION_COUNT, out var countStr) && !string.IsNullOrWhiteSpace(countStr))
         {
@@ -166,6 +170,8 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         {
             m_counts = [];
         }
+        // Fill rest of the counts with default values, if the list is shorter than destinations
+        m_counts.AddRange(Enumerable.Repeat(0, m_destinations.Count - m_counts.Count));
 
         // Validate parameter lengths
         var destCount = m_destinations.Count;
