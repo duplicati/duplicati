@@ -38,39 +38,40 @@ using System.Threading.Tasks;
 namespace RemoteSynchronization
 {
     /// <summary>
+    /// Global configuration for the tool. Should be set after parsing the commandline arguments.
+    /// </summary>
+    public sealed record Config
+    (
+        // Arguments
+        string Src,
+        string Dst,
+
+        // Options
+        bool AutoCreateFolders,
+        int BackendRetries,
+        int BackendRetryDelay,
+        bool BackendRetryWithExponentialBackoff,
+        bool Confirm,
+        bool DryRun,
+        List<string> DstOptions,
+        bool Force,
+        List<string> GlobalOptions,
+        string LogFile,
+        string LogLevel,
+        bool ParseArgumentsOnly,
+        bool Progress,
+        bool Retention,
+        int Retry,
+        List<string> SrcOptions,
+        bool VerifyContents,
+        bool VerifyGetAfterPut
+    );
+
+    /// <summary>
     /// Remote synchronization tool.
     /// </summary>
     public static class RemoteSynchronizationRunner
     {
-        /// <summary>
-        /// Global configuration for the tool. Should be set after parsing the commandline arguments.
-        /// </summary>
-        private sealed record Config
-        (
-            // Arguments
-            string Src,
-            string Dst,
-
-            // Options
-            bool AutoCreateFolders,
-            int BackendRetries,
-            int BackendRetryDelay,
-            bool BackendRetryWithExponentialBackoff,
-            bool Confirm,
-            bool DryRun,
-            List<string> DstOptions,
-            bool Force,
-            List<string> GlobalOptions,
-            string LogFile,
-            string LogLevel,
-            bool ParseArgumentsOnly,
-            bool Progress,
-            bool Retention,
-            int Retry,
-            List<string> SrcOptions,
-            bool VerifyContents,
-            bool VerifyGetAfterPut
-        );
 
         /// <summary>
         /// The log tag for this tool.
@@ -150,7 +151,7 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <returns>The return code for the main entry; 0 on success.</returns>
-        private static async Task<int> Run(Config config, CancellationToken token)
+        public static async Task<int> Run(Config config, CancellationToken token)
         {
             // Unpack and parse the multi token options
             var global_options = ParseOptions(config.GlobalOptions);

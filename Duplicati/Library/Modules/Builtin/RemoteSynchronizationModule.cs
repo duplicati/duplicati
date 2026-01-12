@@ -22,13 +22,18 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
 using RemoteSynchronization;
+
+#nullable enable
 
 namespace Duplicati.Library.Modules.Builtin;
 
@@ -52,31 +57,55 @@ public enum RemoteSyncTriggerMode
 }
 
 /// <summary>
+/// Configuration for a single remote synchronization destination.
+/// </summary>
+public record RemoteSyncDestinationConfig(
+    RemoteSynchronization.Config Config,
+    RemoteSyncTriggerMode Mode = RemoteSyncTriggerMode.Inline,
+    TimeSpan? Schedule = null,
+    int Count = 0
+);
+
+/// <summary>
 /// Module for synchronizing backup data to remote destinations after a successful backup operation.
 /// </summary>
 public class RemoteSynchronizationModule : IGenericCallbackModule
 {
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<RemoteSynchronizationModule>();
 
-    private const string OPTION_BACKEND_DST = "remote-sync-dst";
-    private const string OPTION_FORCE = "remote-sync-force";
-    private const string OPTION_RETENTION = "remote-sync-retention";
-    private const string OPTION_BACKEND_RETRIES = "remote-sync-backend-retries";
-    private const string OPTION_RETRY = "remote-sync-retry";
-    private const string OPTION_MODE = "remote-sync-mode";
-    private const string OPTION_SCHEDULE = "remote-sync-schedule";
-    private const string OPTION_COUNT = "remote-sync-count";
-    private const string OPTION_SYNC_ON_WARNINGS = "remote-sync-on-warnings";
+    private const string OPTION_JSON_CONFIG = "remote-sync-json-config";
 
-    private IReadOnlyDictionary<string, string> m_options = new Dictionary<string, string>();
-    private string m_source;
-    private List<string> m_destinations = [];
-    private string m_operationName;
+    private string? m_dbpath;
+    private List<RemoteSyncDestinationConfig> m_destinations = [];
     private bool m_enabled;
+    private string? m_operationName;
+    private string? m_source;
     private bool m_syncOnWarnings = true;
-    private List<RemoteSyncTriggerMode> m_modes = [];
-    private List<TimeSpan> m_schedules = [];
-    private List<int> m_counts = [];
+
+    // Default configuration for the remote synchronization runner
+    private RemoteSynchronization.Config m_defaultRunnerConfig = new(
+        Src: string.Empty,
+        Dst: string.Empty,
+
+        AutoCreateFolders: true,
+        BackendRetries: 3,
+        BackendRetryDelay: 1000,
+        BackendRetryWithExponentialBackoff: true,
+        Confirm: true,
+        DryRun: false,
+        DstOptions: [],
+        Force: false,
+        GlobalOptions: [],
+        LogFile: string.Empty,
+        LogLevel: "Information",
+        ParseArgumentsOnly: false,
+        Progress: false,
+        Retention: false,
+        Retry: 3,
+        SrcOptions: [],
+        VerifyContents: false,
+        VerifyGetAfterPut: false
+    );
 
     /// <summary>
     /// Gets the key identifier for this module.
@@ -100,15 +129,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     /// </summary>
     public IList<ICommandLineArgument> SupportedCommands =>
     [
-        new CommandLineArgument(OPTION_BACKEND_DST, CommandLineArgument.ArgumentType.String, Strings.RemoteSynchronization.BackendDestinationShort, Strings.RemoteSynchronization.BackendDestinationLong),
-        new CommandLineArgument(OPTION_FORCE, CommandLineArgument.ArgumentType.Boolean, Strings.RemoteSynchronization.ForceShort, Strings.RemoteSynchronization.ForceLong, "false"),
-        new CommandLineArgument(OPTION_RETENTION, CommandLineArgument.ArgumentType.Boolean, Strings.RemoteSynchronization.RetentionShort, Strings.RemoteSynchronization.RetentionLong, "false"),
-        new CommandLineArgument(OPTION_BACKEND_RETRIES, CommandLineArgument.ArgumentType.Integer, Strings.RemoteSynchronization.BackendRetriesShort, Strings.RemoteSynchronization.BackendRetriesLong, "3"),
-        new CommandLineArgument(OPTION_RETRY, CommandLineArgument.ArgumentType.Integer, Strings.RemoteSynchronization.RetryShort, Strings.RemoteSynchronization.RetryLong, "3"),
-        new CommandLineArgument(OPTION_MODE, CommandLineArgument.ArgumentType.Enumeration, Strings.RemoteSynchronization.ModeShort, Strings.RemoteSynchronization.ModeLong, "inline", null, ["inline", "scheduled", "counting"]),
-        new CommandLineArgument(OPTION_SCHEDULE, CommandLineArgument.ArgumentType.Timespan, Strings.RemoteSynchronization.ScheduleShort, Strings.RemoteSynchronization.ScheduleLong),
-        new CommandLineArgument(OPTION_COUNT, CommandLineArgument.ArgumentType.Integer, Strings.RemoteSynchronization.CountShort, Strings.RemoteSynchronization.CountLong),
-        new CommandLineArgument(OPTION_SYNC_ON_WARNINGS, CommandLineArgument.ArgumentType.Boolean, Strings.RemoteSynchronization.SyncOnWarningsShort, Strings.RemoteSynchronization.SyncOnWarningsLong, "true"),
+        new CommandLineArgument(OPTION_JSON_CONFIG, CommandLineArgument.ArgumentType.String, "JSON configuration for remote synchronization", "JSON string or file path containing remote synchronization configuration"),
     ];
 
     /// <summary>
@@ -117,77 +138,104 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     /// <param name="commandlineOptions">The command line options dictionary.</param>
     public void Configure(IDictionary<string, string> commandlineOptions)
     {
-        m_options = commandlineOptions.AsReadOnly();
-        m_destinations =
-            commandlineOptions.TryGetValue(OPTION_BACKEND_DST, out var dstStr)
-            && !string.IsNullOrWhiteSpace(dstStr)
-            ? [.. dstStr
-                .Split(',')
-                .Select(s => s.Trim())
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-            ]
-            : [];
-        m_enabled = m_destinations.Count != 0;
+        // Default is no valid JSON config provided, which disables the module
+        m_enabled = false;
+        m_destinations = [];
 
-        if (commandlineOptions.TryGetValue(OPTION_MODE, out var modeStr) && !string.IsNullOrWhiteSpace(modeStr))
-        {
-            m_modes = [.. modeStr
-                .Split(',')
-                .Select(s => s.Trim())
-                .Select(s => Enum.TryParse<RemoteSyncTriggerMode>(s, true, out var mode)
-                ? mode : RemoteSyncTriggerMode.Inline)
-            ];
-        }
-        else
-        {
-            m_modes = [];
-        }
-        // Fill rest of the modes with default values, if the list is shorter than destinations
-        m_modes.AddRange(Enumerable.Repeat(RemoteSyncTriggerMode.Inline, m_destinations.Count - m_modes.Count));
+        if (commandlineOptions.TryGetValue("dbpath", out var dbpath))
+            m_dbpath = dbpath;
 
-        if (commandlineOptions.TryGetValue(OPTION_SCHEDULE, out var scheduleStr) && !string.IsNullOrWhiteSpace(scheduleStr))
+        // Check if JSON config is provided
+        if (commandlineOptions.TryGetValue(OPTION_JSON_CONFIG, out var jsonConfigStr) && !string.IsNullOrWhiteSpace(jsonConfigStr))
         {
-            m_schedules = [.. scheduleStr
-                .Split(',')
-                .Select(s => s.Trim())
-                .Select(s => TimeSpan.TryParse(s, out var ts)
-                ? ts : TimeSpan.Zero)
-            ];
-        }
-        else
-        {
-            m_schedules = [];
-        }
-        // Fill rest of the schedules with default values, if the list is shorter than destinations
-        m_schedules.AddRange(Enumerable.Repeat(TimeSpan.Zero, m_destinations.Count - m_schedules.Count));
+            string jsonContent;
+            if (jsonConfigStr.TrimStart().StartsWith("{"))
+            {
+                // It's a JSON string
+                jsonContent = jsonConfigStr;
+            }
+            else
+            {
+                // It's a file path
+                try
+                {
+                    jsonContent = File.ReadAllText(jsonConfigStr);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonFileReadError", ex, "Failed to read JSON configuration file '{0}': {1}", jsonConfigStr, ex.Message);
+                    return;
+                }
+            }
 
-        if (commandlineOptions.TryGetValue(OPTION_COUNT, out var countStr) && !string.IsNullOrWhiteSpace(countStr))
-        {
-            m_counts = [.. countStr
-                .Split(',')
-                .Select(s => s.Trim())
-                .Select(s => int.TryParse(s, out var c) ? c : 0)
-            ];
-        }
-        else
-        {
-            m_counts = [];
-        }
-        // Fill rest of the counts with default values, if the list is shorter than destinations
-        m_counts.AddRange(Enumerable.Repeat(0, m_destinations.Count - m_counts.Count));
+            try
+            {
+                var deserializeOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var toplevel = JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonContent, deserializeOpts);
 
-        m_syncOnWarnings = commandlineOptions.TryGetValue(OPTION_SYNC_ON_WARNINGS, out var syncOnWarningsStr)
-            ? bool.TryParse(syncOnWarningsStr, out var syncOnWarnings) ? syncOnWarnings : true
-            : true;
+                if (toplevel?.TryGetValue("sync-on-warnings", out var syncOnWarningsObj) == true)
+                {
+                    if (syncOnWarningsObj is JsonElement elem && elem.ValueKind == JsonValueKind.True)
+                        m_syncOnWarnings = true;
+                    else if (syncOnWarningsObj is JsonElement elem2 && elem2.ValueKind == JsonValueKind.False)
+                        m_syncOnWarnings = false;
+                    else if (syncOnWarningsObj is bool b)
+                        m_syncOnWarnings = b;
+                }
 
-        // Validate parameter lengths
-        var destCount = m_destinations.Count;
-        if (m_modes.Count != 0 && m_modes.Count != destCount)
-            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncConfigMismatch", null, "Number of modes ({0}) does not match number of destinations ({1}). Using defaults for missing values.", m_modes.Count, destCount);
-        if (m_schedules.Count != 0 && m_schedules.Count != destCount)
-            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncConfigMismatch", null, "Number of schedules ({0}) does not match number of destinations ({1}). Using defaults for missing values.", m_schedules.Count, destCount);
-        if (m_counts.Count != 0 && m_counts.Count != destCount)
-            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncConfigMismatch", null, "Number of counts ({0}) does not match number of destinations ({1}). Using defaults for missing values.", m_counts.Count, destCount);
+                if (toplevel?.TryGetValue("destinations", out var destinationsObj) == true &&
+                    destinationsObj is JsonElement destinationsElem &&
+                    destinationsElem.ValueKind == JsonValueKind.Array)
+                {
+                    var destinations = JsonSerializer.Deserialize<List<Dictionary<string, object?>>>(destinationsElem.GetRawText(), deserializeOpts) ?? [];
+                    foreach (var destination in destinations)
+                    {
+                        m_destinations.Add(new(
+                            Config: m_defaultRunnerConfig with
+                            {
+                                Src = m_source ?? string.Empty,
+                                Dst = (destination.GetValueOrDefault("url") as string) ?? (destination.GetValueOrDefault("url") is JsonElement elem && elem.ValueKind == JsonValueKind.String ? elem.GetString() : null) ?? string.Empty,
+
+                                AutoCreateFolders = destination.TryGetValue("auto-create-folders", out var autoCreateFoldersObj) && autoCreateFoldersObj is bool autoCreateFolders ? autoCreateFolders : m_defaultRunnerConfig.AutoCreateFolders,
+                                BackendRetries = destination.TryGetValue("backend-retries", out var backendRetriesObj) && backendRetriesObj is long backendRetriesLong ? (int)backendRetriesLong : m_defaultRunnerConfig.BackendRetries,
+                                BackendRetryDelay = destination.TryGetValue("backend-retry-delay", out var backendRetryDelayObj) && backendRetryDelayObj is long backendRetryDelayLong ? (int)backendRetryDelayLong : m_defaultRunnerConfig.BackendRetryDelay,
+                                BackendRetryWithExponentialBackoff = destination.TryGetValue("backend-retry-with-exponential-backoff", out var backendRetryWithExponentialBackoffObj) && backendRetryWithExponentialBackoffObj is bool backendRetryWithExponentialBackoff ? backendRetryWithExponentialBackoff : m_defaultRunnerConfig.BackendRetryWithExponentialBackoff,
+                                Confirm = destination.TryGetValue("confirm", out var confirmObj) && confirmObj is bool confirm ? confirm : m_defaultRunnerConfig.Confirm,
+                                DryRun = destination.TryGetValue("dry-run", out var dryRunObj) && dryRunObj is bool dryRun ? dryRun : m_defaultRunnerConfig.DryRun,
+                                DstOptions = destination.TryGetValue("dst-options", out var dstOptionsObj) && ((dstOptionsObj is string dstOptionsStr) || (dstOptionsObj is JsonElement elemDstOpt && elemDstOpt.ValueKind == JsonValueKind.String && (dstOptionsStr = elemDstOpt.GetString()) != null)) ? dstOptionsStr.Split(' ').ToList() : m_defaultRunnerConfig.DstOptions,
+                                Force = destination.TryGetValue("force", out var forceObj) && forceObj is bool force ? force : m_defaultRunnerConfig.Force,
+                                GlobalOptions = destination.TryGetValue("global-options", out var globalOptionsObj) && ((globalOptionsObj is string globalOptionsStr) || (globalOptionsObj is JsonElement elemGlob && elemGlob.ValueKind == JsonValueKind.String && (globalOptionsStr = elemGlob.GetString()) != null)) ? globalOptionsStr.Split(' ').ToList() : m_defaultRunnerConfig.GlobalOptions,
+                                LogFile = (destination.GetValueOrDefault("log-file") as string) ?? (destination.GetValueOrDefault("log-file") is JsonElement elemLog && elemLog.ValueKind == JsonValueKind.String ? elemLog.GetString() : null) ?? (commandlineOptions.TryGetValue("log-file", out var logFile) ? logFile : m_defaultRunnerConfig.LogFile),
+                                LogLevel = (destination.GetValueOrDefault("log-level") as string) ?? (destination.GetValueOrDefault("log-level") is JsonElement elemLvl && elemLvl.ValueKind == JsonValueKind.String ? elemLvl.GetString() : null) ?? (commandlineOptions.TryGetValue("log-file-log-level", out var logLevel) ? logLevel : m_defaultRunnerConfig.LogLevel),
+                                ParseArgumentsOnly = destination.TryGetValue("parse-arguments-only", out var parseArgumentsOnlyObj) && parseArgumentsOnlyObj is bool parseArgumentsOnly ? parseArgumentsOnly : m_defaultRunnerConfig.ParseArgumentsOnly,
+                                Progress = destination.TryGetValue("progress", out var progressObj) && progressObj is bool progress ? progress : m_defaultRunnerConfig.Progress,
+                                Retention = destination.TryGetValue("retention", out var retentionObj) && retentionObj is bool retention ? retention : m_defaultRunnerConfig.Retention,
+                                Retry = destination.TryGetValue("retry", out var retryObj) && retryObj is long retryLong ? (int)retryLong : m_defaultRunnerConfig.Retry,
+                                SrcOptions = destination.TryGetValue("src-options", out var srcOptionsObj) && ((srcOptionsObj is string srcOptionsStr) || (srcOptionsObj is JsonElement elemSrc && elemSrc.ValueKind == JsonValueKind.String && (srcOptionsStr = elemSrc.GetString()) != null)) ? srcOptionsStr.Split(' ').ToList() : m_defaultRunnerConfig.SrcOptions,
+                                VerifyContents = destination.TryGetValue("verify-contents", out var verifyContentsObj) && verifyContentsObj is bool verifyContents ? verifyContents : m_defaultRunnerConfig.VerifyContents,
+                                VerifyGetAfterPut = destination.TryGetValue("verify-get-after-put", out var verifyGetAfterPutObj) && verifyGetAfterPutObj is bool verifyGetAfterPut ? verifyGetAfterPut : m_defaultRunnerConfig.VerifyGetAfterPut
+                            },
+                            Mode: Enum.TryParse<RemoteSyncTriggerMode>((destination.GetValueOrDefault("mode") as string) ?? (destination.GetValueOrDefault("mode") is JsonElement elemMode && elemMode.ValueKind == JsonValueKind.String ? elemMode.GetString() : null), true, out var mode) ? mode : RemoteSyncTriggerMode.Inline,
+                            Schedule: destination.TryGetValue("schedule", out var scheduleObj) && ((scheduleObj is string scheduleStr) || (scheduleObj is JsonElement elemSch && elemSch.ValueKind == JsonValueKind.String && (scheduleStr = elemSch.GetString()) != null)) && TimeSpan.TryParse(scheduleStr, out var schedule) ? schedule : null,
+                            Count: destination.TryGetValue("count", out var countObj) && ((countObj is long countLong) || (countObj is JsonElement elemCnt && elemCnt.ValueKind == JsonValueKind.Number && elemCnt.TryGetInt64(out countLong))) ? (int)countLong : 0
+                        ));
+                    }
+
+                    m_enabled = true;
+                }
+                else
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonMissingDestinations", null, "JSON configuration is missing 'destinations' array.");
+                    m_enabled = false;
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonParseError", ex, "Failed to parse JSON configuration: {0}", ex.Message);
+            }
+        }
+
     }
 
     /// <summary>
@@ -247,10 +295,10 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         for (int i = 0; i < m_destinations.Count; i++)
         {
             var dest = m_destinations[i];
-            if (string.IsNullOrWhiteSpace(dest))
+            if (string.IsNullOrWhiteSpace(dest.Config.Dst))
                 continue;
 
-            if (!ShouldTriggerSync(i))
+            if (!ShouldTriggerSync(i, dest))
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization to {0} skipped due to trigger mode conditions not met.", dest);
                 continue;
@@ -258,11 +306,9 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
 
             RecordSyncOperation(i);
 
-            var args = BuildArguments(dest);
-
             try
             {
-                var exitCode = RemoteSynchronizationRunner.RunAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
+                var exitCode = RemoteSynchronizationRunner.Run(dest.Config, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
                 if (exitCode != 0)
                     Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
             }
@@ -272,28 +318,26 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             }
         }
     }
+
     /// <summary>
     /// Checks if remote synchronization should be triggered for the specified destination based on the configured mode.
     /// </summary>
     /// <param name="index">The index of the destination in the list.</param>
     /// <returns>True if synchronization should be triggered.</returns>
-    private bool ShouldTriggerSync(int index)
+    private bool ShouldTriggerSync(int index, RemoteSyncDestinationConfig dest)
     {
-        if (!m_options.TryGetValue("dbpath", out var dbpath) || string.IsNullOrWhiteSpace(dbpath))
+        if (index < 0 || index >= m_destinations.Count)
             return false;
 
-        var mode = index < m_modes.Count ? m_modes[index] : RemoteSyncTriggerMode.Inline;
-        var schedule = index < m_schedules.Count ? m_schedules[index] : TimeSpan.Zero;
-        var count = index < m_counts.Count ? m_counts[index] : 0;
         var description = $"Rsync {index}";
 
-        switch (mode)
+        switch (dest.Mode)
         {
             case RemoteSyncTriggerMode.Inline:
                 return true;
             case RemoteSyncTriggerMode.Scheduled:
                 {
-                    using var db = SQLiteLoader.LoadConnection(dbpath);
+                    using var db = SQLiteLoader.LoadConnection(m_dbpath!);
                     using var cmd = db.CreateCommand();
                     cmd.CommandText = @"
                         SELECT ""Timestamp""
@@ -309,11 +353,11 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                         return true;
                     var lastSyncTime = Utility.Utility.EPOCH.AddSeconds((long)lastSync);
                     var now = DateTime.UtcNow;
-                    return (now - lastSyncTime) >= schedule;
+                    return (now - lastSyncTime) >= dest.Schedule;
                 }
             case RemoteSyncTriggerMode.Counting:
                 {
-                    using var db = SQLiteLoader.LoadConnection(dbpath);
+                    using var db = SQLiteLoader.LoadConnection(m_dbpath!);
                     using var cmd = db.CreateCommand();
                     cmd.CommandText = @"
                         SELECT COUNT(*)
@@ -331,7 +375,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                     cmd.AddNamedParameter("@description", description);
 
                     var backupCount = (long)(cmd.ExecuteScalar() ?? 0L);
-                    return backupCount >= count;
+                    return backupCount >= dest.Count;
                 }
             default:
                 return false;
@@ -351,10 +395,10 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             return;
         }
 
-        if (!m_options.TryGetValue("dbpath", out var dbpath) || string.IsNullOrWhiteSpace(dbpath))
+        if (string.IsNullOrWhiteSpace(m_dbpath))
             return;
 
-        using var db = SQLiteLoader.LoadConnection(dbpath);
+        using var db = SQLiteLoader.LoadConnection(m_dbpath!);
         using var transaction = db.BeginTransaction();
         using var cmd = db.CreateCommand();
         cmd.CommandText = @"
@@ -370,48 +414,6 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         cmd.AddNamedParameter("@timestamp", Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
         cmd.ExecuteNonQuery();
         transaction.Commit();
-    }
-
-    /// <summary>
-    /// Builds the arguments for the remote synchronization command.
-    /// </summary>
-    /// <param name="dest">The destination backend string.</param>
-    /// <returns>An array of command line arguments.</returns>
-    private string[] BuildArguments(string dest)
-    {
-        string[] args = [
-            m_source,
-            dest,
-            .. AddOption(OPTION_BACKEND_RETRIES, "--backend-retries", []),
-            .. AddOption(OPTION_FORCE, "--force", []),
-            .. AddOption(OPTION_RETENTION, "--retention", []),
-            .. AddOption(OPTION_RETRY, "--retry", []),
-            // Hardcoded defaults for automatic operation
-            "--auto-create-folders",
-            "--backend-retry-delay", "1000",
-            "--backend-retry-with-exponential-backoff",
-            "--confirm", // Automatic, no prompt
-        ];
-
-        return args;
-    }
-
-    /// <summary>
-    /// Adds an option to the command line arguments if it is specified.
-    /// </summary>
-    /// <param name="optionKey">The key of the option in the options dictionary.</param>
-    /// <param name="toolOption">The command line flag for the option.</param>
-    /// <param name="defaultvalue">The default value if the option is not specified.</param>
-    /// <returns>An array of strings representing the option and its value, or the default value.</returns>
-    private string[] AddOption(string optionKey, string toolOption, string[] defaultvalue)
-    {
-        if (!m_options.TryGetValue(optionKey, out var value))
-            return defaultvalue;
-
-        if (string.IsNullOrWhiteSpace(value))
-            return defaultvalue;
-
-        return [toolOption, value];
     }
 
 }
