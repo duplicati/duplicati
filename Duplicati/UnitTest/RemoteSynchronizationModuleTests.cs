@@ -56,14 +56,14 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}"
             };
 
             module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<string>;
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(1, destinations.Count);
-            Assert.AreEqual("file:///test/dest", destinations[0]);
+            Assert.AreEqual("file:///test/dest", destinations[0].Config.Dst);
         }
 
         [Test]
@@ -73,15 +73,15 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1""}, {""url"": ""file:///test/dest2""}]}"
             };
 
             module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<string>;
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(2, destinations.Count);
-            Assert.AreEqual("file:///test/dest1", destinations[0]);
-            Assert.AreEqual("file:///test/dest2", destinations[1]);
+            Assert.AreEqual("file:///test/dest1", destinations[0].Config.Dst);
+            Assert.AreEqual("file:///test/dest2", destinations[1].Config.Dst);
         }
 
         [Test]
@@ -91,16 +91,15 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2",
-                ["remote-sync-mode"] = "inline,scheduled"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""mode"": ""inline""}, {""url"": ""file:///test/dest2"", ""mode"": ""scheduled""}]}"
             };
 
             module.Configure(options);
 
-            var modes = module.GetType().GetField("m_modes", BINDING_FLAGS).GetValue(module) as List<RemoteSyncTriggerMode>;
-            Assert.AreEqual(2, modes.Count);
-            Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[0]);
-            Assert.AreEqual(RemoteSyncTriggerMode.Scheduled, modes[1]);
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(2, destinations.Count);
+            Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[0].Mode);
+            Assert.AreEqual(RemoteSyncTriggerMode.Scheduled, destinations[1].Mode);
         }
 
         [Test]
@@ -110,16 +109,15 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2",
-                ["remote-sync-schedule"] = "1:00:00,2:00:00"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""schedule"": ""1:00:00""}, {""url"": ""file:///test/dest2"", ""schedule"": ""2:00:00""}]}"
             };
 
             module.Configure(options);
 
-            var schedules = module.GetType().GetField("m_schedules", BINDING_FLAGS).GetValue(module) as List<TimeSpan>;
-            Assert.AreEqual(2, schedules.Count);
-            Assert.AreEqual(TimeSpan.FromHours(1), schedules[0]);
-            Assert.AreEqual(TimeSpan.FromHours(2), schedules[1]);
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(2, destinations.Count);
+            Assert.AreEqual(TimeSpan.FromHours(1), destinations[0].Schedule);
+            Assert.AreEqual(TimeSpan.FromHours(2), destinations[1].Schedule);
         }
 
         [Test]
@@ -129,16 +127,15 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2",
-                ["remote-sync-count"] = "5,10"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""count"": 5}, {""url"": ""file:///test/dest2"", ""count"": 10}]}"
             };
 
             module.Configure(options);
 
-            var counts = module.GetType().GetField("m_counts", BINDING_FLAGS).GetValue(module) as List<int>;
-            Assert.AreEqual(2, counts.Count);
-            Assert.AreEqual(5, counts[0]);
-            Assert.AreEqual(10, counts[1]);
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(2, destinations.Count);
+            Assert.AreEqual(5, destinations[0].Count);
+            Assert.AreEqual(10, destinations[1].Count);
         }
 
         [Test]
@@ -148,7 +145,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}"
             };
             module.Configure(options);
 
@@ -167,13 +164,13 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
-                ["remote-sync-mode"] = "inline",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""inline""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -184,9 +181,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
-                ["remote-sync-mode"] = "scheduled",
-                ["remote-sync-schedule"] = "1:00:00",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""scheduled"", ""schedule"": ""1:00:00""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -196,7 +191,8 @@ namespace Duplicati.UnitTest
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -207,9 +203,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
-                ["remote-sync-mode"] = "counting",
-                ["remote-sync-count"] = "2",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""counting"", ""count"": 2}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -230,7 +224,8 @@ namespace Duplicati.UnitTest
             cmd.ExecuteNonQuery();
             cmd.ExecuteNonQuery();
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -241,7 +236,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -263,30 +258,6 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(1, count);
         }
 
-        [Test]
-        [Category("RemoteSync")]
-        public void TestBuildArguments()
-        {
-            var module = new RemoteSynchronizationModule();
-            var options = new Dictionary<string, string>
-            {
-                ["remote-sync-dst"] = "file:///test/dest",
-                ["remote-sync-force"] = "true",
-                ["remote-sync-retention"] = "true"
-            };
-            module.Configure(options);
-
-            // Set m_source
-            module.GetType().GetField("m_source", BINDING_FLAGS).SetValue(module, "file:///source");
-
-            var args = module.GetType().GetMethod("BuildArguments", BINDING_FLAGS).Invoke(module, ["file:///dest"]) as string[];
-
-            Assert.IsTrue(args.Contains("file:///source"));
-            Assert.IsTrue(args.Contains("file:///dest"));
-            Assert.IsTrue(args.Contains("--force"));
-            Assert.IsTrue(args.Contains("--retention"));
-            Assert.IsTrue(args.Contains("--auto-create-folders"));
-        }
 
         [Test]
         [Category("RemoteSync")]
@@ -296,7 +267,7 @@ namespace Duplicati.UnitTest
             System.IO.File.WriteAllText(System.IO.Path.Combine(DATAFOLDER, "testfile.txt"), "test content");
 
             var options = TestOptions;
-            options["remote-sync-dst"] = "file://" + System.IO.Path.Combine(BASEFOLDER, "syncdest");
+            options["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file://" + System.IO.Path.Combine(BASEFOLDER, "syncdest") + @"""}]}";
             options["dbpath"] = DBFILE;
 
             // Run actual backup
@@ -324,7 +295,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -357,35 +328,33 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2",
-                ["remote-sync-mode"] = "inline,invalidmode"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""mode"": ""inline""}, {""url"": ""file:///test/dest2"", ""mode"": ""invalidmode""}]}"
             };
 
             module.Configure(options);
 
-            var modes = module.GetType().GetField("m_modes", BINDING_FLAGS).GetValue(module) as List<RemoteSyncTriggerMode>;
-            Assert.AreEqual(2, modes.Count);
-            Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[0]);
-            Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[1]); // Invalid defaults to Inline
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(2, destinations.Count);
+            Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[0].Mode);
+            Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[1].Mode); // Invalid defaults to Inline
         }
 
         [Test]
         [Category("RemoteSync")]
-        public void TestConfigure_InvalidSchedule_DefaultsToZero()
+        public void TestConfigure_InvalidSchedule_DefaultsToNull()
         {
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2",
-                ["remote-sync-schedule"] = "1:00:00,invalid"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""schedule"": ""1:00:00""}, {""url"": ""file:///test/dest2"", ""schedule"": ""invalid""}]}"
             };
 
             module.Configure(options);
 
-            var schedules = module.GetType().GetField("m_schedules", BINDING_FLAGS).GetValue(module) as List<TimeSpan>;
-            Assert.AreEqual(2, schedules.Count);
-            Assert.AreEqual(TimeSpan.FromHours(1), schedules[0]);
-            Assert.AreEqual(TimeSpan.Zero, schedules[1]); // Invalid defaults to Zero
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(2, destinations.Count);
+            Assert.AreEqual(TimeSpan.FromHours(1), destinations[0].Schedule);
+            Assert.AreEqual(null, destinations[1].Schedule); // Invalid defaults to null
         }
 
         [Test]
@@ -395,16 +364,15 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2",
-                ["remote-sync-count"] = "5,invalid"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""count"": 5}, {""url"": ""file:///test/dest2"", ""count"": ""invalid""}]}"
             };
 
             module.Configure(options);
 
-            var counts = module.GetType().GetField("m_counts", BINDING_FLAGS).GetValue(module) as List<int>;
-            Assert.AreEqual(2, counts.Count);
-            Assert.AreEqual(5, counts[0]);
-            Assert.AreEqual(0, counts[1]); // Invalid defaults to 0
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(2, destinations.Count);
+            Assert.AreEqual(5, destinations[0].Count);
+            Assert.AreEqual(0, destinations[1].Count); // Invalid defaults to 0
         }
 
         [Test]
@@ -414,9 +382,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
-                ["remote-sync-mode"] = "scheduled",
-                ["remote-sync-schedule"] = "1:00:00",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""scheduled"", ""schedule"": ""1:00:00""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -436,7 +402,8 @@ namespace Duplicati.UnitTest
             cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             cmd.ExecuteNonQuery();
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
             Assert.IsFalse(shouldTrigger);
         }
 
@@ -447,9 +414,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
-                ["remote-sync-mode"] = "counting",
-                ["remote-sync-count"] = "5",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""counting"", ""count"": 5}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -470,7 +435,8 @@ namespace Duplicati.UnitTest
             cmd.ExecuteNonQuery();
             cmd.ExecuteNonQuery();
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
             Assert.IsFalse(shouldTrigger);
         }
 
@@ -485,14 +451,14 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
-                ["remote-sync-mode"] = "inline"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""inline""}]}"
                 // No dbpath
             };
             module.Configure(options);
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0]);
-            Assert.IsFalse(shouldTrigger);
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            Assert.IsTrue(shouldTrigger); // Inline always returns true
         }
 
         [Test]
@@ -502,7 +468,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -533,7 +499,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -565,7 +531,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -589,38 +555,6 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(0, count);
         }
 
-        [Test]
-        [Category("RemoteSync")]
-        public void TestBuildArguments_AllOptions()
-        {
-            var module = new RemoteSynchronizationModule();
-            var options = new Dictionary<string, string>
-            {
-                ["remote-sync-dst"] = "file:///test/dest",
-                ["remote-sync-force"] = "true",
-                ["remote-sync-retention"] = "true",
-                ["remote-sync-retry"] = "5",
-                ["remote-sync-backend-retries"] = "10"
-            };
-            module.Configure(options);
-
-            // Set m_source
-            module.GetType().GetField("m_source", BINDING_FLAGS).SetValue(module, "file:///source");
-
-            var args = module.GetType().GetMethod("BuildArguments", BINDING_FLAGS).Invoke(module, ["file:///dest"]) as string[];
-
-            Assert.IsTrue(args.Contains("file:///source"));
-            Assert.IsTrue(args.Contains("file:///dest"));
-            Assert.IsTrue(args.Contains("--force"));
-            Assert.IsTrue(args.Contains("--retention"));
-            Assert.IsTrue(args.Contains("--retry"));
-            Assert.IsTrue(args.Contains("5"));
-            Assert.IsTrue(args.Contains("--backend-retries"));
-            Assert.IsTrue(args.Contains("10"));
-            Assert.IsTrue(args.Contains("--auto-create-folders"));
-            Assert.IsTrue(args.Contains("--backend-retry-delay"));
-            Assert.IsTrue(args.Contains("1000"));
-        }
 
         [Test]
         [Category("RemoteSync")]
@@ -629,7 +563,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}"
                 // No dbpath
             };
             module.Configure(options);
@@ -640,25 +574,21 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public void TestConfigure_MismatchedParameterCounts_UsesDefaults()
+        public void TestConfigure_DefaultMode()
         {
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest1,file:///test/dest2,file:///test/dest3",
-                ["remote-sync-mode"] = "inline,scheduled" // Only 2 modes for 3 destinations
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1""}, {""url"": ""file:///test/dest2"", ""mode"": ""scheduled""}]}"
             };
 
             module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<string>;
-            var modes = module.GetType().GetField("m_modes", BINDING_FLAGS).GetValue(module) as List<RemoteSyncTriggerMode>;
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
 
-            Assert.AreEqual(3, destinations.Count);
-            Assert.AreEqual(3, modes.Count); // Modes list has the provided values, defaults used for missing indices
-            Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[0]);
-            Assert.AreEqual(RemoteSyncTriggerMode.Scheduled, modes[1]);
-            Assert.AreEqual(RemoteSyncTriggerMode.Inline, modes[2]);
+            Assert.AreEqual(2, destinations.Count);
+            Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[0].Mode); // Default
+            Assert.AreEqual(RemoteSyncTriggerMode.Scheduled, destinations[1].Mode);
         }
 
         [Test]
@@ -678,7 +608,7 @@ namespace Duplicati.UnitTest
             // if commands are added or removed.
             var supportedCommands = module.SupportedCommands;
             Assert.IsNotNull(supportedCommands);
-            Assert.AreEqual(9, supportedCommands.Count);
+            Assert.AreEqual(1, supportedCommands.Count);
         }
 
         [Test]
@@ -688,15 +618,10 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///valid""}, {""url"": """"}, {""url"": ""file:///another""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
-
-            // Manually set destinations including empty and enable
-            var destinationsField = module.GetType().GetField("m_destinations", BINDING_FLAGS);
-            destinationsField.SetValue(module, new List<string> { "file:///valid", "", "file:///another" });
-            var enabledField = module.GetType().GetField("m_enabled", BINDING_FLAGS);
-            enabledField.SetValue(module, true);
 
             string remoteurl = "file:///source";
             string[] localpath = [];
@@ -723,37 +648,26 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public void TestShouldTriggerSync_OutOfRangeIndex_UsesInline()
+        public void TestShouldTriggerSync_OutOfRangeIndex_ReturnsFalse()
         {
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
-                ["remote-sync-mode"] = "scheduled", // Only one mode
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""scheduled""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
 
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [1]); // Index 1, but only 1 destination
-            Assert.IsTrue(shouldTrigger); // Uses default Inline, which is true
+            // Create Operation table
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            EnsureOperationTableCreated(cmd);
+
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [1, destinations[0]]); // Index 1, but only 1 destination
+            Assert.IsFalse(shouldTrigger); // Out of range
         }
 
-        [Test]
-        [Category("RemoteSync")]
-        public void TestAddOption_WithWhitespace_ReturnsDefault()
-        {
-            var module = new RemoteSynchronizationModule();
-            var options = new Dictionary<string, string>
-            {
-                ["remote-sync-retry"] = "   " // Whitespace value
-            };
-            module.Configure(options);
-
-            var addOptionMethod = module.GetType().GetMethod("AddOption", BINDING_FLAGS);
-            var result = (string[])addOptionMethod.Invoke(module, ["remote-sync-retry", "--retry", Array.Empty<string>()]);
-
-            Assert.AreEqual(0, result.Length); // Should return default empty array
-        }
 
         [Test]
         [Category("RemoteSync")]
@@ -762,7 +676,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}"
             };
             module.Configure(options);
 
@@ -784,9 +698,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///dest1,file:///dest2",
-                ["remote-sync-mode"] = "inline,scheduled",
-                ["remote-sync-schedule"] = "1:00:00,2:00:00",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///dest1"", ""mode"": ""inline""}, {""url"": ""file:///dest2"", ""mode"": ""scheduled"", ""schedule"": ""1:00:00""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -829,7 +741,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -862,8 +774,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
-                ["remote-sync-on-warnings"] = "false",
+                ["remote-sync-json-config"] = @"{""sync-on-warnings"": false, ""destinations"": [{""url"": ""file:///test/dest""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -891,20 +802,20 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public void TestConfigure_WithWhitespaceInDestinations_Trims()
+        public void TestConfigure_WithWhitespaceInDestinations_PreservesWhitespace()
         {
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "  file:///dest1  ,  file:///dest2  "
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""  file:///dest1  ""}, {""url"": ""  file:///dest2  ""}]}"
             };
 
             module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<string>;
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(2, destinations.Count);
-            Assert.AreEqual("file:///dest1", destinations[0]);
-            Assert.AreEqual("file:///dest2", destinations[1]);
+            Assert.AreEqual("  file:///dest1  ", destinations[0].Config.Dst); // JSON preserves spaces
+            Assert.AreEqual("  file:///dest2  ", destinations[1].Config.Dst);
         }
 
         [Test]
@@ -914,15 +825,16 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///dest1,,file:///dest2"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///dest1""}, {}, {""url"": ""file:///dest2""}]}"
             };
 
             module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<string>;
-            Assert.AreEqual(2, destinations.Count);
-            Assert.AreEqual("file:///dest1", destinations[0]);
-            Assert.AreEqual("file:///dest2", destinations[1]);
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(3, destinations.Count); // All are included, empty ones skipped in OnFinish
+            Assert.AreEqual("file:///dest1", destinations[0].Config.Dst);
+            Assert.AreEqual("", destinations[1].Config.Dst);
+            Assert.AreEqual("file:///dest2", destinations[2].Config.Dst);
         }
 
         [Test]
@@ -933,7 +845,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -961,7 +873,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -974,12 +886,27 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
+        public void TestConfigure_InvalidJson_DoesNotActivate()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = @"invalid json"
+            };
+            module.Configure(options);
+
+            var enabled = module.GetType().GetField("m_enabled", BINDING_FLAGS).GetValue(module);
+            Assert.IsFalse((bool)enabled);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
         public void TestConfigure_WithNoDestinations_DoesNotActivate()
         {
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                // No remote-sync-dst
+                // No remote-sync-json-config
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -1010,32 +937,6 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(0, count);
         }
 
-        [Test]
-        [Category("RemoteSync")]
-        public void TestBuildArguments_WithNoOptions()
-        {
-            var module = new RemoteSynchronizationModule();
-            var options = new Dictionary<string, string>
-            {
-                ["remote-sync-dst"] = "file:///test/dest"
-                // No additional options
-            };
-            module.Configure(options);
-
-            // Set m_source
-            module.GetType().GetField("m_source", BINDING_FLAGS).SetValue(module, "file:///source");
-
-            var args = module.GetType().GetMethod("BuildArguments", BINDING_FLAGS).Invoke(module, ["file:///dest"]) as string[];
-
-            Assert.IsTrue(args.Contains("file:///source"));
-            Assert.IsTrue(args.Contains("file:///dest"));
-            Assert.IsTrue(args.Contains("--auto-create-folders"));
-            Assert.IsTrue(args.Contains("--backend-retry-delay"));
-            Assert.IsTrue(args.Contains("1000"));
-            Assert.IsTrue(args.Contains("--backend-retry-with-exponential-backoff"));
-            Assert.IsTrue(args.Contains("--confirm"));
-            // No other options
-        }
 
         [Test]
         [Category("RemoteSync")]
@@ -1044,7 +945,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-dst"] = "file:///test/dest",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
