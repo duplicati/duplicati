@@ -193,7 +193,6 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                         m_destinations.Add(new(
                             Config: m_defaultRunnerConfig with
                             {
-                                Src = m_source ?? string.Empty,
                                 Dst = (destination.GetValueOrDefault("url") as string) ?? (destination.GetValueOrDefault("url") is JsonElement elem && elem.ValueKind == JsonValueKind.String ? elem.GetString() : null) ?? string.Empty,
 
                                 AutoCreateFolders = destination.TryGetValue("auto-create-folders", out var autoCreateFoldersObj) && autoCreateFoldersObj is bool autoCreateFolders ? autoCreateFolders : m_defaultRunnerConfig.AutoCreateFolders,
@@ -286,9 +285,15 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(m_source) || m_destinations.Count == 0)
+        if (string.IsNullOrWhiteSpace(m_source))
         {
-            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncMissingBackends", null, "Remote synchronization skipped because source or destinations are missing.");
+            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncMissingBackends", null, "Remote synchronization skipped because source is missing.");
+            return;
+        }
+
+        if (m_destinations.Count == 0)
+        {
+            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncNoDestinations", null, "Remote synchronization skipped because no destinations are configured.");
             return;
         }
 
@@ -308,7 +313,8 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
 
             try
             {
-                var exitCode = RemoteSynchronizationRunner.Run(dest.Config, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+                var config = dest.Config with { Src = m_source! };
+                var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
                 if (exitCode != 0)
                     Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
             }
