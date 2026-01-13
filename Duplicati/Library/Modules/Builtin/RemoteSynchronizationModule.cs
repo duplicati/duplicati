@@ -345,6 +345,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                 {
                     using var db = SQLiteLoader.LoadConnection(m_dbpath!);
                     using var cmd = db.CreateCommand();
+
                     cmd.CommandText = @"
                         SELECT ""Timestamp""
                         FROM ""Operation""
@@ -365,6 +366,17 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                 {
                     using var db = SQLiteLoader.LoadConnection(m_dbpath!);
                     using var cmd = db.CreateCommand();
+                    cmd.CommandText = @"
+                        SELECT COUNT(*)
+                        FROM ""Operation""
+                        WHERE ""Description"" = @description
+                    ";
+                    cmd.AddNamedParameter("@description", description);
+                    var syncCount = (long)(cmd.ExecuteScalar() ?? 0L);
+                    if (syncCount == 0)
+                        return true;
+                    cmd.Parameters.Clear();
+
                     cmd.CommandText = @"
                         SELECT COUNT(*)
                         FROM ""Operation""

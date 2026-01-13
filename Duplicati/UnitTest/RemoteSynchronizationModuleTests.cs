@@ -377,6 +377,28 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
+        public void TestShouldTriggerSync_Scheduled_Initial()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""scheduled"", ""schedule"": ""1:00:00""}]}",
+                ["dbpath"] = DBFILE
+            };
+            module.Configure(options);
+
+            // Create Operation table with no prior syncs
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            EnsureOperationTableCreated(cmd);
+
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            Assert.IsTrue(shouldTrigger);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
         public void TestShouldTriggerSync_Scheduled_NotDue()
         {
             var module = new RemoteSynchronizationModule();
@@ -409,6 +431,60 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
+        public void TestShouldTriggerSync_Scheduled_Due()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""scheduled"", ""schedule"": ""1:00:00""}]}",
+                ["dbpath"] = DBFILE
+            };
+            module.Configure(options);
+
+            // Create Operation table and insert recent sync
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            EnsureOperationTableCreated(cmd);
+            cmd.CommandText = @"
+                INSERT INTO ""Operation"" (
+                    ""Description"",
+                    ""Timestamp""
+                ) VALUES (
+                    'Rsync 0',
+                    @ts
+                )";
+            cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow - TimeSpan.FromHours(2)));
+            cmd.ExecuteNonQuery();
+
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            Assert.IsTrue(shouldTrigger);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestShouldTriggerSync_Counting_Initial()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""counting"", ""count"": 5}]}",
+                ["dbpath"] = DBFILE
+            };
+            module.Configure(options);
+
+            // Create Operation table and simulate 0 backups, which should trigger sync
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            EnsureOperationTableCreated(cmd);
+
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            Assert.IsTrue(shouldTrigger);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
         public void TestShouldTriggerSync_Counting_NotReached()
         {
             var module = new RemoteSynchronizationModule();
@@ -421,9 +497,21 @@ namespace Duplicati.UnitTest
 
             // Create Operation table and simulate 2 backups (less than 5)
             using var db = SQLiteLoader.LoadConnection(DBFILE);
-            using var cmd = db.CreateCommand();
-            EnsureOperationTableCreated(cmd);
-            cmd.CommandText = @"
+            using var cmd_backup = db.CreateCommand();
+            using var cmd_rsync = db.CreateCommand();
+            EnsureOperationTableCreated(cmd_backup);
+
+            cmd_rsync.CommandText = @"
+                INSERT INTO ""Operation"" (
+                    ""Description"",
+                    ""Timestamp""
+                ) VALUES (
+                    'Rsync 0',
+                    @ts
+                )";
+            cmd_rsync.AddNamedParameter("@ts");
+
+            cmd_backup.CommandText = @"
                 INSERT INTO ""Operation"" (
                     ""Description"",
                     ""Timestamp""
@@ -431,13 +519,74 @@ namespace Duplicati.UnitTest
                     'Backup',
                     @ts
                 )";
-            cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
-            cmd.ExecuteNonQuery();
-            cmd.ExecuteNonQuery();
+            cmd_backup.AddNamedParameter("@ts");
+
+            var curtime = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow);
+            cmd_backup.SetParameterValue("@ts", curtime - 5);
+            cmd_backup.ExecuteNonQuery();
+            cmd_rsync.SetParameterValue("@ts", curtime - 4);
+            cmd_rsync.ExecuteNonQuery();
+            cmd_backup.SetParameterValue("@ts", curtime - 3);
+            cmd_backup.ExecuteNonQuery();
+            cmd_backup.SetParameterValue("@ts", curtime - 2);
+            cmd_backup.ExecuteNonQuery();
 
             var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
             Assert.IsFalse(shouldTrigger);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestShouldTriggerSync_Counting_Reached()
+        {
+            var module = new RemoteSynchronizationModule();
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""counting"", ""count"": 2}]}",
+                ["dbpath"] = DBFILE
+            };
+            module.Configure(options);
+
+            // Create Operation table and simulate 2 backups (less than 5)
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd_backup = db.CreateCommand();
+            using var cmd_rsync = db.CreateCommand();
+            EnsureOperationTableCreated(cmd_backup);
+
+            cmd_rsync.CommandText = @"
+                INSERT INTO ""Operation"" (
+                    ""Description"",
+                    ""Timestamp""
+                ) VALUES (
+                    'Rsync 0',
+                    @ts
+                )";
+            cmd_rsync.AddNamedParameter("@ts");
+
+            cmd_backup.CommandText = @"
+                INSERT INTO ""Operation"" (
+                    ""Description"",
+                    ""Timestamp""
+                ) VALUES (
+                    'Backup',
+                    @ts
+                )";
+            cmd_backup.AddNamedParameter("@ts");
+
+            var curtime = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow);
+            cmd_backup.SetParameterValue("@ts", curtime - 5);
+            cmd_backup.ExecuteNonQuery();
+            cmd_rsync.SetParameterValue("@ts", curtime - 4);
+            cmd_rsync.ExecuteNonQuery();
+            cmd_backup.SetParameterValue("@ts", curtime - 3);
+            cmd_backup.ExecuteNonQuery();
+            cmd_backup.SetParameterValue("@ts", curtime - 2);
+            cmd_backup.ExecuteNonQuery();
+
+            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            Assert.IsTrue(shouldTrigger);
         }
 
         [Test]
