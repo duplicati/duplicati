@@ -1117,6 +1117,190 @@ namespace Duplicati.UnitTest
             var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(0, count);
         }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestMultipleBackups_WithCountingDestinations()
+        {
+            // Create test files: one folder with 2 files, 2 subfolders each with 2 files, all ~1kb
+            var testDataFolder = System.IO.Path.Combine(DATAFOLDER, "testdata");
+            System.IO.Directory.CreateDirectory(testDataFolder);
+            var sub1 = System.IO.Path.Combine(testDataFolder, "sub1");
+            var sub2 = System.IO.Path.Combine(testDataFolder, "sub2");
+            System.IO.Directory.CreateDirectory(sub1);
+            System.IO.Directory.CreateDirectory(sub2);
+
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var rng = new Random();
+            var buf = new byte[1024];
+            void NewRandomFile(string folder, string filename)
+            {
+                rng.NextBytes(buf);
+                var content = new string([.. buf.Select(c => chars[c % chars.Length])]);
+                System.IO.File.WriteAllText(System.IO.Path.Combine(folder, filename), content);
+            }
+            NewRandomFile(testDataFolder, "file1.txt");
+            NewRandomFile(testDataFolder, "file2.txt");
+            NewRandomFile(sub1, "file3.txt");
+            NewRandomFile(sub1, "file4.txt");
+            NewRandomFile(sub2, "file5.txt");
+            NewRandomFile(sub2, "file6.txt");
+
+            // Sync destinations
+            var syncDest1 = System.IO.Path.Combine(BASEFOLDER, "syncdest1");
+            var syncDest2 = System.IO.Path.Combine(BASEFOLDER, "syncdest2");
+            var syncDest3 = System.IO.Path.Combine(BASEFOLDER, "syncdest3");
+
+            var options = TestOptions;
+            options["remote-sync-json-config"] = $@"
+            {{
+                ""destinations"": [
+                    {{
+                        ""url"": ""file://{syncDest1}""
+                    }},
+                    {{
+                        ""url"": ""file://{syncDest2}"",
+                        ""mode"": ""counting"",
+                        ""count"": 2
+                    }},
+                    {{
+                        ""url"": ""file://{syncDest3}"",
+                        ""mode"": ""counting"",
+                        ""count"": 3
+                    }}
+                ]
+            }}";
+            options["dbpath"] = DBFILE;
+
+            // First backup
+            void Backup()
+            {
+                using var console = new CommandLine.ConsoleOutput(Console.Out, options);
+                using var controller = new Controller("file://" + TARGETFOLDER, options, console);
+                var result = controller.Backup([DATAFOLDER]);
+                Assert.AreEqual(ParsedResultType.Success, result.ParsedResult);
+            }
+            Backup();
+
+            // Assert all destinations have same files
+            bool ContainsSameFiles(string path1, string path2, bool shouldAssert = true)
+            {
+                bool matches = true;
+                var files1 = System.IO.Directory.GetFiles(path1, "*", System.IO.SearchOption.TopDirectoryOnly)
+                    .Select(f => f.Substring(path1.Length).TrimStart(System.IO.Path.DirectorySeparatorChar))
+                    .OrderBy(f => f)
+                    .ToArray();
+                var files2 = System.IO.Directory.GetFiles(path2, "*", System.IO.SearchOption.TopDirectoryOnly)
+                    .Select(f => f.Substring(path2.Length).TrimStart(System.IO.Path.DirectorySeparatorChar))
+                    .OrderBy(f => f)
+                    .ToArray();
+
+                if (shouldAssert)
+                    Assert.AreEqual(files1.Length, files2.Length, $"File count mismatch between {path1} and {path2}");
+                matches &= files1.Length == files2.Length;
+                if (!matches)
+                    return false;
+
+                for (int i = 0; i < files1.Length; i++)
+                {
+                    if (shouldAssert)
+                        Assert.AreEqual(files1[i], files2[i], $"Filename mismatch: {files1[i]} vs {files2[i]}");
+                    matches &= files1[i] == files2[i];
+
+                    var content1 = System.IO.File.ReadAllText(System.IO.Path.Combine(path1, files1[i]));
+                    var content2 = System.IO.File.ReadAllText(System.IO.Path.Combine(path2, files2[i]));
+                    if (shouldAssert)
+                        Assert.AreEqual(content1, content2, $"File content mismatch for {files1[i]}");
+                    matches &= content1 == content2;
+                }
+
+                var folders1 = System.IO.Directory.GetDirectories(path1, "*", System.IO.SearchOption.TopDirectoryOnly)
+                    .Select(f => f.Substring(path1.Length).TrimStart(System.IO.Path.DirectorySeparatorChar))
+                    .OrderBy(f => f)
+                    .ToArray();
+                var folders2 = System.IO.Directory.GetDirectories(path2, "*", System.IO.SearchOption.TopDirectoryOnly)
+                    .Select(f => f.Substring(path2.Length).TrimStart(System.IO.Path.DirectorySeparatorChar))
+                    .OrderBy(f => f)
+                    .ToArray();
+                if (shouldAssert)
+                    Assert.AreEqual(folders1.Length, folders2.Length, $"Folder count mismatch between {path1} and {path2}");
+                matches &= folders1.Length == folders2.Length;
+                if (!matches)
+                    return false;
+
+                for (int i = 0; i < folders1.Length; i++)
+                {
+                    if (shouldAssert)
+                        Assert.AreEqual(folders1[i], folders2[i], $"Folder name mismatch: {folders1[i]} vs {folders2[i]}");
+                    matches &= folders1[i] == folders2[i];
+
+                    // Recursively check subfolders
+                    matches &= ContainsSameFiles(System.IO.Path.Combine(path1, folders1[i]), System.IO.Path.Combine(path2, folders2[i]), shouldAssert);
+                }
+
+                return matches;
+            }
+
+            bool DestinationsAreEqual(bool shouldAssert = true, params string[] paths)
+            {
+                bool matches = true;
+                for (int i = 1; i < paths.Length; i++)
+                    matches &= ContainsSameFiles(paths[0], paths[i], shouldAssert);
+                return matches;
+            }
+
+            DestinationsAreEqual(true, TARGETFOLDER, syncDest1, syncDest2, syncDest3);
+
+            // Assert restore from each works
+            void AssertRestoreWorks(string[] Urls)
+            {
+                var restoreFolders = Urls.Select(url => System.IO.Path.Combine(BASEFOLDER, "restore_" + System.IO.Path.GetRandomFileName())).ToArray();
+                foreach (var (url, restoreFolder) in Urls.Zip(restoreFolders))
+                {
+                    System.IO.Directory.CreateDirectory(restoreFolder);
+                    var dataFolder = System.IO.Path.Combine(restoreFolder, "data");
+                    System.IO.Directory.CreateDirectory(dataFolder);
+
+                    var restoreOptions = new Dictionary<string, string>(TestOptions)
+                    {
+                        ["dbpath"] = System.IO.Path.Combine(restoreFolder, "db.sqlite"),
+                        ["restore-path"] = dataFolder
+                    };
+
+                    using var console = new CommandLine.ConsoleOutput(Console.Out, restoreOptions);
+                    using var controller = new Controller(url, restoreOptions, console);
+                    var result = controller.Restore(["*"]);
+                }
+
+                DestinationsAreEqual(true, [.. restoreFolders.Select(f => System.IO.Path.Combine(f, "data"))]);
+
+            }
+
+            AssertRestoreWorks([TARGETFOLDER, syncDest1, syncDest2, syncDest3]);
+
+            // Add another file and backup
+            NewRandomFile(testDataFolder, "file7.txt");
+            Backup();
+            DestinationsAreEqual(true, TARGETFOLDER, syncDest1);
+            Assert.IsFalse(DestinationsAreEqual(false, TARGETFOLDER, syncDest2)); // syncDest2 should be out of date
+            Assert.IsFalse(DestinationsAreEqual(false, TARGETFOLDER, syncDest3)); // syncDest3 should be out of date
+            AssertRestoreWorks([TARGETFOLDER, syncDest1]);
+
+            // Add another file and backup
+            NewRandomFile(sub1, "file8.txt");
+            Backup();
+            DestinationsAreEqual(true, TARGETFOLDER, syncDest1, syncDest2);
+            Assert.IsFalse(DestinationsAreEqual(false, TARGETFOLDER, syncDest3)); // syncDest3 should be out of date
+            AssertRestoreWorks([TARGETFOLDER, syncDest1, syncDest2]);
+
+            // Add another file and backup
+            NewRandomFile(sub2, "file9.txt");
+            Backup();
+            DestinationsAreEqual(true, TARGETFOLDER, syncDest1, syncDest3);
+            Assert.IsFalse(DestinationsAreEqual(false, TARGETFOLDER, syncDest2)); // syncDest2 should be out of date
+            AssertRestoreWorks([TARGETFOLDER, syncDest1, syncDest3]);
+        }
+
     }
 
     /// <summary>
