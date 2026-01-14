@@ -1,0 +1,720 @@
+// Copyright (c) 2026 Duplicati Inc. All rights reserved.
+
+using System.Net;
+using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
+using Duplicati.Library.Interface;
+
+namespace Duplicati.Proprietary.Office365;
+
+partial class SourceProvider
+{
+    internal UserEmailApiImpl UserEmailApi => new UserEmailApiImpl(_apiHelper);
+
+    internal class UserEmailApiImpl(APIHelper provider)
+    {
+        /// <summary>
+        /// Lists all messages in the user's mailbox (across all folders) using paging via @odata.nextLink.
+        /// Requires Microsoft Graph application permission Mail.Read (or Mail.ReadBasic.All for limited fields).
+        /// </summary>
+        internal IAsyncEnumerable<GraphMessage> ListAllEmailsAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var select = GraphSelectBuilder.BuildSelect<GraphMessage>();
+
+            // Consider adding $filter=receivedDateTime ge ... for incremental runs.
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/messages" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                "&$orderby=receivedDateTime asc" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphMessage>(url, ct);
+        }
+
+        /// <summary>
+        /// Lists all messages in a specific mail folder.
+        /// </summary>
+        internal IAsyncEnumerable<GraphMessage> ListAllEmailsInFolderAsync(
+            string userIdOrUpn,
+            string folderId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var folder = Uri.EscapeDataString(folderId);
+            var select = GraphSelectBuilder.BuildSelect<GraphMessage>();
+
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/mailFolders/{folder}/messages" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                "&$orderby=receivedDateTime asc" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphMessage>(url, ct);
+        }
+
+        internal async Task<GraphMailFolder> GetMailRootFolderAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var select = GraphSelectBuilder.BuildSelect<GraphMailFolder>();
+
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/mailFolders/msgfolderroot" +
+                $"?$select={Uri.EscapeDataString(select)}";
+
+            var folder = await provider.GetGraphItemAsync<GraphMailFolder>(url, ct).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(folder.Id))
+                throw new UserInformationException("Failed to read root mail folder.", nameof(SourceProvider));
+
+            return folder;
+        }
+
+        /// <summary>
+        /// Enumerates mail folders under a given folder. Use folderId = "msgfolderroot" to list top-level folders.
+        /// For a full tree, call this recursively for each returned folder.
+        /// </summary>
+        internal IAsyncEnumerable<GraphMailFolder> ListMailChildFoldersAsync(string userIdOrUpn, string folderId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var folder = Uri.EscapeDataString(folderId);
+            var select = GraphSelectBuilder.BuildSelect<GraphMailFolder>();
+
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/mailFolders/{folder}/childFolders" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphMailFolder>(url, ct);
+        }
+
+        internal Task<Stream> GetEmailContentStreamAsync(string userIdOrUpn, string messageId, CancellationToken ct)
+        {
+            // MIME (RFC 822) content of the message
+            // Graph returns message/rfc822
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var msg = Uri.EscapeDataString(messageId);
+
+            var url = $"{baseUrl}/v1.0/users/{user}/messages/{msg}/$value";
+            return provider.GetGraphAsStreamAsync(url, "message/rfc822", ct);
+        }
+
+        internal Task<Stream> GetEmailMetadataStreamAsync(string userIdOrUpn, string messageId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var msg = Uri.EscapeDataString(messageId);
+
+            // Mailbox-specific state that is NOT preserved in RFC822
+            var select =
+                "id,parentFolderId,isRead,importance,categories,flag," +
+                "conversationId,conversationIndex,internetMessageId," +
+                "receivedDateTime,sentDateTime,createdDateTime,lastModifiedDateTime," +
+                "from,toRecipients,ccRecipients,bccRecipients,replyTo,sender,subject,hasAttachments";
+
+            var url = $"{baseUrl}/v1.0/users/{user}/messages/{msg}?$select={Uri.EscapeDataString(select)}";
+            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+        }
+    }
+
+    internal ContactsApiImpl ContactsApi => new ContactsApiImpl(_apiHelper);
+    internal class ContactsApiImpl(APIHelper provider)
+    {
+        /// <summary>
+        /// Enumerates all contacts in the user's default Contacts container.
+        /// For contact folders too, enumerate /contactFolders and then /contactFolders/{id}/contacts.
+        /// Requires Microsoft Graph application permission Contacts.Read (or Contacts.ReadWrite).
+        /// </summary>
+        internal IAsyncEnumerable<GraphContact> ListAllContactsAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var select = GraphSelectBuilder.BuildSelect<GraphContact>();
+
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/contacts" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphContact>(url, ct);
+        }
+    }
+
+    internal TodoApiImpl TodoApi => new TodoApiImpl(_apiHelper);
+
+    internal class TodoApiImpl(APIHelper provider)
+    {
+        internal IAsyncEnumerable<GraphTodoTaskList> ListUserTaskListsAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphTodoTaskList>();
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/todo/lists" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphTodoTaskList>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphTodoTask> ListTaskListTasksAsync(string userIdOrUpn, string taskListId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var list = Uri.EscapeDataString(taskListId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphTodoTask>();
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/todo/lists/{list}/tasks" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphTodoTask>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphTodoChecklistItem> ListTaskChecklistItemsAsync(
+            string userIdOrUpn,
+            string taskListId,
+            string taskId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var list = Uri.EscapeDataString(taskListId);
+            var task = Uri.EscapeDataString(taskId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphTodoChecklistItem>();
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/todo/lists/{list}/tasks/{task}/checklistItems" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphTodoChecklistItem>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphTodoLinkedResource> ListTaskLinkedResourcesAsync(
+            string userIdOrUpn,
+            string taskListId,
+            string taskId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var list = Uri.EscapeDataString(taskListId);
+            var task = Uri.EscapeDataString(taskId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphTodoLinkedResource>();
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/todo/lists/{list}/tasks/{task}/linkedResources" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphTodoLinkedResource>(url, ct);
+        }
+
+        internal Task<Stream> GetStreamFromUrl(string url, CancellationToken ct)
+        {
+            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+        }
+
+        internal Task<Stream> GetTaskStreamAsync(
+            string userIdOrUpn,
+            string taskListId,
+            string taskId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var list = Uri.EscapeDataString(taskListId);
+            var task = Uri.EscapeDataString(taskId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphTodoTask>();
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/todo/lists/{list}/tasks/{task}" +
+                $"?$select={Uri.EscapeDataString(select)}";
+
+            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+        }
+
+        internal Task<Stream> GetTaskChecklistItemStreamAsync(
+            string userIdOrUpn,
+            string taskListId,
+            string taskId,
+            string checklistItemId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var list = Uri.EscapeDataString(taskListId);
+            var task = Uri.EscapeDataString(taskId);
+            var item = Uri.EscapeDataString(checklistItemId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphTodoChecklistItem>();
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/todo/lists/{list}/tasks/{task}/checklistItems/{item}" +
+                $"?$select={Uri.EscapeDataString(select)}";
+
+            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+        }
+
+        internal Task<Stream> GetTaskLinkedResourceStreamAsync(
+            string userIdOrUpn,
+            string taskListId,
+            string taskId,
+            string linkedResourceId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var list = Uri.EscapeDataString(taskListId);
+            var task = Uri.EscapeDataString(taskId);
+            var lr = Uri.EscapeDataString(linkedResourceId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphTodoLinkedResource>();
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/todo/lists/{list}/tasks/{task}/linkedResources/{lr}" +
+                $"?$select={Uri.EscapeDataString(select)}";
+
+            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+        }
+    }
+
+    internal OnenoteApiImpl OnenoteApi => new OnenoteApiImpl(_apiHelper);
+
+    internal class OnenoteApiImpl(APIHelper provider)
+    {
+        internal IAsyncEnumerable<GraphNotebook> ListUserNotebooksAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphNotebook>();
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/onenote/notebooks" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphNotebook>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphOnenoteSectionGroup> ListNotebookSectionGroupsAsync(string notebookId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var nb = Uri.EscapeDataString(notebookId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphOnenoteSectionGroup>();
+            var url =
+                $"{baseUrl}/v1.0/onenote/notebooks/{nb}/sectionGroups" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphOnenoteSectionGroup>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphOnenoteSectionGroup> ListSectionGroupSectionGroupsAsync(string sectionGroupId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var sg = Uri.EscapeDataString(sectionGroupId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphOnenoteSectionGroup>();
+            var url =
+                $"{baseUrl}/v1.0/onenote/sectionGroups/{sg}/sectionGroups" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphOnenoteSectionGroup>(url, ct);
+        }
+        internal IAsyncEnumerable<GraphOnenoteSection> ListSectionGroupSectionsAsync(string sectionGroupId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var sg = Uri.EscapeDataString(sectionGroupId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphOnenoteSection>();
+            var url =
+                $"{baseUrl}/v1.0/onenote/sectionGroups/{sg}/sections" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphOnenoteSection>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphOnenotePage> ListSectionPagesAsync(string sectionId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var section = Uri.EscapeDataString(sectionId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphOnenotePage>();
+            var url =
+                $"{baseUrl}/v1.0/onenote/sections/{section}/pages" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphOnenotePage>(url, ct);
+        }
+
+        internal Task<Stream> GetOnenotePageContentStreamAsync(string contentUrl, CancellationToken ct)
+        {
+            // contentUrl is typically an absolute Microsoft Graph URL. Use it as-is.
+            // Page content is HTML; Accept header is optional but helps.
+            return provider.GetGraphAsStreamAsync(contentUrl, "text/html", ct);
+        }
+    }
+
+    internal OneDriveApiImpl OneDriveApi => new OneDriveApiImpl(_apiHelper);
+
+    internal class OneDriveApiImpl(APIHelper provider)
+    {
+
+        internal async Task<GraphDeltaResult<GraphDriveItem>> ListDriveDeltaAsync(
+            string driveId,
+            string? deltaLink,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var drive = Uri.EscapeDataString(driveId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphDriveItem>();
+            var nextUrl = string.IsNullOrWhiteSpace(deltaLink)
+                ? $"{baseUrl}/v1.0/drives/{drive}/root/delta" +
+                  $"?$select={Uri.EscapeDataString(select)}" +
+                  $"&$top={GENERAL_PAGE_SIZE}"
+                : deltaLink;
+
+            var items = new List<GraphDriveItem>();
+            string? finalDeltaLink = null;
+
+            while (!string.IsNullOrWhiteSpace(nextUrl))
+            {
+                ct.ThrowIfCancellationRequested();
+
+                async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
+                {
+                    var req = new HttpRequestMessage(HttpMethod.Get, new Uri(nextUrl));
+                    req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, ct);
+                    req.Headers.Accept.Clear();
+                    req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    return req;
+                }
+
+                using var resp = await provider.SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, null, ct).ConfigureAwait(false);
+                await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+                var page = await APIHelper.ParseResponseJson<GraphDeltaPage<GraphDriveItem>>(resp, ct).ConfigureAwait(false)
+                           ?? new GraphDeltaPage<GraphDriveItem>();
+
+                if (page.Value.Count > 0)
+                    items.AddRange(page.Value);
+
+                if (!string.IsNullOrWhiteSpace(page.DeltaLink))
+                    finalDeltaLink = page.DeltaLink;
+
+                nextUrl = page.NextLink;
+            }
+
+            if (string.IsNullOrWhiteSpace(finalDeltaLink))
+                throw new UserInformationException("Drive delta did not return an @odata.deltaLink.", nameof(SourceProvider));
+
+            return new GraphDeltaResult<GraphDriveItem>(items, finalDeltaLink);
+        }
+
+        internal IAsyncEnumerable<GraphDriveItem> ListDriveRootChildrenAsync(string driveId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var drive = Uri.EscapeDataString(driveId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphDriveItem>();
+            var url =
+                $"{baseUrl}/v1.0/drives/{drive}/root/children" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphDriveItem>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphDrive> ListUserDrivesAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphDrive>();
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/drives" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            bool? EvaluateStatusCode(HttpResponseMessage m)
+            {
+                return m.StatusCode switch
+                {
+                    HttpStatusCode.ServiceUnavailable => false,
+                    _ => null,
+                };
+            }
+
+            // Map 503 to success, as it means the user has no OneDrive provisioned.
+            return WithTryCatch(
+                provider.GetAllGraphItemsAsync<GraphDrive>(url, EvaluateStatusCode, ct),
+                ex => ex is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.ServiceUnavailable,
+                ct);
+        }
+
+        private async IAsyncEnumerable<T> WithTryCatch<T>(IAsyncEnumerable<T> source, Func<Exception, bool>? ignoreException, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var enumerator = source.GetAsyncEnumerator(cancellationToken);
+
+            while (true)
+            {
+                try
+                {
+                    if (!await enumerator.MoveNextAsync().ConfigureAwait(false))
+                        yield break;
+                }
+                catch (Exception ex)
+                {
+                    if (ignoreException?.Invoke(ex) != true)
+                        throw;
+
+                    yield break;
+                }
+
+                yield return enumerator.Current;
+            }
+        }
+
+        internal async Task<GraphDrive> GetUserPrimaryDriveAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+
+            var select = "id,driveType,webUrl,createdDateTime,lastModifiedDateTime,owner";
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/drive" +
+                $"?$select={Uri.EscapeDataString(select)}";
+
+            var drive = await provider.GetGraphItemAsync<GraphDrive>(url, ct).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(drive.Id))
+                throw new UserInformationException("Failed to read user's primary drive.", nameof(SourceProvider));
+
+            return drive;
+        }
+
+        internal IAsyncEnumerable<GraphDriveItem> ListDriveFolderChildrenAsync(
+            string driveId,
+            string folderItemId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var drive = Uri.EscapeDataString(driveId);
+            var folder = Uri.EscapeDataString(folderItemId);
+
+            var select = "id,name,size,createdDateTime,lastModifiedDateTime,eTag,cTag,parentReference,deleted,folder,file,fileSystemInfo";
+            var url =
+                $"{baseUrl}/v1.0/drives/{drive}/items/{folder}/children" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphDriveItem>(url, ct);
+        }
+
+        internal Task<Stream> GetDriveItemContentStreamAsync(string driveId, string itemId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var drive = Uri.EscapeDataString(driveId);
+            var item = Uri.EscapeDataString(itemId);
+
+            // Returns the file content stream (302 redirect handled by HttpClient by default)
+            var url = $"{baseUrl}/v1.0/drives/{drive}/items/{item}/content";
+            return provider.GetGraphAsStreamAsync(url, "application/octet-stream", ct);
+        }
+    }
+
+    internal CalendarApiImpl CalendarApi => new CalendarApiImpl(_apiHelper);
+
+    internal class CalendarApiImpl(APIHelper provider)
+    {
+        internal IAsyncEnumerable<GraphCalendarGroup> ListUserCalendarGroupsAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+
+            var select = "id,name,classId,changeKey";
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/calendarGroups" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphCalendarGroup>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphCalendar> ListUserCalendarsInCalendarGroupAsync(
+            string userIdOrUpn,
+            string calendarGroupId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var group = Uri.EscapeDataString(calendarGroupId);
+
+            var select = "id,name,changeKey,color,isDefaultCalendar,isRemovable,canShare,canViewPrivateItems";
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/calendarGroups/{group}/calendars" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphCalendar>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphEvent> ListCalendarEventsAsync(string userIdOrUpn, string calendarId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var cal = Uri.EscapeDataString(calendarId);
+
+            var select =
+                "id,subject,createdDateTime,lastModifiedDateTime,start,end,isAllDay,isCancelled," +
+                "location,organizer,attendees,recurrence,seriesMasterId,type";
+
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/calendars/{cal}/events" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphEvent>(url, ct);
+        }
+
+        internal Task<Stream> GetCalendarEventStreamAsync(
+            string userIdOrUpn,
+            string calendarId,
+            string eventId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var cal = Uri.EscapeDataString(calendarId);
+            var ev = Uri.EscapeDataString(eventId);
+
+            var select =
+                "id,subject,createdDateTime,lastModifiedDateTime,start,end,isAllDay,isCancelled," +
+                "location,organizer,attendees,recurrence,seriesMasterId,type," +
+                "body,bodyPreview,importance,sensitivity,categories,showAs,responseStatus,onlineMeeting,webLink";
+
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/calendars/{cal}/events/{ev}" +
+                $"?$select={Uri.EscapeDataString(select)}";
+
+            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+        }
+    }
+
+    internal UserPlannerApiImpl UserPlannerApi => new UserPlannerApiImpl(_apiHelper);
+
+    internal class UserPlannerApiImpl(APIHelper provider)
+    {
+        internal IAsyncEnumerable<GraphPlannerTask> ListUserAssignedPlannerTasksAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+
+            var select =
+                "id,planId,bucketId,title,createdDateTime,startDateTime,dueDateTime,completedDateTime," +
+                "percentComplete,hasDescription,assignments";
+
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/planner/tasks" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphPlannerTask>(url, ct);
+        }
+    }
+
+    internal ChatApiImpl ChatApi => new ChatApiImpl(_apiHelper);
+    internal class ChatApiImpl(APIHelper provider)
+    {
+        internal IAsyncEnumerable<GraphChat> ListUserChatsAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+
+            var select = "id,chatType,topic,createdDateTime,lastUpdatedDateTime,webUrl";
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/chats" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={OptionsHelper.CHATS_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphChat>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphChatMember> ListChatMembersAsync(string chatId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var chat = Uri.EscapeDataString(chatId);
+
+            var select = "id,displayName,roles,visibleHistoryStartDateTime,userId";
+            var url =
+                $"{baseUrl}/v1.0/chats/{chat}/members" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphChatMember>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphChatMessage> ListChatMessagesAsync(string chatId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var chat = Uri.EscapeDataString(chatId);
+
+            var select =
+                "id,createdDateTime,lastModifiedDateTime,deletedDateTime,subject,body,from," +
+                "attachments,mentions,reactions,replyToId";
+
+            var url =
+                $"{baseUrl}/v1.0/chats/{chat}/messages" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphChatMessage>(url, ct);
+        }
+
+
+        public IAsyncEnumerable<GraphChatHostedContent> ListChatHostedContentsAsync(
+            string chatId,
+            string messageId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var chat = Uri.EscapeDataString(chatId);
+            var msg = Uri.EscapeDataString(messageId);
+
+            var select = "id,contentType";
+            var url =
+                $"{baseUrl}/v1.0/chats/{chat}/messages/{msg}/hostedContents" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphChatHostedContent>(url, ct);
+        }
+
+        public Task<Stream> GetChatHostedContentValueStreamAsync(
+            string chatId,
+            string messageId,
+            string hostedContentId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var chat = Uri.EscapeDataString(chatId);
+            var msg = Uri.EscapeDataString(messageId);
+            var hc = Uri.EscapeDataString(hostedContentId);
+
+            var url =
+                $"{baseUrl}/v1.0/chats/{chat}/messages/{msg}/hostedContents/{hc}/$value";
+
+            return provider.GetGraphAsStreamAsync(url, "application/octet-stream", ct);
+        }
+    }
+}

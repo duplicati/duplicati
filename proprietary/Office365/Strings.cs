@@ -1,0 +1,53 @@
+// Copyright (c) 2026 Duplicati Inc. All rights reserved.
+
+using Duplicati.Library.Localization.Short;
+
+namespace Duplicati.Proprietary.Office365;
+
+internal static class Strings
+{
+    public static string ProviderDisplayName => LC.L("Microsoft 365 Provider");
+
+    public static string ProviderDescription => LC.L(
+        "Expose Microsoft 365 content through a virtual folder structure organized by content type and internal structure.");
+
+    public static string WebModuleDisplayName => LC.L("Microsoft 365 Web Module");
+    public static string WebModuleDescription => LC.L("Provides a web API for managing Microsoft 365 backups.");
+
+    public static string MissingAccessToken => LC.L("An OAuth access token is required for this workspace backend.");
+    public static string InvalidRestoreTargetType(string? type) => LC.L($"Invalid restore target type: {type}");
+
+    public static string IncorrectTargetUrlFormat(RestoreTargetType targetType, int expected, string[] parts) => LC.L(
+        $"The target URL does not have the correct number of parts for restore target type {targetType}: expected {expected}, got {parts.Length}");
+
+    public static string MetadataStorageNotEnabled => LC.L(
+        "Storing metadata content in the database must be enabled to use the Microsoft 365 source provider.");
+
+    public static string MissingTenantId => LC.L("A tenant ID must be supplied to query the Office 365 Management API.");
+
+    public static string OfficeTenantOptionShort => LC.L("Azure AD tenant identifier.");
+
+    public static string OfficeTenantOptionLong => LC.L("The tenant GUID used when calling the Office 365 Management Activity APIs.");
+
+    public static string OfficeClientOptionShort => LC.L("Azure application (client) ID.");
+
+    public static string OfficeClientOptionLong => LC.L("Client identifier used for OAuth2 client credential flow against the Office 365 Management API.");
+
+    public static string OfficeSecretOptionShort => LC.L("Azure application client secret.");
+
+    public static string OfficeSecretOptionLong => LC.L("Client secret used for OAuth2 client credential flow against the Office 365 Management API.");
+
+    public static string OfficeGraphBaseOptionShort => LC.L("Microsoft Graph base URL.");
+
+    public static string OfficeGraphBaseOptionLong => LC.L("Base URL for Microsoft Graph if targeting a sovereign cloud.");
+
+    public static string WebModuleOperationShort => LC.L("The operation to perform.");
+    public static string WebModuleOperationLong => LC.L("The operation that the web module should perform.");
+
+    public static string WebModuleURLShort => LC.L("The Microsoft 365 URL.");
+    public static string WebModuleURLLong => LC.L("The Microsoft 365 URL to the destination.");
+
+    public static string WebModulePathShort => LC.L("The path within the Microsoft 365 destination.");
+    public static string WebModulePathLong => LC.L("The path within the Microsoft 365 destination to list.");
+
+}
