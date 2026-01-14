@@ -180,15 +180,17 @@ namespace Duplicati.Library.DynamicLoader
         {
             // Source providers are preferred over backends
             var provider = _RestoreDestinationProvider.GetRestoreDestinationProvider(url, mountPoint, options);
-            if (provider == null)
-            {
-                // See if there is a backend that can also be a destination provider
-                var backend = BackendLoader.GetBackend(url, options);
-                if (backend is IFolderEnabledBackend folderBackend)
-                    provider = new BackendRestoreDestinationProvider(folderBackend, mountPoint);
-                else
-                    backend?.Dispose();
-            }
+
+            // TODO: Support restoring to backends as well
+            // if (provider == null)
+            // {
+            //     // See if there is a backend that can also be a destination provider
+            //     var backend = BackendLoader.GetBackend(url, options);
+            //     if (backend is IFolderEnabledBackend folderBackend)
+            //         provider = new BackendRestoreDestinationProvider(folderBackend, mountPoint);
+            //     else
+            //         backend?.Dispose();
+            // }
 
             if (provider == null)
                 return null;
