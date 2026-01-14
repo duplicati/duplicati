@@ -143,14 +143,15 @@ public class Issue6705 : BasicSetupHelper
     public void DownloadAndExtractBackups()
     {
         bool remote = false; // Set to false to use local files instead of downloading from S3
-        var localZipPath = "D:\\git\\duplicati-carl\\";
+        var localZipPath = "D:\\git\\duplicati-carl";
+        var zipPostfix = "_large"; // Set to "" for small backup, "_large" for large backup
         foreach (var os in new[] { "Windows", "Linux", "MacOS" })
         {
-            string zipFilepath = $"{localZipPath}{os}.zip";
+            string zipFilepath = Path.Combine(localZipPath, $"{os}{zipPostfix}.zip");
             if (remote)
             {
                 zipFilepath = ZipPath(os);
-                var url = $"https://testfiles.duplicati.com/issue6705/{os}.zip";
+                var url = $"https://testfiles.duplicati.com/issue6705/{os}{zipPostfix}.zip";
                 DownloadS3FileIfNewerAsync(zipFilepath, url).GetAwaiter().GetResult();
             }
             var extractedPath = ExtractedBasePath(os);
