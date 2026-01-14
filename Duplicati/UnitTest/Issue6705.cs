@@ -95,13 +95,28 @@ public class Issue6705 : BasicSetupHelper
     }
 
     // The backups were created using the following "generic" script on each OS:
-    /*
+
+    /* Small backup:
     git clone git@github.com:duplicati/documentation.git duplicati-docs
+    rm -rf duplicati-docs/.gitbook/assets
     dotnet build
     mkdir cross-os-backup
     Executables/Duplicati.CommandLine/bin/Debug/net10.0/Duplicati.CommandLine backup "file://cross-os-backup/backup" ./duplicati-docs --passphrase=123456 --blocksize=10kb --dblock-size=10mb --dbpath="cross-os-backup/db.sqlite"
     mv duplicati-docs cross-os-backup/original
     zip -r {OS}.zip cross-os-backup
+    */
+
+    /* Large backup:
+    git clone git@github.com:duplicati/duplicati.git duplicati
+    cd duplicati
+    dotnet build
+    dotnet build -c Release
+    cd ..
+    dotnet build
+    mkdir cross-os-backup
+    Executables/Duplicati.CommandLine/bin/Debug/net10.0/Duplicati.CommandLine backup "file://cross-os-backup/backup" ./duplicati-docs --passphrase=123456 --blocksize=10kb --dblock-size=10mb --dbpath="cross-os-backup/db.sqlite"
+    mv duplicati cross-os-backup/original
+    zip -r {OS}_large.zip cross-os-backup
     */
 
     [Test]
