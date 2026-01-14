@@ -110,9 +110,9 @@ public class Issue6705 : BasicSetupHelper
         } while (retries > 0);
     }
 
-    string ExtractedBasePath(string os) => Path.Combine(BASEFOLDER, os);
-    string ExtractedPath(string os) => Path.Combine(ExtractedBasePath(os), "cross-os-backup");
-    string ZipPath(string os) => Path.Combine(BASEFOLDER, $"{os}.zip");
+    static string ExtractedBasePath(string os) => Path.Combine(BASEFOLDER, os);
+    static string ExtractedPath(string os) => Path.Combine(ExtractedBasePath(os), "cross-os-backup");
+    static string ZipPath(string os) => Path.Combine(BASEFOLDER, $"{os}.zip");
 
     // The backups were created using the following "generic" script on each OS:
 
