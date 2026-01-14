@@ -216,7 +216,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     if (options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                     {
-                        var metadata = MetadataGenerator.GenerateMetadata(entry, attributes, options);
+                        var metadata = await MetadataGenerator.GenerateMetadata(entry, attributes, options, cancellationToken);
 
                         if (!metadata.ContainsKey("CoreSymlinkTarget"))
                             metadata["CoreSymlinkTarget"] = symlinkTarget;
@@ -242,7 +242,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 if (!options.SkipMetadata)
                 {
-                    metahash = Utility.WrapMetadata(MetadataGenerator.GenerateMetadata(entry, attributes, options), options);
+                    metahash = Utility.WrapMetadata(await MetadataGenerator.GenerateMetadata(entry, attributes, options, cancellationToken), options);
                 }
                 else
                 {
@@ -273,7 +273,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             using (var ms = new MemoryStream(meta.Blob))
                 res = await StreamBlock.ProcessStream(streamblockchannel, path, ms, true, CompressionHint.Default);
 
-            return await database.AddMetadatasetAsync(res.Streamhash, res.Streamlength, res.Blocksetid, cancellationToken).ConfigureAwait(false);
+            return await database.AddMetadatasetAsync(res.Streamhash, res.Streamlength, res.Blocksetid, meta, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

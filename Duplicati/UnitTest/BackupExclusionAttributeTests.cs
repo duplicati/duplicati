@@ -47,17 +47,17 @@ public class BackupExclusionAttributeTests : BasicSetupHelper
         public bool IsSymlink { get; set; }
         public string? SymlinkTarget { get; set; }
         public FileAttributes Attributes { get; set; } = FileAttributes.Normal;
-        public Dictionary<string, string> MinorMetadata { get; set; } = new();
         public bool IsBlockDevice { get; set; }
         public bool IsCharacterDevice { get; set; }
         public bool IsAlternateStream { get; set; }
         public string? HardlinkTargetId { get; set; }
+        public Dictionary<string, string?> MinorMetadata { get; set; } = new();
 
         public Task<Stream> OpenRead(CancellationToken cancellationToken)
             => throw new NotImplementedException();
 
-        public Task<Stream?> OpenMetadataRead(CancellationToken cancellationToken)
-            => throw new NotImplementedException();
+        public Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+            => Task.FromResult(MinorMetadata);
 
         public Task<bool> FileExists(string filename, CancellationToken cancellationToken)
             => throw new NotImplementedException();
@@ -82,7 +82,7 @@ public class BackupExclusionAttributeTests : BasicSetupHelper
         var entry = new TestEntry
         {
             Path = "/test/file.txt",
-            MinorMetadata = new Dictionary<string, string>()
+            MinorMetadata = new Dictionary<string, string?>()
         };
 
         var result = InvokeHasBackupExclusionAttribute(entry);
@@ -96,7 +96,7 @@ public class BackupExclusionAttributeTests : BasicSetupHelper
         var entry = new TestEntry
         {
             Path = "/test/file.txt",
-            MinorMetadata = new Dictionary<string, string>()
+            MinorMetadata = new Dictionary<string, string?>()
         };
 
         // macOS attribute

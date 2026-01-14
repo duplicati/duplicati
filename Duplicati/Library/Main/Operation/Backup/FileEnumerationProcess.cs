@@ -306,6 +306,10 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 if (e.IsFolder)
                 {
+#if DEBUG
+                    if (!e.Path.EndsWith(Path.DirectorySeparatorChar))
+                        throw new Exception($"Expected folder entry to end with directory separator char: {e.Path}");
+#endif
                     try
                     {
                         // We only filter new items, as we assume the input is already filtered
@@ -503,7 +507,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             // Filter entries that are marked as excluded from backups via filesystem extended attributes
-            if (!disableBackupExclusionXattr && HasBackupExclusionAttribute(entry))
+            if (!disableBackupExclusionXattr && await HasBackupExclusionAttribute(entry, cancellationToken).ConfigureAwait(false))
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromBackupAttribute", "Excluding path marked as excluded from backups via filesystem attribute: {0}", entry.Path);
                 return false;
@@ -584,11 +588,11 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         /// <param name="entry">The entry to check.</param>
         /// <returns>True if the entry has the attribute, false otherwise.</returns>
-        private static bool HasBackupExclusionAttribute(ISourceProviderEntry entry)
+        private static async Task<bool> HasBackupExclusionAttribute(ISourceProviderEntry entry, CancellationToken token)
         {
             try
             {
-                var metadata = entry.MinorMetadata;
+                var metadata = await entry.GetMinorMetadata(token).ConfigureAwait(false);
                 if (metadata == null || metadata.Count == 0)
                     return false;
 
