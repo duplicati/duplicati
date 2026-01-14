@@ -235,8 +235,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             await foreach (var s in source.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
                 // Keep track of directories
-                var isDirectory = s.Path[s.Path.Length - 1] == System.IO.Path.DirectorySeparatorChar;
-                if (isDirectory)
+                if (s.IsFolder)
                 {
                     while (pathstack.Count > 0 && !s.Path.StartsWith(pathstack.Peek().Item.Path, Library.Utility.Utility.ClientFilenameStringComparison))
                     {

@@ -115,7 +115,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 var lastupdate = DateTime.Now;
 
                                 // Core processing loop, read blocks of data and hash individually
-                                while (((lastread = await stream.ForceStreamReadAsync(buf, blocksize)) != 0))
+                                while (((lastread = await stream.ForceStreamReadAsync(buf, blocksize, taskreader.ProgressToken)) != 0))
                                 {
                                     // Run file hashing concurrently to squeeze a little extra concurrency out of it
                                     var pftask = Task.Run(() => filehasher.TransformBlock(buf, 0, lastread, buf, 0));

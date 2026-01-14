@@ -561,13 +561,13 @@ namespace Duplicati.Library.Utility
         /// <param name="buf">The buffer to read into.</param>
         /// <param name="count">The amount of bytes to read.</param>
         /// <returns>The number of bytes read</returns>
-        public static async Task<int> ForceStreamReadAsync(this System.IO.Stream stream, byte[] buf, int count)
+        public static async Task<int> ForceStreamReadAsync(this System.IO.Stream stream, byte[] buf, int count, CancellationToken cancellationToken)
         {
             int a;
             int index = 0;
             do
             {
-                a = await stream.ReadAsync(buf, index, count).ConfigureAwait(false);
+                a = await stream.ReadAsync(buf, index, count, cancellationToken).ConfigureAwait(false);
                 index += a;
                 count -= a;
             } while (a != 0 && count > 0);

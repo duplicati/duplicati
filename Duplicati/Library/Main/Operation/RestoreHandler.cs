@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.Operation
                 };
         }
 
-        public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter)
+        public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
 
@@ -132,7 +132,7 @@ namespace Duplicati.Library.Main.Operation
                             .ConfigureAwait(false);
 
                     if (!m_options.SkipMetadata)
-                        ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage());
+                        await ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage(), restoreDestination, m_result.TaskControl.ProgressToken);
 
                     //If we have --version set, we need to adjust, as the db has only the required versions
                     //TODO: Bit of a hack to set options that way
@@ -141,9 +141,9 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 if (m_options.RestoreLegacy)
-                    await DoRunAsync(backendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await DoRunAsync(backendManager, db, filter, restoreDestination, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
-                    await DoRunNewAsync(backendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await DoRunNewAsync(backendManager, db, filter, restoreDestination, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
             finally
             {
@@ -153,7 +153,7 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private static async Task PatchWithBlocklist(LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer, RestoreHandlerMetadataStorage metadatastorage, CancellationToken cancellationToken)
+        private static async Task PatchWithBlocklist(LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer, RestoreHandlerMetadataStorage metadatastorage, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
             var blocksize = options.Blocksize;
             var updateCounter = 0L;
@@ -176,16 +176,16 @@ namespace Duplicati.Library.Main.Operation
 
                     try
                     {
-                        var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
-                        if (!options.Dryrun && !SystemIO.IO_OS.DirectoryExists(folderpath))
+                        if (!options.Dryrun)
                         {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
-                            SystemIO.IO_OS.DirectoryCreate(folderpath);
+                            var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
+                            if (await restoreDestination.CreateFolderIfNotExists(folderpath, cancellationToken).ConfigureAwait(false))
+                                Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
                         }
 
                         // TODO: Much faster if we iterate the volume and checks what blocks are used,
                         // because the compressors usually like sequential reading
-                        using (var file = SystemIO.IO_OS.FileOpenWrite(targetpath))
+                        using (var file = await restoreDestination.OpenWrite(targetpath, cancellationToken).ConfigureAwait(false))
                             await foreach (var targetblock in restorelist.Blocks(cancellationToken).ConfigureAwait(false))
                             {
                                 file.Position = targetblock.Offset;
@@ -274,7 +274,7 @@ namespace Duplicati.Library.Main.Operation
             await blockmarker.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        private static void ApplyStoredMetadata(Options options, RestoreHandlerMetadataStorage metadatastorage)
+        private static async Task ApplyStoredMetadata(Options options, RestoreHandlerMetadataStorage metadatastorage, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
             foreach (var metainfo in metadatastorage.Records)
             {
@@ -289,14 +289,14 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteVerboseMessage(LOGTAG, "PatchingMetadata", "Patching metadata with remote data: {0}", targetpath);
                     try
                     {
-                        var folderpath = Duplicati.Library.Utility.Utility.GetParent(targetpath, false);
-                        if (!options.Dryrun && !SystemIO.IO_OS.DirectoryExists(folderpath))
+                        if (!options.Dryrun)
                         {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for target {1}", folderpath, targetpath);
-                            SystemIO.IO_OS.DirectoryCreate(folderpath);
+                            var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
+                            if (await restoreDestination.CreateFolderIfNotExists(folderpath, cancellationToken).ConfigureAwait(false))
+                                Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for target {1}", folderpath, targetpath);
                         }
 
-                        ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Dryrun);
+                        await ApplyMetadata(targetpath, metainfo.Value, options, restoreDestination, cancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -314,7 +314,9 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="database">The database containing information about the restore.</param>
         /// <param name="filter">The filter of which files to restore.</param>
-        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
+        /// <param name="restoreDestination">The destination to restore to.</param>
+        /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
+        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
             // Perform initial setup
             await Utility.UpdateOptionsFromDb(database, m_options, cancellationToken)
@@ -336,7 +338,7 @@ namespace Duplicati.Library.Main.Operation
                     .ConfigureAwait(false);
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
             using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
-                await CreateDirectoryStructure(database, m_options, m_result).ConfigureAwait(false);
+                await CreateDirectoryStructure(database, restoreDestination, string.IsNullOrEmpty(m_options.Restorepath), m_options, m_result).ConfigureAwait(false);
 
             // At this point, there should be no more writes to the database, so we have to unlock the database:
             await database.Transaction
@@ -357,7 +359,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Create the process network
             var filelister = Restore.FileLister.Run(channels, database, m_options, m_result);
-            var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
+            var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], restoreDestination, m_options, m_result)).ToArray();
             var blockmanager = Restore.BlockManager.Run(channels, database, fileprocessor_requests, fileprocessor_responses, m_options, m_result);
             var volumecache = Restore.VolumeManager.Run(channels, m_options, m_result);
             var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.Run(channels, database, backendManager, m_options, m_result)).ToArray();
@@ -441,7 +443,9 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="database">The database containing information about the restore.</param>
         /// <param name="filter">The filter of which files to restore.</param>
-        private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
+        /// <param name="restoreDestination">The destination to restore to.</param>
+        /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
+        private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
@@ -469,7 +473,7 @@ namespace Duplicati.Library.Main.Operation
                 //Make the entire output setup
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
                 using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
-                    await CreateDirectoryStructure(database, m_options, m_result)
+                    await CreateDirectoryStructure(database, restoreDestination, string.IsNullOrEmpty(m_options.Restorepath), m_options, m_result)
                         .ConfigureAwait(false);
 
                 //If we are patching an existing target folder, do not touch stuff that is already updated
@@ -477,7 +481,7 @@ namespace Duplicati.Library.Main.Operation
                 using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
                 using (var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
                 using (new Logging.Timer(LOGTAG, "ScanForExistingTargetBlocks", "ScanForExistingTargetBlocks"))
-                    await ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, m_result).ConfigureAwait(false);
+                    await ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, restoreDestination, m_result).ConfigureAwait(false);
 
                 //Look for existing blocks in the original source files only
                 if (m_options.UseLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
@@ -486,7 +490,7 @@ namespace Duplicati.Library.Main.Operation
                     using (new Logging.Timer(LOGTAG, "ScanForExistingSourceBlocksFast", "ScanForExistingSourceBlocksFast"))
                     {
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForLocalBlocks);
-                        await ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, m_result).ConfigureAwait(false);
+                        await ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, restoreDestination, m_result).ConfigureAwait(false);
                     }
                 }
 
@@ -502,7 +506,7 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PatchWithLocalBlocks);
                     using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
                     using (new Logging.Timer(LOGTAG, "PatchWithLocalBlocks", "PatchWithLocalBlocks"))
-                        await ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_result, metadatastorage).ConfigureAwait(false);
+                        await ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_result, metadatastorage, restoreDestination).ConfigureAwait(false);
                 }
 
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
@@ -540,7 +544,7 @@ namespace Duplicati.Library.Main.Operation
 
                             using (tmpfile)
                             using (var blocks = new BlockVolumeReader(GetCompressionModule(name), tmpfile, m_options))
-                                await PatchWithBlocklist(database, blocks, m_options, m_result, m_blockbuffer, metadatastorage, cancellationToken)
+                                await PatchWithBlocklist(database, blocks, m_options, m_result, m_blockbuffer, metadatastorage, restoreDestination, cancellationToken)
                                     .ConfigureAwait(false);
                         }
                         catch (Exception ex)
@@ -561,10 +565,18 @@ namespace Duplicati.Library.Main.Operation
 
                     try
                     {
-                        SystemIO.IO_OS.DirectoryCreate(SystemIO.IO_OS.PathGetDirectoryName(file.Path));
+                        await restoreDestination.CreateFolderIfNotExists(SystemIO.IO_OS.PathGetDirectoryName(file.Path), cancellationToken).ConfigureAwait(false);
                         // Just create the file and close it right away, empty statement is intentional.
-                        using (SystemIO.IO_OS.FileCreate(file.Path))
+                        using (var stream = await restoreDestination.OpenWrite(file.Path, cancellationToken).ConfigureAwait(false))
                         {
+                            try
+                            {
+                                stream.SetLength(0);
+                            }
+                            catch (NotSupportedException)
+                            {
+                                // Some streams do not support setting length, ignore
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -581,7 +593,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Apply metadata
                 if (!m_options.SkipMetadata)
-                    ApplyStoredMetadata(m_options, metadatastorage);
+                    await ApplyStoredMetadata(m_options, metadatastorage, restoreDestination, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                     return;
@@ -608,7 +620,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 string key;
                                 long size;
-                                using (var fs = SystemIO.IO_OS.FileOpenRead(file.Path))
+                                using (var fs = await restoreDestination.OpenRead(file.Path, cancellationToken).ConfigureAwait(false))
                                 {
                                     size = fs.Length;
                                     key = Convert.ToBase64String(filehasher.ComputeHash(fs));
@@ -645,76 +657,22 @@ namespace Duplicati.Library.Main.Operation
             m_result.EndTime = DateTime.UtcNow;
         }
 
-        public static bool ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool restoreSymlinkMetadata, bool dryrun)
+        public static async Task<bool> ApplyMetadata(string path, System.IO.Stream stream, Options options, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
             // TODO This has been modified to return a bool indicating if anything was written to properly report the number of files restored. The legacy restore doesn't check this, which produces an error in the CI where it reports that no files have been restored, even though one have. It's in Duplicati/UnitTests/SymLinkTests.cs the test SymLinkTests.SymLinkExists() that fails on the very last assert that there are 0 warnings.
             using (var tr = new System.IO.StreamReader(stream))
             using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
             {
                 var metadata = new Newtonsoft.Json.JsonSerializer().Deserialize<Dictionary<string, string>>(jr);
-                string k;
-                long t;
-                System.IO.FileAttributes fa;
-                var wrote_something = false;
-
                 // If this is dry-run, we stop after having deserialized the metadata
-                if (dryrun)
-                    return wrote_something;
+                if (options.Dryrun)
+                    return false;
 
-                var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
-                var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
-
-                // Make the symlink first, otherwise we cannot apply metadata to it
-                if (metadata.TryGetValue("CoreSymlinkTarget", out k))
-                {
-                    // Check if the target exists, and overwrite it if it does.
-                    if (SystemIO.IO_OS.FileExists(targetpath))
-                    {
-                        SystemIO.IO_OS.FileDelete(targetpath);
-                    }
-                    else if (SystemIO.IO_OS.DirectoryExists(targetpath))
-                    {
-                        SystemIO.IO_OS.DirectoryDelete(targetpath, false);
-                    }
-                    SystemIO.IO_OS.CreateSymlink(targetpath, k, isDirTarget);
-                    wrote_something = true;
-                }
-                // If the target is a folder, make sure we create it first
-                else if (isDirTarget && !SystemIO.IO_OS.DirectoryExists(targetpath))
-                    SystemIO.IO_OS.DirectoryCreate(targetpath);
-
-                // Avoid setting restoring symlink metadata, as that writes the symlink target, not the symlink itself
-                if (!restoreSymlinkMetadata && Snapshots.SnapshotUtility.IsSymlink(SystemIO.IO_OS, targetpath))
-                {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "no-symlink-metadata-restored", "Not applying metadata to symlink: {0}", targetpath);
-                    return wrote_something;
-                }
-
-                if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
-                {
-                    if (isDirTarget)
-                        SystemIO.IO_OS.DirectorySetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
-                    else
-                        SystemIO.IO_OS.FileSetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
-                }
-
-                if (metadata.TryGetValue("CoreCreatetime", out k) && long.TryParse(k, out t))
-                {
-                    if (isDirTarget)
-                        SystemIO.IO_OS.DirectorySetCreationTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
-                    else
-                        SystemIO.IO_OS.FileSetCreationTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
-                }
-
-                if (metadata.TryGetValue("CoreAttributes", out k) && Enum.TryParse(k, true, out fa))
-                    SystemIO.IO_OS.SetFileAttributes(targetpath, fa);
-
-                SystemIO.IO_OS.SetMetadata(path, metadata, restorePermissions);
-                return wrote_something;
+                return await restoreDestination.WriteMetadata(path, metadata, options.RestoreSymlinkMetadata, options.RestorePermissions, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        private static async Task ScanForExistingSourceBlocksFast(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result)
+        private static async Task ScanForExistingSourceBlocksFast(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, IRestoreDestinationProvider restoreDestination, RestoreResults result)
         {
             // Fill BLOCKS with data from known local source files
             await using var blockmarker = await database.CreateBlockMarkerAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -730,14 +688,14 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (SystemIO.IO_OS.FileExists(sourcepath))
                     {
-                        var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
-                        if (!options.Dryrun && !SystemIO.IO_OS.DirectoryExists(folderpath))
+                        if (!options.Dryrun)
                         {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
-                            SystemIO.IO_OS.DirectoryCreate(folderpath);
+                            var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
+                            if (await restoreDestination.CreateFolderIfNotExists(folderpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
+                                Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
                         }
 
-                        using (var targetstream = options.Dryrun ? null : SystemIO.IO_OS.FileOpenWrite(targetpath))
+                        using (var targetstream = options.Dryrun ? null : await restoreDestination.OpenWrite(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
                         {
                             try
                             {
@@ -820,7 +778,7 @@ namespace Duplicati.Library.Main.Operation
             await blockmarker.CommitAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
         }
 
-        private static async Task ScanForExistingSourceBlocks(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result, RestoreHandlerMetadataStorage metadatastorage)
+        private static async Task ScanForExistingSourceBlocks(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result, RestoreHandlerMetadataStorage metadatastorage, IRestoreDestinationProvider restoreDestination)
         {
             // Fill BLOCKS with data from known local source files
             await using var blockmarker = await database.CreateBlockMarkerAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -835,14 +793,14 @@ namespace Duplicati.Library.Main.Operation
                     if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         return;
 
-                    var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
-                    if (!options.Dryrun && !SystemIO.IO_OS.DirectoryExists(folderpath))
+                    if (!options.Dryrun)
                     {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
-                        SystemIO.IO_OS.DirectoryCreate(folderpath);
+                        var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
+                        if (await restoreDestination.CreateFolderIfNotExists(folderpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
+                            Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for file {1}", folderpath, targetpath);
                     }
 
-                    using (var file = options.Dryrun ? null : SystemIO.IO_OS.FileOpenWrite(targetpath))
+                    using (var file = options.Dryrun ? null : await restoreDestination.OpenWrite(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
                         await foreach (var targetblock in restorelist.Blocks(result.TaskControl.ProgressToken).ConfigureAwait(false))
                         {
                             await foreach (var source in targetblock.BlockSources(result.TaskControl.ProgressToken).ConfigureAwait(false))
@@ -974,19 +932,18 @@ namespace Duplicati.Library.Main.Operation
 
         }
 
-        private static async Task CreateDirectoryStructure(LocalRestoreDatabase database, Options options, RestoreResults result)
+        private static async Task CreateDirectoryStructure(LocalRestoreDatabase database, IRestoreDestinationProvider restoreDestination, bool restoreToOriginalLocation, Options options, RestoreResults result)
         {
             // This part is not protected by try/catch as we need the target folder to exist
-            if (!string.IsNullOrEmpty(options.Restorepath))
-                if (!SystemIO.IO_OS.DirectoryExists(options.Restorepath))
-                {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "CreateFolder", "Creating folder: {0}", options.Restorepath);
-
-                    if (options.Dryrun)
-                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldCreateFolder", "Would create folder: {0}", options.Restorepath);
-                    else
-                        SystemIO.IO_OS.DirectoryCreate(options.Restorepath);
-                }
+            if (options.Dryrun)
+            {
+                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldCreateFolder", "Would create folder: {0}", options.Restorepath);
+            }
+            else if (await restoreDestination.CreateFolderIfNotExists(options.Restorepath, result.TaskControl.ProgressToken).ConfigureAwait(false))
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "CreateFolder", "Created root restore folder: {0}", options.Restorepath);
+                result.RestoredFolders++;
+            }
 
             await foreach (var folder in database.GetTargetFolders(result.TaskControl.ProgressToken).ConfigureAwait(false))
             {
@@ -995,16 +952,12 @@ namespace Duplicati.Library.Main.Operation
                     if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         return;
 
-                    if (!SystemIO.IO_OS.DirectoryExists(folder))
+                    if (options.Dryrun)
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldCreateFolder", "Would create folder: {0}", folder);
+                    else if (await restoreDestination.CreateFolderIfNotExists(folder, result.TaskControl.ProgressToken).ConfigureAwait(false))
                     {
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "CreateFolder", "Created folder: {0}", folder);
                         result.RestoredFolders++;
-
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "CreateFolder", "Creating folder: {0}", folder);
-
-                        if (options.Dryrun)
-                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldCreateFolder", "Would create folder: {0}", folder);
-                        else
-                            SystemIO.IO_OS.DirectoryCreate(folder);
                     }
                 }
                 catch (Exception ex)
@@ -1016,7 +969,18 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private static async Task ScanForExistingTargetBlocks(LocalRestoreDatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm blockhasher, System.Security.Cryptography.HashAlgorithm filehasher, Options options, RestoreResults result)
+        private static async Task ResetReadOnlyAttributeIfNeeded(string path, Options options, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
+        {
+            if (await restoreDestination.HasReadOnlyAttribute(path, cancellationToken).ConfigureAwait(false))
+            {
+                if (options.Dryrun)
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribute", "Would reset read-only attribute on file: {0}", path);
+                else
+                    await restoreDestination.ClearReadOnlyAttribute(path, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task ScanForExistingTargetBlocks(LocalRestoreDatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm blockhasher, System.Security.Cryptography.HashAlgorithm filehasher, Options options, IRestoreDestinationProvider restoreDestination, RestoreResults result)
         {
             // Scan existing files for existing BLOCKS
             await using var blockmarker = await database.CreateBlockMarkerAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -1028,14 +992,14 @@ namespace Duplicati.Library.Main.Operation
                 var targetfileid = restorelist.TargetFileID;
                 var targetfilehash = restorelist.TargetHash;
                 var targetfilelength = restorelist.Length;
-                if (SystemIO.IO_OS.FileExists(targetpath))
+                if (await restoreDestination.FileExists(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
                     try
                     {
                         if (!await result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             return;
 
-                        var currentfilelength = SystemIO.IO_OS.FileLength(targetpath);
+                        var currentfilelength = await restoreDestination.GetFileLength(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false);
                         var wasTruncated = false;
 
                         // Adjust file length in overwrite mode if necessary (smaller is ok, will be extended during restore)
@@ -1043,18 +1007,12 @@ namespace Duplicati.Library.Main.Operation
                         // be truncated (i.e. forthwritten log files).
                         if (!rename && currentfilelength > targetfilelength)
                         {
-                            var currentAttr = SystemIO.IO_OS.GetFileAttributes(targetpath);
-                            if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0) // clear readonly attribute
-                            {
-                                if (options.Dryrun)
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribute", "Would reset read-only attribute on file: {0}", targetpath);
-                                else SystemIO.IO_OS.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
-                            }
+                            await ResetReadOnlyAttributeIfNeeded(targetpath, options, restoreDestination, result.TaskControl.ProgressToken).ConfigureAwait(false);
                             if (options.Dryrun)
                                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldTruncateFile", "Would truncate file '{0}' to length of {1:N0} bytes", targetpath, targetfilelength);
                             else
                             {
-                                using (var file = SystemIO.IO_OS.FileOpenWrite(targetpath))
+                                using (var file = await restoreDestination.OpenWrite(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
                                     file.SetLength(targetfilelength);
                                 currentfilelength = targetfilelength;
                             }
@@ -1072,7 +1030,7 @@ namespace Duplicati.Library.Main.Operation
                             bool calcFileHash = (currentfilelength == targetfilelength);
                             if (calcFileHash) filehasher.Initialize();
 
-                            using (var file = SystemIO.IO_OS.FileOpenRead(targetpath))
+                            using (var file = await restoreDestination.OpenRead(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
                             using (var block = new Blockprocessor(file, blockbuffer))
                                 await foreach (var targetblock in restorelist.Blocks(result.TaskControl.ProgressToken).ConfigureAwait(false))
                                 {
@@ -1123,15 +1081,7 @@ namespace Duplicati.Library.Main.Operation
                             }
 
                             if (!rename && !fullfilehashmatch && !wasTruncated) // Reset read-only attribute (if set) to overwrite
-                            {
-                                var currentAttr = SystemIO.IO_OS.GetFileAttributes(targetpath);
-                                if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0)
-                                {
-                                    if (options.Dryrun)
-                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribyte", "Would reset read-only attribute on file: {0}", targetpath);
-                                    else SystemIO.IO_OS.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
-                                }
-                            }
+                                await ResetReadOnlyAttributeIfNeeded(targetpath, options, restoreDestination, result.TaskControl.ProgressToken).ConfigureAwait(false);
 
                             if (fullfilehashmatch)
                             {
@@ -1187,7 +1137,7 @@ namespace Duplicati.Library.Main.Operation
                     var newname = SystemIO.IO_OS.PathChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
                     var tr = newname + ext;
                     var c = 0;
-                    while (SystemIO.IO_OS.FileExists(tr) && c < 1000)
+                    while (await restoreDestination.FileExists(tr, result.TaskControl.ProgressToken).ConfigureAwait(false) && c < 1000)
                     {
                         try
                         {
@@ -1196,7 +1146,7 @@ namespace Duplicati.Library.Main.Operation
                             filehasher.Initialize();
 
                             string key;
-                            using (var file = SystemIO.IO_OS.FileOpenRead(tr))
+                            using (var file = await restoreDestination.OpenRead(tr, result.TaskControl.ProgressToken).ConfigureAwait(false))
                                 key = Convert.ToBase64String(filehasher.ComputeHash(file));
 
                             if (key == targetfilehash)
