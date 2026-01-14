@@ -20,32 +20,20 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Interface
 {
-    public interface IWebModule : IDynamicModule
+    public interface IWebModule : ICommonModule
     {
-        /// <summary>
-        /// The module key, used to activate or deactivate the module on the commandline
-        /// </summary>
-        string Key { get; }
-
-        /// <summary>
-        /// A localized string describing the module with a friendly name
-        /// </summary>
-        string DisplayName { get; }
-
-        /// <summary>
-        /// A localized description of the module
-        /// </summary>
-        string Description { get; }
-
         /// <summary>
         /// Execute the specified command with the given options.
         /// </summary>
         /// <param name="options">The options to use</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>A list of output values</returns>
-        IDictionary<string, string> Execute(IDictionary<string, string> options);
+        Task<IDictionary<string, string>> Execute(IDictionary<string, string> options, CancellationToken cancellationToken);
 
         /// <summary>
         /// Returns lookup data from the module, if any.

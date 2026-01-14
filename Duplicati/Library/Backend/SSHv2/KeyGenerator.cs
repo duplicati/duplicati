@@ -143,7 +143,7 @@ namespace Duplicati.Library.Backend
         }
 
         #region IWebModule implementation
-        public IDictionary<string, string> Execute(IDictionary<string, string> options)
+        public Task<IDictionary<string, string>> Execute(IDictionary<string, string> options, CancellationToken cancellationToken)
         {
             if (!options.TryGetValue(KEY_TYPE_NAME, out var keytype))
                 keytype = DEFAULT_KEYTYPE;
@@ -174,7 +174,7 @@ namespace Duplicati.Library.Backend
                     key.Modulus ?? []
                 };
 
-                return OutputKey(EncodeDER(privateEntries), EncodePEM(publicEntries), KEY_TEMPLATE_RSA, PUB_KEY_FORMAT_RSA, username);
+                return Task.FromResult(OutputKey(EncodeDER(privateEntries), EncodePEM(publicEntries), KEY_TEMPLATE_RSA, PUB_KEY_FORMAT_RSA, username));
             }
             else if (KEYTYPE_DSA.Equals(keytype, StringComparison.OrdinalIgnoreCase))
             {
@@ -195,7 +195,7 @@ namespace Duplicati.Library.Backend
                     key.Y ?? []
                 };
 
-                return OutputKey(EncodeDER(privateEntries), EncodePEM(publicEntries), KEY_TEMPLATE_DSA, PUB_KEY_FORMAT_DSA, username);
+                return Task.FromResult(OutputKey(EncodeDER(privateEntries), EncodePEM(publicEntries), KEY_TEMPLATE_DSA, PUB_KEY_FORMAT_DSA, username));
             }
             else
             {
