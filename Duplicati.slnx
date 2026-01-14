@@ -71,6 +71,11 @@
     <Project Path="Duplicati/Library/SQLiteHelper/Duplicati.Library.SQLiteHelper.csproj" />
     <Project Path="Duplicati/PackageRef/Duplicati.PackageRef.csproj" />
   </Folder>
+  <Folder Name="/Proprietary/">
+    <Project Path="proprietary/LicenseChecker/Duplicati.Proprietary.LicenseChecker.csproj" />
+    <Project Path="proprietary/LoaderHelper/Duplicati.Proprietary.LoaderHelper.csproj" />
+    <Project Path="proprietary/Office365/Duplicati.Proprietary.Office365.csproj" />
+  </Folder>
   <Folder Name="/SourceProviders/">
     <Project Path="Duplicati/Library/SourceProvider/Builtin/Duplicati.Library.SourceProvider.Builtin.csproj" />
   </Folder>

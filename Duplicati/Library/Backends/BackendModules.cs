@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backends;
 
@@ -71,7 +72,9 @@ public static class BackendModules
         new Backend.Filen.FilenBackend(),
         new Backend.Filejump()
     }
-    .Where(x => x != null)
+    .Concat(Proprietary.LoaderHelper.BackendModules.LicensedBackendModules)
+
+    .WhereNotNull()
     .ToList();
 
     /// <summary>

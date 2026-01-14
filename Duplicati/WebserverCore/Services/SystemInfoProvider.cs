@@ -380,7 +380,9 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             UsingAlternateUpdateURLs = systeminfo.UsingAlternateUpdateURLs,
             LogLevels = systeminfo.LogLevels,
             SpecialFolders = systeminfo.SpecialFolders,
-            APIExtensions = SupportedAPIExtensions.Where(ext => !disabledAPIExtensions.Contains(ext)).ToArray(),
+            APIExtensions = SupportedAPIExtensions
+                .Concat(Proprietary.LoaderHelper.Configuration.LicensedAPIExtensions)
+                .Where(ext => !disabledAPIExtensions.Contains(ext)).ToArray(),
             APIScopes = APIScopes,
             BrowserLocale = new SystemInfoDto.LocaleDto()
             {

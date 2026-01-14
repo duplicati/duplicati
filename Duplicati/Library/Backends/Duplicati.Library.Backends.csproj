@@ -34,6 +34,7 @@
     <ProjectReference Include="..\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj" />
     <ProjectReference Include="..\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj" />
     <ProjectReference Include="..\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj" />
+    <ProjectReference Include="../../../proprietary/LoaderHelper/Duplicati.Proprietary.LoaderHelper.csproj" />
   </ItemGroup>
 
 </Project>

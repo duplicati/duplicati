@@ -25,21 +25,21 @@ using Duplicati.Library.Utility;
 namespace Duplicati.Library.SourceProviders;
 
 /// <summary>
-/// Shared list of statically linked source-provider modules
+/// Shared list of statically linked restore-destination-provider modules
 /// </summary>
-public static class SourceProviderModules
+public static class RestoreDestinationProviderModules
 {
     /// <summary>
-    /// The list of all built-in source-provider modules
+    /// The list of all built-in restore-destination-provider modules
     /// </summary>
-    public static IReadOnlyList<ISourceProviderModule> BuiltInSourceProviderModules => SupportedSourceProviders;
+    public static IReadOnlyList<IRestoreDestinationProviderModule> BuiltInRestoreDestinationProviderModules => SupportedRestoreDestinationProviders;
 
     /// <summary>
     /// Calculate list once and cache it
     /// </summary>
-    private static readonly IReadOnlyList<ISourceProviderModule> SupportedSourceProviders = new ISourceProviderModule[] {
+    private static readonly IReadOnlyList<IRestoreDestinationProviderModule> SupportedRestoreDestinationProviders = new IRestoreDestinationProviderModule[] {
     }
-    .Concat(Proprietary.LoaderHelper.SourceProviderModules.LicensedSourceProviderModules)
+    .Concat(Proprietary.LoaderHelper.RestoreDestinationProviderModules.LicensedRestoreDestinationProviderModules)
     .WhereNotNull()
     .ToList();
 }

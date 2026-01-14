@@ -20,7 +20,9 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Collections.Generic;
+using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend;
 
@@ -29,7 +31,13 @@ public static class WebModules
     /// <summary>
     /// The list of all built-in web modules
     /// </summary>
-    public static IReadOnlyList<IWebModule> BuiltInWebModules => [
+    public static IReadOnlyList<IWebModule> BuiltInWebModules => SupportedWebmodules;
+
+    /// <summary>
+    /// Calculate list once and cache it
+    /// </summary>
+    private static readonly IReadOnlyList<IWebModule> SupportedWebmodules = new IWebModule[]
+    {
         new GoogleServices.GCSConfig(),
         new OpenStack.SwiftConfig(),
         new S3Config(),
@@ -39,5 +47,9 @@ public static class WebModules
         new Storj.StorjConfig(),
         new Duplicati.ListBackupsModule(),
         new Filen.GetApiKeyModule(),
-    ];
+    }
+    .Concat(Proprietary.LoaderHelper.WebModules.LicensedWebModules)
+    .WhereNotNull()
+    .ToList();
+
 }
