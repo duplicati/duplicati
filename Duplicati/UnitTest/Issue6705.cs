@@ -19,21 +19,37 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using NUnit.Framework;
+using System;
 using System.IO;
 using System.Linq;
-using NUnit.Framework;
-using Duplicati.Library.Main.Volumes;
-using Duplicati.Library.SQLiteHelper;
-using Duplicati.Library.Main.Database;
-using System.Threading.Tasks;
 using System.Net.Http;
-using System;
+using System.Threading.Tasks;
+
 using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest;
 
 public class Issue6705 : BasicSetupHelper
 {
+    public static void DeleteDirectoryContentsForcefully(string directoryPath)
+    {
+        var di = new DirectoryInfo(directoryPath);
+        var files = di.GetFiles();
+        foreach (FileInfo file in files)
+        {
+            file.Attributes = FileAttributes.Normal;
+            file.Delete();
+        }
+        var dirs = di.GetDirectories();
+        foreach (DirectoryInfo dir in dirs)
+        {
+            dir.Attributes = FileAttributes.Normal;
+            DeleteDirectoryContentsForcefully(dir.FullName);
+            dir.Delete();
+        }
+    }
+
     // Copied from CommandLineOperationsTests.cs
     public static async Task DownloadS3FileIfNewerAsync(string destinationFilePath, string url, int retries = 5)
     {
@@ -94,6 +110,10 @@ public class Issue6705 : BasicSetupHelper
         } while (retries > 0);
     }
 
+    string ExtractedBasePath(string os) => Path.Combine(BASEFOLDER, os);
+    string ExtractedPath(string os) => Path.Combine(ExtractedBasePath(os), "cross-os-backup");
+    string ZipPath(string os) => Path.Combine(BASEFOLDER, $"{os}.zip");
+
     // The backups were created using the following "generic" script on each OS:
 
     /* Small backup:
@@ -119,6 +139,26 @@ public class Issue6705 : BasicSetupHelper
     zip -r {OS}_large.zip cross-os-backup
     */
 
+    [OneTimeSetUp]
+    public void DownloadAndExtractBackups()
+    {
+        bool remote = false; // Set to false to use local files instead of downloading from S3
+        var localZipPath = "D:\\git\\duplicati-carl\\";
+        foreach (var os in new[] { "Windows", "Linux", "MacOS" })
+        {
+            string zipFilepath = $"{localZipPath}{os}.zip";
+            if (remote)
+            {
+                zipFilepath = ZipPath(os);
+                var url = $"https://testfiles.duplicati.com/issue6705/{os}.zip";
+                DownloadS3FileIfNewerAsync(zipFilepath, url).GetAwaiter().GetResult();
+            }
+            var extractedPath = ExtractedBasePath(os);
+            Directory.CreateDirectory(extractedPath);
+            ZipFileExtractToDirectory(zipFilepath, extractedPath);
+        }
+    }
+
     [Test]
     [Category("Targeted")]
     public async Task RestoreAcrossOperatingSystems(
@@ -128,13 +168,7 @@ public class Issue6705 : BasicSetupHelper
         [Values(true, false)] bool skip_metadata
     )
     {
-        // Download the backup made on different OS
-        var url = $"https://testfiles.duplicati.com/issue6705/{original_os}.zip";
-        var zipFilepath = Path.Combine(BASEFOLDER, $"{original_os}.zip");
-        //await DownloadS3FileIfNewerAsync(zipFilepath, url);
-        File.Copy($"~/git/duplicati-carl/{original_os}_large.zip", zipFilepath, true);
-        ZipFileExtractToDirectory(zipFilepath, TARGETFOLDER);
-        var extractedPath = Path.Combine(TARGETFOLDER, "cross-os-backup");
+        var extractedPath = ExtractedPath(original_os);
 
         var testopts = TestOptions.Expand(new
         {
@@ -154,6 +188,19 @@ public class Issue6705 : BasicSetupHelper
 
         // Verify restored files
         TestUtils.AssertDirectoryTreesAreEquivalent(Path.Combine(extractedPath, "original"), RESTOREFOLDER, false, "Restored files do not match original files");
+
+        DeleteDirectoryContentsForcefully(RESTOREFOLDER);
     }
 
+    [OneTimeTearDown]
+    public void Cleanup()
+    {
+        foreach (var os in new[] { "Windows", "Linux", "MacOS" })
+        {
+            if (systemIO.DirectoryExists(ExtractedBasePath(os)))
+                systemIO.DirectoryDelete(ExtractedBasePath(os), true);
+            if (systemIO.FileExists(ZipPath(os)))
+                systemIO.FileDelete(ZipPath(os));
+        }
+    }
 }
