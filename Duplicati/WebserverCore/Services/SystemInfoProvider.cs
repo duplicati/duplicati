@@ -191,6 +191,16 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         public required IDynamicModule[] GenericModules { get; init; }
 
         /// <summary>
+        /// Gets or sets the source provider modules.
+        /// </summary>
+        public required IDynamicModule[] SourceProviderModules { get; init; }
+
+        /// <summary>
+        /// Gets or sets the restore destination provider modules.
+        /// </summary>
+        public required IDynamicModule[] RestoreDestinationProviderModules { get; init; }
+
+        /// <summary>
         /// Gets or sets the web modules.
         /// </summary>
         public required IDynamicModule[] WebModules { get; init; }
@@ -272,6 +282,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             EncryptionModules = Server.Serializable.ServerSettings.EncryptionModules,
             BackendModules = Server.Serializable.ServerSettings.BackendModules,
             GenericModules = Server.Serializable.ServerSettings.GenericModules,
+            SourceProviderModules = Server.Serializable.ServerSettings.SourceProviderModules,
+            RestoreDestinationProviderModules = Server.Serializable.ServerSettings.RestoreDestinationProviderModules,
             WebModules = Server.Serializable.ServerSettings.WebModules,
             ConnectionModules = Server.Serializable.ServerSettings.ConnectionModules,
             ServerModules = Server.Serializable.ServerSettings.ServerModules,
@@ -363,6 +375,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             ConnectionModules = systeminfo.ConnectionModules,
             ServerModules = systeminfo.ServerModules,
             SecretProviderModules = systeminfo.SecretProviderModules,
+            SourceProviderModules = systeminfo.SourceProviderModules,
+            RestoreDestinationProviderModules = systeminfo.RestoreDestinationProviderModules,
             UsingAlternateUpdateURLs = systeminfo.UsingAlternateUpdateURLs,
             LogLevels = systeminfo.LogLevels,
             SpecialFolders = systeminfo.SpecialFolders,
