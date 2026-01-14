@@ -267,7 +267,7 @@ namespace Duplicati.UnitTest
             System.IO.File.WriteAllText(System.IO.Path.Combine(DATAFOLDER, "testfile.txt"), "test content");
 
             var options = TestOptions;
-            options["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file://" + System.IO.Path.Combine(BASEFOLDER, "syncdest") + @"""}]}";
+            options["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file://" + System.IO.Path.Combine(BASEFOLDER, "syncdest").Replace("\\", "\\\\") + @"""}]}";
             options["dbpath"] = DBFILE;
 
             // Run actual backup
@@ -1156,15 +1156,15 @@ namespace Duplicati.UnitTest
             {{
                 ""destinations"": [
                     {{
-                        ""url"": ""file://{syncDest1}""
+                        ""url"": ""file://{syncDest1.Replace("\\", "\\\\")}""
                     }},
                     {{
-                        ""url"": ""file://{syncDest2}"",
+                        ""url"": ""file://{syncDest2.Replace("\\", "\\\\")}"",
                         ""mode"": ""counting"",
                         ""count"": 2
                     }},
                     {{
-                        ""url"": ""file://{syncDest3}"",
+                        ""url"": ""file://{syncDest3.Replace("\\", "\\\\")}"",
                         ""mode"": ""counting"",
                         ""count"": 3
                     }}
