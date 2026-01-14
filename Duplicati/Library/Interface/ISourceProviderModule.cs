@@ -26,14 +26,6 @@ namespace Duplicati.Library.Interface;
 /// <summary>
 /// Implements a data source that can be backed up
 /// </summary>
-public interface ISourceProviderModule : ISourceProvider, IDynamicModule
+public interface ISourceProviderModule : ISourceProvider, ICommonModule
 {
-    /// <summary>
-    /// Gets the module key
-    /// </summary>
-    string Key { get; }
-    /// <summary>
-    /// Gets the display name of the module
-    /// </summary>
-    string DisplayName { get; }
 }
