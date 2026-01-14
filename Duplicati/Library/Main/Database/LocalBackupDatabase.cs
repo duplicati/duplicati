@@ -154,6 +154,11 @@ namespace Duplicati.Library.Main.Database
         private bool m_logQueries;
 
         /// <summary>
+        /// Indicates whether the metadata content should be stored in the database.
+        /// </summary>
+        private bool m_storeMetadataContent;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LocalBackupDatabase"/> class.
         /// This constructor is private to enforce the use of the static and asynchronous CreateAsync methods for instantiation.
         /// </summary>
@@ -192,6 +197,7 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
 
             dbnew.m_logQueries = options.ProfileAllDatabaseQueries;
+            dbnew.m_storeMetadataContent = options.StoreMetadataContentInDatabase;
 
             dbnew.m_findblockCommand = await dbnew.Connection.CreateCommandAsync(@"
                 SELECT ""ID""
@@ -326,8 +332,8 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
 
             dbnew.m_insertmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"
-                INSERT INTO ""Metadataset"" (""BlocksetID"")
-                VALUES (@BlocksetId);
+                INSERT INTO ""Metadataset"" (""BlocksetID"", ""Content"")
+                VALUES (@BlocksetId, @Content);
                 SELECT last_insert_rowid();
             ", token)
                 .ConfigureAwait(false);
@@ -966,9 +972,10 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filehash">The metadata hash.</param>
         /// <param name="size">The size of the metadata.</param>
         /// <param name="blocksetid">The id of the blockset to add.</param>
+        /// <param name="metahash">The metahash object.</param>
         /// <param name="token"> The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a tuple with the first value indicating if the metadata set was added, and the second value being the metadata ID.</returns>
-        public async Task<(bool, long)> AddMetadataset(string filehash, long size, long blocksetid, CancellationToken token)
+        public async Task<(bool, long)> AddMetadataset(string filehash, long size, long blocksetid, IMetahash metahash, CancellationToken token)
         {
             var (metadatafound, metadataid) = await GetMetadatasetID(filehash, size, token)
                 .ConfigureAwait(false);
@@ -978,6 +985,7 @@ namespace Duplicati.Library.Main.Database
             metadataid = await m_insertmetadatasetCommand
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@BlocksetId", blocksetid)
+                .SetParameterValue("@Content", m_storeMetadataContent ? Library.Utility.Utility.GetStringWithoutBOM(metahash.Blob) : null)
                 .ExecuteScalarInt64Async(m_logQueries, token)
                 .ConfigureAwait(false);
 

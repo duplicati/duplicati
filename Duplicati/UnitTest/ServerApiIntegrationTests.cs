@@ -269,7 +269,8 @@ public class ServerApiIntegrationTests : BasicSetupHelper
                 Time = timestamp,
                 Paths = null,
                 Page = 0,
-                PageSize = 0
+                PageSize = 0,
+                ReturnExtended = false
             };
             var listFolderResponse = await httpClient.PostAsJsonAsync("/api/v2/backup/list-folder", listFolderRequest, JsonOptions).ConfigureAwait(false);
             listFolderResponse.EnsureSuccessStatusCode();

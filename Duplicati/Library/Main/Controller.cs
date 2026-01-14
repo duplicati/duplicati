@@ -191,10 +191,11 @@ namespace Duplicati.Library.Main
         /// <param name="folders">The folders to list</param>
         /// <param name="offset">The offset to start listing from</param>
         /// <param name="limit">The maximum number of entries to list</param>
+        /// <param name="extendedData">Whether to include extended data</param>
         /// <returns>>The folder contents</returns>
-        public IListFolderResults ListFolder(string[] folders, long offset, long limit)
+        public IListFolderResults ListFolder(string[] folders, long offset, long limit, bool extendedData)
             => RunAction(new ListFolderResults(), (result, _) =>
-                Operation.ListFolderHandler.RunAsync(m_options, result, folders, offset, limit)
+                Operation.ListFolderHandler.RunAsync(m_options, result, folders, offset, limit, extendedData)
             );
 
         /// <summary>
@@ -216,10 +217,11 @@ namespace Duplicati.Library.Main
         /// <param name="filter">The filter to use for searching</param>
         /// <param name="offset">The offset to start searching from</param>
         /// <param name="limit">The maximum number of results to return</param>
+        /// <param name="extendedData">Whether to include extended data</param>
         /// <returns>>The search results</returns>
-        public ISearchFilesResults SearchEntries(string[] pathprefixes, IFilter filter, long offset, long limit)
+        public ISearchFilesResults SearchEntries(string[] pathprefixes, IFilter filter, long offset, long limit, bool extendedData)
             => RunAction(new SearchFilesResults(), ref filter, (result, backendManager) =>
-                Operation.SearchEntriesHandler.RunAsync(m_options, result, pathprefixes, filter, offset, limit)
+                Operation.SearchEntriesHandler.RunAsync(m_options, result, pathprefixes, filter, offset, limit, extendedData)
             );
 
         public IListResults List()

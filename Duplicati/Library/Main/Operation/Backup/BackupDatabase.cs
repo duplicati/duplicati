@@ -82,11 +82,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
-        public Task<(bool, long)> AddMetadatasetAsync(string hash, long size, long blocksetid, CancellationToken cancellationToken)
+        public Task<(bool, long)> AddMetadatasetAsync(string hash, long size, long blocksetid, IMetahash metahash, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
                 await m_database
-                    .AddMetadataset(hash, size, blocksetid, cancellationToken)
+                    .AddMetadataset(hash, size, blocksetid, metahash, cancellationToken)
                     .ConfigureAwait(false)
             );
         }

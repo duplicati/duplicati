@@ -233,12 +233,12 @@ to easily extend metadatasets with new properties
 */
 CREATE TABLE "Metadataset" (
 	"ID" INTEGER PRIMARY KEY,
-	"BlocksetID" INTEGER NOT NULL
+	"BlocksetID" INTEGER NOT NULL,
+	"Content" TEXT NULL
 );
 
 CREATE INDEX "MetadatasetBlocksetID" ON "Metadataset" ("BlocksetID");
 CREATE INDEX "nnc_Metadataset" ON Metadataset ("ID","BlocksetID");
-
 
 /*
 Operations performed on the backend,
@@ -297,4 +297,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (18);
+INSERT INTO "Version" ("Version") VALUES (19);

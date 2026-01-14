@@ -59,7 +59,7 @@ public class BackupListing : IEndpointV2
             ? new DateTime(0)
             : Library.Utility.Timeparser.ParseTimeInterval(input.Time, DateTime.Now);
 
-        var r = queueRunnerService.RunImmediately(Runner.CreateListFolderContents(bk, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0)) as IListFolderResults;
+        var r = queueRunnerService.RunImmediately(Runner.CreateListFolderContents(bk, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0, input.ReturnExtended ?? false)) as IListFolderResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 
@@ -71,7 +71,8 @@ public class BackupListing : IEndpointV2
                     IsDirectory = x.IsDirectory,
                     Size = x.Size,
                     LastModified = x.LastModified,
-                    IsSymlink = x.IsSymlink
+                    IsSymlink = x.IsSymlink,
+                    Metadata = x.Metadata
                 }),
                 r.Entries.Page,
                 r.Entries.PageSize,
@@ -144,7 +145,7 @@ public class BackupListing : IEndpointV2
             ? new DateTime(0)
             : Library.Utility.Timeparser.ParseTimeInterval(input.Time, DateTime.Now);
 
-        var r = queueRunnerService.RunImmediately(Runner.CreateSearchEntriesTask(bk, input.Filters, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0)) as ISearchFilesResults;
+        var r = queueRunnerService.RunImmediately(Runner.CreateSearchEntriesTask(bk, input.Filters, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0, input.ReturnExtended ?? false)) as ISearchFilesResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 
@@ -158,7 +159,8 @@ public class BackupListing : IEndpointV2
                     IsDirectory = x.IsDirectory,
                     Size = x.Size,
                     LastModified = x.LastModified,
-                    IsSymlink = x.IsSymlink
+                    IsSymlink = x.IsSymlink,
+                    Metadata = x.Metadata
                 }),
                 r.FileVersions.Page,
                 r.FileVersions.PageSize,

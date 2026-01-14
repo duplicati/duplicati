@@ -193,6 +193,33 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Reads a byte array and returns a string, removing any BOM if present
+        /// </summary>
+        /// <param name="s">The byte array to read from.</param>
+        /// <returns>The resulting string.</returns>
+        public static string GetStringWithoutBOM(byte[] s)
+        {
+            using var ms = new MemoryStream(s);
+            return GetStringWithoutBOM(ms, leaveOpen: false);
+        }
+
+        /// <summary>
+        /// Reads a stream and returns a string, removing any BOM if present
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <param name="leaveOpen">If true, the stream is not closed after reading.</param>
+        /// <returns>The resulting string.</returns>
+        public static string GetStringWithoutBOM(Stream stream, bool leaveOpen)
+        {
+            if (stream.CanSeek)
+                try { stream.Position = 0; }
+                catch { }
+
+            using var sr = new StreamReader(stream, Encoding.UTF8, true, leaveOpen: leaveOpen);
+            return sr.ReadToEnd();
+        }
+
+        /// <summary>
         /// These are characters that must be escaped when using a globbing expression
         /// </summary>
         private static readonly string BADCHARS = @"\\|\+|\||\{|\[|\(|\)|\]|\}|\^|\$|\#|\.";

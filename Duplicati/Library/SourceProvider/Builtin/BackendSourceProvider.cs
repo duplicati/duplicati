@@ -47,6 +47,9 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
     public string DisplayName => backend.DisplayName;
 
     /// <inheritdoc/>
+    public string Description => backend.Description;
+
+    /// <inheritdoc/>
     public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
 
     /// <summary>

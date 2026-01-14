@@ -1481,6 +1481,81 @@ namespace Duplicati.Library.Main.Database
             await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
+        public record MetadataBlockInfo(
+            long MetadataId,
+            long MetaLength,
+            long BlockIndex,
+            string BlockHash,
+            long BlockSize,
+            string VolumeName,
+            string? VolumeHash,
+            long VolumeSize
+        );
+
+        public async IAsyncEnumerable<MetadataBlockInfo> GetMissingMetadataBlocks([EnumeratorCancellation] CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+            cmd.CommandText = @"
+                    SELECT
+                        m.""ID"" AS ""MetadataId"",
+                        bs.""Length"" AS ""MetaLength"",
+                        bse.""Index"" AS ""BlockIndex"",
+                        b.""Hash"" AS ""BlockHash"",
+                        b.""Size"" AS ""BlockSize"",
+                        rv.""Name"" AS ""VolumeName"",
+                        rv.""Hash"" AS ""VolumeHash"",
+                        rv.""Size"" AS ""VolumeSize""
+                    FROM ""Metadataset"" m
+                    JOIN ""Blockset"" bs
+                        ON bs.""ID"" = m.""BlocksetID""
+                    JOIN ""BlocksetEntry"" bse
+                        ON bse.""BlocksetID"" = m.""BlocksetID""
+                    JOIN ""Block"" b
+                        ON b.""ID"" = bse.""BlockID""
+                    JOIN ""RemoteVolume"" rv
+                        ON rv.""ID"" = b.""VolumeID""
+                    WHERE
+                        (m.""Content"" IS NULL OR m.""Content"" = '')
+                        AND bs.""Length"" > 0
+                        AND b.""Size"" > 0
+                        AND b.""VolumeID"" > 0
+                        AND rv.""Type"" = @VolumeType
+                    ORDER BY rv.""Name"", m.""ID"", bse.""Index"";
+                ";
+            cmd.Parameters.AddWithValue("@VolumeType", RemoteVolumeType.Blocks.ToString());
+
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+            {
+                yield return new MetadataBlockInfo(
+                    rd.ConvertValueToInt64(0),
+                    rd.ConvertValueToInt64(1),
+                    rd.ConvertValueToInt64(2),
+                    rd.ConvertValueToString(3) ?? string.Empty,
+                    rd.ConvertValueToInt64(4),
+                    rd.ConvertValueToString(5) ?? string.Empty,
+                    rd.IsDBNull(6) ? null : rd.ConvertValueToString(6),
+                    rd.ConvertValueToInt64(7, -1)
+                );
+            }
+        }
+
+        public async Task SetMetadataContent(long metadataId, string content, CancellationToken token)
+        {
+            await using var update = m_connection.CreateCommand(m_rtr);
+            update.CommandText = @"
+                UPDATE ""Metadataset""
+                SET ""Content"" = @Content
+                WHERE
+                    ""ID"" = @MetadataId
+                    AND(""Content"" IS NULL OR ""Content"" = '')
+            ";
+            update.Parameters.AddWithValue("@Content", content);
+            update.Parameters.AddWithValue("@MetadataId", metadataId);
+
+            await update.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+
         public override void Dispose()
         {
             DisposeAsync().AsTask().Await();

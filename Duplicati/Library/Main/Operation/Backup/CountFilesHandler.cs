@@ -73,7 +73,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             try
                             {
-                                size += entry.Size;
+                                var entrySize = entry.Size;
+                                if (entrySize >= 0)
+                                    size += entrySize;
                             }
                             catch
                             {

@@ -460,6 +460,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("log-socket-data", CommandLineArgument.ArgumentType.Integer, Strings.Options.LogsocketdataShort, Strings.Options.LogsocketdataLong, "-1"),
 
             new CommandLineArgument("profile-all-database-queries", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ProfilealldatabasequeriesShort, Strings.Options.ProfilealldatabasequeriesLong, "false"),
+            new CommandLineArgument("store-metadata-content-in-database", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadatacontentindatabaseShort, Strings.Options.StoremetadatacontentindatabaseLong, "false"),
 
             new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsLong, "false"),
             new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepLong, "false"),
@@ -1134,6 +1135,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if all database queries should be logged
         /// </summary>
         public bool ProfileAllDatabaseQueries => GetBool("profile-all-database-queries");
+
+        /// <summary>
+        /// A value indicating if metadata content should be stored in the database
+        /// </summary>
+        public bool StoreMetadataContentInDatabase => GetBool("store-metadata-content-in-database");
 
         /// <summary>
         /// Gets the attribute filter used to exclude files and folders.

@@ -406,7 +406,7 @@ namespace Duplicati.CommandLine
                     return 200;
                 }
 
-                var res = i.ListFolder(args.ToArray(), 0, 0);
+                var res = i.ListFolder(args.ToArray(), 0, 0, false);
                 outwriter.WriteLine("Folder contents:");
                 foreach (var e in res.Entries.Items)
                 {
@@ -466,7 +466,7 @@ namespace Duplicati.CommandLine
 
                 HandleDbAccessWithoutPassphrase(backend, options);
 
-                var res = i.SearchEntries(args.ToArray(), filter, 0, 0);
+                var res = i.SearchEntries(args.ToArray(), filter, 0, 0, false);
                 outwriter.WriteLine("File versions:");
                 var prevFile = string.Empty;
                 foreach (var e in res.FileVersions.Items)
