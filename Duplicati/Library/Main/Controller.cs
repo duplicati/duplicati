@@ -142,8 +142,22 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new RestoreResults(), ref paths, ref filter, async (result, backendManager) =>
             {
+                using var restoreDestination =
+                    (m_options.Restorepath ?? "").StartsWith("@")
+
+                    ? await DynamicLoader.RestoreDestinationProviderLoader.GetRestoreDestinationProvider(
+                        m_options.Restorepath,
+                        "", // TODO: Do we need the mount point?
+                        m_options.RawOptions,
+                        result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false)
+
+                    : new SourceProvider.FileRestoreDestinationProvider(
+                        m_options.Restorepath ?? "" // TODO: Do we need the mount point?
+                    );
+
                 await new Operation.RestoreHandler(m_options, result)
-                    .RunAsync(paths, backendManager, filter)
+                    .RunAsync(paths, backendManager, filter, restoreDestination)
                     .ConfigureAwait(false);
 
                 UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.RestoredFiles);
