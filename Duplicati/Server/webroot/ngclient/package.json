@@ -4,6 +4,6 @@
   "description": "Modern Angular Client for Duplicati",
   "license": "MIT",
   "dependencies": {
-    "@duplicati/ngclient": "^0.0.192"
+    "@duplicati/ngclient": "^0.0.194"
   }
 }
