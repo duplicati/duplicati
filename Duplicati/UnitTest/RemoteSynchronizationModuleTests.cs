@@ -1150,6 +1150,13 @@ namespace Duplicati.UnitTest
             var syncDest1 = System.IO.Path.Combine(BASEFOLDER, "syncdest1");
             var syncDest2 = System.IO.Path.Combine(BASEFOLDER, "syncdest2");
             var syncDest3 = System.IO.Path.Combine(BASEFOLDER, "syncdest3");
+            // Create the folders so that the destination exists.
+            if (!System.IO.Directory.Exists(syncDest1))
+                System.IO.Directory.CreateDirectory(syncDest1);
+            if (!System.IO.Directory.Exists(syncDest2))
+                System.IO.Directory.CreateDirectory(syncDest2);
+            if (!System.IO.Directory.Exists(syncDest3))
+                System.IO.Directory.CreateDirectory(syncDest3);
 
             var options = TestOptions;
             options["remote-sync-json-config"] = $@"
