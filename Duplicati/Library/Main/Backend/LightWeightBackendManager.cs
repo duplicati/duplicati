@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Library.Backends;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
