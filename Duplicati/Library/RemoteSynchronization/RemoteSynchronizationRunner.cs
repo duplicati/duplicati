@@ -153,27 +153,46 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <returns>The return code for the main entry; 0 on success.</returns>
         public static async Task<int> Run(Config config, CancellationToken token)
         {
-            // Unpack and parse the multi token options
-            var global_options = ParseOptions(config.GlobalOptions);
-
             // Parse the log level
             var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(config.LogLevel, true, out var log_level_enum);
             log_level_enum = log_level_parsed ? log_level_enum : Duplicati.Library.Logging.LogMessageType.Information;
-            using var console_sink = new StreamLogDestination(Console.OpenStandardOutput());
 
-            // Parse the log file
-            StreamLogDestination? log_file_sink = null;
             if (!string.IsNullOrEmpty(config.LogFile))
             {
-                string log_file_dir = SystemIO.IO_OS.PathGetDirectoryName(config.LogFile);
-                if (!string.IsNullOrEmpty(log_file_dir) && !SystemIO.IO_OS.DirectoryExists(log_file_dir))
-                    SystemIO.IO_OS.DirectoryCreate(log_file_dir);
-                log_file_sink = new StreamLogDestination(config.LogFile);
-            }
-            using var multi_sink = new MultiLogDestination([console_sink, log_file_sink]);
+                using var console_sink = new StreamLogDestination(Console.OpenStandardOutput());
 
-            // Start the logging scope
-            using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
+                // Parse the log file
+                StreamLogDestination? log_file_sink = null;
+                if (!string.IsNullOrEmpty(config.LogFile))
+                {
+                    string log_file_dir = SystemIO.IO_OS.PathGetDirectoryName(config.LogFile);
+                    if (!string.IsNullOrEmpty(log_file_dir) && !SystemIO.IO_OS.DirectoryExists(log_file_dir))
+                        SystemIO.IO_OS.DirectoryCreate(log_file_dir);
+                    log_file_sink = new StreamLogDestination(config.LogFile);
+                }
+                using var multi_sink = new MultiLogDestination([console_sink, log_file_sink]);
+
+                // Start the logging scope
+                using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
+
+                return await RunCore(config, token).ConfigureAwait(false);
+            }
+            else
+            {
+                return await RunCore(config, token).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// The core logic of the tool, without logging setup.
+        /// </summary>
+        /// <param name="config">The parsed configuration for the tool.</param>
+        /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
+        /// <returns>The return code for the main entry; 0 on success.</returns>
+        private static async Task<int> RunCore(Config config, CancellationToken token)
+        {
+            // Unpack and parse the multi token options
+            var global_options = ParseOptions(config.GlobalOptions);
 
             var src_opts = ParseOptions(config.SrcOptions);
             var dst_opts = ParseOptions(config.DstOptions);
