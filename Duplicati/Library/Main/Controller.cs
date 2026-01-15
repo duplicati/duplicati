@@ -451,7 +451,7 @@ namespace Duplicati.Library.Main
             );
 
             /// Forward all messages from the email module to the message sink
-            var filtertag = "Duplicati.Library.Modules.Builtin.SendMail";
+            var filtertag = Logging.Log.LogTagFromType(DynamicLoader.GenericLoader.GetModule(sendMailModuleKey).GetType());
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
                 return RunAction(new SendMailResults(), (result, backendManager) =>
