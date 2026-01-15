@@ -437,8 +437,7 @@ namespace Duplicati.Library.Main
             m_options.RawOptions["send-mail-level"] = "all";
             m_options.RawOptions["send-mail-any-operation"] = "true";
             const string sendMailModuleKey = "sendmail";
-            string targetmail;
-            m_options.RawOptions.TryGetValue("send-mail-to", out targetmail);
+            m_options.RawOptions.TryGetValue("send-mail-to", out string targetmail);
             if (string.IsNullOrWhiteSpace(targetmail))
                 throw new Exception(string.Format("No email specified, please use --{0}", "send-mail-to"));
 
