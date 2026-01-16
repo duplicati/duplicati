@@ -30,6 +30,10 @@ public class FileRestoreDestinationProvider(string mountedPath) : IRestoreDestin
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileRestoreDestinationProvider>();
     private static readonly string DIRSEP = Path.DirectorySeparatorChar.ToString();
 
+    /// <inheritdoc />
+    public string TargetDestination => mountedPath;
+
+    /// <inheritdoc />
     public Task ClearReadOnlyAttribute(string path, CancellationToken cancel)
     {
         var currentAttr = SystemIO.IO_OS.GetFileAttributes(path);
@@ -47,48 +51,62 @@ public class FileRestoreDestinationProvider(string mountedPath) : IRestoreDestin
         return Task.FromResult(true);
     }
 
+    /// <inheritdoc />
     public Task DeleteFile(string path, CancellationToken cancel)
     {
         SystemIO.IO_OS.FileDelete(path);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task DeleteFolder(string path, CancellationToken cancel)
     {
         SystemIO.IO_OS.DirectoryDelete(path, true);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
     }
 
+    /// <inheritdoc />
     public Task<bool> FileExists(string path, CancellationToken cancel)
     => Task.FromResult(SystemIO.IO_OS.FileExists(path));
 
+    /// <inheritdoc />
     public Task<long> GetFileLength(string path, CancellationToken cancel)
         => Task.FromResult(SystemIO.IO_OS.FileLength(path));
 
+    /// <inheritdoc />
     public Task<bool> HasReadOnlyAttribute(string path, CancellationToken cancel)
     {
         var currentAttr = SystemIO.IO_OS.GetFileAttributes(path);
         return Task.FromResult(currentAttr.HasFlag(FileAttributes.ReadOnly));
     }
 
+    /// <inheritdoc />
     public Task Initialize(CancellationToken cancel)
-    {
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 
+    /// <inheritdoc />
+    public Task Finalize(CancellationToken cancel)
+        => Task.CompletedTask;
+
+    /// <inheritdoc />
     public Task<Stream> OpenRead(string path, CancellationToken cancel)
         => Task.FromResult<Stream>(SystemIO.IO_OS.FileOpenRead(path));
+    /// <inheritdoc />
 
+    /// <inheritdoc />
     public Task<Stream> OpenReadWrite(string path, CancellationToken cancel)
         => Task.FromResult<Stream>(SystemIO.IO_OS.FileOpenReadWrite(path));
 
+    /// <inheritdoc />
     public Task<Stream> OpenWrite(string path, CancellationToken cancel)
         => Task.FromResult<Stream>(SystemIO.IO_OS.FileOpenWrite(path));
 
+    /// <inheritdoc />
     public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, CancellationToken cancel)
     {
         var wrote_something = false;

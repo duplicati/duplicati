@@ -12,6 +12,41 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
 {
     private static readonly string LOGTAG = Log.LogTagFromType<UserTypeSourceEntry>();
 
+    public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+        => Task.FromResult(new Dictionary<string, string?>()
+            {
+                { "o365:v", "1" },
+                { "o365:Id", user.Id },
+                { "o365:Type", userType switch
+                    {
+                        Office365UserType.Profile => SourceItemType.UserProfile.ToString(),
+                        Office365UserType.Mailbox => SourceItemType.UserMailbox.ToString(),
+                        Office365UserType.Calendar => SourceItemType.UserCalendar.ToString(),
+                        Office365UserType.Contacts => SourceItemType.UserContacts.ToString(),
+                        Office365UserType.Tasks => SourceItemType.UserTasks.ToString(),
+                        Office365UserType.Notes => SourceItemType.UserNotes.ToString(),
+                        Office365UserType.Planner => SourceItemType.UserPlannerTasks.ToString(),
+                        Office365UserType.Chats => SourceItemType.UserChats.ToString(),
+                        _ => null
+                    }
+                },
+                { "o365:Name", userType switch
+                    {
+                        Office365UserType.Profile => "Profile",
+                        Office365UserType.Mailbox => "Mailbox",
+                        Office365UserType.Calendar => "Calendar",
+                        Office365UserType.Contacts => "Contacts",
+                        Office365UserType.Tasks => "Tasks",
+                        Office365UserType.Notes => "Notes",
+                        Office365UserType.Planner => "Planner",
+                        Office365UserType.Chats => "Chats",
+                        _ => null
+                    }
+                }
+            }
+            .Where(kv => !string.IsNullOrEmpty(kv.Value))
+            .ToDictionary(kv => kv.Key, kv => kv.Value));
+
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var entries = userType switch

@@ -90,38 +90,14 @@ public class WebModule : IWebModule
             forwardoptions[key!] = uri.QueryParameters[key];
 
         using var client = new SourceProvider(url, "", forwardoptions);
-        var entries = client.Enumerate(cancellationToken);
-        path = path?.TrimEnd(Path.DirectorySeparatorChar);
+        await client.Initialize(cancellationToken);
 
-        var pathsegments = path?.Split(Path.DirectorySeparatorChar) ?? Array.Empty<string>();
-        if (pathsegments.Length == 0)
-            pathsegments = [""];
-
-        foreach (var item in pathsegments)
-        {
-            var found = false;
-            await foreach (var entry in entries.WithCancellation(cancellationToken))
-            {
-                var name = entry.Path.TrimEnd(Path.DirectorySeparatorChar)
-                    .Split(Path.DirectorySeparatorChar)
-                    .Last();
-                if (name.Equals(item, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!entry.IsFolder)
-                        throw new UserInformationException($"Path segment '{item}' is not a folder", "PathSegmentNotFolder");
-
-                    entries = entry.Enumerate(cancellationToken);
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-                throw new UserInformationException($"Path segment '{item}' not found", "PathSegmentNotFound");
-        }
+        var targetEntry = await client.GetEntry(path ?? "", isFolder: true, cancellationToken).ConfigureAwait(false);
+        if (targetEntry == null)
+            throw new DirectoryNotFoundException($"Path not found: {path}");
 
         var result = new Dictionary<string, string>();
-        await foreach (var entry in entries.WithCancellation(cancellationToken))
+        await foreach (var entry in targetEntry.Enumerate(cancellationToken))
         {
             if (op == Operation.ListDestinationRestoreTargets)
             {

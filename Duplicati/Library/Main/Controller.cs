@@ -145,20 +145,26 @@ namespace Duplicati.Library.Main
                 using var restoreDestination =
                     (m_options.Restorepath ?? "").StartsWith("@")
 
+                    // Remote destination
                     ? await DynamicLoader.RestoreDestinationProviderLoader.GetRestoreDestinationProvider(
-                        m_options.Restorepath,
-                        "", // TODO: Do we need the mount point?
+                        m_options.Restorepath.Substring(1),
                         m_options.RawOptions,
                         result.TaskControl.ProgressToken)
                         .ConfigureAwait(false)
 
-                    : new SourceProvider.FileRestoreDestinationProvider(
-                        m_options.Restorepath ?? "" // TODO: Do we need the mount point?
-                    );
+                    // Local destination
+                    : new SourceProvider.FileRestoreDestinationProvider(m_options.Restorepath ?? "");
+
+                if (restoreDestination == null)
+                    throw new UserInformationException($"Could not find restore destination for path: {m_options.Restorepath}", "InvalidRestoreDestination");
 
                 await new Operation.RestoreHandler(m_options, result)
                     .RunAsync(paths, backendManager, filter, restoreDestination)
                     .ConfigureAwait(false);
+
+                await restoreDestination.Finalize(result.TaskControl.ProgressToken).ConfigureAwait(false);
+                result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
+                result.EndTime = DateTime.UtcNow;
 
                 UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.RestoredFiles);
                 UsageReporter.Reporter.Report("RESTORE_FILESIZE", result.SizeOfRestoredFiles);

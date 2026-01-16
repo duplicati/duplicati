@@ -334,11 +334,11 @@ namespace Duplicati.Library.Main.Operation
             // Prepare the block and file list and create the directory structure
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
             using (new Logging.Timer(LOGTAG, "PrepareBlockList", "PrepareBlockList"))
-                await PrepareBlockAndFileList(database, m_options, filter, m_result)
+                await PrepareBlockAndFileList(database, m_options, filter, restoreDestination, m_result)
                     .ConfigureAwait(false);
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
             using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
-                await CreateDirectoryStructure(database, restoreDestination, string.IsNullOrEmpty(m_options.Restorepath), m_options, m_result).ConfigureAwait(false);
+                await CreateDirectoryStructure(database, restoreDestination, string.IsNullOrEmpty(restoreDestination.TargetDestination), m_options, m_result).ConfigureAwait(false);
 
             // At this point, there should be no more writes to the database, so we have to unlock the database:
             await database.Transaction
@@ -433,7 +433,7 @@ namespace Duplicati.Library.Main.Operation
             await backendManager.WaitForEmptyAsync(database, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             // Report that the restore is complete
-            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Finalize);
             m_result.EndTime = DateTime.UtcNow;
         }
 
@@ -467,13 +467,13 @@ namespace Duplicati.Library.Main.Operation
                 //Figure out what files are to be patched, and what blocks are needed
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
                 using (new Logging.Timer(LOGTAG, "PrepareBlockList", "PrepareBlockList"))
-                    await PrepareBlockAndFileList(database, m_options, filter, m_result)
+                    await PrepareBlockAndFileList(database, m_options, filter, restoreDestination, m_result)
                         .ConfigureAwait(false);
 
                 //Make the entire output setup
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
                 using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
-                    await CreateDirectoryStructure(database, restoreDestination, string.IsNullOrEmpty(m_options.Restorepath), m_options, m_result)
+                    await CreateDirectoryStructure(database, restoreDestination, string.IsNullOrEmpty(restoreDestination.TargetDestination), m_options, m_result)
                         .ConfigureAwait(false);
 
                 //If we are patching an existing target folder, do not touch stuff that is already updated
@@ -484,7 +484,7 @@ namespace Duplicati.Library.Main.Operation
                     await ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, restoreDestination, m_result).ConfigureAwait(false);
 
                 //Look for existing blocks in the original source files only
-                if (m_options.UseLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
+                if (m_options.UseLocalBlocks && !string.IsNullOrEmpty(restoreDestination.TargetDestination))
                 {
                     using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
                     using (new Logging.Timer(LOGTAG, "ScanForExistingSourceBlocksFast", "ScanForExistingSourceBlocksFast"))
@@ -653,7 +653,7 @@ namespace Duplicati.Library.Main.Operation
                 await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
             }
 
-            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Finalize);
             m_result.EndTime = DateTime.UtcNow;
         }
 
@@ -886,7 +886,7 @@ namespace Duplicati.Library.Main.Operation
             await blockmarker.CommitAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
         }
 
-        private static async Task PrepareBlockAndFileList(LocalRestoreDatabase database, Options options, Library.Utility.IFilter filter, RestoreResults result)
+        private static async Task PrepareBlockAndFileList(LocalRestoreDatabase database, Options options, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination, RestoreResults result)
         {
             // Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
             // Delete all entries from the temp table that are excluded by the filter(s)
@@ -899,18 +899,18 @@ namespace Duplicati.Library.Main.Operation
             }
 
             using (new Logging.Timer(LOGTAG, "SetTargetPaths", "SetTargetPaths"))
-                if (!string.IsNullOrEmpty(options.Restorepath))
+                if (!string.IsNullOrEmpty(restoreDestination.TargetDestination))
                 {
                     // Find the largest common prefix
                     var largest_prefix = options.DontCompressRestorePaths
                         ? "" :
                         await database.GetLargestPrefix(result.TaskControl.ProgressToken).ConfigureAwait(false);
 
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "MappingRestorePath", "Mapping restore path prefix to \"{0}\" to \"{1}\"", largest_prefix, Util.AppendDirSeparator(options.Restorepath));
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "MappingRestorePath", "Mapping restore path prefix to \"{0}\" to \"{1}\"", largest_prefix, Util.AppendDirSeparator(restoreDestination.TargetDestination));
 
                     // Set the target paths, special care with C:\ and /
                     await database
-                        .SetTargetPaths(largest_prefix, Util.AppendDirSeparator(options.Restorepath), result.TaskControl.ProgressToken)
+                        .SetTargetPaths(largest_prefix, Util.AppendDirSeparator(restoreDestination.TargetDestination), result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
                 }
                 else
@@ -937,11 +937,11 @@ namespace Duplicati.Library.Main.Operation
             // This part is not protected by try/catch as we need the target folder to exist
             if (options.Dryrun)
             {
-                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldCreateFolder", "Would create folder: {0}", options.Restorepath);
+                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldCreateFolder", "Would create folder: {0}", restoreDestination.TargetDestination);
             }
-            else if (await restoreDestination.CreateFolderIfNotExists(options.Restorepath, result.TaskControl.ProgressToken).ConfigureAwait(false))
+            else if (await restoreDestination.CreateFolderIfNotExists(restoreDestination.TargetDestination, result.TaskControl.ProgressToken).ConfigureAwait(false))
             {
-                Logging.Log.WriteVerboseMessage(LOGTAG, "CreateFolder", "Created root restore folder: {0}", options.Restorepath);
+                Logging.Log.WriteVerboseMessage(LOGTAG, "CreateFolder", "Created root restore folder: {0}", restoreDestination.TargetDestination);
                 result.RestoredFolders++;
             }
 

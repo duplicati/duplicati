@@ -17,11 +17,8 @@ internal static class Strings
     public static string MissingAccessToken => LC.L("An OAuth access token is required for this workspace backend.");
     public static string InvalidRestoreTargetType(string? type) => LC.L($"Invalid restore target type: {type}");
 
-    public static string IncorrectTargetUrlFormat(RestoreTargetType targetType, int expected, string[] parts) => LC.L(
-        $"The target URL does not have the correct number of parts for restore target type {targetType}: expected {expected}, got {parts.Length}");
-
-    public static string MetadataStorageNotEnabled => LC.L(
-        "Storing metadata content in the database must be enabled to use the Microsoft 365 source provider.");
+    public static string MetadataStorageNotEnabled(string optionname) => LC.L(
+        $"Storing metadata content in the database must be enabled to use the Microsoft 365 source provider. Use the option: --{optionname}");
 
     public static string MissingTenantId => LC.L("A tenant ID must be supplied to query the Office 365 Management API.");
 

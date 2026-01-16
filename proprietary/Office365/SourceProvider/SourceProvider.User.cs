@@ -531,6 +531,26 @@ partial class SourceProvider
             var url = $"{baseUrl}/v1.0/drives/{drive}/items/{item}/content";
             return provider.GetGraphAsStreamAsync(url, "application/octet-stream", ct);
         }
+
+        internal Task<Stream> GetDriveItemMetadataStreamAsync(
+            string driveId,
+            string itemId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var drive = Uri.EscapeDataString(driveId);
+            var item = Uri.EscapeDataString(itemId);
+
+            var select =
+                "id,name,parentReference,webUrl,eTag,cTag,size," +
+                "createdDateTime,lastModifiedDateTime,createdBy,lastModifiedBy," +
+                "fileSystemInfo,file,folder,package,shared,deleted";
+
+            var url =
+                $"{baseUrl}/v1.0/drives/{drive}/items/{item}?$select={Uri.EscapeDataString(select)}";
+
+            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+        }
     }
 
     internal CalendarApiImpl CalendarApi => new CalendarApiImpl(_apiHelper);

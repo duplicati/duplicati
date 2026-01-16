@@ -1017,3 +1017,77 @@ public sealed class GraphChatMessageIdentity
     [JsonPropertyName("userIdentityType")]
     public string? UserIdentityType { get; set; }
 }
+
+internal sealed class GraphCreatedMessage
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+}
+
+internal sealed class GraphMoveRequest
+{
+    [JsonPropertyName("destinationId")]
+    public string DestinationId { get; set; } = "";
+}
+
+internal sealed class GraphCreateMailFolderRequest
+{
+    [JsonPropertyName("displayName")]
+    public string DisplayName { get; set; } = "";
+}
+
+internal sealed class GraphEmailMessageMetadata
+{
+    // Only fields we want to round-trip for restore
+    [JsonPropertyName("isRead")]
+    public bool? IsRead { get; set; }
+
+    [JsonPropertyName("importance")]
+    public string? Importance { get; set; } // "low" | "normal" | "high"
+
+    [JsonPropertyName("categories")]
+    public List<string>? Categories { get; set; }
+
+    [JsonPropertyName("flag")]
+    public GraphFollowupFlag? Flag { get; set; }
+}
+
+internal sealed class GraphEmailMessagePatch
+{
+    [JsonPropertyName("isRead")]
+    public bool? IsRead { get; set; }
+
+    [JsonPropertyName("importance")]
+    public string? Importance { get; set; }
+
+    [JsonPropertyName("categories")]
+    public List<string>? Categories { get; set; }
+
+    [JsonPropertyName("flag")]
+    public GraphFollowupFlag? Flag { get; set; }
+}
+
+internal sealed class GraphFollowupFlag
+{
+    [JsonPropertyName("flagStatus")]
+    public string? FlagStatus { get; set; } // "notFlagged" | "flagged" | "complete"
+
+    // Optional fields if you later include them:
+    [JsonPropertyName("startDateTime")]
+    public GraphDateTimeTimeZone? StartDateTime { get; set; }
+
+    [JsonPropertyName("dueDateTime")]
+    public GraphDateTimeTimeZone? DueDateTime { get; set; }
+
+    [JsonPropertyName("completedDateTime")]
+    public GraphDateTimeTimeZone? CompletedDateTime { get; set; }
+}
+
+internal sealed class GraphDateTimeTimeZone
+{
+    [JsonPropertyName("dateTime")]
+    public string? DateTime { get; set; } // Graph commonly uses string for this object
+
+    [JsonPropertyName("timeZone")]
+    public string? TimeZone { get; set; }
+}

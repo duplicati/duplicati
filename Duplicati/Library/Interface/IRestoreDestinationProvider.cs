@@ -31,11 +31,23 @@ namespace Duplicati.Library.Interface;
 public interface IRestoreDestinationProvider : IDisposable
 {
     /// <summary>
+    /// The target destination path
+    /// </summary>
+    string TargetDestination { get; }
+
+    /// <summary>
     /// Initializes the restore destination provider
     /// </summary>
     /// <param name="cancel">The cancellation token</param>
     /// <returns>An awaitable task</returns>
     Task Initialize(CancellationToken cancel);
+
+    /// <summary>
+    /// Finalizes the restore destination provider
+    /// </summary>
+    /// <param name="cancel">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    Task Finalize(CancellationToken cancel);
 
     /// <summary>
     /// Creates the folder at the given path if it does not exist

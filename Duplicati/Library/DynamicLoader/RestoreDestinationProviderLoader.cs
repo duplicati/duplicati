@@ -67,7 +67,7 @@ namespace Duplicati.Library.DynamicLoader
             /// <param name="url">The url to create the instance for</param>
             /// <param name="options">The options to pass to the instance constructor</param>
             /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
-            public IRestoreDestinationProvider GetRestoreDestinationProvider(string url, string mountPoint, Dictionary<string, string> options)
+            public IRestoreDestinationProvider GetRestoreDestinationProvider(string url, Dictionary<string, string> options)
             {
                 var uri = new Utility.Uri(url);
 
@@ -82,7 +82,7 @@ namespace Duplicati.Library.DynamicLoader
                     try
                     {
                         if (m_interfaces.ContainsKey(uri.Scheme))
-                            return (IRestoreDestinationProvider)Activator.CreateInstance(m_interfaces[uri.Scheme].GetType(), url, mountPoint, newOpts);
+                            return (IRestoreDestinationProvider)Activator.CreateInstance(m_interfaces[uri.Scheme].GetType(), url, newOpts);
                     }
                     catch (System.Reflection.TargetInvocationException tex)
                     {
@@ -172,14 +172,13 @@ namespace Duplicati.Library.DynamicLoader
         /// Instanciates a specific SourceProvider, given the url and options
         /// </summary>
         /// <param name="url">The url to create the instance for</param>
-        /// <param name="mountPoint">The mount point to use</param>
         /// <param name="options">The options to pass to the instance constructor</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
-        public static async Task<IRestoreDestinationProvider> GetRestoreDestinationProvider(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)
+        public static async Task<IRestoreDestinationProvider> GetRestoreDestinationProvider(string url, Dictionary<string, string> options, CancellationToken cancellationToken)
         {
             // Source providers are preferred over backends
-            var provider = _RestoreDestinationProvider.GetRestoreDestinationProvider(url, mountPoint, options);
+            var provider = _RestoreDestinationProvider.GetRestoreDestinationProvider(url, options);
 
             // TODO: Support restoring to backends as well
             // if (provider == null)

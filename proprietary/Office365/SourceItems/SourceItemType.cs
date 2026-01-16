@@ -41,6 +41,13 @@ public enum SourceItemType
     UserMailboxEmail,
     User,
     UserContact,
+    UserProfile,
+    UserCalendar,
+    UserContacts,
+    UserTasks,
+    UserNotes,
+    UserChats,
+
     UserPlannerTasks,
     PlannerBucket
 }

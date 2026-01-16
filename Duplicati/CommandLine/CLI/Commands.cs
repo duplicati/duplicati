@@ -723,7 +723,13 @@ namespace Duplicati.CommandLine
                         string restorePath;
                         options.TryGetValue("restore-path", out restorePath);
 
-                        output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.RestoredFiles, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), string.IsNullOrEmpty(restorePath) ? "original path" : restorePath));
+                        if (string.IsNullOrWhiteSpace(restorePath))
+                            restorePath = "original location";
+                        if (restorePath.StartsWith("@"))
+                            restorePath = "remote destination";
+
+
+                        output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.RestoredFiles, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), restorePath));
                         output.MessageEvent(string.Format("Duration of restore: {0:hh\\:mm\\:ss}", res.Duration));
 
                         if (output.FullResults)
