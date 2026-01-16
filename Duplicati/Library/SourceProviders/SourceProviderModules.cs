@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.CompilerServices;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -35,11 +36,37 @@ public static class SourceProviderModules
     public static IReadOnlyList<ISourceProviderModule> BuiltInSourceProviderModules => SupportedSourceProviders;
 
     /// <summary>
+    /// Lazy loaded list of proprietary source-provider modules
+    /// </summary>
+    private static Lazy<IReadOnlyList<ISourceProviderModule>> ProprietarySourceProviderModules = new Lazy<IReadOnlyList<ISourceProviderModule>>(() =>
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DUPLICATI_DISABLE_PROPRIETARY_MODULES")))
+                return LoadProprietaryModules();
+        }
+        catch
+        {
+        }
+
+        return Array.Empty<ISourceProviderModule>();
+    });
+
+    /// <summary>
+    /// Loads the proprietary modules, and is marked as NoInlining to avoid JIT errors if the library is missing
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static IReadOnlyList<ISourceProviderModule> LoadProprietaryModules()
+    {
+        return Proprietary.LoaderHelper.SourceProviderModules.LicensedSourceProviderModules.WhereNotNull().ToList();
+    }
+
+    /// <summary>
     /// Calculate list once and cache it
     /// </summary>
     private static readonly IReadOnlyList<ISourceProviderModule> SupportedSourceProviders = new ISourceProviderModule[] {
     }
-    .Concat(Proprietary.LoaderHelper.SourceProviderModules.LicensedSourceProviderModules)
+    .Concat(ProprietarySourceProviderModules.Value)
     .WhereNotNull()
     .ToList();
 }
