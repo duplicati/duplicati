@@ -133,6 +133,83 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     ];
 
     /// <summary>
+    /// Gets a boolean value from the dictionary for the specified key.
+    /// </summary>
+    /// <param name="dict">The dictionary to search.</param>
+    /// <param name="key">The key to look for in the dictionary.</param>
+    /// <param name="defaultValue">The default value to return if the key is not found or the value is not a boolean.</param>
+    /// <returns>The boolean value associated with the key, or the default value if not found or invalid.</returns>
+    private static bool GetBoolFromDictionary(Dictionary<string, object?> dict, string key, bool defaultValue = false)
+    {
+        if (dict.TryGetValue(key, out var val))
+        {
+            if (val is bool b)
+                return b;
+            else if (val is JsonElement elem && (elem.ValueKind == JsonValueKind.True || elem.ValueKind == JsonValueKind.False))
+                return elem.GetBoolean();
+        }
+        return defaultValue;
+    }
+
+    /// <summary>
+    /// Gets an integer value from the dictionary for the specified key.
+    /// </summary>
+    /// <param name="dict">The dictionary to search.</param>
+    /// <param name="key">The key to look for in the dictionary.</param>
+    /// <param name="defaultValue">The default value to return if the key is not found or the value is not an integer.</param>
+    /// <returns>The integer value associated with the key, or the default value if not found or invalid.</returns>
+    private static int GetIntFromDictionary(Dictionary<string, object?> dict, string key, int defaultValue = 0)
+    {
+        if (dict.TryGetValue(key, out var val))
+        {
+            if (val is int l)
+                return l;
+            else if (val is JsonElement elem && elem.ValueKind == JsonValueKind.Number && elem.TryGetInt32(out var parsedInt))
+                return parsedInt;
+        }
+        return defaultValue;
+    }
+
+    /// <summary>
+    /// Gets a list of strings from the dictionary for the specified key.
+    /// </summary>
+    /// <param name="dict">The dictionary to search.</param>
+    /// <param name="key">The key to look for in the dictionary.</param>
+    /// <param name="defaultValue">The default list to return if the key is not found or the value is not a string.</param>
+    /// <returns>The list of strings associated with the key, or the default list if not found or invalid.</returns>
+    private static List<string> GetOptionsFromDictionary(Dictionary<string, object?> dict, string key, List<string> defaultValue)
+    {
+        var options = GetStringFromDictionary(dict, key)
+            .Split(' ')
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToList();
+
+        if (options.Count != 0)
+            return [.. options];
+
+        return defaultValue;
+    }
+
+    /// <summary>
+    /// Gets a string value from the dictionary for the specified key.
+    /// </summary>
+    /// <param name="dict">The dictionary to search.</param>
+    /// <param name="key">The key to look for in the dictionary.</param>
+    /// <param name="defaultValue">The default value to return if the key is not found or the value is not a string.</param>
+    /// <returns>The string value associated with the key, or the default value if not found or invalid.</returns>
+    private static string GetStringFromDictionary(Dictionary<string, object?> dict, string key, string defaultValue = "")
+    {
+        if (dict.TryGetValue(key, out var val))
+        {
+            if (val is string str)
+                return str;
+            else if (val is JsonElement elem && elem.ValueKind == JsonValueKind.String)
+                return elem.GetString() ?? defaultValue;
+        }
+        return defaultValue;
+    }
+
+    /// <summary>
     /// Configures the module with the provided command line options.
     /// </summary>
     /// <param name="commandlineOptions">The command line options dictionary.</param>
@@ -173,15 +250,12 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                 var deserializeOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var toplevel = JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonContent, deserializeOpts);
 
-                if (toplevel?.TryGetValue("sync-on-warnings", out var syncOnWarningsObj) == true)
+                if (toplevel == null)
                 {
-                    if (syncOnWarningsObj is JsonElement elem && elem.ValueKind == JsonValueKind.True)
-                        m_syncOnWarnings = true;
-                    else if (syncOnWarningsObj is JsonElement elem2 && elem2.ValueKind == JsonValueKind.False)
-                        m_syncOnWarnings = false;
-                    else if (syncOnWarningsObj is bool b)
-                        m_syncOnWarnings = b;
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonParseError", null, "Failed to parse JSON configuration: top-level object is null.");
+                    return;
                 }
+                m_syncOnWarnings = GetBoolFromDictionary(toplevel, "sync-on-warnings", m_syncOnWarnings);
 
                 if (toplevel?.TryGetValue("destinations", out var destinationsObj) == true &&
                     destinationsObj is JsonElement destinationsElem &&
@@ -190,33 +264,37 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                     var destinations = JsonSerializer.Deserialize<List<Dictionary<string, object?>>>(destinationsElem.GetRawText(), deserializeOpts) ?? [];
                     foreach (var destination in destinations)
                     {
+                        var loglevel = GetStringFromDictionary(destination, "log-level");
+                        var mode = GetStringFromDictionary(destination, "mode");
+                        var schedule = GetStringFromDictionary(destination, "schedule");
+
                         m_destinations.Add(new(
                             Config: m_defaultRunnerConfig with
                             {
-                                Dst = (destination.GetValueOrDefault("url") as string) ?? (destination.GetValueOrDefault("url") is JsonElement elem && elem.ValueKind == JsonValueKind.String ? elem.GetString() : null) ?? string.Empty,
+                                Dst = GetStringFromDictionary(destination, "url", string.Empty),
 
-                                AutoCreateFolders = destination.TryGetValue("auto-create-folders", out var autoCreateFoldersObj) && autoCreateFoldersObj is bool autoCreateFolders ? autoCreateFolders : m_defaultRunnerConfig.AutoCreateFolders,
-                                BackendRetries = destination.TryGetValue("backend-retries", out var backendRetriesObj) && backendRetriesObj is long backendRetriesLong ? (int)backendRetriesLong : m_defaultRunnerConfig.BackendRetries,
-                                BackendRetryDelay = destination.TryGetValue("backend-retry-delay", out var backendRetryDelayObj) && backendRetryDelayObj is long backendRetryDelayLong ? (int)backendRetryDelayLong : m_defaultRunnerConfig.BackendRetryDelay,
-                                BackendRetryWithExponentialBackoff = destination.TryGetValue("backend-retry-with-exponential-backoff", out var backendRetryWithExponentialBackoffObj) && backendRetryWithExponentialBackoffObj is bool backendRetryWithExponentialBackoff ? backendRetryWithExponentialBackoff : m_defaultRunnerConfig.BackendRetryWithExponentialBackoff,
-                                Confirm = destination.TryGetValue("confirm", out var confirmObj) && confirmObj is bool confirm ? confirm : m_defaultRunnerConfig.Confirm,
-                                DryRun = destination.TryGetValue("dry-run", out var dryRunObj) && dryRunObj is bool dryRun ? dryRun : m_defaultRunnerConfig.DryRun,
-                                DstOptions = destination.TryGetValue("dst-options", out var dstOptionsObj) && ((dstOptionsObj is string dstOptionsStr) || (dstOptionsObj is JsonElement elemDstOpt && elemDstOpt.ValueKind == JsonValueKind.String && (dstOptionsStr = elemDstOpt.GetString()) != null)) ? dstOptionsStr.Split(' ').ToList() : m_defaultRunnerConfig.DstOptions,
-                                Force = destination.TryGetValue("force", out var forceObj) && forceObj is bool force ? force : m_defaultRunnerConfig.Force,
-                                GlobalOptions = destination.TryGetValue("global-options", out var globalOptionsObj) && ((globalOptionsObj is string globalOptionsStr) || (globalOptionsObj is JsonElement elemGlob && elemGlob.ValueKind == JsonValueKind.String && (globalOptionsStr = elemGlob.GetString()) != null)) ? globalOptionsStr.Split(' ').ToList() : m_defaultRunnerConfig.GlobalOptions,
-                                LogFile = (destination.GetValueOrDefault("log-file") as string) ?? (destination.GetValueOrDefault("log-file") is JsonElement elemLog && elemLog.ValueKind == JsonValueKind.String ? elemLog.GetString() : null) ?? string.Empty,
-                                LogLevel = (destination.GetValueOrDefault("log-level") as string) ?? (destination.GetValueOrDefault("log-level") is JsonElement elemLvl && elemLvl.ValueKind == JsonValueKind.String ? elemLvl.GetString() : null) ?? (commandlineOptions.TryGetValue("log-file-log-level", out var logLevel) ? logLevel : m_defaultRunnerConfig.LogLevel),
-                                ParseArgumentsOnly = destination.TryGetValue("parse-arguments-only", out var parseArgumentsOnlyObj) && parseArgumentsOnlyObj is bool parseArgumentsOnly ? parseArgumentsOnly : m_defaultRunnerConfig.ParseArgumentsOnly,
-                                Progress = destination.TryGetValue("progress", out var progressObj) && progressObj is bool progress ? progress : m_defaultRunnerConfig.Progress,
-                                Retention = destination.TryGetValue("retention", out var retentionObj) && retentionObj is bool retention ? retention : m_defaultRunnerConfig.Retention,
-                                Retry = destination.TryGetValue("retry", out var retryObj) && retryObj is long retryLong ? (int)retryLong : m_defaultRunnerConfig.Retry,
-                                SrcOptions = destination.TryGetValue("src-options", out var srcOptionsObj) && ((srcOptionsObj is string srcOptionsStr) || (srcOptionsObj is JsonElement elemSrc && elemSrc.ValueKind == JsonValueKind.String && (srcOptionsStr = elemSrc.GetString()) != null)) ? srcOptionsStr.Split(' ').ToList() : m_defaultRunnerConfig.SrcOptions,
-                                VerifyContents = destination.TryGetValue("verify-contents", out var verifyContentsObj) && verifyContentsObj is bool verifyContents ? verifyContents : m_defaultRunnerConfig.VerifyContents,
-                                VerifyGetAfterPut = destination.TryGetValue("verify-get-after-put", out var verifyGetAfterPutObj) && verifyGetAfterPutObj is bool verifyGetAfterPut ? verifyGetAfterPut : m_defaultRunnerConfig.VerifyGetAfterPut
+                                AutoCreateFolders = GetBoolFromDictionary(destination, "auto-create-folders", m_defaultRunnerConfig.AutoCreateFolders),
+                                BackendRetries = GetIntFromDictionary(destination, "backend-retries", m_defaultRunnerConfig.BackendRetries),
+                                BackendRetryDelay = GetIntFromDictionary(destination, "backend-retry-delay", m_defaultRunnerConfig.BackendRetryDelay),
+                                BackendRetryWithExponentialBackoff = GetBoolFromDictionary(destination, "backend-retry-with-exponential-backoff", m_defaultRunnerConfig.BackendRetryWithExponentialBackoff),
+                                Confirm = GetBoolFromDictionary(destination, "confirm", m_defaultRunnerConfig.Confirm),
+                                DryRun = GetBoolFromDictionary(destination, "dry-run", m_defaultRunnerConfig.DryRun),
+                                DstOptions = GetOptionsFromDictionary(destination, "dst-options", m_defaultRunnerConfig.DstOptions),
+                                Force = GetBoolFromDictionary(destination, "force", m_defaultRunnerConfig.Force),
+                                GlobalOptions = GetOptionsFromDictionary(destination, "global-options", m_defaultRunnerConfig.GlobalOptions),
+                                LogFile = GetStringFromDictionary(destination, "log-file"),
+                                LogLevel = loglevel ?? (commandlineOptions.TryGetValue("log-file-log-level", out var logLevel) ? logLevel : m_defaultRunnerConfig.LogLevel),
+                                ParseArgumentsOnly = GetBoolFromDictionary(destination, "parse-arguments-only", m_defaultRunnerConfig.ParseArgumentsOnly),
+                                Progress = GetBoolFromDictionary(destination, "progress", m_defaultRunnerConfig.Progress),
+                                Retention = GetBoolFromDictionary(destination, "retention", m_defaultRunnerConfig.Retention),
+                                Retry = GetIntFromDictionary(destination, "retry", m_defaultRunnerConfig.Retry),
+                                SrcOptions = GetOptionsFromDictionary(destination, "src-options", m_defaultRunnerConfig.SrcOptions),
+                                VerifyContents = GetBoolFromDictionary(destination, "verify-contents", m_defaultRunnerConfig.VerifyContents),
+                                VerifyGetAfterPut = GetBoolFromDictionary(destination, "verify-get-after-put", m_defaultRunnerConfig.VerifyGetAfterPut)
                             },
-                            Mode: Enum.TryParse<RemoteSyncTriggerMode>((destination.GetValueOrDefault("mode") as string) ?? (destination.GetValueOrDefault("mode") is JsonElement elemMode && elemMode.ValueKind == JsonValueKind.String ? elemMode.GetString() : null), true, out var mode) ? mode : RemoteSyncTriggerMode.Inline,
-                            Schedule: destination.TryGetValue("schedule", out var scheduleObj) && ((scheduleObj is string scheduleStr) || (scheduleObj is JsonElement elemSch && elemSch.ValueKind == JsonValueKind.String && (scheduleStr = elemSch.GetString()) != null)) && TimeSpan.TryParse(scheduleStr, out var schedule) ? schedule : null,
-                            Count: destination.TryGetValue("count", out var countObj) && ((countObj is long countLong) || (countObj is JsonElement elemCnt && elemCnt.ValueKind == JsonValueKind.Number && elemCnt.TryGetInt64(out countLong))) ? (int)countLong : 0
+                            Mode: Enum.TryParse<RemoteSyncTriggerMode>(mode, true, out var parsedMode) ? parsedMode : RemoteSyncTriggerMode.Inline,
+                            Schedule: string.IsNullOrWhiteSpace(schedule) ? (TimeSpan?)null : TimeSpan.TryParse(schedule, out var scheduleTimeSpan) ? scheduleTimeSpan : (TimeSpan?)null,
+                            Count: GetIntFromDictionary(destination, "count", 0)
                         ));
                     }
 
