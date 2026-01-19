@@ -31,6 +31,7 @@ using System.Linq;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -1182,6 +1183,7 @@ namespace Duplicati.UnitTest
             // First backup
             void Backup()
             {
+                Task.Delay(1000).Wait(); // Ensure timestamp difference between backups
                 using var console = new CommandLine.ConsoleOutput(Console.Out, options);
                 using var controller = new Controller("file://" + TARGETFOLDER, options, console);
                 var result = controller.Backup([DATAFOLDER]);
