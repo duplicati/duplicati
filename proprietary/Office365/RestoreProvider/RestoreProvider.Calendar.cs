@@ -497,7 +497,7 @@ partial class RestoreProvider
         {
             try
             {
-                if (!Provider._overwrite && !string.IsNullOrWhiteSpace(eventItem.Subject))
+                if (!Provider._ignoreExisting && !string.IsNullOrWhiteSpace(eventItem.Subject))
                 {
                     DateTimeOffset? start = null;
                     if (eventItem.Start is JsonElement startElem && startElem.ValueKind == JsonValueKind.Object)
@@ -542,7 +542,7 @@ partial class RestoreProvider
         {
             try
             {
-                if (!Provider._overwrite && !string.IsNullOrWhiteSpace(eventItem.Subject))
+                if (!Provider._ignoreExisting && !string.IsNullOrWhiteSpace(eventItem.Subject))
                 {
                     DateTimeOffset? start = null;
                     if (eventItem.Start is JsonElement startElem && startElem.ValueKind == JsonValueKind.Object)

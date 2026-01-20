@@ -57,6 +57,11 @@ internal class APIHelper : IDisposable
     private readonly string? _certificatePassword;
 
     /// <summary>
+    /// The scope for the API requests
+    /// </summary>
+    private readonly string _scope;
+
+    /// <summary>
     /// The timeout options for the backend
     /// </summary>
     private readonly TimeoutOptionsHelper.Timeouts _timeouts;
@@ -71,7 +76,8 @@ internal class APIHelper : IDisposable
     /// <param name="timeouts">The timeout options</param>
     /// <param name="certificatePath">The path to the certificate file</param>
     /// <param name="certificatePassword">The password for the certificate file</param>
-    private APIHelper(HttpClient httpClient, AuthOptionsHelper.AuthOptions authOptions, string tenantId, string graphBaseUrl, TimeoutOptionsHelper.Timeouts timeouts, string? certificatePath, string? certificatePassword)
+    /// <param name="scope">The scope for the API requests</param>
+    private APIHelper(HttpClient httpClient, AuthOptionsHelper.AuthOptions authOptions, string tenantId, string graphBaseUrl, TimeoutOptionsHelper.Timeouts timeouts, string? certificatePath, string? certificatePassword, string scope)
     {
         _httpClient = httpClient;
         _authOptions = authOptions;
@@ -80,6 +86,7 @@ internal class APIHelper : IDisposable
         _timeouts = timeouts;
         _certificatePath = certificatePath;
         _certificatePassword = certificatePassword;
+        _scope = scope;
     }
 
     /// <summary>
@@ -91,8 +98,9 @@ internal class APIHelper : IDisposable
     /// <param name="timeouts">The timeout options</param>
     /// <param name="certificatePath">The path to the certificate file</param>
     /// <param name="certificatePassword">The password for the certificate file</param>
+    /// <param name="scope">The scope for the API requests</param>
     /// <returns>A new instance of the <see cref="APIHelper"/> class</returns>
-    public static APIHelper Create(AuthOptionsHelper.AuthOptions authOptions, string tenantId, string graphBaseUrl, TimeoutOptionsHelper.Timeouts timeouts, string? certificatePath = null, string? certificatePassword = null)
+    public static APIHelper Create(AuthOptionsHelper.AuthOptions authOptions, string tenantId, string graphBaseUrl, TimeoutOptionsHelper.Timeouts timeouts, string? certificatePath = null, string? certificatePassword = null, string scope = "https://graph.microsoft.com/.default")
     {
         var handler = new HttpClientHandler
         {
@@ -103,7 +111,7 @@ internal class APIHelper : IDisposable
         httpClient.Timeout = Timeout.InfiniteTimeSpan;
         httpClient.DefaultRequestHeaders.Add("User-Agent", $"Duplicati/{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
 
-        return new APIHelper(httpClient, authOptions, tenantId, graphBaseUrl, timeouts, certificatePath, certificatePassword);
+        return new APIHelper(httpClient, authOptions, tenantId, graphBaseUrl, timeouts, certificatePath, certificatePassword, scope);
     }
 
     /// <summary>
@@ -134,7 +142,7 @@ internal class APIHelper : IDisposable
         {
             ["grant_type"] = "client_credentials",
             ["client_id"] = _authOptions.Username!,
-            ["scope"] = $"{_graphBaseUrl.TrimEnd('/')}/.default"
+            ["scope"] = _scope
         };
 
         if (!string.IsNullOrWhiteSpace(_certificatePath))

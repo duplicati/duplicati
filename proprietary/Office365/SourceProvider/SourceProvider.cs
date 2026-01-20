@@ -129,7 +129,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             graphBaseUrl: parsedOptions.GraphBaseUrl,
             timeouts: _timeouts,
             certificatePath: parsedOptions.CertificatePath,
-            certificatePassword: parsedOptions.CertificatePassword
+            certificatePassword: parsedOptions.CertificatePassword,
+            scope: parsedOptions.Scope
         );
     }
 

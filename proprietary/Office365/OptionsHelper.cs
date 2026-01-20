@@ -12,6 +12,9 @@ internal static class OptionsHelper
     internal const string OFFICE_CERTIFICATE_PATH_OPTION = "office-certificate-path";
     internal const string OFFICE_CERTIFICATE_PASSWORD_OPTION = "office-certificate-password";
     internal const string OFFICE_GRAPH_BASE_OPTION = "office-graph-base-url";
+    internal const string OFFICE_SCOPE_OPTION = "office-scope";
+    internal const string OFFICE_SCOPE_OPTION_DEFAULT = "https://graph.microsoft.com/.default";
+    internal const string OFFICE_IGNORE_EXISTING_OPTION = "office-ignore-existing";
 
     internal const string DEFAULT_GRAPH_BASE_URL = "https://graph.microsoft.com";
 
@@ -23,7 +26,8 @@ internal static class OptionsHelper
         AuthOptionsHelper.AuthOptions AuthOptions,
         string GraphBaseUrl,
         string? CertificatePath,
-        string? CertificatePassword
+        string? CertificatePassword,
+        string Scope
     );
 
     internal static ParsedOptions ParseAndValidateOptions(string url, Dictionary<string, string?> options)
@@ -41,12 +45,17 @@ internal static class OptionsHelper
         var _certificatePath = options.GetValueOrDefault(OFFICE_CERTIFICATE_PATH_OPTION);
         var _certificatePassword = options.GetValueOrDefault(OFFICE_CERTIFICATE_PASSWORD_OPTION);
 
+        var _scope = options.GetValueOrDefault(OFFICE_SCOPE_OPTION);
+        if (string.IsNullOrWhiteSpace(_scope))
+            _scope = OFFICE_SCOPE_OPTION_DEFAULT;
+
         return new ParsedOptions(
             TenantId: _tenantId,
             AuthOptions: _authOptions,
             GraphBaseUrl: _graphBaseUrl,
             CertificatePath: _certificatePath,
-            CertificatePassword: _certificatePassword
+            CertificatePassword: _certificatePassword,
+            Scope: _scope
         );
     }
 
@@ -57,6 +66,7 @@ internal static class OptionsHelper
         new CommandLineArgument(OFFICE_SECRET_OPTION, CommandLineArgument.ArgumentType.Password, Strings.OfficeSecretOptionShort, Strings.OfficeSecretOptionLong, null, [AuthOptionsHelper.AuthPasswordOption], null),
         new CommandLineArgument(OFFICE_CERTIFICATE_PATH_OPTION, CommandLineArgument.ArgumentType.Path, Strings.OfficeCertificatePathOptionShort, Strings.OfficeCertificatePathOptionLong),
         new CommandLineArgument(OFFICE_CERTIFICATE_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.OfficeCertificatePasswordOptionShort, Strings.OfficeCertificatePasswordOptionLong),
-        new CommandLineArgument(OFFICE_GRAPH_BASE_OPTION, CommandLineArgument.ArgumentType.String, Strings.OfficeGraphBaseOptionShort, Strings.OfficeGraphBaseOptionLong, DEFAULT_GRAPH_BASE_URL)
+        new CommandLineArgument(OFFICE_GRAPH_BASE_OPTION, CommandLineArgument.ArgumentType.String, Strings.OfficeGraphBaseOptionShort, Strings.OfficeGraphBaseOptionLong, DEFAULT_GRAPH_BASE_URL),
+        new CommandLineArgument(OFFICE_SCOPE_OPTION, CommandLineArgument.ArgumentType.String, Strings.OfficeScopeOptionShort, Strings.OfficeScopeOptionLong, OFFICE_SCOPE_OPTION_DEFAULT)
     ];
 }

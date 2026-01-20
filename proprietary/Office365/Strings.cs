@@ -20,6 +20,9 @@ internal static class Strings
     public static string MetadataStorageNotEnabled(string optionname) => LC.L(
         $"Storing metadata content in the database must be enabled to use the Microsoft 365 source provider. Use the option: --{optionname}");
 
+    public static string RestoreTargetMissingOverwriteOption(string optionname) => LC.L($"The Office365 restore target must have the overwrite option set to true. Use the provider specific option --{optionname} to avoid overwriting existing items.");
+
+
     public static string MissingTenantId => LC.L("A tenant ID must be supplied to query the Office 365 Management API.");
 
     public static string OfficeTenantOptionShort => LC.L("Azure AD tenant identifier.");
@@ -43,6 +46,12 @@ internal static class Strings
     public static string OfficeGraphBaseOptionShort => LC.L("Microsoft Graph base URL.");
 
     public static string OfficeGraphBaseOptionLong => LC.L("Base URL for Microsoft Graph if targeting a sovereign cloud.");
+
+    public static string OfficeIgnoreExistingOptionShort => LC.L("Ignore existing items.");
+    public static string OfficeIgnoreExistingOptionLong => LC.L("If set, existing items in the destination will not be overwritten.");
+
+    public static string OfficeScopeOptionShort => LC.L("Microsoft Graph API scope.");
+    public static string OfficeScopeOptionLong => LC.L("The scope to use when requesting an access token for the Microsoft Graph API.");
 
     public static string WebModuleOperationShort => LC.L("The operation to perform.");
     public static string WebModuleOperationLong => LC.L("The operation that the web module should perform.");

@@ -110,7 +110,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
     /// <summary>
     /// Whether to overwrite existing items
     /// </summary>
-    internal readonly bool _overwrite;
+    internal readonly bool _ignoreExisting;
 
     /// <summary>
     /// Default constructor for the restore provider.
@@ -140,10 +140,14 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             graphBaseUrl: parsedOptions.GraphBaseUrl,
             certificatePath: parsedOptions.CertificatePath,
             certificatePassword: parsedOptions.CertificatePassword,
-            timeouts: TimeoutOptionsHelper.Parse(options)
+            timeouts: TimeoutOptionsHelper.Parse(options),
+            scope: parsedOptions.Scope
         );
 
-        _overwrite = Utility.ParseBoolOption(options, "overwrite");
+        _ignoreExisting = Utility.ParseBoolOption(options, OptionsHelper.OFFICE_IGNORE_EXISTING_OPTION);
+        var overwrite = Utility.ParseBoolOption(options, "overwrite");
+        if (!overwrite)
+            throw new UserInformationException(Strings.RestoreTargetMissingOverwriteOption(OptionsHelper.OFFICE_IGNORE_EXISTING_OPTION), "OverwriteOptionNotSet");
 
         var sourceOpts = new Dictionary<string, string?>(options)
         {
@@ -167,7 +171,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
     public string Description => Strings.ProviderDescription;
 
     /// <inheritdoc />
-    public IList<ICommandLineArgument> SupportedCommands => OptionsHelper.SupportedCommands;
+    public IList<ICommandLineArgument> SupportedCommands => OptionsHelper.SupportedCommands.Concat([new CommandLineArgument(OptionsHelper.OFFICE_IGNORE_EXISTING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.OfficeIgnoreExistingOptionShort, Strings.OfficeIgnoreExistingOptionLong)]).ToList();
 
     /// <inheritdoc />
     public string TargetDestination => _restorePath;
@@ -847,7 +851,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     targetFolderId = mappedFolderId;
                 }
 
-                if (!string.IsNullOrWhiteSpace(internetMessageId) && await EmailApi.EmailExistsInFolderByInternetMessageIdAsync(userId, targetFolderId, internetMessageId, cancel))
+                if (!_ignoreExisting && !string.IsNullOrWhiteSpace(internetMessageId) && await EmailApi.EmailExistsInFolderByInternetMessageIdAsync(userId, targetFolderId, internetMessageId, cancel))
                 {
                     Log.WriteInformationMessage(LOGTAG, "RestoreUserEmailsSkipExisting", null, $"Email with InternetMessageId {internetMessageId} already exists in target mailbox, skipping restore for {emailSource.Key}.");
                 }
@@ -1099,7 +1103,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
                 var displayName = file.Value.GetValueOrDefault("o365:Name") ?? Path.GetFileName(originalPath);
 
-                if (!_overwrite)
+                if (!_ignoreExisting)
                 {
                     var existingItem = await DriveApi.GetDriveItemAsync(driveId, parentId, displayName, cancel);
                     if (existingItem != null)
@@ -1316,7 +1320,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     targetFolderId = mappedFolderId;
                 }
 
-                if (!_overwrite)
+                if (!_ignoreExisting)
                 {
                     using (var checkStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                     {
@@ -1496,7 +1500,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     continue;
                 }
 
-                if (!_overwrite)
+                if (!_ignoreExisting)
                 {
                     if (!existingTasksByPlan.TryGetValue(planId, out var existingTasks))
                     {
@@ -1576,7 +1580,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     taskData?.AppliedCategories,
                     cancel);
 
-                if (!_overwrite && existingTasksByPlan.TryGetValue(planId, out var currentTasks))
+                if (!_ignoreExisting && existingTasksByPlan.TryGetValue(planId, out var currentTasks))
                 {
                     currentTasks.Add(newTask);
                 }
