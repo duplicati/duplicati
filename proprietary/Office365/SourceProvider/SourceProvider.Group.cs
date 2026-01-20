@@ -36,7 +36,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/groups/{group}/members" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphDirectoryObject>(url, ct);
         }
@@ -50,7 +50,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/groups/{group}/owners" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphDirectoryObject>(url, ct);
         }
@@ -73,7 +73,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/groups/{group}/conversations" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphConversation>(url, ct);
         }
@@ -91,7 +91,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/groups/{group}/threads" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphConversationThread>(url, ct);
         }
@@ -113,7 +113,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/groups/{group}/conversations/{conv}/threads" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphConversationThread>(url, ct);
         }
@@ -133,7 +133,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/groups/{group}/threads/{thread}/posts" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphPost>(url, ct);
         }
@@ -199,7 +199,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/groups/{group}/events" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphEvent>(url, ct);
         }
@@ -236,7 +236,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/groups/{group}/drives" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphDrive>(url, ct);
         }
@@ -255,7 +255,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/groups/{group}/planner/plans" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphPlannerPlan>(url, ct);
         }
@@ -274,7 +274,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/planner/plans/{plan}/buckets" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphPlannerBucket>(url, ct);
         }
@@ -289,7 +289,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/planner/plans/{plan}/tasks" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphPlannerTask>(url, ct);
         }
@@ -432,7 +432,7 @@ partial class SourceProvider
 
             var url =
                 $"{baseUrl}/v1.0/teams/{team}/channels/{channel}/messages" +
-                $"?$top={OptionsHelper.CHATS_PAGE_SIZE}";
+                $"?$top={APIHelper.CHATS_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphChannelMessage>(url, ct);
         }
@@ -450,7 +450,7 @@ partial class SourceProvider
 
             var url =
                 $"{baseUrl}/v1.0/teams/{team}/channels/{channel}/messages/{msg}/replies" +
-                $"?$top={OptionsHelper.CHATS_PAGE_SIZE}";
+                $"?$top={APIHelper.CHATS_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphChannelMessage>(url, ct);
         }

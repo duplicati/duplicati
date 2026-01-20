@@ -17,7 +17,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/users" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                   $"&$top={GENERAL_PAGE_SIZE}";
+                   $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphUser>(url, ct);
         }
@@ -29,7 +29,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/groups" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphGroup>(url, ct);
         }
@@ -44,7 +44,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/groups" +
                 $"?$filter={Uri.EscapeDataString(filter)}" +
                 $"&$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphGroup>(url, ct);
         }
@@ -58,7 +58,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/sites/getAllSites" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphSite>(url, ct);
         }

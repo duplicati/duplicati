@@ -18,9 +18,6 @@ internal static class OptionsHelper
 
     internal const string DEFAULT_GRAPH_BASE_URL = "https://graph.microsoft.com";
 
-    internal const int GENERAL_PAGE_SIZE = 100;
-    internal const int CHATS_PAGE_SIZE = 50;
-
     internal sealed record ParsedOptions(
         string TenantId,
         AuthOptionsHelper.AuthOptions AuthOptions,

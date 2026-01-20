@@ -21,6 +21,17 @@ internal class APIHelper : IDisposable
     /// The log tag for this class
     /// </summary>
     private static readonly string LOGTAG = Log.LogTagFromType<APIHelper>();
+
+    /// <summary>
+    /// The default page size for API requests
+    /// </summary>
+    internal const int GENERAL_PAGE_SIZE = 100;
+
+    /// <summary>
+    /// The default page size for chat API requests
+    /// </summary>
+    internal const int CHATS_PAGE_SIZE = 50;
+
     /// <summary>
     /// The HTTP client used for API requests
     /// </summary>

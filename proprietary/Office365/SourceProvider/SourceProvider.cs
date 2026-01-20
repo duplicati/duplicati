@@ -19,11 +19,6 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<SourceProvider>();
 
     /// <summary>
-    /// The general page size for Graph API requests.
-    /// </summary>
-    private const int GENERAL_PAGE_SIZE = OptionsHelper.GENERAL_PAGE_SIZE;
-
-    /// <summary>
     /// API helper for making requests to the Graph API.
     /// </summary>
     private readonly APIHelper _apiHelper;

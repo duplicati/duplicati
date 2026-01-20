@@ -20,7 +20,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/sites/{site}/lists" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphList>(url, ct);
         }
@@ -37,7 +37,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/sites/{site}/lists/{list}/items" +
                 $"?$select={Uri.EscapeDataString(select)}" +
                 $"&$expand=fields" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphListItem>(url, ct);
         }
