@@ -245,13 +245,13 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public async Task SetObjectLockUntilAsync(string keyName, DateTime lockUntilUtc, CancellationToken cancellationToken)
+        public async Task SetObjectLockUntilAsync(string keyName, DateTime lockUntilUtc, BlobImmutabilityPolicyMode policyMode, CancellationToken cancellationToken)
         {
             var blobClient = _container.GetBlobClient(keyName);
             var policy = new BlobImmutabilityPolicy
             {
                 ExpiresOn = new DateTimeOffset(lockUntilUtc.ToUniversalTime(), TimeSpan.Zero),
-                PolicyMode = BlobImmutabilityPolicyMode.Unlocked
+                PolicyMode = policyMode
             };
 
             try
