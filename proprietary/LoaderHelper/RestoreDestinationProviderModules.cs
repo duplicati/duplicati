@@ -2,6 +2,7 @@
 
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using Duplicati.Proprietary.LicenseChecker;
 
 namespace Duplicati.Proprietary.LoaderHelper;
 
@@ -34,7 +35,7 @@ public static class RestoreDestinationProviderModules
     /// </summary>
     private static readonly Lazy<IReadOnlyList<IRestoreDestinationProviderModule>> LicensedRestoreDestinationProvidersLazy = new(() =>
         new IRestoreDestinationProviderModule?[] {
-            LicenseHelper.HasOffice365Feature ? new Office365.RestoreProvider() : null
+            LicenseHelper.AvailableOffice365FeatureSeats > 0 ? new Office365.RestoreProvider() : null
         }
         .WhereNotNull()
         .ToList()

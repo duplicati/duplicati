@@ -2,6 +2,7 @@
 
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using Duplicati.Proprietary.LicenseChecker;
 
 namespace Duplicati.Proprietary.LoaderHelper;
 
@@ -34,7 +35,7 @@ public static class WebModules
     /// </summary>
     private static Lazy<IReadOnlyList<IWebModule>> LicensedWebModulesLazy = new(() =>
         new IWebModule?[] {
-            LicenseHelper.HasOffice365Feature ? new Office365.WebModule() : null
+            LicenseHelper.AvailableOffice365FeatureSeats > 0 ? new Office365.WebModule() : null
         }
         .WhereNotNull()
         .ToList()

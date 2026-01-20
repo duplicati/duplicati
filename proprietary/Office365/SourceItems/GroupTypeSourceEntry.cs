@@ -160,5 +160,13 @@ internal class GroupTypeSourceEntry(SourceProvider provider, string path, GraphG
             yield return new GroupChannelSourceEntry(provider, this.Path, group, channel);
         }
 
+        await foreach (var app in provider.GroupTeamsApi.ListTeamInstalledAppsAsync(group.Id, cancellationToken).ConfigureAwait(false))
+        {
+            if (cancellationToken.IsCancellationRequested)
+                yield break;
+
+            yield return new GroupInstalledAppSourceEntry(provider, this.Path, group, app);
+        }
+
     }
 }

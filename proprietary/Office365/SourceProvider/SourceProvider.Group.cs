@@ -24,7 +24,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/groups/{group}" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
         public IAsyncEnumerable<GraphDirectoryObject> ListGroupMembersAsync(string groupId, CancellationToken ct)
@@ -154,7 +154,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/groups/{group}/threads/{thread}/posts/{post}" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
     }
 
@@ -172,7 +172,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/groups/{group}/calendar" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
         internal Task<GraphCalendar> GetGroupCalendarAsync(string groupId, CancellationToken ct)
@@ -219,7 +219,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/groups/{group}/events/{ev}" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
     }
 
@@ -305,7 +305,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/planner/tasks/{task}/details" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
         internal Task<Stream> GetPlannerProgressTaskBoardFormatStreamAsync(string taskId, CancellationToken ct)
@@ -318,7 +318,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/planner/tasks/{task}/progressTaskBoardFormat" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
         internal Task<Stream> GetPlannerAssignedToTaskBoardFormatStreamAsync(string taskId, CancellationToken ct)
@@ -331,7 +331,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/planner/tasks/{task}/assignedToTaskBoardFormat" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
         internal Task<Stream> GetPlannerBucketTaskBoardFormatStreamAsync(string taskId, CancellationToken ct)
@@ -344,7 +344,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/planner/tasks/{task}/bucketTaskBoardFormat" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
     }
 
@@ -364,7 +364,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/teams/{group}" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
         internal Task<Stream> GetTeamMetadataStreamAsync(string groupId, CancellationToken ct)
@@ -377,7 +377,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/teams/{team}" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
         internal IAsyncEnumerable<GraphTeamMember> ListTeamMembersAsync(string groupId, CancellationToken ct)
@@ -421,7 +421,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/teams/{team}/channels/{channel}" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
         internal IAsyncEnumerable<GraphChannelMessage> ListChannelMessagesAsync(string groupId, string channelId, CancellationToken ct)
@@ -474,7 +474,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/teams/{team}/channels/{channel}/messages/{msg}" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
         internal Task<Stream> GetChannelMessageReplyStreamAsync(
@@ -498,7 +498,71 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/teams/{team}/channels/{channel}/messages/{msg}/replies/{reply}" +
                 $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetGraphAsStreamAsync(url, "application/json", ct);
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
+        }
+
+        internal IAsyncEnumerable<GraphTeamsTab> ListChannelTabsAsync(string groupId, string channelId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var team = Uri.EscapeDataString(groupId);
+            var channel = Uri.EscapeDataString(channelId);
+
+            // configuration is a complex property (selectable) but NOT expandable
+            var select = GraphSelectBuilder.BuildSelect<GraphTeamsTab>();
+
+            var url =
+                $"{baseUrl}/v1.0/teams/{team}/channels/{channel}/tabs" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$expand=teamsApp";
+
+            return provider.GetAllGraphItemsAsync<GraphTeamsTab>(url, ct);
+        }
+
+        internal Task<Stream> GetChannelTabStreamAsync(string groupId, string channelId, string tabId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var team = Uri.EscapeDataString(groupId);
+            var channel = Uri.EscapeDataString(channelId);
+            var tab = Uri.EscapeDataString(tabId);
+
+            // configuration is a complex property (selectable) but NOT expandable
+            var select = GraphSelectBuilder.BuildSelect<GraphTeamsTab>();
+
+            var url =
+                $"{baseUrl}/v1.0/teams/{team}/channels/{channel}/tabs/{tab}" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$expand=teamsApp";
+
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
+        }
+
+        internal IAsyncEnumerable<GraphTeamsAppInstallation> ListTeamInstalledAppsAsync(string groupId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var team = Uri.EscapeDataString(groupId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphTeamsAppInstallation>();
+            var url =
+                $"{baseUrl}/v1.0/teams/{team}/installedApps" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$expand=teamsApp,teamsAppDefinition";
+
+            return provider.GetAllGraphItemsAsync<GraphTeamsAppInstallation>(url, ct);
+        }
+
+        internal Task<Stream> GetTeamInstalledAppStreamAsync(string groupId, string appId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var team = Uri.EscapeDataString(groupId);
+            var app = Uri.EscapeDataString(appId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphTeamsAppInstallation>();
+            var url =
+                $"{baseUrl}/v1.0/teams/{team}/installedApps/{app}" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$expand=teamsApp,teamsAppDefinition";
+
+            return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
         internal async Task<bool> IsGroupTeamAsync(string groupId, CancellationToken ct)
@@ -515,7 +579,7 @@ partial class SourceProvider
                 return req;
             }
 
-            using var resp = await provider.SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, null, ct).ConfigureAwait(false);
+            using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
 
             if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return false;

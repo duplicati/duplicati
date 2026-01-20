@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
-using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using Duplicati.Proprietary.LicenseChecker;
 
 namespace Duplicati.Proprietary.LoaderHelper;
 
@@ -14,7 +14,7 @@ public static class Configuration
 
     private static Lazy<string[]> LicensedAPIExtensionsLazy = new(() =>
         new string?[] {
-            LicenseHelper.HasOffice365Feature ? "office365" : null
+            LicenseHelper.AvailableOffice365FeatureSeats > 0 ? "office365" : null
         }
         .WhereNotNull()
         .ToArray()

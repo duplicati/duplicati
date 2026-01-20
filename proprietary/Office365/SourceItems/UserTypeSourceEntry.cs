@@ -140,6 +140,24 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
 
             yield return entry;
         }
+
+        // Add Mailbox Settings
+        yield return new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, "settings.json"),
+            createdUtc: DateTime.UnixEpoch,
+            lastModificationUtc: DateTime.UnixEpoch,
+            size: -1,
+            streamFactory: (ct) => provider.UserEmailApi.GetMailboxSettingsStreamAsync(user.Id, ct),
+            minorMetadataFactory: (ct) => Task.FromResult(new Dictionary<string, string?>()
+            {
+                { "o365:v", "1" },
+                { "o365:Type", SourceItemType.UserMailboxSettings.ToString() },
+                { "o365:Name", "Mailbox Settings" },
+            }
+            .Where(kv => !string.IsNullOrEmpty(kv.Value))
+            .ToDictionary(kv => kv.Key, kv => kv.Value)));
+
+        // Add Mailbox Rules
+        yield return new UserMailboxRulesSourceEntry(provider, user, this.Path);
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> ContactsEntries([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -151,13 +169,13 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
 
             var ms = new MemoryStream();
             System.Text.Json.JsonSerializer.Serialize(ms, contact);
-            ms.Seek(0, SeekOrigin.Begin);
+            var jsonBytes = ms.ToArray();
 
             yield return new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, contact.Id + ".json"),
                 createdUtc: contact.CreatedDateTime.FromGraphDateTime(),
                 lastModificationUtc: contact.LastModifiedDateTime.FromGraphDateTime(),
-                size: -1,
-                streamFactory: (ct) => Task.FromResult<Stream>(ms),
+                size: jsonBytes.Length,
+                streamFactory: (ct) => Task.FromResult<Stream>(new MemoryStream(jsonBytes)),
                 minorMetadataFactory: (ct) => Task.FromResult(new Dictionary<string, string?>()
                 {
                     { "o365:v", "1" },
@@ -167,6 +185,24 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
                 }
                 .Where(kv => !string.IsNullOrEmpty(kv.Value))
                 .ToDictionary(kv => kv.Key, kv => kv.Value)));
+
+            // Contact Photo
+            var photoEntry = new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, contact.Id + ".photo"),
+                createdUtc: DateTime.UnixEpoch,
+                lastModificationUtc: DateTime.UnixEpoch,
+                size: -1,
+                streamFactory: (ct) => provider.ContactsApi.GetContactPhotoStreamAsync(user.Id, contact.Id, null, ct));
+
+            if (await photoEntry.ProbeIfExistsAsync(cancellationToken).ConfigureAwait(false))
+                yield return photoEntry;
+        }
+
+        await foreach (var folder in provider.ContactsApi.ListContactFoldersAsync(user.Id, null, cancellationToken).ConfigureAwait(false))
+        {
+            if (cancellationToken.IsCancellationRequested)
+                yield break;
+
+            yield return new UserContactFolderSourceEntry(provider, user, SystemIO.IO_OS.PathCombine(this.Path, folder.Id), folder);
         }
     }
 

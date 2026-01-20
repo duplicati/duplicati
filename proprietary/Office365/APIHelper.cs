@@ -1,10 +1,13 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
+using Jose;
 using NetUri = System.Uri;
 
 namespace Duplicati.Proprietary.Office365;
@@ -14,6 +17,10 @@ namespace Duplicati.Proprietary.Office365;
 /// </summary>
 internal class APIHelper : IDisposable
 {
+    /// <summary>
+    /// The log tag for this class
+    /// </summary>
+    private static readonly string LOGTAG = Log.LogTagFromType<APIHelper>();
     /// <summary>
     /// The HTTP client used for API requests
     /// </summary>
@@ -40,18 +47,39 @@ internal class APIHelper : IDisposable
     public string GraphBaseUrl => _graphBaseUrl;
 
     /// <summary>
+    /// The path to the certificate file
+    /// </summary>
+    private readonly string? _certificatePath;
+
+    /// <summary>
+    /// The password for the certificate file
+    /// </summary>
+    private readonly string? _certificatePassword;
+
+    /// <summary>
+    /// The timeout options for the backend
+    /// </summary>
+    private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="APIHelper"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client to use for API requests</param>
     /// <param name="authOptions">The authentication options</param>
     /// <param name="tenantId">The tenant ID</param>
     /// <param name="graphBaseUrl">The base URL for Graph API requests</param>
-    private APIHelper(HttpClient httpClient, AuthOptionsHelper.AuthOptions authOptions, string tenantId, string graphBaseUrl)
+    /// <param name="timeouts">The timeout options</param>
+    /// <param name="certificatePath">The path to the certificate file</param>
+    /// <param name="certificatePassword">The password for the certificate file</param>
+    private APIHelper(HttpClient httpClient, AuthOptionsHelper.AuthOptions authOptions, string tenantId, string graphBaseUrl, TimeoutOptionsHelper.Timeouts timeouts, string? certificatePath, string? certificatePassword)
     {
         _httpClient = httpClient;
         _authOptions = authOptions;
         _tenantId = tenantId;
         _graphBaseUrl = graphBaseUrl;
+        _timeouts = timeouts;
+        _certificatePath = certificatePath;
+        _certificatePassword = certificatePassword;
     }
 
     /// <summary>
@@ -60,8 +88,11 @@ internal class APIHelper : IDisposable
     /// <param name="authOptions">The authentication options</param>
     /// <param name="tenantId">The tenant ID</param>
     /// <param name="graphBaseUrl">The base URL for Graph API requests</param>
+    /// <param name="timeouts">The timeout options</param>
+    /// <param name="certificatePath">The path to the certificate file</param>
+    /// <param name="certificatePassword">The password for the certificate file</param>
     /// <returns>A new instance of the <see cref="APIHelper"/> class</returns>
-    public static APIHelper Create(AuthOptionsHelper.AuthOptions authOptions, string tenantId, string graphBaseUrl)
+    public static APIHelper Create(AuthOptionsHelper.AuthOptions authOptions, string tenantId, string graphBaseUrl, TimeoutOptionsHelper.Timeouts timeouts, string? certificatePath = null, string? certificatePassword = null)
     {
         var handler = new HttpClientHandler
         {
@@ -72,7 +103,7 @@ internal class APIHelper : IDisposable
         httpClient.Timeout = Timeout.InfiniteTimeSpan;
         httpClient.DefaultRequestHeaders.Add("User-Agent", $"Duplicati/{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
 
-        return new APIHelper(httpClient, authOptions, tenantId, graphBaseUrl);
+        return new APIHelper(httpClient, authOptions, tenantId, graphBaseUrl, timeouts, certificatePath, certificatePassword);
     }
 
     /// <summary>
@@ -99,13 +130,56 @@ internal class APIHelper : IDisposable
             return _graphAccessToken;
 
         var tokenEndpoint = new NetUri($"https://login.microsoftonline.com/{_tenantId}/oauth2/v2.0/token");
-        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        var parameters = new Dictionary<string, string>
         {
             ["grant_type"] = "client_credentials",
             ["client_id"] = _authOptions.Username!,
-            ["client_secret"] = _authOptions.Password!,
             ["scope"] = $"{_graphBaseUrl.TrimEnd('/')}/.default"
-        });
+        };
+
+        if (!string.IsNullOrWhiteSpace(_certificatePath))
+        {
+            if (!File.Exists(_certificatePath))
+                throw new UserInformationException($"Certificate file not found: {_certificatePath}", "CertificateFileNotFound");
+
+            try
+            {
+                var cert = X509CertificateLoader.LoadPkcs12FromFile(_certificatePath, _certificatePassword);
+                var rsa = cert.GetRSAPrivateKey();
+                if (rsa == null)
+                    throw new UserInformationException("Certificate does not contain a private key", "CertificateNoPrivateKey");
+
+                var payload = new Dictionary<string, object>
+                {
+                    { "aud", tokenEndpoint.ToString() },
+                    { "exp", DateTimeOffset.UtcNow.AddMinutes(10).ToUnixTimeSeconds() },
+                    { "iss", _authOptions.Username! },
+                    { "jti", Guid.NewGuid().ToString() },
+                    { "nbf", DateTimeOffset.UtcNow.AddMinutes(-1).ToUnixTimeSeconds() },
+                    { "sub", _authOptions.Username! }
+                };
+
+                var extraHeaders = new Dictionary<string, object>
+                {
+                    { "x5t", Convert.ToBase64String(cert.GetCertHash()) }
+                };
+
+                var clientAssertion = JWT.Encode(payload, rsa, JwsAlgorithm.RS256, extraHeaders);
+
+                parameters["client_assertion_type"] = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
+                parameters["client_assertion"] = clientAssertion;
+            }
+            catch (Exception ex)
+            {
+                throw new UserInformationException($"Failed to load certificate: {ex.Message}", "CertificateLoadFailed", ex);
+            }
+        }
+        else
+        {
+            parameters["client_secret"] = _authOptions.Password!;
+        }
+
+        using var content = new FormUrlEncodedContent(parameters);
 
         using var client = HttpClientHelper.CreateClient();
         using var response = await client.PostAsync(tokenEndpoint, content, cancellationToken).ConfigureAwait(false);
@@ -236,7 +310,7 @@ internal class APIHelper : IDisposable
             return req;
         }
 
-        using var resp = await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, shouldRetry, ct).ConfigureAwait(false);
+        using var resp = await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, shouldRetry, _timeouts.ListTimeout, ct).ConfigureAwait(false);
         await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
 
         return await ParseResponseJson<GraphPage<T>>(resp, ct).ConfigureAwait(false)
@@ -302,11 +376,159 @@ internal class APIHelper : IDisposable
             return req;
         }
 
-        using var resp = await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, null, ct).ConfigureAwait(false);
+        using var resp = await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, null, _timeouts.ShortTimeout, ct).ConfigureAwait(false);
         await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
 
         return await ParseResponseJson<T>(resp, ct).ConfigureAwait(false)
             ?? throw new UserInformationException("Failed to parse Graph item response.", nameof(SourceProvider));
+    }
+
+    /// <summary>
+    /// Posts a Graph API item.
+    /// </summary>
+    /// <typeparam name="T">The type of the item to return</typeparam>
+    /// <param name="url">The URL to post to</param>
+    /// <param name="content">The content to post</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The posted item</returns>
+    public async Task<T> PostGraphItemAsync<T>(string url, HttpContent content, CancellationToken ct)
+    {
+        async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
+        {
+            var req = new HttpRequestMessage(HttpMethod.Post, new NetUri(url));
+            req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
+            req.Headers.Accept.Clear();
+            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            req.Content = content;
+            return req;
+        }
+
+        using var resp = await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, null, _timeouts.ShortTimeout, ct).ConfigureAwait(false);
+        await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+        return await ParseResponseJson<T>(resp, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Posts a Graph API item and ignores the response body.
+    /// </summary>
+    /// <param name="url">The URL to post to</param>
+    /// <param name="content">The content to post</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    public async Task PostGraphItemNoResponseAsync(string url, HttpContent content, CancellationToken ct)
+    {
+        async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
+        {
+            var req = new HttpRequestMessage(HttpMethod.Post, new NetUri(url));
+            req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
+            req.Headers.Accept.Clear();
+            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            req.Content = content;
+            return req;
+        }
+
+        using var resp = await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, null, _timeouts.ShortTimeout, ct).ConfigureAwait(false);
+        await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Patches a Graph API item.
+    /// </summary>
+    /// <param name="url">The URL to patch</param>
+    /// <param name="content">The content to patch</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    public async Task PatchGraphItemAsync(string url, HttpContent content, CancellationToken ct)
+    {
+        async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
+        {
+            var req = new HttpRequestMessage(HttpMethod.Patch, new NetUri(url));
+            req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
+            req.Headers.Accept.Clear();
+            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            req.Content = content;
+            return req;
+        }
+
+        using var resp = await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, null, _timeouts.ShortTimeout, ct).ConfigureAwait(false);
+        await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+    }
+
+
+    /// <summary>
+    /// Returns the response from the Graph API as a stream.
+    /// This method will buffer the response in memory.
+    /// </summary>
+    /// <param name="url">The URL to fetch</param>
+    /// <param name="accept">The Accept header value</param>
+    /// <param name="prefer">The Prefer header value</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The response stream</returns>
+    public Task<Stream> GetGraphItemAsStreamAsync(string url, string accept, string prefer, CancellationToken ct)
+        => GetGraphItemAsStreamAsync(url, accept, prefer, null, ct);
+
+    /// <summary>
+    /// Returns the response from the Graph API as a stream.
+    /// This method will buffer the response in memory.
+    /// </summary>
+    /// <param name="url">The URL to fetch</param>
+    /// <param name="accept">The Accept header value</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The response stream</returns>
+    public Task<Stream> GetGraphItemAsStreamAsync(string url, string accept, CancellationToken ct)
+        => GetGraphItemAsStreamAsync(url, accept, null, null, ct);
+
+    /// <summary>
+    /// Returns the response from the Graph API as a stream.
+    /// This method will buffer the response in memory.
+    /// </summary>
+    /// <param name="url">The URL to fetch</param>
+    /// <param name="accept">The Accept header value</param>
+    /// <param name="prefer">The Prefer header value</param>
+    /// <param name="shouldRetry">A callback to determine if a request should be retried</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The response stream</returns>
+    private async Task<Stream> GetGraphItemAsStreamAsync(
+        string url,
+        string accept,
+        string? prefer,
+        Func<HttpResponseMessage, bool?>? shouldRetry,
+        CancellationToken ct)
+    {
+        async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, new NetUri(url));
+            req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+
+            req.Headers.Accept.Clear();
+            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(accept));
+
+            if (!string.IsNullOrWhiteSpace(prefer))
+                req.Headers.TryAddWithoutValidation("Prefer", prefer);
+
+            return req;
+        }
+
+        using var resp = await SendWithRetryAsync(
+            requestFactory,
+            HttpCompletionOption.ResponseHeadersRead,
+            shouldRetry,
+            _timeouts.ShortTimeout,
+            ct).ConfigureAwait(false);
+
+        if (resp.StatusCode == HttpStatusCode.NotFound)
+            return Stream.Null;
+
+        await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+        // Return a stream the caller can own safely after HttpResponseMessage disposal.
+        var ms = new MemoryStream();
+        using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+        await timeoutStream.CopyToAsync(ms, ct).ConfigureAwait(false);
+        ms.Position = 0;
+        return ms;
     }
 
     /// <summary>
@@ -316,38 +538,42 @@ internal class APIHelper : IDisposable
     /// <param name="accept">The Accept header value</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The response stream</returns>
-    public Task<Stream> GetGraphAsStreamAsync(string url, string accept, CancellationToken ct)
-        => GetGraphAsStreamAsync(url, accept, null, ct);
-
-    /// <summary>
-    /// Returns the response from the Graph API as a stream.
-    /// </summary>
-    /// <param name="url">The URL to fetch</param>
-    /// <param name="accept">The Accept header value</param>
-    /// <param name="shouldRetry">A callback to determine if a request should be retried</param>
-    /// <param name="ct">The cancellation token</param>
-    /// <returns>The response stream</returns>
-    private async Task<Stream> GetGraphAsStreamAsync(string url, string accept, Func<HttpResponseMessage, bool?>? shouldRetry, CancellationToken ct)
+    public async Task<Stream> GetGraphResponseAsRealStreamAsync(string url, string accept, CancellationToken ct)
     {
-        async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
+        async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
         {
             var req = new HttpRequestMessage(HttpMethod.Get, new NetUri(url));
-            req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
+            req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(accept));
             return req;
         }
 
-        using var resp = await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, shouldRetry, ct).ConfigureAwait(false);
-        if (resp.StatusCode == HttpStatusCode.NotFound)
-            return Stream.Null;
+        using var resp = await SendWithRetryAsync(
+            requestFactory,
+            HttpCompletionOption.ResponseHeadersRead,
+            null,
+            _timeouts.ShortTimeout,
+            ct).ConfigureAwait(false);
+
         await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
 
+        if (resp.Content.Headers.ContentLength == 0)
+            return Stream.Null;
+
         // Return a stream the caller can own safely after HttpResponseMessage disposal.
-        var ms = new MemoryStream();
-        await resp.Content.CopyToAsync(ms, ct).ConfigureAwait(false);
-        ms.Position = 0;
-        return ms;
+        using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+
+        // The caller expects a FileStream-like stream, so we need to buffer to a temp file.
+        // We could wrap this in a stream that exposes the Length property, which would avoid the temp file.
+        var tempStream = TempFileStream.Create();
+        await timeoutStream.CopyToAsync(tempStream, ct).ConfigureAwait(false);
+        tempStream.Position = 0;
+
+        // Return the stream, will delete on dispose.
+        return tempStream;
     }
 
     /// <summary>
@@ -364,21 +590,35 @@ internal class APIHelper : IDisposable
     }
 
     /// <summary>
+    /// Sends an HTTP request with retry logic for transient failures, using short timeouts.
+    /// </summary>
+    /// <param name="requestFactory">The factory to create the HTTP request</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>>The HTTP response message</returns>
+    public async Task<HttpResponseMessage> SendWithRetryShortAsync(
+        Func<CancellationToken, Task<HttpRequestMessage>> requestFactory,
+        CancellationToken ct
+    )
+        => await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, null, _timeouts.ShortTimeout, ct).ConfigureAwait(false);
+
+    /// <summary>
     /// Sends an HTTP request with retry logic for transient failures.
     /// </summary>
     /// <param name="requestFactory">The factory to create the HTTP request</param>
     /// <param name="completionOption">The HTTP completion option</param>
     /// <param name="shouldRetry">A callback to determine if a request should be retried</param>
+    /// <param name="timeout">The timeout for the request</param>
     /// <param name="ct">The cancellation token</param>
-    /// <param name="maxRetries">The maximum number of retries</param>
     /// <returns>>The HTTP response message</returns>
     public async Task<HttpResponseMessage> SendWithRetryAsync(
         Func<CancellationToken, Task<HttpRequestMessage>> requestFactory,
         HttpCompletionOption completionOption,
         Func<HttpResponseMessage, bool?>? shouldRetry,
-        CancellationToken ct,
-        int maxRetries = 4)
+        TimeSpan? timeout,
+        CancellationToken ct
+)
     {
+        int maxRetries = 4;
         var attempt = 0;
         var isReAuthAttempt = false;
         var client = await GetHttpClientAsync(ct).ConfigureAwait(false);
@@ -387,45 +627,73 @@ internal class APIHelper : IDisposable
         {
             ct.ThrowIfCancellationRequested();
 
-            using var request = await requestFactory(ct).ConfigureAwait(false);
-            var resp = await client.SendAsync(request, completionOption, ct).ConfigureAwait(false);
-
-            if (resp.IsSuccessStatusCode)
-                return resp;
-
-            if (shouldRetry?.Invoke(resp) == false)
-                return resp;
-
-            // Retryable status codes:
-            // 429: TooManyRequests
-            // 503: ServiceUnavailable
-            // 502: BadGateway
-            // 504: GatewayTimeout
-
-            switch (resp.StatusCode)
+            HttpResponseMessage? resp = null;
+            try
             {
-                case HttpStatusCode.TooManyRequests:
-                case HttpStatusCode.ServiceUnavailable:
-                case HttpStatusCode.BadGateway:
-                case HttpStatusCode.GatewayTimeout:
-                    break;
-                case HttpStatusCode.Unauthorized:
-                    _graphAccessToken = null; // force re-auth
-                    if (isReAuthAttempt)
-                        return resp; // already tried re-auth
-                    isReAuthAttempt = true;
-                    break;
-                default:
+                using var request = await requestFactory(ct).ConfigureAwait(false);
+                if (timeout.HasValue)
+                {
+                    resp = await Utility.WithTimeout(timeout.Value, ct, c => client.SendAsync(request, completionOption, c)).ConfigureAwait(false);
+                }
+                else
+                {
+                    resp = await client.SendAsync(request, completionOption, ct).ConfigureAwait(false);
+                }
+            }
+            catch (TimeoutException)
+            {
+                // Ignore and retry
+            }
+
+            if (resp != null)
+            {
+                if (resp.IsSuccessStatusCode)
                     return resp;
+
+                if (shouldRetry?.Invoke(resp) == false)
+                    return resp;
+
+                // Retryable status codes:
+                // 429: TooManyRequests
+                // 503: ServiceUnavailable
+                // 502: BadGateway
+                // 504: GatewayTimeout
+
+                switch (resp.StatusCode)
+                {
+                    case HttpStatusCode.TooManyRequests:
+                    case HttpStatusCode.ServiceUnavailable:
+                    case HttpStatusCode.BadGateway:
+                    case HttpStatusCode.GatewayTimeout:
+                        break;
+                    case HttpStatusCode.Unauthorized:
+                        _graphAccessToken = null; // force re-auth
+                        if (isReAuthAttempt)
+                            return resp; // already tried re-auth
+                        isReAuthAttempt = true;
+                        break;
+                    default:
+                        return resp;
+                }
             }
 
             attempt++;
             if (attempt > maxRetries)
-                return resp; // let EnsureOfficeApiSuccessAsync throw with details
+            {
+                if (resp != null)
+                    return resp; // let EnsureOfficeApiSuccessAsync throw with details
+
+                throw new TimeoutException($"Request timed out after {maxRetries} attempts");
+            }
+
+            if (resp != null)
+                Log.WriteRetryMessage(LOGTAG, "Office365APIRetry", null, $"Request failed with status code {(int)resp.StatusCode} {resp.StatusCode}. Retrying attempt {attempt} of {maxRetries}.");
+            else
+                Log.WriteRetryMessage(LOGTAG, "Office365APITimeout", null, $"Request timed out. Retrying attempt {attempt} of {maxRetries}.");
 
             // Respect Retry-After if present, else exponential backoff.
             TimeSpan delay;
-            if (resp.Headers.RetryAfter?.Delta is TimeSpan ra)
+            if (resp?.Headers.RetryAfter?.Delta is TimeSpan ra)
             {
                 delay = ra;
             }
@@ -436,8 +704,55 @@ internal class APIHelper : IDisposable
                 delay = TimeSpan.FromSeconds(baseSeconds) + TimeSpan.FromMilliseconds(jitterMs);
             }
 
-            resp.Dispose();
+            resp?.Dispose();
             await Task.Delay(delay, ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Uploads a stream to an upload session.
+    /// </summary>
+    /// <param name="uploadUrl">The upload session URL</param>
+    /// <param name="contentStream">The content stream</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    public async Task UploadFileToSessionAsync(string uploadUrl, Stream contentStream, CancellationToken ct)
+    {
+        // 320 KiB is the required multiple for Graph API
+        const int ChunkSize = 320 * 1024 * 10; // 3.2 MB chunks
+
+        var buffer = new byte[ChunkSize];
+        long totalLength = contentStream.Length;
+        long position = 0;
+
+        while (position < totalLength)
+        {
+            var bytesRead = await contentStream.ReadAsync(buffer, 0, ChunkSize, ct).ConfigureAwait(false);
+            if (bytesRead == 0) break;
+
+            var rangeHeader = $"bytes {position}-{position + bytesRead - 1}/{totalLength}";
+
+            HttpRequestMessage requestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Put, new NetUri(uploadUrl));
+                var ms = new MemoryStream(buffer, 0, bytesRead);
+                var timeoutStream = ms.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+                req.Content = new StreamContent(timeoutStream);
+                req.Content.Headers.ContentLength = bytesRead;
+                req.Content.Headers.ContentRange = ContentRangeHeaderValue.Parse(rangeHeader);
+                return req;
+            }
+
+            using var resp = await SendWithRetryAsync(
+                ct => Task.FromResult(requestFactory(ct)),
+                HttpCompletionOption.ResponseHeadersRead,
+                null,
+                null,
+                ct).ConfigureAwait(false);
+
+            await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+            position += bytesRead;
         }
     }
 

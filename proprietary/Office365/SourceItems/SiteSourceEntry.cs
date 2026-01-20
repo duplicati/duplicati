@@ -41,5 +41,13 @@ internal class SiteSourceEntry(SourceProvider provider, string path, GraphSite s
 
             yield return new DriveSourceEntry(provider, this.Path, drive);
         }
+
+        await foreach (var list in provider.SharePointListApi.ListListsAsync(site.Id, cancellationToken).ConfigureAwait(false))
+        {
+            if (cancellationToken.IsCancellationRequested)
+                yield break;
+
+            yield return new SharePointListSourceEntry(provider, this.Path, site, list);
+        }
     }
 }

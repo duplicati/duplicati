@@ -34,6 +34,12 @@ internal static class Strings
 
     public static string OfficeSecretOptionLong => LC.L("Client secret used for OAuth2 client credential flow against the Office 365 Management API.");
 
+    public static string OfficeCertificatePathOptionShort => LC.L("Path to the PKCS12 certificate file.");
+    public static string OfficeCertificatePathOptionLong => LC.L("Path to the PKCS12 certificate file used for OAuth2 client credential flow against the Office 365 Management API.");
+
+    public static string OfficeCertificatePasswordOptionShort => LC.L("Password for the certificate file.");
+    public static string OfficeCertificatePasswordOptionLong => LC.L("Password for the PKCS12 certificate file used for OAuth2 client credential flow against the Office 365 Management API.");
+
     public static string OfficeGraphBaseOptionShort => LC.L("Microsoft Graph base URL.");
 
     public static string OfficeGraphBaseOptionLong => LC.L("Base URL for Microsoft Graph if targeting a sovereign cloud.");

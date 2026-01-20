@@ -37,5 +37,13 @@ internal class GroupChannelSourceEntry(SourceProvider provider, string path, Gra
             yield return new GroupChannelMessageSourceEntry(provider, this.Path, group, channel, message);
 
         }
+
+        await foreach (var tab in provider.GroupTeamsApi.ListChannelTabsAsync(group.Id, channel.Id, cancellationToken).ConfigureAwait(false))
+        {
+            if (cancellationToken.IsCancellationRequested)
+                yield break;
+
+            yield return new GroupChannelTabSourceEntry(provider, this.Path, group, channel, tab);
+        }
     }
 }

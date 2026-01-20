@@ -125,6 +125,79 @@ internal sealed class GraphMessage
 
     [JsonPropertyName("hasAttachments")]
     public bool? HasAttachments { get; set; }
+
+    [JsonPropertyName("body")]
+    public GraphBody? Body { get; set; }
+
+    [JsonPropertyName("sender")]
+    public GraphRecipient? Sender { get; set; }
+
+    [JsonPropertyName("ccRecipients")]
+    public List<GraphRecipient>? CcRecipients { get; set; }
+
+    [JsonPropertyName("bccRecipients")]
+    public List<GraphRecipient>? BccRecipients { get; set; }
+}
+
+internal sealed class GraphBody
+{
+    [JsonPropertyName("contentType")]
+    public string? ContentType { get; set; } // "Text" or "HTML"
+
+    [JsonPropertyName("content")]
+    public string? Content { get; set; }
+}
+
+internal sealed class GraphAttachment
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("@odata.type")]
+    public string? ODataType { get; set; } // "#microsoft.graph.fileAttachment"
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("contentType")]
+    public string? ContentType { get; set; }
+
+    [JsonPropertyName("size")]
+    public int? Size { get; set; }
+
+    [JsonPropertyName("isInline")]
+    public bool? IsInline { get; set; }
+
+    [JsonPropertyName("contentId")]
+    public string? ContentId { get; set; }
+
+    // For fileAttachment
+    [JsonPropertyName("contentBytes")]
+    public string? ContentBytes { get; set; } // Base64
+}
+
+internal sealed class GraphAttachmentItem
+{
+    [JsonPropertyName("attachmentType")]
+    public string? AttachmentType { get; set; } // "file"
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("size")]
+    public long? Size { get; set; }
+}
+
+internal sealed class GraphUploadSession
+{
+    [JsonPropertyName("uploadUrl")]
+    public string? UploadUrl { get; set; }
+
+    [JsonPropertyName("expirationDateTime")]
+    public DateTimeOffset? ExpirationDateTime { get; set; }
+
+    [JsonPropertyName("nextExpectedRanges")]
+    public List<string>? NextExpectedRanges { get; set; }
 }
 
 internal sealed class GraphRecipient
@@ -185,6 +258,18 @@ internal sealed class GraphContactEmail
 
     [JsonPropertyName("address")]
     public string? Address { get; set; }
+}
+
+internal sealed class GraphContactFolder
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("parentFolderId")]
+    public string? ParentFolderId { get; set; }
 }
 
 internal sealed class GraphTodoTaskList
@@ -593,6 +678,9 @@ internal sealed class GraphEvent
 
     [JsonPropertyName("type")]
     public string? Type { get; set; } // singleInstance, occurrence, exception, seriesMaster
+
+    [JsonPropertyName("originalStart")]
+    public DateTimeOffset? OriginalStart { get; set; }
 }
 
 internal sealed class GraphPlannerTask
@@ -624,11 +712,17 @@ internal sealed class GraphPlannerTask
     [JsonPropertyName("percentComplete")]
     public int? PercentComplete { get; set; }
 
+    [JsonPropertyName("priority")]
+    public int? Priority { get; set; }
+
     [JsonPropertyName("hasDescription")]
     public bool? HasDescription { get; set; }
 
     [JsonPropertyName("assignments")]
     public JsonElement? Assignments { get; set; } // map keyed by userId
+
+    [JsonPropertyName("appliedCategories")]
+    public JsonElement? AppliedCategories { get; set; } // map keyed by category
 }
 
 internal sealed class GraphChat
@@ -875,6 +969,9 @@ public sealed class GraphIdentitySet
 
         [JsonPropertyName("displayName")]
         public string? DisplayName { get; set; }
+
+        [JsonPropertyName("email")]
+        public string? Email { get; set; }
     }
 }
 
@@ -1036,6 +1133,12 @@ internal sealed class GraphCreateMailFolderRequest
     public string DisplayName { get; set; } = "";
 }
 
+internal sealed class GraphCreateCalendarRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+}
+
 internal sealed class GraphEmailMessageMetadata
 {
     // Only fields we want to round-trip for restore
@@ -1091,3 +1194,271 @@ internal sealed class GraphDateTimeTimeZone
     [JsonPropertyName("timeZone")]
     public string? TimeZone { get; set; }
 }
+
+internal sealed class GraphList
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonPropertyName("webUrl")]
+    public string? WebUrl { get; set; }
+
+    [JsonPropertyName("createdDateTime")]
+    public DateTimeOffset? CreatedDateTime { get; set; }
+
+    [JsonPropertyName("lastModifiedDateTime")]
+    public DateTimeOffset? LastModifiedDateTime { get; set; }
+
+    [JsonPropertyName("list")]
+    public GraphListInfo? List { get; set; }
+}
+
+internal sealed class GraphListInfo
+{
+    [JsonPropertyName("contentTypesEnabled")]
+    public bool? ContentTypesEnabled { get; set; }
+
+    [JsonPropertyName("hidden")]
+    public bool? Hidden { get; set; }
+
+    [JsonPropertyName("template")]
+    public string? Template { get; set; }
+}
+
+internal sealed class GraphListItem
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("createdDateTime")]
+    public DateTimeOffset? CreatedDateTime { get; set; }
+
+    [JsonPropertyName("lastModifiedDateTime")]
+    public DateTimeOffset? LastModifiedDateTime { get; set; }
+
+    [JsonPropertyName("webUrl")]
+    public string? WebUrl { get; set; }
+
+    [JsonPropertyName("contentType")]
+    public GraphContentTypeInfo? ContentType { get; set; }
+
+    [JsonPropertyName("fields")]
+    public JsonElement? Fields { get; set; }
+}
+
+internal sealed class GraphContentTypeInfo
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+}
+
+internal sealed class GraphTeamsTab
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("webUrl")]
+    public string? WebUrl { get; set; }
+
+    [JsonPropertyName("configuration")]
+    public GraphTeamsTabConfiguration? Configuration { get; set; }
+
+    [JsonPropertyName("teamsApp")]
+    public GraphTeamsApp? TeamsApp { get; set; }
+}
+
+internal sealed class GraphTeamsTabConfiguration
+{
+    [JsonPropertyName("entityId")]
+    public string? EntityId { get; set; }
+
+    [JsonPropertyName("contentUrl")]
+    public string? ContentUrl { get; set; }
+
+    [JsonPropertyName("removeUrl")]
+    public string? RemoveUrl { get; set; }
+
+    [JsonPropertyName("websiteUrl")]
+    public string? WebsiteUrl { get; set; }
+}
+
+internal sealed class GraphTeamsAppInstallation
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("teamsApp")]
+    public GraphTeamsApp? TeamsApp { get; set; }
+
+    [JsonPropertyName("teamsAppDefinition")]
+    public GraphTeamsAppDefinition? TeamsAppDefinition { get; set; }
+}
+
+internal sealed class GraphTeamsApp
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("distributionMethod")]
+    public string? DistributionMethod { get; set; }
+}
+
+internal sealed class GraphTeamsAppDefinition
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("teamsAppId")]
+    public string? TeamsAppId { get; set; }
+
+    [JsonPropertyName("version")]
+    public string? Version { get; set; }
+}
+
+internal sealed class GraphMessageRule
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("sequence")]
+    public int? Sequence { get; set; }
+
+    [JsonPropertyName("isEnabled")]
+    public bool? IsEnabled { get; set; }
+
+    [JsonPropertyName("hasError")]
+    public bool? HasError { get; set; }
+
+    [JsonPropertyName("isReadOnly")]
+    public bool? IsReadOnly { get; set; }
+
+    [JsonPropertyName("conditions")]
+    public object? Conditions { get; set; }
+
+    [JsonPropertyName("actions")]
+    public object? Actions { get; set; }
+
+    [JsonPropertyName("exceptions")]
+    public object? Exceptions { get; set; }
+}
+
+internal sealed class GraphMailboxSettings
+{
+    [JsonPropertyName("automaticRepliesSetting")]
+    public GraphAutomaticRepliesSetting? AutomaticRepliesSetting { get; set; }
+
+    [JsonPropertyName("archiveFolder")]
+    public string? ArchiveFolder { get; set; }
+
+    [JsonPropertyName("timeZone")]
+    public string? TimeZone { get; set; }
+
+    [JsonPropertyName("language")]
+    public GraphLocaleInfo? Language { get; set; }
+
+    [JsonPropertyName("dateFormat")]
+    public string? DateFormat { get; set; }
+
+    [JsonPropertyName("timeFormat")]
+    public string? TimeFormat { get; set; }
+
+    [JsonPropertyName("workingHours")]
+    public object? WorkingHours { get; set; }
+}
+
+internal sealed class GraphAutomaticRepliesSetting
+{
+    [JsonPropertyName("status")]
+    public string? Status { get; set; } // disabled, alwaysEnabled, scheduled
+
+    [JsonPropertyName("externalAudience")]
+    public string? ExternalAudience { get; set; } // none, contactsOnly, all
+
+    [JsonPropertyName("scheduledStartDateTime")]
+    public GraphDateTimeTimeZone? ScheduledStartDateTime { get; set; }
+
+    [JsonPropertyName("scheduledEndDateTime")]
+    public GraphDateTimeTimeZone? ScheduledEndDateTime { get; set; }
+
+    [JsonPropertyName("internalReplyMessage")]
+    public string? InternalReplyMessage { get; set; }
+
+    [JsonPropertyName("externalReplyMessage")]
+    public string? ExternalReplyMessage { get; set; }
+}
+
+internal sealed class GraphLocaleInfo
+{
+    [JsonPropertyName("locale")]
+    public string? Locale { get; set; }
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+}
+
+internal sealed class GraphPermission
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("roles")]
+    public List<string>? Roles { get; set; }
+
+    [JsonPropertyName("grantedTo")]
+    public GraphIdentitySet? GrantedTo { get; set; }
+
+    [JsonPropertyName("grantedToIdentities")]
+    public List<GraphIdentitySet>? GrantedToIdentities { get; set; }
+
+    [JsonPropertyName("link")]
+    public GraphSharingLink? Link { get; set; }
+
+    [JsonPropertyName("invitation")]
+    public GraphSharingInvitation? Invitation { get; set; }
+}
+
+internal sealed class GraphSharingLink
+{
+    [JsonPropertyName("scope")]
+    public string? Scope { get; set; }
+
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
+    [JsonPropertyName("webUrl")]
+    public string? WebUrl { get; set; }
+}
+
+internal sealed class GraphSharingInvitation
+{
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
+
+    [JsonPropertyName("signInRequired")]
+    public bool? SignInRequired { get; set; }
+}
+

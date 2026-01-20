@@ -47,19 +47,31 @@ internal class GroupSourceEntry(SourceProvider provider, string path, GraphGroup
                 createdUtc: DateTime.UnixEpoch,
                 lastModificationUtc: DateTime.UnixEpoch,
                 size: -1,
-                streamFactory: (ct) => provider.GroupApi.GetGroupMetadataStreamAsync(group.Id, ct)),
+                streamFactory: (ct) => provider.GroupApi.GetGroupMetadataStreamAsync(group.Id, ct),
+                minorMetadataFactory: (ct) => Task.FromResult(new Dictionary<string, string?> {
+                    { "o365:Type", SourceItemType.GroupSettings.ToString() },
+                    { "o365:Id", group.Id }
+                })),
 
             new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, "members.json"),
                 createdUtc: DateTime.UnixEpoch,
                 lastModificationUtc: DateTime.UnixEpoch,
                 size: -1,
-                streamFactory: (ct) => DirectoryEntriesAsStream(provider.GroupApi.ListGroupMembersAsync(group.Id, ct), ct)),
+                streamFactory: (ct) => DirectoryEntriesAsStream(provider.GroupApi.ListGroupMembersAsync(group.Id, ct), ct),
+                minorMetadataFactory: (ct) => Task.FromResult(new Dictionary<string, string?> {
+                    { "o365:Type", SourceItemType.GroupMember.ToString() },
+                    { "o365:Id", group.Id }
+                })),
 
             new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, "owners.json"),
                 createdUtc: DateTime.UnixEpoch,
                 lastModificationUtc: DateTime.UnixEpoch,
                 size: -1,
-                streamFactory: (ct) => DirectoryEntriesAsStream(provider.GroupApi.ListGroupOwnersAsync(group.Id, ct), ct)),
+                streamFactory: (ct) => DirectoryEntriesAsStream(provider.GroupApi.ListGroupOwnersAsync(group.Id, ct), ct),
+                minorMetadataFactory: (ct) => Task.FromResult(new Dictionary<string, string?> {
+                    { "o365:Type", SourceItemType.GroupOwner.ToString() },
+                    { "o365:Id", group.Id }
+                })),
         };
 
         foreach (var entry in res)

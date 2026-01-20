@@ -11,6 +11,9 @@
   <ItemGroup>
     <ProjectReference Include="../../Duplicati/Library/AutoUpdater/Duplicati.Library.AutoUpdater.csproj" />
     <ProjectReference Include="../../Duplicati/Library/Utility/Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="../LicenseChecker/Duplicati.Proprietary.LicenseChecker.csproj" />
+    <PackageReference Include="MimeKit" Version="4.12.0" />
+    <PackageReference Include="jose-jwt" Version="5.2.0" />
   </ItemGroup>
 
 </Project>

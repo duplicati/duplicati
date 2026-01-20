@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
+using System.Text.Json;
 using Duplicati.Library.Logging;
 using Duplicati.Proprietary.Office365.SourceItems;
 
@@ -95,6 +96,22 @@ partial class RestoreProvider
 
             var restoredFolder = await Provider.EmailApi.CreateMailFolderAsync(userId, "msgfolderroot", RESTORED_FOLDER_NAME, cancel);
             return restoredFolder.Id;
+        }
+
+        public async Task RestoreMailboxSettings(string userId, Stream settingsStream, CancellationToken cancel)
+        {
+            var settings = await JsonSerializer.DeserializeAsync<GraphMailboxSettings>(settingsStream, cancellationToken: cancel);
+            if (settings == null) return;
+
+            await Provider.EmailApi.UpdateMailboxSettingsAsync(userId, settings, cancel);
+        }
+
+        public async Task RestoreMessageRule(string userId, Stream ruleStream, CancellationToken cancel)
+        {
+            var rule = await JsonSerializer.DeserializeAsync<GraphMessageRule>(ruleStream, cancellationToken: cancel);
+            if (rule == null) return;
+
+            await Provider.EmailApi.CreateMessageRuleAsync(userId, rule, cancel);
         }
     }
 }

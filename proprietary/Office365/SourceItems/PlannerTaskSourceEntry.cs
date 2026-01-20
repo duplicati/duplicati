@@ -1,5 +1,6 @@
 
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 
@@ -10,6 +11,19 @@ internal class PlannerTaskSourceEntry(SourceProvider provider, string path, Grap
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        yield return new StreamResourceEntryFunction(
+            SystemIO.IO_OS.PathCombine(this.Path, "task.json"),
+            createdUtc: task.CreatedDateTime.FromGraphDateTime(),
+            lastModificationUtc: task.CreatedDateTime.FromGraphDateTime(),
+            size: -1,
+            streamFactory: async (ct) =>
+            {
+                var stream = new MemoryStream();
+                await JsonSerializer.SerializeAsync(stream, task, cancellationToken: ct);
+                stream.Position = 0;
+                return stream;
+            });
+
         yield return new StreamResourceEntryFunction(
             SystemIO.IO_OS.PathCombine(this.Path, "content.json"),
             createdUtc: task.CreatedDateTime.FromGraphDateTime(),

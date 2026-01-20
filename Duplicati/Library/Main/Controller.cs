@@ -162,7 +162,10 @@ namespace Duplicati.Library.Main
                     .RunAsync(paths, backendManager, filter, restoreDestination)
                     .ConfigureAwait(false);
 
-                await restoreDestination.Finalize(result.TaskControl.ProgressToken).ConfigureAwait(false);
+                await restoreDestination.Finalize((pg) =>
+                {
+                    result.OperationProgressUpdater.UpdateProgress((float)pg);
+                }, result.TaskControl.ProgressToken).ConfigureAwait(false);
                 result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
                 result.EndTime = DateTime.UtcNow;
 

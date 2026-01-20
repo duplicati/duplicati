@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MimeKit;
 
 namespace Duplicati.Proprietary.Office365;
 
@@ -13,6 +14,10 @@ partial class RestoreProvider
 
     internal class EmailApiImpl(APIHelper provider)
     {
+        /// <summary>
+        /// Limit for ensuring we stay under the 4MB limit for simple email restore.
+        /// </summary>
+        private const long MAX_SIZE_FOR_SIMPLE_EMAIL_RESTORE = (long)((4 * 1024 * 1024) * (1 - 0.33)) - 1024; // 4MB - 33% base64 overhead - 1KB margin
         public async Task<string> RestoreEmailToFolderAsync(
             string userId,
             string targetFolderId,
@@ -22,6 +27,12 @@ partial class RestoreProvider
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = System.Uri.EscapeDataString(userId);
+
+            long length = 0;
+            try { length = contentStream.Length; } catch { }
+
+            if (length > MAX_SIZE_FOR_SIMPLE_EMAIL_RESTORE)
+                return await RestoreLargeEmailAsync(userId, targetFolderId, contentStream, metadataStream, ct);
 
             // 1) Create draft message via MIME (always goes to Drafts by default)
             // POST /users/{id}/messages (MIME = base64 in text/plain body)
@@ -54,10 +65,8 @@ partial class RestoreProvider
                 return req;
             }
 
-            using var createResp = await provider.SendWithRetryAsync(
+            using var createResp = await provider.SendWithRetryShortAsync(
                 createRequestFactory,
-                HttpCompletionOption.ResponseHeadersRead,
-                null,
                 ct).ConfigureAwait(false);
 
             await APIHelper.EnsureOfficeApiSuccessAsync(createResp, ct).ConfigureAwait(false);
@@ -79,10 +88,8 @@ partial class RestoreProvider
                 return req;
             }
 
-            using var moveResp = await provider.SendWithRetryAsync(
+            using var moveResp = await provider.SendWithRetryShortAsync(
                 moveRequestFactory,
-                HttpCompletionOption.ResponseHeadersRead,
-                null,
                 ct).ConfigureAwait(false);
 
             await APIHelper.EnsureOfficeApiSuccessAsync(moveResp, ct).ConfigureAwait(false);
@@ -100,6 +107,248 @@ partial class RestoreProvider
             }
 
             return movedId;
+        }
+
+        private async Task<string> RestoreLargeEmailAsync(
+            string userId,
+            string targetFolderId,
+            Stream contentStream,
+            Stream metadataStream,
+            CancellationToken ct)
+        {
+            // 1. Parse MIME
+            if (contentStream.CanSeek) contentStream.Position = 0;
+            var message = await MimeMessage.LoadAsync(contentStream, ct);
+
+            // 2. Create Draft Message (without attachments)
+            var draft = new GraphMessage
+            {
+                Subject = message.Subject,
+                Body = new GraphBody
+                {
+                    ContentType = message.HtmlBody != null ? "html" : "text",
+                    Content = message.HtmlBody ?? message.TextBody ?? ""
+                },
+                From = ConvertToGraphRecipient(message.From),
+                Sender = ConvertToGraphRecipient(message.Sender),
+                ToRecipients = ConvertToGraphRecipients(message.To),
+                CcRecipients = ConvertToGraphRecipients(message.Cc),
+                BccRecipients = ConvertToGraphRecipients(message.Bcc),
+                HasAttachments = message.Attachments.Any()
+            };
+
+            var createdDraft = await CreateMessageAsync(userId, draft, ct);
+
+            // 3. Upload Attachments
+            foreach (var attachment in message.Attachments)
+            {
+                await UploadAttachmentAsync(userId, createdDraft.Id, attachment, ct);
+            }
+
+            // 4. Move to target folder
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var userEncoded = Uri.EscapeDataString(userId);
+            var moveUrl = $"{baseUrl}/v1.0/users/{userEncoded}/messages/{Uri.EscapeDataString(createdDraft.Id)}/move";
+
+            async Task<HttpRequestMessage> moveRequestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Post, moveUrl);
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+
+                var moveBody = JsonSerializer.SerializeToUtf8Bytes(new GraphMoveRequest { DestinationId = targetFolderId });
+                req.Content = new ByteArrayContent(moveBody);
+                req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                return req;
+            }
+
+            using var moveResp = await provider.SendWithRetryShortAsync(
+                moveRequestFactory,
+                ct).ConfigureAwait(false);
+
+            await APIHelper.EnsureOfficeApiSuccessAsync(moveResp, ct).ConfigureAwait(false);
+
+            var movedId = await ReadIdAsync(moveResp, ct).ConfigureAwait(false);
+
+            // 5. Patch metadata
+            if (metadataStream != null)
+            {
+                await PatchRestoredEmailMetadataAsync(
+                    userId,
+                    movedId,
+                    metadataStream,
+                    ct).ConfigureAwait(false);
+            }
+
+            return movedId;
+        }
+
+        private async Task<GraphCreatedMessage> CreateMessageAsync(string userId, GraphMessage message, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userId);
+            var url = $"{baseUrl}/v1.0/users/{user}/messages";
+
+            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Post, url);
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                req.Content = JsonContent.Create(message);
+                return req;
+            }
+
+            using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
+            await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+            using var s = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            return await JsonSerializer.DeserializeAsync<GraphCreatedMessage>(s, cancellationToken: ct).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("Failed to create draft message");
+        }
+
+        private async Task UploadAttachmentAsync(string userId, string messageId, MimeEntity attachment, CancellationToken ct)
+        {
+            if (attachment is MessagePart msgPart)
+            {
+                // Handle attached message as .eml file
+                using var ms = new MemoryStream();
+                await msgPart.Message.WriteToAsync(ms, ct);
+                ms.Position = 0;
+
+                // Create a fake MimePart for upload logic
+                var fakePart = new MimePart("message", "rfc822")
+                {
+                    Content = new MimeContent(ms),
+                    FileName = (msgPart.Message.Subject ?? "attached") + ".eml"
+                };
+
+                await UploadAttachmentAsync(userId, messageId, fakePart, ct);
+                return;
+            }
+
+            if (attachment is not MimePart part) return;
+
+            // Check size
+            long size = 0;
+            using (var measure = new MemoryStream())
+            {
+                await part.Content.DecodeToAsync(measure, ct);
+                size = measure.Length;
+            }
+
+            if (size < 3 * 1024 * 1024)
+            {
+                // Small attachment: POST /users/{id}/messages/{id}/attachments
+                await UploadSmallAttachmentAsync(userId, messageId, part, size, ct);
+            }
+            else
+            {
+                // Large attachment: createUploadSession
+                await UploadLargeAttachmentAsync(userId, messageId, part, size, ct);
+            }
+        }
+
+        private async Task UploadSmallAttachmentAsync(string userId, string messageId, MimePart part, long size, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userId);
+            var msg = Uri.EscapeDataString(messageId);
+            var url = $"{baseUrl}/v1.0/users/{user}/messages/{msg}/attachments";
+
+            using var ms = new MemoryStream();
+            await part.Content.DecodeToAsync(ms, ct);
+            var bytes = ms.ToArray();
+
+            var attach = new GraphAttachment
+            {
+                ODataType = "#microsoft.graph.fileAttachment",
+                Name = part.FileName ?? "attachment",
+                ContentType = part.ContentType.MimeType,
+                Size = (int)size,
+                IsInline = !string.IsNullOrEmpty(part.ContentId),
+                ContentId = part.ContentId,
+                ContentBytes = Convert.ToBase64String(bytes)
+            };
+
+            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Post, url);
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                req.Content = JsonContent.Create(attach);
+                return req;
+            }
+
+            using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
+            await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+        }
+
+        private async Task UploadLargeAttachmentAsync(string userId, string messageId, MimePart part, long size, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userId);
+            var msg = Uri.EscapeDataString(messageId);
+            var url = $"{baseUrl}/v1.0/users/{user}/messages/{msg}/attachments/createUploadSession";
+
+            var attachmentItem = new GraphAttachmentItem
+            {
+                AttachmentType = "file",
+                Name = part.FileName ?? "attachment",
+                Size = size
+            };
+
+            var body = new { AttachmentItem = attachmentItem };
+
+            async Task<HttpRequestMessage> sessionRequestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Post, url);
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                req.Content = JsonContent.Create(body);
+                return req;
+            }
+
+            using var sessionResp = await provider.SendWithRetryShortAsync(sessionRequestFactory, ct).ConfigureAwait(false);
+            await APIHelper.EnsureOfficeApiSuccessAsync(sessionResp, ct).ConfigureAwait(false);
+
+            using var sessionStream = await sessionResp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            var session = await JsonSerializer.DeserializeAsync<GraphUploadSession>(sessionStream, cancellationToken: ct).ConfigureAwait(false);
+
+            if (session?.UploadUrl == null) throw new InvalidOperationException("Failed to create upload session");
+
+            // Upload chunks
+            using var contentStream = new MemoryStream();
+            await part.Content.DecodeToAsync(contentStream, ct);
+            contentStream.Position = 0;
+
+            await provider.UploadFileToSessionAsync(session.UploadUrl, contentStream, ct);
+        }
+
+        private GraphRecipient? ConvertToGraphRecipient(InternetAddressList? addresses)
+        {
+            var addr = addresses?.Mailboxes.FirstOrDefault();
+            if (addr == null) return null;
+            return new GraphRecipient
+            {
+                EmailAddress = new GraphEmailAddress { Name = addr.Name, Address = addr.Address }
+            };
+        }
+
+        private GraphRecipient? ConvertToGraphRecipient(InternetAddress? address)
+        {
+            if (address is MailboxAddress mailbox)
+            {
+                return new GraphRecipient
+                {
+                    EmailAddress = new GraphEmailAddress { Name = mailbox.Name, Address = mailbox.Address }
+                };
+            }
+            return null;
+        }
+
+        private List<GraphRecipient>? ConvertToGraphRecipients(InternetAddressList? addresses)
+        {
+            if (addresses == null || addresses.Count == 0) return null;
+            return addresses.Mailboxes.Select(addr => new GraphRecipient
+            {
+                EmailAddress = new GraphEmailAddress { Name = addr.Name, Address = addr.Address }
+            }).ToList();
         }
 
         private static async Task<string> ReadIdAsync(HttpResponseMessage resp, CancellationToken ct)
@@ -168,10 +417,8 @@ partial class RestoreProvider
                     return req;
                 }
 
-                using var resp = await provider.SendWithRetryAsync(
+                using var resp = await provider.SendWithRetryShortAsync(
                     requestFactory,
-                    HttpCompletionOption.ResponseHeadersRead,
-                    null,
                     cancellationToken).ConfigureAwait(false);
 
                 await APIHelper.EnsureOfficeApiSuccessAsync(resp, cancellationToken).ConfigureAwait(false);
@@ -202,10 +449,8 @@ partial class RestoreProvider
                 return req;
             }
 
-            using var resp = await provider.SendWithRetryAsync(
+            using var resp = await provider.SendWithRetryShortAsync(
                 requestFactory,
-                HttpCompletionOption.ResponseHeadersRead,
-                null,
                 ct).ConfigureAwait(false);
 
             await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
@@ -244,10 +489,8 @@ partial class RestoreProvider
                     Content = JsonContent.Create(body)
                 };
 
-            using var resp = await provider.SendWithRetryAsync(
+            using var resp = await provider.SendWithRetryShortAsync(
                 requestFactory,
-                HttpCompletionOption.ResponseHeadersRead,
-                null,
                 ct).ConfigureAwait(false);
 
             await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
@@ -285,7 +528,7 @@ partial class RestoreProvider
                 $"&$select=id" +
                 $"&$top=1";
 
-            using var stream = await provider.GetGraphAsStreamAsync(
+            using var stream = await provider.GetGraphItemAsStreamAsync(
                 url, "application/json", ct).ConfigureAwait(false);
 
             using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct)
@@ -296,114 +539,33 @@ partial class RestoreProvider
                    value.GetArrayLength() > 0;
         }
 
-        public async Task RestoreCalendarEventToCalendarAsync(
-            string userId,
-            string targetCalendarId,
-            Stream eventJsonStream,
-            CancellationToken cancellationToken)
+        public async Task UpdateMailboxSettingsAsync(string userIdOrUpn, GraphMailboxSettings settings, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
-            var user = Uri.EscapeDataString(userId);
-            var calendar = Uri.EscapeDataString(targetCalendarId);
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var url = $"{baseUrl}/v1.0/users/{user}/mailboxSettings";
 
-            // Create event in a specific calendar:
-            // POST /users/{id}/calendars/{id}/events  (application/json event body)
-            var url = $"{baseUrl}/v1.0/users/{user}/calendars/{calendar}/events";
+            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-            // Buffer the body so retries can resend it
-            byte[] payload;
-            using (var ms = new MemoryStream())
-            {
-                await eventJsonStream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
-                payload = ms.ToArray();
-            }
-
-            async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
-            {
-                var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
-                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
-
-                // Important: create new content per attempt
-                req.Content = new ByteArrayContent(payload);
-                req.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-
-                return req;
-            }
-
-            using var resp = await provider.SendWithRetryAsync(
-                requestFactory,
-                HttpCompletionOption.ResponseHeadersRead,
-                null,
-                cancellationToken).ConfigureAwait(false);
-
-            await APIHelper.EnsureOfficeApiSuccessAsync(resp, cancellationToken).ConfigureAwait(false);
+            await provider.PatchGraphItemAsync(url, content, ct);
         }
 
-        public async Task RestoreDriveItemToFolderAsync(
-            string driveId,
-            string targetFolderItemId,
-            string fileName,
-            Stream contentStream,
-            string? contentType,
-            CancellationToken cancellationToken)
+        public async Task CreateMessageRuleAsync(string userIdOrUpn, GraphMessageRule rule, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
-            var drive = Uri.EscapeDataString(driveId);
-            var folder = Uri.EscapeDataString(targetFolderItemId);
-            var name = Uri.EscapeDataString(fileName);
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var url = $"{baseUrl}/v1.0/users/{user}/mailFolders/inbox/messageRules";
 
-            // PUT /drives/{drive-id}/items/{parent-id}:/{filename}:/content
-            var url =
-                $"{baseUrl}/v1.0/drives/{drive}/items/{folder}:/{name}:/content";
+            // Remove ID and read-only properties before creating
+            rule.Id = "";
+            rule.IsReadOnly = null;
+            rule.HasError = null;
 
-            async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
-            {
-                var req = new HttpRequestMessage(HttpMethod.Put, new Uri(url));
-                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
+            var json = JsonSerializer.Serialize(rule, new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-                contentStream.Position = 0;
-                req.Content = new StreamContent(contentStream);
-                req.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType ?? "application/octet-stream");
-
-                return req;
-            }
-
-            using var resp = await provider.SendWithRetryAsync(
-                requestFactory,
-                HttpCompletionOption.ResponseHeadersRead,
-                null,
-                cancellationToken).ConfigureAwait(false);
-
-            await APIHelper.EnsureOfficeApiSuccessAsync(resp, cancellationToken).ConfigureAwait(false);
-        }
-
-        public async Task RestoreDriveItemMetadataAsync(
-            string driveId,
-            string itemId,
-            Stream metadataJsonStream,
-            CancellationToken cancellationToken)
-        {
-            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
-            var drive = Uri.EscapeDataString(driveId);
-            var item = Uri.EscapeDataString(itemId);
-
-            var url = $"{baseUrl}/v1.0/drives/{drive}/items/{item}";
-
-            async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
-            {
-                var req = new HttpRequestMessage(HttpMethod.Patch, new Uri(url));
-                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
-
-                metadataJsonStream.Position = 0;
-                req.Content = new StreamContent(metadataJsonStream);
-                req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                return req;
-            }
-
-            using var resp = await provider.SendWithRetryAsync(
-                requestFactory, HttpCompletionOption.ResponseHeadersRead, null, cancellationToken).ConfigureAwait(false);
-
-            await APIHelper.EnsureOfficeApiSuccessAsync(resp, cancellationToken).ConfigureAwait(false);
+            await provider.PostGraphItemAsync<GraphMessageRule>(url, content, ct);
         }
     }
 }

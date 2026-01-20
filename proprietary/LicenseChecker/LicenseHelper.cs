@@ -2,23 +2,33 @@
 
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Utility;
-using Duplicati.Proprietary.LicenseChecker;
 
-namespace Duplicati.Proprietary.LoaderHelper;
+namespace Duplicati.Proprietary.LicenseChecker;
 
-internal static class LicenseHelper
+public static class LicenseHelper
 {
     public static LicenseData? LicenseData => licenseData.Value;
 
-    public static bool HasOffice365Feature => HasFeature(DuplicatiLicenseFeatures.Office365);
+    public static int AvailableOffice365FeatureSeats => GetFeatureSeats(DuplicatiLicenseFeatures.Office365);
 
-    private static bool HasFeature(string feature)
+    private static Dictionary<string, int> UnlicensedSeats = new Dictionary<string, int>
+    {
+        { DuplicatiLicenseFeatures.Office365, 5 },
+    };
+
+    private static int GetDefaultSeats(string feature)
+        => UnlicensedSeats.GetValueOrDefault(feature, 0);
+
+    private static int GetFeatureSeats(string feature)
     {
         var data = LicenseData;
         if (data == null)
-            return false;
+            return GetDefaultSeats(feature);
 
-        return data.Features.ContainsKey(feature);
+        if (!int.TryParse(data.Features.GetValueOrDefault(feature, "0"), out int seats))
+            return GetDefaultSeats(feature);
+
+        return seats;
     }
 
     private static Lazy<LicenseData?> licenseData = new Lazy<LicenseData?>(() =>
@@ -39,7 +49,7 @@ internal static class LicenseHelper
             return null;
 
         using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        return LicenseChecker.LicenseChecker.ObtainLicenseAsync(key, ct.Token).Await();
+        return LicenseChecker.ObtainLicenseAsync(key, ct.Token).Await();
     });
 
 }

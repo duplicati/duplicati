@@ -30,8 +30,9 @@ internal class DriveFolderSourceEntry(SourceProvider provider, string path, Grap
         }
     }
 
-    public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
-        => Task.FromResult(new Dictionary<string, string?>()
+    public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+    {
+        var metadata = new Dictionary<string, string?>()
             {
                 { "o365:v", "1" },
                 { "o365:Id", item.Id },
@@ -43,9 +44,30 @@ internal class DriveFolderSourceEntry(SourceProvider provider, string path, Grap
                 { "o365:ParentReference", JsonSerializer.Serialize(item.ParentReference) ?? "" },
                 { "o365:FileSystemInfo", JsonSerializer.Serialize(item.FileSystemInfo) ?? "" },
                 { "o365:DownloadUrl", item.DownloadUrl ?? "" }
+            };
+
+        try
+        {
+            var permissions = new List<GraphPermission>();
+            await foreach (var perm in provider.OneDriveApi.GetDriveItemPermissionsAsync(drive.Id, item.Id, cancellationToken))
+            {
+                permissions.Add(perm);
             }
+
+            if (permissions.Count > 0)
+            {
+                metadata["o365:Permissions"] = JsonSerializer.Serialize(permissions);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.WriteWarningMessage(LOGTAG, "PermissionReadError", ex, $"Failed to read permissions for folder {item.Id}");
+        }
+
+        return metadata
             .Where(kv => !string.IsNullOrEmpty(kv.Value))
-            .ToDictionary(kv => kv.Key, kv => kv.Value));
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+    }
 
     public override Task<bool> FileExists(string filename, CancellationToken cancellationToken)
     {

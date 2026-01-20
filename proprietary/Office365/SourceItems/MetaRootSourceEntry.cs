@@ -52,6 +52,10 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
+
+                    if (!provider.LicenseApprovedForEntry(Path, type, user.Id))
+                        yield break;
+
                     yield return new UserSourceEntry(provider, Path, user);
                 }
                 break;
@@ -60,6 +64,10 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
+
+                    if (!provider.LicenseApprovedForEntry(Path, type, group.Id))
+                        yield break;
+
                     yield return new GroupSourceEntry(provider, this.Path, group);
                 }
                 break;
@@ -68,6 +76,10 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
+
+                    if (!provider.LicenseApprovedForEntry(Path, type, site.Id))
+                        yield break;
+
                     yield return new SiteSourceEntry(provider, this.Path, site);
                 }
                 break;

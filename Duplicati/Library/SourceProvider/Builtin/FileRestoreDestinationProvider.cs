@@ -90,7 +90,7 @@ public class FileRestoreDestinationProvider(string mountedPath) : IRestoreDestin
         => Task.CompletedTask;
 
     /// <inheritdoc />
-    public Task Finalize(CancellationToken cancel)
+    public Task Finalize(Action<double>? progressCallback, CancellationToken cancel)
         => Task.CompletedTask;
 
     /// <inheritdoc />

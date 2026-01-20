@@ -40,7 +40,7 @@ internal class CalendarSourceEntry(SourceProvider provider, string path, GraphUs
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
-            yield return new CalendarEventSourceEntry(provider, this.Path, calendarGroup, calendar, eventItem);
+            yield return new CalendarEventSourceEntry(provider, this.Path, user, calendar, eventItem);
         }
     }
 }

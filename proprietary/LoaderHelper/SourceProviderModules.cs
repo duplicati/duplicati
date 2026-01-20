@@ -2,6 +2,7 @@
 
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using Duplicati.Proprietary.LicenseChecker;
 
 namespace Duplicati.Proprietary.LoaderHelper;
 
@@ -34,7 +35,7 @@ public static class SourceProviderModules
     /// </summary>
     private static Lazy<IReadOnlyList<ISourceProviderModule>> LicensedSourceProvidersLazy = new(() =>
         new ISourceProviderModule?[] {
-            LicenseHelper.HasOffice365Feature ? new Office365.SourceProvider() : null
+            LicenseHelper.AvailableOffice365FeatureSeats > 0 ? new Office365.SourceProvider() : null
         }
         .WhereNotNull()
         .ToList()

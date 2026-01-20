@@ -45,9 +45,10 @@ public interface IRestoreDestinationProvider : IDisposable
     /// <summary>
     /// Finalizes the restore destination provider
     /// </summary>
+    /// <param name="progressCallback">A callback to report progress</param>
     /// <param name="cancel">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task Finalize(CancellationToken cancel);
+    Task Finalize(Action<double>? progressCallback, CancellationToken cancel);
 
     /// <summary>
     /// Creates the folder at the given path if it does not exist

@@ -33,7 +33,7 @@ internal class StreamResourceEntryFunction(string path, DateTime createdUtc, Dat
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
         => _stream != null
             ? _stream
-            : await streamFactory(cancellationToken).ConfigureAwait(false);
+            : (await streamFactory(cancellationToken).ConfigureAwait(false) ?? throw new FileNotFoundException($"Resource not found: {Path}"));
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
         => minorMetadataFactory != null
