@@ -60,11 +60,20 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// The option to specify the number of internal retries
         /// </summary>
         private const string AZURE_INTERNAL_RETRIES_OPTION = "azure-internal-retries";
+        /// <summary>
+        /// The option to specify the immutability policy mode
+        /// </summary>
+        private const string AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION = "azure-blob-immutability-policy-mode";
 
         /// <summary>
         /// The default number of internal retries
         /// </summary>
         public const int DEFAULT_INTERNAL_RETRIES = 3;
+
+        /// <summary>
+        /// The immutability policy mode
+        /// </summary>
+        private readonly BlobImmutabilityPolicyMode _immutabilityPolicyMode;
 
         /// <summary>
         /// The default storage classes that are considered archive classes
@@ -116,6 +125,10 @@ namespace Duplicati.Library.Backend.AzureBlob
                 // Warning: The cast here is required to avoid implicit casting null to AccessTier
                 : (AccessTier?)new AccessTier(accessTierValue);
             var internalRetries = Library.Utility.Utility.ParseIntOption(options, AZURE_INTERNAL_RETRIES_OPTION, DEFAULT_INTERNAL_RETRIES);
+
+            var immutabilityPolicyModeValue = options.GetValueOrDefault(AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION);
+            _immutabilityPolicyMode = Library.Utility.Utility.ParseEnumOption(options, AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION, BlobImmutabilityPolicyMode.Unlocked);
+
             _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, accessTier, archiveClasses, timeouts, internalRetries);
         }
 
@@ -184,7 +197,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <inheritdoc />
         public Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancellationToken)
         {
-            return WrapWithExceptionHandler(_azureBlob.SetObjectLockUntilAsync(remotename, lockUntilUtc, cancellationToken));
+            return WrapWithExceptionHandler(_azureBlob.SetObjectLockUntilAsync(remotename, lockUntilUtc, _immutabilityPolicyMode, cancellationToken));
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -227,6 +240,13 @@ namespace Duplicati.Library.Backend.AzureBlob
                         Strings.AzureBlobBackend.InternalRetriesDescriptionShort,
                         Strings.AzureBlobBackend.InternalRetriesDescriptionLong,
                         Library.Utility.Utility.FormatInvariantValue(DEFAULT_INTERNAL_RETRIES)),
+                    new CommandLineArgument(AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION,
+                        CommandLineArgument.ArgumentType.String,
+                        Strings.AzureBlobBackend.ImmutabilityPolicyModeDescriptionShort,
+                        Strings.AzureBlobBackend.ImmutabilityPolicyModeDescriptionLong,
+                        "Unlocked",
+                        null,
+                        Enum.GetNames(typeof(BlobImmutabilityPolicyMode))),
                     .. TimeoutOptionsHelper.GetOptions()
                 ];
             }
