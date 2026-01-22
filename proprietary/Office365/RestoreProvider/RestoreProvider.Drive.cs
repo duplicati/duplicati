@@ -59,7 +59,7 @@ partial class RestoreProvider
                     }
                     catch (Exception ex)
                     {
-                        Log.WriteErrorMessage(LOGTAG, "GetDefaultDriveIdFailed", ex, $"Failed to get user primary drive: {ex.Message}");
+                        Log.WriteErrorMessage(LOGTAG, "GetDefaultDriveIdFailed", ex, $"Failed to get user primary drive");
                     }
                 }
                 else if (!string.IsNullOrWhiteSpace(targetSiteId))
@@ -71,7 +71,7 @@ partial class RestoreProvider
                     }
                     catch (Exception ex)
                     {
-                        Log.WriteErrorMessage(LOGTAG, "GetDefaultDriveIdFailed", ex, $"Failed to get site primary drive: {ex.Message}");
+                        Log.WriteErrorMessage(LOGTAG, "GetDefaultDriveIdFailed", ex, $"Failed to get site primary drive");
                     }
                 }
             }
@@ -92,7 +92,7 @@ partial class RestoreProvider
                 }
                 catch (Exception ex)
                 {
-                    Log.WriteWarningMessage(LOGTAG, "CreateRestoredFolderFailed", ex, $"Failed to create 'Restored' folder in drive {driveId}: {ex.Message}");
+                    Log.WriteWarningMessage(LOGTAG, "CreateRestoredFolderFailed", ex, $"Failed to create 'Restored' folder in drive {driveId}");
                     // Fallback to root
                     _cachedDefaultFolderId = "root";
                 }

@@ -97,7 +97,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreNotebooksFailed", ex, $"Failed to restore notebook {notebook.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreNotebooksFailed", ex, $"Failed to restore notebook {notebook.Key}");
             }
         }
     }
@@ -154,7 +154,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreNotebookSectionGroupsFailed", ex, $"Failed to restore section group {group.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreNotebookSectionGroupsFailed", ex, $"Failed to restore section group {group.Key}");
             }
         }
     }
@@ -208,7 +208,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreNotebookSectionsFailed", ex, $"Failed to restore section {section.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreNotebookSectionsFailed", ex, $"Failed to restore section {section.Key}");
             }
         }
     }
@@ -247,7 +247,7 @@ public partial class RestoreProvider
                 }
                 catch (Exception ex)
                 {
-                    Log.WriteErrorMessage(LOGTAG, "RestoreNotebookPagesFailed", ex, $"Failed to restore page {filePath}: {ex.Message}");
+                    Log.WriteErrorMessage(LOGTAG, "RestoreNotebookPagesFailed", ex, $"Failed to restore page {filePath}");
                 }
             }
         }

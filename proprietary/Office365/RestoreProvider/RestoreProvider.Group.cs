@@ -480,7 +480,7 @@ public partial class RestoreProvider
                 }
                 catch (Exception ex)
                 {
-                    Log.WriteWarningMessage(LOGTAG, "GetTargetChannelIdFailed", ex, $"Failed to get/create channel {displayName}: {ex.Message}");
+                    Log.WriteWarningMessage(LOGTAG, "GetTargetChannelIdFailed", ex, $"Failed to get/create channel {displayName}");
                     return null;
                 }
             }
@@ -551,7 +551,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreGroupChannelsFailed", ex, $"Failed to restore channel {channel.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreGroupChannelsFailed", ex, $"Failed to restore channel {channel.Key}");
             }
         }
     }
@@ -654,7 +654,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreChannelMessagesFailed", ex, $"Failed to restore channel message {message.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreChannelMessagesFailed", ex, $"Failed to restore channel message {message.Key}");
             }
         }
 
@@ -746,7 +746,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreChannelMessagesReplyFailed", ex, $"Failed to restore channel message reply {reply.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreChannelMessagesReplyFailed", ex, $"Failed to restore channel message reply {reply.Key}");
             }
         }
     }
@@ -824,7 +824,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreGroupConversationsThreadFailed", ex, $"Failed to restore thread {thread.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreGroupConversationsThreadFailed", ex, $"Failed to restore thread {thread.Key}");
             }
         }
 
@@ -883,7 +883,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreGroupConversationsPostFailed", ex, $"Failed to restore post {post.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreGroupConversationsPostFailed", ex, $"Failed to restore post {post.Key}");
             }
         }
     }
@@ -933,7 +933,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreGroupCalendarEventsFailed", ex, $"Failed to restore group calendar event {eventItem.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreGroupCalendarEventsFailed", ex, $"Failed to restore group calendar event {eventItem.Key}");
             }
         }
     }
@@ -1028,7 +1028,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreChannelTabsFailed", ex, $"Failed to restore channel tab {tab.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreChannelTabsFailed", ex, $"Failed to restore channel tab {tab.Key}");
             }
         }
     }
@@ -1074,7 +1074,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreTeamAppsFailed", ex, $"Failed to restore team app {app.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreTeamAppsFailed", ex, $"Failed to restore team app {app.Key}");
             }
         }
     }
@@ -1120,7 +1120,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreGroupSettingsFailed", ex, $"Failed to restore group settings {setting.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreGroupSettingsFailed", ex, $"Failed to restore group settings {setting.Key}");
             }
         }
     }
@@ -1172,7 +1172,7 @@ public partial class RestoreProvider
                         }
                         catch (Exception ex)
                         {
-                            Log.WriteWarningMessage(LOGTAG, "RestoreGroupMemberFailed", ex, $"Failed to add member {member.Id} to group: {ex.Message}");
+                            Log.WriteWarningMessage(LOGTAG, "RestoreGroupMemberFailed", ex, $"Failed to add member {member.Id} to group");
                         }
                     }
                 }
@@ -1183,7 +1183,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreGroupMembersFailed", ex, $"Failed to restore group members {members.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreGroupMembersFailed", ex, $"Failed to restore group members {members.Key}");
             }
         }
     }
@@ -1235,7 +1235,7 @@ public partial class RestoreProvider
                         }
                         catch (Exception ex)
                         {
-                            Log.WriteWarningMessage(LOGTAG, "RestoreGroupOwnerFailed", ex, $"Failed to add owner {owner.Id} to group: {ex.Message}");
+                            Log.WriteWarningMessage(LOGTAG, "RestoreGroupOwnerFailed", ex, $"Failed to add owner {owner.Id} to group");
                         }
                     }
                 }
@@ -1246,7 +1246,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreGroupOwnersFailed", ex, $"Failed to restore group owners {owners.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreGroupOwnersFailed", ex, $"Failed to restore group owners {owners.Key}");
             }
         }
     }
@@ -1393,7 +1393,7 @@ public partial class RestoreProvider
                 }
                 catch (Exception ex)
                 {
-                    Log.WriteWarningMessage(LOGTAG, "EndMigrationModeFailed", ex, $"Failed to end migration mode for channel {kvp.Value} in group {kvp.Key}: {ex.Message}");
+                    Log.WriteWarningMessage(LOGTAG, "EndMigrationModeFailed", ex, $"Failed to end migration mode for channel {kvp.Value} in group {kvp.Key}");
                 }
             }
             _channelsInExplicitMigrationMode.Clear();

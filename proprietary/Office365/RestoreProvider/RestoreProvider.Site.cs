@@ -86,7 +86,7 @@ partial class RestoreProvider
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "RestoreSiteDrivesFailed", ex, $"Failed to restore site drives: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "RestoreSiteDrivesFailed", ex, $"Failed to restore site drives");
         }
     }
 

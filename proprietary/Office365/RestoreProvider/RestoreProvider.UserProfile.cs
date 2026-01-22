@@ -149,7 +149,7 @@ partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreUserProfileFailed", ex, $"Failed to restore user profile {profile.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreUserProfileFailed", ex, $"Failed to restore user profile {profile.Key}");
             }
         }
     }

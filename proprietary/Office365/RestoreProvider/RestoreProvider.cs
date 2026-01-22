@@ -347,7 +347,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserEmailFoldersFailed", ex, $"Failed to restore user email folders: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserEmailFoldersFailed", ex, $"Failed to restore user email folders");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -358,7 +358,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserEmailsFailed", ex, $"Failed to restore user emails: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserEmailsFailed", ex, $"Failed to restore user emails");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -369,7 +369,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserMailboxSettingsFailed", ex, $"Failed to restore user mailbox settings: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserMailboxSettingsFailed", ex, $"Failed to restore user mailbox settings");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -380,7 +380,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserMailboxRulesFailed", ex, $"Failed to restore user mailbox rules: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserMailboxRulesFailed", ex, $"Failed to restore user mailbox rules");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -391,7 +391,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreDrivesFailed", ex, $"Failed to restore drives: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreDrivesFailed", ex, $"Failed to restore drives");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -402,7 +402,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreSiteDrivesFailed", ex, $"Failed to restore site drives: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreSiteDrivesFailed", ex, $"Failed to restore site drives");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -413,7 +413,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreSharePointListsFailed", ex, $"Failed to restore SharePoint lists: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreSharePointListsFailed", ex, $"Failed to restore SharePoint lists");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -424,7 +424,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreSharePointListItemsFailed", ex, $"Failed to restore SharePoint list items: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreSharePointListItemsFailed", ex, $"Failed to restore SharePoint list items");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -435,7 +435,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreDriveFoldersFailed", ex, $"Failed to restore drive folders: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreDriveFoldersFailed", ex, $"Failed to restore drive folders");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -446,7 +446,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreDriveFilesFailed", ex, $"Failed to restore drive files: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreDriveFilesFailed", ex, $"Failed to restore drive files");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -457,7 +457,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreCalendarEventsFailed", ex, $"Failed to restore calendar events: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreCalendarEventsFailed", ex, $"Failed to restore calendar events");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -468,7 +468,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreContactFoldersFailed", ex, $"Failed to restore contact folders: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreContactFoldersFailed", ex, $"Failed to restore contact folders");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -479,7 +479,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreContactsFailed", ex, $"Failed to restore contacts: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreContactsFailed", ex, $"Failed to restore contacts");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -490,7 +490,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreContactGroupsFailed", ex, $"Failed to restore contact groups: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreContactGroupsFailed", ex, $"Failed to restore contact groups");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -501,7 +501,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupChannelsFailed", ex, $"Failed to restore group channels: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupChannelsFailed", ex, $"Failed to restore group channels");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -512,7 +512,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupSettingsFailed", ex, $"Failed to restore group settings: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupSettingsFailed", ex, $"Failed to restore group settings");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -523,7 +523,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupMembersFailed", ex, $"Failed to restore group members: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupMembersFailed", ex, $"Failed to restore group members");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -534,7 +534,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupOwnersFailed", ex, $"Failed to restore group owners: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupOwnersFailed", ex, $"Failed to restore group owners");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -545,7 +545,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreTeamAppsFailed", ex, $"Failed to restore team apps: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreTeamAppsFailed", ex, $"Failed to restore team apps");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -556,7 +556,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreChannelTabsFailed", ex, $"Failed to restore channel tabs: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreChannelTabsFailed", ex, $"Failed to restore channel tabs");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -567,7 +567,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreChannelMessagesFailed", ex, $"Failed to restore channel messages: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreChannelMessagesFailed", ex, $"Failed to restore channel messages");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -578,7 +578,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupConversationsFailed", ex, $"Failed to restore group conversations: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupConversationsFailed", ex, $"Failed to restore group conversations");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -589,7 +589,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupCalendarEventsFailed", ex, $"Failed to restore group calendar events: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupCalendarEventsFailed", ex, $"Failed to restore group calendar events");
         }
 
         try
@@ -598,7 +598,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "EndMigrationModeFailed", ex, $"Failed to end migration mode for channels: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "EndMigrationModeFailed", ex, $"Failed to end migration mode for channels");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -609,7 +609,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestorePlannerBucketsFailed", ex, $"Failed to restore planner buckets: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestorePlannerBucketsFailed", ex, $"Failed to restore planner buckets");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -620,7 +620,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestorePlannerTasksFailed", ex, $"Failed to restore planner tasks: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestorePlannerTasksFailed", ex, $"Failed to restore planner tasks");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -631,7 +631,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreNotebooksFailed", ex, $"Failed to restore notebooks: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreNotebooksFailed", ex, $"Failed to restore notebooks");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -642,7 +642,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreNotebookSectionGroupsFailed", ex, $"Failed to restore notebook section groups: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreNotebookSectionGroupsFailed", ex, $"Failed to restore notebook section groups");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -653,7 +653,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreNotebookSectionsFailed", ex, $"Failed to restore notebook sections: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreNotebookSectionsFailed", ex, $"Failed to restore notebook sections");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -664,7 +664,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreNotebookPagesFailed", ex, $"Failed to restore notebook pages: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreNotebookPagesFailed", ex, $"Failed to restore notebook pages");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -675,7 +675,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreTaskListsFailed", ex, $"Failed to restore task lists: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreTaskListsFailed", ex, $"Failed to restore task lists");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -686,7 +686,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreTaskListTasksFailed", ex, $"Failed to restore task list tasks: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreTaskListTasksFailed", ex, $"Failed to restore task list tasks");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -697,7 +697,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreTaskChecklistItemsFailed", ex, $"Failed to restore task checklist items: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreTaskChecklistItemsFailed", ex, $"Failed to restore task checklist items");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -708,7 +708,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreTaskLinkedResourcesFailed", ex, $"Failed to restore task linked resources: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreTaskLinkedResourcesFailed", ex, $"Failed to restore task linked resources");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -719,7 +719,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserProfileFailed", ex, $"Failed to restore user profile: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserProfileFailed", ex, $"Failed to restore user profile");
         }
 
         RemoveMetaEntriesForNonRestoredItems();
@@ -798,6 +798,13 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             // If we are restoring TO a site, we don't need to restore the site itself
             if (type == SourceItemType.Site && RestoreTarget != null && RestoreTarget.Type == SourceItemType.Site)
                 toRemove.Add(kv.Key);
+
+            if (type == SourceItemType.Planner && RestoreTarget != null)
+            {
+                if (RestoreTarget.Type == SourceItemType.Group || RestoreTarget.Type == SourceItemType.Planner)
+                    toRemove.Add(kv.Key);
+                toRemove.Add(kv.Key);
+            }
         }
 
         foreach (var key in toRemove)
@@ -873,7 +880,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreUserEmailFoldersFailed", ex, $"Failed to restore folder {displayName} at {originalPath}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreUserEmailFoldersFailed", ex, $"Failed to restore folder {displayName} at {originalPath}");
             }
         }
     }
@@ -956,7 +963,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreUserEmailsFailed", ex, $"Failed to restore email at {emailSource.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreUserEmailsFailed", ex, $"Failed to restore email at {emailSource.Key}");
             }
         }
     }
@@ -1006,7 +1013,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreDrivesFailed", ex, $"Failed to restore drives: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreDrivesFailed", ex, $"Failed to restore drives");
             }
         }
         else if (!string.IsNullOrWhiteSpace(targetSiteId))
@@ -1021,7 +1028,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreDrivesFailed", ex, $"Failed to restore drives: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreDrivesFailed", ex, $"Failed to restore drives");
             }
         }
     }
@@ -1127,13 +1134,13 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     }
                     catch (Exception ex)
                     {
-                        Log.WriteWarningMessage(LOGTAG, "RestoreDriveFolderPermissionsFailed", ex, $"Failed to restore permissions for folder {originalPath}: {ex.Message}");
+                        Log.WriteWarningMessage(LOGTAG, "RestoreDriveFolderPermissionsFailed", ex, $"Failed to restore permissions for folder {originalPath}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreDriveFoldersFailed", ex, $"Failed to restore folder {displayName} at {originalPath}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreDriveFoldersFailed", ex, $"Failed to restore folder {displayName} at {originalPath}");
             }
         }
     }
@@ -1283,7 +1290,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     }
                     catch (Exception ex)
                     {
-                        Log.WriteWarningMessage(LOGTAG, "RestoreDriveFileMetadataFailed", ex, $"Failed to restore metadata for file {file.Key}: {ex.Message}");
+                        Log.WriteWarningMessage(LOGTAG, "RestoreDriveFileMetadataFailed", ex, $"Failed to restore metadata for file {file.Key}");
                     }
                 }
 
@@ -1297,7 +1304,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     }
                     catch (Exception ex)
                     {
-                        Log.WriteWarningMessage(LOGTAG, "RestoreDriveFilePermissionsFailed", ex, $"Failed to restore permissions for file {file.Key}: {ex.Message}");
+                        Log.WriteWarningMessage(LOGTAG, "RestoreDriveFilePermissionsFailed", ex, $"Failed to restore permissions for file {file.Key}");
                     }
                 }
 
@@ -1307,7 +1314,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreDriveFilesFailed", ex, $"Failed to restore file {file.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreDriveFilesFailed", ex, $"Failed to restore file {file.Key}");
             }
         }
     }
@@ -1372,7 +1379,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreCalendarEventAnalysisFailed", ex, $"Failed to analyze event {originalPath}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreCalendarEventAnalysisFailed", ex, $"Failed to analyze event {originalPath}");
             }
         }
 
@@ -1420,7 +1427,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreCalendarAttachmentFailed", ex, $"Failed to restore attachment for event {eventPath}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreCalendarAttachmentFailed", ex, $"Failed to restore attachment for event {eventPath}");
             }
         }
     }
@@ -1451,7 +1458,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "RestoreSingleEventFailed", ex, $"Failed to restore event {path}: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "RestoreSingleEventFailed", ex, $"Failed to restore event {path}");
         }
     }
 
@@ -1483,7 +1490,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "RestoreMasterEventFailed", ex, $"Failed to restore master event {path}: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "RestoreMasterEventFailed", ex, $"Failed to restore master event {path}");
             return null;
         }
     }
@@ -1547,7 +1554,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "RestoreExceptionEventFailed", ex, $"Failed to restore exception event {path}: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "RestoreExceptionEventFailed", ex, $"Failed to restore exception event {path}");
         }
     }
 
@@ -1609,7 +1616,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreContactFoldersFailed", ex, $"Failed to restore folder {displayName} at {originalPath}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreContactFoldersFailed", ex, $"Failed to restore folder {displayName} at {originalPath}");
             }
         }
     }
@@ -1709,13 +1716,13 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     }
                     catch (Exception ex)
                     {
-                        Log.WriteWarningMessage(LOGTAG, "RestoreContactPhotoFailed", ex, $"Failed to restore photo for contact {originalPath}: {ex.Message}");
+                        Log.WriteWarningMessage(LOGTAG, "RestoreContactPhotoFailed", ex, $"Failed to restore photo for contact {originalPath}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreContactsFailed", ex, $"Failed to restore contact {contact.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreContactsFailed", ex, $"Failed to restore contact {contact.Key}");
             }
         }
     }
@@ -1822,7 +1829,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                                         catch (Exception ex)
                                         {
                                             // Member might already exist
-                                            Log.WriteWarningMessage(LOGTAG, "RestoreContactGroupMemberFailed", ex, $"Failed to add member {member.DisplayName} to group {restoredGroup.DisplayName}: {ex.Message}");
+                                            Log.WriteWarningMessage(LOGTAG, "RestoreContactGroupMemberFailed", ex, $"Failed to add member {member.DisplayName} to group {restoredGroup.DisplayName}");
                                         }
                                     }
                                     else
@@ -1837,13 +1844,13 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     }
                     catch (Exception ex)
                     {
-                        Log.WriteWarningMessage(LOGTAG, "RestoreContactGroupMembersFailed", ex, $"Failed to restore members for group {originalPath}: {ex.Message}");
+                        Log.WriteWarningMessage(LOGTAG, "RestoreContactGroupMembersFailed", ex, $"Failed to restore members for group {originalPath}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreContactGroupsFailed", ex, $"Failed to restore contact group {group.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreContactGroupsFailed", ex, $"Failed to restore contact group {group.Key}");
             }
         }
     }
@@ -1857,11 +1864,8 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         if (buckets.Count == 0)
             return;
 
-        string? targetPlanId = null;
-        if (RestoreTarget.Type == SourceItemType.Planner)
-        {
-            targetPlanId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
+        string? targetPlanId = await PlannerRestore.GetTargetPlanId(cancel);
+        var existingBucketsByPlan = new Dictionary<string, List<GraphPlannerBucket>>();
 
         foreach (var bucket in buckets)
         {
@@ -1873,7 +1877,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                 var originalPath = bucket.Key;
                 var metadata = bucket.Value;
                 var name = metadata.GetValueOrDefault("o365:Name") ?? "Restored Bucket";
-                var orderHint = metadata.GetValueOrDefault("o365:OrderHint");
+                var originalBucketId = metadata.GetValueOrDefault("o365:Id");
 
                 // Determine Plan ID
                 var planId = targetPlanId;
@@ -1897,13 +1901,42 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     continue;
                 }
 
-                var newBucket = await PlannerApi.CreatePlannerBucketAsync(planId, name, orderHint, cancel);
+                if (!_ignoreExisting)
+                {
+                    if (!existingBucketsByPlan.TryGetValue(planId, out var existingBuckets))
+                    {
+                        existingBuckets = await PlannerApi.GetPlannerBucketsAsync(planId, cancel);
+                        existingBucketsByPlan[planId] = existingBuckets;
+                    }
+
+                    if (existingBuckets.Any(b => b.Name == name))
+                    {
+                        Log.WriteInformationMessage(LOGTAG, "RestorePlannerBucketsSkipDuplicate", $"Skipping duplicate bucket {originalPath} (Name: {name})");
+
+                        // Map existing bucket ID so tasks can find it
+                        var existingBucket = existingBuckets.First(b => b.Name == name);
+                        _restoredPlannerBucketMap[originalPath] = existingBucket.Id;
+                        if (!string.IsNullOrWhiteSpace(originalBucketId))
+                            _restoredPlannerBucketMap[originalBucketId] = existingBucket.Id;
+                        _metadata.TryRemove(originalPath, out _);
+                        continue;
+                    }
+                }
+
+                var newBucket = await PlannerApi.CreatePlannerBucketAsync(planId, name, null, cancel);
                 _restoredPlannerBucketMap[originalPath] = newBucket.Id;
+                if (!string.IsNullOrWhiteSpace(originalBucketId))
+                    _restoredPlannerBucketMap[originalBucketId] = newBucket.Id;
                 _metadata.TryRemove(originalPath, out _);
+
+                if (!_ignoreExisting && existingBucketsByPlan.TryGetValue(planId, out var currentBuckets))
+                {
+                    currentBuckets.Add(newBucket);
+                }
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestorePlannerBucketsFailed", ex, $"Failed to restore bucket {bucket.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestorePlannerBucketsFailed", ex, $"Failed to restore bucket {bucket.Key}");
             }
         }
     }
@@ -1917,12 +1950,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         if (tasks.Count == 0)
             return;
 
-        string? targetPlanId = null;
-        if (RestoreTarget.Type == SourceItemType.Planner)
-        {
-            targetPlanId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
+        string? targetPlanId = await PlannerRestore.GetTargetPlanId(cancel);
         var existingTasksByPlan = new Dictionary<string, List<GraphPlannerTask>>();
 
         foreach (var task in tasks)
@@ -1988,28 +2016,10 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                 // Determine Bucket ID
                 string? bucketId = null;
                 if (!string.IsNullOrWhiteSpace(originalBucketId))
-                {
-                    // Assuming standard structure: .../PlanId/buckets/BucketId
-                    var taskParent = Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)); // .../PlanId/tasks
-                    if (taskParent != null)
-                    {
-                        var planPath = Path.GetDirectoryName(taskParent); // .../PlanId
-                        if (planPath != null)
-                        {
-                            var bucketPath = SystemIO.IO_OS.PathCombine(planPath, "buckets", originalBucketId);
-                            if (_restoredPlannerBucketMap.TryGetValue(bucketPath, out var mappedBucketId))
-                            {
-                                bucketId = mappedBucketId;
-                            }
-                        }
-                    }
-                }
+                    _restoredPlannerBucketMap.TryGetValue(originalBucketId, out bucketId);
 
-                // If bucketId is still null, we might want to use the original one if we are restoring to the same plan?
-                // Or just let it be null (if API allows, but API requires it).
-                // If API requires it, and we don't have it, we might fail.
-                // But let's try with null if we can't find it, maybe the API helper handles it or we catch the error.
-                // Actually, CreatePlannerTaskAsync takes bucketId.
+                if (string.IsNullOrWhiteSpace(bucketId))
+                    bucketId = await PlannerRestore.GetTargetBucketId(cancel);
 
                 // Read task.json if available
                 var taskJsonPath = SystemIO.IO_OS.PathCombine(originalPath, "task.json");
@@ -2025,6 +2035,11 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     _metadata.TryRemove(taskJsonPath, out _);
                     _temporaryFiles.TryRemove(taskJsonPath, out var taskJsonFile);
                     taskJsonFile?.Dispose();
+                }
+
+                if (title == "Conduct needs analysis")
+                {
+                    Console.WriteLine("Debug");
                 }
 
                 var newTask = await PlannerApi.CreatePlannerTaskAsync(
@@ -2064,7 +2079,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestorePlannerTasksFailed", ex, $"Failed to restore task {task.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestorePlannerTasksFailed", ex, $"Failed to restore task {task.Key}");
             }
         }
     }
@@ -2109,7 +2124,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreUserMailboxSettingsFailed", ex, $"Failed to restore mailbox settings {setting.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreUserMailboxSettingsFailed", ex, $"Failed to restore mailbox settings {setting.Key}");
             }
         }
     }
@@ -2154,7 +2169,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreUserMailboxRulesFailed", ex, $"Failed to restore mailbox rule {rule.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreUserMailboxRulesFailed", ex, $"Failed to restore mailbox rule {rule.Key}");
             }
         }
     }

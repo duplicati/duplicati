@@ -68,7 +68,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreSharePointListFailed", ex, $"Failed to restore list {list.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreSharePointListFailed", ex, $"Failed to restore list {list.Key}");
             }
         }
     }
@@ -272,7 +272,7 @@ public partial class RestoreProvider
                             }
                             catch (Exception ex)
                             {
-                                Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListFetchFailed", ex, $"Failed to fetch existing items for list {listId}: {ex.Message}");
+                                Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListFetchFailed", ex, $"Failed to fetch existing items for list {listId}");
                             }
                             _sharePointListExistingItems[listId] = existingItems;
                         }
@@ -298,7 +298,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreSharePointListItemFailed", ex, $"Failed to restore list item {item.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreSharePointListItemFailed", ex, $"Failed to restore list item {item.Key}");
             }
         }
     }

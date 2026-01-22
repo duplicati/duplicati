@@ -105,7 +105,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreTaskListsFailed", ex, $"Failed to restore task list {taskList.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreTaskListsFailed", ex, $"Failed to restore task list {taskList.Key}");
             }
         }
     }
@@ -173,7 +173,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreTaskListTasksFailed", ex, $"Failed to restore task {task.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreTaskListTasksFailed", ex, $"Failed to restore task {task.Key}");
             }
         }
     }
@@ -240,7 +240,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreTaskChecklistItemsFailed", ex, $"Failed to restore checklist item {item.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreTaskChecklistItemsFailed", ex, $"Failed to restore checklist item {item.Key}");
             }
         }
     }
@@ -320,7 +320,7 @@ public partial class RestoreProvider
             }
             catch (Exception ex)
             {
-                Log.WriteErrorMessage(LOGTAG, "RestoreTaskLinkedResourcesFailed", ex, $"Failed to restore linked resource {resource.Key}: {ex.Message}");
+                Log.WriteErrorMessage(LOGTAG, "RestoreTaskLinkedResourcesFailed", ex, $"Failed to restore linked resource {resource.Key}");
             }
         }
     }
