@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -30,8 +31,8 @@ internal class GroupConversationThreadSourceEntry(SourceProvider provider, strin
                     { "o365:Type", SourceItemType.GroupConversationThreadPost.ToString() },
                     { "o365:Name", $"{post.From?.EmailAddress?.Name} - {post.CreatedDateTime.FromGraphDateTime()}" },
                     { "o365:From", post.From?.ToString()  },
-                    { "o365:CreatedDateTime", post.CreatedDateTime.FromGraphDateTime().ToString("o") },
-                    { "o365:LastModifiedDateTime", post.LastModifiedDateTime.FromGraphDateTime().ToString("o") }
+                    { "o365:CreatedDateTime", post.CreatedDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) },
+                    { "o365:LastModifiedDateTime", post.LastModifiedDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) }
                 }
                 .WhereNotNull()
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
@@ -47,7 +48,7 @@ internal class GroupConversationThreadSourceEntry(SourceProvider provider, strin
                 { "o365:Type", SourceItemType.GroupConversationThread.ToString() },
                 { "o365:Name", $"Thread: {thread.Topic ?? ""}" },
                 { "o365:Topic", thread.Topic },
-                { "o365:LastDeliveredDateTime", thread.LastDeliveredDateTime.FromGraphDateTime().ToString("o") }
+                { "o365:LastDeliveredDateTime", thread.LastDeliveredDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) }
             }
             .WhereNotNull()
             .ToDictionary(kvp => kvp.Key, kvp => kvp.Value));

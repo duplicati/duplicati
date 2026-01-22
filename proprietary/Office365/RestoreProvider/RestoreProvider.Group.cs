@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -176,14 +177,28 @@ public partial class RestoreProvider
         internal async Task<GraphChannel?> GetTeamChannelAsync(string groupId, string displayName, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
-            var group = Uri.EscapeDataString(groupId);
+            var team = Uri.EscapeDataString(groupId);
+
+            // First verify that the Team exists (group may exist without Teams).
+            var teamUrl = $"{baseUrl}/v1.0/teams/{team}";
+
+            async Task<HttpRequestMessage> teamReqFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, new Uri(teamUrl));
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                return req;
+            }
+
+            using (var teamResp = await provider.SendWithRetryShortAsync(teamReqFactory, ct).ConfigureAwait(false))
+            {
+                if (teamResp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    return null; // Not a Team (no threadId)
+
+                await APIHelper.EnsureOfficeApiSuccessAsync(teamResp, ct).ConfigureAwait(false);
+            }
 
             var select = "id,displayName,description,membershipType,createdDateTime,isFavoriteByDefault,email,webUrl";
-
-            // Note: Graph API filtering on channels might be limited. 
-            // Let's just list all channels and find the one with matching name.
-
-            var url = $"{baseUrl}/v1.0/teams/{group}/channels?$select={Uri.EscapeDataString(select)}";
+            var url = $"{baseUrl}/v1.0/teams/{team}/channels?$select={Uri.EscapeDataString(select)}";
 
             await foreach (var channel in provider.GetAllGraphItemsAsync<GraphChannel>(url, ct))
             {
@@ -194,27 +209,96 @@ public partial class RestoreProvider
             return null;
         }
 
-        internal async Task<GraphChannel> CreateTeamChannelAsync(string groupId, string displayName, string? description, string? membershipType, CancellationToken ct)
+        internal async Task<bool> IsGroupTeamsEnabledAsync(string groupId, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
-            var group = Uri.EscapeDataString(groupId);
+            var team = Uri.EscapeDataString(groupId);
 
-            var url = $"{baseUrl}/v1.0/teams/{group}/channels";
+            var url = $"{baseUrl}/v1.0/teams/{team}";
 
-            var payload = new
+            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
             {
-                displayName,
-                description,
-                membershipType = membershipType ?? "standard"
+                var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                return req;
+            }
+
+            using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
+
+            if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return false; // Group exists but has no Team
+
+            await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+            return true;
+        }
+
+        internal async Task<GraphChannel> CreateTeamChannelAsync(
+            string groupId,
+            string displayName,
+            string? description,
+            string? membershipType,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var team = Uri.EscapeDataString(groupId);
+
+            var url = $"{baseUrl}/v1.0/teams/{team}/channels";
+
+            var payload = new Dictionary<string, object?>
+            {
+                ["displayName"] = displayName,
+                ["description"] = description,
+                ["membershipType"] = membershipType ?? "standard"
             };
 
             var json = JsonSerializer.Serialize(payload);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            return await provider.PostGraphItemAsync<GraphChannel>(url, content, ct);
+            return await provider.PostGraphItemAsync<GraphChannel>(url, content, ct).ConfigureAwait(false);
         }
 
-        internal async Task<GraphChatMessage> CreateChannelMessageAsync(string groupId, string channelId, object body, CancellationToken ct)
+
+        internal async Task<GraphChannel> CreateTeamChannelInMigrationModeAsync(
+            string groupId,
+            string displayName,
+            string? description,
+            string? membershipType,
+            DateTimeOffset? createdDateTimeUtc,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var team = Uri.EscapeDataString(groupId);
+
+            var url = $"{baseUrl}/v1.0/teams/{team}/channels";
+
+            // Graph requires the instance annotation property name exactly.
+            var payload = new Dictionary<string, object?>
+            {
+                ["displayName"] = displayName,
+                ["description"] = description,
+                ["membershipType"] = membershipType ?? "standard",
+                ["@microsoft.graph.channelCreationMode"] = "migration"
+            };
+
+            // Optional for migration scenarios; must be UTC and not in the future.
+            if (createdDateTimeUtc.HasValue)
+                payload["createdDateTime"] = createdDateTimeUtc.Value.UtcDateTime.ToGraphTimeString();
+
+            var json = JsonSerializer.Serialize(payload);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            return await provider.PostGraphItemAsync<GraphChannel>(url, content, ct).ConfigureAwait(false);
+        }
+
+        internal async Task<GraphChatMessage> ImportChannelMessageAsync(
+            string groupId,
+            string channelId,
+            string senderUserId,
+            string senderDisplayName,
+            DateTimeOffset createdDateTimeUtc,
+            string htmlContent,
+            string? replyToId,
+            CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var group = Uri.EscapeDataString(groupId);
@@ -222,18 +306,60 @@ public partial class RestoreProvider
 
             var url = $"{baseUrl}/v1.0/teams/{group}/channels/{channel}/messages";
 
-            var payload = new
+            var payload = new Dictionary<string, object?>
             {
-                body
+                ["createdDateTime"] = createdDateTimeUtc.UtcDateTime.ToString("o", CultureInfo.InvariantCulture),
+                ["from"] = new
+                {
+                    user = new
+                    {
+                        id = senderUserId,
+                        displayName = senderDisplayName,
+                        userIdentityType = "aadUser"
+                    }
+                },
+                ["body"] = new
+                {
+                    contentType = "html",
+                    content = htmlContent
+                }
             };
 
-            var json = JsonSerializer.Serialize(payload);
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            if (!string.IsNullOrWhiteSpace(replyToId))
+                payload["replyToId"] = replyToId;
 
-            return await provider.PostGraphItemAsync<GraphChatMessage>(url, content, ct);
+            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                req.Headers.Add("Teamwork-Migrate", "true");
+                req.Content = JsonContent.Create(payload);
+                return req;
+            }
+
+            using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
+            await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+            await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            var created = await JsonSerializer.DeserializeAsync<GraphChatMessage>(stream, cancellationToken: ct).ConfigureAwait(false);
+
+            if (created is null || string.IsNullOrWhiteSpace(created.Id))
+                throw new InvalidOperationException("Graph did not return the imported message id.");
+
+            return created;
         }
 
-        internal async Task ReplyToChannelMessageAsync(string groupId, string channelId, string messageId, object body, CancellationToken ct)
+        internal IAsyncEnumerable<GraphChatMessage> ListChannelMessagesAsync(string groupId, string channelId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var group = Uri.EscapeDataString(groupId);
+            var channel = Uri.EscapeDataString(channelId);
+
+            var url = $"{baseUrl}/v1.0/teams/{group}/channels/{channel}/messages";
+            return provider.GetAllGraphItemsAsync<GraphChatMessage>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphChatMessage> ListChannelMessageRepliesAsync(string groupId, string channelId, string messageId, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var group = Uri.EscapeDataString(groupId);
@@ -241,25 +367,30 @@ public partial class RestoreProvider
             var message = Uri.EscapeDataString(messageId);
 
             var url = $"{baseUrl}/v1.0/teams/{group}/channels/{channel}/messages/{message}/replies";
-
-            var payload = new
-            {
-                body
-            };
-
-            var json = JsonSerializer.Serialize(payload);
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            await provider.PostGraphItemNoResponseAsync(url, content, ct);
+            return provider.GetAllGraphItemsAsync<GraphChatMessage>(url, ct);
         }
 
-        internal async Task<GraphTeamsTab> CreateChannelTabAsync(string groupId, string channelId, string displayName, string? teamsAppId, GraphTeamsTabConfiguration? configuration, CancellationToken ct)
+        internal async Task<GraphTeamsTab> CreateChannelTabAsync(string groupId, string channelId, string displayName, string? teamsAppId, GraphTeamsTabConfiguration? configuration, bool ignoreExisting, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var group = Uri.EscapeDataString(groupId);
             var channel = Uri.EscapeDataString(channelId);
 
             var url = $"{baseUrl}/v1.0/teams/{group}/channels/{channel}/tabs";
+
+            // Check if tab already exists
+            if (!ignoreExisting)
+            {
+                var existingTabs = provider.GetAllGraphItemsAsync<GraphTeamsTab>(url, ct);
+                await foreach (var tab in existingTabs)
+                {
+                    if (string.Equals(tab.DisplayName, displayName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Tab already exists, return it
+                        return tab;
+                    }
+                }
+            }
 
             var payload = new Dictionary<string, object?>
             {
@@ -297,6 +428,69 @@ public partial class RestoreProvider
         }
     }
 
+    private async Task<string?> GetTargetChannelId(string groupId, string itemPath, CancellationToken cancel)
+    {
+        // Check map first
+        var channelPath = _restoredChannelMap.Keys
+            .Where(k => itemPath.StartsWith(Util.AppendDirSeparator(k)) || itemPath == k)
+            .OrderByDescending(k => k.Length)
+            .FirstOrDefault();
+
+        if (channelPath != null)
+            return _restoredChannelMap[channelPath];
+
+        // Walk up to find channel in metadata
+        var currentPath = itemPath;
+        while (!string.IsNullOrEmpty(currentPath))
+        {
+            if (_metadata.TryGetValue(currentPath, out var metadata) &&
+                metadata.TryGetValue("o365:Type", out var type) &&
+                type == SourceItemType.GroupChannel.ToString())
+            {
+                var displayName = metadata.GetValueOrDefault("o365:DisplayName") ?? metadata.GetValueOrDefault("o365:Name");
+                if (string.IsNullOrWhiteSpace(displayName))
+                    return null;
+
+                try
+                {
+                    // Check if exists
+                    var existingChannel = await GroupTeamsApi.GetTeamChannelAsync(groupId, displayName, cancel);
+                    if (existingChannel != null)
+                    {
+                        await ChannelRestore.EnsureChannelInMigrationMode(existingChannel.Id, groupId, cancel);
+                        _restoredChannelMap[currentPath] = existingChannel.Id;
+                        return existingChannel.Id;
+                    }
+
+                    if (!await GroupTeamsApi.IsGroupTeamsEnabledAsync(groupId, cancel))
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "GroupTeamsNotEnabled", null, $"Group {groupId} does not have Teams enabled, skipping channel create {displayName}");
+                        return null;
+                    }
+
+                    // Create
+                    var description = metadata.GetValueOrDefault("o365:Description");
+                    var membershipType = metadata.GetValueOrDefault("o365:MembershipType");
+                    var createdDateTimeStr = metadata.GetValueOrDefault("o365:CreatedDateTime");
+
+                    var newChannel = await GroupTeamsApi.CreateTeamChannelAsync(groupId, displayName, description, membershipType, cancel);
+                    await ChannelRestore.EnsureChannelInMigrationMode(newChannel.Id, groupId, cancel);
+                    _restoredChannelMap[currentPath] = newChannel.Id;
+                    return newChannel.Id;
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "GetTargetChannelIdFailed", ex, $"Failed to get/create channel {displayName}: {ex.Message}");
+                    return null;
+                }
+            }
+            currentPath = Path.GetDirectoryName(currentPath);
+        }
+
+        // Not found, use default channel
+        return await ChannelRestore.GetTargetChannelId(groupId, cancel);
+    }
+
     private async Task RestoreGroupChannels(CancellationToken cancel)
     {
         if (RestoreTarget == null)
@@ -306,20 +500,10 @@ public partial class RestoreProvider
         if (channels.Count == 0)
             return;
 
-        // We need the target group ID.
-        // If we are restoring to a Group, RestoreTarget.Metadata["o365:Id"] should be the group ID.
-
-        string? targetGroupId = null;
-        if (RestoreTarget.Type == SourceItemType.Group)
-        {
-            targetGroupId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
+        // If ID is missing we already logged warning
+        var targetGroupId = await ChannelRestore.GetTargetGroupId(cancel);
         if (string.IsNullOrWhiteSpace(targetGroupId))
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreGroupChannelsMissingTarget", null, "Could not determine target group ID for restoring channels.");
             return;
-        }
 
         foreach (var channel in channels)
         {
@@ -339,18 +523,30 @@ public partial class RestoreProvider
                 }
 
                 // Check if channel exists
-                var existingChannel = await GroupTeamsApi.GetTeamChannelAsync(targetGroupId, displayName, cancel);
-                if (existingChannel != null)
+                if (!_ignoreExisting)
                 {
-                    Log.WriteInformationMessage(LOGTAG, "RestoreGroupChannelsSkipExisting", null, $"Channel {displayName} already exists in target group, skipping.");
-                    _restoredChannelMap[originalPath] = existingChannel.Id;
+                    var existingChannel = await GroupTeamsApi.GetTeamChannelAsync(targetGroupId, displayName, cancel);
+                    if (existingChannel != null)
+                    {
+                        Log.WriteInformationMessage(LOGTAG, "RestoreGroupChannelsSkipExisting", null, $"Channel {displayName} already exists in target group, skipping.");
+                        await ChannelRestore.EnsureChannelInMigrationMode(existingChannel.Id, targetGroupId, cancel);
+                        _restoredChannelMap[originalPath] = existingChannel.Id;
+                        continue;
+                    }
+                }
+
+                if (!await GroupTeamsApi.IsGroupTeamsEnabledAsync(targetGroupId, cancel))
+                {
+                    Log.WriteWarningMessage(LOGTAG, "GroupTeamsNotEnabled", null, $"Group {targetGroupId} does not have Teams enabled, skipping channel create {displayName}");
                     continue;
                 }
 
                 var description = metadata.GetValueOrDefault("o365:Description");
                 var membershipType = metadata.GetValueOrDefault("o365:MembershipType");
+                var createdDateTimeStr = metadata.GetValueOrDefault("o365:CreatedDateTime");
 
                 var newChannel = await GroupTeamsApi.CreateTeamChannelAsync(targetGroupId, displayName, description, membershipType, cancel);
+                await ChannelRestore.EnsureChannelInMigrationMode(newChannel.Id, targetGroupId, cancel);
                 _restoredChannelMap[originalPath] = newChannel.Id;
             }
             catch (Exception ex)
@@ -371,17 +567,13 @@ public partial class RestoreProvider
         if (messages.Count == 0 && replies.Count == 0)
             return;
 
-        string? targetGroupId = null;
-        if (RestoreTarget.Type == SourceItemType.Group)
-        {
-            targetGroupId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
+        // If ID is missing we already logged warning
+        var targetGroupId = await ChannelRestore.GetTargetGroupId(cancel);
         if (string.IsNullOrWhiteSpace(targetGroupId))
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreChannelMessagesMissingTarget", null, "Could not determine target group ID for restoring channel messages.");
             return;
-        }
+
+        var existingMessagesCache = new Dictionary<string, List<GraphChatMessage>>();
+        var existingRepliesCache = new Dictionary<string, List<GraphChatMessage>>();
 
         // Restore messages
         foreach (var message in messages)
@@ -394,18 +586,12 @@ public partial class RestoreProvider
                 var originalPath = message.Key;
 
                 // Find channel ID
-                var channelPath = _restoredChannelMap.Keys
-                    .Where(k => originalPath.StartsWith(k + Path.DirectorySeparatorChar))
-                    .OrderByDescending(k => k.Length)
-                    .FirstOrDefault();
+                var channelId = await GetTargetChannelId(targetGroupId, originalPath, cancel);
+                if (string.IsNullOrWhiteSpace(channelId))
+                    return;
 
-                if (channelPath == null)
-                {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreChannelMessagesMissingChannel", null, $"Could not find restored channel for message {originalPath}, skipping.");
-                    continue;
-                }
-
-                var channelId = _restoredChannelMap[channelPath];
+                if (!existingMessagesCache.ContainsKey(channelId))
+                    existingMessagesCache[channelId] = await GroupTeamsApi.ListChannelMessagesAsync(targetGroupId, channelId, cancel).ToListAsync(cancel);
 
                 var contentEntry = _temporaryFiles.GetValueOrDefault(originalPath);
                 if (contentEntry == null)
@@ -414,22 +600,54 @@ public partial class RestoreProvider
                     continue;
                 }
 
-                object? body = null;
+                GraphChatMessage? graphMessage;
                 using (var stream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                 {
-                    var graphMessage = await JsonSerializer.DeserializeAsync<GraphChatMessage>(stream, cancellationToken: cancel);
-                    body = graphMessage?.Body;
+                    graphMessage = await JsonSerializer.DeserializeAsync<GraphChatMessage>(stream, cancellationToken: cancel);
                 }
 
-                if (body == null)
+                if (graphMessage?.Body?.Content == null)
                 {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreChannelMessagesMissingBody", null, $"Missing body for message {originalPath}, skipping.");
+                    Log.WriteWarningMessage(LOGTAG, "RestoreChannelMessagesMissingBody", null, $"Missing body content for message {originalPath}, skipping.");
                     continue;
                 }
 
-                var newMessage = await GroupTeamsApi.CreateChannelMessageAsync(targetGroupId, channelId, body, cancel);
-                _restoredChannelMessageMap[originalPath] = newMessage.Id;
+                var senderUserId = graphMessage.From?.User?.Id;
+                var senderDisplayName = graphMessage.From?.User?.DisplayName ?? "Unknown User";
+                var createdDateTime = graphMessage.CreatedDateTime ?? DateTimeOffset.UtcNow;
 
+                if (string.IsNullOrWhiteSpace(senderUserId))
+                {
+                    Log.WriteWarningMessage(LOGTAG, "RestoreChannelMessagesMissingSender", null, $"Missing sender for message {originalPath}, skipping.");
+                    continue;
+                }
+
+                // Remove the "/content.json" suffix to get the message path so replies can find it
+                var restoreMessagePath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath));
+
+                if (!_ignoreExisting)
+                {
+                    var existing = existingMessagesCache[channelId].FirstOrDefault(m =>
+                        m.CreatedDateTime.HasValue &&
+                        Math.Abs((m.CreatedDateTime.Value - createdDateTime).TotalSeconds) < 2 &&
+                        m.From?.User?.Id == senderUserId
+                    );
+
+
+                    if (existing != null)
+                    {
+                        Log.WriteInformationMessage(LOGTAG, "RestoreChannelMessagesSkipExisting", null, $"Message {originalPath} already exists, skipping.");
+                        _restoredChannelMessageMap[restoreMessagePath] = existing.Id;
+
+                        _metadata.TryRemove(originalPath, out _);
+                        _temporaryFiles.TryRemove(originalPath, out var contentFileSkip);
+                        contentFileSkip?.Dispose();
+                        continue;
+                    }
+                }
+
+                var newMessage = await GroupTeamsApi.ImportChannelMessageAsync(targetGroupId, channelId, senderUserId, senderDisplayName, createdDateTime, graphMessage.Body.Content, null, cancel);
+                _restoredChannelMessageMap[restoreMessagePath] = newMessage.Id;
                 _metadata.TryRemove(originalPath, out _);
                 _temporaryFiles.TryRemove(originalPath, out var contentFile);
                 contentFile?.Dispose();
@@ -451,22 +669,13 @@ public partial class RestoreProvider
                 var originalPath = reply.Key;
 
                 // Find channel ID
-                var channelPath = _restoredChannelMap.Keys
-                    .Where(k => originalPath.StartsWith(k + Path.DirectorySeparatorChar))
-                    .OrderByDescending(k => k.Length)
-                    .FirstOrDefault();
-
-                if (channelPath == null)
-                {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreChannelMessagesReplyMissingChannel", null, $"Could not find restored channel for reply {originalPath}, skipping.");
-                    continue;
-                }
-
-                var channelId = _restoredChannelMap[channelPath];
+                var channelId = await GetTargetChannelId(targetGroupId, originalPath, cancel);
+                if (string.IsNullOrWhiteSpace(channelId))
+                    return;
 
                 // Find parent message ID
                 var parentMessagePath = _restoredChannelMessageMap.Keys
-                    .Where(k => originalPath.StartsWith(k + Path.DirectorySeparatorChar))
+                    .Where(k => originalPath.StartsWith(Util.AppendDirSeparator(k)))
                     .OrderByDescending(k => k.Length)
                     .FirstOrDefault();
 
@@ -478,6 +687,9 @@ public partial class RestoreProvider
 
                 var parentMessageId = _restoredChannelMessageMap[parentMessagePath];
 
+                if (!existingRepliesCache.ContainsKey(parentMessageId))
+                    existingRepliesCache[parentMessageId] = await GroupTeamsApi.ListChannelMessageRepliesAsync(targetGroupId, channelId, parentMessageId, cancel).ToListAsync(cancel);
+
                 var contentEntry = _temporaryFiles.GetValueOrDefault(originalPath);
                 if (contentEntry == null)
                 {
@@ -485,20 +697,48 @@ public partial class RestoreProvider
                     continue;
                 }
 
-                object? body = null;
+                GraphChatMessage? graphMessage;
                 using (var stream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                 {
-                    var graphMessage = await JsonSerializer.DeserializeAsync<GraphChatMessage>(stream, cancellationToken: cancel);
-                    body = graphMessage?.Body;
+                    graphMessage = await JsonSerializer.DeserializeAsync<GraphChatMessage>(stream, cancellationToken: cancel);
                 }
 
-                if (body == null)
+                if (graphMessage?.Body?.Content == null)
                 {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreChannelMessagesReplyMissingBody", null, $"Missing body for reply {originalPath}, skipping.");
+                    Log.WriteWarningMessage(LOGTAG, "RestoreChannelMessagesReplyMissingBody", null, $"Missing body content for reply {originalPath}, skipping.");
                     continue;
                 }
 
-                await GroupTeamsApi.ReplyToChannelMessageAsync(targetGroupId, channelId, parentMessageId, body, cancel);
+                var senderUserId = graphMessage.From?.User?.Id;
+                var senderDisplayName = graphMessage.From?.User?.DisplayName ?? "Unknown User";
+                var createdDateTime = graphMessage.CreatedDateTime ?? DateTimeOffset.UtcNow;
+
+                if (string.IsNullOrWhiteSpace(senderUserId))
+                {
+                    Log.WriteWarningMessage(LOGTAG, "RestoreChannelMessagesReplyMissingSender", null, $"Missing sender for reply {originalPath}, skipping.");
+                    continue;
+                }
+
+                if (!_ignoreExisting)
+                {
+                    var existing = existingRepliesCache[parentMessageId].FirstOrDefault(m =>
+                        m.CreatedDateTime.HasValue &&
+                        Math.Abs((m.CreatedDateTime.Value - createdDateTime).TotalSeconds) < 2 &&
+                        m.From?.User?.Id == senderUserId
+                    );
+
+                    if (existing != null)
+                    {
+                        Log.WriteInformationMessage(LOGTAG, "RestoreChannelMessagesReplySkipExisting", null, $"Reply {originalPath} already exists, skipping.");
+
+                        _metadata.TryRemove(originalPath, out _);
+                        _temporaryFiles.TryRemove(originalPath, out var contentFileSkip);
+                        contentFileSkip?.Dispose();
+                        continue;
+                    }
+                }
+
+                await GroupTeamsApi.ImportChannelMessageAsync(targetGroupId, channelId, senderUserId, senderDisplayName, createdDateTime, graphMessage.Body.Content, parentMessageId, cancel);
 
                 _metadata.TryRemove(originalPath, out _);
                 _temporaryFiles.TryRemove(originalPath, out var contentFile);
@@ -522,17 +762,10 @@ public partial class RestoreProvider
         if (threads.Count == 0 && posts.Count == 0)
             return;
 
-        string? targetGroupId = null;
-        if (RestoreTarget.Type == SourceItemType.Group)
-        {
-            targetGroupId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
+        // If ID is missing we already logged warning
+        var targetGroupId = await ChannelRestore.GetTargetGroupId(cancel);
         if (string.IsNullOrWhiteSpace(targetGroupId))
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreGroupConversationsMissingTarget", null, "Could not determine target group ID for restoring conversations.");
             return;
-        }
 
         // Restore threads
         foreach (var thread in threads)
@@ -548,7 +781,7 @@ public partial class RestoreProvider
 
                 // Find the first post for this thread to create it
                 var threadPosts = posts
-                    .Where(p => p.Key.StartsWith(originalPath + Path.DirectorySeparatorChar))
+                    .Where(p => p.Key.StartsWith(Util.AppendDirSeparator(originalPath)))
                     .OrderBy(p => p.Value.GetValueOrDefault("o365:CreatedDateTime"))
                     .ToList();
 
@@ -617,7 +850,7 @@ public partial class RestoreProvider
 
                 // Find thread ID
                 var threadPath = _restoredConversationThreadMap.Keys
-                    .Where(k => originalPath.StartsWith(k + Path.DirectorySeparatorChar))
+                    .Where(k => originalPath.StartsWith(Util.AppendDirSeparator(k)))
                     .OrderByDescending(k => k.Length)
                     .FirstOrDefault();
 
@@ -664,17 +897,10 @@ public partial class RestoreProvider
         if (events.Count == 0)
             return;
 
-        string? targetGroupId = null;
-        if (RestoreTarget.Type == SourceItemType.Group)
-        {
-            targetGroupId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
+        // If ID is missing we already logged warning
+        var targetGroupId = await ChannelRestore.GetTargetGroupId(cancel);
         if (string.IsNullOrWhiteSpace(targetGroupId))
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreGroupCalendarEventsMissingTarget", null, "Could not determine target group ID for restoring calendar events.");
             return;
-        }
 
         foreach (var eventItem in events)
         {
@@ -712,6 +938,29 @@ public partial class RestoreProvider
         }
     }
 
+    /// <summary>
+    /// Determines if the tab should be skipped during restore (built-in tabs).
+    /// </summary>
+    /// <param name="teamsAppId">The teams app ID to check.</param>
+    /// <param name="entityId">The entity ID to check.</param>
+    /// <returns><c>true</c> if the tab should be skipped; otherwise, <c>false</c>.</returns>
+    internal static bool ShouldSkipTab(string? teamsAppId, string? entityId)
+    {
+        if (string.IsNullOrEmpty(teamsAppId))
+            return true;
+
+        if (!string.IsNullOrEmpty(entityId) && entityId.Equals("FileBrowserTabApp", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return teamsAppId.Equals("com.microsoft.teamspace.tab.files", StringComparison.OrdinalIgnoreCase)
+            || teamsAppId.Equals("com.microsoft.teamspace.tab.conversations", StringComparison.OrdinalIgnoreCase)
+            || teamsAppId.Equals("com.microsoft.teamspace.tab.wiki", StringComparison.OrdinalIgnoreCase)
+            || teamsAppId.Equals("com.microsoft.teamspace.tab.forms", StringComparison.OrdinalIgnoreCase)
+            || teamsAppId.Equals("com.microsoft.teamspace.tab.stream", StringComparison.OrdinalIgnoreCase)
+            || teamsAppId.Equals("com.microsoft.teamspace.tab.powerbi", StringComparison.OrdinalIgnoreCase)
+            || teamsAppId.Equals("com.microsoft.teamspace.tab.whiteboard", StringComparison.OrdinalIgnoreCase);
+    }
+
     private async Task RestoreChannelTabs(CancellationToken cancel)
     {
         if (RestoreTarget == null)
@@ -721,17 +970,10 @@ public partial class RestoreProvider
         if (tabs.Count == 0)
             return;
 
-        string? targetGroupId = null;
-        if (RestoreTarget.Type == SourceItemType.Group)
-        {
-            targetGroupId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
+        // If ID is missing we already logged warning
+        var targetGroupId = await ChannelRestore.GetTargetGroupId(cancel);
         if (string.IsNullOrWhiteSpace(targetGroupId))
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreChannelTabsMissingTarget", null, "Could not determine target group ID for restoring channel tabs.");
             return;
-        }
 
         foreach (var tab in tabs)
         {
@@ -744,6 +986,7 @@ public partial class RestoreProvider
                 var metadata = tab.Value;
                 var displayName = metadata.GetValueOrDefault("o365:DisplayName");
                 var teamsAppId = metadata.GetValueOrDefault("o365:TeamsAppId");
+                var entityId = metadata.GetValueOrDefault("o365:EntityId");
 
                 if (string.IsNullOrWhiteSpace(displayName))
                 {
@@ -751,19 +994,20 @@ public partial class RestoreProvider
                     continue;
                 }
 
-                // Find channel ID
-                var channelPath = _restoredChannelMap.Keys
-                    .Where(k => originalPath.StartsWith(k + Path.DirectorySeparatorChar))
-                    .OrderByDescending(k => k.Length)
-                    .FirstOrDefault();
-
-                if (channelPath == null)
+                if (ShouldSkipTab(teamsAppId, entityId))
                 {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreChannelTabsMissingChannel", null, $"Could not find restored channel for tab {originalPath}, skipping.");
+                    _metadata.TryRemove(originalPath, out _);
+                    if (_temporaryFiles.TryRemove(originalPath, out var cf))
+                        cf?.Dispose();
+
+                    Log.WriteInformationMessage(LOGTAG, "RestoreChannelTabsSkipBuiltIn", $"Skipping built-in tab {displayName} for channel {originalPath}.");
                     continue;
                 }
 
-                var channelId = _restoredChannelMap[channelPath];
+                // Find channel ID
+                var channelId = await GetTargetChannelId(targetGroupId, originalPath, cancel);
+                if (string.IsNullOrWhiteSpace(channelId))
+                    return;
 
                 // Construct configuration
                 var configuration = new GraphTeamsTabConfiguration
@@ -774,7 +1018,7 @@ public partial class RestoreProvider
                     WebsiteUrl = metadata.GetValueOrDefault("o365:WebsiteUrl")
                 };
 
-                await GroupTeamsApi.CreateChannelTabAsync(targetGroupId, channelId, displayName, teamsAppId, configuration, cancel);
+                await GroupTeamsApi.CreateChannelTabAsync(targetGroupId, channelId, displayName, teamsAppId, configuration, _ignoreExisting, cancel);
                 _metadata.TryRemove(originalPath, out _);
 
                 if (_temporaryFiles.TryRemove(originalPath, out var contentFile))
@@ -798,17 +1042,10 @@ public partial class RestoreProvider
         if (apps.Count == 0)
             return;
 
-        string? targetGroupId = null;
-        if (RestoreTarget.Type == SourceItemType.Group)
-        {
-            targetGroupId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
+        // If ID is missing we already logged warning
+        var targetGroupId = await ChannelRestore.GetTargetGroupId(cancel);
         if (string.IsNullOrWhiteSpace(targetGroupId))
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreTeamAppsMissingTarget", null, "Could not determine target group ID for restoring team apps.");
             return;
-        }
 
         foreach (var app in apps)
         {
@@ -851,17 +1088,10 @@ public partial class RestoreProvider
         if (settings.Count == 0)
             return;
 
-        string? targetGroupId = null;
-        if (RestoreTarget.Type == SourceItemType.Group)
-        {
-            targetGroupId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
+        // If ID is missing we already logged warning
+        var targetGroupId = await ChannelRestore.GetTargetGroupId(cancel);
         if (string.IsNullOrWhiteSpace(targetGroupId))
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreGroupSettingsMissingTarget", null, "Could not determine target group ID for restoring group settings.");
             return;
-        }
 
         foreach (var setting in settings)
         {
@@ -904,17 +1134,10 @@ public partial class RestoreProvider
         if (membersList.Count == 0)
             return;
 
-        string? targetGroupId = null;
-        if (RestoreTarget.Type == SourceItemType.Group)
-        {
-            targetGroupId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
+        // If ID is missing we already logged warning
+        var targetGroupId = await ChannelRestore.GetTargetGroupId(cancel);
         if (string.IsNullOrWhiteSpace(targetGroupId))
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreGroupMembersMissingTarget", null, "Could not determine target group ID for restoring group members.");
             return;
-        }
 
         foreach (var members in membersList)
         {
@@ -974,17 +1197,10 @@ public partial class RestoreProvider
         if (ownersList.Count == 0)
             return;
 
-        string? targetGroupId = null;
-        if (RestoreTarget.Type == SourceItemType.Group)
-        {
-            targetGroupId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
+        // If ID is missing we already logged warning
+        var targetGroupId = await ChannelRestore.GetTargetGroupId(cancel);
         if (string.IsNullOrWhiteSpace(targetGroupId))
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreGroupOwnersMissingTarget", null, "Could not determine target group ID for restoring group owners.");
             return;
-        }
 
         foreach (var owners in ownersList)
         {
@@ -1032,6 +1248,155 @@ public partial class RestoreProvider
             {
                 Log.WriteErrorMessage(LOGTAG, "RestoreGroupOwnersFailed", ex, $"Failed to restore group owners {owners.Key}: {ex.Message}");
             }
+        }
+    }
+
+    private ChannelRestoreHelper? _channelRestoreHelper = null;
+
+    internal ChannelRestoreHelper ChannelRestore => _channelRestoreHelper ??= new ChannelRestoreHelper(this);
+
+    internal class ChannelRestoreHelper(RestoreProvider Provider)
+    {
+        private string? _targetGroupId = null;
+        private bool _hasLoadedGroupId = false;
+
+        private ConcurrentDictionary<string, string> _targetChannelIds = new();
+        private ConcurrentDictionary<string, string> _channelsInExplicitMigrationMode = new();
+
+        public async Task<string?> GetTargetGroupId(CancellationToken cancel)
+        {
+            if (_hasLoadedGroupId)
+                return _targetGroupId;
+
+            _hasLoadedGroupId = true;
+
+            var target = Provider.RestoreTarget;
+            if (target == null)
+                throw new InvalidOperationException("Restore target is not set");
+
+            if (target.Type == SourceItemType.Group)
+            {
+                _targetGroupId = target.Metadata["o365:Id"]!;
+            }
+            else if (target.Type == SourceItemType.GroupTeams)
+            {
+                _targetGroupId = target.Metadata["o365:Id"]!;
+            }
+            else if (target.Type == SourceItemType.GroupChannel)
+            {
+                _targetGroupId = target.Metadata["o365:GroupId"]!;
+            }
+            else
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreChatInvalidTargetType", null, $"Restore target type {target.Type} is not valid for restoring chat items.");
+            }
+
+            if (string.IsNullOrWhiteSpace(_targetGroupId))
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreChatMissingGroupId", null, $"Missing target groupId for restoring chat items.");
+                return null;
+            }
+
+            return _targetGroupId;
+        }
+
+        public async Task<string?> GetTargetChannelId(string targetGroupId, CancellationToken cancel)
+        {
+            if (_targetChannelIds.TryGetValue(targetGroupId, out var channelId))
+                return channelId;
+
+            _targetChannelIds.TryAdd(targetGroupId, null!);
+
+            var target = Provider.RestoreTarget;
+            if (target == null)
+                throw new InvalidOperationException("Restore target is not set");
+
+            if (target.Type == SourceItemType.Group)
+            {
+                var groupId = await GetTargetGroupId(cancel);
+                if (string.IsNullOrWhiteSpace(groupId))
+                    return null;
+
+                _targetChannelIds[targetGroupId] = await GetDefaultRestoreTargetChannel(groupId, cancel);
+            }
+            else if (target.Type == SourceItemType.GroupTeams)
+            {
+                var groupId = await GetTargetGroupId(cancel);
+                if (string.IsNullOrWhiteSpace(groupId))
+                    return null;
+
+                _targetChannelIds[targetGroupId] = await GetDefaultRestoreTargetChannel(groupId, cancel);
+            }
+            else if (target.Type == SourceItemType.GroupChannel)
+            {
+                var groupId = await GetTargetGroupId(cancel);
+                if (string.IsNullOrWhiteSpace(groupId))
+                    return null;
+
+                channelId = target.Metadata["o365:Id"];
+                if (string.IsNullOrWhiteSpace(channelId))
+                    return null;
+
+                await EnsureChannelInMigrationMode(channelId, groupId, cancel);
+                _targetChannelIds[targetGroupId] = channelId;
+            }
+            else
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreChatInvalidTargetType", null, $"Restore target type {target.Type} is not valid for restoring chat items.");
+                return null;
+            }
+
+            var res = _targetChannelIds.GetValueOrDefault(targetGroupId);
+
+            if (string.IsNullOrWhiteSpace(res))
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreChatMissingIds", null, $"Missing target userId or chatId for restoring chat items.");
+                return null;
+            }
+
+            return res;
+        }
+
+        private async Task<string> GetDefaultRestoreTargetChannel(string groupId, CancellationToken cancel)
+        {
+            const string RESTORED_CHANNEL_NAME = "Restored";
+
+            var existing = await Provider.ChannelApi.GetChannelByNameAsync(groupId, RESTORED_CHANNEL_NAME, cancel);
+            if (existing != null)
+            {
+                await EnsureChannelInMigrationMode(existing.Id, groupId, cancel);
+                return existing.Id;
+            }
+
+            var created = await Provider.GroupTeamsApi.CreateTeamChannelAsync(groupId, RESTORED_CHANNEL_NAME, "Restored content", null, cancel);
+            await EnsureChannelInMigrationMode(created.Id, groupId, cancel);
+            return created.Id;
+        }
+
+        public async Task EnsureChannelInMigrationMode(string channelId, string groupId, CancellationToken cancel)
+        {
+            if (_channelsInExplicitMigrationMode.ContainsKey(groupId))
+                return;
+
+            await Provider.ChannelApi.StartChannelMigrationAsync(groupId, channelId, cancel);
+            _channelsInExplicitMigrationMode[groupId] = channelId;
+        }
+
+
+        public async Task EndMigrationMode(CancellationToken cancel)
+        {
+            foreach (var kvp in _channelsInExplicitMigrationMode)
+            {
+                try
+                {
+                    await Provider.ChannelApi.CompleteChannelMigrationAsync(kvp.Key, kvp.Value, cancel);
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "EndMigrationModeFailed", ex, $"Failed to end migration mode for channel {kvp.Value} in group {kvp.Key}: {ex.Message}");
+                }
+            }
+            _channelsInExplicitMigrationMode.Clear();
         }
     }
 }

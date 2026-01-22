@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -14,8 +15,12 @@ internal class GroupChannelSourceEntry(SourceProvider provider, string path, Gra
             {
                 { "o365:v", "1" },
                 { "o365:Id", channel.Id },
+                { "o365:GroupId", group.Id },
                 { "o365:Type", SourceItemType.GroupChannel.ToString() },
                 { "o365:Name", channel.DisplayName },
+                { "o365:Description", channel.Description },
+                { "o365:MembershipType",channel.MembershipType },
+                { "o365:CreatedDateTime", channel.CreatedDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) }
             }
             .Where(kv => !string.IsNullOrEmpty(kv.Value))
             .ToDictionary(kv => kv.Key, kv => kv.Value));

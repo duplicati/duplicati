@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text.Json;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -149,10 +150,8 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         if (!overwrite)
             throw new UserInformationException(Strings.RestoreTargetMissingOverwriteOption(OptionsHelper.OFFICE_IGNORE_EXISTING_OPTION), "OverwriteOptionNotSet");
 
-        var sourceOpts = new Dictionary<string, string?>(options)
-        {
-            { "store-metadata-content-in-database", "true" }
-        };
+        var sourceOpts = new Dictionary<string, string?>(options);
+        sourceOpts["store-metadata-content-in-database"] = "true";
 
         SourceProvider = new SourceProvider("office365://", "", sourceOpts)
         {
@@ -207,6 +206,21 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
     /// <returns>The normalized path</returns>
     private string NormalizePath(string path)
         => path;
+
+    /// <summary>
+    /// Replaces the extension of a path with a new extension
+    /// </summary>
+    /// <param name="path">The path to modify</param>
+    /// <param name="oldExtension">The extension to replace</param>
+    /// <param name="newExtension">The new extension</param>
+    /// <returns>The modified path</returns>
+    private static string ReplaceExtension(string path, string oldExtension, string newExtension)
+    {
+        if (path.EndsWith(oldExtension, StringComparison.OrdinalIgnoreCase))
+            return path.Substring(0, path.Length - oldExtension.Length) + newExtension;
+
+        return path;
+    }
 
     /// <inheritdoc />
     public void Dispose()
@@ -472,6 +486,17 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
         try
         {
+            await RestoreContactGroups(cancel).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreContactGroupsFailed", ex, $"Failed to restore contact groups: {ex.Message}");
+        }
+
+        progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
+
+        try
+        {
             await RestoreGroupChannels(cancel).ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -565,6 +590,15 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         catch (Exception ex)
         {
             Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreGroupCalendarEventsFailed", ex, $"Failed to restore group calendar events: {ex.Message}");
+        }
+
+        try
+        {
+            await ChannelRestore.EndMigrationMode(cancel);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteErrorMessage(LOGTAG, "EndMigrationModeFailed", ex, $"Failed to end migration mode for channels: {ex.Message}");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -681,37 +715,6 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
         try
         {
-            await RestoreChats(cancel).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreChatsFailed", ex, $"Failed to restore chats: {ex.Message}");
-        }
-
-        progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
-
-        try
-        {
-            await RestoreChatMessages(cancel).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreChatMessagesFailed", ex, $"Failed to restore chat messages: {ex.Message}");
-        }
-
-        progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
-
-        try
-        {
-            await RestoreChatHostedContent(cancel).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreChatHostedContentFailed", ex, $"Failed to restore chat hosted content: {ex.Message}");
-        }
-
-        try
-        {
             await RestoreUserProfile(cancel).ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -719,14 +722,27 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreUserProfileFailed", ex, $"Failed to restore user profile: {ex.Message}");
         }
 
+        RemoveMetaEntriesForNonRestoredItems();
+
         // We should have restored all items by now
         if (_metadata.Count > 0 || _temporaryFiles.Count > 0)
-            Log.WriteWarningMessage(LOGTAG, "FinalizeIncomplete", null, $"Some items were not restored. Remaining metadata items: {_metadata.Count}, remaining temporary files: {_temporaryFiles.Count}");
+        {
+            var displayItems = _metadata.Values
+                .Select(x => (Type: x.GetValueOrDefault("o365:Type"), Name: x.GetValueOrDefault("o365:Name") ?? x.GetValueOrDefault("o365:DisplayName")))
+                .Where(x => !string.IsNullOrWhiteSpace(x.Type) && !string.IsNullOrWhiteSpace(x.Name))
+                .Take(10);
+
+            foreach (var item in displayItems)
+                Log.WriteWarningMessage(LOGTAG, "FinalizeIncompleteItem", null, $"Unrestored item - Type: {item.Type}, Name: {item.Name}");
+
+            if (_metadata.Count > displayItems.Count())
+                Log.WriteWarningMessage(LOGTAG, "FinalizeIncomplete", null, $"... and {_metadata.Count - displayItems.Count()} more unrestored items.");
+        }
 
         var tempFiles = _temporaryFiles.Values.ToList();
+        _temporaryFiles.Clear();
         foreach (var file in tempFiles)
             file.Dispose();
-        _temporaryFiles.Clear();
         _metadata.Clear();
     }
 
@@ -740,6 +756,53 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             .Where(kv => kv.Value.TryGetValue("o365:Type", out var typeStr)
                 && typeStr == type.ToString())
             .ToList();
+
+    /// <summary>
+    /// Removes metadata entries for items that were not restored and are not required to be processed
+    /// </summary>
+    private void RemoveMetaEntriesForNonRestoredItems()
+    {
+        var toRemove = new HashSet<string>();
+        foreach (var kv in _metadata)
+        {
+            // Some intermediate directories may not have a type
+            if (!kv.Value.ContainsKey("o365:Type"))
+            {
+                toRemove.Add(kv.Key);
+                continue;
+            }
+
+            var key = kv.Value.GetValueOrDefault("o365:Type");
+            if (!Enum.TryParse<SourceItemType>(key, out var type))
+                continue;
+
+            switch (type)
+            {
+                // Various meta-types that are not restored directly
+                case SourceItemType.User:
+                case SourceItemType.UserMailbox:
+                case SourceItemType.UserContacts:
+                case SourceItemType.Calendar:
+                case SourceItemType.Drive:
+                    toRemove.Add(kv.Key);
+                    break;
+
+                default:
+                    break;
+            }
+
+            // If we are restoring TO a channel, we don't need to restore the channel itself
+            if (type == SourceItemType.GroupChannel && RestoreTarget != null && RestoreTarget.Type == SourceItemType.GroupChannel)
+                toRemove.Add(kv.Key);
+        }
+
+        foreach (var key in toRemove)
+        {
+            _metadata.TryRemove(key, out _);
+            _temporaryFiles.TryRemove(key, out var f);
+            f?.Dispose();
+        }
+    }
 
     /// <summary>
     /// Restores user email folders and updates the folder ID map
@@ -853,7 +916,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
                 if (!_ignoreExisting && !string.IsNullOrWhiteSpace(internetMessageId) && await EmailApi.EmailExistsInFolderByInternetMessageIdAsync(userId, targetFolderId, internetMessageId, cancel))
                 {
-                    Log.WriteInformationMessage(LOGTAG, "RestoreUserEmailsSkipExisting", null, $"Email with InternetMessageId {internetMessageId} already exists in target mailbox, skipping restore for {emailSource.Key}.");
+                    Log.WriteInformationMessage(LOGTAG, "RestoreUserEmailsSkipExisting", $"Email with InternetMessageId {internetMessageId} already exists in target mailbox, skipping restore for {emailSource.Key}.");
                 }
                 else
                 {
@@ -971,6 +1034,13 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         // Sort folders by path length to ensure parents are created before children
         var sortedFolders = folders.OrderBy(k => k.Key.Split(Path.DirectorySeparatorChar).Length).ToList();
 
+        var restoreTarget = await DriveRestore.GetDefaultDriveAndFolder(cancel);
+        if (!string.IsNullOrWhiteSpace(restoreTarget.FolderId))
+        {
+            var rootFolderPath = Util.AppendDirSeparator(Path.GetDirectoryName(sortedFolders.First().Key.TrimEnd(Path.DirectorySeparatorChar)));
+            _restoredDriveFolderMap.AddOrUpdate(rootFolderPath, restoreTarget.FolderId, (k, v) => v);
+        }
+
         foreach (var folder in sortedFolders)
         {
             if (cancel.IsCancellationRequested)
@@ -990,23 +1060,34 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
             // Find the drive ID
             var drivePath = _restoredDriveMap.Keys
-                .Where(k => originalPath.StartsWith(k + Path.DirectorySeparatorChar))
+                .Where(k => originalPath.StartsWith(Util.AppendDirSeparator(k)))
                 .OrderByDescending(k => k.Length)
                 .FirstOrDefault();
 
-            if (drivePath == null)
+            string? driveId = null;
+            string defaultRootId = "root";
+
+            if (drivePath != null)
+            {
+                driveId = _restoredDriveMap[drivePath];
+            }
+            else
+            {
+                driveId = restoreTarget.DriveId;
+                if (restoreTarget.FolderId != null) defaultRootId = restoreTarget.FolderId;
+            }
+
+            if (driveId == null)
             {
                 Log.WriteWarningMessage(LOGTAG, "RestoreDriveFoldersMissingDrive", null, $"Could not find restored drive for folder {originalPath}, skipping.");
                 continue;
             }
 
-            var driveId = _restoredDriveMap[drivePath];
-
             // Determine parent folder ID
             var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
-            var parentId = "root";
+            var parentId = defaultRootId;
 
-            if (parentPath != null && parentPath.TrimEnd(Path.DirectorySeparatorChar) != drivePath.TrimEnd(Path.DirectorySeparatorChar))
+            if (parentPath != null && (drivePath == null || parentPath.TrimEnd(Path.DirectorySeparatorChar) != drivePath.TrimEnd(Path.DirectorySeparatorChar)))
             {
                 if (_restoredDriveFolderMap.TryGetValue(parentPath, out var mappedParentId))
                 {
@@ -1021,6 +1102,14 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
             try
             {
+                // Skip if folder already exists
+                var restoredFolder = await DriveApi.GetDriveItemAsync(driveId, parentId, displayName, cancel);
+                if (restoredFolder != null)
+                {
+                    _restoredDriveFolderMap[originalPath] = restoredFolder.Id;
+                    continue;
+                }
+
                 var newFolder = await DriveApi.CreateDriveFolderAsync(driveId, parentId, displayName, cancel);
                 _restoredDriveFolderMap[originalPath] = newFolder.Id;
 
@@ -1072,23 +1161,35 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
                 // Find drive ID
                 var drivePath = _restoredDriveMap.Keys
-                    .Where(k => originalPath.StartsWith(k + Path.DirectorySeparatorChar))
+                    .Where(k => originalPath.StartsWith(Util.AppendDirSeparator(k)))
                     .OrderByDescending(k => k.Length)
                     .FirstOrDefault();
 
-                if (drivePath == null)
+                string? driveId = null;
+                string defaultRootId = "root";
+
+                if (drivePath != null)
+                {
+                    driveId = _restoredDriveMap[drivePath];
+                }
+                else
+                {
+                    var defaults = await DriveRestore.GetDefaultDriveAndFolder(cancel);
+                    driveId = defaults.DriveId;
+                    if (defaults.FolderId != null) defaultRootId = defaults.FolderId;
+                }
+
+                if (driveId == null)
                 {
                     Log.WriteWarningMessage(LOGTAG, "RestoreDriveFilesMissingDrive", null, $"Could not find restored drive for file {originalPath}, skipping.");
                     continue;
                 }
 
-                var driveId = _restoredDriveMap[drivePath];
-
                 // Determine parent folder ID
                 var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
-                var parentId = "root";
+                var parentId = defaultRootId;
 
-                if (parentPath != null && parentPath.TrimEnd(Path.DirectorySeparatorChar) != drivePath.TrimEnd(Path.DirectorySeparatorChar))
+                if (parentPath != null && (drivePath == null || parentPath.TrimEnd(Path.DirectorySeparatorChar) != drivePath.TrimEnd(Path.DirectorySeparatorChar)))
                 {
                     if (_restoredDriveFolderMap.TryGetValue(parentPath, out var mappedParentId))
                     {
@@ -1121,14 +1222,20 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                         if (existingItem.Size == sourceSize)
                         {
                             // Check hash if available
-                            var sourceHash = file.Value.GetValueOrDefault("o365:QuickXorHash") ?? file.Value.GetValueOrDefault("o365:Sha1Hash");
+                            string? sourceHash = null;
+                            var sourceHashStr = file.Value.GetValueOrDefault("o365:Hashes");
+                            if (sourceHashStr != null)
+                            {
+                                var sourceHashes = JsonSerializer.Deserialize<GraphDriveHashes>(sourceHashStr);
+                                sourceHash = sourceHashes?.QuickXorHash ?? sourceHashes?.Sha1Hash;
+                            }
                             var existingHash = existingItem.File?.Hashes?.QuickXorHash ?? existingItem.File?.Hashes?.Sha1Hash;
 
                             if (!string.IsNullOrWhiteSpace(sourceHash) && !string.IsNullOrWhiteSpace(existingHash))
                             {
                                 if (string.Equals(sourceHash, existingHash, StringComparison.OrdinalIgnoreCase))
                                 {
-                                    Log.WriteInformationMessage(LOGTAG, "RestoreDriveFilesSkipDuplicate", null, $"Skipping duplicate file {originalPath} (Name: {displayName}, Hash match)");
+                                    Log.WriteVerboseMessage(LOGTAG, "RestoreDriveFilesSkipDuplicate", $"Skipping existing file {originalPath} (Name: {displayName}, Hash match)");
                                     _metadata.TryRemove(originalPath, out _);
                                     _temporaryFiles.TryRemove(originalPath, out var cFile);
                                     cFile?.Dispose();
@@ -1138,7 +1245,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                             else
                             {
                                 // Fallback to size only if hash is missing
-                                Log.WriteInformationMessage(LOGTAG, "RestoreDriveFilesSkipDuplicate", null, $"Skipping duplicate file {originalPath} (Name: {displayName}, Size match)");
+                                Log.WriteVerboseMessage(LOGTAG, "RestoreDriveFilesSkipDuplicate", $"Skipping existing file {originalPath} (Name: {displayName}, Size match)");
                                 _metadata.TryRemove(originalPath, out _);
                                 _temporaryFiles.TryRemove(originalPath, out var cFile);
                                 cFile?.Dispose();
@@ -1161,8 +1268,8 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                 DateTimeOffset? created = null;
                 DateTimeOffset? modified = null;
 
-                if (DateTimeOffset.TryParse(createdStr, out var c)) created = c;
-                if (DateTimeOffset.TryParse(modifiedStr, out var m)) modified = m;
+                if (DateTimeOffset.TryParse(createdStr, CultureInfo.InvariantCulture, out var c)) created = c;
+                if (DateTimeOffset.TryParse(modifiedStr, CultureInfo.InvariantCulture, out var m)) modified = m;
 
                 if (created != null || modified != null)
                 {
@@ -1210,13 +1317,233 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         if (events.Count == 0)
             return;
 
+        (var userId, var calendarId) = await CalendarRestore.GetUserIdAndCalendarTarget(cancel);
+        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(calendarId))
+            return;
+
+        // Group attachments by event path
+        var attachments = GetMetadataByType(SourceItemType.CalendarEventAttachment)
+            .GroupBy(k => Util.AppendDirSeparator(Path.GetDirectoryName(k.Key.TrimEnd(Path.DirectorySeparatorChar))))
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var singles = new List<(string Path, GraphEvent Event)>();
+        var masters = new List<(string Path, GraphEvent Event)>();
+        var exceptions = new List<(string Path, GraphEvent Event)>();
+
+        foreach (var eventItem in events)
+        {
+            if (cancel.IsCancellationRequested) break;
+
+            var originalPath = eventItem.Key;
+            GraphEvent? graphEvent = null;
+
+            try
+            {
+                var contentPath = SystemIO.IO_OS.PathCombine(originalPath, "content.json");
+                if (_temporaryFiles.TryRemove(contentPath, out var contentFile))
+                {
+                    using var tf = contentFile;
+                    using var stream = SystemIO.IO_OS.FileOpenRead(tf);
+                    graphEvent = await JsonSerializer.DeserializeAsync<GraphEvent>(stream, cancellationToken: cancel);
+                }
+
+                // Clean up content file metadata
+                _metadata.TryRemove(contentPath, out var _);
+
+                // Temporary patch for missing ICalUId
+                _metadata.TryGetValue(originalPath, out var eventMeta);
+                if (string.IsNullOrWhiteSpace(graphEvent?.ICalUId) && eventMeta != null && eventMeta.TryGetValue("o365:CalUId", out var iCalUId))
+                    graphEvent!.ICalUId = iCalUId;
+
+                if (graphEvent == null) continue;
+
+                if (graphEvent.Type == "seriesMaster")
+                    masters.Add((originalPath, graphEvent));
+                else if (graphEvent.Type == "exception")
+                    exceptions.Add((originalPath, graphEvent));
+                else if (graphEvent.Type == "occurrence")
+                    continue; // Skip occurrences
+                else
+                    singles.Add((originalPath, graphEvent));
+            }
+            catch (Exception ex)
+            {
+                Log.WriteErrorMessage(LOGTAG, "RestoreCalendarEventAnalysisFailed", ex, $"Failed to analyze event {originalPath}: {ex.Message}");
+            }
+        }
+
+        // Restore singles
+        foreach (var item in singles)
+            await RestoreSingleEvent(userId, calendarId, item.Path, item.Event, attachments, cancel);
+
+        // Restore masters
+        var masterMap = new Dictionary<string, string>(); // OldId -> NewId
+        foreach (var item in masters)
+        {
+            var newId = await RestoreMasterEvent(userId, calendarId, item.Path, item.Event, attachments, cancel);
+            if (newId != null && !string.IsNullOrWhiteSpace(item.Event.Id))
+                masterMap[item.Event.Id] = newId;
+        }
+
+        // Restore exceptions
+        foreach (var item in exceptions)
+            await RestoreExceptionEvent(userId, calendarId, item.Path, item.Event, masterMap, attachments, cancel);
+    }
+
+    private async Task RestoreCalendarEventAttachments(string userId, string calendarId, string eventId, string eventPath, Dictionary<string, List<KeyValuePair<string, Dictionary<string, string?>>>> attachments, CancellationToken cancel)
+    {
+        var eventPathWithSep = Util.AppendDirSeparator(eventPath);
+        if (!attachments.TryGetValue(eventPathWithSep, out var eventAttachments))
+            return;
+
+        foreach (var att in eventAttachments)
+        {
+            try
+            {
+                var attPath = att.Key;
+                var metadata = att.Value;
+                var name = metadata.GetValueOrDefault("o365:Name") ?? "attachment";
+                var contentType = metadata.GetValueOrDefault("o365:ContentType") ?? "application/octet-stream";
+
+                if (!_temporaryFiles.TryRemove(attPath, out var contentFile))
+                    continue;
+
+                using var tf = contentFile;
+                using var stream = SystemIO.IO_OS.FileOpenRead(tf);
+                await CalendarApi.AddAttachmentAsync(userId, calendarId, eventId, name, contentType, stream, cancel);
+
+                _metadata.TryRemove(attPath, out _);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteErrorMessage(LOGTAG, "RestoreCalendarAttachmentFailed", ex, $"Failed to restore attachment for event {eventPath}: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task RestoreSingleEvent(string userId, string calendarId, string path, GraphEvent eventItem, Dictionary<string, List<KeyValuePair<string, Dictionary<string, string?>>>> attachments, CancellationToken cancel)
+    {
         try
         {
-            await CalendarRestore.RestoreEvents(events, cancel);
+            if (!_ignoreExisting && !string.IsNullOrWhiteSpace(eventItem.ICalUId))
+            {
+                var existing = await CalendarApi.FindEventsAsync(userId, calendarId, eventItem, cancel);
+                if (existing.Count > 0)
+                {
+                    Log.WriteInformationMessage(LOGTAG, "RestoreSingleEventSkipDuplicate", $"Skipping duplicate event {path} (Subject: {eventItem.Subject})");
+                    _metadata.TryRemove(path, out _);
+                    return;
+                }
+            }
+
+            // Clean up properties that shouldn't be sent on creation
+            eventItem.Id = null!;
+            eventItem.CreatedDateTime = null;
+            eventItem.LastModifiedDateTime = null;
+
+            var created = await CalendarApi.CreateCalendarEventAsync(userId, calendarId, eventItem, cancel);
+            await RestoreCalendarEventAttachments(userId, calendarId, created.Id, path, attachments, cancel);
+            _metadata.TryRemove(path, out _);
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "RestoreCalendarEventsFailed", ex, $"Failed to restore calendar events: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "RestoreSingleEventFailed", ex, $"Failed to restore event {path}: {ex.Message}");
+        }
+    }
+
+    private async Task<string?> RestoreMasterEvent(string userId, string calendarId, string path, GraphEvent eventItem, Dictionary<string, List<KeyValuePair<string, Dictionary<string, string?>>>> attachments, CancellationToken cancel)
+    {
+        try
+        {
+            if (!_ignoreExisting && !string.IsNullOrWhiteSpace(eventItem.ICalUId))
+            {
+                var existing = await CalendarApi.FindEventsAsync(userId, calendarId, eventItem, cancel);
+                if (existing.Count > 0)
+                {
+                    Log.WriteInformationMessage(LOGTAG, "RestoreMasterEventSkipDuplicate", $"Skipping duplicate master event {path} (Subject: {eventItem.Subject})");
+                    _metadata.TryRemove(path, out _);
+                    // Return the ID of the existing event so exceptions can be attached to it?
+                    // If we skip it, we should probably return the existing ID.
+                    return existing[0].Id;
+                }
+            }
+
+            eventItem.Id = null!;
+            eventItem.CreatedDateTime = null;
+            eventItem.LastModifiedDateTime = null;
+
+            var created = await CalendarApi.CreateCalendarEventAsync(userId, calendarId, eventItem, cancel);
+            await RestoreCalendarEventAttachments(userId, calendarId, created.Id, path, attachments, cancel);
+            _metadata.TryRemove(path, out _);
+            return created.Id;
+        }
+        catch (Exception ex)
+        {
+            Log.WriteErrorMessage(LOGTAG, "RestoreMasterEventFailed", ex, $"Failed to restore master event {path}: {ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task RestoreExceptionEvent(string userId, string calendarId, string path, GraphEvent eventItem, Dictionary<string, string> masterMap, Dictionary<string, List<KeyValuePair<string, Dictionary<string, string?>>>> attachments, CancellationToken cancel)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(eventItem.SeriesMasterId) || !masterMap.TryGetValue(eventItem.SeriesMasterId, out var newMasterId))
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreExceptionEventMissingMaster", null, $"Could not find restored master for exception event {path}, skipping.");
+                return;
+            }
+
+            if (eventItem.OriginalStart == null)
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreExceptionEventMissingOriginalStart", null, $"Missing original start time for exception event {path}, skipping.");
+                return;
+            }
+
+            // Find the occurrence
+            // We search for instances around the original start time
+            var searchStart = eventItem.OriginalStart.Value.AddMinutes(-1);
+            var searchEnd = eventItem.OriginalStart.Value.AddMinutes(1);
+
+            var instances = await CalendarApi.GetCalendarEventInstancesAsync(userId, newMasterId, searchStart, searchEnd, cancel);
+
+            var instance = instances.FirstOrDefault(i =>
+            {
+                // Parse start time from instance
+                if (i.Start is JsonElement startElem && startElem.ValueKind == JsonValueKind.Object)
+                {
+                    if (startElem.TryGetProperty("dateTime", out var dtProp) && dtProp.GetString() is string dtStr)
+                    {
+                        if (DateTimeOffset.TryParse(dtStr, out var dt))
+                        {
+                            return Math.Abs((dt - eventItem.OriginalStart.Value).TotalSeconds) < 5;
+                        }
+                    }
+                }
+                return false;
+            });
+
+            if (instance == null)
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreExceptionEventInstanceNotFound", null, $"Could not find occurrence instance for exception event {path}, skipping.");
+                return;
+            }
+
+            // Update the instance
+            eventItem.Id = null!;
+            eventItem.SeriesMasterId = null;
+            eventItem.Type = null;
+            eventItem.CreatedDateTime = null;
+            eventItem.LastModifiedDateTime = null;
+            eventItem.OriginalStart = null;
+
+            var updated = await CalendarApi.UpdateCalendarEventAsync(userId, instance.Id, eventItem, cancel);
+            await RestoreCalendarEventAttachments(userId, calendarId, updated.Id, path, attachments, cancel);
+            _metadata.TryRemove(path, out _);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteErrorMessage(LOGTAG, "RestoreExceptionEventFailed", ex, $"Failed to restore exception event {path}: {ex.Message}");
         }
     }
 
@@ -1340,7 +1667,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                                 var existing = await ContactApi.FindContactsAsync(userId, targetFolderId, email, displayName, cancel);
                                 if (existing.Count > 0)
                                 {
-                                    Log.WriteInformationMessage(LOGTAG, "RestoreContactsSkipDuplicate", null, $"Skipping duplicate contact {originalPath} (Name: {displayName}, Email: {email})");
+                                    Log.WriteInformationMessage(LOGTAG, "RestoreContactsSkipDuplicate", $"Skipping duplicate contact {originalPath} (Name: {displayName}, Email: {email})");
                                     _metadata.TryRemove(originalPath, out _);
                                     _temporaryFiles.TryRemove(originalPath, out var cFile);
                                     cFile?.Dispose();
@@ -1362,7 +1689,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                 contentFile?.Dispose();
 
                 // Restore photo if exists
-                var photoPath = originalPath.Replace(".json", ".photo");
+                var photoPath = ReplaceExtension(originalPath, ".json", ".photo");
                 if (originalPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase) && _temporaryFiles.TryGetValue(photoPath, out var photoEntry))
                 {
                     try
@@ -1385,6 +1712,134 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             catch (Exception ex)
             {
                 Log.WriteErrorMessage(LOGTAG, "RestoreContactsFailed", ex, $"Failed to restore contact {contact.Key}: {ex.Message}");
+            }
+        }
+    }
+
+
+    private async Task RestoreContactGroups(CancellationToken cancel)
+    {
+        if (RestoreTarget == null)
+            throw new InvalidOperationException("Restore target entry is not set");
+
+        var groups = GetMetadataByType(SourceItemType.UserContactGroup);
+        if (groups.Count == 0)
+            return;
+
+        (var userId, var defaultFolderId) = await ContactRestore.GetUserIdAndContactFolderTarget(cancel);
+        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(defaultFolderId))
+            return;
+
+        foreach (var group in groups)
+        {
+            if (cancel.IsCancellationRequested)
+                break;
+
+            try
+            {
+                var originalPath = group.Key;
+                var contentEntry = _temporaryFiles.GetValueOrDefault(originalPath);
+
+                if (contentEntry == null)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "RestoreContactGroupsMissingContent", null, $"Missing content for {originalPath}, skipping.");
+                    continue;
+                }
+
+                // Determine target folder
+                var targetFolderId = defaultFolderId;
+                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+                if (parentPath != null && _restoredContactFolderMap.TryGetValue(parentPath, out var mappedFolderId))
+                    targetFolderId = mappedFolderId;
+
+                GraphContactGroup? restoredGroup = null;
+                using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
+                {
+                    var groupData = await JsonSerializer.DeserializeAsync<GraphContactGroup>(contentStream, cancellationToken: cancel);
+                    if (groupData == null)
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "RestoreContactGroupsInvalidContent", null, $"Invalid content for {originalPath}, skipping.");
+                        continue;
+                    }
+
+                    var displayName = groupData.DisplayName ?? group.Value.GetValueOrDefault("o365:DisplayName") ?? "Restored Group";
+
+                    if (!_ignoreExisting)
+                    {
+                        var existing = await ContactApi.FindContactGroupsAsync(userId, targetFolderId, displayName, cancel);
+                        if (existing.Count > 0)
+                        {
+                            Log.WriteInformationMessage(LOGTAG, "RestoreContactGroupsSkipDuplicate", $"Skipping duplicate contact group {originalPath} (Name: {displayName})");
+                            restoredGroup = existing[0];
+                        }
+                    }
+
+                    if (restoredGroup == null)
+                        restoredGroup = await ContactApi.CreateContactGroupAsync(userId, displayName, targetFolderId, cancel);
+                }
+
+                _metadata.TryRemove(originalPath, out _);
+                _temporaryFiles.TryRemove(originalPath, out var contentFile);
+                contentFile?.Dispose();
+
+                // Restore members
+                var membersPath = ReplaceExtension(originalPath, ".json", ".members.json");
+                if (_temporaryFiles.TryGetValue(membersPath, out var membersEntry))
+                {
+                    try
+                    {
+                        using (var membersStream = SystemIO.IO_OS.FileOpenRead(membersEntry))
+                        {
+                            var members = await JsonSerializer.DeserializeAsync<List<GraphContact>>(membersStream, cancellationToken: cancel);
+                            if (members != null)
+                            {
+                                foreach (var member in members)
+                                {
+                                    var contactEmail = member.EmailAddresses?.FirstOrDefault();
+                                    if (contactEmail == null)
+                                    {
+                                        Log.WriteWarningMessage(LOGTAG, "RestoreContactGroupMemberMissingEmail", null, $"Member {member.DisplayName} has no email address, skipping.");
+                                        continue;
+                                    }
+
+                                    var contacts = await ContactApi.FindContactsAsync(userId, targetFolderId, contactEmail.Address, member.DisplayName, cancel);
+                                    if (contacts.Count > 0)
+                                    {
+                                        try
+                                        {
+                                            var address = new GraphEmailAddress
+                                            {
+                                                Address = contactEmail.Address,
+                                                Name = member.DisplayName
+                                            };
+
+                                            await ContactApi.AddContactGroupMemberAsync(userId, targetFolderId, restoredGroup.Id, address, cancel);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            // Member might already exist
+                                            Log.WriteWarningMessage(LOGTAG, "RestoreContactGroupMemberFailed", ex, $"Failed to add member {member.DisplayName} to group {restoredGroup.DisplayName}: {ex.Message}");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Log.WriteWarningMessage(LOGTAG, "RestoreContactGroupMemberNotFound", null, $"Could not find contact for member {member.DisplayName} ({contactEmail}) in target folder.");
+                                    }
+                                }
+                            }
+                        }
+                        _temporaryFiles.TryRemove(membersPath, out var membersFile);
+                        membersFile?.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "RestoreContactGroupMembersFailed", ex, $"Failed to restore members for group {originalPath}: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteErrorMessage(LOGTAG, "RestoreContactGroupsFailed", ex, $"Failed to restore contact group {group.Key}: {ex.Message}");
             }
         }
     }
@@ -1510,7 +1965,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
                     if (existingTasks.Any(t => t.Title == title))
                     {
-                        Log.WriteInformationMessage(LOGTAG, "RestorePlannerTasksSkipDuplicate", null, $"Skipping duplicate task {originalPath} (Title: {title})");
+                        Log.WriteInformationMessage(LOGTAG, "RestorePlannerTasksSkipDuplicate", $"Skipping duplicate task {originalPath} (Title: {title})");
                         _metadata.TryRemove(originalPath, out _);
 
                         // Clean up temp files

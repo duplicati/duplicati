@@ -3,11 +3,105 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Duplicati.Library.Logging;
+using Duplicati.Proprietary.Office365.SourceItems;
 
 namespace Duplicati.Proprietary.Office365;
 
 partial class RestoreProvider
 {
+    private DriveRestoreHelper? _driveRestoreHelper = null;
+    internal DriveRestoreHelper DriveRestore => _driveRestoreHelper ??= new DriveRestoreHelper(this);
+
+    internal class DriveRestoreHelper(RestoreProvider Provider)
+    {
+        private string? _cachedDefaultDriveId;
+        private string? _cachedDefaultFolderId;
+        private bool _defaultDriveIdChecked;
+
+        public async Task<(string? DriveId, string? FolderId)> GetDefaultDriveAndFolder(CancellationToken cancel)
+        {
+            if (_defaultDriveIdChecked)
+                return (_cachedDefaultDriveId, _cachedDefaultFolderId);
+
+            _defaultDriveIdChecked = true;
+
+            var target = Provider.RestoreTarget;
+            if (target == null)
+                return (null, null);
+
+            string? driveId = null;
+
+            if (target.Type == SourceItemType.Drive)
+            {
+                driveId = target.Metadata.GetValueOrDefault("o365:Id");
+            }
+            else
+            {
+                string? targetUserId = null;
+                string? targetSiteId = null;
+
+                if (target.Type == SourceItemType.User)
+                {
+                    targetUserId = target.Metadata.GetValueOrDefault("o365:Id");
+                }
+                else if (target.Type == SourceItemType.Site)
+                {
+                    targetSiteId = target.Metadata.GetValueOrDefault("o365:Id");
+                }
+
+                if (!string.IsNullOrWhiteSpace(targetUserId))
+                {
+                    try
+                    {
+                        var primaryDrive = await Provider.SourceProvider.OneDriveApi.GetUserPrimaryDriveAsync(targetUserId, cancel);
+                        driveId = primaryDrive.Id;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteErrorMessage(LOGTAG, "GetDefaultDriveIdFailed", ex, $"Failed to get user primary drive: {ex.Message}");
+                    }
+                }
+                else if (!string.IsNullOrWhiteSpace(targetSiteId))
+                {
+                    try
+                    {
+                        var primaryDrive = await Provider.SourceProvider.SiteApi.GetSitePrimaryDriveAsync(targetSiteId, cancel);
+                        driveId = primaryDrive.Id;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteErrorMessage(LOGTAG, "GetDefaultDriveIdFailed", ex, $"Failed to get site primary drive: {ex.Message}");
+                    }
+                }
+            }
+
+            if (driveId != null)
+            {
+                _cachedDefaultDriveId = driveId;
+
+                // Create "Restored" folder
+                try
+                {
+                    var restoredFolder = await Provider.DriveApi.GetDriveItemAsync(driveId, "root", "Restored", cancel);
+                    if (restoredFolder == null)
+                    {
+                        restoredFolder = await Provider.DriveApi.CreateDriveFolderAsync(driveId, "root", "Restored", cancel);
+                    }
+                    _cachedDefaultFolderId = restoredFolder.Id;
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "CreateRestoredFolderFailed", ex, $"Failed to create 'Restored' folder in drive {driveId}: {ex.Message}");
+                    // Fallback to root
+                    _cachedDefaultFolderId = "root";
+                }
+            }
+
+            return (_cachedDefaultDriveId, _cachedDefaultFolderId);
+        }
+    }
+
     internal DriveApiImpl DriveApi => new DriveApiImpl(_apiHelper);
 
     internal class DriveApiImpl(APIHelper provider)

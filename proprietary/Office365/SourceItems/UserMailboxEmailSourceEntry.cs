@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -17,9 +18,9 @@ internal class UserMailboxEmailSourceEntry(SourceProvider provider, string path,
                 { "o365:Subject", email.Subject ?? "" },
                 { "o365:From", email.From?.EmailAddress?.Address ?? "" },
                 { "o365:To", string.Join(",", email.ToRecipients?.Select(x => x.EmailAddress?.Address) ?? []) },
-                { "o365:CreatedDateTime", email.CreatedDateTime.FromGraphDateTime().ToString("o") },
-                { "o365:ReceivedDateTime", email.ReceivedDateTime.FromGraphDateTime().ToString("o") },
-                { "o365:SentDateTime", email.SentDateTime.FromGraphDateTime().ToString("o") },
+                { "o365:CreatedDateTime", email.CreatedDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) },
+                { "o365:ReceivedDateTime", email.ReceivedDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) },
+                { "o365:SentDateTime", email.SentDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) },
                 { "o365:InternetMessageId", email.InternetMessageId ?? "" },
                 { "o365:HasAttachments", email.HasAttachments?.ToString() ?? "" },
             }

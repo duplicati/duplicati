@@ -15,8 +15,10 @@ internal class CalendarEventContentSourceEntry(SourceProvider provider, string p
         {
             { "o365:v", "1" },
             { "o365:Id", eventItem.Id },
+            { "o365:CalUId", eventItem.ICalUId },
             { "o365:Name", "content.json" },
             { "o365:Type", SourceItemType.CalendarEventContent.ToString() },
+            { "o365:UserId", user.Id },
         }.Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value)))
 {

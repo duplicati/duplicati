@@ -7,7 +7,7 @@ using Duplicati.Library.Interface;
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
 internal class UserContactFolderSourceEntry(SourceProvider provider, GraphUser user, string path, GraphContactFolder folder)
-    : MetaEntryBase(Util.AppendDirSeparator(path), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, folder.Id)), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -16,6 +16,8 @@ internal class UserContactFolderSourceEntry(SourceProvider provider, GraphUser u
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
+
+            var isContactGroup = await provider.ContactsApi.IsContactGroupAsync(user.Id, contact.Id, cancellationToken).ConfigureAwait(false);
 
             var ms = new MemoryStream();
             System.Text.Json.JsonSerializer.Serialize(ms, contact);
@@ -30,7 +32,9 @@ internal class UserContactFolderSourceEntry(SourceProvider provider, GraphUser u
                 {
                     { "o365:v", "1" },
                     { "o365:Id", contact.Id },
-                    { "o365:Type", SourceItemType.UserContact.ToString() },
+                    { "o365:Type", isContactGroup
+                        ? SourceItemType.UserContactGroup.ToString()
+                        : SourceItemType.UserContact.ToString() },
                     { "o365:Name", contact.DisplayName },
                 }
                 .Where(kv => !string.IsNullOrEmpty(kv.Value))
@@ -54,6 +58,29 @@ internal class UserContactFolderSourceEntry(SourceProvider provider, GraphUser u
 
             if (await photoEntry.ProbeIfExistsAsync(cancellationToken).ConfigureAwait(false))
                 yield return photoEntry;
+
+
+            if (isContactGroup)
+            {
+                // Members
+                var members = await provider.ContactsApi.ListContactGroupMembersAsync(user.Id, folder.Id, contact.Id, cancellationToken)
+                    .ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (members.Count > 0)
+                {
+                    var memMs = new MemoryStream();
+                    System.Text.Json.JsonSerializer.Serialize(memMs, members);
+                    var memBytes = memMs.ToArray();
+
+                    yield return new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, contact.Id + ".members.json"),
+                        createdUtc: DateTime.UnixEpoch,
+                        lastModificationUtc: DateTime.UnixEpoch,
+                        size: memBytes.Length,
+                        streamFactory: (ct) => Task.FromResult<Stream>(new MemoryStream(memBytes)));
+                }
+            }
+
         }
 
         // List child folders
@@ -62,11 +89,7 @@ internal class UserContactFolderSourceEntry(SourceProvider provider, GraphUser u
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
-            yield return new UserContactFolderSourceEntry(
-                provider,
-                user,
-                SystemIO.IO_OS.PathCombine(this.Path, childFolder.Id),
-                childFolder);
+            yield return new UserContactFolderSourceEntry(provider, user, this.Path, childFolder);
         }
     }
 

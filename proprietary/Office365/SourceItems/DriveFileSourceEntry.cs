@@ -25,15 +25,19 @@ internal class DriveFileSourceEntry(SourceProvider provider, string path, GraphD
                 { "o365:v", "1" },
                 { "o365:Id", item.Id },
                 { "o365:Type", SourceItemType.DriveFile.ToString() },
-                { "o365:Name", item.Name ?? "" },
-                { "o365:ETag", item.ETag ?? "" },
-                { "o365:CTag", item.CTag ?? "" },
-                { "o365:MimeType", item.File?.MimeType ?? "" },
-                { "o365:ParentReference", JsonSerializer.Serialize(item.ParentReference) ?? "" },
-                { "o365:FileSystemInfo", JsonSerializer.Serialize(item.FileSystemInfo) ?? "" },
-                { "o365:DownloadUrl", item.DownloadUrl ?? "" },
-                { "o365:Hashes", JsonSerializer.Serialize(item.File?.Hashes) ?? "" }
-            };
+                { "o365:Name", item.Name },
+                { "o365:ETag", item.ETag },
+                { "o365:CTag", item.CTag },
+                { "o365:MimeType", item.File?.MimeType },
+                { "o365:CreatedDateTime", item.CreatedDateTime?.ToGraphTimeString() },
+                { "o365:LastModifiedDateTime", item.LastModifiedDateTime?.ToGraphTimeString() },
+                { "o365:ParentReference", JsonSerializer.Serialize(item.ParentReference) },
+                { "o365:FileSystemInfo", JsonSerializer.Serialize(item.FileSystemInfo) },
+                { "o365:DownloadUrl", item.DownloadUrl },
+                { "o365:Hashes", JsonSerializer.Serialize(item.File?.Hashes) }
+            }
+            .Where(kv => !string.IsNullOrEmpty(kv.Value))
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
 
         try
         {

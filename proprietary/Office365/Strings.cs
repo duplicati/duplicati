@@ -62,4 +62,13 @@ internal static class Strings
     public static string WebModulePathShort => LC.L("The path within the Microsoft 365 destination.");
     public static string WebModulePathLong => LC.L("The path within the Microsoft 365 destination to list.");
 
+    public static string OfficeIncludedRootTypesShort => LC.L("Included root types.");
+    public static string OfficeIncludedRootTypesLong => LC.L("The root types to include in the backup (e.g. Users, Groups, Sites).");
+
+    public static string OfficeIncludedUserTypesShort => LC.L("Included user types.");
+    public static string OfficeIncludedUserTypesLong => LC.L("The user types to include in the backup (e.g. Mailbox, OneDrive, Calendar).");
+
+    public static string OfficeIncludedGroupTypesShort => LC.L("Included group types.");
+    public static string OfficeIncludedGroupTypesLong => LC.L("The group types to include in the backup (e.g. Mailbox, OneDrive, Calendar).");
+
 }

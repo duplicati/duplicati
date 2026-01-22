@@ -14,6 +14,7 @@ internal class GroupInstalledAppSourceEntry(SourceProvider provider, string path
                 { "o365:v", "1" },
                 { "o365:Id", app.Id },
                 { "o365:Type", SourceItemType.GroupInstalledApp.ToString() },
+                { "o365:Name", app.TeamsAppDefinition?.DisplayName },
                 { "o365:TeamsAppId", app.TeamsApp?.Id },
                 { "o365:TeamsAppDisplayName", app.TeamsApp?.DisplayName },
                 { "o365:TeamsAppDistributionMethod", app.TeamsApp?.DistributionMethod },

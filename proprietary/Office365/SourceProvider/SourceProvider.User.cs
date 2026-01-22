@@ -29,7 +29,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/users/{user}/messages" +
                 $"?$select={Uri.EscapeDataString(select)}" +
                 "&$orderby=receivedDateTime asc" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphMessage>(url, ct);
         }
@@ -51,7 +51,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/users/{user}/mailFolders/{folder}/messages" +
                 $"?$select={Uri.EscapeDataString(select)}" +
                 "&$orderby=receivedDateTime asc" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphMessage>(url, ct);
         }
@@ -87,7 +87,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/users/{user}/mailFolders/{folder}/childFolders" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphMailFolder>(url, ct);
         }
@@ -130,7 +130,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/users/{user}/mailFolders/inbox/messageRules" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphMessageRule>(url, ct);
         }
@@ -204,7 +204,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/users/{user}/contacts" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphContact>(url, ct);
         }
@@ -220,14 +220,14 @@ partial class SourceProvider
             {
                 url = $"{baseUrl}/v1.0/users/{user}/contactFolders" +
                       $"?$select={Uri.EscapeDataString(select)}" +
-                      $"&$top={GENERAL_PAGE_SIZE}";
+                      $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
             }
             else
             {
                 var parent = Uri.EscapeDataString(parentFolderId);
                 url = $"{baseUrl}/v1.0/users/{user}/contactFolders/{parent}/childFolders" +
                       $"?$select={Uri.EscapeDataString(select)}" +
-                      $"&$top={GENERAL_PAGE_SIZE}";
+                      $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
             }
 
             return provider.GetAllGraphItemsAsync<GraphContactFolder>(url, ct);
@@ -242,7 +242,7 @@ partial class SourceProvider
 
             var url = $"{baseUrl}/v1.0/users/{user}/contactFolders/{folder}/contacts" +
                       $"?$select={Uri.EscapeDataString(select)}" +
-                      $"&$top={GENERAL_PAGE_SIZE}";
+                      $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphContact>(url, ct);
         }
@@ -266,6 +266,75 @@ partial class SourceProvider
 
             return provider.GetGraphResponseAsRealStreamAsync(url, "application/octet-stream", ct);
         }
+
+        internal IAsyncEnumerable<GraphRecipient> ListContactGroupMembersAsync(
+            string userIdOrUpn,
+            string contactGroupId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var group = Uri.EscapeDataString(contactGroupId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphRecipient>();
+
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/contacts/{group}/members" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphRecipient>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphRecipient> ListContactGroupMembersAsync(
+            string userIdOrUpn,
+            string contactFolderId,
+            string contactGroupId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var folder = Uri.EscapeDataString(contactFolderId);
+            var group = Uri.EscapeDataString(contactGroupId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphRecipient>();
+
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/contactFolders/{folder}/contacts/{group}/members" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphRecipient>(url, ct);
+        }
+
+        internal async Task<bool> IsContactGroupAsync(string userIdOrUpn, string contactId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var id = Uri.EscapeDataString(contactId);
+
+            var url = $"{baseUrl}/v1.0/users/{user}/contacts/{id}/members?$top=1";
+
+            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                return req;
+            }
+
+            using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
+
+            if (resp.IsSuccessStatusCode)
+                return true;
+
+            // Contacts will typically fail with 400/404 for the 'members' segment.
+            if (resp.StatusCode == HttpStatusCode.BadRequest ||
+                resp.StatusCode == HttpStatusCode.NotFound)
+                return false;
+
+            await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+            return false;
+        }
     }
 
     internal TodoApiImpl TodoApi => new TodoApiImpl(_apiHelper);
@@ -281,7 +350,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/users/{user}/todo/lists" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphTodoTaskList>(url, ct);
         }
@@ -296,7 +365,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/users/{user}/todo/lists/{list}/tasks" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphTodoTask>(url, ct);
         }
@@ -316,7 +385,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/users/{user}/todo/lists/{list}/tasks/{task}/checklistItems" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphTodoChecklistItem>(url, ct);
         }
@@ -336,7 +405,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/users/{user}/todo/lists/{list}/tasks/{task}/linkedResources" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphTodoLinkedResource>(url, ct);
         }
@@ -416,7 +485,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/users/{user}/onenote/notebooks" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphNotebook>(url, ct);
         }
@@ -430,7 +499,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/onenote/notebooks/{nb}/sectionGroups" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphOnenoteSectionGroup>(url, ct);
         }
@@ -444,7 +513,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/onenote/sectionGroups/{sg}/sectionGroups" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphOnenoteSectionGroup>(url, ct);
         }
@@ -457,7 +526,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/onenote/sectionGroups/{sg}/sections" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphOnenoteSection>(url, ct);
         }
@@ -471,7 +540,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/onenote/sections/{section}/pages" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphOnenotePage>(url, ct);
         }
@@ -501,8 +570,8 @@ partial class SourceProvider
             var nextUrl = string.IsNullOrWhiteSpace(deltaLink)
                 ? $"{baseUrl}/v1.0/drives/{drive}/root/delta" +
                   $"?$select={Uri.EscapeDataString(select)}" +
-                  $"&$top={GENERAL_PAGE_SIZE}"
-                : deltaLink;
+                  $"&$top={APIHelper.GENERAL_PAGE_SIZE}"
+            : deltaLink;
 
             var items = new List<GraphDriveItem>();
             string? finalDeltaLink = null;
@@ -516,7 +585,7 @@ partial class SourceProvider
                     var req = new HttpRequestMessage(HttpMethod.Get, new Uri(nextUrl));
                     req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, ct);
                     req.Headers.Accept.Clear();
-                    req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application / json"));
                     return req;
                 }
 
@@ -550,7 +619,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/drives/{drive}/root/children" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphDriveItem>(url, ct);
         }
@@ -564,7 +633,7 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/users/{user}/drives" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             bool? EvaluateStatusCode(HttpResponseMessage m)
             {
@@ -610,7 +679,7 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userIdOrUpn);
 
-            var select = "id,driveType,webUrl,createdDateTime,lastModifiedDateTime,owner";
+            var select = GraphSelectBuilder.BuildSelect<GraphDrive>();
             var url =
                 $"{baseUrl}/v1.0/users/{user}/drive" +
                 $"?$select={Uri.EscapeDataString(select)}";
@@ -631,11 +700,11 @@ partial class SourceProvider
             var drive = Uri.EscapeDataString(driveId);
             var folder = Uri.EscapeDataString(folderItemId);
 
-            var select = "id,name,size,createdDateTime,lastModifiedDateTime,eTag,cTag,parentReference,deleted,folder,file,fileSystemInfo";
+            var select = GraphSelectBuilder.BuildSelect<GraphDriveItem>();
             var url =
                 $"{baseUrl}/v1.0/drives/{drive}/items/{folder}/children" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphDriveItem>(url, ct);
         }
@@ -660,7 +729,7 @@ partial class SourceProvider
             var drive = Uri.EscapeDataString(driveId);
             var item = Uri.EscapeDataString(itemId);
 
-            var select = "id,roles,grantedTo,grantedToIdentities,link,invitation";
+            var select = GraphSelectBuilder.BuildSelect<GraphPermission>();
             var url =
                 $"{baseUrl}/v1.0/drives/{drive}/items/{item}/permissions" +
                 $"?$select={Uri.EscapeDataString(select)}";
@@ -698,11 +767,11 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userIdOrUpn);
 
-            var select = "id,name,classId,changeKey";
+            var select = GraphSelectBuilder.BuildSelect<GraphCalendarGroup>();
             var url =
                 $"{baseUrl}/v1.0/users/{user}/calendarGroups" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphCalendarGroup>(url, ct);
         }
@@ -716,11 +785,11 @@ partial class SourceProvider
             var user = Uri.EscapeDataString(userIdOrUpn);
             var group = Uri.EscapeDataString(calendarGroupId);
 
-            var select = "id,name,changeKey,color,isDefaultCalendar,isRemovable,canShare,canViewPrivateItems";
+            var select = GraphSelectBuilder.BuildSelect<GraphCalendar>();
             var url =
                 $"{baseUrl}/v1.0/users/{user}/calendarGroups/{group}/calendars" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphCalendar>(url, ct);
         }
@@ -731,14 +800,12 @@ partial class SourceProvider
             var user = Uri.EscapeDataString(userIdOrUpn);
             var cal = Uri.EscapeDataString(calendarId);
 
-            var select =
-                "id,subject,createdDateTime,lastModifiedDateTime,start,end,isAllDay,isCancelled," +
-                "location,organizer,attendees,recurrence,seriesMasterId,type";
+            var select = GraphSelectBuilder.BuildSelect<GraphEvent>();
 
             var url =
                 $"{baseUrl}/v1.0/users/{user}/calendars/{cal}/events" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphEvent>(url, ct);
         }
@@ -756,7 +823,7 @@ partial class SourceProvider
 
             var select =
                 "id,subject,createdDateTime,lastModifiedDateTime,start,end,isAllDay,isCancelled," +
-                "location,organizer,attendees,recurrence,seriesMasterId,type," +
+                "location,organizer,attendees,recurrence,seriesMasterId,type,iCalUId," +
                 "body,bodyPreview,importance,sensitivity,categories,showAs,responseStatus,onlineMeeting,webLink";
 
             var url =
@@ -777,11 +844,15 @@ partial class SourceProvider
             var cal = Uri.EscapeDataString(calendarId);
             var ev = Uri.EscapeDataString(eventId);
 
-            var select = "id,name,contentType,size,isInline,lastModifiedDateTime";
+            var select = GraphSelectBuilder.BuildSelect<GraphAttachment>([
+                nameof(GraphAttachment.ContentBytes),
+                nameof(GraphAttachment.ContentId)
+            ]);
+
             var url =
                 $"{baseUrl}/v1.0/users/{user}/calendars/{cal}/events/{ev}/attachments" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphAttachment>(url, ct);
         }
@@ -813,14 +884,12 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userIdOrUpn);
 
-            var select =
-                "id,planId,bucketId,title,createdDateTime,startDateTime,dueDateTime,completedDateTime," +
-                "percentComplete,hasDescription,assignments";
+            var select = GraphSelectBuilder.BuildSelect<GraphPlannerTask>();
 
             var url =
                 $"{baseUrl}/v1.0/users/{user}/planner/tasks" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphPlannerTask>(url, ct);
         }
@@ -834,11 +903,11 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userIdOrUpn);
 
-            var select = "id,chatType,topic,createdDateTime,lastUpdatedDateTime,webUrl";
+            var select = GraphSelectBuilder.BuildSelect<GraphChat>();
             var url =
                 $"{baseUrl}/v1.0/users/{user}/chats" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={OptionsHelper.CHATS_PAGE_SIZE}";
+                $"&$top={APIHelper.CHATS_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphChat>(url, ct);
         }
@@ -848,11 +917,11 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var chat = Uri.EscapeDataString(chatId);
 
-            var select = "id,displayName,roles,visibleHistoryStartDateTime,userId";
+            var select = GraphSelectBuilder.BuildSelect<GraphChatMember>();
             var url =
                 $"{baseUrl}/v1.0/chats/{chat}/members" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphChatMember>(url, ct);
         }
@@ -862,14 +931,12 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var chat = Uri.EscapeDataString(chatId);
 
-            var select =
-                "id,createdDateTime,lastModifiedDateTime,deletedDateTime,subject,body,from," +
-                "attachments,mentions,reactions,replyToId";
+            var select = GraphSelectBuilder.BuildSelect<GraphChatMessage>();
 
             var url =
                 $"{baseUrl}/v1.0/chats/{chat}/messages" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphChatMessage>(url, ct);
         }
@@ -884,11 +951,11 @@ partial class SourceProvider
             var chat = Uri.EscapeDataString(chatId);
             var msg = Uri.EscapeDataString(messageId);
 
-            var select = "id,contentType";
+            var select = GraphSelectBuilder.BuildSelect<GraphChatHostedContent>();
             var url =
                 $"{baseUrl}/v1.0/chats/{chat}/messages/{msg}/hostedContents" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphChatHostedContent>(url, ct);
         }

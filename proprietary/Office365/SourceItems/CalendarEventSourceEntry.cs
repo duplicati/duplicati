@@ -14,11 +14,15 @@ internal class CalendarEventSourceEntry(SourceProvider provider, string path, Gr
         {
             { "o365:v", "1" },
             { "o365:Id", eventItem.Id },
-            { "o365:Name", eventItem.Subject ?? "" },
+            { "o365:UserId", user.Id },
+            { "o365:CalendarName", calendar.Name },
+            { "o365:CalUId", eventItem.ICalUId },
+            { "o365:CalendarId", calendar.Id },
+            { "o365:Name", eventItem.Subject },
             { "o365:Type", SourceItemType.CalendarEvent.ToString() },
-            { "o365:Subject", eventItem.Subject ?? "" },
-            { "o365:Start", eventItem.Start?.ToString() ??"" },
-            { "o365:End", eventItem.End?.ToString() ?? "" },
+            { "o365:Subject", eventItem.Subject },
+            { "o365:Start", eventItem.Start?.ToString() },
+            { "o365:End", eventItem.End?.ToString() },
         }.Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));
 

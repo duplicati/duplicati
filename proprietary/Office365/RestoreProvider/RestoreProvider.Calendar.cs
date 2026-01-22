@@ -189,8 +189,8 @@ partial class RestoreProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userId);
             // Format dates as ISO 8601
-            var startStr = start.ToString("yyyy-MM-ddTHH:mm:ssZ");
-            var endStr = end.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            var startStr = start.ToGraphTimeString();
+            var endStr = end.ToGraphTimeString();
 
             var url = $"{baseUrl}/v1.0/users/{user}/events/{eventId}/instances?startDateTime={startStr}&endDateTime={endStr}";
 
@@ -213,39 +213,73 @@ partial class RestoreProvider
         }
 
         public async Task<List<GraphEvent>> FindEventsAsync(
-            string userId,
+            string userIdOrUpn,
             string calendarId,
-            string subject,
-            DateTimeOffset start,
+            GraphEvent original,
             CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
-            var user = Uri.EscapeDataString(userId);
+            var user = Uri.EscapeDataString(userIdOrUpn);
             var calendar = Uri.EscapeDataString(calendarId);
 
-            // Filter by subject and start time range (e.g. +/- 1 minute to account for precision issues)
-            var startStr = start.AddMinutes(-1).ToString("yyyy-MM-ddTHH:mm:ssZ");
-            var endStr = start.AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ssZ");
-            var subjectFilter = subject.Replace("'", "''");
+            // Use a day-ish window to survive all-day/timezone normalization
+            var startHint = original.GetStartUtcHint() ?? DateTimeOffset.UtcNow;
+            var from = startHint.Date.AddHours(-2).ToGraphTimeString();
+            var to = startHint.Date.AddDays(1).AddHours(2).ToGraphTimeString();
 
-            var url = $"{baseUrl}/v1.0/users/{user}/calendars/{calendar}/events?$filter=subject eq '{subjectFilter}' and start/dateTime ge '{startStr}' and start/dateTime le '{endStr}'";
+            var select = "id,iCalUId,subject,start,end,isAllDay,seriesMasterId,type,organizer,location";
 
-            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/calendars/{calendar}/calendarView" +
+                $"?startDateTime={Uri.EscapeDataString(from)}" +
+                $"&endDateTime={Uri.EscapeDataString(to)}" +
+                $"&$select={Uri.EscapeDataString(select)}" +
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+
+            var results = new List<GraphEvent>();
+
+            await foreach (var ev in provider.GetAllGraphItemsAsync<GraphEvent>(url, ct).ConfigureAwait(false))
             {
-                var req = new HttpRequestMessage(HttpMethod.Get, new System.Uri(url));
-                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
-                return req;
+                // 1) Exact iCalUId match (best-effort)
+                if (!string.IsNullOrEmpty(original.ICalUId) &&
+                    string.Equals(ev.ICalUId, original.ICalUId, StringComparison.Ordinal))
+                {
+                    results.Add(ev);
+                    continue;
+                }
+
+                // 2) Recurring instances: match by seriesMasterId + originalStart
+                if (!string.IsNullOrEmpty(original.SeriesMasterId) &&
+                    string.Equals(ev.SeriesMasterId, original.SeriesMasterId, StringComparison.Ordinal) &&
+                    original.OriginalStart.HasValue &&
+                    ev.OriginalStart.HasValue &&
+                    Math.Abs((ev.OriginalStart.Value - original.OriginalStart.Value).TotalMinutes) < 1)
+                {
+                    results.Add(ev);
+                    continue;
+                }
+
+                // 3) Series master
+                if (original.Type == "seriesMaster" &&
+                    ev.Type == "seriesMaster" &&
+                    !string.IsNullOrEmpty(original.SeriesMasterId) &&
+                    string.Equals(ev.SeriesMasterId, original.SeriesMasterId, StringComparison.Ordinal))
+                {
+                    results.Add(ev);
+                    continue;
+                }
+
+                // 4) Last-resort single-instance fallback
+                if (original.Type == "singleInstance" &&
+                    ev.Type == "singleInstance" &&
+                    string.Equals(ev.Subject?.Trim(), original.Subject?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                    ev.IsAllDay == original.IsAllDay)
+                {
+                    results.Add(ev);
+                }
             }
 
-            using var resp = await provider.SendWithRetryShortAsync(
-                requestFactory,
-                ct).ConfigureAwait(false);
-
-            await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
-
-            using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-            var page = await JsonSerializer.DeserializeAsync<GraphPage<GraphEvent>>(stream, cancellationToken: ct).ConfigureAwait(false);
-            return page?.Value ?? [];
+            return results;
         }
 
         public async Task AddAttachmentAsync(
@@ -381,272 +415,6 @@ partial class RestoreProvider
 
             var created = await Provider.CalendarApi.CreateCalendarAsync(userId, RESTORED_CALENDAR_NAME, cancel);
             return created.Id;
-        }
-
-        public async Task RestoreEvents(List<KeyValuePair<string, Dictionary<string, string?>>> events, CancellationToken cancel)
-        {
-            (var userId, var calendarId) = await GetUserIdAndCalendarTarget(cancel);
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(calendarId))
-                return;
-
-            // Group attachments by event path
-            var attachments = Provider.GetMetadataByType(SourceItemType.CalendarEventAttachment)
-                .GroupBy(k => Util.AppendDirSeparator(Path.GetDirectoryName(k.Key.TrimEnd(Path.DirectorySeparatorChar))))
-                .ToDictionary(g => g.Key, g => g.ToList());
-
-            var singles = new List<(string Path, GraphEvent Event)>();
-            var masters = new List<(string Path, GraphEvent Event)>();
-            var exceptions = new List<(string Path, GraphEvent Event)>();
-
-            foreach (var eventItem in events)
-            {
-                if (cancel.IsCancellationRequested) break;
-
-                var originalPath = eventItem.Key;
-                GraphEvent? graphEvent = null;
-
-                try
-                {
-                    // Try to read as file (old format)
-                    if (await Provider.FileExists(originalPath, cancel))
-                    {
-                        using var stream = await Provider.OpenRead(originalPath, cancel);
-                        graphEvent = await JsonSerializer.DeserializeAsync<GraphEvent>(stream, cancellationToken: cancel);
-                    }
-                    // Try to read content.json (new format)
-                    else
-                    {
-                        var contentPath = SystemIO.IO_OS.PathCombine(originalPath, "content.json");
-                        if (await Provider.FileExists(contentPath, cancel))
-                        {
-                            using var stream = await Provider.OpenRead(contentPath, cancel);
-                            graphEvent = await JsonSerializer.DeserializeAsync<GraphEvent>(stream, cancellationToken: cancel);
-
-                            // Clean up content file metadata
-                            Provider._metadata.TryRemove(contentPath, out _);
-                        }
-                    }
-
-                    if (graphEvent == null) continue;
-
-                    if (graphEvent.Type == "seriesMaster")
-                        masters.Add((originalPath, graphEvent));
-                    else if (graphEvent.Type == "exception")
-                        exceptions.Add((originalPath, graphEvent));
-                    else if (graphEvent.Type == "occurrence")
-                        continue; // Skip occurrences
-                    else
-                        singles.Add((originalPath, graphEvent));
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteErrorMessage(LOGTAG, "RestoreCalendarEventAnalysisFailed", ex, $"Failed to analyze event {originalPath}: {ex.Message}");
-                }
-            }
-
-            // Restore singles
-            foreach (var item in singles)
-            {
-                await RestoreSingleEvent(userId, calendarId, item.Path, item.Event, attachments, cancel);
-            }
-
-            // Restore masters
-            var masterMap = new Dictionary<string, string>(); // OldId -> NewId
-            foreach (var item in masters)
-            {
-                var newId = await RestoreMasterEvent(userId, calendarId, item.Path, item.Event, attachments, cancel);
-                if (newId != null)
-                    masterMap[item.Event.Id] = newId;
-            }
-
-            // Restore exceptions
-            foreach (var item in exceptions)
-            {
-                await RestoreExceptionEvent(userId, calendarId, item.Path, item.Event, masterMap, attachments, cancel);
-            }
-        }
-
-        private async Task RestoreAttachments(string userId, string calendarId, string eventId, string eventPath, Dictionary<string, List<KeyValuePair<string, Dictionary<string, string?>>>> attachments, CancellationToken cancel)
-        {
-            var eventPathWithSep = Util.AppendDirSeparator(eventPath);
-            if (!attachments.TryGetValue(eventPathWithSep, out var eventAttachments))
-                return;
-
-            foreach (var att in eventAttachments)
-            {
-                try
-                {
-                    var attPath = att.Key;
-                    var metadata = att.Value;
-                    var name = metadata.GetValueOrDefault("o365:Name") ?? "attachment";
-                    var contentType = metadata.GetValueOrDefault("o365:ContentType") ?? "application/octet-stream";
-
-                    using var stream = await Provider.OpenRead(attPath, cancel);
-                    await Provider.CalendarApi.AddAttachmentAsync(userId, calendarId, eventId, name, contentType, stream, cancel);
-
-                    Provider._metadata.TryRemove(attPath, out _);
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteErrorMessage(LOGTAG, "RestoreCalendarAttachmentFailed", ex, $"Failed to restore attachment for event {eventPath}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RestoreSingleEvent(string userId, string calendarId, string path, GraphEvent eventItem, Dictionary<string, List<KeyValuePair<string, Dictionary<string, string?>>>> attachments, CancellationToken cancel)
-        {
-            try
-            {
-                if (!Provider._ignoreExisting && !string.IsNullOrWhiteSpace(eventItem.Subject))
-                {
-                    DateTimeOffset? start = null;
-                    if (eventItem.Start is JsonElement startElem && startElem.ValueKind == JsonValueKind.Object)
-                    {
-                        if (startElem.TryGetProperty("dateTime", out var dtProp) && dtProp.GetString() is string dtStr)
-                        {
-                            if (DateTimeOffset.TryParse(dtStr, out var dt))
-                            {
-                                start = dt;
-                            }
-                        }
-                    }
-
-                    if (start.HasValue)
-                    {
-                        var existing = await Provider.CalendarApi.FindEventsAsync(userId, calendarId, eventItem.Subject, start.Value, cancel);
-                        if (existing.Count > 0)
-                        {
-                            Log.WriteInformationMessage(LOGTAG, "RestoreSingleEventSkipDuplicate", null, $"Skipping duplicate event {path} (Subject: {eventItem.Subject})");
-                            Provider._metadata.TryRemove(path, out _);
-                            return;
-                        }
-                    }
-                }
-
-                // Clean up properties that shouldn't be sent on creation
-                eventItem.Id = "";
-                eventItem.CreatedDateTime = null;
-                eventItem.LastModifiedDateTime = null;
-
-                var created = await Provider.CalendarApi.CreateCalendarEventAsync(userId, calendarId, eventItem, cancel);
-                await RestoreAttachments(userId, calendarId, created.Id, path, attachments, cancel);
-                Provider._metadata.TryRemove(path, out _);
-            }
-            catch (Exception ex)
-            {
-                Log.WriteErrorMessage(LOGTAG, "RestoreSingleEventFailed", ex, $"Failed to restore event {path}: {ex.Message}");
-            }
-        }
-
-        private async Task<string?> RestoreMasterEvent(string userId, string calendarId, string path, GraphEvent eventItem, Dictionary<string, List<KeyValuePair<string, Dictionary<string, string?>>>> attachments, CancellationToken cancel)
-        {
-            try
-            {
-                if (!Provider._ignoreExisting && !string.IsNullOrWhiteSpace(eventItem.Subject))
-                {
-                    DateTimeOffset? start = null;
-                    if (eventItem.Start is JsonElement startElem && startElem.ValueKind == JsonValueKind.Object)
-                    {
-                        if (startElem.TryGetProperty("dateTime", out var dtProp) && dtProp.GetString() is string dtStr)
-                        {
-                            if (DateTimeOffset.TryParse(dtStr, out var dt))
-                            {
-                                start = dt;
-                            }
-                        }
-                    }
-
-                    if (start.HasValue)
-                    {
-                        var existing = await Provider.CalendarApi.FindEventsAsync(userId, calendarId, eventItem.Subject, start.Value, cancel);
-                        if (existing.Count > 0)
-                        {
-                            Log.WriteInformationMessage(LOGTAG, "RestoreMasterEventSkipDuplicate", null, $"Skipping duplicate master event {path} (Subject: {eventItem.Subject})");
-                            Provider._metadata.TryRemove(path, out _);
-                            // Return the ID of the existing event so exceptions can be attached to it?
-                            // If we skip it, we should probably return the existing ID.
-                            return existing[0].Id;
-                        }
-                    }
-                }
-
-                eventItem.Id = "";
-                eventItem.CreatedDateTime = null;
-                eventItem.LastModifiedDateTime = null;
-
-                var created = await Provider.CalendarApi.CreateCalendarEventAsync(userId, calendarId, eventItem, cancel);
-                await RestoreAttachments(userId, calendarId, created.Id, path, attachments, cancel);
-                Provider._metadata.TryRemove(path, out _);
-                return created.Id;
-            }
-            catch (Exception ex)
-            {
-                Log.WriteErrorMessage(LOGTAG, "RestoreMasterEventFailed", ex, $"Failed to restore master event {path}: {ex.Message}");
-                return null;
-            }
-        }
-
-        private async Task RestoreExceptionEvent(string userId, string calendarId, string path, GraphEvent eventItem, Dictionary<string, string> masterMap, Dictionary<string, List<KeyValuePair<string, Dictionary<string, string?>>>> attachments, CancellationToken cancel)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(eventItem.SeriesMasterId) || !masterMap.TryGetValue(eventItem.SeriesMasterId, out var newMasterId))
-                {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreExceptionEventMissingMaster", null, $"Could not find restored master for exception event {path}, skipping.");
-                    return;
-                }
-
-                if (eventItem.OriginalStart == null)
-                {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreExceptionEventMissingOriginalStart", null, $"Missing original start time for exception event {path}, skipping.");
-                    return;
-                }
-
-                // Find the occurrence
-                // We search for instances around the original start time
-                var searchStart = eventItem.OriginalStart.Value.AddMinutes(-1);
-                var searchEnd = eventItem.OriginalStart.Value.AddMinutes(1);
-
-                var instances = await Provider.CalendarApi.GetCalendarEventInstancesAsync(userId, newMasterId, searchStart, searchEnd, cancel);
-
-                var instance = instances.FirstOrDefault(i =>
-                {
-                    // Parse start time from instance
-                    if (i.Start is JsonElement startElem && startElem.ValueKind == JsonValueKind.Object)
-                    {
-                        if (startElem.TryGetProperty("dateTime", out var dtProp) && dtProp.GetString() is string dtStr)
-                        {
-                            if (DateTimeOffset.TryParse(dtStr, out var dt))
-                            {
-                                return Math.Abs((dt - eventItem.OriginalStart.Value).TotalSeconds) < 5;
-                            }
-                        }
-                    }
-                    return false;
-                });
-
-                if (instance == null)
-                {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreExceptionEventInstanceNotFound", null, $"Could not find occurrence instance for exception event {path}, skipping.");
-                    return;
-                }
-
-                // Update the instance
-                eventItem.Id = "";
-                eventItem.SeriesMasterId = null;
-                eventItem.Type = null;
-                eventItem.CreatedDateTime = null;
-                eventItem.LastModifiedDateTime = null;
-                eventItem.OriginalStart = null;
-
-                var updated = await Provider.CalendarApi.UpdateCalendarEventAsync(userId, instance.Id, eventItem, cancel);
-                await RestoreAttachments(userId, calendarId, updated.Id, path, attachments, cancel);
-                Provider._metadata.TryRemove(path, out _);
-            }
-            catch (Exception ex)
-            {
-                Log.WriteErrorMessage(LOGTAG, "RestoreExceptionEventFailed", ex, $"Failed to restore exception event {path}: {ex.Message}");
-            }
         }
     }
 }

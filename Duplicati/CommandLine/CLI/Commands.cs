@@ -705,6 +705,9 @@ namespace Duplicati.CommandLine
                                     periodicOutput.Join(TimeSpan.FromMilliseconds(100));
                                     output.MessageEvent("Verifying restored files ...");
                                     break;
+                                case Duplicati.Library.Main.OperationPhase.Restore_Finalize:
+                                    output.MessageEvent("Completing restore on destination ...");
+                                    break;
                                 case Duplicati.Library.Main.OperationPhase.Restore_ScanForLocalBlocks:
                                     output.MessageEvent("Scanning local files for needed data ...");
                                     break;

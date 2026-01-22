@@ -13,6 +13,38 @@ internal class GroupTypeSourceEntry(SourceProvider provider, string path, GraphG
 {
     private static readonly string LOGTAG = Log.LogTagFromType<GroupTypeSourceEntry>();
 
+    public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+    => Task.FromResult(new Dictionary<string, string?>()
+        {
+            { "o365:v", "1" },
+            { "o365:Id", group.Id },
+            { "o365:Type", groupType switch
+                {
+                    Office365GroupType.Mailbox => SourceItemType.GroupMailbox.ToString(),
+                    Office365GroupType.Calendar => SourceItemType.GroupCalendar.ToString(),
+                    Office365GroupType.Files => SourceItemType.GroupFiles.ToString(),
+                    Office365GroupType.Planner => SourceItemType.GroupPlanner.ToString(),
+                    Office365GroupType.Teams => SourceItemType.GroupTeams.ToString(),
+                    _ => null
+                }
+            },
+                { "o365:Name", groupType switch
+                {
+                    Office365GroupType.Mailbox => "Mailbox",
+                    Office365GroupType.Calendar => "Calendar",
+                    Office365GroupType.Files => "Files",
+                    Office365GroupType.Planner => "Planner",
+                    Office365GroupType.Teams => "Teams",
+                    _ => null
+                }
+                }
+        }
+        .Where(kv => !string.IsNullOrEmpty(kv.Value))
+        .ToDictionary(kv => kv.Key, kv => kv.Value)
+    );
+
+
+
     public override bool IsMetaEntry
     {
         get

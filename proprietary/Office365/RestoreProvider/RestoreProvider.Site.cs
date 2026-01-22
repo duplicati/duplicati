@@ -20,7 +20,7 @@ partial class RestoreProvider
             var url =
                 $"{baseUrl}/v1.0/sites/{site}/drives" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={OptionsHelper.GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphDrive>(url, ct);
         }

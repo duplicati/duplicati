@@ -12,7 +12,7 @@ internal enum ChatEntryType
     Member
 }
 
-internal class ChatSourceEntry(SourceProvider provider, string path, GraphChat chat)
+internal class ChatSourceEntry(SourceProvider provider, string path, GraphUser user, GraphChat chat)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, chat.Id)), chat.CreatedDateTime.FromGraphDateTime(), chat.LastUpdatedDateTime.FromGraphDateTime())
 {
     public async override IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -30,6 +30,7 @@ internal class ChatSourceEntry(SourceProvider provider, string path, GraphChat c
             {
                 { "o365:v", "1" },
                 { "o365:Id", chat.Id },
+                { "o365:UserId", user.Id },
                 { "o365:Type", SourceItemType.Chat.ToString() },
                 { "o365:Name", chat.Topic ?? "" },
             }

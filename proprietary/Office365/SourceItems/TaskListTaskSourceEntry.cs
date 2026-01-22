@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -31,8 +32,8 @@ internal class TaskListTaskSourceEntry(SourceProvider provider, string path, Gra
                 { "o365:Id", task.Id },
                 { "o365:Type", SourceItemType.TaskListTask.ToString() },
                 { "o365:Name", task.Title ?? "" },
-                { "o365:LastModifiedDateTime", task.LastModifiedDateTime.FromGraphDateTime().ToString("o") },
-                { "o365:CreatedDateTime", task.CreatedDateTime.FromGraphDateTime().ToString("o") },
+                { "o365:LastModifiedDateTime", task.LastModifiedDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) },
+                { "o365:CreatedDateTime", task.CreatedDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) },
                 { "o365:Status", task.Status ?? "" },
                 { "o365:Importance", task.Importance ?? "" }
             }

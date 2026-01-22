@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Duplicati.Library.Common.IO;
@@ -8,14 +9,14 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
-
+[Flags]
 internal enum Office365GroupType
 {
-    Mailbox,
-    Calendar,
-    Files,
-    Planner,
-    Teams
+    Mailbox = 1,
+    Calendar = 2,
+    Files = 4,
+    Planner = 8,
+    Teams = 16
 }
 
 internal class GroupSourceEntry(SourceProvider provider, string path, GraphGroup group)
@@ -102,7 +103,7 @@ internal class GroupSourceEntry(SourceProvider provider, string path, GraphGroup
                 { "o365:Type", SourceItemType.Group.ToString() },
                 { "o365:Name", group.DisplayName },
                 { "o365:Description", group.Description },
-                { "o365:CreatedDateTime", group.CreatedDateTime.FromGraphDateTime().ToString("o") },
+                { "o365:CreatedDateTime", group.CreatedDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) },
                 { "o365:Visibility", group.Visibility },
                 { "o365:MailEnabled", group.MailEnabled.ToString() },
                 { "o365:SecurityEnabled", group.SecurityEnabled.ToString() },

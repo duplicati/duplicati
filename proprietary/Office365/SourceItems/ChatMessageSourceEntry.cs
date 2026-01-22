@@ -28,7 +28,7 @@ internal class ChatMessageSourceEntry(SourceProvider provider, string path, Grap
                 { "o365:Id", message.Id },
                 { "o365:Type", SourceItemType.ChatMessage.ToString() },
                 { "o365:Name", message.Subject ?? "" },
-                { "o365:From", message.From?.ToString() ?? "" },
+                { "o365:From", message.From?.DisplayName ?? "" },
             }
             .Where(kv => !string.IsNullOrEmpty(kv.Value))
             .ToDictionary(kv => kv.Key, kv => kv.Value)));

@@ -42,7 +42,7 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var site = Uri.EscapeDataString(siteId);
 
-            var select = "id,driveType,webUrl,createdDateTime,lastModifiedDateTime,owner";
+            var select = GraphSelectBuilder.BuildSelect<GraphDrive>();
             var url =
                 $"{baseUrl}/v1.0/sites/{site}/drive" +
                 $"?$select={Uri.EscapeDataString(select)}";

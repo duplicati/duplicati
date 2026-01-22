@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -29,7 +30,7 @@ internal class GroupConversationSourceEntry(SourceProvider provider, GraphGroup 
                 { "o365:Name", conversation.Topic },
                 { "o365:Topic", conversation.Topic },
                 { "o365:HasAttachments", conversation.HasAttachments.ToString() },
-                { "o365:LastDeliveredDateTime", conversation.LastDeliveredDateTime.FromGraphDateTime().ToString("o") }
+                { "o365:LastDeliveredDateTime", conversation.LastDeliveredDateTime.FromGraphDateTime().ToString("o", CultureInfo.InvariantCulture) }
             }
             .Where(kv => !string.IsNullOrEmpty(kv.Value))
             .ToDictionary(kv => kv.Key, kv => kv.Value));

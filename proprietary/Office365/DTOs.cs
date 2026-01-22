@@ -250,9 +250,6 @@ internal sealed class GraphContact
     [JsonPropertyName("lastModifiedDateTime")]
     public DateTimeOffset? LastModifiedDateTime { get; set; }
 
-    [JsonPropertyName("@odata.type")]
-    public string? ODataType { get; set; }
-
     [JsonPropertyName("parentFolderId")]
     public string? ParentFolderId { get; set; }
 }
@@ -294,6 +291,10 @@ internal sealed class GraphContactGroup
 
     [JsonPropertyName("lastModifiedDateTime")]
     public DateTimeOffset? LastModifiedDateTime { get; set; }
+
+    [JsonPropertyName("@odata.type")]
+    public string? ODataType { get; set; }
+
 }
 
 internal sealed class GraphTodoTaskList
@@ -663,6 +664,9 @@ internal sealed class GraphEvent
     [JsonPropertyName("id")]
     public string Id { get; set; } = "";
 
+    [JsonPropertyName("iCalUId")]
+    public string? ICalUId { get; set; }
+
     [JsonPropertyName("subject")]
     public string? Subject { get; set; }
 
@@ -806,10 +810,10 @@ internal sealed class GraphChatMessage
     public string? Subject { get; set; }
 
     [JsonPropertyName("body")]
-    public object? Body { get; set; }
+    public GraphBody? Body { get; set; }
 
     [JsonPropertyName("from")]
-    public object? From { get; set; }
+    public GraphChatMessageFromIdentitySet? From { get; set; }
 
     [JsonPropertyName("attachments")]
     public object? Attachments { get; set; }

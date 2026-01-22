@@ -49,49 +49,25 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private int _licenseWarningIssued = 0;
 
     /// <summary>
+    /// The included root types.
+    /// </summary>
+    private readonly Office365MetaType[] _includedRootTypes;
+
+    /// <summary>
+    /// The included user types.
+    /// </summary>
+    private readonly Office365UserType[] _includedUserTypes;
+
+    /// <summary>
+    /// The included group types.
+    /// </summary>
+    private readonly Office365GroupType[] _includedGroupTypes;
+
+    /// <summary>
     /// Whether this provider is being used for a restore operation.
     /// </summary>
     internal bool UsedForRestoreOperation { get; set; } = false;
 
-    /// <summary>
-    /// User types that require delegated permissions, default disabled.
-    /// </summary>
-    private static readonly Office365UserType[] DELEGATED_USER_TYPES =
-    [
-        Office365UserType.Tasks,
-        Office365UserType.Notes
-    ];
-
-    /// <summary>
-    /// Group types that require delegated permissions, default disabled.
-    /// </summary>
-    private static readonly Office365GroupType[] DELEGATED_GROUP_TYPES =
-    [
-        Office365GroupType.Calendar
-    ];
-
-    /// <summary>
-    /// The default included root types.
-    /// </summary>
-    private static readonly Office365MetaType[] DEFAULT_INCLUDED_ROOT_TYPES =
-        Enum.GetValues<Office365MetaType>()
-            .ToArray();
-
-    /// <summary>
-    /// The default included group types.
-    /// </summary>
-    private static readonly Office365GroupType[] DEFAULT_INCLUDED_GROUP_TYPES =
-        Enum.GetValues<Office365GroupType>()
-            .Except(DELEGATED_GROUP_TYPES)
-            .ToArray();
-
-    /// <summary>
-    /// The default included user types.
-    /// </summary>
-    private static readonly Office365UserType[] DEFAULT_INCLUDED_USER_TYPES =
-    Enum.GetValues<Office365UserType>()
-        .Except(DELEGATED_USER_TYPES)
-        .ToArray();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SourceProvider"/> class.
@@ -102,6 +78,9 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         _apiHelper = null!;
         _mountPoint = null!;
         _timeouts = null!;
+        _includedRootTypes = null!;
+        _includedUserTypes = null!;
+        _includedGroupTypes = null!;
     }
 
     /// <summary>
@@ -118,6 +97,9 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         _mountPoint = mountPoint;
         var parsedOptions = OptionsHelper.ParseAndValidateOptions(url, options);
         _timeouts = TimeoutOptionsHelper.Parse(options);
+        _includedRootTypes = parsedOptions.IncludedRootTypes;
+        _includedUserTypes = parsedOptions.IncludedUserTypes;
+        _includedGroupTypes = parsedOptions.IncludedGroupTypes;
         _apiHelper = APIHelper.Create(
             tenantId: parsedOptions.TenantId,
             authOptions: parsedOptions.AuthOptions,
@@ -258,17 +240,17 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// Gets the included root types.
     /// </summary>
     internal IEnumerable<Office365MetaType> IncludedRootTypes =>
-       DEFAULT_INCLUDED_ROOT_TYPES;
+       _includedRootTypes;
 
     /// <summary>
     /// Gets the included user types.
     /// </summary>
     internal IEnumerable<Office365UserType> IncludedUserTypes =>
-        DEFAULT_INCLUDED_USER_TYPES;
+        _includedUserTypes;
 
     /// <summary>
     /// Gets the included group types.
     /// </summary>
     internal IEnumerable<Office365GroupType> IncludedGroupTypes =>
-        DEFAULT_INCLUDED_GROUP_TYPES;
+        _includedGroupTypes;
 }

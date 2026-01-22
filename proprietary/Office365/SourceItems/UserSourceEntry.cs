@@ -6,16 +6,17 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
+[Flags]
 internal enum Office365UserType
 {
-    Profile,
-    Mailbox,
-    Calendar,
-    Contacts,
-    Tasks,
-    Notes,
-    Planner,
-    Chats
+    Profile = 1,
+    Mailbox = 2,
+    Calendar = 4,
+    Contacts = 8,
+    Tasks = 16,
+    Notes = 32,
+    Planner = 64,
+    Chats = 128
 }
 
 internal class UserSourceEntry(SourceProvider provider, string path, GraphUser user)

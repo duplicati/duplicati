@@ -185,11 +185,11 @@ partial class RestoreProvider
         }
 
         public async Task<List<GraphContact>> FindContactsAsync(
-            string userId,
-            string folderId,
-            string? email,
-            string? displayName,
-            CancellationToken ct)
+                    string userId,
+                    string folderId,
+                    string? email,
+                    string? displayName,
+                    CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userId);
@@ -226,6 +226,131 @@ partial class RestoreProvider
             using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
             var page = await JsonSerializer.DeserializeAsync<GraphPage<GraphContact>>(stream, cancellationToken: ct).ConfigureAwait(false);
             return page?.Value ?? [];
+        }
+
+        public async Task<List<GraphContactGroup>> FindContactGroupsAsync(
+            string userIdOrUpn,
+            string folderId,
+            string displayName,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var folder = Uri.EscapeDataString(folderId);
+
+            // OData string literal escaping
+            var filterName = displayName.Replace("'", "''");
+            var filter = $"displayName eq '{filterName}'";
+
+            // Must include @odata.type to distinguish contactGroup vs contact
+            var select = GraphSelectBuilder.BuildSelect<GraphContactGroup>();
+
+            var url =
+                $"{baseUrl}/v1.0/users/{user}/contactFolders/{folder}/contacts" +
+                $"?$filter={Uri.EscapeDataString(filter)}" +
+                $"&$select={Uri.EscapeDataString(select)}" +
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+
+            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                return req;
+            }
+
+            using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
+            await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+            await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            var page = await JsonSerializer.DeserializeAsync<GraphPage<GraphContact>>(stream, cancellationToken: ct).ConfigureAwait(false);
+
+            var results = new List<GraphContactGroup>();
+            if (page?.Value == null)
+                return results;
+
+            foreach (var item in page.Value)
+            {
+                results.Add(new GraphContactGroup
+                {
+                    Id = item.Id,
+                    DisplayName = item.DisplayName,
+                    ParentFolderId = item.ParentFolderId
+                });
+            }
+
+            return results;
+        }
+
+        public async Task<GraphContactGroup> CreateContactGroupAsync(
+            string userIdOrUpn,
+            string displayName,
+            string folderId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var folder = Uri.EscapeDataString(folderId);
+
+            var url = $"{baseUrl}/v1.0/users/{user}/contactFolders/{folder}/contacts";
+
+            var body = new Dictionary<string, object?>
+            {
+                ["@odata.type"] = "#microsoft.graph.contactGroup",
+                ["displayName"] = displayName
+            };
+
+            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                req.Content = JsonContent.Create(body);
+                return req;
+            }
+
+            using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
+            await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+            await using var respStream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            var created = await JsonSerializer.DeserializeAsync<GraphContactGroup>(respStream, cancellationToken: ct).ConfigureAwait(false);
+
+            if (created is null || string.IsNullOrWhiteSpace(created.Id))
+                throw new InvalidOperationException("Graph did not return the created contact group id.");
+
+            return created;
+        }
+
+        public async Task AddContactGroupMemberAsync(
+            string userIdOrUpn,
+            string folderId,
+            string contactGroupId,
+            GraphEmailAddress member,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var folder = Uri.EscapeDataString(folderId);
+            var group = Uri.EscapeDataString(contactGroupId);
+
+            var url = $"{baseUrl}/v1.0/users/{user}/contactFolders/{folder}/contacts/{group}";
+
+            var body = new
+            {
+                members = new[]
+                {
+                    new { emailAddress = new { name = member.Name, address = member.Address } }
+                }
+            };
+
+            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Patch, new Uri(url));
+                req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                req.Content = JsonContent.Create(body);
+                return req;
+            }
+
+            using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
+            await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
         }
     }
 

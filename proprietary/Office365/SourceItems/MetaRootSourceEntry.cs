@@ -7,16 +7,13 @@ using Duplicati.Library.Logging;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
+[Flags]
 internal enum Office365MetaType
 {
     // Tenant directory / discovery roots
-    Users,
-    Groups,
-    Sites,
-
-    // // SharePoint structured content
-    // Lists,               // SharePoint lists
-    // ListItems,           // SharePoint list rows/items
+    Users = 1,
+    Groups = 2,
+    Sites = 4,
 
     // // Compliance/audit
     // AuditLogBlobs        // Management Activity API content items
@@ -36,7 +33,14 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                     Office365MetaType.Users => SourceItemType.MetaRootUsers.ToString(),
                     Office365MetaType.Groups => SourceItemType.MetaRootGroups.ToString(),
                     Office365MetaType.Sites => SourceItemType.MetaRootSites.ToString(),
-                    _ => SourceItemType.MetaRoot.ToString()
+                    _ => null
+                } },
+                { "o365:Name", type switch
+                {
+                    Office365MetaType.Users => "Users",
+                    Office365MetaType.Groups => "Groups",
+                    Office365MetaType.Sites => "Sites",
+                    _ => null
                 } },
                 { "o365:MetaType", type.ToString() },
             }

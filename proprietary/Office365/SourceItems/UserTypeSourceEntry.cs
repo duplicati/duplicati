@@ -167,6 +167,8 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
+            var isContactGroup = await provider.ContactsApi.IsContactGroupAsync(user.Id, contact.Id, cancellationToken).ConfigureAwait(false);
+
             var ms = new MemoryStream();
             System.Text.Json.JsonSerializer.Serialize(ms, contact);
             var jsonBytes = ms.ToArray();
@@ -180,7 +182,9 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
                 {
                     { "o365:v", "1" },
                     { "o365:Id", contact.Id },
-                    { "o365:Type", SourceItemType.UserContact.ToString() },
+                    { "o365:Type", isContactGroup
+                        ? SourceItemType.UserContactGroup.ToString()
+                        : SourceItemType.UserContact.ToString() },
                     { "o365:Name", contact.DisplayName },
                 }
                 .Where(kv => !string.IsNullOrEmpty(kv.Value))
@@ -195,14 +199,35 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
 
             if (await photoEntry.ProbeIfExistsAsync(cancellationToken).ConfigureAwait(false))
                 yield return photoEntry;
+
+            if (isContactGroup)
+            {
+                // Members
+                var members = await provider.ContactsApi.ListContactGroupMembersAsync(user.Id, contact.Id, cancellationToken)
+                    .ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (members.Count > 0)
+                {
+                    var memMs = new MemoryStream();
+                    System.Text.Json.JsonSerializer.Serialize(memMs, members);
+                    var memBytes = memMs.ToArray();
+
+                    yield return new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, contact.Id + ".members.json"),
+                        createdUtc: DateTime.UnixEpoch,
+                        lastModificationUtc: DateTime.UnixEpoch,
+                        size: memBytes.Length,
+                        streamFactory: (ct) => Task.FromResult<Stream>(new MemoryStream(memBytes)));
+                }
+            }
         }
 
-        await foreach (var folder in provider.ContactsApi.ListContactFoldersAsync(user.Id, null, cancellationToken).ConfigureAwait(false))
+        await foreach (var contactFolder in provider.ContactsApi.ListContactFoldersAsync(user.Id, null, cancellationToken).ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
-            yield return new UserContactFolderSourceEntry(provider, user, SystemIO.IO_OS.PathCombine(this.Path, folder.Id), folder);
+            yield return new UserContactFolderSourceEntry(provider, user, this.Path, contactFolder);
         }
     }
 
@@ -228,17 +253,6 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
             yield return new NotebookSourceEntry(provider, this.Path, user, note);
         }
     }
-
-    // private async IAsyncEnumerable<ISourceProviderEntry> OneDriveEntries([EnumeratorCancellation] CancellationToken cancellationToken)
-    // {
-    //     await foreach (var drive in provider.OneDriveApi.ListUserDrivesAsync(user.Id, cancellationToken).ConfigureAwait(false))
-    //     {
-    //         if (cancellationToken.IsCancellationRequested)
-    //             yield break;
-
-    //         yield return new DriveSourceEntry(provider, this.Path, drive);
-    //     }
-    // }
 
     private async IAsyncEnumerable<ISourceProviderEntry> CalendarEntries([EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -287,7 +301,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
-            yield return new ChatSourceEntry(provider, this.Path, chat);
+            yield return new ChatSourceEntry(provider, this.Path, user, chat);
         }
     }
 }
