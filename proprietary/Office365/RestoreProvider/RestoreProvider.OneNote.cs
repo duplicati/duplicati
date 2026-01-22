@@ -55,9 +55,7 @@ public partial class RestoreProvider
             var section = Uri.EscapeDataString(sectionId);
             var url = $"{baseUrl}/v1.0/onenote/sections/{section}/pages";
 
-            var content = new StreamContent(contentStream);
-            content.Headers.ContentType = new MediaTypeHeaderValue("text/html");
-            return provider.PostGraphItemAsync<GraphOnenotePage>(url, content, ct);
+            return provider.PostGraphItemStreamAsync<GraphOnenotePage>(url, contentStream, "text/html", ct);
         }
     }
 

@@ -19,10 +19,31 @@ internal class SharePointListItemSourceEntry(SourceProvider provider, string pat
             size: -1,
             streamFactory: (ct) =>
             {
-                var json = JsonSerializer.Serialize(item, new JsonSerializerOptions { WriteIndented = true });
-                return Task.FromResult<Stream>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json)));
+                var ms = new MemoryStream();
+                JsonSerializer.Serialize(ms, item, new JsonSerializerOptions { WriteIndented = true });
+                ms.Position = 0;
+                return Task.FromResult<Stream>(ms);
             }
         );
+
+        // Get content if this is a file
+        bool isFile = item.ContentType?.Name != "Folder" && item.ContentType?.Name != "Document Set";
+        if (item.Fields != null && item.Fields.Value.TryGetProperty("FSObjType", out var fsObjTypeProp))
+        {
+            if (fsObjTypeProp.GetString() == "0") isFile = true;
+            else if (fsObjTypeProp.GetString() == "1") isFile = false;
+        }
+
+        if (isFile)
+        {
+            yield return new StreamResourceEntryFunction(
+                SystemIO.IO_OS.PathCombine(this.Path, "content.data"),
+                createdUtc: CreatedUtc,
+                lastModificationUtc: LastModificationUtc,
+                size: -1,
+                streamFactory: (ct) => provider.SharePointListApi.GetItemContentStreamAsync(site.Id, listId, item.Id, ct)
+            );
+        }
 
         if (string.IsNullOrWhiteSpace(site.WebUrl))
             yield break;

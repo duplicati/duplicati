@@ -10,6 +10,8 @@ namespace Duplicati.Proprietary.Office365;
 public partial class RestoreProvider
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _restoredSharePointListMap = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _restoredSharePointFolderMap = new();
+    private readonly Dictionary<string, HashSet<string>> _sharePointListExistingItems = new();
 
     private async Task RestoreSharePointLists(CancellationToken cancel)
     {
@@ -89,7 +91,10 @@ public partial class RestoreProvider
         if (string.IsNullOrWhiteSpace(targetSiteId))
             return;
 
-        foreach (var item in items)
+        // Sort items by path to ensure folders are created before their children
+        var sortedItems = items.OrderBy(x => x.Key).ToList();
+
+        foreach (var item in sortedItems)
         {
             if (cancel.IsCancellationRequested)
                 break;
@@ -98,26 +103,27 @@ public partial class RestoreProvider
             {
                 var originalPath = item.Key;
 
-                // Determine List ID
-                // Path: .../ListId/ItemId.json
-                var parent = Path.GetDirectoryName(originalPath);
-                if (parent == null) continue;
-
+                // Determine List ID by walking up the path
                 string? listId = null;
-                if (_restoredSharePointListMap.TryGetValue(parent, out var mappedListId))
+                string? listPath = null;
+                var currentPath = originalPath;
+
+                while (true)
                 {
-                    listId = mappedListId;
+                    var parentDir = Util.AppendDirSeparator(Path.GetDirectoryName(currentPath.TrimEnd(Path.DirectorySeparatorChar)));
+                    if (string.IsNullOrEmpty(parentDir)) break;
+
+                    if (_restoredSharePointListMap.TryGetValue(parentDir, out var mappedListId))
+                    {
+                        listId = mappedListId;
+                        listPath = parentDir;
+                        break;
+                    }
+                    currentPath = parentDir;
                 }
-                else
+
+                if (listId == null || listPath == null)
                 {
-                    // Maybe we are restoring to the same list ID if we didn't restore the list itself (e.g. partial restore)
-                    // But we don't know the target list ID unless we mapped it.
-                    // If we didn't restore the list, we might assume the parent folder name is the list ID?
-                    // But the parent folder name is the source list ID.
-                    // If we are restoring to the same site, maybe the list exists with the same ID? Unlikely.
-                    // If we are restoring to a different site, we definitely need the map.
-                    // If the list was not in the backup (e.g. only items selected), we can't restore items easily without knowing where to put them.
-                    // We'll skip if we can't find the list.
                     Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemMissingList", null, $"Missing target list for item {originalPath}, skipping.");
                     continue;
                 }
@@ -132,13 +138,158 @@ public partial class RestoreProvider
 
                 GraphListItem? itemData = null;
                 using (var stream = SystemIO.IO_OS.FileOpenRead(contentEntry))
-                {
                     itemData = await JsonSerializer.DeserializeAsync<GraphListItem>(stream, cancellationToken: cancel);
+
+                if (itemData == null)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemDeserializationFailed", null, $"Failed to deserialize item {originalPath}, skipping.");
+                    continue;
                 }
 
-                if (itemData?.Fields != null)
+                var isDocumentLibrary = await SourceProvider.SharePointListApi.IsDocumentLibraryAsync(targetSiteId, listId, cancel);
+                if (isDocumentLibrary)
                 {
-                    await SourceProvider.SharePointListApi.CreateListItemAsync(targetSiteId, listId, itemData.Fields.Value, cancel);
+                    var driveId = await SourceProvider.SharePointListApi.GetDriveIdForListAsync(targetSiteId, listId, cancel);
+                    if (driveId == null)
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemMissingDrive", null, $"Missing drive for document library list {listId}, skipping item {originalPath}.");
+                        continue;
+                    }
+
+                    // Document library item - restore as DriveItem
+                    string? fileName = null;
+                    if (itemData.Fields != null && itemData.Fields.Value.TryGetProperty("FileLeafRef", out var nameProp))
+                    {
+                        fileName = nameProp.GetString();
+                    }
+
+                    if (string.IsNullOrWhiteSpace(fileName))
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemMissingName", null, $"Missing FileLeafRef for item {originalPath}, skipping.");
+                        continue;
+                    }
+
+                    bool isFolder = itemData.ContentType?.Name == "Folder" || itemData.ContentType?.Name == "Document Set";
+                    if (itemData.Fields != null && itemData.Fields.Value.TryGetProperty("FSObjType", out var fsObjTypeProp))
+                    {
+                        if (fsObjTypeProp.GetString() == "1") isFolder = true;
+                    }
+
+                    // Determine parent ID
+                    string parentId;
+                    var itemParentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+
+                    try
+                    {
+                        parentId = await EnsureParentFolderAsync(driveId, listPath, itemParentPath, cancel);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemMissingParent", ex, $"Failed to ensure parent folder for item {originalPath}, skipping.");
+                        continue;
+                    }
+
+                    if (!_ignoreExisting)
+                    {
+                        var existingItem = await DriveApi.GetDriveItemAsync(driveId, parentId, fileName, cancel);
+                        if (existingItem != null)
+                        {
+                            Log.WriteInformationMessage(LOGTAG, "RestoreSharePointListItemSkipped", $"Skipping restore of item {originalPath} because it already exists.");
+
+                            if (isFolder)
+                            {
+                                _restoredSharePointFolderMap[originalPath] = existingItem.Id;
+                            }
+
+                            _metadata.TryRemove(originalPath, out _);
+                            _temporaryFiles.TryRemove(originalPath, out var contentFileSkipped);
+                            contentFileSkipped?.Dispose();
+                            continue;
+                        }
+                    }
+
+                    if (isFolder)
+                    {
+                        var newFolder = await DriveApi.CreateDriveFolderAsync(driveId, parentId, fileName, cancel);
+                        _restoredSharePointFolderMap[originalPath] = newFolder.Id;
+                    }
+                    else
+                    {
+                        var dataPath = SystemIO.IO_OS.PathCombine(originalPath, "content.data");
+                        var dataEntry = _temporaryFiles.GetValueOrDefault(dataPath);
+
+                        if (dataEntry != null)
+                        {
+                            using (var contentStream = SystemIO.IO_OS.FileOpenRead(dataEntry))
+                            {
+                                await DriveApi.RestoreDriveItemToFolderAsync(driveId, parentId, fileName, contentStream, null, cancel);
+                            }
+                        }
+                        else
+                        {
+                            Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemMissingFileContent", null, $"Missing content.data for item {originalPath}, skipping file restore.");
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (itemData?.Fields == null)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemMissingFields", null, $"Missing fields for item {originalPath}, skipping.");
+                    continue;
+                }
+
+                if (!_ignoreExisting)
+                {
+                    string? title = null;
+                    if (itemData.Fields.Value.ValueKind == JsonValueKind.Object &&
+                        itemData.Fields.Value.TryGetProperty("Title", out var titleProp))
+                    {
+                        title = titleProp.GetString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(title))
+                    {
+                        if (!_sharePointListExistingItems.TryGetValue(listId, out var existingItems))
+                        {
+                            existingItems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            try
+                            {
+                                await foreach (var existingItem in SourceProvider.SharePointListApi.ListListItemsAsync(targetSiteId, listId, cancel))
+                                {
+                                    if (existingItem.Fields.HasValue &&
+                                        existingItem.Fields.Value.ValueKind == JsonValueKind.Object &&
+                                        existingItem.Fields.Value.TryGetProperty("Title", out var existingTitleProp))
+                                    {
+                                        var existingTitle = existingTitleProp.GetString();
+                                        if (!string.IsNullOrWhiteSpace(existingTitle))
+                                        {
+                                            existingItems.Add(existingTitle);
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListFetchFailed", ex, $"Failed to fetch existing items for list {listId}: {ex.Message}");
+                            }
+                            _sharePointListExistingItems[listId] = existingItems;
+                        }
+
+                        if (existingItems.Contains(title))
+                        {
+                            Log.WriteInformationMessage(LOGTAG, "RestoreSharePointListItemSkipped", $"Skipping restore of item {originalPath} because it already exists.");
+                            _metadata.TryRemove(originalPath, out _);
+                            _temporaryFiles.TryRemove(originalPath, out var contentFileSkipped);
+                            contentFileSkipped?.Dispose();
+                            continue;
+                        }
+                    }
+
+                    var res = await SourceProvider.SharePointListApi.CreateListItemAsync(targetSiteId, listId, itemData.Fields.Value, cancel);
+                    if (res == null)
+                        Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemFailed", null, $"Failed to create list item for {originalPath} (no restorable fields), skipping.");
                 }
 
                 _metadata.TryRemove(originalPath, out _);
@@ -150,5 +301,35 @@ public partial class RestoreProvider
                 Log.WriteErrorMessage(LOGTAG, "RestoreSharePointListItemFailed", ex, $"Failed to restore list item {item.Key}: {ex.Message}");
             }
         }
+    }
+
+    private async Task<string> EnsureParentFolderAsync(string driveId, string listPath, string currentPath, CancellationToken cancel)
+    {
+        if (currentPath.Equals(listPath, StringComparison.OrdinalIgnoreCase))
+            return "root";
+
+        if (_restoredSharePointFolderMap.TryGetValue(currentPath, out var cachedId))
+            return cachedId;
+
+        var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(currentPath.TrimEnd(Path.DirectorySeparatorChar)));
+
+        // Safety check to prevent infinite recursion if we go above listPath
+        if (string.IsNullOrEmpty(parentPath) || currentPath.Length <= listPath.Length)
+            throw new InvalidOperationException($"Path {currentPath} cannot be resolved relative to {listPath}");
+
+        var parentId = await EnsureParentFolderAsync(driveId, listPath, parentPath, cancel);
+
+        var folderName = Path.GetFileName(currentPath.TrimEnd(Path.DirectorySeparatorChar));
+
+        var existing = await DriveApi.GetDriveItemAsync(driveId, parentId, folderName, cancel);
+        if (existing != null)
+        {
+            _restoredSharePointFolderMap[currentPath] = existing.Id;
+            return existing.Id;
+        }
+
+        var newFolder = await DriveApi.CreateDriveFolderAsync(driveId, parentId, folderName, cancel);
+        _restoredSharePointFolderMap[currentPath] = newFolder.Id;
+        return newFolder.Id;
     }
 }

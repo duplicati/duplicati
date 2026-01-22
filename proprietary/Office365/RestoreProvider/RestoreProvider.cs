@@ -794,6 +794,10 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             // If we are restoring TO a channel, we don't need to restore the channel itself
             if (type == SourceItemType.GroupChannel && RestoreTarget != null && RestoreTarget.Type == SourceItemType.GroupChannel)
                 toRemove.Add(kv.Key);
+
+            // If we are restoring TO a site, we don't need to restore the site itself
+            if (type == SourceItemType.Site && RestoreTarget != null && RestoreTarget.Type == SourceItemType.Site)
+                toRemove.Add(kv.Key);
         }
 
         foreach (var key in toRemove)

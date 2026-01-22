@@ -407,11 +407,45 @@ internal class APIHelper : IDisposable
     /// </summary>
     /// <typeparam name="T">The type of the item to return</typeparam>
     /// <param name="url">The URL to post to</param>
+    /// <param name="stream">The stream to post</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The posted item</returns>
+    public async Task<T> PostGraphItemStreamAsync<T>(string url, Stream stream, string contentType, CancellationToken ct)
+    {
+        async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
+        {
+            var req = new HttpRequestMessage(HttpMethod.Post, new NetUri(url));
+            req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
+            req.Headers.Accept.Clear();
+            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            stream.Position = 0;
+            req.Content = new StreamContent(stream);
+            req.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+            return req;
+        }
+
+        using var resp = await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, null, _timeouts.ShortTimeout, ct).ConfigureAwait(false);
+        await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+        return await ParseResponseJson<T>(resp, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Posts a Graph API item.
+    /// </summary>
+    /// <typeparam name="T">The type of the item to return</typeparam>
+    /// <param name="url">The URL to post to</param>
     /// <param name="content">The content to post</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The posted item</returns>
     public async Task<T> PostGraphItemAsync<T>(string url, HttpContent content, CancellationToken ct)
     {
+#if DEBUG
+        if (content is StreamContent)
+            throw new InvalidOperationException("Use PostGraphItemStreamAsync for stream content.");
+#endif
+
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
             var req = new HttpRequestMessage(HttpMethod.Post, new NetUri(url));
