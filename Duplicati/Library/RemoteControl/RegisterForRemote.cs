@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Duplicati.Library.Logging;
@@ -237,7 +238,7 @@ public class RegisterForRemote : IDisposable
             { "machineId", AutoUpdater.DataFolderManager.MachineID },
             { "machineName", AutoUpdater.DataFolderManager.MachineName },
             { "installId", AutoUpdater.DataFolderManager.InstallID },
-            { "localTime", DateTimeOffset.Now.ToString("o") },
+            { "localTime", DateTimeOffset.Now.ToString("o", CultureInfo.InvariantCulture) },
             { "version", AutoUpdater.UpdaterManager.SelfVersion?.Version },
             { "packageTypeId", AutoUpdater.UpdaterManager.PackageTypeId },
             { "operatingSystem", AutoUpdater.UpdaterManager.OperatingSystemName }
