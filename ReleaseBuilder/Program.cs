@@ -46,6 +46,7 @@ class Program
         "linux-x64-gui.zip",
         "linux-x64-gui.deb",
         "linux-x64-gui.rpm",
+        "linux-x64-gui.appimage",
         "linux-x64-cli.zip",
         "linux-x64-cli.deb",
         "linux-x64-cli.rpm",
@@ -58,6 +59,7 @@ class Program
 
         "linux-arm7-gui.zip",
         "linux-arm7-gui.deb",
+        "linux-arm7-gui.appimage",
         "linux-arm7-cli.zip",
         "linux-arm7-cli.deb",
         "linux-arm7-cli.docker",
@@ -68,6 +70,7 @@ class Program
         "linux-arm64-gui.zip",
         "linux-arm64-gui.deb",
         "linux-arm64-gui.rpm",
+        "linux-arm64-gui.appimage",
         "linux-arm64-cli.zip",
         "linux-arm64-cli.deb",
         "linux-arm64-cli.rpm",

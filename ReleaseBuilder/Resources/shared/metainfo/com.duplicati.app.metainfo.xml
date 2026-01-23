@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.duplicati.app</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Duplicati</name>
+  <summary>Create and maintain local and remote backup copies of your data</summary>
+  
+  <developer id="com.duplicati.app">
+    <name>Duplicati Team</name>
+  </developer>
+
+  <content_rating type="oars-1.1" />
+  
+  <description>
+    <p>
+      Duplicati is a free backup client that securely stores encrypted,
+      incremental, compressed backups on cloud storage services and remote file servers.
+    </p>
+    <p>
+      It works with Amazon S3, Windows Live SkyDrive, Google Drive,
+      OneDrive or WebDAV, SSH, FTP (and many more).
+    </p>
+    <p>
+      Duplicati has built-in AES-256 encryption and backups can be signed using GNU Privacy Guard.
+      A built-in scheduler and a Web-based interface makes it easy to maintain a regular backup.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">duplicati.desktop</launchable>
+  
+  <url type="homepage">https://www.duplicati.com/</url>
+  <url type="bugtracker">https://github.com/duplicati/duplicati/issues</url>
+  <url type="vcs-browser">https://github.com/duplicati/duplicati</url>
+
+  <provides>
+    <binary>duplicati</binary>
+  </provides>
+
+</component>
