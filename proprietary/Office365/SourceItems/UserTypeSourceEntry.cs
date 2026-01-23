@@ -250,7 +250,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
-            yield return new NotebookSourceEntry(provider, this.Path, user, note);
+            yield return new NotebookSourceEntry(provider, this.Path, note);
         }
     }
 

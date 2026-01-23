@@ -6,7 +6,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
-internal class NotebookSourceEntry(SourceProvider provider, string path, GraphUser user, GraphNotebook notebook)
+internal class NotebookSourceEntry(SourceProvider provider, string path, GraphNotebook notebook)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, notebook.Id)), notebook.CreatedDateTime.FromGraphDateTime(), notebook.LastModifiedDateTime.FromGraphDateTime())
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -16,7 +16,7 @@ internal class NotebookSourceEntry(SourceProvider provider, string path, GraphUs
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
-            yield return new NotebookSectionGroupSourceEntry(provider, this.Path, user, notebook, section);
+            yield return new NotebookSectionGroupSourceEntry(provider, this.Path, section);
         }
     }
 

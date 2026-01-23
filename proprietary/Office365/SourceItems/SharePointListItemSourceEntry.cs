@@ -27,11 +27,11 @@ internal class SharePointListItemSourceEntry(SourceProvider provider, string pat
         );
 
         // Get content if this is a file
-        bool isFile = item.ContentType?.Name != "Folder" && item.ContentType?.Name != "Document Set";
+        bool isFile = false;
         if (item.Fields != null && item.Fields.Value.TryGetProperty("FSObjType", out var fsObjTypeProp))
         {
-            if (fsObjTypeProp.GetString() == "0") isFile = true;
-            else if (fsObjTypeProp.GetString() == "1") isFile = false;
+            if (fsObjTypeProp.GetString() == "0" && item.ContentType?.Name != "Folder" && item.ContentType?.Name != "Document Set")
+                isFile = true;
         }
 
         if (isFile)

@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
-using System.Net.Http.Headers;
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using Duplicati.Library.Common.IO;
@@ -15,11 +15,21 @@ public partial class RestoreProvider
 
     internal class OnenoteApiImpl(APIHelper provider)
     {
-        internal Task<GraphNotebook> CreateNotebookAsync(string userIdOrUpn, string displayName, CancellationToken ct)
+        internal Task<GraphNotebook> CreateUserNotebookAsync(string userIdOrUpn, string displayName, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userIdOrUpn);
             var url = $"{baseUrl}/v1.0/users/{user}/onenote/notebooks";
+
+            var content = new StringContent(JsonSerializer.Serialize(new { displayName }), Encoding.UTF8, "application/json");
+            return provider.PostGraphItemAsync<GraphNotebook>(url, content, ct);
+        }
+
+        internal Task<GraphNotebook> CreateGroupNotebookAsync(string groupId, string displayName, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var group = Uri.EscapeDataString(groupId);
+            var url = $"{baseUrl}/v1.0/groups/{group}/onenote/notebooks";
 
             var content = new StringContent(JsonSerializer.Serialize(new { displayName }), Encoding.UTF8, "application/json");
             return provider.PostGraphItemAsync<GraphNotebook>(url, content, ct);
@@ -57,6 +67,134 @@ public partial class RestoreProvider
 
             return provider.PostGraphItemStreamAsync<GraphOnenotePage>(url, contentStream, "text/html", ct);
         }
+
+        internal IAsyncEnumerable<GraphNotebook> GetUserNotebooks(string userIdOrUpn, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var user = Uri.EscapeDataString(userIdOrUpn);
+            var url = $"{baseUrl}/v1.0/users/{user}/onenote/notebooks";
+
+            return provider.GetAllGraphItemsAsync<GraphNotebook>(url, ct);
+        }
+
+        internal IAsyncEnumerable<GraphNotebook> GetGroupNotebooks(string groupId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var group = Uri.EscapeDataString(groupId);
+            var url = $"{baseUrl}/v1.0/groups/{group}/onenote/notebooks";
+
+            return provider.GetAllGraphItemsAsync<GraphNotebook>(url, ct);
+        }
+    }
+
+    private NotebookRestoreHelper? _notebookRestoreHelper = null;
+    internal NotebookRestoreHelper NotebookRestore => _notebookRestoreHelper ??= new NotebookRestoreHelper(this);
+
+    internal class NotebookRestoreHelper(RestoreProvider Provider)
+    {
+        private string? _targetUserId = null;
+        private string? _targetGroupId = null;
+        private bool _hasLoadedTarget = false;
+
+        private ConcurrentDictionary<string, string> _targetNotebookIds = new();
+
+        public async Task<string?> GetTargetNotebookId(string originalPath, string displayName, CancellationToken cancel)
+        {
+            if (_targetNotebookIds.TryGetValue(originalPath, out var notebookId))
+                return notebookId;
+
+            if (!_hasLoadedTarget)
+            {
+                _hasLoadedTarget = true;
+                var target = Provider.RestoreTarget;
+                if (target == null)
+                    throw new InvalidOperationException("Restore target is not set");
+
+                if (target.Type == SourceItemType.User)
+                {
+                    _targetUserId = target.Metadata.GetValueOrDefault("o365:Id");
+                }
+                else if (target.Type == SourceItemType.Group || target.Type == SourceItemType.GroupTeams)
+                {
+                    _targetGroupId = target.Metadata.GetValueOrDefault("o365:Id");
+                }
+                else if (target.Type == SourceItemType.Notebook)
+                {
+                    var targetId = target.Metadata.GetValueOrDefault("o365:Id");
+                    if (!string.IsNullOrWhiteSpace(targetId))
+                    {
+                        return targetId;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(_targetUserId))
+            {
+                // Check if notebook exists
+                if (!Provider._ignoreExisting)
+                {
+                    await EnsureExistingNotebooksLoaded(_targetUserId, null, cancel);
+                    if (_existingNotebooks.TryGetValue(displayName, out var existingId))
+                    {
+                        _targetNotebookIds[originalPath] = existingId;
+                        return existingId;
+                    }
+                }
+
+                // Create new
+                var newNotebook = await Provider.OnenoteApi.CreateUserNotebookAsync(_targetUserId, displayName, cancel);
+                _targetNotebookIds[originalPath] = newNotebook.Id;
+                return newNotebook.Id;
+            }
+            else if (!string.IsNullOrWhiteSpace(_targetGroupId))
+            {
+                // Check if notebook exists
+                if (!Provider._ignoreExisting)
+                {
+                    await EnsureExistingNotebooksLoaded(null, _targetGroupId, cancel);
+                    if (_existingNotebooks.TryGetValue(displayName, out var existingId))
+                    {
+                        _targetNotebookIds[originalPath] = existingId;
+                        return existingId;
+                    }
+                }
+
+                // Create new
+                var newNotebook = await Provider.OnenoteApi.CreateGroupNotebookAsync(_targetGroupId, displayName, cancel);
+                _targetNotebookIds[originalPath] = newNotebook.Id;
+                return newNotebook.Id;
+            }
+
+            return null;
+        }
+
+        private Dictionary<string, string> _existingNotebooks = new(StringComparer.OrdinalIgnoreCase);
+        private bool _hasLoadedExistingNotebooks = false;
+
+        private async Task EnsureExistingNotebooksLoaded(string? userId, string? groupId, CancellationToken cancel)
+        {
+            if (_hasLoadedExistingNotebooks)
+                return;
+
+            _hasLoadedExistingNotebooks = true;
+
+            IAsyncEnumerable<GraphNotebook>? notebooks = null;
+            if (userId != null)
+                notebooks = Provider.OnenoteApi.GetUserNotebooks(userId, cancel);
+            else if (groupId != null)
+                notebooks = Provider.OnenoteApi.GetGroupNotebooks(groupId, cancel);
+
+            if (notebooks != null)
+            {
+                await foreach (var notebook in notebooks)
+                {
+                    if (!string.IsNullOrWhiteSpace(notebook.DisplayName) && !string.IsNullOrWhiteSpace(notebook.Id))
+                    {
+                        _existingNotebooks.TryAdd(notebook.DisplayName, notebook.Id);
+                    }
+                }
+            }
+        }
     }
 
     private async Task RestoreNotebooks(CancellationToken cancel)
@@ -67,18 +205,6 @@ public partial class RestoreProvider
         var notebooks = GetMetadataByType(SourceItemType.Notebook);
         if (notebooks.Count == 0)
             return;
-
-        string? targetUserId = null;
-        if (RestoreTarget.Type == SourceItemType.User)
-        {
-            targetUserId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
-        if (string.IsNullOrWhiteSpace(targetUserId))
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreNotebooksMissingUser", null, "Could not determine target user for notebook restore.");
-            return;
-        }
 
         foreach (var notebook in notebooks)
         {
@@ -91,9 +217,16 @@ public partial class RestoreProvider
                 var metadata = notebook.Value;
                 var displayName = metadata.GetValueOrDefault("o365:Name") ?? metadata.GetValueOrDefault("o365:DisplayName") ?? "Restored Notebook";
 
-                var newNotebook = await OnenoteApi.CreateNotebookAsync(targetUserId, displayName, cancel);
-                _restoredNotebookMap[originalPath] = newNotebook.Id;
-                _metadata.TryRemove(originalPath, out _);
+                var notebookId = await NotebookRestore.GetTargetNotebookId(originalPath, displayName, cancel);
+                if (notebookId != null)
+                {
+                    _restoredNotebookMap[originalPath] = notebookId;
+                    _metadata.TryRemove(originalPath, out _);
+                }
+                else
+                {
+                    Log.WriteWarningMessage(LOGTAG, "RestoreNotebooksMissingTarget", null, $"Could not determine target for notebook {notebook.Key}");
+                }
             }
             catch (Exception ex)
             {

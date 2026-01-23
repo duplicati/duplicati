@@ -28,6 +28,7 @@ public enum SourceItemType
     GroupFiles,
     GroupPlanner,
     GroupTeams,
+    GroupNotes,
     GroupChannel,
     GroupChannelMessage,
     GroupChannelMessageReply,

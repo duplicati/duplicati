@@ -13,6 +13,136 @@ public partial class RestoreProvider
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _restoredSharePointFolderMap = new();
     private readonly Dictionary<string, HashSet<string>> _sharePointListExistingItems = new();
 
+    private SharePointListsImpl SharePointListApi => new SharePointListsImpl(this._apiHelper);
+
+    private class SharePointListsImpl(APIHelper provider)
+    {
+        // Case-insensitive set of fields that SharePoint treats as read-only/system
+        private static readonly IReadOnlySet<string> ListItemBlockedFields =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "LinkTitle",
+                "LinkTitleNoMenu",
+                "ID",
+                "Edit",
+                "GUID",
+                "Created",
+                "Modified",
+                "Author",
+                "AuthorLookupId",
+                "Editor",
+                "EditorLookupId",
+                "FileLeafRef",
+                "FileRef",
+                "FileDirRef",
+                "EncodedAbsUrl",
+                "ServerUrl",
+                "ServerRelativeUrl",
+                "Attachments",
+                "ItemChildCount",
+                "FolderChildCount",
+                "ContentType",
+                "_UIVersionString",
+                "_ComplianceFlags",
+                "_ComplianceTag"
+            };
+
+        internal async Task<IReadOnlySet<string>> GetBlockedListItemFieldNamesAsync(
+            string siteId,
+            string listId,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var site = Uri.EscapeDataString(siteId);
+            var list = Uri.EscapeDataString(listId);
+
+            var url =
+                $"{baseUrl}/v1.0/sites/{site}/lists/{list}/columns" +
+                "?$select=name,readOnly,hidden,isSealed";
+
+            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+                req.Headers.Authorization =
+                    await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+                return req;
+            }
+
+            using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
+            await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+            using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
+            var blocked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            blocked.UnionWith(ListItemBlockedFields);
+
+            if (doc.RootElement.TryGetProperty("value", out var columns))
+            {
+                foreach (var col in columns.EnumerateArray())
+                {
+                    var name = col.GetProperty("name").GetString();
+                    if (string.IsNullOrWhiteSpace(name))
+                        continue;
+
+                    var readOnly = col.TryGetProperty("readOnly", out var ro) && ro.GetBoolean();
+                    var hidden = col.TryGetProperty("hidden", out var hid) && hid.GetBoolean();
+                    var sealedCol = col.TryGetProperty("isSealed", out var seal) && seal.GetBoolean();
+
+                    if (readOnly) // || hidden || sealedCol)
+                        blocked.Add(name);
+                }
+            }
+
+            return blocked;
+        }
+
+        internal async Task<GraphListItem?> CreateListItemAsync(
+            string siteId,
+            string listId,
+            JsonElement fields,
+            CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var site = Uri.EscapeDataString(siteId);
+            var list = Uri.EscapeDataString(listId);
+            var url = $"{baseUrl}/v1.0/sites/{site}/lists/{list}/items";
+
+            var blockedFields = await GetBlockedListItemFieldNamesAsync(siteId, listId, ct).ConfigureAwait(false);
+
+            var any = false;
+            using var ms = new MemoryStream();
+            using (var jw = new Utf8JsonWriter(ms))
+            {
+                jw.WriteStartObject();
+                jw.WritePropertyName("fields");
+                jw.WriteStartObject();
+
+                if (fields.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var prop in fields.EnumerateObject())
+                    {
+                        if (blockedFields.Contains(prop.Name))
+                            continue;
+                        any = true;
+                        jw.WritePropertyName(prop.Name);
+                        prop.Value.WriteTo(jw);
+                    }
+                }
+
+                jw.WriteEndObject();
+                jw.WriteEndObject();
+            }
+
+            if (!any)
+                return null;
+
+            ms.Position = 0;
+            return await provider
+                .PostGraphItemStreamAsync<GraphListItem>(url, ms, "application/json", ct)
+                .ConfigureAwait(false);
+        }
+    }
+
     private async Task RestoreSharePointLists(CancellationToken cancel)
     {
         if (RestoreTarget == null)
@@ -287,7 +417,7 @@ public partial class RestoreProvider
                         }
                     }
 
-                    var res = await SourceProvider.SharePointListApi.CreateListItemAsync(targetSiteId, listId, itemData.Fields.Value, cancel);
+                    var res = await SharePointListApi.CreateListItemAsync(targetSiteId, listId, itemData.Fields.Value, cancel);
                     if (res == null)
                         Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemFailed", null, $"Failed to create list item for {originalPath} (no restorable fields), skipping.");
                 }

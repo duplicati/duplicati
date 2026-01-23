@@ -25,19 +25,21 @@ internal class GroupTypeSourceEntry(SourceProvider provider, string path, GraphG
                     Office365GroupType.Files => SourceItemType.GroupFiles.ToString(),
                     Office365GroupType.Planner => SourceItemType.GroupPlanner.ToString(),
                     Office365GroupType.Teams => SourceItemType.GroupTeams.ToString(),
+                    Office365GroupType.Notes => SourceItemType.GroupNotes.ToString(),
                     _ => null
                 }
             },
-                { "o365:Name", groupType switch
+            { "o365:Name", groupType switch
                 {
                     Office365GroupType.Mailbox => "Mailbox",
                     Office365GroupType.Calendar => "Calendar",
                     Office365GroupType.Files => "Files",
                     Office365GroupType.Planner => "Planner",
                     Office365GroupType.Teams => "Teams",
+                    Office365GroupType.Notes => "Notes",
                     _ => null
                 }
-                }
+            }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value)
@@ -71,7 +73,7 @@ internal class GroupTypeSourceEntry(SourceProvider provider, string path, GraphG
             Office365GroupType.Files => FilesEntries(cancellationToken),
             Office365GroupType.Planner => PlannerEntries(cancellationToken),
             Office365GroupType.Teams => TeamsEntries(cancellationToken),
-
+            Office365GroupType.Notes => NotesEntries(cancellationToken),
             _ => null
         };
 
@@ -199,6 +201,16 @@ internal class GroupTypeSourceEntry(SourceProvider provider, string path, GraphG
 
             yield return new GroupInstalledAppSourceEntry(provider, this.Path, group, app);
         }
+    }
 
+    private async IAsyncEnumerable<ISourceProviderEntry> NotesEntries([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await foreach (var notebook in provider.GroupNotesApi.ListGroupOneNoteNotebooksAsync(group.Id, cancellationToken).ConfigureAwait(false))
+        {
+            if (cancellationToken.IsCancellationRequested)
+                yield break;
+
+            yield return new NotebookSourceEntry(provider, this.Path, notebook);
+        }
     }
 }

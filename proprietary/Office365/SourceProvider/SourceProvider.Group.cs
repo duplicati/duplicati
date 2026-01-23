@@ -588,4 +588,23 @@ partial class SourceProvider
             return true;
         }
     }
+
+    internal GroupNotesApiImpl GroupNotesApi => new GroupNotesApiImpl(_apiHelper);
+
+    internal sealed class GroupNotesApiImpl(APIHelper provider)
+    {
+        internal IAsyncEnumerable<GraphNotebook> ListGroupOneNoteNotebooksAsync(string groupId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var group = Uri.EscapeDataString(groupId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphNotebook>();
+            var url =
+                $"{baseUrl}/v1.0/groups/{group}/onenote/notebooks" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphNotebook>(url, ct);
+        }
+    }
 }

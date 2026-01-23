@@ -16,7 +16,8 @@ internal enum Office365GroupType
     Calendar = 2,
     Files = 4,
     Planner = 8,
-    Teams = 16
+    Teams = 16,
+    Notes = 32
 }
 
 internal class GroupSourceEntry(SourceProvider provider, string path, GraphGroup group)

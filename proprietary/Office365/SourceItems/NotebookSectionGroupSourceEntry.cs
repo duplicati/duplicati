@@ -7,7 +7,7 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
-internal class NotebookSectionGroupSourceEntry(SourceProvider provider, string path, GraphUser user, GraphNotebook notebook, GraphOnenoteSectionGroup sectionGroup)
+internal class NotebookSectionGroupSourceEntry(SourceProvider provider, string path, GraphOnenoteSectionGroup sectionGroup)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, sectionGroup.Id)), sectionGroup.CreatedDateTime.FromGraphDateTime(), sectionGroup.LastModifiedDateTime.FromGraphDateTime())
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -20,18 +20,12 @@ internal class NotebookSectionGroupSourceEntry(SourceProvider provider, string p
             yield return new NotebookSectionSourceEntry(provider, this.Path, section);
         }
 
-        await foreach (var subSectionGroup in provider.OnenoteApi.ListNotebookSectionGroupsAsync(notebook.Id, cancellationToken).ConfigureAwait(false))
+        await foreach (var childSectionGroup in provider.OnenoteApi.ListSectionGroupSectionGroupsAsync(sectionGroup.Id, cancellationToken).ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
-            await foreach (var sectionGroup in provider.OnenoteApi.ListSectionGroupSectionGroupsAsync(sectionGroup.Id, cancellationToken).ConfigureAwait(false))
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    yield break;
-
-                yield return new NotebookSectionGroupSourceEntry(provider, this.Path, user, notebook, sectionGroup);
-            }
+            yield return new NotebookSectionGroupSourceEntry(provider, this.Path, childSectionGroup);
         }
     }
 

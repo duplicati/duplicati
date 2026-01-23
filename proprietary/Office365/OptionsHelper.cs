@@ -34,7 +34,8 @@ internal static class OptionsHelper
     /// </summary>
     private static readonly Office365GroupType[] DELEGATED_GROUP_TYPES =
     [
-        Office365GroupType.Calendar
+        Office365GroupType.Calendar,
+        Office365GroupType.Notes
     ];
 
     /// <summary>
