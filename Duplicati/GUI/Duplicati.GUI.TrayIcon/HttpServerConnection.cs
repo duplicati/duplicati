@@ -263,7 +263,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             var settings = await PerformRequestAsync<Dictionary<string, string>>("GET", "/serversettings", null, null)
                 .ConfigureAwait(false);
-            if (settings != null && settings.TryGetValue("disable-tray-icon-login", out var str))
+            if (settings != null && settings.TryGetValue(Server.Database.ServerSettings.CONST.DISABLE_TRAY_ICON_LOGIN, out var str))
                 m_disableTrayIconLogin = Library.Utility.Utility.ParseBool(str, false);
         }
 
