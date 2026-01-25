@@ -7,7 +7,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
-internal class CalendarSourceEntry(SourceProvider provider, string path, GraphUser user, GraphCalendarGroup calendarGroup, GraphCalendar calendar)
+internal class CalendarSourceEntry(SourceProvider provider, string path, GraphUser user, GraphCalendar calendar)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, calendar.Id)), null, null)
 {
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

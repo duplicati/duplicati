@@ -28,6 +28,10 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
     /// </summary>
     private readonly string _restorePath;
     /// <summary>
+    /// Whether the overwrite option has been set
+    /// </summary>
+    private readonly bool _hasSetOverwriteOption;
+    /// <summary>
     /// Source provider for accessing currently existing items on the destination tenant
     /// </summary>
     internal SourceProvider SourceProvider { get; init; }
@@ -122,6 +126,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         _apiHelper = null!;
         _restorePath = null!;
         SourceProvider = null!;
+        _hasSetOverwriteOption = false;
     }
 
     /// <summary>
@@ -146,9 +151,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         );
 
         _ignoreExisting = Utility.ParseBoolOption(options, OptionsHelper.OFFICE_IGNORE_EXISTING_OPTION);
-        var overwrite = Utility.ParseBoolOption(options, "overwrite");
-        if (!overwrite)
-            throw new UserInformationException(Strings.RestoreTargetMissingOverwriteOption(OptionsHelper.OFFICE_IGNORE_EXISTING_OPTION), "OverwriteOptionNotSet");
+        _hasSetOverwriteOption = Utility.ParseBoolOption(options, "overwrite");
 
         var sourceOpts = new Dictionary<string, string?>(options);
         sourceOpts["store-metadata-content-in-database"] = "true";
@@ -185,6 +188,9 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
     /// <inheritdoc />
     public async Task Initialize(CancellationToken cancel)
     {
+        if (!_hasSetOverwriteOption)
+            throw new UserInformationException(Strings.RestoreTargetMissingOverwriteOption("overwrite", OptionsHelper.OFFICE_IGNORE_EXISTING_OPTION), "OverwriteOptionNotSet");
+
         await _apiHelper.AcquireAccessTokenAsync(true, cancel);
         await SourceProvider.Initialize(cancel);
         var entry = await SourceProvider.GetEntry(_restorePath, isFolder: true, cancel);
@@ -198,6 +204,20 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
         RestoreTarget = new RestoreTargetData(_restorePath, entry, metadata, type);
     }
+
+    /// <inheritdoc />
+    public async Task Test(CancellationToken cancellationToken)
+    {
+        await _apiHelper.AcquireAccessTokenAsync(false, cancellationToken);
+
+        // If we have no path, just check that we can connect
+        if (string.IsNullOrWhiteSpace(_restorePath))
+            return;
+
+        // Otherwise, check that the path exists and is a valid target
+        await Initialize(cancellationToken);
+    }
+
 
     /// <summary>
     /// Normalizes the given path by applying the RemovedRestorePrefix if it has been removed

@@ -51,6 +51,13 @@ public interface IRestoreDestinationProvider : IDisposable
     Task Finalize(Action<double>? progressCallback, CancellationToken cancel);
 
     /// <summary>
+    /// Tests the provider connection
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    Task Test(CancellationToken cancellationToken);
+
+    /// <summary>
     /// Creates the folder at the given path if it does not exist
     /// </summary>
     /// <param name="path">The path to create</param>

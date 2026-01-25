@@ -94,6 +94,10 @@ public class FileRestoreDestinationProvider(string mountedPath) : IRestoreDestin
         => Task.CompletedTask;
 
     /// <inheritdoc />
+    public Task Test(CancellationToken cancellationToken)
+        => SystemIO.IO_OS.DirectoryExists(mountedPath) ? Task.CompletedTask : throw new Exception($"The path {mountedPath} does not exist");
+
+    /// <inheritdoc />
     public Task<Stream> OpenRead(string path, CancellationToken cancel)
         => Task.FromResult<Stream>(SystemIO.IO_OS.FileOpenRead(path));
     /// <inheritdoc />

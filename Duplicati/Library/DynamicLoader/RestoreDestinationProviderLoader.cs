@@ -169,13 +169,34 @@ namespace Duplicati.Library.DynamicLoader
         }
 
         /// <summary>
-        /// Instanciates a specific SourceProvider, given the url and options
+        /// Instanciates a specific RestoreDestinationProvider, given the url and options
         /// </summary>
         /// <param name="url">The url to create the instance for</param>
         /// <param name="options">The options to pass to the instance constructor</param>
         /// <param name="cancellationToken">The cancellation token</param>
-        /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
-        public static async Task<IRestoreDestinationProvider> GetRestoreDestinationProvider(string url, Dictionary<string, string> options, CancellationToken cancellationToken)
+        /// <returns>The instanciated RestoreDestinationProvider or null if the url is not supported</returns>
+        public static Task<IRestoreDestinationProvider> GetRestoreDestinationProvider(string url, Dictionary<string, string> options, CancellationToken cancellationToken)
+            => GetRestoreDestinationProvider(url, options, false, cancellationToken);
+
+        /// <summary>
+        /// Instanciates a specific RestoreDestinationProvider for testing purposes, given the url and options
+        /// </summary>
+        /// <param name="url">The url to create the instance for</param>
+        /// <param name="options">The options to pass to the instance constructor</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The instanciated RestoreDestinationProvider or null if the url is not supported</returns>
+        public static Task<IRestoreDestinationProvider> GetRestoreDestinationProviderForTesting(string url, Dictionary<string, string> options, CancellationToken cancellationToken)
+            => GetRestoreDestinationProvider(url, options, true, cancellationToken);
+
+        /// <summary>
+        /// Instanciates a specific RestoreDestinationProvider, given the url and options
+        /// </summary>
+        /// <param name="url">The url to create the instance for</param>
+        /// <param name="options">The options to pass to the instance constructor</param>
+        /// <param name="getForTesting">If true, the RestoreDestinationProvider is instanciated for testing purposes, and may not be used for actual backups</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The instanciated RestoreDestinationProvider or null if the url is not supported</returns>
+        private static async Task<IRestoreDestinationProvider> GetRestoreDestinationProvider(string url, Dictionary<string, string> options, bool getForTesting, CancellationToken cancellationToken)
         {
             // Source providers are preferred over backends
             var provider = _RestoreDestinationProvider.GetRestoreDestinationProvider(url, options);
@@ -196,7 +217,8 @@ namespace Duplicati.Library.DynamicLoader
 
             try
             {
-                await provider.Initialize(cancellationToken).ConfigureAwait(false);
+                if (!getForTesting)
+                    await provider.Initialize(cancellationToken).ConfigureAwait(false);
                 return provider;
             }
             catch

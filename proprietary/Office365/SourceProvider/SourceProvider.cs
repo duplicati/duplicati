@@ -29,6 +29,11 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private readonly string _mountPoint;
 
     /// <summary>
+    /// Indicates whether the metadata storage option has been set.
+    /// </summary>
+    private readonly bool _hasSetMetadataStorageOption;
+
+    /// <summary>
     /// The timeout options for the backend
     /// </summary>
     private readonly TimeoutOptionsHelper.Timeouts _timeouts;
@@ -81,6 +86,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         _includedRootTypes = null!;
         _includedUserTypes = null!;
         _includedGroupTypes = null!;
+        _hasSetMetadataStorageOption = false;
     }
 
     /// <summary>
@@ -91,8 +97,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <param name="options">The source provider options.</param>
     public SourceProvider(string url, string mountPoint, Dictionary<string, string?> options)
     {
-        if (!Library.Utility.Utility.ParseBoolOption(options, "store-metadata-content-in-database"))
-            throw new UserInformationException(Strings.MetadataStorageNotEnabled("store-metadata-content-in-database"), "DatabaseMetadataStorageNotEnabled");
+        _hasSetMetadataStorageOption = Library.Utility.Utility.ParseBoolOption(options, "store-metadata-content-in-database");
 
         _mountPoint = mountPoint;
         var parsedOptions = OptionsHelper.ParseAndValidateOptions(url, options);
@@ -135,7 +140,16 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
     /// <inheritdoc />
     public Task Initialize(CancellationToken cancellationToken)
-        => _apiHelper.AcquireAccessTokenAsync(true, cancellationToken);
+    {
+        if (!_hasSetMetadataStorageOption)
+            throw new UserInformationException(Strings.MetadataStorageNotEnabled("store-metadata-content-in-database"), "DatabaseMetadataStorageNotEnabled");
+
+        return _apiHelper.AcquireAccessTokenAsync(true, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task Test(CancellationToken cancellationToken)
+        => _apiHelper.AcquireAccessTokenAsync(false, cancellationToken);
 
     /// <inheritdoc />
     public async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)

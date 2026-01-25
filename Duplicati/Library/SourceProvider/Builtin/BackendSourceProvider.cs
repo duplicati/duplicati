@@ -83,6 +83,10 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
     }
 
     /// <inheritdoc/>
+    public Task Test(CancellationToken cancellationToken)
+        => backend.TestAsync(cancellationToken);
+
+    /// <inheritdoc/>
     public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
         => new[] { Interlocked.Exchange(ref preparedRoot, null) ?? CreateRoot() }.ToAsyncEnumerable();
 

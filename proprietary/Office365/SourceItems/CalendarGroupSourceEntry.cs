@@ -29,7 +29,7 @@ internal class CalendarGroupSourceEntry(SourceProvider provider, string path, Gr
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
-            yield return new CalendarSourceEntry(provider, this.Path, user, group, calendar);
+            yield return new CalendarSourceEntry(provider, this.Path, user, calendar);
         }
     }
 }

@@ -176,7 +176,30 @@ namespace Duplicati.Library.DynamicLoader
         /// <param name="options">The options to pass to the instance constructor</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
-        public static async Task<ISourceProviderModule> GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)
+        public static Task<ISourceProviderModule> GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)
+            => GetSourceProvider(url, mountPoint, options, false, cancellationToken);
+
+        /// <summary>
+        /// Instanciates a specific SourceProvider for testing, given the url and options
+        /// </summary>
+        /// <param name="url">The url to create the instance for</param>
+        /// <param name="mountPoint">The mount point to use</param>
+        /// <param name="options">The options to pass to the instance constructor</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
+        public static Task<ISourceProviderModule> GetSourceProviderForTesting(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)
+            => GetSourceProvider(url, mountPoint, options, true, cancellationToken);
+
+        /// <summary>
+        /// Instanciates a specific SourceProvider, given the url and options
+        /// </summary>
+        /// <param name="url">The url to create the instance for</param>
+        /// <param name="mountPoint">The mount point to use</param>
+        /// <param name="options">The options to pass to the instance constructor</param>
+        /// <param name="getForTesting">Whether the SourceProvider is requested for testing purposes</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
+        private static async Task<ISourceProviderModule> GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options, bool getForTesting, CancellationToken cancellationToken)
         {
             // Source providers are preferred over backends
             var provider = _SourceProviderLoader.GetSourceProvider(url, mountPoint, options);
@@ -195,7 +218,9 @@ namespace Duplicati.Library.DynamicLoader
 
             try
             {
-                await provider.Initialize(cancellationToken).ConfigureAwait(false);
+                // In test mode, we do not initialize the provider
+                if (!getForTesting)
+                    await provider.Initialize(cancellationToken).ConfigureAwait(false);
                 return provider;
             }
             catch

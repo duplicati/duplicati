@@ -20,7 +20,7 @@ internal static class Strings
     public static string MetadataStorageNotEnabled(string optionname) => LC.L(
         $"Storing metadata content in the database must be enabled to use the Microsoft 365 source provider. Use the option: --{optionname}");
 
-    public static string RestoreTargetMissingOverwriteOption(string optionname) => LC.L($"The Office365 restore target must have the overwrite option set to true. Use the provider specific option --{optionname} to avoid overwriting existing items.");
+    public static string RestoreTargetMissingOverwriteOption(string originalOptionName, string alternateOptionName) => LC.L($"The Office365 restore target must have the --{originalOptionName} option set to true. Use the provider specific option --{alternateOptionName} to avoid overwriting existing items.");
 
 
     public static string MissingTenantId => LC.L("A tenant ID must be supplied to query the Office 365 Management API.");
