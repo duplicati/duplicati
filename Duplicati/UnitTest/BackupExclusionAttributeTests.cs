@@ -73,7 +73,8 @@ public class BackupExclusionAttributeTests : BasicSetupHelper
             BindingFlags.NonPublic | BindingFlags.Static);
 
         Assert.That(method, Is.Not.Null, "HasBackupExclusionAttribute not found via reflection");
-        return (bool)method!.Invoke(null, [entry])!;
+        var task = (Task<bool>)method!.Invoke(null, [entry, CancellationToken.None])!;
+        return task.GetAwaiter().GetResult();
     }
 
     [Test]
