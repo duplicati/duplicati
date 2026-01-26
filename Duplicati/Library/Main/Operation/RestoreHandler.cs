@@ -935,14 +935,17 @@ namespace Duplicati.Library.Main.Operation
         private static async Task CreateDirectoryStructure(LocalRestoreDatabase database, IRestoreDestinationProvider restoreDestination, bool restoreToOriginalLocation, Options options, RestoreResults result)
         {
             // This part is not protected by try/catch as we need the target folder to exist
-            if (options.Dryrun)
+            if (!string.IsNullOrEmpty(restoreDestination.TargetDestination))
             {
-                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldCreateFolder", "Would create folder: {0}", restoreDestination.TargetDestination);
-            }
-            else if (await restoreDestination.CreateFolderIfNotExists(restoreDestination.TargetDestination, result.TaskControl.ProgressToken).ConfigureAwait(false))
-            {
-                Logging.Log.WriteVerboseMessage(LOGTAG, "CreateFolder", "Created root restore folder: {0}", restoreDestination.TargetDestination);
-                result.RestoredFolders++;
+                if (options.Dryrun)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldCreateFolder", "Would create folder: {0}", restoreDestination.TargetDestination);
+                }
+                else if (await restoreDestination.CreateFolderIfNotExists(restoreDestination.TargetDestination, result.TaskControl.ProgressToken).ConfigureAwait(false))
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "CreateFolder", "Created root restore folder: {0}", restoreDestination.TargetDestination);
+                    result.RestoredFolders++;
+                }
             }
 
             await foreach (var folder in database.GetTargetFolders(result.TaskControl.ProgressToken).ConfigureAwait(false))
