@@ -76,6 +76,11 @@ namespace Duplicati.Library.Main.Volumes
 
         public void FinishVolume(string volumehash, long volumesize)
         {
+            // If StartVolume was never called, m_writer will be null
+            // This can happen if the volume was created but never used
+            if (m_writer == null || m_streamwriter == null)
+                return;
+
             m_writer.WriteEndArray();
             m_writer.WritePropertyName("volumehash");
             m_writer.WriteValue(volumehash);
