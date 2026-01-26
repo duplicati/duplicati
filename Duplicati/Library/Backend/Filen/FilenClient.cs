@@ -216,7 +216,7 @@ public class FilenClient : IDisposable
     {
         var loginUrl = $"{baseUrl}/v3/auth/info";
         using var request = new HttpRequestMessage(HttpMethod.Post, loginUrl);
-        request.Content = new StringContent(JsonSerializer.Serialize(new { email }), Encoding.UTF8, "application/json");
+        request.Content = JsonContent.Create(new { email });
 
         var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         return await ExtractDataFromResponse<AuthInfo>(response, cancellationToken).ConfigureAwait(false);
@@ -257,14 +257,9 @@ public class FilenClient : IDisposable
                 var mkUrl = $"{baseUrl}/v3/user/masterKeys";
                 using var mkReq = new HttpRequestMessage(HttpMethod.Post, mkUrl);
                 mkReq.Headers.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+                    new AuthenticationHeaderValue("Bearer", apiKey);
 
-                // For retrieval, Filen accepts an empty/placeholder body
-                mkReq.Content = new StringContent(
-                    JsonSerializer.Serialize(new { masterKeys = "" }),
-                    Encoding.UTF8,
-                    "application/json");
-
+                mkReq.Content = JsonContent.Create(new { masterKeys = rootKeys.MasterKey.Key });
                 using var mkResp = await httpClient.SendAsync(mkReq, cancellationToken)
                     .ConfigureAwait(false);
 
@@ -273,18 +268,25 @@ public class FilenClient : IDisposable
                 var mkResult = await ExtractDataFromResponse<MasterKeysResponse>(mkResp, cancellationToken)
                     .ConfigureAwait(false);
 
-                var masterKeysPlain = rootKeys.MasterKey.DecryptMetadata(mkResult.MasterKeys);
+                var masterKeysPlain = string.IsNullOrWhiteSpace(mkResult.MasterKeys)
+                    ? ""
+                    : rootKeys.MasterKey.DecryptMetadata(mkResult.MasterKeys);
 
                 return new FilenAuthResult
                 {
                     ApiKey = apiKey,
                     AccountMasterKey = rootKeys.MasterKey,
-                    MasterKeys = masterKeysPlain.Split('|').Select(DerivedKey.Create).ToList()
+                    MasterKeys = masterKeysPlain
+                        .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                        .Prepend(rootKeys.MasterKey.Key)
+                        .Distinct()
+                        .Select(DerivedKey.Create)
+                        .ToList()
                 };
             }
-            catch
+            catch (Exception ex)
             {
-                // Any failure (invalid/expired apiKey, network, schema, decrypt) -> fall back to login
+                Logging.Log.WriteWarningMessage(LOGTAG, "ApiKeyAuthFailed", ex, "Failed to authenticate with API key, falling back to password login");
             }
         }
 
@@ -294,16 +296,13 @@ public class FilenClient : IDisposable
 
         var loginUrl = $"{baseUrl}/v3/login";
         using var loginReq = new HttpRequestMessage(HttpMethod.Post, loginUrl);
-        loginReq.Content = new StringContent(
-            JsonSerializer.Serialize(new
-            {
-                email,
-                password = rootKeys.Password,
-                twoFactorCode,
-                authVersion = authInfo.AuthVersion
-            }),
-            Encoding.UTF8,
-            "application/json");
+        loginReq.Content = JsonContent.Create(new
+        {
+            email,
+            password = rootKeys.Password,
+            twoFactorCode,
+            authVersion = authInfo.AuthVersion
+        });
 
         using var loginResp = await httpClient.SendAsync(loginReq, cancellationToken)
             .ConfigureAwait(false);
@@ -311,13 +310,20 @@ public class FilenClient : IDisposable
         var loginResult = await ExtractDataFromResponse<AuthResponse>(loginResp, cancellationToken)
             .ConfigureAwait(false);
 
-        var masterKeys = rootKeys.MasterKey.DecryptMetadata(loginResult.MasterKeys);
+        var masterKeys = string.IsNullOrWhiteSpace(loginResult.MasterKeys)
+            ? ""
+            : rootKeys.MasterKey.DecryptMetadata(loginResult.MasterKeys);
 
         return new FilenAuthResult
         {
             ApiKey = loginResult.ApiKey,
             AccountMasterKey = rootKeys.MasterKey,
-            MasterKeys = masterKeys.Split('|').Select(DerivedKey.Create).ToList()
+            MasterKeys = masterKeys
+                .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                .Prepend(rootKeys.MasterKey.Key)
+                .Distinct()
+                .Select(DerivedKey.Create)
+                .ToList()
         };
     }
 
@@ -337,9 +343,9 @@ public class FilenClient : IDisposable
     {
         response.EnsureSuccessStatusCode();
 
-        // var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        // var result = JsonSerializer.Deserialize<FilenResponseEnvelope<T>>(json);
-        var result = await response.Content.ReadFromJsonAsync<FilenResponseEnvelope<T>>(cancellationToken).ConfigureAwait(false);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        var result = JsonSerializer.Deserialize<FilenResponseEnvelope<T>>(json);
+        //var result = await response.Content.ReadFromJsonAsync<FilenResponseEnvelope<T>>(cancellationToken).ConfigureAwait(false);
         if (result is null)
             throw new Exception("Failed to read response");
         if (!result.Status || !string.IsNullOrWhiteSpace(result.Error))
@@ -381,7 +387,7 @@ public class FilenClient : IDisposable
             var url = $"{_baseUrl}/v3/dir/content";
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authResult.ApiKey);
-            request.Content = new StringContent(JsonSerializer.Serialize(new { uuid = folderUuid }), Encoding.UTF8, "application/json");
+            request.Content = JsonContent.Create(new { uuid = folderUuid });
 
             using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             return await ExtractDataFromResponse<DirListData>(response, cancellationToken).ConfigureAwait(false);
@@ -465,7 +471,7 @@ public class FilenClient : IDisposable
 
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authResult.ApiKey);
-        request.Content = new StringContent(JsonSerializer.Serialize(new { uuid = fileUuid }), Encoding.UTF8, "application/json");
+        request.Content = JsonContent.Create(new { uuid = fileUuid });
 
         var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         await ExtractDataFromResponse<string?>(response, cancellationToken).ConfigureAwait(false);
@@ -603,7 +609,7 @@ public class FilenClient : IDisposable
         var url = $"{_baseUrl}/v3/upload/done";
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authResult.ApiKey);
-        request.Content = new StringContent(JsonSerializer.Serialize(completeBody), Encoding.UTF8, "application/json");
+        request.Content = JsonContent.Create(completeBody);
         var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         var res = await ExtractDataFromResponse<FileUploadResponse>(response, cancellationToken).ConfigureAwait(false);
         if (res.Size != size)
@@ -668,7 +674,7 @@ public class FilenClient : IDisposable
         var url = $"{_baseUrl}/v3/dir/create";
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authResult.ApiKey);
-        request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        request.Content = JsonContent.Create(body);
         var response = await _httpClient.SendAsync(request, cancellationToken);
         var result = await ExtractDataFromResponse<CreateFolderResponse>(response, cancellationToken).ConfigureAwait(false);
         return result.Uuid;
