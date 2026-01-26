@@ -40,6 +40,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string ServiceAccountJsonDescriptionLong { get { return LC.L(@"String with JSON credentials for a Google Cloud service account. When set, AuthID is not required."); } }
         public static string ServiceAccountFileDescriptionShort { get { return LC.L(@"Service account JSON"); } }
         public static string ServiceAccountFileDescriptionLong { get { return LC.L(@"Path to a file with JSON credentials for a Google Cloud service account. When set, AuthID is not required."); } }
+        public static string RetentionPolicyModeDescriptionShort { get { return LC.L(@"Specify retention policy mode"); } }
+        public static string RetentionPolicyModeDescriptionLong { get { return LC.L(@"This option specifies the retention policy mode to use when setting object lock. Possible values are 'Locked' and 'Unlocked'."); } }
     }
 
     internal static class GoogleDrive

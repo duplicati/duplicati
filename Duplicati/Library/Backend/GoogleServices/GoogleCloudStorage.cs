@@ -34,7 +34,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class GoogleCloudStorage : IBackend, IStreamingBackend
+    public class GoogleCloudStorage : IBackend, IStreamingBackend, ILockingBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("gcs", null);
         private const string PROJECT_OPTION = "gcs-project";
@@ -43,6 +43,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         private const string STORAGECLASS_OPTION = "gcs-storage-class";
         private const string SERVICE_ACCOUNT_JSON_OPTION = "gcs-service-account-json";
         private const string SERVICE_ACCOUNT_FILE_OPTION = "gcs-service-account-file";
+        private const string RETENTION_POLICY_MODE_OPTION = "gcs-retention-policy-mode";
+
+        private const RetentionPolicyMode DEFAULT_RETENTION_POLICY_MODE = RetentionPolicyMode.Unlocked;
 
         private const string CREDENTIAL_SCOPE = "https://www.googleapis.com/auth/devstorage.read_write";
 
@@ -53,6 +56,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         private readonly string? m_location;
         private readonly string? m_storage_class;
+        private readonly RetentionPolicyMode m_retention_policy_mode;
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
         public GoogleCloudStorage()
@@ -61,6 +65,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             m_prefix = null!;
             m_oauth = null!;
             m_timeouts = null!;
+            m_retention_policy_mode = RetentionPolicyMode.Locked;
         }
 
         public GoogleCloudStorage(string url, Dictionary<string, string?> options)
@@ -82,6 +87,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             m_location = options.GetValueOrDefault(LOCATION_OPTION);
             m_storage_class = options.GetValueOrDefault(STORAGECLASS_OPTION);
 
+            m_retention_policy_mode = Utility.Utility.ParseEnumOption(options, RETENTION_POLICY_MODE_OPTION, DEFAULT_RETENTION_POLICY_MODE);
             if (!string.IsNullOrWhiteSpace(serviceAccountJson))
             {
                 m_oauth = new ServiceAccountHttpClient(GoogleCredential.FromJson(serviceAccountJson).CreateScoped(CREDENTIAL_SCOPE));
@@ -121,6 +127,23 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             public string? name { get; set; }
             public string? location { get; set; }
             public string? storageClass { get; set; }
+        }
+
+        private class ObjectMetadata
+        {
+            public Retention? retention { get; set; }
+        }
+
+        private class Retention
+        {
+            public string? mode { get; set; }
+            public DateTime? retainUntilTime { get; set; }
+        }
+
+        private enum RetentionPolicyMode
+        {
+            Locked,
+            Unlocked
         }
 
         private async Task<T> HandleListExceptions<T>(Func<Task<T>> func)
@@ -198,6 +221,57 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }).ConfigureAwait(false);
         }
 
+        public async Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancellationToken)
+        {
+            var url = WebApi.GoogleCloudStorage.MetadataUrl(m_bucket, Utility.Uri.UrlPathEncode(m_prefix + remotename));
+
+            try
+            {
+                using var req = await m_oauth.CreateRequestAsync(url, HttpMethod.Get, cancellationToken).ConfigureAwait(false);
+                req.Headers.Add("Accept", "application/json");
+
+                using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var metadata = await resp.Content.ReadFromJsonAsync<ObjectMetadata>(cancellationToken).ConfigureAwait(false);
+
+                return metadata?.retention?.retainUntilTime;
+            }
+            catch (HttpRequestException hrex)
+            {
+                if (hrex.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileMissingException();
+                throw;
+            }
+        }
+
+        public async Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancellationToken)
+        {
+            var url = WebApi.GoogleCloudStorage.MetadataUrl(m_bucket, Utility.Uri.UrlPathEncode(m_prefix + remotename));
+
+            var metadata = new ObjectMetadata
+            {
+                retention = new Retention
+                {
+                    mode = m_retention_policy_mode.ToString(),
+                    retainUntilTime = lockUntilUtc
+                }
+            };
+
+            try
+            {
+                using var req = await m_oauth.CreateRequestAsync(url, new HttpMethod("PATCH"), cancellationToken).ConfigureAwait(false);
+                req.Content = JsonContent.Create(metadata);
+                req.Headers.Add("Accept", "application/json");
+
+                using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            }
+            catch (HttpRequestException hrex)
+            {
+                if (hrex.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileMissingException();
+                throw;
+            }
+        }
+
         public Task TestAsync(CancellationToken cancelToken)
             => this.TestReadWritePermissionsAsync(cancelToken);
 
@@ -248,6 +322,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                     .. AuthIdOptionsHelper.GetOptions(TOKEN_URL),
                     new CommandLineArgument(SERVICE_ACCOUNT_JSON_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionLong),
                     new CommandLineArgument(SERVICE_ACCOUNT_FILE_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionLong),
+                    new CommandLineArgument(RETENTION_POLICY_MODE_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.RetentionPolicyModeDescriptionShort, Strings.GoogleCloudStorage.RetentionPolicyModeDescriptionLong, DEFAULT_RETENTION_POLICY_MODE.ToString(), null, Enum.GetNames(typeof(RetentionPolicyMode))),
                     new CommandLineArgument(PROJECT_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ProjectDescriptionShort, Strings.GoogleCloudStorage.ProjectDescriptionLong),
                     .. TimeoutOptionsHelper.GetOptions(),
                 ];
