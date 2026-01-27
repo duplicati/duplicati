@@ -294,7 +294,14 @@ namespace Duplicati.Library.Main
                     {
                         try
                         {
-                            await backendManager.DeleteAsync(list[i].File.Name, list[i].File.Size, true, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                            if (m_options.Dryrun)
+                            {
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteFile", "Would delete file: {0}", list[i].File.Name);
+                            }
+                            else
+                            {
+                                await backendManager.DeleteAsync(list[i].File.Name, list[i].File.Size, true, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                            }
                         }
                         catch (Exception ex)
                         {
