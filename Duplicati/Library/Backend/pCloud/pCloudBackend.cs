@@ -562,7 +562,7 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
         var fileId = await GetFileId(oldname, cancellationToken).ConfigureAwait(false);
         var encodedNewName = Uri.EscapeDataString(newname);
 
-        using var request = CreateRequest($"/renamefile?fileid={fileId}&tofilename={encodedNewName}", HttpMethod.Get);
+        using var request = CreateRequest($"/renamefile?fileid={fileId}&toname={encodedNewName}", HttpMethod.Get);
         using var response = await Utility.Utility.WithTimeout(_Timeouts.ShortTimeout, cancellationToken,
             ct => _HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct)
         ).ConfigureAwait(false);
