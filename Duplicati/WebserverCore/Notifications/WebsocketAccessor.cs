@@ -262,7 +262,7 @@ public class WebsocketAccessor : IWebsocketAccessor
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "WebsockSendFailure", ex, $"Failed to send websocket message: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "WebsockSendFailure", ex, $"Failed to send websocket message");
         }
     }
 
@@ -277,7 +277,7 @@ public class WebsocketAccessor : IWebsocketAccessor
         }
         catch (Exception ex)
         {
-            Log.WriteErrorMessage(LOGTAG, "WebsocketDeserializationError", ex, $"Failed to deserialize websocket message: {ex.Message}");
+            Log.WriteErrorMessage(LOGTAG, "WebsocketDeserializationError", ex, $"Failed to deserialize websocket message");
             await SendRequestReply<object>(socket, "", null, "Invalid message format", false);
             return;
         }

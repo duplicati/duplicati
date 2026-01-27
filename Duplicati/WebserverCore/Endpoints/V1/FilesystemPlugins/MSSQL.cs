@@ -76,7 +76,7 @@ public class MSSQL : IFilesystemPlugin
 
                 var servers = serverNames.Select(x => new Dto.TreeNodeDto
                 {
-                    id = string.Join(Path.DirectorySeparatorChar, RootName, x) + Path.DirectorySeparatorChar,
+                    id = Util.AppendDirSeparator(string.Join(Path.DirectorySeparatorChar, RootName, x)),
                     text = x,
                     cls = "folder",
                     iconCls = "x-tree-icon-mssql",
