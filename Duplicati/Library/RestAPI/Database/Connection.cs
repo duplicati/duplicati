@@ -34,6 +34,7 @@ using Duplicati.Library.Main.Database;
 using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.RegularExpressions;
+using Duplicati.WebserverCore.Abstractions;
 
 #nullable enable
 
@@ -81,6 +82,8 @@ namespace Duplicati.Server.Database
 
         public static IReadOnlySet<string> PasswordFieldNames => _encryptedFields;
 
+        private Action m_startOrStopUsageReporter;
+
         public Connection(IDbConnection connection, bool disableFieldEncryption, EncryptedFieldHelper.KeyInstance? key, string dataFolder, Action startOrStopUsageReporter)
         {
             m_dataFolder = dataFolder;
@@ -88,8 +91,9 @@ namespace Duplicati.Server.Database
             m_key = key;
             m_connection = connection;
             m_errorcmd = m_connection.CreateCommand(@"INSERT INTO ""ErrorLog"" (""BackupID"", ""Message"", ""Exception"", ""Timestamp"") VALUES (@BackupId,@Message,@Exception,@Timestamp)");
+            m_startOrStopUsageReporter = startOrStopUsageReporter;
 
-            this.ApplicationSettings = new ServerSettings(this, startOrStopUsageReporter);
+            this.ApplicationSettings = new ServerSettings(this);
         }
 
         /// <summary>
@@ -391,7 +395,28 @@ namespace Duplicati.Server.Database
                     tr.Dispose();
                 }
             }
+
+            if (id == SERVER_SETTINGS_ID || id == ANY_BACKUP_ID)
+                SignalSettingsChanged();
         }
+
+        private void SignalSettingsChanged()
+        {
+            var provider = ServiceProvider;
+            if (provider != null)
+            {
+                provider?.GetRequiredService<INotificationUpdateService>()?.IncrementLastDataUpdateId();
+                provider?.GetRequiredService<EventPollNotify>()?.SignalNewEvent();
+                provider?.GetRequiredService<EventPollNotify>()?.SignalServerSettingsUpdated();
+                // If throttle options were changed, update now
+                provider?.GetRequiredService<IQueueRunnerService>()?.GetCurrentTask()?.UpdateThrottleSpeeds(ApplicationSettings.UploadSpeedLimit, ApplicationSettings.DownloadSpeedLimit);
+                provider?.GetRequiredService<LiveControls>()?.UpdatePowerModeProvider();
+            }
+
+            // In case the usage reporter is enabled or disabled, refresh now
+            m_startOrStopUsageReporter?.Invoke();
+        }
+
 
         internal string?[] GetSources(long id)
         {
