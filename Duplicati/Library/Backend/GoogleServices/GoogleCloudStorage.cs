@@ -34,7 +34,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class GoogleCloudStorage : IBackend, IStreamingBackend
+    public class GoogleCloudStorage : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("gcs", null);
         private const string PROJECT_OPTION = "gcs-project";
@@ -295,6 +295,39 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                     throw new FileMissingException();
                 throw;
             }
+        }
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            var url = WebApi.GoogleCloudStorage.RewriteUrl(m_bucket, Utility.Uri.UrlPathEncode(m_prefix + oldname), m_bucket, Utility.Uri.UrlPathEncode(m_prefix + newname));
+
+            // Perform rewrite (copy)
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, async ct =>
+            {
+                using var req = await m_oauth.CreateRequestAsync(url, HttpMethod.Post, ct).ConfigureAwait(false);
+                req.Content = new StringContent("", Encoding.UTF8, "application/json"); // Empty body
+                using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+
+                var res = await resp.Content.ReadFromJsonAsync<RewriteResponse>(ct).ConfigureAwait(false);
+                while (res != null && res.done == false)
+                {
+                    var token = res.rewriteToken;
+                    var nextUrl = url + "?rewriteToken=" + token;
+                    using var nextReq = await m_oauth.CreateRequestAsync(nextUrl, HttpMethod.Post, ct).ConfigureAwait(false);
+                    nextReq.Content = new StringContent("", Encoding.UTF8, "application/json");
+                    using var nextResp = await m_oauth.GetResponseAsync(nextReq, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+                    res = await nextResp.Content.ReadFromJsonAsync<RewriteResponse>(ct).ConfigureAwait(false);
+                }
+            }).ConfigureAwait(false);
+
+            // Delete old file
+            await DeleteAsync(oldname, cancellationToken).ConfigureAwait(false);
+        }
+
+        private class RewriteResponse
+        {
+            public bool done { get; set; }
+            public string? rewriteToken { get; set; }
         }
 
         #region IDisposable implementation

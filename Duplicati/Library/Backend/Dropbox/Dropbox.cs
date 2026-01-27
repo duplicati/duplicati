@@ -28,7 +28,7 @@ namespace Duplicati.Library.Backend
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class Dropbox : IBackend, IStreamingBackend
+    public class Dropbox : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("dropbox", null);
         private readonly string m_path;
@@ -207,6 +207,21 @@ namespace Duplicati.Library.Backend
             {
                 string path = string.Format("{0}/{1}", m_path, remotename);
                 await dbx.DownloadFileAsync(path, stream, cancelToken).ConfigureAwait(false);
+            }
+            catch (DropboxException de)
+            {
+                ThrowFolderMissingException(de);
+                throw;
+            }
+        }
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            try
+            {
+                string oldPath = $"{m_path}/{oldname}";
+                string newPath = $"{m_path}/{newname}";
+                await dbx.MoveAsync(oldPath, newPath, cancellationToken).ConfigureAwait(false);
             }
             catch (DropboxException de)
             {

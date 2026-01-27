@@ -448,6 +448,52 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
+    /// Renames a file.
+    /// </summary>
+    /// <param name="oldname">The old filename</param>
+    /// <param name="newname">The new filename</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+    {
+        await _semaphore.WaitAsync(cancellationToken);
+        try
+        {
+            await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ =>
+            {
+                var status = _smbFileStore.CreateFile(out var fileHandle, out var fileStatus, NormalizeSlashes(Path.Combine(_connectionParameters.Path, oldname)),
+                    AccessMask.GENERIC_WRITE | AccessMask.DELETE | AccessMask.SYNCHRONIZE,
+                    FileAttributes.Normal,
+                    ShareAccess.None,
+                    CreateDisposition.FILE_OPEN,
+                    CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
+                    null);
+
+                if (status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND)
+                    throw new FileMissingException();
+
+                if (status == NTStatus.STATUS_SUCCESS)
+                {
+                    var fileRenameInformation = new FileRenameInformationType2
+                    {
+                        ReplaceIfExists = true,
+                        FileName = NormalizeSlashes(Path.Combine(_connectionParameters.Path, newname))
+                    };
+                    status = _smbFileStore.SetFileInformation(fileHandle, fileRenameInformation);
+                    if (status != NTStatus.STATUS_SUCCESS)
+                        throw new UserInformationException($"{LC.L("Failed to rename file on RenameAsync")} with status {status}", "RenameFileError");
+                    status = _smbFileStore.CloseFile(fileHandle);
+                    if (status != NTStatus.STATUS_SUCCESS)
+                        throw new UserInformationException($"{LC.L("Failed to close file on RenameAsync")} with status {status}", "CloseFileError");
+                }
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    /// <summary>
     /// Synchronously dispose the resources.
     /// </summary>
     public void Dispose()

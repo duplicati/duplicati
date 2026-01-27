@@ -28,7 +28,7 @@ namespace Duplicati.Library.Backend.Filen;
 /// <summary>
 /// The Filen backend
 /// </summary>
-public class FilenBackend : IStreamingBackend
+public class FilenBackend : IStreamingBackend, IRenameEnabledBackend
 {
     /// <summary>
     /// The two-factor option name
@@ -271,5 +271,17 @@ public class FilenBackend : IStreamingBackend
     public void Dispose()
     {
         _client?.Dispose();
+    }
+
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+    {
+        var client = await GetClientAsync(cancellationToken).ConfigureAwait(false);
+        var folderUuid = await GetFolderUuid(client, cancellationToken).ConfigureAwait(false);
+        var fileEntry = await client.GetFileEntryAsync(folderUuid, oldname, _timeout.ListTimeout, cancellationToken).ConfigureAwait(false);
+
+        if (fileEntry == null)
+            throw new FileMissingException($"File '{oldname}' not found.");
+
+        await Utility.Utility.WithTimeout(_timeout.ShortTimeout, cancellationToken, ct => client.RenameFileAsync(fileEntry.Uuid, newname, ct)).ConfigureAwait(false);
     }
 }

@@ -20,8 +20,10 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -31,7 +33,7 @@ using Uri = Duplicati.Library.Utility.Uri;
 
 namespace Duplicati.Library.Backend.Box
 {
-    public class BoxBackend : IStreamingBackend
+    public class BoxBackend : IStreamingBackend, IRenameEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("box.com", null);
         private const string AUTHID_OPTION = "authid";
@@ -77,6 +79,23 @@ namespace Duplicati.Library.Backend.Box
 
                 errorResponse ??= new ErrorResponse { Status = (int)responseContext.StatusCode, Code = "Unknown", Message = rawData };
                 throw new UserInformationException($"Box.com ErrorResponse: {errorResponse.Status} - {errorResponse.Code}: {errorResponse.Message}", "box.com");
+            }
+
+            public async Task<T> PutAndGetJsonDataAsync<T>(string url, object item, CancellationToken cancellationToken)
+            {
+                var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item));
+
+                return await GetJsonDataAsync<T>(
+                    url,
+                    cancellationToken,
+                    request =>
+                    {
+                        request.Method = HttpMethod.Put;
+                        request.Content = new ByteArrayContent(data);
+                        request.Content.Headers.Add("Content-Length", data.Length.ToString());
+                        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    }
+                ).ConfigureAwait(false);
             }
         }
 
@@ -289,6 +308,27 @@ namespace Duplicati.Library.Backend.Box
                     {
                     }
                 }
+            }
+            catch
+            {
+                _fileCache.Clear();
+                throw;
+            }
+        }
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            var fileId = await GetFileIdAsync(oldname, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct => _oAuthHelper.PutAndGetJsonDataAsync<FileEntity>(
+                    $"{BOX_API_URL}/files/{fileId}",
+                    new CreateItemRequest { Name = newname },
+                    ct
+                )).ConfigureAwait(false);
+
+                _fileCache.Remove(oldname);
+                _fileCache[newname] = fileId;
             }
             catch
             {
