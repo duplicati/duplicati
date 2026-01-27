@@ -116,6 +116,12 @@ namespace Duplicati.Library.Backend.WebApi
             return Utility.Uri.UriBuilder(Url.API, path, queryParams);
         }
 
+        public static string MetadataUrl(string bucketId, string objectId)
+        {
+            var path = BucketObjectPath(bucketId, objectId);
+            return Utility.Uri.UriBuilder(Url.API, path);
+        }
+
         private static class Url
         {
             public const string API = "https://www.googleapis.com/storage/v1";
