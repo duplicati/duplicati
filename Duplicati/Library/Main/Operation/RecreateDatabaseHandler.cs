@@ -870,6 +870,32 @@ namespace Duplicati.Library.Main.Operation
                         var expectedmetablocklisthashes = (expectedmetablocks + hashes_pr_block - 1) / hashes_pr_block;
                         if (expectedmetablocks <= 1) expectedmetablocklisthashes = 0;
 
+                        if (!options.AllowRestoreOutsideTargetDirectory)
+                        {
+                            // Check for cross-platform rooted paths
+                            var isAbsolute =
+                                (fe.Path.Length > 0 && fe.Path[0] == '/') ||
+                                (fe.Path.Length > 2 && fe.Path[1] == ':' && (fe.Path[2] == '\\' || fe.Path[2] == '/')) ||
+                                fe.Path.StartsWith("\\\\");
+
+                            // Check for relative path segments
+                            var hasRelativeSegments = fe.Path.Contains("/../") || fe.Path.Contains("\\..\\")
+                                || fe.Path.EndsWith("/..") || fe.Path.EndsWith("\\..")
+                                || fe.Path.StartsWith("../") || fe.Path.StartsWith("..\\");
+
+                            if (hasRelativeSegments)
+                            {
+                                Logging.Log.WriteWarningMessage(LOGTAG, "PathTraversalDetected", null, "Path traversal detected in path: {0}", fe.Path);
+                                continue;
+                            }
+
+                            if (!Path.IsPathFullyQualified(fe.Path) && !isAbsolute)
+                            {
+                                Logging.Log.WriteWarningMessage(LOGTAG, "InvalidPath", null, "Invalid path: {0}", fe.Path);
+                                continue;
+                            }
+                        }
+
                         var metadataid = long.MinValue;
                         var split = LocalDatabase.SplitIntoPrefixAndName(fe.Path);
                         var prefixid = await restoredb
