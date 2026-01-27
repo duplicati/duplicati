@@ -36,6 +36,7 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
     /// <inheritdoc />
     public Task ClearReadOnlyAttribute(string path, CancellationToken cancel)
     {
+        VerifyPath(path);
         var currentAttr = SystemIO.IO_OS.GetFileAttributes(path);
         SystemIO.IO_OS.SetFileAttributes(path, currentAttr & ~FileAttributes.ReadOnly);
         return Task.CompletedTask;
@@ -55,6 +56,7 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
     /// <inheritdoc />
     public Task DeleteFile(string path, CancellationToken cancel)
     {
+        VerifyPath(path);
         SystemIO.IO_OS.FileDelete(path);
         return Task.CompletedTask;
     }
@@ -62,6 +64,7 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
     /// <inheritdoc />
     public Task DeleteFolder(string path, CancellationToken cancel)
     {
+        VerifyPath(path);
         SystemIO.IO_OS.DirectoryDelete(path, true);
         return Task.CompletedTask;
     }
@@ -73,15 +76,22 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
 
     /// <inheritdoc />
     public Task<bool> FileExists(string path, CancellationToken cancel)
-    => Task.FromResult(SystemIO.IO_OS.FileExists(path));
+    {
+        VerifyPath(path);
+        return Task.FromResult(SystemIO.IO_OS.FileExists(path));
+    }
 
     /// <inheritdoc />
     public Task<long> GetFileLength(string path, CancellationToken cancel)
-        => Task.FromResult(SystemIO.IO_OS.FileLength(path));
+    {
+        VerifyPath(path);
+        return Task.FromResult(SystemIO.IO_OS.FileLength(path));
+    }
 
     /// <inheritdoc />
     public Task<bool> HasReadOnlyAttribute(string path, CancellationToken cancel)
     {
+        VerifyPath(path);
         var currentAttr = SystemIO.IO_OS.GetFileAttributes(path);
         return Task.FromResult(currentAttr.HasFlag(FileAttributes.ReadOnly));
     }
@@ -100,12 +110,17 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
 
     /// <inheritdoc />
     public Task<Stream> OpenRead(string path, CancellationToken cancel)
-        => Task.FromResult<Stream>(SystemIO.IO_OS.FileOpenRead(path));
-    /// <inheritdoc />
+    {
+        VerifyPath(path);
+        return Task.FromResult<Stream>(SystemIO.IO_OS.FileOpenRead(path));
+    }
 
     /// <inheritdoc />
     public Task<Stream> OpenReadWrite(string path, CancellationToken cancel)
-        => Task.FromResult<Stream>(SystemIO.IO_OS.FileOpenReadWrite(path));
+    {
+        VerifyPath(path);
+        return Task.FromResult<Stream>(SystemIO.IO_OS.FileOpenReadWrite(path));
+    }
 
     /// <inheritdoc />
     public Task<Stream> OpenWrite(string path, CancellationToken cancel)
