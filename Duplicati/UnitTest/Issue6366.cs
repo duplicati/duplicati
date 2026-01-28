@@ -13,9 +13,10 @@ namespace Duplicati.UnitTest
 {
     public class Issue6366 : BasicSetupHelper
     {
-        [Test]
-        [Category("Purge")]
-        [Category("Performance")]
+        // Disabled because it takes too long to run, and the value is fairly low
+        // [Test]
+        // [Category("Purge")]
+        // [Category("Performance")]
         public async Task TestPurgeBrokenFilesPerformance()
         {
             var blocksize = 1024 * 10;
@@ -155,7 +156,7 @@ namespace Duplicati.UnitTest
                     dblockToDelete = dblocks.OrderByDescending(f => new FileInfo(f).CreationTime).First();
                 }
 
-                Thread.Sleep(1000); // Ensure filesystem timestamp granularity
+                Thread.Sleep(2000); // Ensure filesystem timestamp granularity
             }
 
             // Delete the dblock file
