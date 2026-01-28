@@ -25,7 +25,7 @@ using System.Linq;
 using System.Text;
 using Duplicati.Library.Interface;
 
-namespace Duplicati.Library.Modules.Builtin.ResultSerialization
+namespace Duplicati.Library.ResultSerialization
 {
     /// <summary>
     /// Provides a human-readable output for result data
