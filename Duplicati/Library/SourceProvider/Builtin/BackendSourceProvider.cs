@@ -47,6 +47,9 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
     public string DisplayName => backend.DisplayName;
 
     /// <inheritdoc/>
+    public string Description => backend.Description;
+
+    /// <inheritdoc/>
     public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
 
     /// <summary>
@@ -78,6 +81,10 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
         await root.PrepareEnumerator(cancellationToken).ConfigureAwait(false);
         preparedRoot = root;
     }
+
+    /// <inheritdoc/>
+    public Task Test(CancellationToken cancellationToken)
+        => backend.TestAsync(cancellationToken);
 
     /// <inheritdoc/>
     public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)

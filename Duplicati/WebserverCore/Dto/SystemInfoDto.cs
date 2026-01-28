@@ -170,6 +170,16 @@ public sealed record SystemInfoDto
     public required IEnumerable<IDynamicModule> ConnectionModules { get; init; }
 
     /// <summary>
+    /// Gets or sets the source provider modules.
+    /// </summary>
+    public required IEnumerable<IDynamicModule> SourceProviderModules { get; init; }
+
+    /// <summary>
+    /// Gets or sets the restore destination provider modules.
+    /// </summary>
+    public required IEnumerable<IDynamicModule> RestoreDestinationProviderModules { get; init; }
+
+    /// <summary>
     /// Gets or sets the server modules.
     /// </summary>
     public required IEnumerable<object> ServerModules { get; init; }

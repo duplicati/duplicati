@@ -38,7 +38,7 @@ internal sealed class MacOSPhotoAssetEntry : ISourceProviderEntry
     private readonly MacOSPhotosLibrary library;
     private readonly string libraryRootPath;
     private readonly MacOSPhotoAsset asset;
-    private readonly Dictionary<string, string> metadata;
+    private readonly Dictionary<string, string?> metadata;
 
     public MacOSPhotoAssetEntry(MacOSPhotosLibrary library, string rootPath, MacOSPhotoAsset asset)
     {
@@ -46,7 +46,7 @@ internal sealed class MacOSPhotoAssetEntry : ISourceProviderEntry
         libraryRootPath = rootPath ?? throw new ArgumentNullException(nameof(rootPath));
         this.asset = asset ?? throw new ArgumentNullException(nameof(asset));
 
-        metadata = new Dictionary<string, string>(StringComparer.Ordinal)
+        metadata = new Dictionary<string, string?>(StringComparer.Ordinal)
         {
             ["LocalIdentifier"] = asset.Identifier,
             ["OriginalFileName"] = asset.FileName
@@ -80,8 +80,6 @@ internal sealed class MacOSPhotoAssetEntry : ISourceProviderEntry
 
     public FileAttributes Attributes => FileAttributes.Normal;
 
-    public Dictionary<string, string> MinorMetadata => metadata;
-
     public bool IsBlockDevice => false;
 
     public bool IsCharacterDevice => false;
@@ -93,8 +91,8 @@ internal sealed class MacOSPhotoAssetEntry : ISourceProviderEntry
     public async Task<Stream> OpenRead(CancellationToken cancellationToken)
         => await library.OpenAssetStreamAsync(asset, cancellationToken).ConfigureAwait(false);
 
-    public Task<Stream?> OpenMetadataRead(CancellationToken cancellationToken)
-        => Task.FromResult<Stream?>(new MemoryStream(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(metadata)));
+    public Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+        => Task.FromResult(metadata);
 
     public Task<bool> FileExists(string filename, CancellationToken cancellationToken)
         => Task.FromResult(false);

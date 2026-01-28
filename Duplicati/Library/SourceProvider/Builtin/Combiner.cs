@@ -41,6 +41,10 @@ public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
     public Task Initialize(CancellationToken cancellationToken)
         => Task.WhenAll(providers.Select(x => x.Initialize(cancellationToken)));
 
+    /// <inheritdoc/>
+    public Task Test(CancellationToken cancellationToken)
+        => Task.WhenAll(providers.Select(x => x.Test(cancellationToken)));
+
     /// <inheritdoc />
     public async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {

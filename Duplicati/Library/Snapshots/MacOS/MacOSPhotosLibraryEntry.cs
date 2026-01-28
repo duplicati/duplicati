@@ -74,8 +74,6 @@ internal sealed class MacOSPhotosLibraryEntry : ISourceProviderEntry
 
     public FileAttributes Attributes => inner.Attributes;
 
-    public Dictionary<string, string> MinorMetadata => inner.MinorMetadata;
-
     public bool IsBlockDevice => inner.IsBlockDevice;
 
     public bool IsCharacterDevice => inner.IsCharacterDevice;
@@ -87,8 +85,8 @@ internal sealed class MacOSPhotosLibraryEntry : ISourceProviderEntry
     public Task<Stream> OpenRead(CancellationToken cancellationToken)
         => inner.OpenRead(cancellationToken);
 
-    public Task<Stream?> OpenMetadataRead(CancellationToken cancellationToken)
-        => inner.OpenMetadataRead(cancellationToken);
+    public Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+        => inner.GetMinorMetadata(cancellationToken);
 
     public async Task<bool> FileExists(string filename, CancellationToken cancellationToken)
     {

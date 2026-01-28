@@ -29,7 +29,7 @@ namespace Duplicati.Library.Interface;
 /// <summary>
 /// Interface for secret providers
 /// </summary>
-public interface ISecretProvider : IDynamicModule
+public interface ISecretProvider : ICommonModule
 {
     // abstract static Task<T> CreateAsync<T>(string config, CancellationToken cancellationToken)
     //     where T : ISecretProvider;
@@ -57,10 +57,6 @@ public interface ISecretProvider : IDynamicModule
     /// <param name="cancellationToken">The cancellation token.</param>
     Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken);
     /// <summary>
-    /// The key for the secret provider
-    /// </summary>
-    string Key { get; }
-    /// <summary>
     /// Indicates whether the secret provider is supported on the current platform.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -69,12 +65,4 @@ public interface ISecretProvider : IDynamicModule
     /// Indicates whether the secret provider supports setting secrets.
     /// </summary>
     bool IsSetSupported { get; }
-    /// <summary>
-    /// The display name of the secret provider
-    /// </summary>
-    string DisplayName { get; }
-    /// <summary>
-    /// The description of the secret provider
-    /// </summary>
-    string Description { get; }
 }

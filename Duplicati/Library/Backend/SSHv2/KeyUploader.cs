@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend
 
         #region IWebModule implementation
 
-        public IDictionary<string, string> Execute(IDictionary<string, string> options)
+        public async Task<IDictionary<string, string>> Execute(IDictionary<string, string> options, CancellationToken cancellationToken)
         {
             var res = new Dictionary<string, string>();
 
@@ -65,20 +65,20 @@ namespace Duplicati.Library.Backend
 
             using (var connection = new SSHv2(url, (Dictionary<string, string?>)options))
             {
-                var client = connection.CreateConnection(CancellationToken.None).Await();
+                var client = await connection.CreateConnection(cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    client.ChangeDirectory(SSH_FOLDER);
+                    await client.ChangeDirectoryAsync(SSH_FOLDER, cancellationToken).ConfigureAwait(false);
                 }
                 catch
                 {
-                    client.CreateDirectory(SSH_FOLDER);
+                    await client.CreateDirectoryAsync(SSH_FOLDER, cancellationToken).ConfigureAwait(false);
                     client.ChangePermissions(SSH_FOLDER, SSH_FOLDER_PERMISSIONS);
-                    client.ChangeDirectory(SSH_FOLDER);
+                    await client.ChangeDirectoryAsync(SSH_FOLDER, cancellationToken).ConfigureAwait(false);
                 }
 
-                var sshfolder = client.ListDirectory(".").First(x => x.Name == ".");
-                client.ChangeDirectory("..");
+                var sshfolder = (await client.ListDirectoryAsync(".", cancellationToken).ToListAsync(cancellationToken)).First(x => x.Name == ".");
+                await client.ChangeDirectoryAsync("..", cancellationToken).ConfigureAwait(false);
 
                 if (!sshfolder.OwnerCanRead || !sshfolder.OwnerCanWrite)
                     client.ChangePermissions(SSH_FOLDER, SSH_FOLDER_PERMISSIONS);
@@ -86,12 +86,12 @@ namespace Duplicati.Library.Backend
                 var authorized_keys = "";
                 byte[]? authorized_keys_bytes = null;
 
-                var existing_authorized_keys = client.ListDirectory(SSH_FOLDER).Any(x => x.Name == AUTHORIZED_KEYS_FILE);
+                var existing_authorized_keys = (await client.ListDirectoryAsync(SSH_FOLDER, cancellationToken).ToListAsync(cancellationToken)).Any(x => x.Name == AUTHORIZED_KEYS_FILE);
                 if (existing_authorized_keys)
                 {
                     using (var ms = new MemoryStream())
                     {
-                        client.DownloadFile(AUTHORIZED_KEYS_PATH, ms);
+                        await client.DownloadFileAsync(AUTHORIZED_KEYS_PATH, ms, cancellationToken).ConfigureAwait(false);
                         authorized_keys_bytes = ms.ToArray();
                         authorized_keys = System.Text.Encoding.ASCII.GetString(authorized_keys_bytes);
                     }
@@ -120,12 +120,12 @@ namespace Duplicati.Library.Backend
                     {
                         var filename = AUTHORIZED_KEYS_PATH + ".backup-" + Utility.Utility.SerializeDateTime(DateTime.UtcNow);
                         using (var ms = new MemoryStream(authorized_keys_bytes))
-                            client.UploadFile(ms, filename);
+                            await client.UploadFileAsync(ms, filename, cancellationToken).ConfigureAwait(false);
                         client.ChangePermissions(filename, AUTHORIZED_KEYS_BACKUP_PERMISSIONS);
                     }
 
                     using (var ms = new MemoryStream(System.Text.Encoding.ASCII.GetBytes(new_file)))
-                        client.UploadFile(ms, AUTHORIZED_KEYS_PATH);
+                        await client.UploadFileAsync(ms, AUTHORIZED_KEYS_PATH, cancellationToken).ConfigureAwait(false);
 
                     if (!existing_authorized_keys)
                         client.ChangePermissions(AUTHORIZED_KEYS_PATH, AUTHORIZED_KEYS_PERMISSIONS);

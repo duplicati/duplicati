@@ -63,7 +63,7 @@ public record WebModules : IEndpointV1
 
         return new Dto.WebModuleOutputDto(
             Status: "OK",
-            Result: m.Execute(options)
+            Result: await m.Execute(options, cancellationToken).ConfigureAwait(false)
         );
     }
 

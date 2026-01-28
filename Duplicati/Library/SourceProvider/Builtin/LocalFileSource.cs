@@ -49,6 +49,10 @@ public class LocalFileSource(ISnapshotService snapshotService) : ISourceProvider
         => Task.FromResult(snapshotService.GetFilesystemEntry(path, isFolder));
 
     /// <inheritdoc/>
+    public Task Test(CancellationToken cancellationToken)
+        => snapshotService.DirectoryExists(MountedPath) ? Task.CompletedTask : throw new Exception($"The path {MountedPath} does not exist");
+
+    /// <inheritdoc/>
     public void Dispose()
     {
         snapshotService.Dispose();

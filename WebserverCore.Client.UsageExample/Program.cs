@@ -590,7 +590,8 @@ class Program
                 PageSize = 10,
                 Paths = null,
                 Time = null,
-                Page = null
+                Page = null,
+                ReturnExtended = null
             };
             var folderResponse = await client.ListFolderContentV2Async(folderRequest, CancellationToken.None);
             Console.WriteLine($"✓ V2 Folder Content: {folderResponse!.Data!.ToArray().Length} items,");
@@ -603,7 +604,8 @@ class Program
                 PageSize = 10,
                 Paths = null,
                 Time = null,
-                Page = 0
+                Page = 0,
+                ReturnExtended = false
             };
             var searchResponse = await client.SearchEntriesV2Async(searchRequest, CancellationToken.None);
             Console.WriteLine($"✓ V2 Search Results: {searchResponse!.Data!.ToArray().Length} items");

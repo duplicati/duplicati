@@ -101,6 +101,29 @@ namespace Duplicati.Server.Serializable
                 this.DisplayName = module.DisplayName;
                 this.Options = module.SupportedCommands?.ToArray() ?? [];
             }
+
+            /// <summary>
+            /// Constructor for sourceprovider interface
+            /// </summary>
+            public DynamicModule(Library.Interface.ISourceProviderModule module)
+            {
+                this.Key = module.Key;
+                this.Description = module.Description;
+                this.DisplayName = module.DisplayName;
+                this.Options = module.SupportedCommands?.ToArray() ?? [];
+            }
+
+            /// <summary>
+            /// Constructor for restoredestinationprovider interface
+            /// </summary>
+            public DynamicModule(Library.Interface.IRestoreDestinationProviderModule module)
+            {
+                this.Key = module.Key;
+                this.Description = module.Description;
+                this.DisplayName = module.DisplayName;
+                this.Options = module.SupportedCommands?.ToArray() ?? [];
+            }
+
             /// <summary>
             /// The module key
             /// </summary>
@@ -214,6 +237,38 @@ namespace Duplicati.Server.Serializable
                 return
                     (from n in Library.DynamicLoader.GenericLoader.Modules
                      where n is Library.Interface.IConnectionModule
+                     select new DynamicModule(n))
+                    .ToArray();
+            }
+        }
+
+        /// <summary>
+        /// The source provider modules known by the server
+        /// </summary>
+        public static IDynamicModule[] SourceProviderModules
+        {
+            get
+            {
+                return
+                    (from n in Library.DynamicLoader.SourceProviderLoader.SourceProviders
+                     select new DynamicModule(n))
+                     .Concat(
+                        from n in Library.DynamicLoader.BackendLoader.Backends
+                        where n is Library.Interface.IFolderEnabledBackend
+                        select new DynamicModule(n))
+                    .ToArray();
+            }
+        }
+
+        /// <summary>
+        /// The restore destination provider modules known by the server
+        /// </summary>
+        public static IDynamicModule[] RestoreDestinationProviderModules
+        {
+            get
+            {
+                return
+                    (from n in Library.DynamicLoader.RestoreDestinationProviderLoader.ResotreDestinationProviders
                      select new DynamicModule(n))
                     .ToArray();
             }

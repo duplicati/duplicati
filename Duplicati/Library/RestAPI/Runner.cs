@@ -46,6 +46,7 @@ namespace Duplicati.Server
             string[]? ExtraArguments { get; }
             int PageSize { get; }
             int PageOffset { get; }
+            bool ReturnExtended { get; }
             void SetController(Library.Main.Controller? controller);
         }
 
@@ -73,7 +74,7 @@ namespace Duplicati.Server
             public string[]? ExtraArguments { get; internal set; }
             public int PageSize { get; internal set; } = 0;
             public int PageOffset { get; internal set; } = 0;
-
+            public bool ReturnExtended { get; internal set; } = false;
             public DateTime? TaskStarted { get; set; }
             public DateTime? TaskFinished { get; set; }
 
@@ -173,7 +174,7 @@ namespace Duplicati.Server
             return new CustomRunnerTask(runner);
         }
 
-        public static IRunnerData CreateTask(DuplicatiOperation operation, IBackup backup, IDictionary<string, string?>? extraOptions = null, string[]? filterStrings = null, string[]? extraArguments = null, int pageSize = 0, int pageOffset = 0)
+        public static IRunnerData CreateTask(DuplicatiOperation operation, IBackup backup, IDictionary<string, string?>? extraOptions = null, string[]? filterStrings = null, string[]? extraArguments = null, int pageSize = 0, int pageOffset = 0, bool returnExtended = false)
         {
             return new RunnerData()
             {
@@ -183,7 +184,8 @@ namespace Duplicati.Server
                 FilterStrings = filterStrings,
                 ExtraArguments = extraArguments,
                 PageSize = pageSize,
-                PageOffset = pageOffset
+                PageOffset = pageOffset,
+                ReturnExtended = returnExtended
             };
         }
 
@@ -225,7 +227,7 @@ namespace Duplicati.Server
                 extraOptions ?? new Dictionary<string, string?>());
         }
 
-        public static IRunnerData CreateListFolderContents(IBackup backup, string[]? folders, DateTime time, int pageSize, int pageOffset)
+        public static IRunnerData CreateListFolderContents(IBackup backup, string[]? folders, DateTime time, int pageSize, int pageOffset, bool returnExtended)
         {
             var dict = new Dictionary<string, string?>();
             if (time.Ticks > 0)
@@ -237,7 +239,8 @@ namespace Duplicati.Server
                 dict,
                 extraArguments: folders,
                 pageSize: pageSize,
-                pageOffset: pageOffset);
+                pageOffset: pageOffset,
+                returnExtended: returnExtended);
         }
 
         public static IRunnerData ListFileVersionsTask(IBackup backup, string[]? filepaths, int pageSize, int pageOffset)
@@ -252,7 +255,7 @@ namespace Duplicati.Server
                 pageOffset: pageOffset);
         }
 
-        public static IRunnerData CreateSearchEntriesTask(IBackup backup, string[]? filters, string[]? folders, DateTime time, int pageSize, int pageOffset)
+        public static IRunnerData CreateSearchEntriesTask(IBackup backup, string[]? filters, string[]? folders, DateTime time, int pageSize, int pageOffset, bool returnExtended)
         {
             var dict = new Dictionary<string, string?>();
             if (time.Ticks > 0)
@@ -265,7 +268,8 @@ namespace Duplicati.Server
                 filters,
                 extraArguments: folders,
                 pageSize: pageSize,
-                pageOffset: pageOffset);
+                pageOffset: pageOffset,
+                returnExtended: returnExtended);
         }
 
 
@@ -806,7 +810,7 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.ListFolderContents:
                             {
-                                return controller.ListFolder(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize);
+                                return controller.ListFolder(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtended);
                             }
 
                         case DuplicatiOperation.ListFileVersions:
@@ -816,7 +820,7 @@ namespace Duplicati.Server
                         case DuplicatiOperation.SearchEntries:
                             {
                                 var parsedfilter = new FilterExpression(data.FilterStrings);
-                                return controller.SearchEntries(data.ExtraArguments, parsedfilter, data.PageOffset * data.PageSize, data.PageSize);
+                                return controller.SearchEntries(data.ExtraArguments, parsedfilter, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtended);
                             }
                         default:
                             //TODO: Log this
