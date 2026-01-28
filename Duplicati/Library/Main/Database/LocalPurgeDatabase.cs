@@ -157,6 +157,10 @@ namespace Duplicati.Library.Main.Database
             /// Gets the count of updated files.
             /// </summary>
             long UpdatedFileCount { get; }
+            /// <summary>
+            /// Gets or sets a value indicating if the purge-broken-files command should skip calculating the size of the removed files
+            /// </summary>
+            bool ReducedPurgeStatistics { get; set; }
 
             /// <summary>
             /// Applies a filter to the temporary fileset.
@@ -207,6 +211,7 @@ namespace Duplicati.Library.Main.Database
             public long RemovedFileCount { get; private set; }
             public long RemovedFileSize { get; private set; }
             public long UpdatedFileCount { get; private set; }
+            public bool ReducedPurgeStatistics { get; set; }
 
             /// <summary>
             /// Calling this constructor will throw an exception. Use CreateAsync instead.
@@ -380,24 +385,32 @@ namespace Duplicati.Library.Main.Database
                     ", 0, token)
                     .ConfigureAwait(false);
 
-                RemovedFileSize = await cmd.ExecuteScalarInt64Async($@"
-                        SELECT SUM(""C"".""Length"")
-                        FROM
-                            ""{m_tablename}"" ""A"",
-                            ""FileLookup"" ""B"",
-                            ""Blockset"" ""C"",
-                            ""Metadataset"" ""D""
-                        WHERE
-                            ""A"".""FileID"" = ""B"".""ID""
-                            AND (
-                                ""B"".""BlocksetID"" = ""C"".""ID""
-                                OR (
-                                    ""B"".""MetadataID"" = ""D"".""ID""
-                                    AND ""D"".""BlocksetID"" = ""C"".""ID""
-                                )
-                            )
+                if (ReducedPurgeStatistics)
+                {
+                    RemovedFileSize = -1;
+                }
+                else
+                {
+                    RemovedFileSize = await cmd.ExecuteScalarInt64Async($@"
+                        SELECT SUM(""Length"") FROM (
+                            SELECT ""C"".""Length""
+                            FROM
+                                ""{m_tablename}"" ""A""
+                                INNER JOIN ""FileLookup"" ""B"" ON ""A"".""FileID"" = ""B"".""ID""
+                                INNER JOIN ""Blockset"" ""C"" ON ""B"".""BlocksetID"" = ""C"".""ID""
+
+                            UNION ALL
+
+                            SELECT ""C"".""Length""
+                            FROM
+                                ""{m_tablename}"" ""A""
+                                INNER JOIN ""FileLookup"" ""B"" ON ""A"".""FileID"" = ""B"".""ID""
+                                INNER JOIN ""Metadataset"" ""D"" ON ""B"".""MetadataID"" = ""D"".""ID""
+                                INNER JOIN ""Blockset"" ""C"" ON ""D"".""BlocksetID"" = ""C"".""ID""
+                        )
                     ", 0, token)
                     .ConfigureAwait(false);
+                }
 
                 var filesetcount = await cmd.SetCommandAndParameters($@"
                         SELECT COUNT(*)

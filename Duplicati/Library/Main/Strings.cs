@@ -340,6 +340,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablePartialDblockRecoveryShort { get { return LC.L("Disable partial dblock recovery"); } }
         public static string DisableReplaceMissingMetadataLong { get { return LC.L($"If metadata is missing during the {"list-broken-files"} or {"purge-broken-files"} command, Duplicati will attempt to replace the missing metadata with a new copy. Use this option to disable this behavior and drop entries that are missing metadata."); } }
         public static string DisableReplaceMissingMetadataShort { get { return LC.L("Disable replacement of missing metadata"); } }
+        public static string ReducedPurgeStatisticsLong { get { return LC.L("If this option is enabled, the purge-broken-files command will skip calculating the size of the removed files. This can speed up the operation on large datasets."); } }
+        public static string ReducedPurgeStatisticsShort { get { return LC.L("Skip calculating removed file size"); } }
 
         public static string AutoCompactIntervalLong { get { return LC.L("The minimum amount of time that must elapse after the last compaction before another will be automatically triggered at the end of a backup job. Automatic compaction can be a long-running process and may not be desirable to run after every single backup."); } }
         public static string AutoCompactIntervalShort { get { return LC.L("Minimum time between auto compactions"); } }
