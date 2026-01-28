@@ -381,6 +381,21 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
+        public void TestConfigure_SyncOnWarnings()
+        {
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = $"{{\"sync-on-warnings\": false, \"destinations\": [{{\"url\": \"file://{dest1}\"}}]}}"
+            };
+
+            module.Configure(options);
+
+            var syncOnWarnings = module.GetType().GetField("m_syncOnWarnings", BINDING_FLAGS).GetValue(module);
+            Assert.IsFalse((bool)syncOnWarnings);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
         public void TestShouldTriggerSync_Scheduled_Initial()
         {
             var options = new Dictionary<string, string>

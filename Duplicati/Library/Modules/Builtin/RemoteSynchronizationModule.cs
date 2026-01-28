@@ -180,7 +180,11 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
 
             try
             {
-                var deserializeOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var deserializeOpts = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.KebabCaseLower
+                };
                 var toplevel = JsonSerializer.Deserialize<TopLevelRemoteSyncConfig>(jsonContent, deserializeOpts);
 
                 if (toplevel is null)
