@@ -32,6 +32,9 @@ namespace Duplicati.Library.Backend.WebApi
         public static string ListFilesContinueUrl()
             => Utility.Uri.UriBuilder(Url.API, Path.ListFolderContinue);
 
+        public static string GetMetadataUrl()
+            => Utility.Uri.UriBuilder(Url.API, Path.GetMetadata);
+
         public static string DeleteUrl()
             => Utility.Uri.UriBuilder(Url.API, Path.DeleteFolder);
 
@@ -62,6 +65,7 @@ namespace Duplicati.Library.Backend.WebApi
             public const string DeleteFolder = "files/delete";
             public const string ListFolder = "files/list_folder";
             public const string ListFolderContinue = "files/list_folder/continue";
+            public const string GetMetadata = "files/get_metadata";
 
             public const string UploadSessionStart = "files/upload_session/start";
             public const string UploadSessionAppend = "files/upload_session/append_v2";
