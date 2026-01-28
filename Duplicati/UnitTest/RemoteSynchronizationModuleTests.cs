@@ -92,7 +92,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""mode"": ""inline""}, {""url"": ""file:///test/dest2"", ""mode"": ""scheduled""}]}"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""mode"": ""inline""}, {""url"": ""file:///test/dest2"", ""mode"": ""interval""}]}"
             };
 
             module.Configure(options);
@@ -100,7 +100,7 @@ namespace Duplicati.UnitTest
             var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[0].Mode);
-            Assert.AreEqual(RemoteSyncTriggerMode.Scheduled, destinations[1].Mode);
+            Assert.AreEqual(RemoteSyncTriggerMode.Interval, destinations[1].Mode);
         }
 
         [Test]
@@ -110,15 +110,15 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""schedule"": ""1:00:00""}, {""url"": ""file:///test/dest2"", ""schedule"": ""2:00:00""}]}"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""interval"": ""1:00:00""}, {""url"": ""file:///test/dest2"", ""interval"": ""2:00:00""}]}"
             };
 
             module.Configure(options);
 
             var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(2, destinations.Count);
-            Assert.AreEqual(TimeSpan.FromHours(1), destinations[0].Schedule);
-            Assert.AreEqual(TimeSpan.FromHours(2), destinations[1].Schedule);
+            Assert.AreEqual(TimeSpan.FromHours(1), destinations[0].Interval);
+            Assert.AreEqual(TimeSpan.FromHours(2), destinations[1].Interval);
         }
 
         [Test]
@@ -182,7 +182,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""scheduled"", ""schedule"": ""1:00:00""}]}",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""interval"", ""interval"": ""1:00:00""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -347,15 +347,15 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""schedule"": ""1:00:00""}, {""url"": ""file:///test/dest2"", ""schedule"": ""invalid""}]}"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1"", ""interval"": ""1:00:00""}, {""url"": ""file:///test/dest2"", ""interval"": ""invalid""}]}"
             };
 
             module.Configure(options);
 
             var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(2, destinations.Count);
-            Assert.AreEqual(TimeSpan.FromHours(1), destinations[0].Schedule);
-            Assert.AreEqual(null, destinations[1].Schedule); // Invalid defaults to null
+            Assert.AreEqual(TimeSpan.FromHours(1), destinations[0].Interval);
+            Assert.AreEqual(null, destinations[1].Interval); // Invalid defaults to null
         }
 
         [Test]
@@ -383,7 +383,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""scheduled"", ""schedule"": ""1:00:00""}]}",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""interval"", ""interval"": ""1:00:00""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -405,7 +405,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""scheduled"", ""schedule"": ""1:00:00""}]}",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""interval"", ""interval"": ""1:00:00""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -437,7 +437,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""scheduled"", ""schedule"": ""1:00:00""}]}",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""interval"", ""interval"": ""1:00:00""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -729,7 +729,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1""}, {""url"": ""file:///test/dest2"", ""mode"": ""scheduled""}]}"
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest1""}, {""url"": ""file:///test/dest2"", ""mode"": ""interval""}]}"
             };
 
             module.Configure(options);
@@ -738,7 +738,7 @@ namespace Duplicati.UnitTest
 
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[0].Mode); // Default
-            Assert.AreEqual(RemoteSyncTriggerMode.Scheduled, destinations[1].Mode);
+            Assert.AreEqual(RemoteSyncTriggerMode.Interval, destinations[1].Mode);
         }
 
         [Test]
@@ -803,7 +803,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""scheduled""}]}",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///test/dest"", ""mode"": ""interval""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -848,7 +848,7 @@ namespace Duplicati.UnitTest
             var module = new RemoteSynchronizationModule();
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///dest1"", ""mode"": ""inline""}, {""url"": ""file:///dest2"", ""mode"": ""scheduled"", ""schedule"": ""1:00:00""}]}",
+                ["remote-sync-json-config"] = @"{""destinations"": [{""url"": ""file:///dest1"", ""mode"": ""inline""}, {""url"": ""file:///dest2"", ""mode"": ""interval"", ""interval"": ""1:00:00""}]}",
                 ["dbpath"] = DBFILE
             };
             module.Configure(options);
@@ -874,7 +874,7 @@ namespace Duplicati.UnitTest
             var result = new TestBasicResults(ParsedResultType.Success);
             module.OnFinish(result, null);
 
-            // Check that one additional sync was recorded (dest1 inline, dest2 scheduled not due)
+            // Check that one additional sync was recorded (dest1 inline, dest2 interval not due)
             cmd.CommandText = @"
                 SELECT COUNT(*)
                 FROM ""Operation""
