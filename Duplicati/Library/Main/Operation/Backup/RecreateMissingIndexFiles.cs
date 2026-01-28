@@ -47,8 +47,16 @@ internal static class RecreateMissingIndexFiles
 					return;
 
 				await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, false, default, null, taskreader.ProgressToken).ConfigureAwait(false);
-				await database.CommitTransactionAsync("RecreateMissingIndexFile", true, taskreader.ProgressToken).ConfigureAwait(false);
-				await backendManager.PutAsync(w, null, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager, taskreader.ProgressToken), taskreader.ProgressToken).ConfigureAwait(false);
+
+				if (options.Dryrun)
+				{
+					Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadFile", "Would upload file: {0}", w.RemoteFilename);
+				}
+				else
+				{
+					await database.CommitTransactionAsync("RecreateMissingIndexFile", true, taskreader.ProgressToken).ConfigureAwait(false);
+					await backendManager.PutAsync(w, null, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager, taskreader.ProgressToken), taskreader.ProgressToken).ConfigureAwait(false);
+				}
 			}
 		}
 	}

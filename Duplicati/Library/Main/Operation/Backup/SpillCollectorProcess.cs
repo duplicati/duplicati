@@ -172,8 +172,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                 await database.AddIndexBlockLinkAsync(indexVolumeCopy.VolumeID, target.BlockVolume.VolumeID, taskreader.ProgressToken).ConfigureAwait(false);
             }
 
-            await database.CommitTransactionAsync("UploadSpillVolume", true, taskreader.ProgressToken).ConfigureAwait(false);
-            await backendManager.PutAsync(target.BlockVolume, indexVolumeCopy, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager, taskreader.ProgressToken), taskreader.ProgressToken).ConfigureAwait(false);
+
+            if (options.Dryrun)
+            {
+                Logging.Log.WriteDryrunMessage(Logging.Log.LogTagFromType(typeof(SpillCollectorProcess)), "WouldUploadFile", "Would upload file: {0}", target.BlockVolume.RemoteFilename);
+            }
+            else
+            {
+                await database.CommitTransactionAsync("UploadSpillVolume", true, taskreader.ProgressToken).ConfigureAwait(false);
+                await backendManager.PutAsync(target.BlockVolume, indexVolumeCopy, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager, taskreader.ProgressToken), taskreader.ProgressToken).ConfigureAwait(false);
+            }
         }
     }
 }

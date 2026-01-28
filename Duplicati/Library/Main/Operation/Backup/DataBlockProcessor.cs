@@ -34,6 +34,8 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class DataBlockProcessor
     {
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(DataBlockProcessor));
+
         public static Task Run(Channels channels, BackupDatabase database, IBackendManager backendManager, Options options, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
@@ -142,8 +144,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 blockvolume = null;
                                 indexvolume = null;
 
-                                await database.CommitTransactionAsync("CommitAddBlockToOutputFlush", true, taskreader.ProgressToken).ConfigureAwait(false);
-                                await backendManager.PutAsync(blockVolumeCopy, indexVolumeCopy, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager, taskreader.ProgressToken), taskreader.ProgressToken).ConfigureAwait(false);
+                                if (options.Dryrun)
+                                {
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadFile", "Would upload file: {0}", blockVolumeCopy.RemoteFilename);
+                                }
+                                else
+                                {
+                                    await database.CommitTransactionAsync("CommitAddBlockToOutputFlush", true, taskreader.ProgressToken).ConfigureAwait(false);
+                                    await backendManager.PutAsync(blockVolumeCopy, indexVolumeCopy, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager, taskreader.ProgressToken), taskreader.ProgressToken).ConfigureAwait(false);
+                                }
 
                             }
 

@@ -377,7 +377,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (options.NoBackendverification)
                         {
-                            await FilelistProcessor.VerifyLocalList(backendManager, database, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                            await FilelistProcessor.VerifyLocalList(backendManager, database, options.Dryrun, result.TaskControl.ProgressToken).ConfigureAwait(false);
                             await UpdateStorageStatsFromDatabase(result, database, options, backendManager, result.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
                         else
@@ -389,7 +389,15 @@ namespace Duplicati.Library.Main.Operation
                                 // The last temporary filelist was emptied, and scheduled for deletion, so we need to delete it
                                 try
                                 {
-                                    await backendManager.DeleteAsync(updatedLastTemp.Name, updatedLastTemp.Size, true, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                    if (options.Dryrun)
+                                    {
+                                        Log.WriteDryrunMessage(LOGTAG, "WouldDeleteFile", "Would delete file: {0}", updatedLastTemp.Name);
+                                    }
+                                    else
+                                    {
+                                        Log.WriteInformationMessage(LOGTAG, "DeletingFile", "Deleting file: {0}", updatedLastTemp.Name);
+                                        await backendManager.DeleteAsync(updatedLastTemp.Name, updatedLastTemp.Size, true, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                    }
                                 }
                                 catch (Exception ex)
                                 {

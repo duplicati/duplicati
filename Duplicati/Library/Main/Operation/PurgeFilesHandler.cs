@@ -98,7 +98,7 @@ namespace Duplicati.Library.Main.Operation
                     .ConfigureAwait(false);
 
                 if (m_options.NoBackendverification)
-                    await FilelistProcessor.VerifyLocalList(backendManager, db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await FilelistProcessor.VerifyLocalList(backendManager, db, m_options.Dryrun, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
                     await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, null, null, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
