@@ -1428,6 +1428,21 @@ namespace Duplicati.Library.Main.Database
             var tmptablename = "DeletedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
             await using var cmd = m_connection.CreateCommand(m_rtr);
+
+            // Delete blocks with missing or temporary volumes instead of moving to DeletedBlock
+            await cmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""Block""
+                WHERE ""VolumeID"" IN (
+                    SELECT ""ID""
+                    FROM ""RemoteVolume""
+                    WHERE ""State"" = '{Library.Utility.Utility.FormatInvariantValue(RemoteVolumeState.Temporary)}'
+                )
+                OR ""VolumeID"" NOT IN (
+                    SELECT ""ID""
+                    FROM ""RemoteVolume""
+                )
+            ", token).ConfigureAwait(false);
+
             // 1. Select blocks not used by any file and not as a blocklist into temporary table
             await cmd.ExecuteNonQueryAsync($@"
                 CREATE TEMPORARY TABLE ""{tmptablename}"" AS
