@@ -543,8 +543,15 @@ namespace Duplicati.Library.Main
                             // instead of relying on the operations to correctly toggle the flag
                             if (File.Exists(m_options.Dbpath) && !m_options.NoLocalDb)
                             {
-                                using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).Await();
-                                backend.StopRunnerAndFlushMessages(db).Await();
+                                try
+                                {
+                                    using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).Await();
+                                    backend.StopRunnerAndFlushMessages(db).Await();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "FailedFlushBackendMessages", ex, "Failed to flush backend messages to database: {0}", ex.Message);
+                                }
                             }
                             else
                             {
@@ -559,26 +566,33 @@ namespace Duplicati.Library.Main
 
                     if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                     {
-                        using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).Await();
-                        db.WriteResultsAndCommit(result, CancellationToken.None).Await();
-                        db.PurgeLogData(m_options.LogRetention, CancellationToken.None).Await();
-                        db.PurgeDeletedVolumes(DateTime.UtcNow, CancellationToken.None).Await();
-
-                        // Vacuum is done AFTER the results are written to the database
-                        // This means that the information about the vacuum is not stored in the database,
-                        // but will be reported in the log output and messages sent with any of the reporting modules
-                        if (m_options.AutoVacuum && result is IResultsWithVacuum vacuumResults && result is BasicResults basicResults)
+                        try
                         {
-                            try
+                            using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).Await();
+                            db.WriteResultsAndCommit(result, CancellationToken.None).Await();
+                            db.PurgeLogData(m_options.LogRetention, CancellationToken.None).Await();
+                            db.PurgeDeletedVolumes(DateTime.UtcNow, CancellationToken.None).Await();
+
+                            // Vacuum is done AFTER the results are written to the database
+                            // This means that the information about the vacuum is not stored in the database,
+                            // but will be reported in the log output and messages sent with any of the reporting modules
+                            if (m_options.AutoVacuum && result is IResultsWithVacuum vacuumResults && result is BasicResults basicResults)
                             {
-                                vacuumResults.VacuumResults = new VacuumResults(basicResults);
-                                new Operation.VacuumHandler(m_options, (VacuumResults)vacuumResults.VacuumResults)
-                                    .RunAsync().Await();
+                                try
+                                {
+                                    vacuumResults.VacuumResults = new VacuumResults(basicResults);
+                                    new Operation.VacuumHandler(m_options, (VacuumResults)vacuumResults.VacuumResults)
+                                        .RunAsync().Await();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToVacuum", ex, "Failed to vacuum database");
+                                }
                             }
-                            catch (Exception ex)
-                            {
-                                Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToVacuum", ex, "Failed to vacuum database");
-                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", ex, "Failed to write operation results to database: {0}", ex.Message);
                         }
                     }
 
