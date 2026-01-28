@@ -94,11 +94,9 @@ internal static class OptionsHelper
         if (string.IsNullOrWhiteSpace(_scope))
             _scope = OFFICE_SCOPE_OPTION_DEFAULT;
 
-        var _includedRootTypes = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_ROOT_TYPES_OPTION, (Office365MetaType)DEFAULT_INCLUDED_ROOT_TYPES.Aggregate(0, (acc, type) => acc | (int)type));
-        var _includedUserTypes = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_USER_TYPES_OPTION, (Office365UserType)DEFAULT_INCLUDED_USER_TYPES.Aggregate(0, (acc, type) => acc | (int)type));
-        var _includedGroupTypes = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_GROUP_TYPES_OPTION, (Office365GroupType)DEFAULT_INCLUDED_GROUP_TYPES.Aggregate(0, (acc, type) => acc | (int)type));
-
-        ;
+        var includedRootTypes = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_ROOT_TYPES_OPTION, (Office365MetaType)DEFAULT_INCLUDED_ROOT_TYPES.Aggregate(0, (acc, type) => acc | (int)type));
+        var includedUserTypes = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_USER_TYPES_OPTION, (Office365UserType)DEFAULT_INCLUDED_USER_TYPES.Aggregate(0, (acc, type) => acc | (int)type));
+        var includedGroupTypes = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_GROUP_TYPES_OPTION, (Office365GroupType)DEFAULT_INCLUDED_GROUP_TYPES.Aggregate(0, (acc, type) => acc | (int)type));
 
         return new ParsedOptions(
             TenantId: _tenantId,
@@ -107,9 +105,9 @@ internal static class OptionsHelper
             CertificatePath: _certificatePath,
             CertificatePassword: _certificatePassword,
             Scope: _scope,
-            IncludedRootTypes: Enum.GetValues<Office365MetaType>().Where(n => _includedRootTypes.HasFlag(n)).ToArray(),
-            IncludedUserTypes: Enum.GetValues<Office365UserType>().Where(n => _includedUserTypes.HasFlag(n)).ToArray(),
-            IncludedGroupTypes: Enum.GetValues<Office365GroupType>().Where(n => _includedGroupTypes.HasFlag(n)).ToArray()
+            IncludedRootTypes: Enum.GetValues<Office365MetaType>().Where(n => includedRootTypes.HasFlag(n)).ToArray(),
+            IncludedUserTypes: Enum.GetValues<Office365UserType>().Where(n => includedUserTypes.HasFlag(n)).ToArray(),
+            IncludedGroupTypes: Enum.GetValues<Office365GroupType>().Where(n => includedGroupTypes.HasFlag(n)).ToArray()
         );
     }
 
