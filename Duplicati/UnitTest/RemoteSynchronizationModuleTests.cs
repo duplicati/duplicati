@@ -52,10 +52,11 @@ namespace Duplicati.UnitTest
         public void Setup()
         {
             module = new RemoteSynchronizationModule();
-            source = Path.Combine(TARGETFOLDER, "source");
-            dest1 = Path.Combine(TARGETFOLDER, "dest1");
-            dest2 = Path.Combine(TARGETFOLDER, "dest2");
-            dest3 = Path.Combine(TARGETFOLDER, "dest3");
+            // On Windows, we have to escape backslashes in paths for JSON strings
+            source = Path.Combine(TARGETFOLDER, "source").Replace("\\", "\\\\");
+            dest1 = Path.Combine(TARGETFOLDER, "dest1").Replace("\\", "\\\\");
+            dest2 = Path.Combine(TARGETFOLDER, "dest2").Replace("\\", "\\\\");
+            dest3 = Path.Combine(TARGETFOLDER, "dest3").Replace("\\", "\\\\");
         }
 
         private static void EnsureOperationTableCreated(Microsoft.Data.Sqlite.SqliteCommand cmd)
@@ -81,7 +82,8 @@ namespace Duplicati.UnitTest
 
             var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(1, destinations.Count);
-            Assert.AreEqual($"file://{dest1}", destinations[0].Config.Dst);
+            // Convert the escaped backslashes to single backslashes for comparison on Windows
+            Assert.AreEqual($"file://{dest1.Replace("\\\\", "\\")}", destinations[0].Config.Dst);
         }
 
         [Test]
@@ -97,8 +99,9 @@ namespace Duplicati.UnitTest
 
             var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(2, destinations.Count);
-            Assert.AreEqual($"file://{dest1}", destinations[0].Config.Dst);
-            Assert.AreEqual($"file://{dest2}", destinations[1].Config.Dst);
+            // Convert the escaped backslashes to single backslashes for comparison on Windows
+            Assert.AreEqual($"file://{dest1.Replace("\\\\", "\\")}", destinations[0].Config.Dst);
+            Assert.AreEqual($"file://{dest2.Replace("\\\\", "\\")}", destinations[1].Config.Dst);
         }
 
         [Test]
@@ -963,8 +966,9 @@ namespace Duplicati.UnitTest
 
             var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(2, destinations.Count);
-            Assert.AreEqual($"  file://{dest1}  ", destinations[0].Config.Dst); // JSON preserves spaces
-            Assert.AreEqual($"  file://{dest2}  ", destinations[1].Config.Dst);
+            // Convert the escaped backslashes to single backslashes for comparison on Windows
+            Assert.AreEqual($"  file://{dest1.Replace("\\\\", "\\")}  ", destinations[0].Config.Dst);
+            Assert.AreEqual($"  file://{dest2.Replace("\\\\", "\\")}  ", destinations[1].Config.Dst);
         }
 
         [Test]
@@ -980,9 +984,10 @@ namespace Duplicati.UnitTest
 
             var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(3, destinations.Count); // All are included, empty ones skipped in OnFinish
-            Assert.AreEqual($"file://{dest1}", destinations[0].Config.Dst);
+            // Convert the escaped backslashes to single backslashes for comparison on Windows
+            Assert.AreEqual($"file://{dest1.Replace("\\\\", "\\")}", destinations[0].Config.Dst);
             Assert.AreEqual("", destinations[1].Config.Dst);
-            Assert.AreEqual($"file://{dest2}", destinations[2].Config.Dst);
+            Assert.AreEqual($"file://{dest2.Replace("\\\\", "\\")}", destinations[2].Config.Dst);
         }
 
         [Test]
