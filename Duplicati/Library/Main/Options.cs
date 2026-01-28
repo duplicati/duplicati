@@ -553,6 +553,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
             new CommandLineArgument("disable-partial-dblock-recovery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablePartialDblockRecoveryShort, Strings.Options.DisablePartialDblockRecoveryLong, "false"),
             new CommandLineArgument("disable-replace-missing-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableReplaceMissingMetadataShort, Strings.Options.DisableReplaceMissingMetadataLong, "false"),
+            new CommandLineArgument("reduced-purge-statistics", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ReducedPurgeStatisticsShort, Strings.Options.ReducedPurgeStatisticsLong, "false"),
             new CommandLineArgument("repair-refresh-lock-info", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepairRefreshLockInfoShort, Strings.Options.RepairRefreshLockInfoLong, "false"),
             new CommandLineArgument("refresh-lock-info-complete", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RefreshLockInfoCompleteShort, Strings.Options.RefreshLockInfoCompleteLong, "false"),
 
@@ -1535,6 +1536,11 @@ namespace Duplicati.Library.Main
         /// Gets a value indicating if missing metadata is replaced with empty content on purge-broken-files
         /// </summary>
         public bool DisableReplaceMissingMetadata => GetBool("disable-replace-missing-metadata");
+
+        /// <summary>
+        /// Gets a value indicating if the purge-broken-files command should skip calculating the size of the removed files
+        /// </summary>
+        public bool ReducedPurgeStatistics => GetBool("reduced-purge-statistics");
 
         /// <summary>
         /// Gets the threshold for when log data should be cleaned
