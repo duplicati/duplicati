@@ -96,6 +96,7 @@
   <Project Path="Duplicati/Library/UsageReporter/Duplicati.Library.UsageReporter.csproj" />
   <Project Path="Duplicati/Library/Utility/Duplicati.Library.Utility.csproj" />
   <Project Path="Duplicati/Library/WindowsModules/Duplicati.Library.WindowsModules.csproj" />
+  <Project Path="Duplicati/ShellExtension/Duplicati.ShellExtension.csproj" />
   <Project Path="Duplicati/License/Duplicati.License.csproj" />
   <Project Path="Duplicati/Server/Duplicati.Server.Serialization/Duplicati.Server.Serialization.csproj" />
   <Project Path="Duplicati/Tools/Duplicati.Tools.csproj" />

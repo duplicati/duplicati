@@ -71,6 +71,7 @@ public static class ServiceCollectionsExtensions
             .AddTransient<INotificationService, NotificationService>()
             .AddTransient<IBackupListService, BackupListService>()
             .AddTransient<ITaskQueueService, TaskQueueService>()
+            .AddTransient<IFolderStatusService, FolderStatusService>()
             .AddSingleton<IWebsocketAuthenticator, WebsocketAuthenticator>()
             .AddSingleton(logWriteHandler)
             .AddSingleton(applicationSettings);
