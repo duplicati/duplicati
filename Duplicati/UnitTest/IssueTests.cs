@@ -881,7 +881,10 @@ namespace Duplicati.UnitTest
                             TestUtils.AssertResults(repairResults);
                         }
                     }
-                    failed = true;
+                    else
+                    {
+                        failed = true;
+                    }
                 }
                 Thread.Sleep(1000);
                 foreach (string f in files)
