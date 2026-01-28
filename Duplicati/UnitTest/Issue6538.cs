@@ -54,7 +54,7 @@ namespace Duplicati.UnitTest
                 }
 
                 // Assert - Check that the job log was written to the database
-                using (var connection = new SqliteConnection($"Data Source={testopts["dbpath"]}"))
+                using (var connection = new SqliteConnection($"Data Source={testopts["dbpath"]};Pooling=false"))
                 {
                     connection.Open();
                     var command = connection.CreateCommand();
