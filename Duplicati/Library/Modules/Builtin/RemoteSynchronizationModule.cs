@@ -47,9 +47,9 @@ public enum RemoteSyncTriggerMode
     /// </summary>
     Inline,
     /// <summary>
-    /// Trigger based on a schedule.
+    /// Trigger based on a time interval.
     /// </summary>
-    Scheduled,
+    Interval,
     /// <summary>
     /// Trigger after a certain number of backups.
     /// </summary>
@@ -62,7 +62,7 @@ public enum RemoteSyncTriggerMode
 public record RemoteSyncDestinationConfig(
     RemoteSynchronization.Config Config,
     RemoteSyncTriggerMode Mode = RemoteSyncTriggerMode.Inline,
-    TimeSpan? Schedule = null,
+    TimeSpan? Interval = null,
     int Count = 0
 );
 
@@ -266,7 +266,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                     {
                         var loglevel = GetStringFromDictionary(destination, "log-level");
                         var mode = GetStringFromDictionary(destination, "mode");
-                        var schedule = GetStringFromDictionary(destination, "schedule");
+                        var interval = GetStringFromDictionary(destination, "interval");
 
                         m_destinations.Add(new(
                             Config: m_defaultRunnerConfig with
@@ -293,7 +293,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                                 VerifyGetAfterPut = GetBoolFromDictionary(destination, "verify-get-after-put", m_defaultRunnerConfig.VerifyGetAfterPut)
                             },
                             Mode: Enum.TryParse<RemoteSyncTriggerMode>(mode, true, out var parsedMode) ? parsedMode : RemoteSyncTriggerMode.Inline,
-                            Schedule: string.IsNullOrWhiteSpace(schedule) ? (TimeSpan?)null : TimeSpan.TryParse(schedule, out var scheduleTimeSpan) ? scheduleTimeSpan : (TimeSpan?)null,
+                            Interval: string.IsNullOrWhiteSpace(interval) ? (TimeSpan?)null : TimeSpan.TryParse(interval, out var intervalTimeSpan) ? intervalTimeSpan : (TimeSpan?)null,
                             Count: GetIntFromDictionary(destination, "count", 0)
                         ));
                     }
@@ -419,7 +419,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         {
             case RemoteSyncTriggerMode.Inline:
                 return true;
-            case RemoteSyncTriggerMode.Scheduled:
+            case RemoteSyncTriggerMode.Interval:
                 {
                     using var db = SQLiteLoader.LoadConnection(m_dbpath!);
                     using var cmd = db.CreateCommand();
@@ -438,7 +438,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                         return true;
                     var lastSyncTime = Utility.Utility.EPOCH.AddSeconds((long)lastSync);
                     var now = DateTime.UtcNow;
-                    return (now - lastSyncTime) >= dest.Schedule;
+                    return (now - lastSyncTime) >= dest.Interval;
                 }
             case RemoteSyncTriggerMode.Counting:
                 {
