@@ -94,7 +94,7 @@ namespace Duplicati.UnitTest
             Assert.Greater(filesBefore, 0);
 
             // Manually mark some files as "Uploading" in the database
-            using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DBFILE}"))
+            using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DBFILE};Pooling=false"))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
