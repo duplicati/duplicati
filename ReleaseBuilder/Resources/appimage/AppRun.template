@@ -1,0 +1,30 @@
+#!/bin/bash
+set -e
+
+HERE="$(dirname "$(readlink -f "${0}")")"
+export PATH="${HERE}/usr/bin/:${PATH}"
+
+show_help() {
+    echo "Usage: $(basename "${ARGV0:-$0}") [--<executable>] [args]"
+    echo
+    echo "Available executables:"
+%EXECUTABLE_LIST%
+    echo
+    echo "You can invoke the AppImage via a symlink name or with --<executable>."
+}
+
+if [[ "${1}" == "--help" || "${1}" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
+INVOCATION_NAME="$(basename "${ARGV0:-$0}")"
+case "$INVOCATION_NAME" in
+%INVOCATION_CASES%
+esac
+
+case "$1" in
+%FLAG_CASES%
+esac
+
+exec "${HERE}/usr/bin/%DEFAULT_EXECUTABLE%" "$@"

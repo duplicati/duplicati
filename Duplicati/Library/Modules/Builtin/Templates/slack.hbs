@@ -1,0 +1,86 @@
+{
+    "text": "Duplicati {{OperationName}} - {{ParsedResult}}",
+    "blocks": [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Duplicati {{OperationName}} Report"
+            }
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": "*Status:*\n{{ParsedResult}}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Backup:*\n{{BackupName}}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Machine:*\n{{MachineName}}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Operation:*\n{{OperationName}}"
+                }
+            ]
+        }{{#if Data}},
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Statistics*"
+            }
+        },
+        {
+            "type": "section",
+            "fields": [
+                {{#if Data.ExaminedFiles}}
+                {
+                    "type": "mrkdwn",
+                    "text": "*Files Examined:* {{Data.ExaminedFiles}}"
+                },
+                {{/if}}
+                {{#if Data.AddedFiles}}
+                {
+                    "type": "mrkdwn",
+                    "text": "*Files Added:* {{Data.AddedFiles}}"
+                },
+                {{/if}}
+                {{#if Data.ModifiedFiles}}
+                {
+                    "type": "mrkdwn",
+                    "text": "*Files Modified:* {{Data.ModifiedFiles}}"
+                },
+                {{/if}}
+                {{#if Data.DeletedFiles}}
+                {
+                    "type": "mrkdwn",
+                    "text": "*Files Deleted:* {{Data.DeletedFiles}}"
+                },
+                {{/if}}
+                {
+                    "type": "mrkdwn",
+                    "text": " "
+                }
+            ]
+        }{{/if}}{{#if Exception}},
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Error:* {{Exception}}"
+            }
+        }{{/if}}
+    ]
+}

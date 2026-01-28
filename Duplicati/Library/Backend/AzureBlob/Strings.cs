@@ -43,4 +43,6 @@ internal static class AzureBlobBackend
     public static string ArchiveClassesDescriptionLong => LC.L(@"Use this option to specify what storage classes are considered archive storage classes. With this option it is possible to allow lifecycle policies to move data to cheaper storage classes and prevent Duplicati from accessing archived data.");
     public static string InternalRetriesDescriptionShort => LC.L(@"The number of retries for Azure operations");
     public static string InternalRetriesDescriptionLong => LC.L(@"Use this option to specify the number of retries for Azure blob operations. Set to 0 to disable retries.");
+    public static string ImmutabilityPolicyModeDescriptionShort => LC.L(@"The immutability policy mode");
+    public static string ImmutabilityPolicyModeDescriptionLong => LC.L(@"Use this option to specify the immutability policy mode. The default is 'Unlocked'.");
 }

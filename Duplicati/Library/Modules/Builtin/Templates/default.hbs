@@ -1,0 +1,37 @@
+Duplicati {{OperationName}} Report
+======================================
+
+Status: {{ParsedResult}}
+{{#if BackupName}}Backup: {{BackupName}}{{/if}}
+{{#if MachineName}}Machine: {{MachineName}}{{/if}}
+{{#if MachineId}}Machine ID: {{MachineId}}{{/if}}
+
+{{#if Data}}
+Results:
+--------
+{{#eachProperty Data}}
+  {{Key}}: {{Value}}
+{{/eachProperty}}
+{{/if}}
+
+{{#if Extra}}
+Additional Information:
+-----------------------
+{{#eachProperty Extra}}
+  {{Key}}: {{Value}}
+{{/eachProperty}}
+{{/if}}
+
+{{#if LogLines}}
+Log Messages:
+-------------
+{{#each LogLines}}
+{{this}}
+{{/each}}
+{{/if}}
+
+{{#if Exception}}
+Error Details:
+--------------
+{{Exception}}
+{{/if}}

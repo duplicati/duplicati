@@ -1,0 +1,28 @@
+# We remove the hardcoded platform here so it builds for the host's native arch by default
+FROM ubuntu:latest
+
+# Use the automatic Buildx variable
+ARG TARGETARCH
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       appstream \
+       ca-certificates \
+       curl \
+       file \
+       gnupg \
+       libglib2.0-0 \
+       squashfs-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN case "${TARGETARCH}" in \
+        "amd64")  ARCH="x86_64" ;; \
+        "arm64")  ARCH="aarch64" ;; \
+        *) echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+    esac \
+    && curl -L -o /usr/local/bin/appimagetool \
+       "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${ARCH}.AppImage" \
+    && chmod +x /usr/local/bin/appimagetool
+
+# Necessary for AppImages to run in many container environments
+ENV APPIMAGE_EXTRACT_AND_RUN=1

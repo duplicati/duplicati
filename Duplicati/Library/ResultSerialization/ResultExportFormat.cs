@@ -24,6 +24,7 @@ namespace Duplicati.Library.ResultSerialization
     public enum ResultExportFormat
     {
         Duplicati,
-        Json
+        Json,
+        Template
     }
 }
