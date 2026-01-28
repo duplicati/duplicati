@@ -22,6 +22,7 @@
 using Duplicati.Library.Backend;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Localization.Short;
 using Duplicati.Library.Main.Backend;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
@@ -85,54 +86,32 @@ namespace RemoteSynchronization
         /// <returns>0 on success, -1 on abort, and the number of errors encountered otherwise.</returns>
         public static async Task<int> RunAsync(string[] args)
         {
-            var arg_src = new Argument<string>(name: "backend_src", description: "The source backend string");
-            var arg_dst = new Argument<string>(name: "backend_dst", description: "The destination backend string");
+            var arg_src = new Argument<string>(name: "backend_src", description: Strings.SourceBackendDescription);
+            var arg_dst = new Argument<string>(name: "backend_dst", description: Strings.DestinationBackendDescription);
 
-            var root_cmd = new RootCommand(@"Remote Synchronization Tool
-
-This tool synchronizes two remote backends. The tool assumes that the intent is
-to have the destination match the source.
-
-If the destination has files that are not in the source, they will be deleted
-(or renamed if the retention option is set).
-
-If the destination has files that are also present in the source, but the files
-differ in size, or if the source files have a newer (more recent) timestamp,
-the destination files will be overwritten by the source files. Given that some
-backends do not allow for metadata or timestamp modification, and that the tool
-is run after backup, the destination files should always have a timestamp that
-is newer (or the same if run promptly) compared to the source files.
-
-If the force option is set, the destination will be overwritten by the source,
-regardless of the state of the files. It will also skip the initial comparison,
-and delete (or rename) all files in the destination.
-
-If the verify option is set, the files will be downloaded and compared after
-uploading to ensure that the files are correct. Files that already exist in the
-destination will be verified before being overwritten (if they seemingly match).
-            ")
+            var root_cmd = new RootCommand(Strings.RootCommandDescription)
             {
                 arg_src,
                 arg_dst,
 
-                new Option<bool>(aliases: ["--auto-create-folders"], description: "Automatically create folders in the destination backend if they do not exist", getDefaultValue: () => true),
-                new Option<int>(aliases: ["--backend-retries"], description: "Number of times to recreate a backend on backend errors", getDefaultValue: () => 3) { Arity = ArgumentArity.ExactlyOne },
-                new Option<int>(aliases: ["--backend-retry-delay"], description: "Delay in milliseconds between backend retries", getDefaultValue: () => 1000) { Arity = ArgumentArity.ExactlyOne },
-                new Option<bool>(aliases: ["--backend-retry-with-exponential-backoff"], description: "Use exponential backoff for backend retries, multiplying the delay by two for each failure.", getDefaultValue: () => true),
-                new Option<bool>(aliases: ["--confirm", "--yes", "-y"], description: "Automatically confirm the operation", getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--dry-run", "-d"], description: "Do not actually write or delete files. If not set here, the global options will be checked", getDefaultValue: () => false),
-                OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend. Each option is a key-value pair separated by an equals sign, e.g. --dst-options key1=value1 key2=value2 [default: empty]", getDefaultValue: () => []),
-                new Option<bool>(aliases: ["--force", "-f"], description: "Force the synchronization", getDefaultValue: () => false),
-                OptionWithMultipleTokens(aliases: ["--global-options"], description: "Global options all backends. May be overridden by backend specific options (src-options, dst-options). Each option is a key-value pair separated by an equals sign, e.g. --global-options key1=value1 key2=value2 [default: empty]", getDefaultValue: () => []),
-                new Option<string>(aliases: ["--log-file"], description: "The log file to write to. If not set here, global options will be checked [default: \"\"]", getDefaultValue: () => "") { Arity = ArgumentArity.ExactlyOne },
-                new Option<string>(aliases: ["--log-level"], description: "The log level to use. If not set here, global options will be checked", getDefaultValue: () => "Information") { Arity = ArgumentArity.ExactlyOne },
-                new Option<bool>(aliases: ["--parse-arguments-only"], description: "Only parse the arguments and then exit", getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--progress"], description: "Print progress to STDOUT", getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--retention"], description: "Toggles whether to keep old files. Any deletes will be renames instead", getDefaultValue: () => false),
-                new Option<int>(aliases: ["--retry"], description: "Number of times to retry on errors", getDefaultValue: () => 3) { Arity = ArgumentArity.ExactlyOne },
-                OptionWithMultipleTokens(aliases: ["--src-options"], description: "Options for the source backend. Each option is a key-value pair separated by an equals sign, e.g. --src-options key1=value1 key2=value2 [default: empty]", getDefaultValue: () => []),
-                new Option<bool>(aliases: ["--verify-contents"], description: "Verify the contents of the files to decide whether the pre-existing destination files should be overwritten", getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--verify-get-after-put"], description: "Verify the files after uploading them to ensure that they were uploaded correctly", getDefaultValue: () => false),
+                new Option<bool>(aliases: ["--auto-create-folders"], description: Strings.AutoCreateFoldersDescription, getDefaultValue: () => true),
+                new Option<int>(aliases: ["--backend-retries"], description: Strings.BackendRetriesDescription, getDefaultValue: () => 3) { Arity = ArgumentArity.ExactlyOne },
+                new Option<int>(aliases: ["--backend-retry-delay"], description: Strings.BackendRetryDelayDescription, getDefaultValue: () => 1000) { Arity = ArgumentArity.ExactlyOne },
+                new Option<bool>(aliases: ["--backend-retry-with-exponential-backoff"], description: Strings.BackendRetryWithExponentialBackoffDescription, getDefaultValue: () => true),
+                new Option<bool>(aliases: ["--confirm", "--yes", "-y"], description: Strings.ConfirmDescription, getDefaultValue: () => false),
+                new Option<bool>(aliases: ["--dry-run", "-d"], description: Strings.DryRunDescription, getDefaultValue: () => false),
+                OptionWithMultipleTokens(aliases: ["--dst-options"], description: Strings.DstOptionsDescription, getDefaultValue: () => []),
+                new Option<bool>(aliases: ["--force", "-f"], description: Strings.ForceDescription, getDefaultValue: () => false),
+                OptionWithMultipleTokens(aliases: ["--global-options"], description: Strings.GlobalOptionsDescription, getDefaultValue: () => []),
+                new Option<string>(aliases: ["--log-file"], description: Strings.LogFileDescription, getDefaultValue: () => "") { Arity = ArgumentArity.ExactlyOne },
+                new Option<string>(aliases: ["--log-level"], description: Strings.LogLevelDescription, getDefaultValue: () => "Information") { Arity = ArgumentArity.ExactlyOne },
+                new Option<bool>(aliases: ["--parse-arguments-only"], description: Strings.ParseArgumentsOnlyDescription, getDefaultValue: () => false),
+                new Option<bool>(aliases: ["--progress"], description: Strings.ProgressDescription, getDefaultValue: () => false),
+                new Option<bool>(aliases: ["--retention"], description: Strings.RetentionDescription, getDefaultValue: () => false),
+                new Option<int>(aliases: ["--retry"], description: Strings.RetryDescription, getDefaultValue: () => 3) { Arity = ArgumentArity.ExactlyOne },
+                OptionWithMultipleTokens(aliases: ["--src-options"], description: Strings.SrcOptionsDescription, getDefaultValue: () => []),
+                new Option<bool>(aliases: ["--verify-contents"], description: Strings.VerifyContentsDescription, getDefaultValue: () => false),
+                new Option<bool>(aliases: ["--verify-get-after-put"], description: Strings.VerifyGetAfterPutDescription, getDefaultValue: () => false),
             };
 
             root_cmd.Handler = CommandHandler.Create((string backend_src, string backend_dst, Config config, CancellationToken token) =>
