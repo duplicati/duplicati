@@ -81,6 +81,10 @@ namespace Duplicati.Library.Main.Strings
         public static string AllversionsShort { get { return LC.L(@"Show all versions"); } }
         public static string ListprefixonlyLong { get { return LC.L(@"When searching for files, all matching files are returned. Use this option to return only the largest common prefix path."); } }
         public static string ListprefixonlyShort { get { return LC.L(@"Show largest prefix"); } }
+        public static string SoftdeleteprefixLong { get { return LC.L(@"Use this option to rename files instead of deleting them. The value is the prefix to add to the filename. If the backend supports renaming, the file is renamed. Otherwise, the file is downloaded, re-uploaded with the new name, and then deleted. If the prefix contains a folder separator, the target folder must exist."); } }
+        public static string SoftdeleteprefixShort { get { return LC.L(@"Prefix for soft-deleted files"); } }
+        public static string PreventbackendrenameLong { get { return LC.L(@"Use this option to prevent the backend from renaming files, even if the backend supports it. This will force the soft-delete operation to download, re-upload with the new name, and then delete the original file."); } }
+        public static string PreventbackendrenameShort { get { return LC.L(@"Prevent backend rename"); } }
         public static string ListfoldercontentsLong { get { return LC.L(@"When searching for files, all matching files are returned. Use this option to return only the entries found in the folder specified as filter."); } }
         public static string ListfoldercontentsShort { get { return LC.L(@"Show folder contents"); } }
         public static string RetrydelayLong { get { return LC.L(@"After a failed transmission, Duplicati will wait a short period before attempting again. This is useful if the network drops out occasionally during transmissions."); } }
@@ -340,6 +344,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablePartialDblockRecoveryShort { get { return LC.L("Disable partial dblock recovery"); } }
         public static string DisableReplaceMissingMetadataLong { get { return LC.L($"If metadata is missing during the {"list-broken-files"} or {"purge-broken-files"} command, Duplicati will attempt to replace the missing metadata with a new copy. Use this option to disable this behavior and drop entries that are missing metadata."); } }
         public static string DisableReplaceMissingMetadataShort { get { return LC.L("Disable replacement of missing metadata"); } }
+        public static string ReducedPurgeStatisticsLong { get { return LC.L("If this option is enabled, the purge-broken-files command will skip calculating the size of the removed files. This can speed up the operation on large datasets."); } }
+        public static string ReducedPurgeStatisticsShort { get { return LC.L("Skip calculating removed file size"); } }
 
         public static string AutoCompactIntervalLong { get { return LC.L("The minimum amount of time that must elapse after the last compaction before another will be automatically triggered at the end of a backup job. Automatic compaction can be a long-running process and may not be desirable to run after every single backup."); } }
         public static string AutoCompactIntervalShort { get { return LC.L("Minimum time between auto compactions"); } }

@@ -140,6 +140,7 @@ namespace Duplicati.Library.Main.Operation
 
                 await using (var tempset = await db.CreateTemporaryFileset(versionid, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
+                    tempset.ReducedPurgeStatistics = m_options.ReducedPurgeStatistics;
                     if (filtercommand == null)
                         await tempset.ApplyFilter(filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     else
