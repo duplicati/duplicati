@@ -390,7 +390,7 @@ namespace Duplicati.Library.Main.Strings
         public static string MacosphotoslibrarypathShort { get { return LC.L("Path to the Photos library"); } }
         public static string MacosphotoslibrarypathLong { get { return LC.L("Use this option to specify the path to the Photos library on MacOS. This option is only relevant if the Photos library is not in the default location."); } }
         public static string RepairRefreshLockInfoShort { get { return LC.L("Refresh lock information during repair"); } }
-        public static string RepairRefreshLockInfoLong { get { return LC.L("Use this option to refresh the object lock expiration information from the backend during a repair operation. This will query the backend for the current lock status of each remote volume and update the local database accordingly."); } }
+        public static string RepairRefreshLockInfoLong { get { return LC.L("Use this option to refresh the object lock expiration information from the backend during a repair operation. This will query the backend for the current lock status of each remote volume and update the local database accordingly. If the backend does not support locking, this option will be ignored."); } }
         public static string RefreshLockInfoCompleteShort { get { return LC.L("Perform a complete refresh of lock information"); } }
         public static string RefreshLockInfoCompleteLong { get { return LC.L("Use this option to perform a complete refresh of lock information from the backend. This will query the backend for the current lock status of each remote volume and update the local database accordingly. If this option is not specified, only the lock information for the remote volumes with no lock information will be refreshed."); } }
     }
