@@ -293,7 +293,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                                 VerifyGetAfterPut = GetBoolFromDictionary(destination, "verify-get-after-put", m_defaultRunnerConfig.VerifyGetAfterPut)
                             },
                             Mode: Enum.TryParse<RemoteSyncTriggerMode>(mode, true, out var parsedMode) ? parsedMode : RemoteSyncTriggerMode.Inline,
-                            Interval: string.IsNullOrWhiteSpace(interval) ? (TimeSpan?)null : TimeSpan.TryParse(interval, out var intervalTimeSpan) ? intervalTimeSpan : (TimeSpan?)null,
+                            Interval: string.IsNullOrWhiteSpace(interval) ? null : Duplicati.Library.Utility.Timeparser.ParseTimeSpan(interval),
                             Count: GetIntFromDictionary(destination, "count", 0)
                         ));
                     }
