@@ -87,6 +87,20 @@ namespace Duplicati.Library.Backend
                 }).ConfigureAwait(false);
         }
 
+        public async Task MoveAsync(string fromPath, string toPath, CancellationToken cancellationToken)
+        {
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken,
+                async ct =>
+                {
+                    using var req = await CreateRequestAsync(WebApi.Dropbox.MoveUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
+                    req.Content = JsonContent.Create(new { from_path = fromPath, to_path = toPath });
+                    using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+
+                    // We don't need the result, just ensure success
+                    return await resp.Content.ReadFromJsonAsync<object>(ct).ConfigureAwait(false);
+                }).ConfigureAwait(false);
+        }
+
         private async Task<HttpRequestMessage> CreateChunkRequestAsync<T>(string url, T arg, CancellationToken cancelToken)
         {
             var req = await CreateRequestAsync(url, HttpMethod.Post, cancelToken).ConfigureAwait(false);

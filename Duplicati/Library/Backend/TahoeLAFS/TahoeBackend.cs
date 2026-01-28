@@ -31,7 +31,7 @@ using Uri = Duplicati.Library.Utility.Uri;
 
 namespace Duplicati.Library.Backend;
 
-public class TahoeBackend : IStreamingBackend
+public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
 {
     /// <summary>
     /// Base URL for the Tahoe-LAFS backend
@@ -277,5 +277,17 @@ public class TahoeBackend : IStreamingBackend
         _httpClient.Timeout = Timeout.InfiniteTimeSpan;
 
         return _httpClient;
+    }
+
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+    {
+        using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken,
+            innerCancelToken =>
+            {
+                using var request = CreateRequest(string.Empty, $"t=rename&from_name={Uri.UrlEncode(oldname)}&to_name={Uri.UrlEncode(newname)}", HttpMethod.Post);
+                return GetHttpClient().SendAsync(request, innerCancelToken);
+            }).ConfigureAwait(false);
+
+        resp.EnsureSuccessStatusCode();
     }
 }

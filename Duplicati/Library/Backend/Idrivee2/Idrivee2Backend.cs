@@ -28,7 +28,7 @@ using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend
 {
-    public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend, ILockingBackend
+    public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend, ILockingBackend, IRenameEnabledBackend
     {
         // Non-standard naming managed with AuthOptionsHelper.ParseWithAlias
         private const string AUTH_USERNAME_OPTION = "access_key_id";
@@ -276,5 +276,11 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc/>
         public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
             => Task.FromResult<IFileEntry?>(null);
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            var con = await GetConnection(cancellationToken).ConfigureAwait(false);
+            await con.RenameFileAsync(_bucket, GetFullKey(oldname), GetFullKey(newname), cancellationToken).ConfigureAwait(false);
+        }
     }
 }

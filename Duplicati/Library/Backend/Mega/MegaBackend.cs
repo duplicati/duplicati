@@ -31,7 +31,7 @@ namespace Duplicati.Library.Backend.Mega
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class MegaBackend : IBackend, IStreamingBackend
+    public class MegaBackend : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private readonly string m_username;
         private readonly string m_password;
@@ -281,6 +281,17 @@ namespace Duplicati.Library.Backend.Mega
 
         /// <inheritdoc/>
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            var client = await GetClient(cancellationToken).ConfigureAwait(false);
+            var node = await GetFileNodeAsync(oldname, cancellationToken).ConfigureAwait(false);
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, _ => client.RenameAsync(node, newname)).ConfigureAwait(false);
+
+            // Update cache
+            if (m_filecache != null)
+                m_filecache.Remove(oldname);
+        }
 
         #endregion
 

@@ -30,7 +30,7 @@ using uplink.NET.Services;
 
 namespace Duplicati.Library.Backend.Storj
 {
-    public class Storj : IStreamingBackend
+    public class Storj : IStreamingBackend, IRenameEnabledBackend
     {
         private const string STORJ_AUTH_METHOD = "storj-auth-method";
         private const string STORJ_SATELLITE = "storj-satellite";
@@ -310,6 +310,16 @@ namespace Duplicati.Library.Backend.Storj
             var bytes = new byte[length];
             Random.Shared.NextBytes(bytes);
             return bytes;
+        }
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            var bucket = await GetBucketAsync(cancellationToken).ConfigureAwait(false);
+            var oldKey = GetBasePath() + oldname;
+            var newKey = GetBasePath() + newname;
+
+            await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ => _objectService.CopyObjectAsync(bucket, oldKey, bucket, newKey)).ConfigureAwait(false);
+            await DeleteAsync(oldname, cancellationToken).ConfigureAwait(false);
         }
     }
 }

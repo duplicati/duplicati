@@ -47,7 +47,7 @@ namespace Duplicati.Library.Backend
     /// - Add auth code with access token in event ctx.ExecutingWebRequest
     ///   --> e.WebRequestExecutor.RequestHeaders[“Authorization”] = “Bearer ” + ar.AccessToken;
     /// </remarks>
-    public class SharePointBackend : IBackend, IStreamingBackend
+    public class SharePointBackend : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
 
         #region [Variables and constants declarations]
@@ -761,6 +761,32 @@ namespace Duplicati.Library.Backend
                 m_spContext = null;
             }
             m_userInfo = null!;
+        }
+
+        public Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+            => DoRenameAsync(oldname, newname, false, cancellationToken);
+
+        private async Task DoRenameAsync(string oldname, string newname, bool useNewContext, CancellationToken cancellationToken)
+        {
+            var ctx = await GetSpClientContextAsync(useNewContext, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                string oldFileUrl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(oldname);
+                string newFileUrl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(newname);
+
+                SP.File remoteFile = ctx.Web.GetFileByServerRelativeUrl(oldFileUrl);
+                remoteFile.MoveTo(newFileUrl, MoveOperations.Overwrite);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, _ => ctx.ExecuteQueryAsync()).ConfigureAwait(false);
+            }
+            catch (ServerException) { throw; /* rethrow if Server answered */ }
+            catch (FileMissingException) { throw; }
+            catch (FolderMissingException) { throw; }
+            catch
+            {
+                if (useNewContext)
+                    throw;
+                await DoRenameAsync(oldname, newname, true, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         #endregion

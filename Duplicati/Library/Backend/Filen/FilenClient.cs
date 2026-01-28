@@ -735,5 +735,30 @@ public class FilenClient : IDisposable
     {
         _httpClient.Dispose();
     }
+
+    /// <summary>
+    /// Renames a file in the Filen API
+    /// </summary>
+    /// <param name="fileUuid">The UUID of the file to rename</param>
+    /// <param name="newName">The new name of the file</param>
+    /// <param name="cancellationToken">The cancellation token to use for the operation</param>
+    /// <returns>A task that completes when the file is renamed</returns>
+    public async Task RenameFileAsync(string fileUuid, string newName, CancellationToken cancellationToken)
+    {
+        var encryptedName = _authResult.EncryptMetadata(JsonSerializer.Serialize(new NameEntry() { Name = newName }));
+        var url = $"{_baseUrl}/v3/file/rename";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authResult.ApiKey);
+        request.Content = JsonContent.Create(new { uuid = fileUuid, name = encryptedName });
+
+        var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await ExtractDataFromResponse<string?>(response, cancellationToken).ConfigureAwait(false);
+
+        // Update cache
+        var key = _cachedFiles.FirstOrDefault(kv => kv.Value.Uuid == fileUuid).Key;
+        if (!string.IsNullOrWhiteSpace(key))
+            _cachedFiles.Remove(key);
+    }
 }
 

@@ -33,7 +33,7 @@ namespace Duplicati.Library.Backend
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class Rclone : IBackend
+    public class Rclone : IBackend, IRenameEnabledBackend
     {
         private const string OPTION_LOCAL_REPO = "rclone-local-repository";
         private const string OPTION_REMOTE_REPO = "rclone-remote-repository";
@@ -312,6 +312,18 @@ namespace Duplicati.Library.Backend
         public void Dispose()
         {
 
+        }
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await RcloneCommandExecuter(rclone_executable, $"moveto {remote_repo}:{Path.Combine(remote_path, oldname)} {remote_repo}:{Path.Combine(remote_path, newname)}", Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
+            }
+            catch (FolderMissingException ex)
+            {
+                throw new FileMissingException(ex);
+            }
         }
 
         #endregion

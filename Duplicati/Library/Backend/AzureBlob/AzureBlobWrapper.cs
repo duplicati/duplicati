@@ -171,6 +171,27 @@ namespace Duplicati.Library.Backend.AzureBlob
         }
 
         /// <summary>
+        /// Copies a blob to a new name asynchronously.
+        /// </summary>
+        /// <param name="sourceKeyName">The name of the source blob.</param>
+        /// <param name="destinationKeyName">The name of the destination blob.</param>
+        /// <param name="cancelToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous copy operation.</returns>
+        public async Task CopyFileAsync(string sourceKeyName, string destinationKeyName, CancellationToken cancelToken)
+        {
+            var sourceBlobClient = _container.GetBlobClient(sourceKeyName);
+            var destinationBlobClient = _container.GetBlobClient(destinationKeyName);
+
+            // Start the copy operation
+            var operation = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, async ct =>
+                await destinationBlobClient.StartCopyFromUriAsync(sourceBlobClient.Uri, cancellationToken: ct).ConfigureAwait(false)
+            ).ConfigureAwait(false);
+
+            // Wait for the copy to complete
+            await operation.WaitForCompletionAsync(cancelToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// List container files.
         /// </summary>
         /// <param name="cancelToken">A token to monitor for cancellation requests.</param>
