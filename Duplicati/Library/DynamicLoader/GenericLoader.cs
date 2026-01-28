@@ -43,6 +43,9 @@ namespace Duplicati.Library.DynamicLoader
             //
             // Instead, we attempt to load the built-in modules assembly by name and reflect its
             // exported types to find IGenericModule implementations.
+            //
+            // TODO This could become a problem at some point, as the assembly name might change.
+            // However, there is currently no better way to avoid the circular dependency.
             Assembly? builtinAsm = null;
             try
             {
