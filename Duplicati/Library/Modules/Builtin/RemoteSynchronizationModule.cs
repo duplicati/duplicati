@@ -87,7 +87,6 @@ public record RemoteSyncDestinationConfigRaw(
 
     public List<string> DstOptions { get; init; } = [];
     public List<string> GlobalOptions { get; init; } = [];
-    public List<string> SrcOptions { get; init; } = [];
 
     public string? Mode { get; init; }
     public string? Interval { get; init; }
@@ -258,7 +257,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                                 Progress: destination.Progress,
                                 Retention: destination.Retention,
                                 Retry: destination.Retry,
-                                SrcOptions: destination.SrcOptions,
+                                SrcOptions: [.. commandlineOptions.Select((k, v) => $"{k}={v}")],
                                 VerifyContents: destination.VerifyContents,
                                 VerifyGetAfterPut: destination.VerifyGetAfterPut
                             ),
