@@ -26,7 +26,7 @@ using System.Linq;
 using System.Reflection;
 using HandlebarsDotNet;
 
-namespace Duplicati.Library.Modules.Builtin.ResultSerialization
+namespace Duplicati.Library.ResultSerialization
 {
     /// <summary>
     /// Implements serialization of results using Handlebars templates.

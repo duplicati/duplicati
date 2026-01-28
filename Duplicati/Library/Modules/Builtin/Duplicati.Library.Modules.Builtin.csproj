@@ -42,8 +42,4 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Templates\**\*" />
-  </ItemGroup>
-
 </Project>
