@@ -63,8 +63,43 @@ public record RemoteSyncDestinationConfig(
     RemoteSynchronization.Config Config,
     RemoteSyncTriggerMode Mode = RemoteSyncTriggerMode.Inline,
     TimeSpan? Interval = null,
-    int Count = 0
+    int? Count = null
 );
+
+public record RemoteSyncDestinationConfigRaw(
+    bool AutoCreateFolders = true,
+    int BackendRetries = 3,
+    int BackendRetryDelay = 1000,
+    bool BackendRetryWithExponentialBackoff = true,
+    bool DryRun = false,
+    bool Force = false,
+    string LogFile = "",
+    string LogLevel = "",
+    bool ParseArgumentsOnly = false,
+    bool Progress = false,
+    bool Retention = false,
+    int Retry = 3,
+    bool VerifyContents = false,
+    bool VerifyGetAfterPut = false
+)
+{
+    public string? Url { get; init; }
+
+    public List<string> DstOptions { get; init; } = [];
+    public List<string> GlobalOptions { get; init; } = [];
+    public List<string> SrcOptions { get; init; } = [];
+
+    public string? Mode { get; init; }
+    public string? Interval { get; init; }
+    public int? Count { get; init; }
+};
+
+public record TopLevelRemoteSyncConfig(
+    bool SyncOnWarnings = true
+)
+{
+    public required List<RemoteSyncDestinationConfigRaw> Destinations { get; init; }
+}
 
 /// <summary>
 /// Module for synchronizing backup data to remote destinations after a successful backup operation.
@@ -81,31 +116,6 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     private string? m_operationName;
     private string? m_source;
     private bool m_syncOnWarnings = true;
-
-    // Default configuration for the remote synchronization runner
-    private RemoteSynchronization.Config m_defaultRunnerConfig = new(
-        Src: string.Empty,
-        Dst: string.Empty,
-
-        AutoCreateFolders: true,
-        BackendRetries: 3,
-        BackendRetryDelay: 1000,
-        BackendRetryWithExponentialBackoff: true,
-        Confirm: true,
-        DryRun: false,
-        DstOptions: [],
-        Force: false,
-        GlobalOptions: [],
-        LogFile: string.Empty,
-        LogLevel: "Information",
-        ParseArgumentsOnly: false,
-        Progress: false,
-        Retention: false,
-        Retry: 3,
-        SrcOptions: [],
-        VerifyContents: false,
-        VerifyGetAfterPut: false
-    );
 
     /// <summary>
     /// Gets the key identifier for this module.
@@ -131,83 +141,6 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     [
         new CommandLineArgument(OPTION_JSON_CONFIG, CommandLineArgument.ArgumentType.String, "JSON configuration for remote synchronization", "JSON string or file path containing remote synchronization configuration"),
     ];
-
-    /// <summary>
-    /// Gets a boolean value from the dictionary for the specified key.
-    /// </summary>
-    /// <param name="dict">The dictionary to search.</param>
-    /// <param name="key">The key to look for in the dictionary.</param>
-    /// <param name="defaultValue">The default value to return if the key is not found or the value is not a boolean.</param>
-    /// <returns>The boolean value associated with the key, or the default value if not found or invalid.</returns>
-    private static bool GetBoolFromDictionary(Dictionary<string, object?> dict, string key, bool defaultValue = false)
-    {
-        if (dict.TryGetValue(key, out var val))
-        {
-            if (val is bool b)
-                return b;
-            else if (val is JsonElement elem && (elem.ValueKind == JsonValueKind.True || elem.ValueKind == JsonValueKind.False))
-                return elem.GetBoolean();
-        }
-        return defaultValue;
-    }
-
-    /// <summary>
-    /// Gets an integer value from the dictionary for the specified key.
-    /// </summary>
-    /// <param name="dict">The dictionary to search.</param>
-    /// <param name="key">The key to look for in the dictionary.</param>
-    /// <param name="defaultValue">The default value to return if the key is not found or the value is not an integer.</param>
-    /// <returns>The integer value associated with the key, or the default value if not found or invalid.</returns>
-    private static int GetIntFromDictionary(Dictionary<string, object?> dict, string key, int defaultValue = 0)
-    {
-        if (dict.TryGetValue(key, out var val))
-        {
-            if (val is int l)
-                return l;
-            else if (val is JsonElement elem && elem.ValueKind == JsonValueKind.Number && elem.TryGetInt32(out var parsedInt))
-                return parsedInt;
-        }
-        return defaultValue;
-    }
-
-    /// <summary>
-    /// Gets a list of strings from the dictionary for the specified key.
-    /// </summary>
-    /// <param name="dict">The dictionary to search.</param>
-    /// <param name="key">The key to look for in the dictionary.</param>
-    /// <param name="defaultValue">The default list to return if the key is not found or the value is not a string.</param>
-    /// <returns>The list of strings associated with the key, or the default list if not found or invalid.</returns>
-    private static List<string> GetOptionsFromDictionary(Dictionary<string, object?> dict, string key, List<string> defaultValue)
-    {
-        var options = GetStringFromDictionary(dict, key)
-            .Split(' ')
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .ToList();
-
-        if (options.Count != 0)
-            return [.. options];
-
-        return defaultValue;
-    }
-
-    /// <summary>
-    /// Gets a string value from the dictionary for the specified key.
-    /// </summary>
-    /// <param name="dict">The dictionary to search.</param>
-    /// <param name="key">The key to look for in the dictionary.</param>
-    /// <param name="defaultValue">The default value to return if the key is not found or the value is not a string.</param>
-    /// <returns>The string value associated with the key, or the default value if not found or invalid.</returns>
-    private static string GetStringFromDictionary(Dictionary<string, object?> dict, string key, string defaultValue = "")
-    {
-        if (dict.TryGetValue(key, out var val))
-        {
-            if (val is string str)
-                return str;
-            else if (val is JsonElement elem && elem.ValueKind == JsonValueKind.String)
-                return elem.GetString() ?? defaultValue;
-        }
-        return defaultValue;
-    }
 
     /// <summary>
     /// Configures the module with the provided command line options.
@@ -248,53 +181,86 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             try
             {
                 var deserializeOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var toplevel = JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonContent, deserializeOpts);
+                var toplevel = JsonSerializer.Deserialize<TopLevelRemoteSyncConfig>(jsonContent, deserializeOpts);
 
-                if (toplevel == null)
+                if (toplevel is null)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonParseError", null, "Failed to parse JSON configuration: top-level object is null.");
                     return;
                 }
-                m_syncOnWarnings = GetBoolFromDictionary(toplevel, "sync-on-warnings", m_syncOnWarnings);
 
-                if (toplevel?.TryGetValue("destinations", out var destinationsObj) == true &&
-                    destinationsObj is JsonElement destinationsElem &&
-                    destinationsElem.ValueKind == JsonValueKind.Array)
+                m_syncOnWarnings = toplevel.SyncOnWarnings;
+
+                if (toplevel.Destinations.Count > 0)
                 {
-                    var destinations = JsonSerializer.Deserialize<List<Dictionary<string, object?>>>(destinationsElem.GetRawText(), deserializeOpts) ?? [];
-                    foreach (var destination in destinations)
+                    foreach (var destination in toplevel.Destinations)
                     {
-                        var loglevel = GetStringFromDictionary(destination, "log-level");
-                        var mode = GetStringFromDictionary(destination, "mode");
-                        var interval = GetStringFromDictionary(destination, "interval");
+                        var loglevel = string.IsNullOrWhiteSpace(destination.LogLevel) ?
+                            (commandlineOptions.TryGetValue("log-file-log-level", out var logLevel) ? logLevel : "Information")
+                            : destination.LogLevel;
+                        var mode = !string.IsNullOrWhiteSpace(destination.Mode) && Enum.TryParse<RemoteSyncTriggerMode>(destination.Mode, true, out var parsedMode) ? parsedMode : RemoteSyncTriggerMode.Inline;
+
+                        TimeSpan? interval_parsed;
+                        try
+                        {
+                            interval_parsed = string.IsNullOrWhiteSpace(destination.Interval) ? null : Duplicati.Library.Utility.Timeparser.ParseTimeSpan(destination.Interval);
+                        }
+                        catch (Exception ex)
+                        {
+                            var defaulting_string = string.Empty;
+                            if (mode == RemoteSyncTriggerMode.Interval)
+                            {
+                                mode = RemoteSyncTriggerMode.Inline;
+                                defaulting_string = "; defaulting to inline mode";
+                            }
+                            interval_parsed = null;
+                            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncInvalidInterval", ex, "Invalid interval format '{0}' for remote synchronization destination{1}", destination.Interval, defaulting_string);
+                        }
+
+                        if (string.IsNullOrWhiteSpace(destination.Mode))
+                        {
+                            if (interval_parsed.HasValue && destination.Count.HasValue)
+                            {
+                                Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncBothIntervalAndCount", null, "Both interval and count specified for remote synchronization destination without explicit mode; defaulting to interval mode.");
+                                mode = RemoteSyncTriggerMode.Interval;
+                            }
+                            else if (interval_parsed.HasValue)
+                            {
+                                mode = RemoteSyncTriggerMode.Interval;
+                            }
+                            else if (destination.Count.HasValue)
+                            {
+                                mode = RemoteSyncTriggerMode.Counting;
+                            }
+                        }
 
                         m_destinations.Add(new(
-                            Config: m_defaultRunnerConfig with
-                            {
-                                Dst = GetStringFromDictionary(destination, "url", string.Empty),
+                            Config: new(
+                                Src: "",
+                                Dst: destination.Url ?? "",
 
-                                AutoCreateFolders = GetBoolFromDictionary(destination, "auto-create-folders", m_defaultRunnerConfig.AutoCreateFolders),
-                                BackendRetries = GetIntFromDictionary(destination, "backend-retries", m_defaultRunnerConfig.BackendRetries),
-                                BackendRetryDelay = GetIntFromDictionary(destination, "backend-retry-delay", m_defaultRunnerConfig.BackendRetryDelay),
-                                BackendRetryWithExponentialBackoff = GetBoolFromDictionary(destination, "backend-retry-with-exponential-backoff", m_defaultRunnerConfig.BackendRetryWithExponentialBackoff),
-                                Confirm = GetBoolFromDictionary(destination, "confirm", m_defaultRunnerConfig.Confirm),
-                                DryRun = GetBoolFromDictionary(destination, "dry-run", m_defaultRunnerConfig.DryRun),
-                                DstOptions = GetOptionsFromDictionary(destination, "dst-options", m_defaultRunnerConfig.DstOptions),
-                                Force = GetBoolFromDictionary(destination, "force", m_defaultRunnerConfig.Force),
-                                GlobalOptions = GetOptionsFromDictionary(destination, "global-options", m_defaultRunnerConfig.GlobalOptions),
-                                LogFile = GetStringFromDictionary(destination, "log-file"),
-                                LogLevel = loglevel ?? (commandlineOptions.TryGetValue("log-file-log-level", out var logLevel) ? logLevel : m_defaultRunnerConfig.LogLevel),
-                                ParseArgumentsOnly = GetBoolFromDictionary(destination, "parse-arguments-only", m_defaultRunnerConfig.ParseArgumentsOnly),
-                                Progress = GetBoolFromDictionary(destination, "progress", m_defaultRunnerConfig.Progress),
-                                Retention = GetBoolFromDictionary(destination, "retention", m_defaultRunnerConfig.Retention),
-                                Retry = GetIntFromDictionary(destination, "retry", m_defaultRunnerConfig.Retry),
-                                SrcOptions = GetOptionsFromDictionary(destination, "src-options", m_defaultRunnerConfig.SrcOptions),
-                                VerifyContents = GetBoolFromDictionary(destination, "verify-contents", m_defaultRunnerConfig.VerifyContents),
-                                VerifyGetAfterPut = GetBoolFromDictionary(destination, "verify-get-after-put", m_defaultRunnerConfig.VerifyGetAfterPut)
-                            },
-                            Mode: Enum.TryParse<RemoteSyncTriggerMode>(mode, true, out var parsedMode) ? parsedMode : RemoteSyncTriggerMode.Inline,
-                            Interval: string.IsNullOrWhiteSpace(interval) ? null : Duplicati.Library.Utility.Timeparser.ParseTimeSpan(interval),
-                            Count: GetIntFromDictionary(destination, "count", 0)
+                                AutoCreateFolders: destination.AutoCreateFolders,
+                                BackendRetries: destination.BackendRetries,
+                                BackendRetryDelay: destination.BackendRetryDelay,
+                                BackendRetryWithExponentialBackoff: destination.BackendRetryWithExponentialBackoff,
+                                Confirm: true,
+                                DryRun: destination.DryRun,
+                                DstOptions: destination.DstOptions,
+                                Force: destination.Force,
+                                GlobalOptions: destination.GlobalOptions,
+                                LogFile: destination.LogFile,
+                                LogLevel: loglevel,
+                                ParseArgumentsOnly: destination.ParseArgumentsOnly,
+                                Progress: destination.Progress,
+                                Retention: destination.Retention,
+                                Retry: destination.Retry,
+                                SrcOptions: destination.SrcOptions,
+                                VerifyContents: destination.VerifyContents,
+                                VerifyGetAfterPut: destination.VerifyGetAfterPut
+                            ),
+                            Mode: mode,
+                            Interval: interval_parsed,
+                            Count: destination.Count
                         ));
                     }
 
@@ -302,7 +268,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                 }
                 else
                 {
-                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonMissingDestinations", null, "JSON configuration is missing 'destinations' array.");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncJsonEmptyDestinations", null, "JSON configuration is missing entries in the 'destinations' array.");
                     m_enabled = false;
                     return;
                 }
@@ -391,9 +357,11 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             {
                 var config = dest.Config with { Src = m_source! };
                 var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
-                if (exitCode != 0)
+
+                if (exitCode == 0)
+                    RecordSyncOperation(i);
+                else
                     Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
-                RecordSyncOperation(i);
             }
             catch (Exception ex)
             {
