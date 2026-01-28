@@ -567,7 +567,7 @@ namespace Duplicati.Library.Main
                     if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                     {
                         using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).Await();
-                        db.WriteResults(result, CancellationToken.None).Await();
+                        db.WriteResultsAndCommit(result, CancellationToken.None).Await();
                         db.PurgeLogData(m_options.LogRetention, CancellationToken.None).Await();
                         db.PurgeDeletedVolumes(DateTime.UtcNow, CancellationToken.None).Await();
 
@@ -609,7 +609,7 @@ namespace Duplicati.Library.Main
                         // No operation was started in database, so write logs to new operation
                         if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).Await())
-                                db.WriteResults(result, CancellationToken.None).Await();
+                                db.WriteResultsAndCommit(result, CancellationToken.None).Await();
                     }
                     catch (Exception we)
                     {
@@ -634,7 +634,7 @@ namespace Duplicati.Library.Main
                         // Write logs to previous operation if database exists
                         if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             using (var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).Await())
-                                db.WriteResults(result, CancellationToken.None).Await();
+                                db.WriteResultsAndCommit(result, CancellationToken.None).Await();
                     }
                     catch (Exception we)
                     {
