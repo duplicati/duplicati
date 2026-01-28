@@ -387,14 +387,13 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                 continue;
             }
 
-            RecordSyncOperation(i);
-
             try
             {
                 var config = dest.Config with { Src = m_source! };
                 var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
                 if (exitCode != 0)
                     Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
+                RecordSyncOperation(i);
             }
             catch (Exception ex)
             {
