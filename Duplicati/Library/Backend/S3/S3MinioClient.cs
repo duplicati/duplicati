@@ -110,6 +110,24 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public async Task<IFileEntry?> GetFileEntryAsync(string bucketName, string keyName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var args = new StatObjectArgs().WithBucket(bucketName).WithObject(keyName);
+                var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct => m_client.StatObjectAsync(args, ct)).ConfigureAwait(false);
+
+                return new FileEntry(keyName, response.Size, response.LastModified, response.LastModified)
+                {
+                    IsFolder = keyName.EndsWith("/")
+                };
+            }
+            catch (ObjectNotFoundException)
+            {
+                return null;
+            }
+        }
+
         public async Task AddBucketAsync(string bucketName, CancellationToken cancelToken)
         {
             try

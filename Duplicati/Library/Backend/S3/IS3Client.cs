@@ -104,5 +104,14 @@ namespace Duplicati.Library.Backend
         /// <param name="lockUntilUtc">The UTC timestamp until which the object should remain locked.</param>
         /// <param name="cancelToken">The cancellation token.</param>
         Task SetObjectLockUntilAsync(string bucketName, string keyName, DateTime lockUntilUtc, CancellationToken cancelToken);
+
+        /// <summary>
+        /// Gets the metadata for a single object
+        /// </summary>
+        /// <param name="bucketName">The bucket name</param>
+        /// <param name="keyName">The object key</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The file entry, or null if not found</returns>
+        Task<IFileEntry?> GetFileEntryAsync(string bucketName, string keyName, CancellationToken cancellationToken);
     }
 }

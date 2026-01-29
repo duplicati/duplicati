@@ -87,6 +87,32 @@ namespace Duplicati.Library.Backend
                 }).ConfigureAwait(false);
         }
 
+        public async Task<MetaData?> GetMetadataAsync(string path, CancellationToken cancellationToken)
+        {
+            return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken,
+                async ct =>
+                {
+                    using var req = await CreateRequestAsync(WebApi.Dropbox.GetMetadataUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
+                    req.Content = JsonContent.Create(new PathArg { path = path });
+                    using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+
+                    if (resp.StatusCode == HttpStatusCode.Conflict)
+                        return null;
+
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        var content = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+                        if (content.Contains("path_lookup/not_found"))
+                            return null;
+
+                        throw new HttpRequestException($"Dropbox API error: {resp.StatusCode} {content}");
+                    }
+
+                    return await resp.Content.ReadFromJsonAsync<MetaData>(ct).ConfigureAwait(false)
+                        ?? throw new InvalidOperationException("Failed to deserialize MetaData");
+                }).ConfigureAwait(false);
+        }
+
         private async Task<HttpRequestMessage> CreateChunkRequestAsync<T>(string url, T arg, CancellationToken cancelToken)
         {
             var req = await CreateRequestAsync(url, HttpMethod.Post, cancelToken).ConfigureAwait(false);

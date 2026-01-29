@@ -495,6 +495,26 @@ namespace Duplicati.Library.Backend
                 throw new FileMissingException(string.Format("File {0} not found", keyName), s3Ex);
         }
 
+        public async Task<IFileEntry?> GetFileEntryAsync(string bucketName, string keyName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var request = new GetObjectMetadataRequest { BucketName = bucketName, Key = keyName };
+                var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct => m_client.GetObjectMetadataAsync(request, ct)).ConfigureAwait(false);
+
+                return new FileEntry(keyName, response.ContentLength, response.LastModified ?? default, response.LastModified ?? default)
+                {
+                    IsFolder = keyName.EndsWith("/")
+                };
+            }
+            catch (AmazonS3Exception ex)
+            {
+                if (ex.StatusCode == System.Net.HttpStatusCode.NotFound || "NoSuchKey".Equals(ex.ErrorCode, StringComparison.OrdinalIgnoreCase))
+                    return null;
+                throw;
+            }
+        }
+
         #region IDisposable Members
 
         public void Dispose()

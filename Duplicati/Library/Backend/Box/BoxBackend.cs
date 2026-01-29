@@ -31,7 +31,7 @@ using Uri = Duplicati.Library.Utility.Uri;
 
 namespace Duplicati.Library.Backend.Box
 {
-    public class BoxBackend : IStreamingBackend
+    public class BoxBackend : IStreamingBackend, IFolderEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("box.com", null);
         private const string AUTHID_OPTION = "authid";
@@ -113,9 +113,15 @@ namespace Duplicati.Library.Backend.Box
 
         private async Task<string> GetCurrentFolderAsync(bool create, CancellationToken cancelToken)
         {
+            var id = await GetFolderIdAsync(_path, create, cancelToken).ConfigureAwait(false);
+            return _currentFolder = id;
+        }
+
+        private async Task<string> GetFolderIdAsync(string path, bool create, CancellationToken cancelToken)
+        {
             var parentid = "0";
 
-            foreach (var p in _path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var p in path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 var el = (MiniFolder?)await PagedFileListResponse(parentid, true, cancelToken).FirstOrDefaultAsync(x => x.Name == p, cancellationToken: cancelToken).ConfigureAwait(false);
                 if (el == null)
@@ -136,10 +142,101 @@ namespace Duplicati.Library.Backend.Box
 
                 parentid = el.ID;
                 if (string.IsNullOrWhiteSpace(parentid))
-                    throw new InvalidDataException($"Invalid folder ID for {p} in {_path}");
+                    throw new InvalidDataException($"Invalid folder ID for {p} in {path}");
             }
 
-            return _currentFolder = parentid;
+            return parentid;
+        }
+
+        private IFileEntry ParseEntry(FileEntity n)
+        {
+            var fe = new FileEntry(n.Name);
+            if (n.Type == "folder")
+            {
+                fe.IsFolder = true;
+                if (!fe.Name.EndsWith("/"))
+                    fe.Name += "/";
+            }
+            else
+            {
+                fe.IsFolder = false;
+                fe.Size = n.Size;
+            }
+
+            if (n.ModifiedAt != default)
+                fe.LastModification = fe.LastAccess = n.ModifiedAt.ToUniversalTime();
+
+            return fe;
+        }
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var fullPath = _path;
+            if (!string.IsNullOrEmpty(path))
+            {
+                var p = path.TrimStart('/');
+                if (string.IsNullOrEmpty(fullPath))
+                    fullPath = "/" + p;
+                else if (fullPath == "/")
+                    fullPath = "/" + p;
+                else
+                    fullPath = fullPath + "/" + p;
+            }
+
+            string folderId;
+            try
+            {
+                folderId = await GetFolderIdAsync(fullPath, false, cancellationToken).ConfigureAwait(false);
+            }
+            catch (FolderMissingException)
+            {
+                yield break;
+            }
+
+            await foreach (var n in PagedFileListResponse(folderId, false, cancellationToken).ConfigureAwait(false))
+            {
+                yield return ParseEntry(n);
+            }
+        }
+
+        public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+        {
+            var fullPath = _path;
+            if (!string.IsNullOrEmpty(path))
+            {
+                var p = path.TrimStart('/');
+                if (string.IsNullOrEmpty(fullPath))
+                    fullPath = "/" + p;
+                else if (fullPath == "/")
+                    fullPath = "/" + p;
+                else
+                    fullPath = fullPath + "/" + p;
+            }
+
+            var parts = fullPath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                return new FileEntry(string.Empty) { IsFolder = true };
+
+            var parentPath = string.Join("/", parts.Take(parts.Length - 1));
+            var name = parts.Last();
+
+            string parentId;
+            try
+            {
+                parentId = await GetFolderIdAsync(parentPath, false, cancellationToken).ConfigureAwait(false);
+            }
+            catch (FolderMissingException)
+            {
+                return null;
+            }
+
+            var item = await PagedFileListResponse(parentId, false, cancellationToken)
+                .FirstOrDefaultAsync(x => x.Name == name, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (item == null) return null;
+
+            return ParseEntry(item);
         }
 
         private async Task<string> GetFileIdAsync(string name, CancellationToken cancelToken)
