@@ -310,18 +310,27 @@ namespace Duplicati.Library.Backend
             return fe;
         }
 
+        private string GetAbsolutePath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return this.RootPath;
+
+            var p = path.Replace(Path.DirectorySeparatorChar, '/').Trim('/');
+            if (string.IsNullOrWhiteSpace(this.RootPath) || this.RootPath == "/")
+                p = "/" + p;
+            else
+                p = Util.AppendDirSeparator(this.RootPath, "/") + p;
+
+            if (p == "/")
+                p = "";
+
+            return p;
+        }
+
         public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancelToken)
         {
             var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
-            var targetPath = this.RootPath;
-            if (!string.IsNullOrEmpty(path))
-            {
-                var p = path.TrimStart('/');
-                if (targetPath.EndsWith("/"))
-                    targetPath += p;
-                else
-                    targetPath += "/" + p;
-            }
+            var targetPath = GetAbsolutePath(path);
 
             string url;
             if (targetPath == "/" || string.IsNullOrEmpty(targetPath))
@@ -339,15 +348,7 @@ namespace Duplicati.Library.Backend
         public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
         {
             var drivePrefix = await GetDrivePrefix(cancellationToken).ConfigureAwait(false);
-            var targetPath = this.RootPath;
-            if (!string.IsNullOrEmpty(path))
-            {
-                var p = path.TrimStart('/');
-                if (targetPath.EndsWith("/"))
-                    targetPath += p;
-                else
-                    targetPath += "/" + p;
-            }
+            var targetPath = GetAbsolutePath(path);
 
             string url;
             if (targetPath == "/" || string.IsNullOrEmpty(targetPath))
