@@ -169,20 +169,26 @@ namespace Duplicati.Library.Backend.Box
             return fe;
         }
 
+        /// <summary>
+        /// Gets the absolute path for a given relative path
+        /// </summary>
+        /// <param name="path">The relative path local path, with backslashes or forward slashes</param>
+        /// <returns>The absolute URL path</returns>
+        private string GetAbsolutePath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return _path;
+
+            var p = path.Replace(Path.DirectorySeparatorChar, '/').Trim('/');
+            if (string.IsNullOrWhiteSpace(_path) || _path == "/")
+                return "/" + p;
+            else
+                return Util.AppendDirSeparator(_path, "/") + p;
+        }
+
         public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var fullPath = _path;
-            if (!string.IsNullOrEmpty(path))
-            {
-                var p = path.TrimStart('/');
-                if (string.IsNullOrEmpty(fullPath))
-                    fullPath = "/" + p;
-                else if (fullPath == "/")
-                    fullPath = "/" + p;
-                else
-                    fullPath = fullPath + "/" + p;
-            }
-
+            var fullPath = GetAbsolutePath(path);
             string folderId;
             try
             {
@@ -241,6 +247,39 @@ namespace Duplicati.Library.Backend.Box
 
         private async Task<string> GetFileIdAsync(string name, CancellationToken cancelToken)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new FileMissingException();
+
+            // Note that "name" is in local path format, but the API calls use forward slashes
+            if (name.Contains(Path.DirectorySeparatorChar))
+            {
+                var parts = GetAbsolutePath(name).Split('/', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0)
+                    throw new FileMissingException();
+
+                var fileName = parts.Last();
+                var folderPath = string.Join("/", parts.Take(parts.Length - 1));
+
+                var fullPath = _path;
+                if (!string.IsNullOrEmpty(folderPath))
+                {
+                    if (string.IsNullOrEmpty(fullPath) || fullPath == "/")
+                        fullPath = "/" + folderPath;
+                    else
+                        fullPath = fullPath.TrimEnd('/') + "/" + folderPath;
+                }
+
+                var folderId = await GetFolderIdAsync(fullPath, false, cancelToken).ConfigureAwait(false);
+                var item = await PagedFileListResponse(folderId, false, cancelToken)
+                    .FirstOrDefaultAsync(x => x.Name == fileName, cancelToken)
+                    .ConfigureAwait(false);
+
+                if (item == null || string.IsNullOrWhiteSpace(item.ID))
+                    throw new FileMissingException();
+
+                return item.ID;
+            }
+
             if (_fileCache.TryGetValue(name, out var async))
                 return async;
 
