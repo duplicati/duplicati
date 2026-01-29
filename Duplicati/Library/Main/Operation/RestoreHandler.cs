@@ -107,7 +107,10 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
 
             // Set the restore path in the results for logging purposes
-            m_result.RestorePath = string.IsNullOrEmpty(m_options.Restorepath) ? null : m_options.Restorepath;
+            var restorePath = restoreDestination.TargetDestination;
+            m_result.RestorePath = string.IsNullOrEmpty(restorePath)
+                ? null
+                : restorePath;
 
             // If we have both target paths and a filter, combine them into a single filter
             filter = JoinedFilterExpression.Join(new FilterExpression(paths), filter);
