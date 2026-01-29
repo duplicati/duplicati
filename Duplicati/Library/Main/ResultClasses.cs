@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -537,6 +539,7 @@ namespace Duplicati.Library.Main
         public long DeletedFiles { get; internal set; }
         public long DeletedFolders { get; internal set; }
         public long DeletedSymlinks { get; internal set; }
+        public string? RestorePath { get; internal set; }
 
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
 
