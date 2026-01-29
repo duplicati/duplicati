@@ -23,7 +23,7 @@
     <ProjectReference Include="..\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\UsageReporter\Duplicati.Library.UsageReporter.csproj" />
-    <ProjectReference Include="..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
+    <ProjectReference Include="..\ResultSerialization\Duplicati.Library.ResultSerialization.csproj" />
     <ProjectReference Include="..\SourceProvider\Builtin\Duplicati.Library.SourceProvider.Builtin.csproj" />
   </ItemGroup>
 

@@ -398,6 +398,8 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("version", CommandLineArgument.ArgumentType.String, Strings.Options.VersionShort, Strings.Options.VersionLong, ""),
             new CommandLineArgument("all-versions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllversionsShort, Strings.Options.AllversionsLong, "false"),
             new CommandLineArgument("list-prefix-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListprefixonlyShort, Strings.Options.ListprefixonlyLong, "false"),
+            new CommandLineArgument("soft-delete-prefix", CommandLineArgument.ArgumentType.String, Strings.Options.SoftdeleteprefixShort, Strings.Options.SoftdeleteprefixLong),
+            new CommandLineArgument("prevent-backend-rename", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PreventbackendrenameShort, Strings.Options.PreventbackendrenameLong, "false"),
             new CommandLineArgument("list-folder-contents", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListfoldercontentsShort, Strings.Options.ListfoldercontentsLong, "false"),
             new CommandLineArgument("list-sets-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListsetsonlyShort, Strings.Options.ListsetsonlyLong, "false"),
             new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
@@ -553,6 +555,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
             new CommandLineArgument("disable-partial-dblock-recovery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablePartialDblockRecoveryShort, Strings.Options.DisablePartialDblockRecoveryLong, "false"),
             new CommandLineArgument("disable-replace-missing-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableReplaceMissingMetadataShort, Strings.Options.DisableReplaceMissingMetadataLong, "false"),
+            new CommandLineArgument("reduced-purge-statistics", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ReducedPurgeStatisticsShort, Strings.Options.ReducedPurgeStatisticsLong, "false"),
             new CommandLineArgument("repair-refresh-lock-info", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepairRefreshLockInfoShort, Strings.Options.RepairRefreshLockInfoLong, "false"),
             new CommandLineArgument("refresh-lock-info-complete", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RefreshLockInfoCompleteShort, Strings.Options.RefreshLockInfoCompleteLong, "false"),
 
@@ -1189,6 +1192,16 @@ namespace Duplicati.Library.Main
         public bool QuotaDisable => GetBool("quota-disable");
 
         /// <summary>
+        /// Gets the soft delete prefix
+        /// </summary>
+        public string? SoftDeletePrefix => GetString("soft-delete-prefix", null);
+
+        /// <summary>
+        /// Gets a flag indicating if the backend rename operation should be avoided
+        /// </summary>
+        public bool PreventBackendRename => GetBool("prevent-backend-rename");
+
+        /// <summary>
         /// Gets the display name of the backup
         /// </summary>
         public string BackupName
@@ -1535,6 +1548,11 @@ namespace Duplicati.Library.Main
         /// Gets a value indicating if missing metadata is replaced with empty content on purge-broken-files
         /// </summary>
         public bool DisableReplaceMissingMetadata => GetBool("disable-replace-missing-metadata");
+
+        /// <summary>
+        /// Gets a value indicating if the purge-broken-files command should skip calculating the size of the removed files
+        /// </summary>
+        public bool ReducedPurgeStatistics => GetBool("reduced-purge-statistics");
 
         /// <summary>
         /// Gets the threshold for when log data should be cleaned

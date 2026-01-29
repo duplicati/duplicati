@@ -33,6 +33,7 @@ namespace Duplicati.Library.Main.Volumes
         private JsonWriter m_writer = null;
 #if DEBUG
         private readonly HashSet<string> m_knownBlocklisthashes = new();
+        private bool m_disposed = false;
 #endif
 
         private long m_volumes = 0;
@@ -52,6 +53,10 @@ namespace Duplicati.Library.Main.Volumes
 
         public void StartVolume(string filename)
         {
+#if DEBUG
+            if (m_disposed)
+                throw new ObjectDisposedException("IndexVolumeWriter");
+#endif
             if (m_writer != null || m_streamwriter != null)
                 throw new InvalidOperationException("Previous volume not finished, call FinishVolume before starting a new volume");
 
@@ -76,16 +81,24 @@ namespace Duplicati.Library.Main.Volumes
 
         public void FinishVolume(string volumehash, long volumesize)
         {
+#if DEBUG
+            if (m_disposed)
+                throw new ObjectDisposedException("IndexVolumeWriter");
+#endif
+
             // If StartVolume was never called, m_writer will be null
             // This can happen if the volume was created but never used
             if (m_writer == null || m_streamwriter == null)
                 return;
 
             m_writer.WriteEndArray();
-            m_writer.WritePropertyName("volumehash");
-            m_writer.WriteValue(volumehash);
-            m_writer.WritePropertyName("volumesize");
-            m_writer.WriteValue(volumesize);
+            if (!string.IsNullOrWhiteSpace(volumehash))
+            {
+                m_writer.WritePropertyName("volumehash");
+                m_writer.WriteValue(volumehash);
+                m_writer.WritePropertyName("volumesize");
+                m_writer.WriteValue(volumesize);
+            }
             m_writer.WriteEndObject();
 
             try { m_writer.Close(); }
@@ -97,6 +110,8 @@ namespace Duplicati.Library.Main.Volumes
         public void WriteBlocklist(string hash, byte[] data, int offset, int size)
         {
 #if DEBUG
+            if (m_disposed)
+                throw new ObjectDisposedException("IndexVolumeWriter");
             // Nothing breaks with duplicates, but it should not be there
             if (m_knownBlocklisthashes.Contains(hash))
                 throw new InvalidOperationException($"Attempted to write a blocklist with hash {hash} more than once");
@@ -119,6 +134,8 @@ namespace Duplicati.Library.Main.Volumes
         public void WriteBlocklist(string hash, Stream source)
         {
 #if DEBUG
+            if (m_disposed)
+                throw new ObjectDisposedException("IndexVolumeWriter");
             // Nothing breaks with duplicates, but it should not be there
             if (m_knownBlocklisthashes.Contains(hash))
                 throw new InvalidOperationException($"Attempted to write a blocklist with hash {hash} more than once");
@@ -137,6 +154,10 @@ namespace Duplicati.Library.Main.Volumes
 
         public void CopyFrom(IndexVolumeReader rd, Func<string, string> filename_mapping)
         {
+#if DEBUG
+            if (m_disposed)
+                throw new ObjectDisposedException("IndexVolumeWriter");
+#endif
             foreach (var n in rd.Volumes)
             {
                 this.StartVolume(filename_mapping(n.Filename));
@@ -152,6 +173,9 @@ namespace Duplicati.Library.Main.Volumes
 
         public override void Dispose()
         {
+#if DEBUG
+            m_disposed = true;
+#endif
             if (m_writer != null || m_streamwriter != null)
                 throw new InvalidOperationException("Attempted to dispose an index volume that was being written");
             base.Dispose();
