@@ -124,8 +124,23 @@ namespace Duplicati.Library.Backend.GoogleDrive
             if (entries != null)
                 return entries;
 
-            var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
-            entries = await ListFolder(currentFolderId, false, remotename, cancelToken).ToArrayAsync(cancelToken).ConfigureAwait(false);
+            if (remotename.Contains(Path.DirectorySeparatorChar))
+            {
+                var parts = GetAbsolutePath(remotename).Split('/', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0)
+                    throw new FileMissingException();
+
+                var fileName = parts.Last();
+                var folderPath = string.Join("/", parts.Take(parts.Length - 1));
+
+                var folderId = await GetFolderIdAsync(folderPath, false, cancelToken).ConfigureAwait(false);
+                entries = await ListFolder(folderId, false, fileName, cancelToken).ToArrayAsync(cancelToken).ConfigureAwait(false);
+            }
+            else
+            {
+                var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
+                entries = await ListFolder(currentFolderId, false, remotename, cancelToken).ToArrayAsync(cancelToken).ConfigureAwait(false);
+            }
 
             if (entries == null || entries.Length == 0)
             {
@@ -155,20 +170,21 @@ namespace Duplicati.Library.Backend.GoogleDrive
             return fe;
         }
 
+        private string GetAbsolutePath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return m_path;
+
+            var p = path.Replace(Path.DirectorySeparatorChar, '/').Trim('/');
+            if (string.IsNullOrWhiteSpace(m_path) || m_path == "/")
+                return "/" + p;
+            else
+                return Util.AppendDirSeparator(m_path, "/") + p;
+        }
+
         public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var fullPath = m_path;
-            if (!string.IsNullOrEmpty(path))
-            {
-                var p = path.TrimStart('/');
-                if (string.IsNullOrEmpty(fullPath))
-                    fullPath = "/" + p;
-                else if (fullPath == "/")
-                    fullPath = "/" + p;
-                else
-                    fullPath = fullPath + "/" + p;
-            }
-
+            var fullPath = GetAbsolutePath(path);
             string folderId;
             try
             {
@@ -187,18 +203,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
         {
-            var fullPath = m_path;
-            if (!string.IsNullOrEmpty(path))
-            {
-                var p = path.TrimStart('/');
-                if (string.IsNullOrEmpty(fullPath))
-                    fullPath = "/" + p;
-                else if (fullPath == "/")
-                    fullPath = "/" + p;
-                else
-                    fullPath = fullPath + "/" + p;
-            }
-
+            var fullPath = GetAbsolutePath(path);
             var curparent = string.IsNullOrWhiteSpace(m_teamDriveID)
                 ? (await GetAboutInfoAsync(cancellationToken).ConfigureAwait(false)).rootFolderId
                 : m_teamDriveID;
