@@ -29,7 +29,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using Duplicati.Library.Modules.Builtin.ResultSerialization;
+using Duplicati.Library.ResultSerialization;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
 using Microsoft.Data.Sqlite;
@@ -3363,12 +3363,12 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Writes the results of a basic operation to the log.
+        /// Writes the results of a basic operation to the log and commits the transaction.
         /// </summary>
         /// <param name="result">The results to write.</param>
         /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
-        /// <returns>A task that completes when the results have been written.</returns>
-        public async Task WriteResults(IBasicResults result, CancellationToken token)
+        /// <returns>A task that completes when the results have been written and committed.</returns>
+        public async Task WriteResultsAndCommit(IBasicResults result, CancellationToken token)
         {
             if (IsDisposed)
                 return;
@@ -3389,6 +3389,8 @@ namespace Duplicati.Library.Main.Database
                     token
                 )
                     .ConfigureAwait(false);
+
+                await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
             }
         }
 

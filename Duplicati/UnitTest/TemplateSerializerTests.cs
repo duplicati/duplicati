@@ -22,8 +22,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Duplicati.Library.Modules.Builtin;
-using Duplicati.Library.Modules.Builtin.ResultSerialization;
+using Duplicati.Library;
+using Duplicati.Library.ResultSerialization;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest

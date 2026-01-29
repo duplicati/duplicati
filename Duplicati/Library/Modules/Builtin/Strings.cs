@@ -1,23 +1,24 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Localization.Short;
 using System;
 using System.Collections.Generic;
@@ -51,6 +52,59 @@ namespace Duplicati.Library.Modules.Builtin.Strings
     {
         public static string Description { get { return LC.L(@"This module works internaly to parse source parameters to backup Microsoft SQL Server databases"); } }
         public static string DisplayName { get { return LC.L(@"Configure Microsoft SQL Server module"); } }
+    }
+    internal static class RemoteSynchronization
+    {
+        public static string Description { get { return LC.L(@"This module runs remote synchronization after a successful backup to create a secondary copy (3-2-1)."); } }
+        public static string DisplayName { get { return LC.L(@"Remote synchronization (3-2-1)"); } }
+        public static string BackendSourceShort { get { return LC.L(@"Remote sync source backend"); } }
+        public static string BackendSourceLong { get { return LC.L(@"Specify the source backend string for remote synchronization. If not set, the current backup destination is used."); } }
+        public static string BackendDestinationShort { get { return LC.L(@"Remote sync destination backend"); } }
+        public static string BackendDestinationLong { get { return LC.L(@"Specify the destination backend strings for remote synchronization, comma-separated."); } }
+        public static string AutoCreateFoldersShort { get { return LC.L(@"Create destination folders"); } }
+        public static string AutoCreateFoldersLong { get { return LC.L(@"Automatically create folders in the destination backend if they do not exist."); } }
+        public static string BackendRetriesShort { get { return LC.L(@"Backend retries"); } }
+        public static string BackendRetriesLong { get { return LC.L(@"Number of times to recreate a backend on backend errors."); } }
+        public static string BackendRetryDelayShort { get { return LC.L(@"Backend retry delay"); } }
+        public static string BackendRetryDelayLong { get { return LC.L(@"Delay in milliseconds between backend retries."); } }
+        public static string BackendRetryBackoffShort { get { return LC.L(@"Exponential retry backoff"); } }
+        public static string BackendRetryBackoffLong { get { return LC.L(@"Use exponential backoff for backend retries."); } }
+        public static string ConfirmShort { get { return LC.L(@"Auto confirm remote sync"); } }
+        public static string ConfirmLong { get { return LC.L(@"Automatically confirm the remote synchronization plan to avoid interactive prompts."); } }
+        public static string DryRunShort { get { return LC.L(@"Remote sync dry run"); } }
+        public static string DryRunLong { get { return LC.L(@"Do not write or delete files during remote synchronization."); } }
+        public static string DestinationOptionsShort { get { return LC.L(@"Destination backend options"); } }
+        public static string DestinationOptionsLong { get { return LC.L(@"Space-separated key=value pairs for the destination backend, e.g. ""key1=value1 key2=value2""."); } }
+        public static string ForceShort { get { return LC.L(@"Force remote sync"); } }
+        public static string ForceLong { get { return LC.L(@"Force synchronization, skipping comparisons and overwriting the destination."); } }
+        public static string GlobalOptionsShort { get { return LC.L(@"Global backend options"); } }
+        public static string GlobalOptionsLong { get { return LC.L(@"Space-separated key=value pairs applied to both backends unless overridden."); } }
+        public static string LogFileShort { get { return LC.L(@"Remote sync log file"); } }
+        public static string LogFileLong { get { return LC.L(@"The log file to write to. If not set here, the global options are checked."); } }
+        public static string LogLevelShort { get { return LC.L(@"Remote sync log level"); } }
+        public static string LogLevelLong { get { return LC.L(@"The log level to use. If not set here, the global options are checked."); } }
+        public static string ParseArgumentsOnlyShort { get { return LC.L(@"Parse arguments only"); } }
+        public static string ParseArgumentsOnlyLong { get { return LC.L(@"Only parse the arguments and then exit."); } }
+        public static string ProgressShort { get { return LC.L(@"Show progress"); } }
+        public static string ProgressLong { get { return LC.L(@"Print progress to STDOUT."); } }
+        public static string RetentionShort { get { return LC.L(@"Retention mode"); } }
+        public static string RetentionLong { get { return LC.L(@"Keep old files by renaming instead of deleting them."); } }
+        public static string RetryShort { get { return LC.L(@"Operation retries"); } }
+        public static string RetryLong { get { return LC.L(@"Number of times to retry on errors."); } }
+        public static string SourceOptionsShort { get { return LC.L(@"Source backend options"); } }
+        public static string SourceOptionsLong { get { return LC.L(@"Space-separated key=value pairs for the source backend, e.g. ""key1=value1 key2=value2""."); } }
+        public static string VerifyContentsShort { get { return LC.L(@"Verify contents"); } }
+        public static string VerifyContentsLong { get { return LC.L(@"Verify file contents before overwriting destination files."); } }
+        public static string VerifyGetAfterPutShort { get { return LC.L(@"Verify after upload"); } }
+        public static string VerifyGetAfterPutLong { get { return LC.L(@"Verify files after uploading them."); } }
+        public static string ModeShort { get { return LC.L(@"Remote sync trigger mode"); } }
+        public static string ModeLong { get { return LC.L(@"Specify the trigger modes for remote synchronization, comma-separated: inline (default, after every backup), scheduled (after schedule has passed), counting (after N backups)."); } }
+        public static string ScheduleShort { get { return LC.L(@"Remote sync schedule"); } }
+        public static string ScheduleLong { get { return LC.L(@"Specify the schedule intervals for remote synchronization, comma-separated, e.g. '7.00:00:00,14.00:00:00'."); } }
+        public static string CountShort { get { return LC.L(@"Remote sync backup count"); } }
+        public static string CountLong { get { return LC.L(@"Specify the numbers of backups after which to trigger remote synchronization, comma-separated."); } }
+        public static string SyncOnWarningsShort { get { return LC.L(@"Sync on warnings"); } }
+        public static string SyncOnWarningsLong { get { return LC.L(@"Enable synchronization when the backup completes with warnings."); } }
     }
     internal static class RunScript
     {
@@ -92,7 +146,7 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string OptionPasswordLong { get { return LC.L(@"Use this option to set the password used to authenticate with the SMTP server if required."); } }
         public static string OptionPasswordShort { get { return LC.L(@"SMTP Password"); } }
         public static string OptionRecipientLong { get { return LC.L(@"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.
-Example with 3 recipients: 
+Example with 3 recipients:
 
 Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"); } }
         public static string OptionRecipientShort { get { return LC.L(@"Email recipient(s)"); } }
@@ -143,7 +197,7 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendxmppusernameShort { get { return LC.L(@"The XMPP username"); } }
         public static string SendxmpppasswordLong { get { return LC.L(@"Use this option to set a password for the account that will send the message."); } }
         public static string SendxmpppasswordShort { get { return LC.L(@"The XMPP password"); } }
-        public static string SendxmpplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
+        public static string SendxmpplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
         public static string SendxmpplevelShort { get { return LC.L(@"The messages to send"); } }
         public static string SendxmppanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }
@@ -177,7 +231,7 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendTelegramApiKeyShort => LC.L(@"The Telegram API key");
         public static string SendTelegramTopicShort => LC.L(@"The Telegram topic ID");
         public static string SendTelegramTopicLong => LC.L(@"Topic ID for the Topic in the telegram group. For more information on Telegram setup, refer to documentation.");
-        public static string SendTelegramlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
+        public static string SendTelegramlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
         public static string SendTelegramLevelShort => LC.L(@"The messages to send");
         public static string SendTelegramManyOperationLong => LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations.");
@@ -206,7 +260,7 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendhttpmessageparameternameShort { get { return LC.L(@"The name of the parameter to send the message as"); } }
         public static string SendhttpextraparametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
         public static string SendhttpextraparametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
-        public static string SendhttplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
+        public static string SendhttplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
         public static string SendhttplevelShort { get { return LC.L(@"The messages to send"); } }
         public static string SendhttpanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }

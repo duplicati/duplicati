@@ -21,7 +21,7 @@
 using System;
 using Duplicati.Library.Localization.Short;
 
-namespace Duplicati.Library.Modules.Builtin.ResultSerialization
+namespace Duplicati.Library.ResultSerialization
 {
     /// <summary>
     /// Factory class to provide result serialization

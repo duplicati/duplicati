@@ -14,7 +14,6 @@
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj" />
     <ProjectReference Include="..\Backends\Duplicati.Library.Backends.csproj" />
     <ProjectReference Include="..\Encryption\Duplicati.Library.Encryption.csproj" />
-    <ProjectReference Include="..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
     <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
     <ProjectReference Include="..\SecretProvider\Duplicati.Library.SecretProvider.csproj" />
     <ProjectReference Include="..\SourceProviders\Duplicati.Library.SourceProviders.csproj" />

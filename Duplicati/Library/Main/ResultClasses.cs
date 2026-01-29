@@ -537,6 +537,7 @@ namespace Duplicati.Library.Main
         public long DeletedFiles { get; internal set; }
         public long DeletedFolders { get; internal set; }
         public long DeletedSymlinks { get; internal set; }
+        public string RestorePath { get; internal set; }
 
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
 

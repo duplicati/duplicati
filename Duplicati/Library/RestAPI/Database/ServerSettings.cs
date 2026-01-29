@@ -23,14 +23,12 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using Duplicati.Library.RestAPI;
 using System.Text.Json;
 using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using Duplicati.Library.Utility;
 using Duplicati.Library.AutoUpdater;
 using Microsoft.Extensions.DependencyInjection;
-using Duplicati.WebserverCore.Abstractions;
 using Duplicati.Library.Snapshots;
 
 #nullable enable
@@ -89,11 +87,9 @@ namespace Duplicati.Server.Database
         private readonly Dictionary<string, string?> settings;
         private readonly Connection databaseConnection;
         private UpdateInfo? latestUpdate;
-        private readonly Action? startOrStopUsageReporter;
 
-        internal ServerSettings(Connection con, Action startOrStopUsageReporter)
+        internal ServerSettings(Connection con)
         {
-            this.startOrStopUsageReporter = startOrStopUsageReporter;
             settings = new Dictionary<string, string?>();
             databaseConnection = con;
             ReloadSettings();
@@ -154,19 +150,6 @@ namespace Duplicati.Server.Database
                     Value = n.Value
                 }, Database.Connection.SERVER_SETTINGS_ID);
 
-            var provider = databaseConnection.ServiceProvider;
-            if (provider != null)
-            {
-                provider?.GetRequiredService<INotificationUpdateService>()?.IncrementLastDataUpdateId();
-                provider?.GetRequiredService<EventPollNotify>()?.SignalNewEvent();
-                provider?.GetRequiredService<EventPollNotify>()?.SignalServerSettingsUpdated();
-                // If throttle options were changed, update now
-                provider?.GetRequiredService<IQueueRunnerService>()?.GetCurrentTask()?.UpdateThrottleSpeeds(UploadSpeedLimit, DownloadSpeedLimit);
-                provider?.GetRequiredService<LiveControls>()?.UpdatePowerModeProvider();
-            }
-
-            // In case the usage reporter is enabled or disabled, refresh now
-            startOrStopUsageReporter?.Invoke();
         }
 
         public string? StartupDelayDuration

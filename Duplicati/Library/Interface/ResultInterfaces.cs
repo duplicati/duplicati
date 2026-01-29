@@ -355,6 +355,7 @@ namespace Duplicati.Library.Interface
         long DeletedFiles { get; }
         long DeletedFolders { get; }
         long DeletedSymlinks { get; }
+        string RestorePath { get; }
 
         IRecreateDatabaseResults RecreateDatabaseResults { get; }
     }

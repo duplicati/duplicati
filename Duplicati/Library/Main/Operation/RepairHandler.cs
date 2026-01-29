@@ -60,7 +60,7 @@ namespace Duplicati.Library.Main.Operation
                 await RunRepairCommon().ConfigureAwait(false);
 
                 // Optionally refresh lock information from the backend
-                if (m_options.RepairRefreshLockInfo)
+                if (m_options.RepairRefreshLockInfo && backendManager.SupportsObjectLocking)
                     await RunRefreshLockInfoAsync(backendManager).ConfigureAwait(false);
 
                 m_result.EndTime = DateTime.UtcNow;

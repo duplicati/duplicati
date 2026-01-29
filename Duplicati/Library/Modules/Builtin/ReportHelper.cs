@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -26,7 +26,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Modules.Builtin.ResultSerialization;
+using Duplicati.Library.ResultSerialization;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Modules.Builtin
@@ -418,10 +418,10 @@ namespace Duplicati.Library.Modules.Builtin
         ], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
-        /// Gets the default value for a template key
+        /// Gets the default value for a template key.
         /// </summary>
-        /// <param name="name">The name of the template key</param>
-        /// <returns>The default value</returns>
+        /// <param name="name">The name of the template key.</param>
+        /// <returns>The default value.</returns>
         private string GetDefaultValue(string name)
         {
             switch (name)
@@ -533,7 +533,7 @@ namespace Duplicati.Library.Modules.Builtin
         }
 
         /// <summary>
-        /// Gets the filtered set of log lines
+        /// Gets the filtered set of log lines.
         /// </summary>
         protected IEnumerable<string> LogLines
         {
@@ -681,8 +681,8 @@ namespace Duplicati.Library.Modules.Builtin
         /// Attempts to guess a safe host suffix from a URL.
         /// This attempts to avoid reporting private or sensitive hostnames, and only returns known public cloud suffixes.
         /// </summary>
-        /// <param name="url">The URL to analyze</param>
-        /// <returns>The host suffix, or null if not found or not safe to report</returns>
+        /// <param name="url">The URL to analyze.</param>
+        /// <returns>The host suffix, or null if not found or not safe to report.</returns>
         private static string GuessHostSuffixSafe(string url)
         {
             var scheme = Utility.Utility.GuessScheme(url);

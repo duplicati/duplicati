@@ -136,7 +136,7 @@ public class Commandline : IEndpointV1
         }
 
         var backupId = options.FirstOrDefault(x => x.Key.Equals("backup-id", StringComparison.OrdinalIgnoreCase)).Value;
-        if (backupId != null)
+        if (!string.IsNullOrWhiteSpace(backupId))
         {
             var backup = connection.GetBackup(backupId);
             if (backup != null)
