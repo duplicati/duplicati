@@ -153,7 +153,7 @@ namespace Duplicati.Library.Main
                         .ConfigureAwait(false)
 
                     // Local destination
-                    : new SourceProvider.FileRestoreDestinationProvider(m_options.Restorepath ?? "");
+                    : new SourceProvider.FileRestoreDestinationProvider(m_options.Restorepath ?? "", m_options.AllowRestoreOutsideTargetDirectory);
 
                 if (restoreDestination == null)
                     throw new UserInformationException($"Could not find restore destination for path: {m_options.Restorepath}", "InvalidRestoreDestination");
