@@ -47,12 +47,28 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         private const RetentionPolicyMode DEFAULT_RETENTION_POLICY_MODE = RetentionPolicyMode.Unlocked;
 
+        /// <summary>
+        /// The scope used to request access to Google Cloud Storage.
+        /// </summary>
         private const string CREDENTIAL_SCOPE = "https://www.googleapis.com/auth/devstorage.read_write";
+        /// <summary>
+        /// The scope used to request full control access to Google Cloud Storage, needed for setting object retention.
+        /// </summary>
+        private const string CREDENTIAL_SCOPE_FULL_CONTROL = "https://www.googleapis.com/auth/devstorage.full_control";
 
         private readonly string m_bucket;
         private readonly string m_prefix;
         private readonly string? m_project;
         private readonly JsonWebHelperHttpClient m_oauth;
+
+        /// <summary>
+        /// Cached instance of the full control OAuth client.
+        /// </summary>
+        private JsonWebHelperHttpClient? m_oauth_fullcontrol;
+        /// <summary>
+        /// Only create the full control client when needed, but capture all parameters in the constructor.
+        /// </summary>
+        private readonly Func<JsonWebHelperHttpClient?> m_create_oauth_fullcontrol;
 
         private readonly string? m_location;
         private readonly string? m_storage_class;
@@ -65,6 +81,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             m_prefix = null!;
             m_oauth = null!;
             m_timeouts = null!;
+            m_create_oauth_fullcontrol = null!;
             m_retention_policy_mode = RetentionPolicyMode.Locked;
         }
 
@@ -91,23 +108,26 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             if (!string.IsNullOrWhiteSpace(serviceAccountJson))
             {
                 m_oauth = new ServiceAccountHttpClient(GoogleCredential.FromJson(serviceAccountJson).CreateScoped(CREDENTIAL_SCOPE));
+                m_create_oauth_fullcontrol = () => new ServiceAccountHttpClient(GoogleCredential.FromJson(serviceAccountJson).CreateScoped(CREDENTIAL_SCOPE_FULL_CONTROL));
             }
             else if (!string.IsNullOrWhiteSpace(serviceAccountFile))
             {
                 m_oauth = new ServiceAccountHttpClient(GoogleCredential.FromFile(serviceAccountFile).CreateScoped(CREDENTIAL_SCOPE));
+                m_create_oauth_fullcontrol = () => new ServiceAccountHttpClient(GoogleCredential.FromFile(serviceAccountFile).CreateScoped(CREDENTIAL_SCOPE_FULL_CONTROL));
             }
             else
             {
                 var authId = AuthIdOptionsHelper.Parse(options)
-    .RequireCredentials(TOKEN_URL);
-                var oauth = new OAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl)
+                    .RequireCredentials(TOKEN_URL);
+                m_oauth = new OAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl)
                 {
                     AutoAuthHeader = true
                 };
-                m_oauth = oauth;
+
+                // This does not work with the current OAuth server as it only grants read/write access.
+                m_create_oauth_fullcontrol = () => null;
             }
         }
-
 
         private class ListBucketResponse
         {
@@ -258,11 +278,17 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
             try
             {
-                using var req = await m_oauth.CreateRequestAsync(url, new HttpMethod("PATCH"), cancellationToken).ConfigureAwait(false);
+                if (m_oauth_fullcontrol == null)
+                    m_oauth_fullcontrol = m_create_oauth_fullcontrol();
+
+                if (m_oauth_fullcontrol == null)
+                    throw new UserInformationException(Strings.GoogleCloudStorage.MissingFullControlScopeError, "GoogleCloudStorageMissingFullControlScope");
+
+                using var req = await m_oauth_fullcontrol.CreateRequestAsync(url, new HttpMethod("PATCH"), cancellationToken).ConfigureAwait(false);
                 req.Content = JsonContent.Create(metadata);
                 req.Headers.Add("Accept", "application/json");
 
-                using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                using var resp = await m_oauth_fullcontrol.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             }
             catch (HttpRequestException hrex)
             {
@@ -372,12 +398,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
         }
 
-        #region IDisposable implementation
         public void Dispose()
         {
-
         }
-        #endregion
     }
 }
 

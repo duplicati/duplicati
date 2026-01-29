@@ -28,6 +28,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string Description { get { return LC.L(@"This backend can read and write data to Google Cloud Storage. Allowed format is ""gcs://bucket/folder""."); } }
         public static string DisplayName { get { return LC.L(@"Google Cloud Storage"); } }
         public static string ProjectIDMissingError(string projectoption) { return LC.L(@"You must supply a project ID with --{0} for creating a bucket.", projectoption); }
+        public static string MissingFullControlScopeError { get { return LC.L(@"The supplied credentials are missing the full control scope. Please use a service account with full control access."); } }
         public static string LocationDescriptionLong(string regions) { return LC.L(@"This option is only used when creating new buckets. Use this option to change what region the data is stored in. Charges vary with bucket location. Known bucket locations:
 {0}", regions); }
         public static string LocationDescriptionShort { get { return LC.L(@"Specify location option for creating a bucket"); } }
