@@ -125,23 +125,27 @@ namespace Duplicati.Library.Backend
         public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
             => ListAsync(null, cancelToken);
 
+
+        private string GetAbsolutePath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return m_path;
+
+            var p = path.Replace(Path.DirectorySeparatorChar, '/').Trim('/');
+            if (string.IsNullOrWhiteSpace(m_path) || m_path == "/")
+                p = "/" + p;
+            else
+                p = Util.AppendDirSeparator(m_path, "/") + p;
+
+            if (p == "/")
+                p = "";
+
+            return p;
+        }
+
         public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancelToken)
         {
-            var fullPath = m_path;
-            if (!string.IsNullOrEmpty(path))
-            {
-                var p = path.TrimStart('/');
-                if (string.IsNullOrEmpty(fullPath))
-                    fullPath = "/" + p;
-                else if (fullPath == "/")
-                    fullPath = "/" + p;
-                else
-                    fullPath = fullPath + "/" + p;
-            }
-
-            if (fullPath == "/")
-                fullPath = "";
-
+            var fullPath = GetAbsolutePath(path);
             var lfr = await HandleListExceptions(() => dbx.ListFiles(fullPath, cancelToken)).ConfigureAwait(false);
 
             foreach (var md in lfr.entries ?? [])
@@ -157,21 +161,7 @@ namespace Duplicati.Library.Backend
 
         public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
         {
-            var fullPath = m_path;
-            if (!string.IsNullOrEmpty(path))
-            {
-                var p = path.TrimStart('/');
-                if (string.IsNullOrEmpty(fullPath))
-                    fullPath = "/" + p;
-                else if (fullPath == "/")
-                    fullPath = "/" + p;
-                else
-                    fullPath = fullPath + "/" + p;
-            }
-
-            if (fullPath == "/")
-                fullPath = "";
-
+            var fullPath = GetAbsolutePath(path);
             if (string.IsNullOrEmpty(fullPath))
                 return new FileEntry(string.Empty) { IsFolder = true };
 
@@ -182,11 +172,9 @@ namespace Duplicati.Library.Backend
                     return null;
                 return ParseEntry(md);
             }
-            catch (DropboxException de)
+            catch (Exception ex) when (ex is FolderMissingException || ex is DropboxException)
             {
-                if (de.errorJSON?["error"]?[".tag"]?.ToString() == "path" && de.errorJSON?["error"]?["path"]?[".tag"]?.ToString() == "not_found")
-                    return null;
-                throw;
+                return null;
             }
         }
 
