@@ -207,19 +207,7 @@ namespace Duplicati.Library.Backend.Box
 
         public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
         {
-            var fullPath = _path;
-            if (!string.IsNullOrEmpty(path))
-            {
-                var p = path.TrimStart('/');
-                if (string.IsNullOrEmpty(fullPath))
-                    fullPath = "/" + p;
-                else if (fullPath == "/")
-                    fullPath = "/" + p;
-                else
-                    fullPath = fullPath + "/" + p;
-            }
-
-            var parts = fullPath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var parts = GetAbsolutePath(_path).Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0)
                 return new FileEntry(string.Empty) { IsFolder = true };
 
