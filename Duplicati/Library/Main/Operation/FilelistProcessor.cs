@@ -67,9 +67,10 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="backendManager"> The backend manager instance to use.</param>
         /// <param name="database">The database to compare with.</param>
+        /// <param name="dryrun">If true, no changes will be made.</param>
         /// <param name="cancellationToken">The cancellation token to use.</param>
         /// <returns>A task that completes when the verification is done.</returns>
-        public static async Task VerifyLocalList(IBackendManager backendManager, LocalDatabase database, CancellationToken cancellationToken)
+        public static async Task VerifyLocalList(IBackendManager backendManager, LocalDatabase database, bool dryrun, CancellationToken cancellationToken)
         {
             var locallist = database.GetRemoteVolumes(cancellationToken);
             await foreach (var i in locallist.ConfigureAwait(false))
@@ -84,10 +85,17 @@ namespace Duplicati.Library.Main.Operation
                     case RemoteVolumeState.Temporary:
                     case RemoteVolumeState.Deleting:
                     case RemoteVolumeState.Uploading:
-                        Logging.Log.WriteInformationMessage(LOGTAG, "RemovingStaleFile", "Removing remote file listed as {0}: {1}", i.State, i.Name);
                         try
                         {
-                            await backendManager.DeleteAsync(i.Name, i.Size, true, cancellationToken).ConfigureAwait(false);
+                            if (dryrun)
+                            {
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteFile", "Would delete file: {0}", i.Name);
+                            }
+                            else
+                            {
+                                Logging.Log.WriteInformationMessage(LOGTAG, "RemovingStaleFile", "Removing remote file listed as {0}: {1}", i.State, i.Name);
+                                await backendManager.DeleteAsync(i.Name, i.Size, true, cancellationToken).ConfigureAwait(false);
+                            }
                         }
                         catch (Exception ex)
                         {
