@@ -430,8 +430,6 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             public bool done { get; set; }
             public string? rewriteToken { get; set; }
         }
-
-        #region IDisposable implementation
         public void Dispose()
         {
         }
