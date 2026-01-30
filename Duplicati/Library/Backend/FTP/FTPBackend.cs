@@ -47,7 +47,7 @@ namespace Duplicati.Library.Backend
     /// but overides the default configuration values to match the old names(prefixed with a) and the backedn
     /// name being "aftp" rather than ftp.
     /// </summary>
-    public class FTP : IStreamingBackend
+    public class FTP : IStreamingBackend, IRenameEnabledBackend
     {
         private static readonly string LogTag = Log.LogTagFromType(typeof(FTP));
         /// <summary>
@@ -731,6 +731,25 @@ namespace Duplicati.Library.Backend
 
             if (ex is SslCertificateValidator.InvalidCertificateException)
                 throw ex;
+        }
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var client = await CreateClient(cancellationToken).ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
+                {
+                    var oldPath = PreparePathForClient(oldname, false, client);
+                    var newPath = PreparePathForClient(newname, false, client);
+                    await client.Rename(oldPath, newPath, ct).ConfigureAwait(false);
+                }).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                TranslateException(oldname, e);
+                throw;
+            }
         }
 
         private sealed class DiagnosticsLogger : IFtpLogger

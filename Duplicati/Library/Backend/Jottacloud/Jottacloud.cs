@@ -30,7 +30,7 @@ using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend;
 
-public class Jottacloud : IStreamingBackend
+public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
 {
     private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("jottacloud", null);
     private const string JFS_ROOT = "https://jfs.jottacloud.com/jfs";
@@ -642,6 +642,18 @@ public class Jottacloud : IStreamingBackend
             }
         }
         if (!uploadCompletedSuccessfully) // Report error (and we just let the incomplete/corrupt file revision stay on the server..)
+            throw new HttpRequestException(HttpRequestError.HttpProtocolError, Strings.Jottacloud.FileUploadError, null, response.StatusCode);
+    }
+
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+    {
+        (var client, var _) = await GetClient(cancellationToken).ConfigureAwait(false);
+        var destPath = "/" + m_path + newname;
+        using var req = await CreateRequest(HttpMethod.Post, oldname, "mv=" + Utility.Uri.UrlEncode(destPath), false, cancellationToken).ConfigureAwait(false);
+        using var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken,
+            innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
+
+        if (response.StatusCode != HttpStatusCode.Created && response.StatusCode != HttpStatusCode.OK)
             throw new HttpRequestException(HttpRequestError.HttpProtocolError, Strings.Jottacloud.FileUploadError, null, response.StatusCode);
     }
 }

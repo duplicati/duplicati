@@ -38,6 +38,9 @@ namespace Duplicati.Library.Backend.WebApi
         public static string DeleteUrl()
             => Utility.Uri.UriBuilder(Url.API, Path.DeleteFolder);
 
+        public static string MoveUrl()
+            => Utility.Uri.UriBuilder(Url.API, Path.Move);
+
         public static string UploadSessionStartUrl()
             => Utility.Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionStart);
 
@@ -62,7 +65,8 @@ namespace Duplicati.Library.Backend.WebApi
         private static class Path
         {
             public const string CreateFolder = "files/create_folder";
-            public const string DeleteFolder = "files/delete";
+            public const string DeleteFolder = "files/delete_v2";
+            public const string Move = "files/move_v2";
             public const string ListFolder = "files/list_folder";
             public const string ListFolderContinue = "files/list_folder/continue";
             public const string GetMetadata = "files/get_metadata";

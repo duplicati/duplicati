@@ -28,7 +28,7 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend
 {
-    public class WEBDAV : IStreamingBackend
+    public class WEBDAV : IStreamingBackend, IRenameEnabledBackend
     {
         /// <summary>
         /// The integrated authentication option name
@@ -667,6 +667,25 @@ namespace Duplicati.Library.Backend
                 if (wex.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
 
+                throw;
+            }
+        }
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var request = CreateRequest(oldname, new HttpMethod("MOVE"));
+                request.Headers.Add("Destination", $"{m_url}{Utility.Uri.UrlEncode(newname).Replace("+", "%20")}");
+                request.Headers.Add("Overwrite", "T");
+
+                using var response = await GetHttpClient().SendAsync(request, cancellationToken).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException wex)
+            {
+                if (wex.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
                 throw;
             }
         }
