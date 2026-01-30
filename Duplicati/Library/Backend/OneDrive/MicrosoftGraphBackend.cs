@@ -44,7 +44,7 @@ namespace Duplicati.Library.Backend
     /// Note that instead of using Task.Result to wait for the results of asynchronous operations,
     /// this class uses the Utility.Await() extension method, since it doesn't wrap exceptions in AggregateExceptions.
     /// </remarks>
-    public abstract class MicrosoftGraphBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
+    public abstract class MicrosoftGraphBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private static readonly string LOGTAG = Log.LogTagFromType<MicrosoftGraphBackend>();
 
@@ -294,6 +294,82 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        private IFileEntry ParseEntry(DriveItem item)
+        {
+            var fe = new FileEntry(
+                item.Name,
+                item.Size ?? 0,
+                item.FileSystemInfo?.LastAccessedDateTime?.UtcDateTime ?? new DateTime(),
+                item.FileSystemInfo?.LastModifiedDateTime?.UtcDateTime ?? item.LastModifiedDateTime?.UtcDateTime ?? new DateTime());
+
+            fe.IsFolder = item.IsFolder;
+
+            if (fe.IsFolder && !fe.Name.EndsWith("/"))
+                fe.Name += "/";
+
+            return fe;
+        }
+
+        private string GetAbsolutePath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return this.RootPath;
+
+            var p = path.Replace(Path.DirectorySeparatorChar, '/').Trim('/');
+            if (string.IsNullOrWhiteSpace(this.RootPath) || this.RootPath == "/")
+                p = "/" + p;
+            else
+                p = Util.AppendDirSeparator(this.RootPath, "/") + p;
+
+            if (p == "/")
+                p = "";
+
+            return p;
+        }
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancelToken)
+        {
+            var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
+            var targetPath = GetAbsolutePath(path);
+
+            string url;
+            if (targetPath == "/" || string.IsNullOrEmpty(targetPath))
+                url = $"{drivePrefix}/root/children";
+            else
+                url = $"{drivePrefix}/root:{targetPath}:/children";
+
+            await foreach (var item in this.Enumerate<DriveItem>(url, cancelToken).ConfigureAwait(false))
+            {
+                if (!item.IsDeleted)
+                    yield return ParseEntry(item);
+            }
+        }
+
+        public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+        {
+            var drivePrefix = await GetDrivePrefix(cancellationToken).ConfigureAwait(false);
+            var targetPath = GetAbsolutePath(path);
+
+            string url;
+            if (targetPath == "/" || string.IsNullOrEmpty(targetPath))
+                url = $"{drivePrefix}/root";
+            else
+                url = $"{drivePrefix}/root:{targetPath}";
+
+            try
+            {
+                var item = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken,
+                    ct => GetAsync<DriveItem>(url, ct)
+                ).ConfigureAwait(false);
+
+                return ParseEntry(item);
+            }
+            catch (DriveItemNotFoundException)
+            {
+                return null;
+            }
+        }
+
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
@@ -303,11 +379,7 @@ namespace Duplicati.Library.Backend
                 // Exclude non-files and deleted items (not sure if they show up in this listing, but make sure anyway)
                 if (item.IsFile && !item.IsDeleted)
                 {
-                    yield return new FileEntry(
-                        item.Name,
-                        item.Size ?? 0, // Files should always have a size, but folders don't need it
-                        item.FileSystemInfo?.LastAccessedDateTime?.UtcDateTime ?? new DateTime(),
-                        item.FileSystemInfo?.LastModifiedDateTime?.UtcDateTime ?? item.LastModifiedDateTime?.UtcDateTime ?? new DateTime());
+                    yield return ParseEntry(item);
                 }
             }
         }
