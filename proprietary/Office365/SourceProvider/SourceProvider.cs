@@ -49,9 +49,30 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private readonly ConcurrentDictionary<string, bool> _enumerationCounter = new();
 
     /// <summary>
-    /// Whether a license warning has been issued.
+    /// The current number of users that has been enumerated.
     /// </summary>
-    private int _licenseWarningIssued = 0;
+    private int _userCount = 0;
+    /// <summary>
+    /// The current number of groups that has been enumerated.
+    /// </summary>
+    private int _groupCount = 0;
+    /// <summary>
+    /// The current number of sites that has been enumerated.
+    /// </summary>
+    private int _siteCount = 0;
+
+    /// <summary>
+    /// Whether a license warning has been issued for users.
+    /// </summary>
+    private int _userLicenseWarningIssued = 0;
+    /// <summary>
+    /// Whether a license warning has been issued for groups.
+    /// </summary>
+    private int _groupLicenseWarningIssued = 0;
+    /// <summary>
+    /// Whether a license warning has been issued for sites.
+    /// </summary>
+    private int _siteLicenseWarningIssued = 0;
 
     /// <summary>
     /// The included root types.
@@ -237,15 +258,58 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         if (_enumerationCounter.ContainsKey(targetpath))
             return true;
 
-        var approved = LicenseChecker.LicenseHelper.AvailableOffice365FeatureSeats;
-        if (_enumerationCounter.Count >= approved)
+        int approved = 0;
+        int current = 0;
+
+        if (type.HasFlag(Office365MetaType.Users))
         {
-            if (Interlocked.Exchange(ref _licenseWarningIssued, 1) == 0)
-                Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Office 365 feature seats exceeded ({approved}). Some items will not be backed up.");
-            return false;
+            approved = LicenseChecker.LicenseHelper.AvailableOffice365UserSeats;
+            current = _userCount;
+            if (current >= approved)
+            {
+                if (Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Office 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                return false;
+            }
+        }
+        else if (type.HasFlag(Office365MetaType.Groups))
+        {
+            approved = LicenseChecker.LicenseHelper.AvailableOffice365GroupSeats;
+            current = _groupCount;
+            if (current >= approved)
+            {
+                if (Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Office 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                return false;
+            }
+        }
+        else if (type.HasFlag(Office365MetaType.Sites))
+        {
+            approved = LicenseChecker.LicenseHelper.AvailableOffice365SiteSeats;
+            current = _siteCount;
+            if (current >= approved)
+            {
+                if (Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Office 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                return false;
+            }
+        }
+        else
+        {
+            // Unknown type, allow it
+            return true;
         }
 
-        _enumerationCounter[targetpath] = true;
+        if (_enumerationCounter.TryAdd(targetpath, true))
+        {
+            if (type.HasFlag(Office365MetaType.Users))
+                Interlocked.Increment(ref _userCount);
+            else if (type.HasFlag(Office365MetaType.Groups))
+                Interlocked.Increment(ref _groupCount);
+            else if (type.HasFlag(Office365MetaType.Sites))
+                Interlocked.Increment(ref _siteCount);
+        }
+
         return true;
     }
 
