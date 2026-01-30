@@ -28,7 +28,7 @@ namespace Duplicati.Library.Backend
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class Dropbox : IBackend, IStreamingBackend, IRenameEnabledBackend
+    public class Dropbox : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("dropbox", null);
         private readonly string m_path;
@@ -78,7 +78,11 @@ namespace Duplicati.Library.Backend
 
         private IFileEntry ParseEntry(MetaData md)
         {
-            var ife = new FileEntry(md.name);
+            var name = md.name;
+            if (!md.IsFile && !string.IsNullOrEmpty(name) && !name.EndsWith("/"))
+                name += "/";
+
+            var ife = new FileEntry(name);
             if (md.IsFile)
             {
                 ife.IsFolder = false;
@@ -118,9 +122,31 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
+            => ListAsync(null, cancelToken);
+
+
+        private string GetAbsolutePath(string? path)
         {
-            var lfr = await HandleListExceptions(() => dbx.ListFiles(m_path, cancelToken)).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(path))
+                return m_path;
+
+            var p = path.Replace(Path.DirectorySeparatorChar, '/').Trim('/');
+            if (string.IsNullOrWhiteSpace(m_path) || m_path == "/")
+                p = "/" + p;
+            else
+                p = Util.AppendDirSeparator(m_path, "/") + p;
+
+            if (p == "/")
+                p = "";
+
+            return p;
+        }
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancelToken)
+        {
+            var fullPath = GetAbsolutePath(path);
+            var lfr = await HandleListExceptions(() => dbx.ListFiles(fullPath, cancelToken)).ConfigureAwait(false);
 
             foreach (var md in lfr.entries ?? [])
                 yield return ParseEntry(md);
@@ -130,6 +156,25 @@ namespace Duplicati.Library.Backend
                 lfr = await HandleListExceptions(() => dbx.ListFilesContinue(lfr.cursor!, cancelToken)).ConfigureAwait(false);
                 foreach (var md in lfr.entries ?? [])
                     yield return ParseEntry(md);
+            }
+        }
+
+        public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+        {
+            var fullPath = GetAbsolutePath(path);
+            if (string.IsNullOrEmpty(fullPath))
+                return new FileEntry(string.Empty) { IsFolder = true };
+
+            try
+            {
+                var md = await dbx.GetMetadataAsync(fullPath, cancellationToken).ConfigureAwait(false);
+                if (md == null)
+                    return null;
+                return ParseEntry(md);
+            }
+            catch (Exception ex) when (ex is FolderMissingException || ex is DropboxException)
+            {
+                return null;
             }
         }
 

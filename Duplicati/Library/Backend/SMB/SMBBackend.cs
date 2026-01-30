@@ -345,12 +345,20 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
     }
 
     /// <inheritdoc/>
-    public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
-        => Task.FromResult<IFileEntry?>(null);
-
     public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
     {
         var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
         await con.RenameAsync(oldname, newname, cancellationToken).ConfigureAwait(false);
+    }
+    
+    /// <inheritdoc/>
+    public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+    {
+        var sourcePath = _connectionParameters.Path;
+        if (!string.IsNullOrWhiteSpace(sourcePath))
+            sourcePath = Util.AppendDirSeparator(sourcePath, "/");
+
+        var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+        return await con.GetEntryAsync(sourcePath + BackendSourceFileEntry.NormalizePathTo(path, '/'), cancellationToken).ConfigureAwait(false);
     }
 }

@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
+    public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private const string TEAMDRIVE_ID = "googledrive-teamdrive-id";
         private const string FOLDER_MIMETYPE = "application/vnd.google-apps.folder";
@@ -124,8 +124,23 @@ namespace Duplicati.Library.Backend.GoogleDrive
             if (entries != null)
                 return entries;
 
-            var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
-            entries = await ListFolder(currentFolderId, false, remotename, cancelToken).ToArrayAsync(cancelToken).ConfigureAwait(false);
+            if (remotename.Contains(Path.DirectorySeparatorChar))
+            {
+                var parts = GetAbsolutePath(remotename).Split('/', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0)
+                    throw new FileMissingException();
+
+                var fileName = parts.Last();
+                var folderPath = string.Join("/", parts.Take(parts.Length - 1));
+
+                var folderId = await GetFolderIdAsync(folderPath, false, cancelToken).ConfigureAwait(false);
+                entries = await ListFolder(folderId, false, fileName, cancelToken).ToArrayAsync(cancelToken).ConfigureAwait(false);
+            }
+            else
+            {
+                var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
+                entries = await ListFolder(currentFolderId, false, remotename, cancelToken).ToArrayAsync(cancelToken).ConfigureAwait(false);
+            }
 
             if (entries == null || entries.Length == 0)
             {
@@ -136,6 +151,99 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
 
             return m_filecache[remotename] = entries;
+        }
+
+        private IFileEntry ParseEntry(GoogleDriveFolderItem n)
+        {
+            FileEntry fe;
+            if (n.fileSize == null)
+                fe = new FileEntry(n.title);
+            else if (n.modifiedDate == null)
+                fe = new FileEntry(n.title, n.fileSize.Value);
+            else
+                fe = new FileEntry(n.title, n.fileSize.Value, n.modifiedDate.Value, n.modifiedDate.Value);
+
+            fe.IsFolder = FOLDER_MIMETYPE.Equals(n.mimeType, StringComparison.OrdinalIgnoreCase);
+            if (fe.IsFolder && !fe.Name.EndsWith("/"))
+                fe.Name += "/";
+
+            return fe;
+        }
+
+        private string GetAbsolutePath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return m_path;
+
+            var p = path.Replace(Path.DirectorySeparatorChar, '/').Trim('/');
+            if (string.IsNullOrWhiteSpace(m_path) || m_path == "/")
+                return "/" + p;
+            else
+                return Util.AppendDirSeparator(m_path, "/") + p;
+        }
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var fullPath = GetAbsolutePath(path);
+            string folderId;
+            try
+            {
+                folderId = await GetFolderIdAsync(fullPath, false, cancellationToken).ConfigureAwait(false);
+            }
+            catch (FolderMissingException)
+            {
+                yield break;
+            }
+
+            await foreach (var n in ListFolder(folderId, null, null, cancellationToken).ConfigureAwait(false))
+            {
+                yield return ParseEntry(n);
+            }
+        }
+
+        public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+        {
+            var fullPath = GetAbsolutePath(path);
+            var curparent = string.IsNullOrWhiteSpace(m_teamDriveID)
+                ? (await GetAboutInfoAsync(cancellationToken).ConfigureAwait(false)).rootFolderId
+                : m_teamDriveID;
+
+            if (string.IsNullOrWhiteSpace(curparent))
+                throw new UserInformationException("Unable to get root folder", "GoogleDriveNoRootFolder");
+
+            var parts = fullPath.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                return new FileEntry(string.Empty) { IsFolder = true };
+
+            GoogleDriveFolderItem? currentItem = null;
+
+            for (var i = 0; i < parts.Length; i++)
+            {
+                var p = parts[i];
+                var isLast = i == parts.Length - 1;
+
+                // For intermediate parts, we need folders.
+                // For the last part, it can be file or folder.
+                var onlyFolders = isLast ? (bool?)null : true;
+
+                var res = await ListFolder(curparent, onlyFolders, p, cancellationToken).ToArrayAsync(cancellationToken).ConfigureAwait(false);
+
+                if (res.Length == 0)
+                    return null;
+
+                if (res.Length > 1)
+                    throw new UserInformationException(Strings.GoogleDrive.MultipleEntries(p, fullPath), "GoogleDriveMultipleEntries");
+
+                currentItem = res[0];
+                if (string.IsNullOrWhiteSpace(currentItem.id))
+                    return null;
+
+                curparent = currentItem.id;
+            }
+
+            if (currentItem == null) return null;
+
+            return ParseEntry(currentItem);
         }
 
         private static string EscapeTitleEntries(string title)
@@ -223,34 +331,22 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
                 await foreach (var n in ListFolder(currentFolderId, null, null, cancelToken).ConfigureAwait(false))
                 {
-                    FileEntry? fe = null;
+                    var fe = ParseEntry(n);
 
-                    if (n.fileSize == null)
-                        fe = new FileEntry(n.title);
-                    else if (n.modifiedDate == null)
-                        fe = new FileEntry(n.title, n.fileSize.Value);
-                    else
-                        fe = new FileEntry(n.title, n.fileSize.Value, n.modifiedDate.Value, n.modifiedDate.Value);
-
-                    if (fe != null)
+                    if (!fe.IsFolder)
                     {
-                        fe.IsFolder = FOLDER_MIMETYPE.Equals(n.mimeType, StringComparison.OrdinalIgnoreCase);
-
-                        if (!fe.IsFolder)
+                        if (!m_filecache.TryGetValue(fe.Name, out var lst))
                         {
-                            if (!m_filecache.TryGetValue(fe.Name, out var lst))
-                            {
-                                m_filecache[fe.Name] = [n];
-                            }
-                            else
-                            {
-                                Array.Resize(ref lst, lst.Length + 1);
-                                lst[lst.Length - 1] = n;
-                            }
+                            m_filecache[fe.Name] = [n];
                         }
-
-                        yield return fe;
+                        else
+                        {
+                            Array.Resize(ref lst, lst.Length + 1);
+                            lst[lst.Length - 1] = n;
+                        }
                     }
+
+                    yield return fe;
                 }
 
                 success = true;

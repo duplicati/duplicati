@@ -302,7 +302,74 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
         {
             _semaphore.Release();
         }
+    }
 
+    public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+    {
+        await _semaphore.WaitAsync(cancellationToken);
+
+        object? fileHandle = null;
+        FileStatus fileStatus;
+        try
+        {
+            return await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ =>
+            {
+                var status = _smbFileStore.CreateFile(
+                    out fileHandle,
+                    out fileStatus,
+                    NormalizeSlashes(path),
+                    AccessMask.GENERIC_READ,
+                    0,
+                    ShareAccess.Read | ShareAccess.Write | ShareAccess.Delete,
+                    CreateDisposition.FILE_OPEN,
+                    0,
+                    null);
+
+                if (status != NTStatus.STATUS_SUCCESS)
+                {
+                    return null;
+                }
+
+                try
+                {
+                    FileInformation basicInfo;
+                    status = _smbFileStore.GetFileInformation(out basicInfo, fileHandle, FileInformationClass.FileBasicInformation);
+                    if (status != NTStatus.STATUS_SUCCESS) return null;
+
+                    FileInformation standardInfo;
+                    status = _smbFileStore.GetFileInformation(out standardInfo, fileHandle, FileInformationClass.FileStandardInformation);
+                    if (status != NTStatus.STATUS_SUCCESS) return null;
+
+                    var basic = (FileBasicInformation)basicInfo;
+                    var standard = (FileStandardInformation)standardInfo;
+
+                    var name = path.TrimEnd('/').Split('/').Last();
+                    if (string.IsNullOrEmpty(name)) name = "";
+
+                    var isFolder = (basic.FileAttributes & FileAttributes.Directory) == FileAttributes.Directory;
+                    if (isFolder && !name.EndsWith("/")) name += "/";
+
+                    return (IFileEntry)new FileEntry(
+                        name,
+                        standard.EndOfFile,
+                        (DateTime?)basic.LastAccessTime ?? default,
+                        (DateTime?)basic.LastWriteTime ?? default)
+                    {
+                        IsFolder = isFolder,
+                        Created = (DateTime?)basic.CreationTime ?? default
+                    };
+                }
+                finally
+                {
+                    if (fileHandle != null)
+                        _smbFileStore.CloseFile(fileHandle);
+                }
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     /// <summary>

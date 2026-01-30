@@ -448,6 +448,11 @@ namespace Duplicati.Library.Backend
 
         /// <inheritdoc/>
         public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
-            => Task.FromResult<IFileEntry?>(null);
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return Task.FromResult<IFileEntry?>(new FileEntry(string.Empty) { IsFolder = true });
+
+            return m_s3Client.GetFileEntryAsync(m_bucket, GetFullKey(path), cancellationToken);
+        }
     }
 }
