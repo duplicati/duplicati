@@ -1958,14 +1958,15 @@ namespace Duplicati.Library.Main.Database
                     FROM ""RemoteVolume""
                     WHERE
                         ""Type"" = @Type
-                        AND ""State"" != @State
+                        AND ""State"" NOT IN (@DeletedState, @DeletingState)
                         AND ""ID"" NOT IN (
                             SELECT ""VolumeID""
                             FROM ""Fileset""
                         )
                 ");
                 cmd.SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
-                cmd.SetParameterValue("@State", RemoteVolumeState.Deleted.ToString());
+                cmd.SetParameterValue("@DeletedState", RemoteVolumeState.Deleted.ToString());
+                cmd.SetParameterValue("@DeletingState", RemoteVolumeState.Deleting.ToString());
                 var volumesMissingFilests = await cmd.ExecuteScalarInt64Async(0, token)
                     .ConfigureAwait(false);
 
@@ -1981,14 +1982,15 @@ namespace Duplicati.Library.Main.Database
                             FROM ""RemoteVolume""
                             WHERE
                                 ""Type"" = @Type
-                                AND ""State"" != @State
+                                AND ""State"" NOT IN (@DeletedState, @DeletingState)
                                 AND ""ID"" NOT IN (
                                     SELECT ""VolumeID""
                                     FROM ""Fileset""
                                 )
                         ");
                         cmd.SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
-                        cmd.SetParameterValue("@State", RemoteVolumeState.Deleted.ToString());
+                        cmd.SetParameterValue("@DeletedState", RemoteVolumeState.Deleted.ToString());
+                        cmd.SetParameterValue("@DeletingState", RemoteVolumeState.Deleting.ToString());
                         await using var reader = await cmd.ExecuteReaderAsync(token)
                             .ConfigureAwait(false);
                         if (await reader.ReadAsync(token).ConfigureAwait(false))
