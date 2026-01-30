@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.RestAPI;
+using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
@@ -50,6 +51,7 @@ public class BackupListService(Connection connection) : IBackupListService
                 Description = data.Backup.Description,
                 Tags = data.Backup.Tags,
                 TargetURL = data.Backup.TargetURL,
+                ConnectionStringID = data.Backup.ConnectionStringID,
                 Sources = data.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
                 {
@@ -65,6 +67,15 @@ public class BackupListService(Connection connection) : IBackupListService
                 }).ToArray(),
                 Metadata = data.Backup.Metadata ?? new Dictionary<string, string>()
             };
+
+            if (backup.ConnectionStringID > 0)
+            {
+                var cs = connection.GetConnectionString(backup.ConnectionStringID);
+                if (cs != null)
+                {
+                    backup.TargetURL = QuerystringMasking.Unmask(backup.TargetURL, cs.BaseUrl);
+                }
+            }
 
             var schedule = data.Schedule == null ? null : new Schedule()
             {

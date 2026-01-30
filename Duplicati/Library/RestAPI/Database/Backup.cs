@@ -85,6 +85,11 @@ namespace Duplicati.Server.Database
         public string DBPath { get; internal set; }
 
         /// <summary>
+        /// The connection string ID, or -1 if not used
+        /// </summary>
+        public long ConnectionStringID { get; set; } = -1;
+
+        /// <summary>
         /// The backup source folders and files
         /// </summary>
         public string[] Sources { get; set; }

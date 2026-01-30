@@ -50,6 +50,10 @@ public sealed record BackupDto
     /// </summary>
     public required string TargetURL { get; init; }
     /// <summary>
+    /// The connection string ID, or -1 if not used
+    /// </summary>
+    public long ConnectionStringID { get; init; } = -1;
+    /// <summary>
     /// The path to the local database
     /// </summary>
     public required string DBPath { get; init; }

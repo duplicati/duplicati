@@ -13,7 +13,8 @@ CREATE TABLE "Backup" (
     "Tags" TEXT NOT NULL,
     "TargetURL" TEXT NOT NULL,
     "DBPath" TEXT NOT NULL,
-    "ExternalID" TEXT NULL
+    "ExternalID" TEXT NULL,
+    "ConnectionStringID" INTEGER NOT NULL DEFAULT -1
 );
 
 /*
@@ -165,5 +166,19 @@ CREATE TABLE "TokenFamily" (
     "LastUpdated" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (9);
+/*
+ * Connection strings storage
+ */
+CREATE TABLE "ConnectionString" (
+    "ID" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL UNIQUE,
+    "Description" TEXT NOT NULL DEFAULT '',
+    "BaseUrl" TEXT NOT NULL,
+    "CreatedAt" INTEGER NOT NULL,
+    "UpdatedAt" INTEGER NOT NULL
+);
+
+CREATE UNIQUE INDEX "IX_ConnectionString_Name" ON "ConnectionString" ("Name");
+
+INSERT INTO "Version" ("Version") VALUES (10);
 
