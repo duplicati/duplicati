@@ -11,4 +11,9 @@
     <ProjectReference Include="..\..\Duplicati\Library\Interface\Duplicati.Library.Interface.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.0" />
+    <PackageReference Include="Vanara.PInvoke.Shared" Version="5.0.0" />
+  </ItemGroup>
+
 </Project>
