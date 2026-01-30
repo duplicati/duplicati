@@ -28,7 +28,10 @@ using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend
 {
-    public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend, ILockingBackend, IRenameEnabledBackend
+    public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend, ILockingBackend
+    //, IRenameEnabledBackend 
+    // Renaming "works" but gives errors when trying to download the renamed file:
+    // Expected hash not equal to calculated hash
     {
         // Non-standard naming managed with AuthOptionsHelper.ParseWithAlias
         private const string AUTH_USERNAME_OPTION = "access_key_id";
