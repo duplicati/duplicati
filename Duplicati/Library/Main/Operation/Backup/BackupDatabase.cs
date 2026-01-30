@@ -248,15 +248,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-        public Task AppendFilesFromPreviousSetAsync(CancellationToken cancellationToken)
-        {
-            return RunOnMain(async () =>
-                await m_database
-                    .AppendFilesFromPreviousSet(null, cancellationToken)
-                    .ConfigureAwait(false)
-            );
-        }
-
         public Task AppendFilesFromPreviousSetAsync(string[] deletedFilelist, CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>

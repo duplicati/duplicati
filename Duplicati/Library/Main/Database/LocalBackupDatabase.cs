@@ -1439,8 +1439,14 @@ namespace Duplicati.Library.Main.Database
                         )
                         SELECT
                             @CurrentFilesetId AS ""FilesetID"",
-                            ""FileID"",
-                            ""Lastmodified""
+                            COALESCE(
+                                (SELECT ""ID"" FROM ""File"" ""NewFile""
+                                 WHERE ""NewFile"".""Path"" = ""OldFile"".""Path""
+                                 AND ""NewFile"".""ID"" != ""OldEntry"".""FileID""
+                                 ORDER BY ""NewFile"".""ID"" DESC LIMIT 1),
+                                ""OldEntry"".""FileID""
+                            ) AS ""FileID"",
+                            ""OldEntry"".""Lastmodified""
                         FROM (
                             SELECT DISTINCT
                                 ""FilesetID"",
@@ -1454,6 +1460,18 @@ namespace Duplicati.Library.Main.Database
                                     FROM ""FilesetEntry""
                                     WHERE ""FilesetID"" = @CurrentFilesetId
                                 )
+                        ) ""OldEntry""
+                        INNER JOIN ""File"" ""OldFile"" ON ""OldEntry"".""FileID"" = ""OldFile"".""ID""
+                        /* 
+                           Filter out files that are already in the current fileset (e.g. via --changed-files).
+                           We check by Path because the FileID might be different (new version of the file).
+                        */
+                        WHERE ""OldFile"".""Path"" NOT IN (
+                            SELECT ""Path"" FROM ""File""
+                            WHERE ""ID"" IN (
+                                SELECT ""FileID"" FROM ""FilesetEntry""
+                                WHERE ""FilesetID"" = @CurrentFilesetId
+                            )
                         )
                     ")
                 .SetParameterValue("@CurrentFilesetId", filesetid)
