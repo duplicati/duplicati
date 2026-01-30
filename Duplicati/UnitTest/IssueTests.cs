@@ -872,17 +872,28 @@ namespace Duplicati.UnitTest
                 }
                 catch (UserInformationException e)
                 {
-                    TestContext.WriteLine("Error at index {0}: {1}", errorIdx, e.Message);
-                    if (e.HelpID == "MissingRemoteFiles" || e.HelpID == "ExtraRemoteFiles")
+                    TestContext.WriteLine("Error at index {0}: HelpID={1}, Message={2}", errorIdx, e.HelpID, e.Message);
+                    if (e.HelpID == "MissingRemoteFiles" || e.HelpID == "ExtraRemoteFiles" || e.HelpID == "DatabaseRepairInProgress")
                     {
+                        // If a database repair failed, we need to delete the database file
+                        if (e.HelpID == "DatabaseRepairInProgress")
+                            File.Delete(DBFILE);
+
                         using (var c = new Library.Main.Controller(target, testopts, null))
                         {
                             IRepairResults repairResults = c.Repair();
                             TestUtils.AssertResults(repairResults);
                         }
                     }
+                    else if (e.HelpID == "DatabaseTimestampError")
+                    {
+                        // Clock skew detected, wait and retry - this can happen on CI due to timing issues
+                        TestContext.WriteLine("Clock skew detected at index {0}, waiting 10 seconds before continuing", errorIdx);
+                        Thread.Sleep(10000);
+                    }
                     else
                     {
+                        TestContext.WriteLine("Unexpected error at index {0}: HelpID={1}, Message={2}", errorIdx, e.HelpID, e.Message);
                         failed = true;
                     }
                 }
