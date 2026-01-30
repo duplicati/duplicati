@@ -40,6 +40,40 @@ public static partial class Command
         public record BuiltPackage(PackageTarget Target, string CreatedFile);
 
         /// <summary>
+        /// Generates the metainfo content with the releases block injected
+        /// </summary>
+        /// <param name="baseDir">The base directory</param>
+        /// <param name="metainfoPath">The path to the source metainfo file</param>
+        /// <returns>The modified metainfo content</returns>
+        public static string GetMetainfoWithReleases(string baseDir, string metainfoPath)
+        {
+            var versionPath = Path.Combine(baseDir, "ReleaseBuilder", "build_version.txt");
+            var changelogPath = Path.Combine(baseDir, "ReleaseBuilder", "changelog-news.txt");
+
+            var version = File.ReadAllText(versionPath).Trim();
+            var changelog = File.ReadAllText(changelogPath).Trim();
+            var metainfo = File.ReadAllText(metainfoPath);
+
+            var sb = new StringBuilder();
+            sb.AppendLine("  <releases>");
+            sb.AppendLine($"    <release version=\"{version}\" date=\"{DateTime.UtcNow:yyyy-MM-dd}\">");
+            sb.AppendLine("      <description>");
+            sb.AppendLine($"        <p>{System.Security.SecurityElement.Escape(changelog)}</p>");
+            sb.AppendLine("      </description>");
+            sb.AppendLine("    </release>");
+            sb.AppendLine("  </releases>");
+
+            // Insert before </component>
+            var insertIndex = metainfo.LastIndexOf("</component>");
+            if (insertIndex >= 0)
+            {
+                metainfo = metainfo.Insert(insertIndex, sb.ToString());
+            }
+
+            return metainfo;
+        }
+
+        /// <summary>
         /// Builds the packages for the specified build targets.
         /// </summary>
         /// <param name="baseDir">The base directory.</param>
@@ -138,6 +172,10 @@ public static partial class Command
             {
                 case PackageType.Zip:
                     await BuildZipPackage(Path.Combine(buildRoot, target.BuildTargetString), $"duplicati-{rtcfg.ReleaseInfo.ReleaseName}-{target.BuildTargetString}", tempFile, target, rtcfg);
+                    break;
+
+                case PackageType.AppImage:
+                    await BuildAppImagePackage(baseDir, buildRoot, tempFile, target, rtcfg);
                     break;
 
                 case PackageType.MSI:
@@ -251,6 +289,170 @@ public static partial class Command
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Builds an AppImage package asynchronously.
+        /// </summary>
+        /// <param name="baseDir">The base directory.</param>
+        /// <param name="buildRoot">The build root directory.</param>
+        /// <param name="appImageFile">The AppImage file to generate.</param>
+        /// <param name="target">The package target.</param>
+        /// <param name="rtcfg">The runtime configuration.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        static async Task BuildAppImagePackage(string baseDir, string buildRoot, string appImageFile, PackageTarget target, RuntimeConfig rtcfg)
+        {
+            if (target.OS != OSType.Linux)
+                throw new Exception($"AppImage is only supported for Linux targets, got: {target.OS}");
+
+            if (target.Interface != InterfaceType.GUI)
+                throw new Exception($"AppImage is only supported for GUI interface, got: {target.Interface}");
+
+            var tmpRoot = Path.Combine(buildRoot, "tmp-appimage");
+            if (Directory.Exists(tmpRoot))
+                Directory.Delete(tmpRoot, true);
+            Directory.CreateDirectory(tmpRoot);
+
+            var appDir = Path.Combine(tmpRoot, "AppDir");
+            var appDirUsr = Path.Combine(appDir, "usr");
+            var appDirLib = Path.Combine(appDirUsr, "lib", "duplicati");
+            var appDirBin = Path.Combine(appDirUsr, "bin");
+            Directory.CreateDirectory(appDirLib);
+            Directory.CreateDirectory(appDirBin);
+
+            EnvHelper.CopyDirectory(
+                Path.Combine(buildRoot, target.BuildTargetString),
+                appDirLib,
+                recursive: true);
+
+            await PackageSupport.InstallPackageIdentifier(appDirLib, target);
+            await PackageSupport.RenameExecutables(appDirLib);
+            await PackageSupport.SetPermissionFlags(appDirLib, rtcfg);
+
+            var availableExecutables = ExecutableRenames.Values
+                .Where(x => File.Exists(Path.Combine(appDirLib, x)))
+                .ToList();
+
+            if (!availableExecutables.Any())
+                throw new Exception("No executables found in AppImage payload");
+
+            if (OperatingSystem.IsWindows())
+                throw new PlatformNotSupportedException("AppImage packaging is not supported on Windows, use WSL or Docker");
+
+            foreach (var executable in availableExecutables)
+            {
+                var linkPath = Path.Combine(appDirBin, executable);
+                await ProcessHelper.Execute([
+                    "ln", "-s",
+                    Path.Combine("..", "lib", "duplicati", executable),
+                    linkPath
+                ]);
+            }
+
+            var sharedDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "shared");
+            var appImageResourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "appimage");
+
+            File.Copy(
+                Path.Combine(sharedDir, "desktop", "duplicati.desktop"),
+                Path.Combine(appDir, "com.duplicati.app.desktop"),
+                true
+            );
+
+            var applicationsDir = Path.Combine(appDirUsr, "share", "applications");
+            Directory.CreateDirectory(applicationsDir);
+            File.Copy(
+                Path.Combine(sharedDir, "desktop", "duplicati.desktop"),
+                Path.Combine(applicationsDir, "com.duplicati.app.desktop"),
+                true
+            );
+
+            var metainfoDir = Path.Combine(appDirUsr, "share", "metainfo");
+            Directory.CreateDirectory(metainfoDir);
+
+            // Use the correct reverse-DNS filename for metadata and desktop file to satisfy appstreamcli
+            var metainfoSrc = Path.Combine(sharedDir, "metainfo", "com.duplicati.app.metainfo.xml");
+            var metainfoDest = Path.Combine(metainfoDir, "com.duplicati.app.appdata.xml");
+            var metainfoContent = GetMetainfoWithReleases(baseDir, metainfoSrc);
+            // Update launchable to match new desktop filename
+            metainfoContent = metainfoContent.Replace("duplicati.desktop", "com.duplicati.app.desktop");
+            File.WriteAllText(metainfoDest, metainfoContent);
+
+            if (OperatingSystem.IsWindows())
+                throw new PlatformNotSupportedException("Creating unresolved symlinks is not supported on Windows, use WSL or Docker");
+
+            var iconSource = Path.Combine(sharedDir, "pixmaps", "duplicati.png");
+            File.Copy(iconSource, Path.Combine(appDir, "duplicati.png"), true);
+            File.Copy(iconSource, Path.Combine(appDir, ".DirIcon"), true);
+
+            var defaultExecutable = availableExecutables.Contains("duplicati")
+                ? "duplicati"
+                : availableExecutables.First();
+
+            var appRunTemplate = File.ReadAllText(Path.Combine(appImageResourcesDir, "AppRun.template"));
+            var appRunPayload = appRunTemplate
+                .Replace("%EXECUTABLE_LIST%", string.Join("\n", availableExecutables.Select(x => $"    echo \"  - {x}\"")))
+                .Replace("%INVOCATION_CASES%", string.Join("\n", availableExecutables.Select(x => $"    {x}) exec \"${{HERE}}/usr/bin/{x}\" \"$@\" ;;")))
+                .Replace("%FLAG_CASES%", string.Join("\n", availableExecutables.Select(x =>
+                    $"    --{x})\n        shift\n        exec \"${{HERE}}/usr/bin/{x}\" \"$@\"\n        ;;")))
+                .Replace("%DEFAULT_EXECUTABLE%", defaultExecutable);
+
+            File.WriteAllText(Path.Combine(appDir, "AppRun"), appRunPayload);
+
+            if (!OperatingSystem.IsWindows())
+            {
+                var filemode755 = UnixFileMode.UserRead
+                    | UnixFileMode.UserWrite
+                    | UnixFileMode.UserExecute
+                    | UnixFileMode.GroupRead
+                    | UnixFileMode.GroupExecute
+                    | UnixFileMode.OtherRead
+                    | UnixFileMode.OtherExecute;
+
+                File.SetUnixFileMode(Path.Combine(appDir, "AppRun"), filemode755);
+            }
+
+            File.Copy(
+                Path.Combine(appImageResourcesDir, "Dockerfile.build"),
+                Path.Combine(tmpRoot, "Dockerfile"),
+                true
+            );
+
+            await ProcessHelper.Execute([
+                "docker", "build",
+                "-t", "duplicati/appimage-build:latest",
+                tmpRoot
+            ], workingDirectory: tmpRoot);
+
+            var appImageArch = target.Arch switch
+            {
+                ArchType.x64 => "x86_64",
+                ArchType.Arm64 => "aarch64",
+                ArchType.Arm7 => "armhf",
+                _ => throw new Exception($"Unsupported AppImage architecture: {target.Arch}")
+            };
+
+            var appImageName = Path.GetFileName(appImageFile);
+            var appImageTempPath = Path.Combine(tmpRoot, appImageName);
+            if (File.Exists(appImageTempPath))
+                File.Delete(appImageTempPath);
+
+            await ProcessHelper.Execute([
+                "docker", "run",
+                "--workdir", "/build",
+                "--volume", $"{tmpRoot}:/build:rw",
+                "-e", "APPIMAGE_EXTRACT_AND_RUN=1",
+                "-e", $"ARCH={appImageArch}",
+                "duplicati/appimage-build:latest",
+                "/usr/local/bin/appimagetool",
+                "/build/AppDir",
+                $"/build/{appImageName}"
+            ]);
+
+            if (File.Exists(appImageFile))
+                File.Delete(appImageFile);
+
+            File.Move(appImageTempPath, appImageFile);
+            Directory.Delete(tmpRoot, true);
         }
 
         /// <summary>
@@ -904,6 +1106,11 @@ public static partial class Command
                     Path.Combine(pkgroot, "usr", "share", "applications", "duplicati.desktop")
                 ));
 
+                var metainfoDest = Path.Combine(pkgroot, "usr", "share", "metainfo", "com.duplicati.app.metainfo.xml");
+                var metainfoDir = Path.GetDirectoryName(metainfoDest)!;
+                if (!Directory.Exists(metainfoDir)) Directory.CreateDirectory(metainfoDir);
+                File.WriteAllText(metainfoDest, GetMetainfoWithReleases(baseDir, Path.Combine(sharedDir, "metainfo", "com.duplicati.app.metainfo.xml")));
+
                 supportFiles.AddRange(
                     new[] { "duplicati.png", "duplicati.svg", "duplicati.xpm" }
                         .Select(f => (
@@ -1211,6 +1418,7 @@ public static partial class Command
         File.Copy(Path.Combine(sharedDir, "pixmaps", "duplicati.xpm"), Path.Combine(sources, "duplicati.xpm"));
         File.Copy(Path.Combine(sharedDir, "pixmaps", "duplicati.png"), Path.Combine(sources, "duplicati.png"));
         File.Copy(Path.Combine(sharedDir, "desktop", "duplicati.desktop"), Path.Combine(sources, "duplicati.desktop"));
+        File.WriteAllText(Path.Combine(sources, "com.duplicati.app.metainfo.xml"), CreatePackage.GetMetainfoWithReleases(baseDir, Path.Combine(sharedDir, "metainfo", "com.duplicati.app.metainfo.xml")));
         File.Copy(Path.Combine(resourcesDir, "duplicati-install-recursive.sh"), Path.Combine(sources, "duplicati-install-recursive.sh"));
         if (target.Interface != InterfaceType.Agent)
         {

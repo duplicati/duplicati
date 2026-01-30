@@ -21,11 +21,10 @@
 
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace Duplicati.Library.Backend
 {
@@ -84,6 +83,19 @@ namespace Duplicati.Library.Backend
 
                     return await resp.Content.ReadFromJsonAsync<FolderMetadata>(ct).ConfigureAwait(false)
                         ?? throw new InvalidOperationException("Failed to deserialize FolderMetadata");
+                }).ConfigureAwait(false);
+        }
+
+        public async Task<MetaData?> GetMetadataAsync(string path, CancellationToken cancellationToken)
+        {
+            return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken,
+                async ct =>
+                {
+                    using var req = await CreateRequestAsync(WebApi.Dropbox.GetMetadataUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
+                    req.Content = JsonContent.Create(new PathArg { path = path });
+                    using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+                    return await resp.Content.ReadFromJsonAsync<MetaData>(ct).ConfigureAwait(false)
+                        ?? throw new InvalidOperationException("Failed to deserialize MetaData");
                 }).ConfigureAwait(false);
         }
 
@@ -232,11 +244,11 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            JObject? errJson = null;
+            JsonNode? errJson = null;
             try
             {
                 if (!string.IsNullOrWhiteSpace(json))
-                    errJson = JObject.Parse(json);
+                    errJson = JsonNode.Parse(json);
             }
             catch
             {
@@ -258,7 +270,7 @@ namespace Duplicati.Library.Backend
             : base("Dropbox API error", innerException)
         {
         }
-        public JObject? errorJSON { get; set; }
+        public JsonNode? errorJSON { get; set; }
     }
 
     public class PathArg
@@ -343,12 +355,12 @@ namespace Duplicati.Library.Backend
 
     public class MetaData
     {
-        [JsonProperty(".tag")]
+        [JsonPropertyName(".tag")]
         public string? tag { get; set; }
         public string? name { get; set; }
         public string? server_modified { get; set; }
         public ulong size { get; set; }
-        public bool IsFile { get { return tag == "file"; } }
+        public bool IsFile => tag == "file";
 
         // While this is unused, the Dropbox API v2 documentation does not
         // declare this to be optional.

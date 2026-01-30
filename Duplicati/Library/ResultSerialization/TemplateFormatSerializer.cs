@@ -21,12 +21,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using HandlebarsDotNet;
 
-namespace Duplicati.Library.Modules.Builtin.ResultSerialization
+namespace Duplicati.Library.ResultSerialization
 {
     /// <summary>
     /// Implements serialization of results using Handlebars templates.
@@ -76,7 +77,10 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                 templateSource = templateSourceOrName;
 
             _templateSource = templateSource ?? throw new ArgumentNullException(nameof(templateSourceOrName));
-            _handlebars = Handlebars.Create();
+            _handlebars = Handlebars.Create(new HandlebarsConfiguration
+            {
+                FormatProvider = CultureInfo.InvariantCulture
+            });
             RegisterHelpers();
             _template = _handlebars.Compile(templateSource);
         }
@@ -123,7 +127,7 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                     order++;
                     size /= 1024;
                 }
-                output.Write($"{size:0.##} {sizes[order]}");
+                output.Write($"{size.ToString("0.##", CultureInfo.InvariantCulture)} {sizes[order]}");
             });
 
             // Helper to format durations
@@ -263,7 +267,7 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                 return $"{(int)ts.TotalHours}h {ts.Minutes}m {ts.Seconds}s";
             if (ts.TotalMinutes >= 1)
                 return $"{(int)ts.TotalMinutes}m {ts.Seconds}s";
-            return $"{ts.TotalSeconds:0.#}s";
+            return $"{ts.TotalSeconds.ToString("0.#", CultureInfo.InvariantCulture)}s";
         }
 
         /// <summary>

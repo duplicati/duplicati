@@ -84,6 +84,16 @@ public static partial class Command
     };
 
     /// <summary>
+    /// The packages that require Docker to build
+    /// </summary>
+    private static readonly IReadOnlySet<PackageType> DockerDependingTargets = new HashSet<PackageType> {
+        PackageType.Docker,
+        PackageType.Deb,
+        PackageType.RPM,
+        PackageType.AppImage
+    };
+
+    /// <summary>
     /// Some executables have shorter names that follow the Linux convention of all-lowercase
     /// </summary>
     /// <remarks>Note that the values here mirror the values in the AutoUpdater.PackageHelper, so changes should be coordinated between the two</remarks>
@@ -596,7 +606,7 @@ public static partial class Command
 
             if (!rtcfg.UseDockerBuild)
             {
-                var unsupportedBuilds = buildTargets.Where(x => x.Package == PackageType.Docker || x.Package == PackageType.Deb || x.Package == PackageType.RPM).ToList();
+                var unsupportedBuilds = buildTargets.Where(x => DockerDependingTargets.Contains(x.Package)).ToList();
                 if (unsupportedBuilds.Any())
                     throw new Exception($"The following packages cannot be built without Docker: {string.Join(", ", unsupportedBuilds.Select(x => x.PackageTargetString))}");
             }

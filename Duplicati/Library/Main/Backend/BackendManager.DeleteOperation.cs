@@ -1,3 +1,24 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Linq;
 using System.Net.Http;
@@ -50,15 +71,85 @@ partial class BackendManager
             Size = size;
         }
 
+        /// <summary>
+        /// Generates a unique filename by adding a random suffix if the target already exists.
+        /// </summary>
+        /// <param name="baseName">The base filename</param>
+        /// <returns>A unique filename</returns>
+        private static string GenerateUniqueFilename(string baseName)
+        {
+            return baseName + $".{Guid.NewGuid().ToString("N")[..6]}";
+        }
+
+        /// <summary>
+        /// Performs the soft-delete operation by renaming the file with the soft-delete prefix.
+        /// Handles creating target directories and resolving filename conflicts.
+        /// </summary>
+        /// <param name="backend">The backend to use</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>True if the operation succeeded</returns>
+        private async Task<bool> PerformSoftDeleteAsync(IBackend backend, CancellationToken cancelToken)
+        {
+            var softDeletePrefix = Context.Options.SoftDeletePrefix!;
+            var newName = softDeletePrefix + RemoteFilename;
+            var newNameWithSuffix = newName;
+            const int maxAttempts = 3;
+
+            // Try to rename the file
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                try
+                {
+                    if (backend is IRenameEnabledBackend renameBackend && !Context.Options.PreventBackendRename)
+                    {
+                        await renameBackend.RenameAsync(RemoteFilename, newNameWithSuffix, cancelToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // Soft-delete fallback: download, upload with new name, and delete old file
+                        using (var tempFile = new Library.Utility.TempFile())
+                        {
+                            await backend.GetAsync(RemoteFilename, tempFile, cancelToken).ConfigureAwait(false);
+                            await backend.PutAsync(newName, tempFile, cancelToken).ConfigureAwait(false);
+                        }
+
+                        await backend.DeleteAsync(RemoteFilename, cancelToken).ConfigureAwait(false);
+                    }
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "RemoteFileRenameFailed", ex, $"Failed to rename file {RemoteFilename} to {newName}, attempt {attempt + 1}/{maxAttempts}");
+
+                    if (attempt == maxAttempts - 1)
+                        throw;
+
+                    // Try with a unique suffix in case the target file already exists
+                    newNameWithSuffix = GenerateUniqueFilename(newName);
+                }
+            }
+
+            throw new Exception("Failed to perform soft-delete on file");
+        }
+
         /// <inheritdoc/>
         public override async Task<bool> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
         {
             Context.Statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, RemoteFilename, Size);
 
             string? result = null;
+            bool deleteSucceeded = false;
             try
             {
-                await backend.DeleteAsync(RemoteFilename, cancelToken).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(Context.Options.SoftDeletePrefix))
+                {
+                    await PerformSoftDeleteAsync(backend, cancelToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await backend.DeleteAsync(RemoteFilename, cancelToken).ConfigureAwait(false);
+                }
+                deleteSucceeded = true;
             }
             catch (Exception ex)
             {
@@ -82,7 +173,10 @@ partial class BackendManager
                     }
 
                     if (recovered)
+                    {
                         Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileSuccess", LC.L($"Listing indicates file {RemoteFilename} was deleted correctly"));
+                        deleteSucceeded = true;
+                    }
                     else
                         Logging.Log.WriteWarningMessage(LOGTAG, "DeleteRemoteFileFailed", ex, LC.L($"Listing confirms file {RemoteFilename} was not deleted"));
                 }
@@ -99,8 +193,11 @@ partial class BackendManager
                 // We log that the operation was performed, and the result
                 Context.Database.LogRemoteOperation("delete", RemoteFilename, result);
 
-                // We also log the new state of the file, so it will be attempted to be re-deleted on later listings
-                Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Deleted, -1, null);
+                if (deleteSucceeded)
+                {
+                    // We also log the new state of the file, so it will be attempted to be re-deleted on later listings
+                    Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Deleted, -1, null);
+                }
             }
 
             Context.Statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, RemoteFilename, Size);

@@ -74,6 +74,10 @@ public enum PackageType
     /// </summary>
     Zip,
     /// <summary>
+    /// The AppImage package
+    /// </summary>
+    AppImage,
+    /// <summary>
     /// The Windows installer format
     /// </summary>
     MSI,
@@ -171,6 +175,7 @@ public record PackageTarget(OSType OS, ArchType Arch, InterfaceType Interface, P
         => package switch
         {
             PackageType.Zip => "zip",
+            PackageType.AppImage => "appimage",
             PackageType.MSI => "msi",
             PackageType.Deb => "deb",
             PackageType.RPM => "rpm",

@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main.Operation
 
                     if (changed)
                     {
-                        await db.WriteResults(m_result, m_result.TaskControl.ProgressToken)
+                        await db.WriteResultsAndCommit(m_result, m_result.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
                         if (m_options.AutoVacuum)
                         {

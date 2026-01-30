@@ -22,6 +22,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using uplink.NET.Interfaces;
 using uplink.NET.Models;
@@ -252,8 +253,8 @@ namespace Duplicati.Library.Backend.Storj
         {
             var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
             var custom = new CustomMetadata();
-            custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
-            custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
+            custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) });
+            custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) });
             using var ts = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
             var upload = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), ts, custom, false)).ConfigureAwait(false);
             await upload.StartUploadAsync().ConfigureAwait(false);

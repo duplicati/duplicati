@@ -245,7 +245,12 @@ public static class DataFolderManager
     /// </summary>
     private static readonly Lazy<string> _installID = new(() =>
     {
-        try { return File.ReadAllLines(Path.Combine(GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), INSTALL_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
+        try
+        {
+            var path = Path.Combine(GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), INSTALL_FILE);
+            if (File.Exists(path))
+                return File.ReadAllLines(path).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? "";
+        }
         catch { }
 
         return string.Empty;

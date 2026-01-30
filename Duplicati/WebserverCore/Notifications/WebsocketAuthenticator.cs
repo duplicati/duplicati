@@ -123,7 +123,7 @@ public class WebsocketAuthenticator(
         }
         catch (Exception ex)
         {
-            Log.WriteVerboseMessage(LOGTAG, "WebsocketDeserializationError", ex, $"Failed to deserialize websocket message: {ex.Message}");
+            Log.WriteVerboseMessage(LOGTAG, "WebsocketDeserializationError", ex, $"Failed to deserialize websocket message");
         }
 
         if (message == null)
