@@ -124,7 +124,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             if (entries != null)
                 return entries;
 
-            if (remotename.Contains(Path.DirectorySeparatorChar))
+            if (remotename.Contains('/'))
             {
                 var parts = GetAbsolutePath(remotename).Split('/', StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length == 0)
