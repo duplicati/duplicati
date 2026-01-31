@@ -31,8 +31,9 @@ partial class RestoreProvider
 
             if (target.Type == SourceItemType.User)
             {
-                _targetUserId = target.Metadata["o365:Id"]!;
-                _targetMailboxId = await GetDefaultRestoreTargetMailbox(_targetUserId, cancel);
+                _targetUserId = target.Metadata.GetValueOrDefault("o365:Id");
+                if (!string.IsNullOrWhiteSpace(_targetUserId))
+                    _targetMailboxId = await GetDefaultRestoreTargetMailbox(_targetUserId, cancel);
             }
             else if (target.Type == SourceItemType.UserMailbox)
             {
@@ -44,7 +45,7 @@ partial class RestoreProvider
             else if (target.Type == SourceItemType.UserMailboxFolder)
             {
                 _targetUserId = target.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
-                _targetMailboxId = target.Metadata["o365:Id"];
+                _targetMailboxId = target.Metadata.GetValueOrDefault("o365:Id");
             }
             else
             {
@@ -69,7 +70,7 @@ partial class RestoreProvider
 
             var targetNames = new[] { RESTORED_FOLDER_NAME };
 
-            var path = string.Join("/", new[] {
+            var path = string.Join(Path.DirectorySeparatorChar, new[] {
                 Uri.EscapeDataString(Office365MetaType.Users.ToString().ToLowerInvariant()),
                 Uri.EscapeDataString(userId),
                 Uri.EscapeDataString(Office365UserType.Mailbox.ToString().ToLowerInvariant())
@@ -85,12 +86,18 @@ partial class RestoreProvider
                     break;
 
                 var folderMetadata = await folder.GetMinorMetadata(cancel);
-                var folderId = folderMetadata["o365:Id"];
+                if (!Enum.TryParse<SourceItemType>(folderMetadata.GetValueOrDefault("o365:Type"), out var type))
+                    continue;
+
+                if (type != SourceItemType.UserMailboxFolder)
+                    continue;
+
+                var folderId = folderMetadata.GetValueOrDefault("o365:Id");
                 if (string.IsNullOrWhiteSpace(folderId))
                     continue;
 
-                var folderName = folderMetadata["o365:Name"];
-                if (targetNames.Contains(folderName, StringComparer.OrdinalIgnoreCase))
+                var folderName = folderMetadata.GetValueOrDefault("o365:Name");
+                if (!string.IsNullOrWhiteSpace(folderName) && targetNames.Contains(folderName, StringComparer.OrdinalIgnoreCase))
                     return folderId;
             }
 
