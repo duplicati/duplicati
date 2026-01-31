@@ -91,7 +91,7 @@ public static class EncryptedFieldHelper
     /// </summary>
     /// <param name="value">The value to decrypt</param>
     /// <returns><c>true</c> if the string is encrypted; <c>false</c> otherwise</returns>
-    public static bool IsEncryptedString(string value)
+    public static bool IsEncryptedString(string? value)
         => !string.IsNullOrWhiteSpace(value) && value.StartsWith(HEADER_PREFIX);
 
     /// <summary>
