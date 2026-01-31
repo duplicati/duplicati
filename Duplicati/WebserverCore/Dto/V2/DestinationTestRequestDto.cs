@@ -21,6 +21,25 @@
 namespace Duplicati.WebserverCore.Dto.V2;
 
 /// <summary>
+/// The type of remote destination
+/// </summary>
+public enum RemoteDestinationType
+{
+    /// <summary>
+    /// Backend
+    /// </summary>
+    Backend,
+    /// <summary>
+    /// Source provider
+    /// </summary>
+    SourceProvider,
+    /// <summary>
+    /// Restore destination provider
+    /// </summary>
+    RestoreDestinationProvider
+}
+
+/// <summary>
 /// The list filesets request DTO
 /// </summary>
 public sealed record DestinationTestRequestDto
@@ -43,4 +62,6 @@ public sealed record DestinationTestRequestDto
     /// Whether to automatically create the destination if it does not exist
     /// </summary>
     public required bool AutoCreate { get; init; } = false;
+
+    public RemoteDestinationType? DestinationType { get; init; }
 }

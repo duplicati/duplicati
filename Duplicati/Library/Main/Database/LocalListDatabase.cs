@@ -31,6 +31,7 @@ using Duplicati.Library.Interface;
 using Microsoft.Data.Sqlite;
 using System.Threading;
 using System.Runtime.CompilerServices;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -39,6 +40,7 @@ namespace Duplicati.Library.Main.Database
     /// </summary>
     internal class LocalListDatabase : LocalDatabase
     {
+        private static readonly string LOGTAG = Log.LogTagFromType<LocalListDatabase>();
         /// <summary>
         /// Creates a new instance of the LocalListDatabase.
         /// </summary>
@@ -949,12 +951,14 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Represents a folder entry in the list folder results.
         /// </summary>
+        /// <param name="FileId">The FilesetEntry ID.</param>
         /// <param name="Path">The path of the folder entry.</param>
         /// <param name="Size">The size of the folder entry.</param>
         /// <param name="IsDirectory">Indicates if the entry is a directory.</param>
         /// <param name="IsSymlink">Indicates if the entry is a symbolic link.</param>
         /// <param name="LastModified">The last modified date of the folder entry.</param>
-        private sealed record FolderEntry(string Path, long Size, bool IsDirectory, bool IsSymlink, DateTime LastModified) : IListFolderEntry;
+        /// <param name="Metadata">The metadata of the folder entry, if any.</param>
+        public sealed record FolderEntry(long FileId, string Path, long Size, bool IsDirectory, bool IsSymlink, DateTime LastModified, Dictionary<string, string?>? Metadata) : IListFolderEntry;
 
         /// <summary>
         /// Lists the folder entries for a given fileset and prefix IDs.
@@ -980,6 +984,7 @@ namespace Duplicati.Library.Main.Database
             // Then query the matching files
             cmd.SetCommandAndParameters($@"
                 SELECT
+                    ""fe"".""FileID"",
                     ""pp"".""Prefix"" || ""fl"".""Path"" AS ""FullPath"",
                     ""b"".""Length"",
                     (CASE
@@ -1019,18 +1024,21 @@ namespace Duplicati.Library.Main.Database
             var results = new List<IListFolderEntry>();
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
             {
-                var path = rd.ConvertValueToString(0) ?? string.Empty;
-                var size = rd.ConvertValueToInt64(1);
-                var isDir = rd.GetInt32(2) != 0;
-                var isSymlink = rd.GetInt32(3) != 0;
-                var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
+                var id = rd.ConvertValueToInt64(0);
+                var path = rd.ConvertValueToString(1) ?? string.Empty;
+                var size = rd.ConvertValueToInt64(2);
+                var isDir = rd.GetInt32(3) != 0;
+                var isSymlink = rd.GetInt32(4) != 0;
+                var lastModified = new DateTime(rd.ConvertValueToInt64(5, 0), DateTimeKind.Utc);
 
                 results.Add(new FolderEntry(
+                    id,
                     path,
                     size,
                     isDir,
                     isSymlink,
-                    lastModified
+                    lastModified,
+                    null
                 ));
             }
 
@@ -1105,6 +1113,7 @@ namespace Duplicati.Library.Main.Database
             await using var cmd = m_connection.CreateCommand();
             cmd.SetCommandAndParameters(@"
                 SELECT
+                    fe.""FileID"",
                     pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
                     b.""Length"",
                     CASE WHEN fl.""BlocksetID"" = -100 THEN 1 ELSE 0 END AS ""IsDirectory"",
@@ -1124,18 +1133,70 @@ namespace Duplicati.Library.Main.Database
 
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token))
             {
-                var path = rd.ConvertValueToString(0) ?? string.Empty;
+                var path = rd.ConvertValueToString(1) ?? string.Empty;
                 if (lastRoot == null || !path.StartsWith(lastRoot, StringComparison.Ordinal))
                 {
                     lastRoot = path;
-                    var size = rd.ConvertValueToInt64(1, -1);
-                    var isDir = rd.GetInt32(2) != 0;
-                    var isSymlink = rd.GetInt32(3) != 0;
-                    var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
+                    var id = rd.ConvertValueToInt64(0);
+                    var size = rd.ConvertValueToInt64(2, -1);
+                    var isDir = rd.GetInt32(3) != 0;
+                    var isSymlink = rd.GetInt32(4) != 0;
+                    var lastModified = new DateTime(rd.ConvertValueToInt64(5, 0), DateTimeKind.Utc);
 
-                    yield return new FolderEntry(path, size, isDir, isSymlink, lastModified);
+                    yield return new FolderEntry(id, path, size, isDir, isSymlink, lastModified, null);
                 }
             }
+        }
+
+        /// <summary>
+        /// Extends folder entries with additional metadata from the Metadataset table.
+        /// Note that this modifies the input entries in-place.
+        /// </summary>
+        /// <param name="entries">The folder entries to extend.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns the extended folder entries.</returns>
+        public async Task<Dictionary<long, Dictionary<string, string?>>> GetMetadataForFilesetIds(IEnumerable<long> filesetIds, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand();
+            cmd.SetCommandAndParameters(@"
+                SELECT
+                    fe.""FileID"",
+                    md.""Content""
+                FROM ""FilesetEntry"" fe
+                INNER JOIN ""FileLookup"" fl
+                    ON fe.""FileID"" = fl.""ID""
+                INNER JOIN ""Metadataset"" md
+                    ON fl.""MetadataID"" = md.""ID""
+                
+                WHERE md.""Content"" IS NOT NULL
+                AND fe.""FileID"" IN (@Ids)
+            ")
+                .SetTransaction(m_rtr)
+                .ExpandInClauseParameter("@Ids", filesetIds);
+
+            var map = new Dictionary<long, Dictionary<string, string?>>();
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token))
+            {
+                var id = rd.ConvertValueToInt64(0);
+                var metadata = rd.ConvertValueToString(1);
+                if (string.IsNullOrWhiteSpace(metadata))
+                    continue;
+
+                try
+                {
+                    var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string?>>(metadata);
+                    if (dict == null)
+                        continue;
+
+                    map[id] = dict;
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "InvalidMetadata", ex, $"Failed to parse metadata for FileID {id}");
+                }
+            }
+
+            return map;
         }
 
         /// <summary>
@@ -1435,6 +1496,7 @@ namespace Duplicati.Library.Main.Database
             // Fetch results
             var fetchSql = $@"
                 SELECT
+                    ""fe"".""FileID"",
                     ""fe"".""FilesetID"",
                     ""f"".""Timestamp"",
                     ""pp"".""Prefix"" || ""fl"".""Path"" AS ""FullPath"",
@@ -1485,17 +1547,18 @@ namespace Duplicati.Library.Main.Database
             var results = new List<ISearchFileVersion>();
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
             {
-                var version = versionMap[rd.ConvertValueToInt64(0, -1)];
-                var time = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
-                var path = rd.ConvertValueToString(2) ?? string.Empty;
-                var size = rd.ConvertValueToInt64(3, 0);
-                var isDirectory = rd.GetInt32(4) != 0;
-                var isSymlink = rd.GetInt32(5) != 0;
-                var lastModified = new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc);
+                var id = rd.ConvertValueToInt64(0, -1);
+                var version = versionMap[rd.ConvertValueToInt64(1, -1)];
+                var time = new DateTime(rd.ConvertValueToInt64(2, 0), DateTimeKind.Utc);
+                var path = rd.ConvertValueToString(3) ?? string.Empty;
+                var size = rd.ConvertValueToInt64(4, 0);
+                var isDirectory = rd.GetInt32(5) != 0;
+                var isSymlink = rd.GetInt32(6) != 0;
+                var lastModified = new DateTime(rd.ConvertValueToInt64(7, 0), DateTimeKind.Utc);
 
                 // We cannot know exactly where the match occurred here
                 // (unless we do another pass), so just use Range(0,0) for now
-                results.Add(new SearchFileVersion(version, time, path, size, isDirectory, isSymlink, lastModified, new Range(0, 0)));
+                results.Add(new SearchFileVersion(id, version, time, path, size, isDirectory, isSymlink, lastModified, new Range(0, 0), null));
             }
 
             long totalCount;

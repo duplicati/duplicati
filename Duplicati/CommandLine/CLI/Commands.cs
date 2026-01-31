@@ -406,7 +406,7 @@ namespace Duplicati.CommandLine
                     return 200;
                 }
 
-                var res = i.ListFolder(args.ToArray(), 0, 0);
+                var res = i.ListFolder(args.ToArray(), 0, 0, false);
                 outwriter.WriteLine("Folder contents:");
                 foreach (var e in res.Entries.Items)
                 {
@@ -466,7 +466,7 @@ namespace Duplicati.CommandLine
 
                 HandleDbAccessWithoutPassphrase(backend, options);
 
-                var res = i.SearchEntries(args.ToArray(), filter, 0, 0);
+                var res = i.SearchEntries(args.ToArray(), filter, 0, 0, false);
                 outwriter.WriteLine("File versions:");
                 var prevFile = string.Empty;
                 foreach (var e in res.FileVersions.Items)
@@ -705,6 +705,9 @@ namespace Duplicati.CommandLine
                                     periodicOutput.Join(TimeSpan.FromMilliseconds(100));
                                     output.MessageEvent("Verifying restored files ...");
                                     break;
+                                case Duplicati.Library.Main.OperationPhase.Restore_Finalize:
+                                    output.MessageEvent("Completing restore on destination ...");
+                                    break;
                                 case Duplicati.Library.Main.OperationPhase.Restore_ScanForLocalBlocks:
                                     output.MessageEvent("Scanning local files for needed data ...");
                                     break;
@@ -723,7 +726,13 @@ namespace Duplicati.CommandLine
                         string restorePath;
                         options.TryGetValue("restore-path", out restorePath);
 
-                        output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.RestoredFiles, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), string.IsNullOrEmpty(restorePath) ? "original path" : restorePath));
+                        if (string.IsNullOrWhiteSpace(restorePath))
+                            restorePath = "original location";
+                        if (restorePath.StartsWith("@"))
+                            restorePath = "remote destination";
+
+
+                        output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.RestoredFiles, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), restorePath));
                         output.MessageEvent(string.Format("Duration of restore: {0:hh\\:mm\\:ss}", res.Duration));
 
                         if (output.FullResults)

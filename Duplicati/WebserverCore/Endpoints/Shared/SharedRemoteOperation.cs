@@ -1,3 +1,4 @@
+using Duplicati.CommandLine.RecoveryTool;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Utility;
@@ -7,11 +8,33 @@ using Duplicati.WebserverCore.Abstractions;
 
 namespace Duplicati.WebserverCore.Endpoints.Shared;
 
-public record TupleDisposeWrapper(IBackend Backend, IEnumerable<IGenericModule> Modules) : IDisposable
+public record BackendTupleDisposeWrapper(IBackend Backend, IEnumerable<IGenericModule> Modules) : IDisposable
 {
     public void Dispose()
     {
-        Backend.Dispose();
+        Backend?.Dispose();
+        foreach (var n in Modules)
+            if (n is IDisposable disposable)
+                disposable.Dispose();
+    }
+}
+
+public record SourceProviderTupleDisposeWrapper(ISourceProvider SourceProvider, IEnumerable<IGenericModule> Modules) : IDisposable
+{
+    public void Dispose()
+    {
+        SourceProvider?.Dispose();
+        foreach (var n in Modules)
+            if (n is IDisposable disposable)
+                disposable.Dispose();
+    }
+}
+
+public record RestoreDestinationProviderTupleDisposeWrapper(IRestoreDestinationProvider RestoreDestinationProvider, IEnumerable<IGenericModule> Modules) : IDisposable
+{
+    public void Dispose()
+    {
+        RestoreDestinationProvider?.Dispose();
         foreach (var n in Modules)
             if (n is IDisposable disposable)
                 disposable.Dispose();
@@ -65,12 +88,30 @@ public class SharedRemoteOperation
         return (url, opts);
     }
 
-    public static async Task<TupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
+    public static async Task<BackendTupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
     {
         (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, cancelToken);
         var modules = ConfigureModules(opts);
         var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, opts);
-        return new TupleDisposeWrapper(backend, modules);
+        return new BackendTupleDisposeWrapper(backend, modules);
+    }
+
+    public static async Task<SourceProviderTupleDisposeWrapper> GetSourceProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
+    {
+        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, cancelToken);
+        var modules = ConfigureModules(opts);
+        var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProviderForTesting(url, "", opts, cancelToken);
+
+        return new SourceProviderTupleDisposeWrapper(sourceProvider, modules);
+    }
+
+    public static async Task<RestoreDestinationProviderTupleDisposeWrapper> GetRestoreDestinationProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
+    {
+        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, cancelToken);
+        var modules = ConfigureModules(opts);
+        var restoreDestinationProvider = await Library.DynamicLoader.RestoreDestinationProviderLoader.GetRestoreDestinationProviderForTesting(url, opts, cancelToken);
+
+        return new RestoreDestinationProviderTupleDisposeWrapper(restoreDestinationProvider, modules);
     }
 
     public static Exception GetInnerException<T>(Exception ex) where T : Exception

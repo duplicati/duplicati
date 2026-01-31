@@ -46,6 +46,13 @@ public interface ISourceProvider : IDisposable
     Task Initialize(CancellationToken cancellationToken);
 
     /// <summary>
+    /// Tests the provider connection
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    Task Test(CancellationToken cancellationToken);
+
+    /// <summary>
     /// Gets the root entries
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>

@@ -53,7 +53,7 @@ public class GetApiKeyModule : IWebModule
     ];
 
     /// <inheritdoc/>
-    public IDictionary<string, string> Execute(IDictionary<string, string?> options)
+    public async Task<IDictionary<string, string>> Execute(IDictionary<string, string?> options, CancellationToken cancellationToken)
     {
         options.TryGetValue("filen-operation", out var operation);
         if (operation != "GetApiKey")
@@ -71,7 +71,7 @@ public class GetApiKeyModule : IWebModule
                 newOpts[key] = uri.QueryParameters[key];
 
         var backend = new FilenBackend(url, newOpts);
-        var apiKey = backend.GetApiKey(CancellationToken.None).Await();
+        var apiKey = await backend.GetApiKey(cancellationToken).ConfigureAwait(false);
         return new Dictionary<string, string> { { "api-key", apiKey ?? string.Empty } };
     }
 

@@ -28,9 +28,8 @@ using System.Threading.Tasks;
 namespace Duplicati.Library.Interface;
 
 /// <summary>
-/// An interface a backend may implement if it supports streaming operations.
-/// Backends that implement this interface can be throttled and correctly shows 
-/// the progressbar when transferring data.
+/// An interface for backends that support folder operations.
+/// Backends that implement this interface can be used as sources for data.
 /// </summary>
 public interface IFolderEnabledBackend : IBackend
 {

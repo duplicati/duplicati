@@ -76,7 +76,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(KEY_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.S3IAM.PasswordShort, Strings.S3IAM.PasswordLong)
                 ]);
 
-        public IDictionary<string, string> Execute(IDictionary<string, string> options)
+        public async Task<IDictionary<string, string>> Execute(IDictionary<string, string> options, CancellationToken cancellationToken)
         {
             options.TryGetValue(KEY_OPERATION, out var operationstring);
             options.TryGetValue(KEY_USERNAME, out var username);
@@ -98,12 +98,12 @@ namespace Duplicati.Library.Backend
                     ValidateArgument(username, KEY_USERNAME);
                     ValidateArgument(password, KEY_PASSWORD);
                     ValidateArgument(path, KEY_PATH);
-                    return CreateUnprivilegedUser(username!, password!, path!);
+                    return await CreateUnprivilegedUser(username!, password!, path!, cancellationToken).ConfigureAwait(false);
 
                 default:
                     ValidateArgument(username, KEY_USERNAME);
                     ValidateArgument(password, KEY_PASSWORD);
-                    return CanCreateUser(username!, password!);
+                    return await CanCreateUser(username!, password!, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -138,7 +138,7 @@ namespace Duplicati.Library.Backend
         }
 
 
-        private static bool DetermineIfCreateUserIsAllowed(User user, AmazonIdentityManagementServiceClient cl)
+        private static async Task<bool> DetermineIfCreateUserIsAllowed(User user, AmazonIdentityManagementServiceClient cl, CancellationToken cancellationToken)
         {
             var simulatePrincipalPolicy = new SimulatePrincipalPolicyRequest
             {
@@ -146,13 +146,12 @@ namespace Duplicati.Library.Backend
                 ActionNames = new[] { "iam:CreateUser" }.ToList()
             };
 
-            return cl.SimulatePrincipalPolicyAsync(simulatePrincipalPolicy)
-                                        .GetAwaiter().GetResult()
-                                        .EvaluationResults.First()
-                                        .EvalDecision == PolicyEvaluationDecisionType.Allowed;
+            return (await cl.SimulatePrincipalPolicyAsync(simulatePrincipalPolicy, cancellationToken).ConfigureAwait(false))
+                    .EvaluationResults.First()
+                    .EvalDecision == PolicyEvaluationDecisionType.Allowed;
         }
 
-        private static IDictionary<string, string> GetCreateUserDict(User user, AmazonIdentityManagementServiceClient cl)
+        private static async Task<IDictionary<string, string>> GetCreateUserDict(User user, AmazonIdentityManagementServiceClient cl, CancellationToken cancellationToken)
         {
             var resultDict = new Dictionary<string, string>
             {
@@ -164,7 +163,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                resultDict["isroot"] = DetermineIfCreateUserIsAllowed(user, cl).ToString();
+                resultDict["isroot"] = (await DetermineIfCreateUserIsAllowed(user, cl, cancellationToken)).ToString();
             }
             catch (Exception ex)
             {
@@ -180,13 +179,13 @@ namespace Duplicati.Library.Backend
             return resultDict;
         }
 
-        private static IDictionary<string, string> CanCreateUser(string awsid, string awskey)
+        private static async Task<IDictionary<string, string>> CanCreateUser(string awsid, string awskey, CancellationToken cancellationToken)
         {
             var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
             User user;
             try
             {
-                user = cl.GetUserAsync().Await().User;
+                user = (await cl.GetUserAsync(cancellationToken).ConfigureAwait(false)).User;
             }
             catch (Exception ex)
             {
@@ -198,10 +197,10 @@ namespace Duplicati.Library.Backend
                 };
             }
 
-            return GetCreateUserDict(user, cl);
+            return await GetCreateUserDict(user, cl, cancellationToken);
         }
 
-        private static IDictionary<string, string> CreateUnprivilegedUser(string awsid, string awskey, string path)
+        private static async Task<IDictionary<string, string>> CreateUnprivilegedUser(string awsid, string awskey, string path, CancellationToken cancellationToken)
         {
             var now = Utility.Utility.SerializeDateTime(DateTime.Now);
             var username = string.Format("duplicati-autocreated-backup-user-{0}", now);
@@ -209,13 +208,13 @@ namespace Duplicati.Library.Backend
             var policydoc = GeneratePolicyDoc(path);
 
             var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
-            var user = cl.CreateUserAsync(new CreateUserRequest(username)).GetAwaiter().GetResult().User;
-            cl.PutUserPolicyAsync(new PutUserPolicyRequest(
+            var user = (await cl.CreateUserAsync(new CreateUserRequest(username), cancellationToken).ConfigureAwait(false)).User;
+            await cl.PutUserPolicyAsync(new PutUserPolicyRequest(
                 user.UserName,
                 policyname,
                 policydoc
-            )).GetAwaiter().GetResult();
-            var key = cl.CreateAccessKeyAsync(new CreateAccessKeyRequest { UserName = user.UserName }).GetAwaiter().GetResult().AccessKey;
+            )).ConfigureAwait(false);
+            var key = (await cl.CreateAccessKeyAsync(new CreateAccessKeyRequest { UserName = user.UserName }, cancellationToken).ConfigureAwait(false)).AccessKey;
 
             return new Dictionary<string, string>
             {

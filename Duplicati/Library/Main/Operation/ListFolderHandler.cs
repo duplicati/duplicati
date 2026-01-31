@@ -40,8 +40,9 @@ internal static class ListFolderHandler
     /// <param name="folders">The folders to list</param>
     /// <param name="offset">The offset to start listing from</param>
     /// <param name="limit">The maximum number of entries to list</param>
+    /// <param name="extendedData">Whether to include extended data</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    public static async Task RunAsync(Options options, ListFolderResults result, string[] folders, long offset, long limit)
+    public static async Task RunAsync(Options options, ListFolderResults result, string[] folders, long offset, long limit, bool extendedData)
     {
         if (!System.IO.File.Exists(options.Dbpath) || options.NoLocalDb)
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
@@ -71,7 +72,7 @@ internal static class ListFolderHandler
         }
         else
         {
-            result.Entries = await db
+            var entries = await db
                 .ListFolder(
                     db.GetPrefixIds(folders, result.TaskControl.ProgressToken).ToBlockingEnumerable(),
                     filesetIds[0],
@@ -80,6 +81,20 @@ internal static class ListFolderHandler
                     result.TaskControl.ProgressToken
                 )
                 .ConfigureAwait(false);
+
+            result.Entries = entries;
+        }
+
+        if (extendedData)
+        {
+            var coreentries = result.Entries.Items.Cast<Database.LocalListDatabase.FolderEntry>().ToArray();
+            var metadata = await db.GetMetadataForFilesetIds(coreentries.Select(e => e.FileId), result.TaskControl.ProgressToken).ConfigureAwait(false);
+            for (int i = 0; i < coreentries.Length; i++)
+            {
+                if (metadata.TryGetValue(coreentries[i].FileId, out var dict))
+                    coreentries[i] = coreentries[i] with { Metadata = dict };
+            }
+            result.Entries = new PaginatedResults<IListFolderEntry>(result.Entries.Page, result.Entries.PageSize, result.Entries.TotalPages, result.Entries.TotalCount, coreentries);
         }
     }
 }

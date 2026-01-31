@@ -222,6 +222,11 @@ namespace Duplicati.Library.Interface
         /// The last modified time of the entry
         /// </summary>
         DateTime LastModified { get; }
+
+        /// <summary>
+        /// The metadata of the entry, if any
+        /// </summary>
+        Dictionary<string, string> Metadata { get; }
     }
 
     /// <summary>
@@ -290,6 +295,10 @@ namespace Duplicati.Library.Interface
         /// The matched path of the file version
         /// </summary>
         Range MatchedPathRange { get; }
+        /// <summary>
+        /// The metadata of the entry, if any
+        /// </summary>
+        Dictionary<string, string> Metadata { get; }
     }
 
     public interface IListAffectedResults : IBasicResults

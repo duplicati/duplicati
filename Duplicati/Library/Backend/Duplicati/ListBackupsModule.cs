@@ -43,7 +43,7 @@ public class ListBackupsModule : IWebModule
     }
 
     /// <inheritdoc />
-    public IDictionary<string, string> Execute(IDictionary<string, string?> options)
+    public async Task<IDictionary<string, string>> Execute(IDictionary<string, string?> options, CancellationToken cancellationToken)
     {
         var opts = new Dictionary<string, string?>(options);
 
@@ -71,7 +71,7 @@ public class ListBackupsModule : IWebModule
         using var backend = new DuplicatiBackend(url, opts);
         return new Dictionary<string, string>()
         {
-            { "folders", JsonSerializer.Serialize( backend.ListBackupFolders(CancellationToken.None).ToArrayAsync().Await()) }
+            { "folders", JsonSerializer.Serialize( await backend.ListBackupFolders(cancellationToken).ToArrayAsync(cancellationToken) ) }
         };
     }
 
