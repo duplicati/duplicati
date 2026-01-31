@@ -134,6 +134,7 @@ public class BackupGet : IEndpointV1
                 Description = bk.Description,
                 Tags = bk.Tags,
                 TargetURL = bk.TargetURL,
+                ConnectionStringID = bk.ConnectionStringID,
                 DBPath = bk.DBPath,
                 DBPathExists = File.Exists(bk.DBPath),
                 IsTemporary = bk.IsTemporary,

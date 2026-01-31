@@ -68,6 +68,7 @@ public class BackupPutDelete : IEndpointV1
                 Description = input.Backup.Description,
                 Tags = input.Backup.Tags,
                 TargetURL = input.Backup.TargetURL,
+                ConnectionStringID = input.Backup.ConnectionStringID,
                 Sources = input.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
                 {
@@ -83,6 +84,15 @@ public class BackupPutDelete : IEndpointV1
                 }).ToArray(),
                 Metadata = input.Backup.Metadata
             };
+
+            if (backup.ConnectionStringID > 0 && backup.ConnectionStringID != existing.ConnectionStringID)
+            {
+                var cs = connection.GetConnectionString(backup.ConnectionStringID);
+                if (cs != null)
+                {
+                    backup.TargetURL = QuerystringMasking.Unmask(backup.TargetURL, cs.BaseUrl);
+                }
+            }
 
             var schedule = input.Schedule == null ? null : new Schedule()
             {

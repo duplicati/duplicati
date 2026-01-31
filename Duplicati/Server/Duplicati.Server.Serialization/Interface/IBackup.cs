@@ -53,6 +53,10 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         string TargetURL { get; set; }
         /// <summary>
+        /// The connection string ID, or -1 if not used
+        /// </summary>
+        public long ConnectionStringID { get; set; }
+        /// <summary>
         /// The path to the local database
         /// </summary>
         string DBPath { get; }
