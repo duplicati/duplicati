@@ -257,8 +257,7 @@ namespace Duplicati.Library.Backend.Box
             if (string.IsNullOrWhiteSpace(name))
                 throw new FileMissingException();
 
-            // Note that "name" is in local path format, but the API calls use forward slashes
-            if (name.Contains(Path.DirectorySeparatorChar))
+            if (name.Contains('/'))
             {
                 var parts = GetAbsolutePath(name).Split('/', StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length == 0)
@@ -267,16 +266,7 @@ namespace Duplicati.Library.Backend.Box
                 var fileName = parts.Last();
                 var folderPath = string.Join("/", parts.Take(parts.Length - 1));
 
-                var fullPath = _path;
-                if (!string.IsNullOrEmpty(folderPath))
-                {
-                    if (string.IsNullOrEmpty(fullPath) || fullPath == "/")
-                        fullPath = "/" + folderPath;
-                    else
-                        fullPath = fullPath.TrimEnd('/') + "/" + folderPath;
-                }
-
-                var folderId = await GetFolderIdAsync(fullPath, false, cancelToken).ConfigureAwait(false);
+                var folderId = await GetFolderIdAsync(folderPath, false, cancelToken).ConfigureAwait(false);
                 var item = await PagedFileListResponse(folderId, false, cancelToken)
                     .FirstOrDefaultAsync(x => x.Name == fileName, cancelToken)
                     .ConfigureAwait(false);
@@ -400,7 +390,7 @@ namespace Duplicati.Library.Backend.Box
         {
             var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
             await foreach (var n in PagedFileListResponse(currentFolder, false, cancelToken).ConfigureAwait(false))
-                yield return new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
+                yield return ParseEntry(n);
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
