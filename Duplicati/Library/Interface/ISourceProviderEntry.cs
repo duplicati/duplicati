@@ -75,10 +75,6 @@ public interface ISourceProviderEntry
     /// </summary>
     FileAttributes Attributes { get; }
     /// <summary>
-    /// The minor metadata of the file, should be less than 1KB
-    /// </summary>
-    Dictionary<string, string> MinorMetadata { get; }
-    /// <summary>
     /// True if the file is a block device, false otherwise
     /// </summary>
     bool IsBlockDevice { get; }
@@ -103,11 +99,9 @@ public interface ISourceProviderEntry
     Task<Stream> OpenRead(CancellationToken cancellationToken);
 
     /// <summary>
-    /// Opens the metadata for reading
+    /// The minor metadata of the file, should be less than 1KB
     /// </summary>
-    /// <param name="cancellationToken">A token that can be used to cancel the operation</param>
-    /// <returns>A stream that can be read</returns>
-    Task<Stream?> OpenMetadataRead(CancellationToken cancellationToken);
+    Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken);
 
     /// <summary>
     /// Checks if the specified file exists

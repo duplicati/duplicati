@@ -639,6 +639,18 @@ namespace Duplicati.Library.Main.Operation
 
             await restoredb.CleanupMissingVolumes(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
+            if (!m_options.RepairOnlyPaths && m_options.StoreMetadataContentInDatabase)
+            {
+                await RestoreMetadataContentAsync(backendManager, restoredb, m_result.TaskControl.ProgressToken)
+                    .ConfigureAwait(false);
+
+                // The metadata content restore is executed after the main recreate commits.
+                // Ensure the restored Metadataset.Content values are persisted.
+                await restoredb.Transaction
+                    .CommitAsync(m_result.TaskControl.ProgressToken)
+                    .ConfigureAwait(false);
+            }
+
             if (m_options.RepairOnlyPaths)
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "RecreateOrUpdateOnly", "Recreate/path-update completed, not running consistency checks");
@@ -673,6 +685,154 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_result.EndTime = DateTime.UtcNow;
+        }
+
+        private sealed record MetadataBlockRef(long MetadataId, long BlockIndex, string BlockHash, long BlockSize);
+
+        private sealed class MetadataRecreateState
+        {
+            public long MetadataId { get; }
+            public long MetaLength { get; }
+            public int ExpectedBlockCount { get; set; }
+
+            // Index -> block bytes
+            public SortedDictionary<long, byte[]> Blocks { get; } = new();
+
+            public MetadataRecreateState(long metadataId, long metaLength)
+            {
+                MetadataId = metadataId;
+                MetaLength = metaLength;
+            }
+        }
+
+        private async Task RestoreMetadataContentAsync(IBackendManager backendManager, LocalRecreateDatabase restoredb, CancellationToken cancellationToken)
+        {
+            // Metadata content restoration requires the block structure to be present.
+            if (m_options.RepairOnlyPaths)
+                return;
+
+            // Gather block references for each metadataset that is missing content.
+            var volumeBlocks = new Dictionary<string, List<MetadataBlockRef>>(StringComparer.Ordinal);
+            var volumeInfo = new Dictionary<string, RemoteVolume>(StringComparer.Ordinal);
+            var metaStates = new Dictionary<long, MetadataRecreateState>();
+
+            await foreach (var info in restoredb.GetMissingMetadataBlocks(cancellationToken).ConfigureAwait(false))
+            {
+                var metadataId = info.MetadataId;
+                var metaLength = info.MetaLength;
+                var blockIndex = info.BlockIndex;
+                var blockHash = info.BlockHash;
+                var blockSize = info.BlockSize;
+                var volumeName = info.VolumeName;
+                var volumeHash = info.VolumeHash;
+                var volumeSize = info.VolumeSize;
+
+                if (string.IsNullOrEmpty(volumeName) || string.IsNullOrEmpty(blockHash) || blockSize <= 0)
+                    continue;
+
+                if (!metaStates.TryGetValue(metadataId, out var state))
+                    metaStates[metadataId] = state = new MetadataRecreateState(metadataId, metaLength);
+                state.ExpectedBlockCount++;
+
+                if (!volumeBlocks.TryGetValue(volumeName, out var list))
+                    volumeBlocks[volumeName] = list = new List<MetadataBlockRef>();
+                list.Add(new MetadataBlockRef(metadataId, blockIndex, blockHash, blockSize));
+
+                if (!volumeInfo.ContainsKey(volumeName))
+                    volumeInfo[volumeName] = new RemoteVolume(volumeName, volumeHash, volumeSize);
+            }
+
+            if (volumeInfo.Count == 0)
+                return;
+
+            Logging.Log.WriteInformationMessage(LOGTAG, "RestoringMetadataContent", "Restoring metadata content into the database by downloading {0} block volume(s)", volumeInfo.Count);
+
+            // Download all required block volumes and extract metadata blocks.
+            var volumesToDownload = volumeInfo.Values.Cast<IRemoteVolume>().ToList();
+            await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(volumesToDownload, cancellationToken).ConfigureAwait(false))
+            {
+                using (tmpfile)
+                {
+                    if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        return;
+
+                    if (!volumeBlocks.TryGetValue(name, out var blocksForVolume) || blocksForVolume.Count == 0)
+                        continue;
+
+                    try
+                    {
+                        using var reader = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options);
+
+                        foreach (var bref in blocksForVolume)
+                        {
+                            if (!metaStates.TryGetValue(bref.MetadataId, out var state))
+                                continue;
+
+                            // Already captured
+                            if (state.Blocks.ContainsKey(bref.BlockIndex))
+                                continue;
+
+                            if (bref.BlockSize > int.MaxValue)
+                            {
+                                Logging.Log.WriteWarningMessage(LOGTAG, "MetadataBlockTooLarge", null, "Skipping metadata block {0} for metadataset {1} because block size {2} exceeds supported range", bref.BlockHash, bref.MetadataId, bref.BlockSize);
+                                continue;
+                            }
+
+                            var buf = new byte[(int)bref.BlockSize];
+                            var read = reader.ReadBlock(bref.BlockHash, buf);
+                            if (read != buf.Length)
+                            {
+                                // Trim buffer to actual read length.
+                                Array.Resize(ref buf, read);
+                            }
+
+                            state.Blocks[bref.BlockIndex] = buf;
+
+                            // If we have all blocks for this metadataset, assemble and store content now.
+                            if (state.Blocks.Count == state.ExpectedBlockCount)
+                            {
+                                try
+                                {
+                                    var ms = new MemoryStream(checked((int)Math.Min(state.MetaLength, int.MaxValue)));
+                                    foreach (var kvp in state.Blocks.OrderBy(x => x.Key))
+                                    {
+                                        if (ms.Length >= state.MetaLength)
+                                            break;
+
+                                        var remaining = state.MetaLength - ms.Length;
+                                        var take = (int)Math.Min(remaining, kvp.Value.LongLength);
+                                        ms.Write(kvp.Value, 0, take);
+                                    }
+
+                                    if (ms.Length != state.MetaLength)
+                                    {
+                                        Logging.Log.WriteWarningMessage(LOGTAG, "MetadataContentIncomplete", null, "Failed to restore metadataset content for {0}: expected {1} bytes, got {2} bytes", state.MetadataId, state.MetaLength, ms.Length);
+                                    }
+                                    else
+                                    {
+                                        var content = Library.Utility.Utility.GetStringWithoutBOM(ms, false);
+                                        await restoredb.SetMetadataContent(state.MetadataId, content, cancellationToken).ConfigureAwait(false);
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "MetadataContentRestoreFailed", ex, "Failed to restore metadataset content for {0}", state.MetadataId);
+                                }
+                                finally
+                                {
+                                    metaStates.Remove(state.MetadataId);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "MetadataVolumeProcessingFailed", ex, "Failed to process block volume {0} for metadata content restore", name);
+                        if (ex.IsAbortException())
+                            throw;
+                    }
+                }
+            }
         }
 
         /// <summary>

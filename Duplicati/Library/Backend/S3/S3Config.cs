@@ -43,11 +43,11 @@ namespace Duplicati.Library.Backend
 
         #region IWebModule implementation
 
-        public IDictionary<string, string?> Execute(IDictionary<string, string?> options)
+        public Task<IDictionary<string, string?>> Execute(IDictionary<string, string?> options, CancellationToken cancellationToken)
         {
             var ct = Utility.Utility.ParseEnumOption(options.AsReadOnly(), KEY_CONFIGTYPE, DEFAULT_CONFIG_TYPE);
             GetLookups().TryGetValue(ct.ToString(), out var dict);
-            return dict ?? new Dictionary<string, string?>();
+            return Task.FromResult(dict ?? new Dictionary<string, string?>());
         }
 
         public string Key => "s3-getconfig";

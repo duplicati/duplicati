@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Duplicati.Proprietary.LicenseChecker</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Duplicati/Library/AutoUpdater/Duplicati.Library.AutoUpdater.csproj" />
+    <ProjectReference Include="../../Duplicati/Library/Utility/Duplicati.Library.Utility.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="PublicKey.xml" />
+  </ItemGroup>
+
+</Project>
