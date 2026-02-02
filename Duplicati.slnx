@@ -74,6 +74,8 @@
   </Folder>
   <Folder Name="/Proprietary/">
     <Project Path="proprietary/DiskImage/Duplicati.Proprietary.DiskImage.csproj" />
+    <!-- TODO remove later -->
+    <Project Path="proprietary/FullDiskRunner/FullDiskRunner.csproj" />
     <Project Path="proprietary/LicenseChecker/Duplicati.Proprietary.LicenseChecker.csproj" />
     <Project Path="proprietary/LoaderHelper/Duplicati.Proprietary.LoaderHelper.csproj" />
     <Project Path="proprietary/Office365/Duplicati.Proprietary.Office365.csproj" />
