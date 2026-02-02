@@ -129,6 +129,15 @@
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/Executables/Duplicati.CommandLine.DatabaseTool/bin/Debug/net10.0/Duplicati.CommandLine.DatabaseTool",
       "args": []
+    },
+    {
+      "name": "Launch FullDiskRunner executable",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "cwd": "${workspaceFolder}/proprietary/FullDiskRunner",
+      "program": "${workspaceFolder}/proprietary/FullDiskRunner/bin/Debug/net10.0/FullDiskRunner",
+      "args": []
     }
   ]
 }
