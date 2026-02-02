@@ -41,48 +41,71 @@ public class DestinationVerify : IEndpointV2
 
     private static async Task<DestinationTestResponseDto> ExecuteTest(Connection connection, IApplicationSettings applicationSettings, DestinationTestRequestDto input, CancellationToken cancelToken)
     {
-        TupleDisposeWrapper? wrapper = null;
+        var destinationType = input.DestinationType ?? RemoteDestinationType.Backend;
 
         try
         {
-            wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
 
-            using (var b = wrapper.Backend)
+            if (destinationType == RemoteDestinationType.SourceProvider)
             {
-                try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
-                catch (Exception ex) when (SharedRemoteOperation.GetInnerException<FolderMissingException>(ex) is FolderMissingException)
-                {
-                    if (!input.AutoCreate)
-                        throw;
-
-                    await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
-                    await b.TestAsync(cancelToken).ConfigureAwait(false);
-                }
-
-                var anyFiles = false;
-                var anyBackups = false;
-                var anyEncryptedFiles = false;
-                await foreach (var f in b.ListAsync(cancelToken).ConfigureAwait(false))
-                {
-                    if (f.IsFolder)
-                        continue;
-
-                    anyFiles = true;
-                    var parsed = VolumeBase.ParseFilename(f.Name);
-                    if (parsed != null)
-                    {
-                        anyBackups = true;
-                        anyEncryptedFiles = !string.IsNullOrWhiteSpace(parsed.EncryptionModule);
-                        break;
-                    }
-                }
+                using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
 
                 return DestinationTestResponseDto.Create(
-                    anyFiles,
-                    anyBackups,
-                    anyEncryptedFiles
+                    anyFiles: true,
+                    anyBackups: false,
+                    anyEncryptedFiles: false
                 );
+            }
+            else if (destinationType == RemoteDestinationType.RestoreDestinationProvider)
+            {
+                using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
 
+                return DestinationTestResponseDto.Create(
+                    anyFiles: true,
+                    anyBackups: false,
+                    anyEncryptedFiles: false
+                );
+            }
+            else
+            {
+                using var wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
+
+                using (var b = wrapper.Backend)
+                {
+                    try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
+                    catch (Exception ex) when (SharedRemoteOperation.GetInnerException<FolderMissingException>(ex) is FolderMissingException)
+                    {
+                        if (!input.AutoCreate)
+                            throw;
+
+                        await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+                        await b.TestAsync(cancelToken).ConfigureAwait(false);
+                    }
+
+                    var anyFiles = false;
+                    var anyBackups = false;
+                    var anyEncryptedFiles = false;
+                    await foreach (var f in b.ListAsync(cancelToken).ConfigureAwait(false))
+                    {
+                        if (f.IsFolder)
+                            continue;
+
+                        anyFiles = true;
+                        var parsed = VolumeBase.ParseFilename(f.Name);
+                        if (parsed != null)
+                        {
+                            anyBackups = true;
+                            anyEncryptedFiles = !string.IsNullOrWhiteSpace(parsed.EncryptionModule);
+                            break;
+                        }
+                    }
+
+                    return DestinationTestResponseDto.Create(
+                        anyFiles,
+                        anyBackups,
+                        anyEncryptedFiles
+                    );
+                }
             }
         }
         catch (Exception ex) when (SharedRemoteOperation.GetInnerException<FolderMissingException>(ex) is FolderMissingException)
@@ -156,10 +179,6 @@ public class DestinationVerify : IEndpointV2
                 ex.Message,
                 "error"
             );
-        }
-        finally
-        {
-            wrapper?.Dispose();
         }
     }
 }

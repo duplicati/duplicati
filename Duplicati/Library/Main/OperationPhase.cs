@@ -48,6 +48,7 @@ namespace Duplicati.Library.Main
         Restore_PatchWithLocalBlocks,
         Restore_DownloadingRemoteFiles,
         Restore_PostRestoreVerify,
+        Restore_Finalize,
         Restore_Complete,
 
         Recreate_Running,

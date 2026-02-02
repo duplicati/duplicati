@@ -104,7 +104,7 @@ namespace Duplicati.UnitTest
             {
                 using (var c = new Controller("file://" + this.TARGETFOLDER, options.Expand(new { version = version }), null))
                 {
-                    var files = c.ListFolder([""], 0, 0);
+                    var files = c.ListFolder([""], 0, 0, false);
                     var roots = rootItems(round).Select(x => Path.Combine(this.DATAFOLDER, x.Replace("/", Path.DirectorySeparatorChar.ToString()))).ToArray();
 
                     Assert.That(files.Entries.Items.Count(), Is.EqualTo(roots.Length));
@@ -116,7 +116,7 @@ namespace Duplicati.UnitTest
                     while (work.Count > 0)
                     {
                         var path = work.Dequeue();
-                        var files2 = c.ListFolder(new[] { Path.Combine(this.DATAFOLDER, path.Replace("/", Path.DirectorySeparatorChar.ToString())) }, 0, 0);
+                        var files2 = c.ListFolder(new[] { Path.Combine(this.DATAFOLDER, path.Replace("/", Path.DirectorySeparatorChar.ToString())) }, 0, 0, false);
                         var matches = round.Select(x => Path.Combine(this.DATAFOLDER, x.Replace("/", Path.DirectorySeparatorChar.ToString())))
                             .Where(x => x.StartsWith(path) && x.Length > path.Length && !x.Substring(path.Length, x.Length - path.Length - 1).Contains(Path.DirectorySeparatorChar))
                             .ToArray();
@@ -259,42 +259,42 @@ namespace Duplicati.UnitTest
                 TestUtils.AssertResults(c.Backup(rootItems(initial).Select(x => Path.Combine(this.DATAFOLDER, x.Replace("/", Path.DirectorySeparatorChar.ToString()))).ToArray()));
 
                 // Simple Search for 'file'
-                var search = c.SearchEntries(null, ParseFilters("+file"), 0, 0);
+                var search = c.SearchEntries(null, ParseFilters("+file"), 0, 0, false);
                 Assert.That(search.FileVersions.Items.Count(), Is.EqualTo(3)); // file1.txt, file2.txt, file3.txt
 
                 // Simple Search for 'notes'
-                var searchNotes = c.SearchEntries(null, ParseFilters("+notes"), 0, 0);
+                var searchNotes = c.SearchEntries(null, ParseFilters("+notes"), 0, 0, false);
                 Assert.That(searchNotes.FileVersions.Items.Count(), Is.EqualTo(1));
                 Assert.That(searchNotes.FileVersions.Items.First().Path.EndsWith("notes.txt"));
 
                 // Simple Search for NOT 'notes'
-                var searchNotNotes = c.SearchEntries(null, ParseFilters("-notes"), 0, 0);
+                var searchNotNotes = c.SearchEntries(null, ParseFilters("-notes"), 0, 0, false);
                 Assert.That(searchNotNotes.FileVersions.Items.Count(), Is.EqualTo(5));
                 Assert.That(searchNotNotes.FileVersions.Items.All(x => !x.Path.Contains("notes")), Is.True);
 
                 // Simple Search for 'folder1' folder contents
-                var searchFolder = c.SearchEntries(null, ParseFilters("+folder1"), 0, 0);
+                var searchFolder = c.SearchEntries(null, ParseFilters("+folder1"), 0, 0, false);
                 Assert.That(searchFolder.FileVersions.Items.All(x => x.Path.Contains("folder1")), Is.True);
 
                 // Simple Search with exact file name
-                var searchExact = c.SearchEntries(null, ParseFilters("+file1.txt"), 0, 0);
+                var searchExact = c.SearchEntries(null, ParseFilters("+file1.txt"), 0, 0, false);
                 Assert.That(searchExact.FileVersions.Items.Count(), Is.EqualTo(1));
                 Assert.That(searchExact.FileVersions.Items.First().Path.EndsWith("file1.txt"));
 
                 // Mixed include and exclude
-                var searchMixed = c.SearchEntries(null, ParseFilters("+file;-file2"), 0, 0);
+                var searchMixed = c.SearchEntries(null, ParseFilters("+file;-file2"), 0, 0, false);
                 // Include has precedence over exclude, but we include non-matches as well
                 Assert.That(searchMixed.FileVersions.Items.Count(), Is.EqualTo(6));
                 Assert.That(searchMixed.FileVersions.Items.Any(x => x.Path.Contains("file2")), Is.True);
 
                 // Mixed include and exclude
-                var searchMixed2 = c.SearchEntries(null, ParseFilters("+file2;-file"), 0, 0);
+                var searchMixed2 = c.SearchEntries(null, ParseFilters("+file2;-file"), 0, 0, false);
                 // Include has precedence over exclude, but we include non-matches as well
                 Assert.That(searchMixed2.FileVersions.Items.Count(), Is.EqualTo(4));
                 Assert.That(searchMixed2.FileVersions.Items.Any(x => x.Path.Contains("file2")), Is.True);
 
                 // Mixed include and exclude, wildcards
-                var searchMixed3 = c.SearchEntries(null, ParseFilters("+file2;-*"), 0, 0);
+                var searchMixed3 = c.SearchEntries(null, ParseFilters("+file2;-*"), 0, 0, false);
                 // Include has precedence over exclude, but we include non-matches as well
                 Assert.That(searchMixed3.FileVersions.Items.Count(), Is.EqualTo(1));
                 Assert.That(searchMixed3.FileVersions.Items.All(x => x.Path.Contains("file2")), Is.True);
@@ -303,7 +303,7 @@ namespace Duplicati.UnitTest
                 var searchInFolder1 = c.SearchEntries(
                     new[] { Path.Combine(this.DATAFOLDER, "folder1") },
                     ParseFilters("+file"),
-                    0, 0);
+                    0, 0, false);
                 Assert.That(searchInFolder1.FileVersions.Items.Count(), Is.EqualTo(2)); // file2.txt, file3.txt inside folder1
                 Assert.That(searchInFolder1.FileVersions.Items.All(x => x.Path.Contains("folder1")), Is.True);
 
@@ -315,7 +315,7 @@ namespace Duplicati.UnitTest
                 Path.Combine(this.DATAFOLDER, "folder2")
                     },
                     ParseFilters("+file;+notes"),
-                    0, 0);
+                    0, 0, false);
                 Assert.That(searchInFolders.FileVersions.Items.Count(), Is.EqualTo(3)); // file2.txt, file3.txt, notes.txt
                 Assert.That(searchInFolders.FileVersions.Items.Any(x => x.Path.Contains("folder1")), Is.True);
                 Assert.That(searchInFolders.FileVersions.Items.Any(x => x.Path.Contains("folder2")), Is.True);

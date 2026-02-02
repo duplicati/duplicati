@@ -34,7 +34,7 @@ using Uri = Duplicati.Library.Utility.Uri;
 
 namespace Duplicati.Library.Backend.OpenStack;
 
-public class OpenStackStorage : IStreamingBackend
+public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
 {
     private const string DOMAINNAME_OPTION = "openstack-domain-name";
     private const string TENANTNAME_OPTION = "openstack-tenant-name";
@@ -504,5 +504,17 @@ public class OpenStackStorage : IStreamingBackend
 
     public void Dispose()
     {
+    }
+
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+    {
+        var url = JoinUrls(await GetSimpleStorageEndPoint(cancellationToken).ConfigureAwait(false), m_container, Uri.UrlPathEncode(m_prefix + oldname));
+        using var req = m_helper.CreateRequest(url, "COPY");
+        req.Headers.Add("Destination", "/" + m_container + "/" + Uri.UrlPathEncode(m_prefix + newname));
+
+        using var response = await m_httpClient.SendAsync(req, cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        await DeleteAsync(oldname, cancellationToken).ConfigureAwait(false);
     }
 }

@@ -87,11 +87,6 @@ public class SnapshotSourceFileEntry(ISnapshotService service, string path, bool
     }
 
     /// <summary>
-    /// Gets the minor metadata for the file
-    /// </summary>
-    public Dictionary<string, string> MinorMetadata => service.GetMetadata(path, IsSymlink);
-
-    /// <summary>
     /// Gets a value indicating if the entry is a block device
     /// </summary>
     public bool IsBlockDevice => service.IsBlockDevice(path);
@@ -135,7 +130,8 @@ public class SnapshotSourceFileEntry(ISnapshotService service, string path, bool
     public Task<Stream> OpenRead(CancellationToken cancellationToken) => service.OpenReadAsync(path, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<Stream?> OpenMetadataRead(CancellationToken cancellationToken) => Task.FromResult<Stream?>(new MemoryStream(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(MinorMetadata)));
+    public Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken) => Task.FromResult(service.GetMetadata(path, IsSymlink));
+
     /// <inheritdoc/>
     public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken) => service.EnumerateFilesystemEntries(this).ToAsyncEnumerable();
     /// <inheritdoc/>

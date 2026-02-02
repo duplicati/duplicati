@@ -20,8 +20,10 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -31,7 +33,7 @@ using Uri = Duplicati.Library.Utility.Uri;
 
 namespace Duplicati.Library.Backend.Box
 {
-    public class BoxBackend : IStreamingBackend
+    public class BoxBackend : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("box.com", null);
         private const string AUTHID_OPTION = "authid";
@@ -78,6 +80,23 @@ namespace Duplicati.Library.Backend.Box
                 errorResponse ??= new ErrorResponse { Status = (int)responseContext.StatusCode, Code = "Unknown", Message = rawData };
                 throw new UserInformationException($"Box.com ErrorResponse: {errorResponse.Status} - {errorResponse.Code}: {errorResponse.Message}", "box.com");
             }
+
+            public async Task<T> PutAndGetJsonDataAsync<T>(string url, object item, CancellationToken cancellationToken)
+            {
+                var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item));
+
+                return await GetJsonDataAsync<T>(
+                    url,
+                    cancellationToken,
+                    request =>
+                    {
+                        request.Method = HttpMethod.Put;
+                        request.Content = new ByteArrayContent(data);
+                        request.Content.Headers.Add("Content-Length", data.Length.ToString());
+                        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    }
+                ).ConfigureAwait(false);
+            }
         }
 
         public BoxBackend()
@@ -113,9 +132,15 @@ namespace Duplicati.Library.Backend.Box
 
         private async Task<string> GetCurrentFolderAsync(bool create, CancellationToken cancelToken)
         {
+            var id = await GetFolderIdAsync(_path, create, cancelToken).ConfigureAwait(false);
+            return _currentFolder = id;
+        }
+
+        private async Task<string> GetFolderIdAsync(string path, bool create, CancellationToken cancelToken)
+        {
             var parentid = "0";
 
-            foreach (var p in _path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var p in path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 var el = (MiniFolder?)await PagedFileListResponse(parentid, true, cancelToken).FirstOrDefaultAsync(x => x.Name == p, cancellationToken: cancelToken).ConfigureAwait(false);
                 if (el == null)
@@ -136,14 +161,122 @@ namespace Duplicati.Library.Backend.Box
 
                 parentid = el.ID;
                 if (string.IsNullOrWhiteSpace(parentid))
-                    throw new InvalidDataException($"Invalid folder ID for {p} in {_path}");
+                    throw new InvalidDataException($"Invalid folder ID for {p} in {path}");
             }
 
-            return _currentFolder = parentid;
+            return parentid;
+        }
+
+        private IFileEntry ParseEntry(FileEntity n)
+        {
+            var fe = new FileEntry(n.Name);
+            if (n.Type == "folder")
+            {
+                fe.IsFolder = true;
+                if (!fe.Name.EndsWith("/"))
+                    fe.Name += "/";
+            }
+            else
+            {
+                fe.IsFolder = false;
+                fe.Size = n.Size;
+            }
+
+            if (n.ModifiedAt != default)
+                fe.LastModification = fe.LastAccess = n.ModifiedAt.ToUniversalTime();
+
+            return fe;
+        }
+
+        /// <summary>
+        /// Gets the absolute path for a given relative path
+        /// </summary>
+        /// <param name="path">The relative path local path, with backslashes or forward slashes</param>
+        /// <returns>The absolute URL path</returns>
+        private string GetAbsolutePath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return _path;
+
+            var p = path.Replace(Path.DirectorySeparatorChar, '/').Trim('/');
+            if (string.IsNullOrWhiteSpace(_path) || _path == "/")
+                return "/" + p;
+            else
+                return Util.AppendDirSeparator(_path, "/") + p;
+        }
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var fullPath = GetAbsolutePath(path);
+            string folderId;
+            try
+            {
+                folderId = await GetFolderIdAsync(fullPath, false, cancellationToken).ConfigureAwait(false);
+            }
+            catch (FolderMissingException)
+            {
+                yield break;
+            }
+
+            await foreach (var n in PagedFileListResponse(folderId, false, cancellationToken).ConfigureAwait(false))
+            {
+                yield return ParseEntry(n);
+            }
+        }
+
+        public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+        {
+            var parts = GetAbsolutePath(_path).Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                return new FileEntry(string.Empty) { IsFolder = true };
+
+            var parentPath = string.Join("/", parts.Take(parts.Length - 1));
+            var name = parts.Last();
+
+            string parentId;
+            try
+            {
+                parentId = await GetFolderIdAsync(parentPath, false, cancellationToken).ConfigureAwait(false);
+            }
+            catch (FolderMissingException)
+            {
+                return null;
+            }
+
+            var item = await PagedFileListResponse(parentId, false, cancellationToken)
+                .FirstOrDefaultAsync(x => x.Name == name, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (item == null) return null;
+
+            return ParseEntry(item);
         }
 
         private async Task<string> GetFileIdAsync(string name, CancellationToken cancelToken)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new FileMissingException();
+
+            if (name.Contains('/'))
+            {
+                var parts = GetAbsolutePath(name).Split('/', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0)
+                    throw new FileMissingException();
+
+                var fileName = parts.Last();
+                var folderPath = string.Join("/", parts.Take(parts.Length - 1));
+
+                var folderId = await GetFolderIdAsync(folderPath, false, cancelToken).ConfigureAwait(false);
+                var item = await PagedFileListResponse(folderId, false, cancelToken)
+                    .FirstOrDefaultAsync(x => x.Name == fileName, cancelToken)
+                    .ConfigureAwait(false);
+
+                if (item == null || string.IsNullOrWhiteSpace(item.ID))
+                    throw new FileMissingException();
+
+                return item.ID;
+            }
+
             if (_fileCache.TryGetValue(name, out var async))
                 return async;
 
@@ -257,7 +390,7 @@ namespace Duplicati.Library.Backend.Box
         {
             var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
             await foreach (var n in PagedFileListResponse(currentFolder, false, cancelToken).ConfigureAwait(false))
-                yield return new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
+                yield return ParseEntry(n);
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
@@ -289,6 +422,27 @@ namespace Duplicati.Library.Backend.Box
                     {
                     }
                 }
+            }
+            catch
+            {
+                _fileCache.Clear();
+                throw;
+            }
+        }
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            var fileId = await GetFileIdAsync(oldname, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct => _oAuthHelper.PutAndGetJsonDataAsync<FileEntity>(
+                    $"{BOX_API_URL}/files/{fileId}",
+                    new CreateItemRequest { Name = newname },
+                    ct
+                )).ConfigureAwait(false);
+
+                _fileCache.Remove(oldname);
+                _fileCache[newname] = fileId;
             }
             catch
             {

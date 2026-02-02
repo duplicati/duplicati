@@ -77,6 +77,13 @@ namespace Duplicati.Library.Backend.WebApi
         public static string RenameUrl(string bucketId, string objectId)
             => Utility.Uri.UriBuilder(Url.API, BucketObjectPath(bucketId, objectId));
 
+        public static string RewriteUrl(string sourceBucket, string sourceObject, string destBucket, string destObject)
+        {
+            var path = UrlPath.Create(Path.Bucket).Append(sourceBucket).Append(Path.Object).Append(sourceObject)
+                .Append("rewriteTo").Append(Path.Bucket).Append(destBucket).Append(Path.Object).Append(destObject).ToString();
+            return Utility.Uri.UriBuilder(Url.API, path);
+        }
+
         public static string ListUrl(string bucketId, string prefix)
             => ListUrl(bucketId, prefix, null);
 
@@ -114,6 +121,12 @@ namespace Duplicati.Library.Backend.WebApi
             var path = BucketObjectPath(bucketId, objectId);
 
             return Utility.Uri.UriBuilder(Url.API, path, queryParams);
+        }
+
+        public static string MetadataUrl(string bucketId, string objectId)
+        {
+            var path = BucketObjectPath(bucketId, objectId);
+            return Utility.Uri.UriBuilder(Url.API, path);
         }
 
         private static class Url

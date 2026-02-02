@@ -34,7 +34,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class GoogleCloudStorage : IBackend, IStreamingBackend
+    public class GoogleCloudStorage : IBackend, IStreamingBackend, ILockingBackend, IRenameEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("gcs", null);
         private const string PROJECT_OPTION = "gcs-project";
@@ -43,16 +43,36 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         private const string STORAGECLASS_OPTION = "gcs-storage-class";
         private const string SERVICE_ACCOUNT_JSON_OPTION = "gcs-service-account-json";
         private const string SERVICE_ACCOUNT_FILE_OPTION = "gcs-service-account-file";
+        private const string RETENTION_POLICY_MODE_OPTION = "gcs-retention-policy-mode";
 
+        private const RetentionPolicyMode DEFAULT_RETENTION_POLICY_MODE = RetentionPolicyMode.Unlocked;
+
+        /// <summary>
+        /// The scope used to request access to Google Cloud Storage.
+        /// </summary>
         private const string CREDENTIAL_SCOPE = "https://www.googleapis.com/auth/devstorage.read_write";
+        /// <summary>
+        /// The scope used to request full control access to Google Cloud Storage, needed for setting object retention.
+        /// </summary>
+        private const string CREDENTIAL_SCOPE_FULL_CONTROL = "https://www.googleapis.com/auth/devstorage.full_control";
 
         private readonly string m_bucket;
         private readonly string m_prefix;
         private readonly string? m_project;
         private readonly JsonWebHelperHttpClient m_oauth;
 
+        /// <summary>
+        /// Cached instance of the full control OAuth client.
+        /// </summary>
+        private JsonWebHelperHttpClient? m_oauth_fullcontrol;
+        /// <summary>
+        /// Only create the full control client when needed, but capture all parameters in the constructor.
+        /// </summary>
+        private readonly Func<JsonWebHelperHttpClient?> m_create_oauth_fullcontrol;
+
         private readonly string? m_location;
         private readonly string? m_storage_class;
+        private readonly RetentionPolicyMode m_retention_policy_mode;
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
         public GoogleCloudStorage()
@@ -61,6 +81,8 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             m_prefix = null!;
             m_oauth = null!;
             m_timeouts = null!;
+            m_create_oauth_fullcontrol = null!;
+            m_retention_policy_mode = RetentionPolicyMode.Locked;
         }
 
         public GoogleCloudStorage(string url, Dictionary<string, string?> options)
@@ -82,26 +104,30 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             m_location = options.GetValueOrDefault(LOCATION_OPTION);
             m_storage_class = options.GetValueOrDefault(STORAGECLASS_OPTION);
 
+            m_retention_policy_mode = Utility.Utility.ParseEnumOption(options, RETENTION_POLICY_MODE_OPTION, DEFAULT_RETENTION_POLICY_MODE);
             if (!string.IsNullOrWhiteSpace(serviceAccountJson))
             {
                 m_oauth = new ServiceAccountHttpClient(GoogleCredential.FromJson(serviceAccountJson).CreateScoped(CREDENTIAL_SCOPE));
+                m_create_oauth_fullcontrol = () => new ServiceAccountHttpClient(GoogleCredential.FromJson(serviceAccountJson).CreateScoped(CREDENTIAL_SCOPE_FULL_CONTROL));
             }
             else if (!string.IsNullOrWhiteSpace(serviceAccountFile))
             {
                 m_oauth = new ServiceAccountHttpClient(GoogleCredential.FromFile(serviceAccountFile).CreateScoped(CREDENTIAL_SCOPE));
+                m_create_oauth_fullcontrol = () => new ServiceAccountHttpClient(GoogleCredential.FromFile(serviceAccountFile).CreateScoped(CREDENTIAL_SCOPE_FULL_CONTROL));
             }
             else
             {
                 var authId = AuthIdOptionsHelper.Parse(options)
-    .RequireCredentials(TOKEN_URL);
-                var oauth = new OAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl)
+                    .RequireCredentials(TOKEN_URL);
+                m_oauth = new OAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl)
                 {
                     AutoAuthHeader = true
                 };
-                m_oauth = oauth;
+
+                // This does not work with the current OAuth server as it only grants read/write access.
+                m_create_oauth_fullcontrol = () => null;
             }
         }
-
 
         private class ListBucketResponse
         {
@@ -121,6 +147,23 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             public string? name { get; set; }
             public string? location { get; set; }
             public string? storageClass { get; set; }
+        }
+
+        private class ObjectMetadata
+        {
+            public Retention? retention { get; set; }
+        }
+
+        private class Retention
+        {
+            public string? mode { get; set; }
+            public DateTime? retainUntilTime { get; set; }
+        }
+
+        private enum RetentionPolicyMode
+        {
+            Locked,
+            Unlocked
         }
 
         private async Task<T> HandleListExceptions<T>(Func<Task<T>> func)
@@ -198,6 +241,63 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }).ConfigureAwait(false);
         }
 
+        public async Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancellationToken)
+        {
+            var url = WebApi.GoogleCloudStorage.MetadataUrl(m_bucket, Utility.Uri.UrlPathEncode(m_prefix + remotename));
+
+            try
+            {
+                using var req = await m_oauth.CreateRequestAsync(url, HttpMethod.Get, cancellationToken).ConfigureAwait(false);
+                req.Headers.Add("Accept", "application/json");
+
+                using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var metadata = await resp.Content.ReadFromJsonAsync<ObjectMetadata>(cancellationToken).ConfigureAwait(false);
+
+                return metadata?.retention?.retainUntilTime;
+            }
+            catch (HttpRequestException hrex)
+            {
+                if (hrex.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileMissingException();
+                throw;
+            }
+        }
+
+        public async Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancellationToken)
+        {
+            var url = WebApi.GoogleCloudStorage.MetadataUrl(m_bucket, Utility.Uri.UrlPathEncode(m_prefix + remotename));
+
+            var metadata = new ObjectMetadata
+            {
+                retention = new Retention
+                {
+                    mode = m_retention_policy_mode.ToString(),
+                    retainUntilTime = lockUntilUtc
+                }
+            };
+
+            try
+            {
+                if (m_oauth_fullcontrol == null)
+                    m_oauth_fullcontrol = m_create_oauth_fullcontrol();
+
+                if (m_oauth_fullcontrol == null)
+                    throw new UserInformationException(Strings.GoogleCloudStorage.MissingFullControlScopeError, "GoogleCloudStorageMissingFullControlScope");
+
+                using var req = await m_oauth_fullcontrol.CreateRequestAsync(url, new HttpMethod("PATCH"), cancellationToken).ConfigureAwait(false);
+                req.Content = JsonContent.Create(metadata);
+                req.Headers.Add("Accept", "application/json");
+
+                using var resp = await m_oauth_fullcontrol.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            }
+            catch (HttpRequestException hrex)
+            {
+                if (hrex.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileMissingException();
+                throw;
+            }
+        }
+
         public Task TestAsync(CancellationToken cancelToken)
             => this.TestReadWritePermissionsAsync(cancelToken);
 
@@ -248,6 +348,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                     .. AuthIdOptionsHelper.GetOptions(TOKEN_URL),
                     new CommandLineArgument(SERVICE_ACCOUNT_JSON_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionLong),
                     new CommandLineArgument(SERVICE_ACCOUNT_FILE_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionLong),
+                    new CommandLineArgument(RETENTION_POLICY_MODE_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.RetentionPolicyModeDescriptionShort, Strings.GoogleCloudStorage.RetentionPolicyModeDescriptionLong, DEFAULT_RETENTION_POLICY_MODE.ToString(), null, Enum.GetNames(typeof(RetentionPolicyMode))),
                     new CommandLineArgument(PROJECT_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ProjectDescriptionShort, Strings.GoogleCloudStorage.ProjectDescriptionLong),
                     .. TimeoutOptionsHelper.GetOptions(),
                 ];
@@ -297,12 +398,41 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
         }
 
-        #region IDisposable implementation
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            var url = WebApi.GoogleCloudStorage.RewriteUrl(m_bucket, Utility.Uri.UrlPathEncode(m_prefix + oldname), m_bucket, Utility.Uri.UrlPathEncode(m_prefix + newname));
+
+            // Perform rewrite (copy)
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, async ct =>
+            {
+                using var req = await m_oauth.CreateRequestAsync(url, HttpMethod.Post, ct).ConfigureAwait(false);
+                req.Content = new StringContent("", Encoding.UTF8, "application/json"); // Empty body
+                using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+
+                var res = await resp.Content.ReadFromJsonAsync<RewriteResponse>(ct).ConfigureAwait(false);
+                while (res != null && res.done == false)
+                {
+                    var token = res.rewriteToken;
+                    var nextUrl = url + "?rewriteToken=" + token;
+                    using var nextReq = await m_oauth.CreateRequestAsync(nextUrl, HttpMethod.Post, ct).ConfigureAwait(false);
+                    nextReq.Content = new StringContent("", Encoding.UTF8, "application/json");
+                    using var nextResp = await m_oauth.GetResponseAsync(nextReq, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+                    res = await nextResp.Content.ReadFromJsonAsync<RewriteResponse>(ct).ConfigureAwait(false);
+                }
+            }).ConfigureAwait(false);
+
+            // Delete old file
+            await DeleteAsync(oldname, cancellationToken).ConfigureAwait(false);
+        }
+
+        private class RewriteResponse
+        {
+            public bool done { get; set; }
+            public string? rewriteToken { get; set; }
+        }
         public void Dispose()
         {
-
         }
-        #endregion
     }
 }
 

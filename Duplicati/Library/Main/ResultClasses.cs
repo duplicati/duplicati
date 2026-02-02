@@ -537,6 +537,7 @@ namespace Duplicati.Library.Main
         public long DeletedFiles { get; internal set; }
         public long DeletedFolders { get; internal set; }
         public long DeletedSymlinks { get; internal set; }
+        public string RestorePath { get; internal set; }
 
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
 
@@ -623,7 +624,7 @@ namespace Duplicati.Library.Main
         public IPaginatedResults<IListFileVersion> FileVersions { get; set; }
     }
 
-    internal sealed record SearchFileVersion(long Version, DateTime Time, string Path, long Size, bool IsDirectory, bool IsSymlink, DateTime LastModified, Range MatchedPathRange) : ISearchFileVersion;
+    internal sealed record SearchFileVersion(long FileId, long Version, DateTime Time, string Path, long Size, bool IsDirectory, bool IsSymlink, DateTime LastModified, Range MatchedPathRange, Dictionary<string, string> Metadata) : ISearchFileVersion;
 
     internal class SearchFilesResults : BasicResults, ISearchFilesResults
     {

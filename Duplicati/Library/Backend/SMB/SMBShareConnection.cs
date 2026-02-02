@@ -302,7 +302,74 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
         {
             _semaphore.Release();
         }
+    }
 
+    public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+    {
+        await _semaphore.WaitAsync(cancellationToken);
+
+        object? fileHandle = null;
+        FileStatus fileStatus;
+        try
+        {
+            return await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ =>
+            {
+                var status = _smbFileStore.CreateFile(
+                    out fileHandle,
+                    out fileStatus,
+                    NormalizeSlashes(path),
+                    AccessMask.GENERIC_READ,
+                    0,
+                    ShareAccess.Read | ShareAccess.Write | ShareAccess.Delete,
+                    CreateDisposition.FILE_OPEN,
+                    0,
+                    null);
+
+                if (status != NTStatus.STATUS_SUCCESS)
+                {
+                    return null;
+                }
+
+                try
+                {
+                    FileInformation basicInfo;
+                    status = _smbFileStore.GetFileInformation(out basicInfo, fileHandle, FileInformationClass.FileBasicInformation);
+                    if (status != NTStatus.STATUS_SUCCESS) return null;
+
+                    FileInformation standardInfo;
+                    status = _smbFileStore.GetFileInformation(out standardInfo, fileHandle, FileInformationClass.FileStandardInformation);
+                    if (status != NTStatus.STATUS_SUCCESS) return null;
+
+                    var basic = (FileBasicInformation)basicInfo;
+                    var standard = (FileStandardInformation)standardInfo;
+
+                    var name = path.TrimEnd('/').Split('/').Last();
+                    if (string.IsNullOrEmpty(name)) name = "";
+
+                    var isFolder = (basic.FileAttributes & FileAttributes.Directory) == FileAttributes.Directory;
+                    if (isFolder && !name.EndsWith("/")) name += "/";
+
+                    return (IFileEntry)new FileEntry(
+                        name,
+                        standard.EndOfFile,
+                        (DateTime?)basic.LastAccessTime ?? default,
+                        (DateTime?)basic.LastWriteTime ?? default)
+                    {
+                        IsFolder = isFolder,
+                        Created = (DateTime?)basic.CreationTime ?? default
+                    };
+                }
+                finally
+                {
+                    if (fileHandle != null)
+                        _smbFileStore.CloseFile(fileHandle);
+                }
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -445,6 +512,52 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     private string NormalizeSlashes(string path)
     {
         return path.Replace('/', '\\').TrimEnd('\\');
+    }
+
+    /// <summary>
+    /// Renames a file.
+    /// </summary>
+    /// <param name="oldname">The old filename</param>
+    /// <param name="newname">The new filename</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+    {
+        await _semaphore.WaitAsync(cancellationToken);
+        try
+        {
+            await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ =>
+            {
+                var status = _smbFileStore.CreateFile(out var fileHandle, out var fileStatus, NormalizeSlashes(Path.Combine(_connectionParameters.Path, oldname)),
+                    AccessMask.GENERIC_WRITE | AccessMask.DELETE | AccessMask.SYNCHRONIZE,
+                    FileAttributes.Normal,
+                    ShareAccess.None,
+                    CreateDisposition.FILE_OPEN,
+                    CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
+                    null);
+
+                if (status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND)
+                    throw new FileMissingException();
+
+                if (status == NTStatus.STATUS_SUCCESS)
+                {
+                    var fileRenameInformation = new FileRenameInformationType2
+                    {
+                        ReplaceIfExists = true,
+                        FileName = NormalizeSlashes(Path.Combine(_connectionParameters.Path, newname))
+                    };
+                    status = _smbFileStore.SetFileInformation(fileHandle, fileRenameInformation);
+                    if (status != NTStatus.STATUS_SUCCESS)
+                        throw new UserInformationException($"{LC.L("Failed to rename file on RenameAsync")} with status {status}", "RenameFileError");
+                    status = _smbFileStore.CloseFile(fileHandle);
+                    if (status != NTStatus.STATUS_SUCCESS)
+                        throw new UserInformationException($"{LC.L("Failed to close file on RenameAsync")} with status {status}", "CloseFileError");
+                }
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     /// <summary>
