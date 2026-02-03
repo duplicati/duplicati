@@ -13,6 +13,9 @@ public class GPT : IPartitionTable
     // Constants for GPT parsing
     private const int HeaderSize = 92;
     private const long GptSignature = 0x5452415020494645; // "EFI PART" in little-endian
+    private const int MbrSize = 512;
+    private const ushort MbrBootSignature = 0xAA55;
+    private const byte ProtectiveMbrType = 0xEE;
 
     // Internal state
     private bool m_parsed = false;
@@ -36,6 +39,7 @@ public class GPT : IPartitionTable
     // Additional tracking
     private IRawDisk? m_rawDisk;
     private byte[]? m_headerBytes;
+    private byte[]? m_protectiveMbrBytes;
     private long m_bytesPerSector;
 
     // Partition storage
@@ -62,10 +66,15 @@ public class GPT : IPartitionTable
 
     public async Task<bool> ParseAsync(byte[] bytes, int sectorSize, CancellationToken token)
     {
-        // Skip the protective MBR (LBA1; first sectorSize bytes)
+        m_bytesPerSector = sectorSize;
+
+        // Parse the protective MBR first (LBA 0; first sectorSize bytes)
+        if (!await ParseProtectiveMbrAsync(bytes, sectorSize, token).ConfigureAwait(false))
+            return false;
+
+        // Now parse the GPT header (LBA 1)
         m_headerBytes = bytes[sectorSize..(sectorSize + HeaderSize)];
-        var parsedHeader = await ParseHeaderAsync(m_headerBytes, token)
-            .ConfigureAwait(false);
+        var parsedHeader = await ParseHeaderAsync(m_headerBytes, token).ConfigureAwait(false);
 
         if (!parsedHeader)
             return false;
@@ -78,8 +87,31 @@ public class GPT : IPartitionTable
 
         var partitionBytes = bytes[partitionEntriesOffset..(partitionEntriesOffset + sizeEntries)];
 
-        return await ParsePartitionEntriesAsync(partitionBytes, token)
-            .ConfigureAwait(false);
+        return await ParsePartitionEntriesAsync(partitionBytes, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Parses the protective MBR to verify this is a GPT disk.
+    /// </summary>
+    private async Task<bool> ParseProtectiveMbrAsync(byte[] bytes, int sectorSize, CancellationToken token)
+    {
+        if (bytes.Length < sectorSize)
+            throw new ArgumentException($"Byte array must be at least {sectorSize} bytes long.", nameof(bytes));
+
+        // Extract the MBR (first sector)
+        m_protectiveMbrBytes = bytes[0..sectorSize];
+
+        // Verify MBR boot signature (offset 510)
+        ushort bootSignature = BitConverter.ToUInt16(m_protectiveMbrBytes, 510);
+        if (bootSignature != MbrBootSignature)
+            return false;
+
+        // Check if first partition entry has protective MBR type (0xEE)
+        byte partitionType = m_protectiveMbrBytes[450];
+        if (partitionType != ProtectiveMbrType)
+            return false;
+
+        return true;
     }
 
     public async Task<bool> ParseHeaderAsync(IRawDisk disk, CancellationToken token)
@@ -355,8 +387,19 @@ public class GPT : IPartitionTable
         if (!m_parsed)
             throw new InvalidOperationException("GPT header not parsed.");
 
-        // TODO: Implement protective MBR retrieval
-        throw new NotImplementedException();
+        if (m_protectiveMbrBytes != null)
+        {
+            // Return a MemoryStream with the stored MBR bytes
+            return new MemoryStream(m_protectiveMbrBytes, writable: false);
+        }
+
+        if (m_rawDisk != null)
+        {
+            // Read MBR from disk
+            return await m_rawDisk.ReadBytesAsync(0, MbrSize, cancellationToken).ConfigureAwait(false);
+        }
+
+        throw new InvalidOperationException("No protective MBR available.");
     }
 
     public void Dispose()
@@ -372,6 +415,7 @@ public class GPT : IPartitionTable
             if (disposing)
             {
                 m_headerBytes = null;
+                m_protectiveMbrBytes = null;
                 m_rawDisk = null;
                 if (m_partitions != null)
                 {
