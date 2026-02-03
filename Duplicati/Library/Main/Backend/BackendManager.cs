@@ -310,6 +310,7 @@ internal partial class BackendManager : IBackendManager
             TrackedInDb = true,
             IndexVolumeFinishedCallback = indexVolumeFinished,
             OnDbUpdate = onDbUpdate ?? PutOperation.OnDbUpdateDefault,
+            BlockVolumeID = volume.VolumeID
         };
 
         // Prepare encryption

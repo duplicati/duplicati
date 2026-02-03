@@ -2894,6 +2894,42 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
+        /// Removes a link between an index volume and a block volume.
+        /// </summary>
+        /// <param name="indexVolumeID">The ID of the index volume.</param>
+        /// <param name="blockVolumeID">The ID of the block volume.</param>
+        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
+        public async Task RemoveIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID, CancellationToken token)
+        {
+            if (indexVolumeID <= 0 || blockVolumeID <= 0)
+                return;
+
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+            cmd.SetCommandAndParameters(@"DELETE FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = @IndexVolumeId AND ""BlockVolumeID"" = @BlockVolumeId");
+            cmd.SetParameterValue("@IndexVolumeId", indexVolumeID);
+            cmd.SetParameterValue("@BlockVolumeId", blockVolumeID);
+            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Removes IndexBlockLink entries that reference volumes in Temporary or Uploading state
+        /// </summary>
+        public async Task RemoveOrphanedIndexBlockLinksAsync(CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+            cmd.CommandText = @"
+                DELETE FROM ""IndexBlockLink""
+                WHERE ""BlockVolumeID"" IN (
+                    SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" IN ('Temporary', 'Uploading')
+                )
+                OR ""IndexVolumeID"" IN (
+                    SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" IN ('Temporary', 'Uploading')
+                )
+            ";
+            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Returns all unique blocklists for a given volume.
         /// </summary>
         /// <param name="volumeid">The volume ID to get blocklists for.</param>

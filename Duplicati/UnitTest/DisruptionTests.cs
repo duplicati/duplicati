@@ -1338,5 +1338,82 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(4, listResults.Filesets.Count());
             }
         }
+
+        [Test]
+        [Category("Disruption")]
+        public async Task TestIndexBlockLinkCleanupOnFailedUpload()
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+            testopts["asynchronous-concurrent-upload-limit"] = "2"; // Force parallel uploads
+
+            // Make a base backup
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+
+            // Modify source files to ensure multiple blocks need uploading
+            ModifySourceFiles();
+
+            // Add more data to ensure multiple dblock files
+            var extraFile = Path.Combine(DATAFOLDER, "extra-large-file");
+            File.WriteAllBytes(extraFile, new byte[15 * 1024 * 1024]); // 15MB file
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+
+            var uploadCount = 0;
+            var failedUpload = false;
+
+            // Fail the first dblock upload, allow subsequent ones
+            DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
+            {
+                if (action == DeterministicErrorBackend.BackendAction.PutBefore && remotename.Contains(".dblock."))
+                {
+                    var count = Interlocked.Increment(ref uploadCount);
+                    if (count == 1)
+                    {
+                        failedUpload = true;
+                        return true; // Fail first dblock upload
+                    }
+                }
+                return false;
+            };
+
+            // This backup should fail
+            using (var c = new Controller(failtarget, testopts, null))
+                Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.Backup(new string[] { DATAFOLDER }));
+
+            Assert.IsTrue(failedUpload, "First upload should have failed");
+
+            // Verify database state - check for orphaned IndexBlockLink entries
+            using (var db = await LocalDatabase.CreateLocalDatabaseAsync(testopts["dbpath"], "test", true, null, CancellationToken.None))
+            {
+                await using var cmd = db.Connection.CreateCommand();
+
+                // Check for IndexBlockLink entries that reference non-existent or temporary volumes
+                cmd.CommandText = @"
+                    SELECT COUNT(*)
+                    FROM IndexBlockLink ibl
+                    LEFT JOIN RemoteVolume rv_block ON ibl.BlockVolumeID = rv_block.ID
+                    LEFT JOIN RemoteVolume rv_index ON ibl.IndexVolumeID = rv_index.ID
+                    WHERE rv_block.State IN ('Temporary', 'Uploading')
+                       OR rv_index.State IN ('Temporary', 'Uploading')
+                       OR rv_block.ID IS NULL
+                       OR rv_index.ID IS NULL
+                ";
+
+                var orphanedLinks = Convert.ToInt64(await cmd.ExecuteScalarAsync());
+                Assert.AreEqual(0, orphanedLinks, $"Found {orphanedLinks} orphaned IndexBlockLink entries");
+            }
+
+            // Now run a successful backup
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+
+            // Verify with full remote verification - this is where the original test fails
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+                TestUtils.AssertResults(c.Test(long.MaxValue));
+        }
     }
 }

@@ -1401,6 +1401,7 @@ namespace Duplicati.Library.Main.Operation
             if (await db.RepairInProgress(m_result.TaskControl.ProgressToken).ConfigureAwait(false) || await db.PartiallyRecreated(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 Logging.Log.WriteWarningMessage(LOGTAG, "InProgressDatabase", null, "The database is marked as \"in-progress\" and may be incomplete.");
 
+            await db.RemoveOrphanedIndexBlockLinksAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db.FixDuplicateMetahash(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db.FixDuplicateFileentries(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db

@@ -96,6 +96,10 @@ partial class BackendManager
         /// </summary>
         public required IndexVolumeWriter? OriginalIndexFile { get; init; }
         /// <summary>
+        /// The ID of the block volume, if any
+        /// </summary>
+        public long BlockVolumeID { get; init; }
+        /// <summary>
         /// A callback that is invoked when the index volume is finished
         /// </summary>
         public required Func<Task>? IndexVolumeFinishedCallback { get; init; }
@@ -251,7 +255,24 @@ partial class BackendManager
             // Flag for next attempt, if any
             operationState = OperationState.Uploading;
 
-            await PerformUpload(backend, hash, size, cancelToken).ConfigureAwait(false);
+            try
+            {
+                await PerformUpload(backend, hash, size, cancelToken).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Clean up the IndexBlockLink if the block upload failed
+                if (TrackedInDb && OriginalIndexFile != null && BlockVolumeID > 0)
+                {
+                    Context.Database.LogIndexBlockLinkRemoval(OriginalIndexFile.VolumeID, BlockVolumeID);
+                    try
+                    {
+                        await OnDbUpdate().ConfigureAwait(false);
+                    }
+                    catch { }
+                }
+                throw;
+            }
 
             operationState = OperationState.Uploaded;
 
