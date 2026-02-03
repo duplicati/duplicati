@@ -45,13 +45,15 @@ public class DestinationVerify : IEndpointV2
 
         try
         {
-
             if (destinationType == RemoteDestinationType.SourceProvider)
             {
                 using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
+                await wrapper.SourceProvider.Test(cancelToken);
+                // Technically we also count folders as files here, but really we just want to know if there is data to backup
+                var anyFiles = await wrapper.SourceProvider.Enumerate(cancelToken).AnyAsync(cancelToken);
 
                 return DestinationTestResponseDto.Create(
-                    anyFiles: true,
+                    anyFiles: anyFiles,
                     anyBackups: false,
                     anyEncryptedFiles: false
                 );
@@ -59,6 +61,7 @@ public class DestinationVerify : IEndpointV2
             else if (destinationType == RemoteDestinationType.RestoreDestinationProvider)
             {
                 using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
+                await wrapper.RestoreDestinationProvider.Test(cancelToken);
 
                 return DestinationTestResponseDto.Create(
                     anyFiles: true,
