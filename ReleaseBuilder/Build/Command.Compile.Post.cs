@@ -86,9 +86,9 @@ public static partial class Command
         static IEnumerable<string> UnwantedFolders(OSType os)
             => UnwantedCommonFolders.Concat(os switch
             {
-                OSType.Windows => ["lvm-scripts"],
+                OSType.Windows => ["lvm-scripts", "apfs-scripts"],
                 OSType.MacOS => ["lvm-scripts"],
-                OSType.Linux => [],
+                OSType.Linux => ["apfs-scripts"],
                 _ => throw new Exception($"Not supported os: {os}")
             });
 
@@ -100,9 +100,9 @@ public static partial class Command
         static IEnumerable<string> UnwantedFiles(OSType os)
             => UnwantedCommonFiles.Concat(os switch
             {
-                OSType.Windows => [],
+                OSType.Windows => ["libDuplicatiPhotos.dylib"],
                 OSType.MacOS => [Path.Combine("utility-scripts", "DuplicatiVerify.ps1")],
-                OSType.Linux => [Path.Combine("utility-scripts", "DuplicatiVerify.ps1")],
+                OSType.Linux => [Path.Combine("utility-scripts", "DuplicatiVerify.ps1"), "libDuplicatiPhotos.dylib"],
                 _ => throw new Exception($"Not supported os: {os}")
             })
             .Distinct();
