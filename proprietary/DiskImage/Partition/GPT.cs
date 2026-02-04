@@ -37,7 +37,7 @@ public class GPT : IPartitionTable
     private uint m_partitionEntryCrc32;
 
     // Additional tracking
-    private IRawDisk? m_rawDisk;
+    private IRawDisk m_rawDisk;
     private byte[]? m_headerBytes;
     private byte[]? m_protectiveMbrBytes;
     private long m_bytesPerSector;
@@ -45,22 +45,25 @@ public class GPT : IPartitionTable
     // Partition storage
     private List<IPartition>? m_partitions;
 
-    public GPT() { }
-
     // IPartitionTable implementation
-    public IRawDisk? RawDisk { get; private set; }
+    public IRawDisk RawDisk { get => m_rawDisk; }
 
     public PartitionTableType TableType => PartitionTableType.GPT;
 
-    public async Task<bool> ParseAsync(IRawDisk disk, CancellationToken token)
+    public GPT(IRawDisk disk)
     {
-        var parsedHeader = await ParseHeaderAsync(disk, token)
+        m_rawDisk = disk;
+    }
+
+    public async Task<bool> ParseAsync(CancellationToken token)
+    {
+        var parsedHeader = await ParseHeaderAsync(token)
             .ConfigureAwait(false);
 
         if (!parsedHeader)
             return false;
 
-        return await ParsePartitionEntriesAsync(disk, token)
+        return await ParsePartitionEntriesAsync(token)
             .ConfigureAwait(false);
     }
 
@@ -114,13 +117,13 @@ public class GPT : IPartitionTable
         return true;
     }
 
-    public async Task<bool> ParseHeaderAsync(IRawDisk disk, CancellationToken token)
+    public async Task<bool> ParseHeaderAsync(CancellationToken token)
     {
         m_headerBytes = new byte[HeaderSize];
-        m_bytesPerSector = disk.SectorSize;
+        m_bytesPerSector = m_rawDisk.SectorSize;
 
         // Read the GPT header (LBA 1)
-        using var bytestream = await disk.ReadBytesAsync(m_bytesPerSector, (int)m_bytesPerSector, token)
+        using var bytestream = await m_rawDisk.ReadBytesAsync(m_bytesPerSector, (int)m_bytesPerSector, token)
             .ConfigureAwait(false);
         await bytestream.ReadAtLeastAsync(m_headerBytes, HeaderSize, cancellationToken: token)
             .ConfigureAwait(false);
@@ -129,11 +132,8 @@ public class GPT : IPartitionTable
 
         if (result)
         {
-            RawDisk = disk;
-            m_rawDisk = disk;
-
             // Verify backup header
-            if (!await VerifyBackupHeaderAsync(disk, token).ConfigureAwait(false))
+            if (!await VerifyBackupHeaderAsync(token).ConfigureAwait(false))
                 return false;
         }
 
@@ -199,7 +199,7 @@ public class GPT : IPartitionTable
         return true;
     }
 
-    private async Task<bool> ParsePartitionEntriesAsync(IRawDisk disk, CancellationToken token)
+    private async Task<bool> ParsePartitionEntriesAsync(CancellationToken token)
     {
         if (m_partitions != null)
             return false;
@@ -214,7 +214,7 @@ public class GPT : IPartitionTable
         long totalSize = m_partitionEntrySize * m_numPartitionEntries;
         var buffer = new byte[totalSize];
 
-        using var stream = await disk.ReadBytesAsync(partitionEntriesOffset, (int)totalSize, token)
+        using var stream = await m_rawDisk.ReadBytesAsync(partitionEntriesOffset, (int)totalSize, token)
             .ConfigureAwait(false);
         await stream.ReadAtLeastAsync(buffer, (int)totalSize, cancellationToken: token)
             .ConfigureAwait(false);
@@ -300,6 +300,7 @@ public class GPT : IPartitionTable
         {
             PartitionNumber = partitionNumber,
             Type = partitionType,
+            PartitionTable = this,
             StartOffset = startOffset,
             Size = size,
             Name = string.IsNullOrEmpty(name) ? null : name,
@@ -386,7 +387,7 @@ public class GPT : IPartitionTable
 
         // Ensure partitions are parsed
         if (m_partitions == null && m_rawDisk != null)
-            await ParsePartitionEntriesAsync(m_rawDisk, cancellationToken).ConfigureAwait(false);
+            await ParsePartitionEntriesAsync(cancellationToken).ConfigureAwait(false);
 
         if (m_partitions != null)
         {
@@ -405,7 +406,7 @@ public class GPT : IPartitionTable
 
         // Ensure partitions are parsed
         if (m_partitions == null && m_rawDisk != null)
-            await ParsePartitionEntriesAsync(m_rawDisk, cancellationToken).ConfigureAwait(false);
+            await ParsePartitionEntriesAsync(cancellationToken).ConfigureAwait(false);
 
         if (m_partitions == null)
             return null;
@@ -436,7 +437,7 @@ public class GPT : IPartitionTable
         throw new InvalidOperationException("No protective MBR available.");
     }
 
-    private async Task<bool> VerifyBackupHeaderAsync(IRawDisk disk, CancellationToken token)
+    private async Task<bool> VerifyBackupHeaderAsync(CancellationToken token)
     {
         if (m_backupLba == 0)
             return false;
@@ -446,7 +447,7 @@ public class GPT : IPartitionTable
 
         try
         {
-            using var stream = await disk.ReadBytesAsync(backupOffset, (int)m_bytesPerSector, token).ConfigureAwait(false);
+            using var stream = await m_rawDisk.ReadBytesAsync(backupOffset, (int)m_bytesPerSector, token).ConfigureAwait(false);
             await stream.ReadAtLeastAsync(backupHeaderBytes, HeaderSize, cancellationToken: token).ConfigureAwait(false);
         }
         catch
@@ -535,7 +536,6 @@ public class GPT : IPartitionTable
             {
                 m_headerBytes = null;
                 m_protectiveMbrBytes = null;
-                m_rawDisk = null;
                 if (m_partitions != null)
                 {
                     foreach (var partition in m_partitions)
@@ -554,12 +554,13 @@ public class GPT : IPartitionTable
     {
         public int PartitionNumber { get; init; }
         public PartitionType Type { get; init; }
+        public required IPartitionTable PartitionTable { get; init; }
         public long StartOffset { get; init; }
         public long Size { get; init; }
         public string? Name { get; init; }
         public FileSystemType FilesystemType { get; init; }
         public Guid? VolumeGuid { get; init; }
-        public IRawDisk? RawDisk { get; init; }
+        public required IRawDisk RawDisk { get; init; }
         public long StartingLba { get; init; }
         public long EndingLba { get; init; }
         public long Attributes { get; init; }

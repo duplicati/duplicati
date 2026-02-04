@@ -13,6 +13,11 @@ namespace Duplicati.Proprietary.DiskImage.Partition;
 public interface IPartition : IDisposable
 {
     /// <summary>
+    /// Gets the parent partition table.
+    /// </summary>
+    IPartitionTable PartitionTable { get; }
+
+    /// <summary>
     /// Gets the partition number (1-based).
     /// </summary>
     int PartitionNumber { get; }
@@ -63,7 +68,7 @@ public interface IPartitionTable : IDisposable
     /// <summary>
     /// Gets the raw disk this table was parsed from.
     /// </summary>
-    IRawDisk? RawDisk { get; }
+    IRawDisk RawDisk { get; }
 
     /// <summary>
     /// Gets the partition table type.

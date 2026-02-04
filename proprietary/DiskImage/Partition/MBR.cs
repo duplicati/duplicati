@@ -29,17 +29,20 @@ public class MBR : IPartitionTable
     private List<MBRPartitionEntry>? m_partitionEntries;
 
     // Additional tracking
-    private IRawDisk? m_rawDisk;
+    private IRawDisk m_rawDisk;
     private byte[]? m_mbrBytes;
     private long m_bytesPerSector;
 
     // Partition storage
     private List<IPartition>? m_partitions;
 
-    public MBR() { }
+    public MBR(IRawDisk disk)
+    {
+        m_rawDisk = disk;
+    }
 
     // IPartitionTable implementation
-    public IRawDisk? RawDisk { get; private set; }
+    public IRawDisk RawDisk { get => m_rawDisk; }
 
     public PartitionTableType TableType => PartitionTableType.MBR;
 
@@ -53,12 +56,6 @@ public class MBR : IPartitionTable
         await bytestream.ReadAtLeastAsync(m_mbrBytes, MbrSize, cancellationToken: token).ConfigureAwait(false);
 
         var result = await ParseMBRBytesAsync(m_mbrBytes, token).ConfigureAwait(false);
-
-        if (result)
-        {
-            RawDisk = disk;
-            m_rawDisk = disk;
-        }
 
         return result;
     }
@@ -106,6 +103,7 @@ public class MBR : IPartitionTable
                 {
                     PartitionNumber = i + 1,
                     Type = entry.PartitionType,
+                    PartitionTable = this,
                     StartOffset = entry.StartLBA * m_bytesPerSector,
                     Size = entry.SizeInSectors * m_bytesPerSector,
                     Name = $"Partition {i + 1}",
@@ -261,7 +259,6 @@ public class MBR : IPartitionTable
             if (disposing)
             {
                 m_mbrBytes = null;
-                m_rawDisk = null;
                 if (m_partitions != null)
                 {
                     foreach (var partition in m_partitions)
@@ -298,12 +295,13 @@ public class MBR : IPartitionTable
     {
         public int PartitionNumber { get; init; }
         public PartitionType Type { get; init; }
+        public required IPartitionTable PartitionTable { get; init; }
         public long StartOffset { get; init; }
         public long Size { get; init; }
         public string? Name { get; init; }
         public FileSystemType FilesystemType { get; init; }
         public Guid? VolumeGuid { get; init; }
-        public IRawDisk? RawDisk { get; init; }
+        public required IRawDisk RawDisk { get; init; }
         public long StartingLba { get; init; }
         public long EndingLba { get; init; }
         public long Attributes { get; init; }
