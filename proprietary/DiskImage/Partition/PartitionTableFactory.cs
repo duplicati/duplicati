@@ -150,7 +150,7 @@ public static class PartitionTableFactory
 
     private static async Task<IPartitionTable> CreateGPTAsync(IRawDisk disk, byte[] mbrBytes, CancellationToken cancellationToken)
     {
-        var gpt = new GPT();
+        var gpt = new GPT(disk);
 
         // Verify GPT signature at LBA 1
         if (!await HasValidGptHeaderAsync(disk, cancellationToken).ConfigureAwait(false))
@@ -159,13 +159,14 @@ public static class PartitionTableFactory
             return await CreateMBRAsync(disk, mbrBytes, cancellationToken).ConfigureAwait(false);
         }
 
-        await gpt.ParseAsync(disk, cancellationToken).ConfigureAwait(false);
+        await gpt.ParseAsync(cancellationToken).ConfigureAwait(false);
+
         return gpt;
     }
 
     private static async Task<IPartitionTable> CreateGPTAsync(byte[] mbrBytes, int sectorSize, CancellationToken cancellationToken)
     {
-        var gpt = new GPT();
+        var gpt = new GPT(null);
 
         // Verify GPT signature at LBA 1
         if (!HasValidGptHeader(mbrBytes, sectorSize))
@@ -180,14 +181,14 @@ public static class PartitionTableFactory
 
     private static async Task<IPartitionTable> CreateMBRAsync(IRawDisk disk, byte[] mbrBytes, CancellationToken cancellationToken)
     {
-        var mbr = new MBR();
+        var mbr = new MBR(disk);
         await mbr.ParseAsync(disk, cancellationToken).ConfigureAwait(false);
         return mbr;
     }
 
     private static async Task<IPartitionTable> CreateMBRAsync(byte[] mbrBytes, int sectorSize, CancellationToken cancellationToken)
     {
-        var mbr = new MBR();
+        var mbr = new MBR(null);
         await mbr.ParseAsync(mbrBytes, sectorSize, cancellationToken).ConfigureAwait(false);
         return mbr;
     }

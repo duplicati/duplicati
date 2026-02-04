@@ -37,7 +37,7 @@ public class GPT : IPartitionTable
     private uint m_partitionEntryCrc32;
 
     // Additional tracking
-    private IRawDisk m_rawDisk;
+    private IRawDisk? m_rawDisk;
     private byte[]? m_headerBytes;
     private byte[]? m_protectiveMbrBytes;
     private long m_bytesPerSector;
@@ -46,11 +46,11 @@ public class GPT : IPartitionTable
     private List<IPartition>? m_partitions;
 
     // IPartitionTable implementation
-    public IRawDisk RawDisk { get => m_rawDisk; }
+    public IRawDisk? RawDisk { get => m_rawDisk; }
 
     public PartitionTableType TableType => PartitionTableType.GPT;
 
-    public GPT(IRawDisk disk)
+    public GPT(IRawDisk? disk)
     {
         m_rawDisk = disk;
     }
@@ -119,6 +119,9 @@ public class GPT : IPartitionTable
 
     public async Task<bool> ParseHeaderAsync(CancellationToken token)
     {
+        if (m_rawDisk == null)
+            throw new InvalidOperationException("No raw disk available for reading GPT header.");
+
         m_headerBytes = new byte[HeaderSize];
         m_bytesPerSector = m_rawDisk.SectorSize;
 
@@ -201,6 +204,9 @@ public class GPT : IPartitionTable
 
     private async Task<bool> ParsePartitionEntriesAsync(CancellationToken token)
     {
+        if (m_rawDisk == null)
+            throw new InvalidOperationException("No raw disk available for reading GPT partition entries.");
+
         if (m_partitions != null)
             return false;
 
@@ -439,6 +445,9 @@ public class GPT : IPartitionTable
 
     private async Task<bool> VerifyBackupHeaderAsync(CancellationToken token)
     {
+        if (m_rawDisk == null)
+            throw new InvalidOperationException("No raw disk available for reading GPT backup header.");
+
         if (m_backupLba == 0)
             return false;
 
@@ -560,7 +569,7 @@ public class GPT : IPartitionTable
         public string? Name { get; init; }
         public FileSystemType FilesystemType { get; init; }
         public Guid? VolumeGuid { get; init; }
-        public required IRawDisk RawDisk { get; init; }
+        public required IRawDisk? RawDisk { get; init; }
         public long StartingLba { get; init; }
         public long EndingLba { get; init; }
         public long Attributes { get; init; }

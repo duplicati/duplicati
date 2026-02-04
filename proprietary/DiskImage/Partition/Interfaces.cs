@@ -66,9 +66,9 @@ public interface IPartition : IDisposable
 public interface IPartitionTable : IDisposable
 {
     /// <summary>
-    /// Gets the raw disk this table was parsed from.
+    /// Gets the raw disk this table was parsed from. Null if the table was created from a byte array.
     /// </summary>
-    IRawDisk RawDisk { get; }
+    IRawDisk? RawDisk { get; }
 
     /// <summary>
     /// Gets the partition table type.

@@ -29,20 +29,20 @@ public class MBR : IPartitionTable
     private List<MBRPartitionEntry>? m_partitionEntries;
 
     // Additional tracking
-    private IRawDisk m_rawDisk;
+    private IRawDisk? m_rawDisk;
     private byte[]? m_mbrBytes;
     private long m_bytesPerSector;
 
     // Partition storage
     private List<IPartition>? m_partitions;
 
-    public MBR(IRawDisk disk)
+    public MBR(IRawDisk? disk)
     {
         m_rawDisk = disk;
     }
 
     // IPartitionTable implementation
-    public IRawDisk RawDisk { get => m_rawDisk; }
+    public IRawDisk? RawDisk { get => m_rawDisk; }
 
     public PartitionTableType TableType => PartitionTableType.MBR;
 
@@ -301,7 +301,7 @@ public class MBR : IPartitionTable
         public string? Name { get; init; }
         public FileSystemType FilesystemType { get; init; }
         public Guid? VolumeGuid { get; init; }
-        public required IRawDisk RawDisk { get; init; }
+        public required IRawDisk? RawDisk { get; init; }
         public long StartingLba { get; init; }
         public long EndingLba { get; init; }
         public long Attributes { get; init; }
