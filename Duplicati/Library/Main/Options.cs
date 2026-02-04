@@ -356,7 +356,7 @@ namespace Duplicati.Library.Main
         private IEnumerable<ICommandLineArgument> GetOSConditionalCommands()
         {
             var items = new List<ICommandLineArgument>();
-            if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+            if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
                 yield return new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, DEFAULT_SNAPSHOT_POLICY.ToString(), null, Enum.GetNames(typeof(OptimizationStrategy)));
 
             if (OperatingSystem.IsWindows())
