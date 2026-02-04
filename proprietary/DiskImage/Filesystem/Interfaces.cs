@@ -32,7 +32,7 @@ public interface IFilesystem : IDisposable
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that resolves to a collection of top-level files.</returns>
-    Task<IEnumerable<IFile>> ListFilesAsync(CancellationToken cancellationToken);
+    IAsyncEnumerable<IFile> ListFilesAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Lists files in a directory.
@@ -42,7 +42,7 @@ public interface IFilesystem : IDisposable
     /// <returns>A task that resolves to a collection of files in the specified directory.</returns>
     /// <throws cref="ArgumentNullException">Thrown if <paramref name="directory"/> is null.</throws>
     /// <throws cref="ArgumentException">Thrown if <paramref name="directory"/> is not a directory.</throws>
-    Task<IEnumerable<IFile>> ListFilesAsync(IFile directory, CancellationToken cancellationToken);
+    IAsyncEnumerable<IFile> ListFilesAsync(IFile directory, CancellationToken cancellationToken);
 
     Task<Stream> OpenFileAsync(IFile file, CancellationToken cancellationToken);
 }
