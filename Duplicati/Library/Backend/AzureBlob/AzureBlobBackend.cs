@@ -29,7 +29,7 @@ namespace Duplicati.Library.Backend.AzureBlob
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class AzureBlobBackend : IStreamingBackend, ILockingBackend
+    public class AzureBlobBackend : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
     {
         /// <summary>
         /// The access to Azure blob storage
@@ -292,6 +292,15 @@ namespace Duplicati.Library.Backend.AzureBlob
         public void Dispose()
         {
 
+        }
+
+        public Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            return WrapWithExceptionHandler(Task.Run(async () =>
+            {
+                await _azureBlob.CopyFileAsync(oldname, newname, cancellationToken).ConfigureAwait(false);
+                await _azureBlob.DeleteObjectAsync(oldname, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken));
         }
     }
 }

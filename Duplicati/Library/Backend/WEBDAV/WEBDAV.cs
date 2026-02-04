@@ -28,7 +28,7 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend
 {
-    public class WEBDAV : IStreamingBackend
+    public class WEBDAV : IStreamingBackend, IRenameEnabledBackend
     {
         /// <summary>
         /// The integrated authentication option name
@@ -364,7 +364,13 @@ namespace Duplicati.Library.Backend
         {
             if (m_httpClient == null)
             {
-                var httpHandler = m_certificateOptions.CreateHandler();
+                var httpHandler = new HttpClientHandler();
+
+                // Custom certificate validation to throw exception on failure
+                var validator = new SslCertificateValidator(m_certificateOptions.AcceptAllCertificates, m_certificateOptions.AcceptSpecificCertificateHashes);
+                httpHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) =>
+                    validator.ValidateServerCertificate(sender, cert, chain, sslPolicyErrors);
+
                 if (m_useIntegratedAuthentication)
                 {
                     httpHandler.UseDefaultCredentials = true;
@@ -439,6 +445,14 @@ namespace Duplicati.Library.Backend
             }
             catch (HttpRequestException wex)
             {
+                var inner = wex.InnerException;
+                while (inner != null)
+                {
+                    if (inner is SslCertificateValidator.InvalidCertificateException)
+                        throw inner;
+                    inner = inner.InnerException;
+                }
+
                 if (wex.StatusCode == HttpStatusCode.NotFound || wex.StatusCode == HttpStatusCode.Conflict)
                     throw new FolderMissingException(Strings.WEBDAV.MissingFolderError(m_path, wex.Message), wex);
 
@@ -667,6 +681,25 @@ namespace Duplicati.Library.Backend
                 if (wex.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
 
+                throw;
+            }
+        }
+
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var request = CreateRequest(oldname, new HttpMethod("MOVE"));
+                request.Headers.Add("Destination", $"{m_url}{Utility.Uri.UrlEncode(newname).Replace("+", "%20")}");
+                request.Headers.Add("Overwrite", "T");
+
+                using var response = await GetHttpClient().SendAsync(request, cancellationToken).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException wex)
+            {
+                if (wex.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
                 throw;
             }
         }

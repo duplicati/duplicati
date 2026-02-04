@@ -34,7 +34,7 @@ namespace Duplicati.Library.Backend;
 /// <summary>
 /// Native pCloud Backend API implementation
 /// </summary>
-public class pCloudBackend : IStreamingBackend
+public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
 {
     /// <summary>
     /// The URL used to get a new token
@@ -555,5 +555,32 @@ public class pCloudBackend : IStreamingBackend
     /// </summary>
     public void Dispose()
     {
+    }
+
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+    {
+        var fileId = await GetFileId(oldname, cancellationToken).ConfigureAwait(false);
+        var encodedNewName = Uri.EscapeDataString(newname);
+
+        using var request = CreateRequest($"/renamefile?fileid={fileId}&toname={encodedNewName}", HttpMethod.Get);
+        using var response = await Utility.Utility.WithTimeout(_Timeouts.ShortTimeout, cancellationToken,
+            ct => _HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct)
+        ).ConfigureAwait(false);
+
+        response.EnsureSuccessStatusCode();
+
+        var content = await Utility.Utility.WithTimeout(_Timeouts.ShortTimeout, cancellationToken,
+            ct => response.Content.ReadAsStringAsync(ct)
+        ).ConfigureAwait(false);
+
+        var renameResponse = JsonSerializer.Deserialize<pCloudDeleteResponse>(content)
+             ?? throw new Exception("Failed to deserialize rename file response");
+
+        if (renameResponse.result != 0)
+        {
+            if (pCloudErrorList.ErrorMessages.TryGetValue(renameResponse.result, out var message))
+                throw new Exception(message);
+            throw new Exception(Strings.pCloudBackend.FailedWithUnexpectedErrorCode("rename", renameResponse.result));
+        }
     }
 }

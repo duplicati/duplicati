@@ -38,4 +38,10 @@ public sealed record ListFolderContentRequestDto : PaginatedRequest
     /// The time to list the folder contents for
     /// </summary>
     public required string? Time { get; init; }
+
+    /// <summary>
+    /// If true, return extended information
+    /// </summary>
+    public bool? ReturnExtended { get; init; }
+
 }

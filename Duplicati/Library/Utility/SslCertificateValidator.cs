@@ -67,6 +67,9 @@ public class SslCertificateValidator(bool acceptAll, string[]? validHashes)
                         return true;
             }
 
+            if (sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateNameMismatch) || sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateChainErrors))
+                throw new InvalidCertificateException(certificate.GetCertHashString(), sslPolicyErrors);
+
             // If no hash is found, perform the standard validations
             return sslPolicyErrors == SslPolicyErrors.None && certificate.Verify();
         }

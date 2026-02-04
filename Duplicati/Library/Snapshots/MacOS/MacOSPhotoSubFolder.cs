@@ -73,9 +73,6 @@ internal class MacOSPhotoSubFolder(MacOSPhotosLibraryEntry parent, string subpat
     public FileAttributes Attributes => parent.Attributes;
 
     /// <inheritdoc/>
-    public Dictionary<string, string> MinorMetadata => new Dictionary<string, string>();
-
-    /// <inheritdoc/>
     public bool IsBlockDevice => false;
 
     /// <inheritdoc/>
@@ -99,10 +96,10 @@ internal class MacOSPhotoSubFolder(MacOSPhotosLibraryEntry parent, string subpat
     }
 
     /// <inheritdoc/>
-    public Task<Stream?> OpenMetadataRead(CancellationToken cancellationToken)
-        => Task.FromResult<Stream?>(null);
-
-    /// <inheritdoc/>
     public Task<Stream> OpenRead(CancellationToken cancellationToken)
         => throw new InvalidOperationException("Cannot open a folder for reading");
+
+    public Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+        => Task.FromResult(new Dictionary<string, string?>());
+
 }

@@ -34,7 +34,7 @@ namespace Duplicati.Library.Backend;
 /// <summary>
 /// Native CIFS/SMB Backend implementation
 /// </summary>
-public class SMBBackend : IStreamingBackend, IFolderEnabledBackend
+public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabledBackend
 {
     /// <inheritdoc/>
     public virtual string ProtocolKey => "smb";
@@ -344,6 +344,13 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend
                 yield return v;
     }
 
+    /// <inheritdoc/>
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+    {
+        var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+        await con.RenameAsync(oldname, newname, cancellationToken).ConfigureAwait(false);
+    }
+    
     /// <inheritdoc/>
     public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
     {
