@@ -131,6 +131,10 @@ public class GPT : IPartitionTable
         {
             RawDisk = disk;
             m_rawDisk = disk;
+
+            // Verify backup header
+            if (!await VerifyBackupHeaderAsync(disk, token).ConfigureAwait(false))
+                return false;
         }
 
         return result;
@@ -398,6 +402,91 @@ public class GPT : IPartitionTable
         }
 
         throw new InvalidOperationException("No protective MBR available.");
+    }
+
+    private async Task<bool> VerifyBackupHeaderAsync(IRawDisk disk, CancellationToken token)
+    {
+        if (m_backupLba == 0)
+            return false;
+
+        var backupHeaderBytes = new byte[HeaderSize];
+        long backupOffset = m_backupLba * m_bytesPerSector;
+
+        try
+        {
+            using var stream = await disk.ReadBytesAsync(backupOffset, (int)m_bytesPerSector, token).ConfigureAwait(false);
+            await stream.ReadAtLeastAsync(backupHeaderBytes, HeaderSize, cancellationToken: token).ConfigureAwait(false);
+        }
+        catch
+        {
+            return false;
+        }
+
+        // Verify Signature
+        long signature = BitConverter.ToInt64(backupHeaderBytes, 0);
+        if (signature != GptSignature)
+            return false;
+
+        // Verify CRC32
+        uint storedCrc = BitConverter.ToUInt32(backupHeaderBytes, 16);
+
+        // Zero out CRC field for calculation
+        var copyForCrc = new byte[HeaderSize];
+        Array.Copy(backupHeaderBytes, copyForCrc, HeaderSize);
+        BitConverter.TryWriteBytes(copyForCrc.AsSpan(16), 0u);
+
+        uint calculatedCrc = CalculateCrc32(copyForCrc, 0, HeaderSize);
+        if (storedCrc != calculatedCrc)
+            return false;
+
+        // Verify other fields
+        // Revision should be same
+        if (BitConverter.ToUInt32(backupHeaderBytes, 8) != m_revision) return false;
+        // Header size should be same
+        if (BitConverter.ToUInt32(backupHeaderBytes, 12) != m_headerSize) return false;
+        // Reserved should be 0
+        if (BitConverter.ToUInt32(backupHeaderBytes, 20) != 0) return false;
+
+        // Current LBA should be Backup LBA
+        if (BitConverter.ToInt64(backupHeaderBytes, 24) != m_backupLba) return false;
+        // Backup LBA should be Current LBA (Primary LBA)
+        if (BitConverter.ToInt64(backupHeaderBytes, 32) != m_currentLba) return false;
+
+        // Usable LBAs should be same
+        if (BitConverter.ToInt64(backupHeaderBytes, 40) != m_firstUsableLba) return false;
+        if (BitConverter.ToInt64(backupHeaderBytes, 48) != m_lastUsableLba) return false;
+
+        // Disk GUID should be same
+        var diskGuidBytes = new byte[16];
+        Array.Copy(backupHeaderBytes, 56, diskGuidBytes, 0, 16);
+        if (new Guid(diskGuidBytes) != m_diskGuid) return false;
+
+        // Number of partition entries should be same
+        if (BitConverter.ToUInt32(backupHeaderBytes, 80) != m_numPartitionEntries) return false;
+        // Size of partition entry should be same
+        if (BitConverter.ToUInt32(backupHeaderBytes, 84) != m_partitionEntrySize) return false;
+        // Partition entry CRC32 should be same
+        if (BitConverter.ToUInt32(backupHeaderBytes, 88) != m_partitionEntryCrc32) return false;
+
+        return true;
+    }
+
+    private static uint CalculateCrc32(byte[] buffer, int offset, int count)
+    {
+        uint crc = 0xFFFFFFFF;
+        for (int i = 0; i < count; i++)
+        {
+            byte b = buffer[offset + i];
+            crc ^= b;
+            for (int j = 0; j < 8; j++)
+            {
+                if ((crc & 1) != 0)
+                    crc = (crc >> 1) ^ 0xEDB88320;
+                else
+                    crc >>= 1;
+            }
+        }
+        return ~crc;
     }
 
     public void Dispose()
