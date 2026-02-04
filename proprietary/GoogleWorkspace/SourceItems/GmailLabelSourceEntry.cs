@@ -37,7 +37,7 @@ internal class GmailLabelSourceEntry(SourceProvider provider, string userId, str
                 foreach (var msg in response.Messages)
                 {
                     var msgRequest = service.Users.Messages.Get(userId, msg.Id);
-                    msgRequest.Format = UsersResource.MessagesResource.GetRequest.FormatEnum.Minimal;
+                    msgRequest.Format = UsersResource.MessagesResource.GetRequest.FormatEnum.Metadata;
                     batch.Queue<Message>(msgRequest, (message, error, index, httpResponse) =>
                     {
                         if (error == null)

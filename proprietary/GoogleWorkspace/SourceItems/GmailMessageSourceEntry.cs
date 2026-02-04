@@ -36,14 +36,16 @@ internal class GmailMessageSourceEntry(SourceProvider provider, string userId, s
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
     {
+        var subject = message.Payload?.Headers?.FirstOrDefault(h => h.Name?.Equals("Subject", StringComparison.OrdinalIgnoreCase) == true)?.Value;
+
         return Task.FromResult(new Dictionary<string, string?>
         {
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.GmailMessage.ToString() },
-            { "gsuite:Name", message.Id },
+            { "gsuite:Name", string.IsNullOrWhiteSpace(subject) ? message.Id : subject },
             { "gsuite:id", message.Id },
             { "gsuite:ThreadId", message.ThreadId },
-            { "gsuite:Snippet", message.Snippet }
+            { "gsuite:Snippet", message.Snippet },
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));
