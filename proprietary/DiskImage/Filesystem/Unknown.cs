@@ -32,7 +32,7 @@ public class UnknownFilesystem : IFilesystem
     private bool m_disposed = false;
     private readonly IPartition m_partition;
 
-    public UnknownFilesystem(IPartition partition, int blockSize = 1024 * 1024 * 1024)
+    public UnknownFilesystem(IPartition partition, int blockSize = 1024 * 1024)
     {
         m_partition = partition;
         if (blockSize < 0 || blockSize % partition.PartitionTable.RawDisk?.SectorSize != 0)

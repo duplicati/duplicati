@@ -33,7 +33,7 @@ await foreach (var partition in table.EnumeratePartitions(CancellationToken.None
 {
     Console.WriteLine($"Partition {partition.PartitionNumber}: {partition.Name}");
     Console.WriteLine($"  Type: {partition.Type}");
-    Console.WriteLine($"  Size: {partition.Size} bytes");
+    Console.WriteLine($"  Size: {partition.Size} bytes ({partition.Size / (1024 * 1024 * 1024)} GB)");
     Console.WriteLine($"  Offset: {partition.StartOffset} bytes");
 }
 
@@ -44,7 +44,7 @@ if (table.TableType == PartitionTableType.GPT)
     Console.WriteLine($"Protective MBR retrieved successfully ({mbrStream.Length} bytes).");
 }
 
-var firstPartition = await table.GetPartitionAsync(0, CancellationToken.None);
+var firstPartition = await table.GetPartitionAsync(1, CancellationToken.None);
 
 if (firstPartition == null)
 {
