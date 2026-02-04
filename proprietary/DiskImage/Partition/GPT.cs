@@ -314,21 +314,53 @@ public class GPT : IPartitionTable
 
     private static PartitionType DeterminePartitionType(Guid typeGuid)
     {
-        // TODO: Once PartitionType enum is extended with specific types, implement GUID mapping
-        // Common GPT partition type GUIDs include:
-        // - EFI System Partition: C12A7328-F81F-11D2-BA4B-00A0C93EC93B
-        // - Microsoft Reserved: E3C9E316-0B5C-4DB8-817D-F92DF00215AE
-        // - Microsoft Basic Data: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
-        // - Linux filesystem: 0FC63DAF-8483-4772-8E79-3D69D8477DE4
-        // For now, always return Unknown
-        return PartitionType.Unknown;
+        // Common GPT partition type GUIDs
+        return typeGuid.ToString().ToUpper() switch
+        {
+            "C12A7328-F81F-11D2-BA4B-00A0C93EC93B" => PartitionType.EFI,
+            "E3C9E316-0B5C-4DB8-817D-F92DF00215AE" => PartitionType.MicrosoftReserved,
+            "EBD0A0A2-B9E5-4433-87C0-68B6B72699C7" => PartitionType.Primary, // Microsoft Basic Data
+            "DE94BBA4-06D1-4D40-A16A-BFD50179D6AC" => PartitionType.Recovery, // Windows Recovery
+            "0FC63DAF-8483-4772-8E79-3D69D8477DE4" => PartitionType.LinuxFilesystem,
+            "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F" => PartitionType.LinuxSwap,
+            "E6D6D379-F507-44C2-A23C-238F2A3DF928" => PartitionType.LinuxLVM,
+            "A19D880F-05FC-4D3B-A006-743F0F84911E" => PartitionType.LinuxRAID,
+            "48465300-0000-11AA-AA11-00306543ECAC" => PartitionType.AppleHFS,
+            "7C3457EF-0000-11AA-AA11-00306543ECAC" => PartitionType.AppleAPFS,
+            "426F6F74-0000-11AA-AA11-00306543ECAC" => PartitionType.AppleBoot,
+            "21686148-6449-6E6F-744E-656564454649" => PartitionType.BIOSBoot,
+            _ => PartitionType.Unknown
+        };
     }
 
     private static FileSystemType DetermineFilesystemType(string name, Guid typeGuid)
     {
-        // TODO: Once FileSystemType enum is extended, implement filesystem detection
-        // For now, always return Unknown - actual detection requires reading the partition
-        return FileSystemType.Unknown;
+        if (!string.IsNullOrEmpty(name))
+        {
+            var upperName = name.ToUpperInvariant();
+            if (upperName.Contains("NTFS")) return FileSystemType.NTFS;
+            if (upperName.Contains("FAT32")) return FileSystemType.FAT32;
+            if (upperName.Contains("FAT16")) return FileSystemType.FAT16;
+            if (upperName.Contains("FAT12")) return FileSystemType.FAT12;
+            if (upperName.Contains("EXFAT")) return FileSystemType.ExFAT;
+            if (upperName.Contains("HFS")) return FileSystemType.HFSPlus;
+            if (upperName.Contains("APFS")) return FileSystemType.APFS;
+            if (upperName.Contains("EXT4")) return FileSystemType.Ext4;
+            if (upperName.Contains("EXT3")) return FileSystemType.Ext3;
+            if (upperName.Contains("EXT2")) return FileSystemType.Ext2;
+            if (upperName.Contains("XFS")) return FileSystemType.XFS;
+            if (upperName.Contains("BTRFS")) return FileSystemType.Btrfs;
+            if (upperName.Contains("ZFS")) return FileSystemType.ZFS;
+            if (upperName.Contains("REFS")) return FileSystemType.ReFS;
+        }
+
+        // Fallback based on GUID
+        return typeGuid.ToString().ToUpper() switch
+        {
+            "48465300-0000-11AA-AA11-00306543ECAC" => FileSystemType.HFSPlus,
+            "7C3457EF-0000-11AA-AA11-00306543ECAC" => FileSystemType.APFS,
+            _ => FileSystemType.Unknown
+        };
     }
 
     // GPT-specific properties
