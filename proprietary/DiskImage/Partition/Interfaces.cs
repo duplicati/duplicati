@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Proprietary.DiskImage.Raw;
+using Duplicati.Proprietary.DiskImage.Disk;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
 

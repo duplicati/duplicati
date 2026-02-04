@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Proprietary.DiskImage.Raw;
+using Duplicati.Proprietary.DiskImage.Disk;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
 

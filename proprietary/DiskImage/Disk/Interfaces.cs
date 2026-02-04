@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Duplicati.Proprietary.DiskImage.Raw;
+namespace Duplicati.Proprietary.DiskImage.Disk;
 
 /// <summary>
 /// Low-level disk access interface for raw disk reading.

@@ -8,7 +8,7 @@ using Vanara.InteropServices;
 using Vanara.PInvoke;
 using static Vanara.PInvoke.Kernel32;
 
-namespace Duplicati.Proprietary.DiskImage.Raw
+namespace Duplicati.Proprietary.DiskImage.Disk
 {
     public class Windows : IRawDisk
     {
