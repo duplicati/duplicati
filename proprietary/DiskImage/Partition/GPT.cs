@@ -200,9 +200,7 @@ public class GPT : IPartitionTable
         if (m_partitions != null)
             return false;
 
-        m_partitions = [];
-
-        if (m_rawDisk == null || !m_parsed)
+        if (!m_parsed)
             return false;
 
         // Calculate the byte offset for the partition entries
