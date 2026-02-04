@@ -115,7 +115,8 @@ public static class PartitionTableFactory
             var sectorSize = disk.SectorSize;
             var headerBytes = new byte[HeaderSize];
 
-            using var stream = await disk.ReadBytesAsync(sectorSize, HeaderSize, cancellationToken).ConfigureAwait(false);
+            // Read a sector at LBA 1 (GPT header)
+            using var stream = await disk.ReadBytesAsync(sectorSize, sectorSize, cancellationToken).ConfigureAwait(false);
             await stream.ReadAtLeastAsync(headerBytes, HeaderSize, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             var signature = BitConverter.ToInt64(headerBytes, 0);

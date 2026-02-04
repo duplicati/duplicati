@@ -120,7 +120,7 @@ public class GPT : IPartitionTable
         m_bytesPerSector = disk.SectorSize;
 
         // Read the GPT header (LBA 1)
-        using var bytestream = await disk.ReadBytesAsync(m_bytesPerSector, HeaderSize, token)
+        using var bytestream = await disk.ReadBytesAsync(m_bytesPerSector, (int)m_bytesPerSector, token)
             .ConfigureAwait(false);
         await bytestream.ReadAtLeastAsync(m_headerBytes, HeaderSize, cancellationToken: token)
             .ConfigureAwait(false);
