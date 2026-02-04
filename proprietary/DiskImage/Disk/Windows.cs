@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Vanara.InteropServices;
@@ -10,6 +11,7 @@ using static Vanara.PInvoke.Kernel32;
 
 namespace Duplicati.Proprietary.DiskImage.Disk
 {
+    [SupportedOSPlatform("windows")]
     public class Windows : IRawDisk
     {
         private readonly string m_devicePath;
