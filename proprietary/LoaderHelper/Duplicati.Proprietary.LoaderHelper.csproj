@@ -13,6 +13,7 @@
     <ProjectReference Include="../../Duplicati/Library/Utility/Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="../LicenseChecker/Duplicati.Proprietary.LicenseChecker.csproj" />
     <ProjectReference Include="../Office365/Duplicati.Proprietary.Office365.csproj" />
+    <ProjectReference Include="../GoogleWorkspace/Duplicati.Proprietary.GoogleWorkspace.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Duplicati.Proprietary.GoogleWorkspace</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Duplicati/Library/AutoUpdater/Duplicati.Library.AutoUpdater.csproj" />
+    <ProjectReference Include="../../Duplicati/Library/Utility/Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="../LicenseChecker/Duplicati.Proprietary.LicenseChecker.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Gmail.v1" Version="1.68.0.3427" />
+    <PackageReference Include="Google.Apis.Admin.Directory.directory_v1" Version="1.68.0.3428" />
+    <PackageReference Include="Google.Apis.Calendar.v3" Version="1.68.0.3430" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.68.0.3428" />
+    <PackageReference Include="Google.Apis.PeopleService.v1" Version="1.69.0.3785" />
+    <PackageReference Include="Google.Apis.Tasks.v1" Version="1.68.0.3435" />
+    <PackageReference Include="Google.Apis.Keep.v1" Version="1.69.0.3729" />
+    <PackageReference Include="Google.Apis.GroupsSettings.v1" Version="1.68.0.2366" />
+    <PackageReference Include="Google.Apis.HangoutsChat.v1" Version="1.68.0.3393" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.69.0" />
+  </ItemGroup>
+
+</Project>
