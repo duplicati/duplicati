@@ -840,17 +840,6 @@ namespace Duplicati.Library.Main.Operation
                                 await RunMainOperation(channels, source, journalService, db, backendManager, stats, m_options, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
                             }
                         }
-                        catch
-                        {
-                            try
-                            {
-                                await db.RollbackTransactionAsync(CancellationToken.None).ConfigureAwait(false);
-                                await db.RemoveOrphanedIndexBlockLinksAsync(CancellationToken.None).ConfigureAwait(false);
-                                await db.CommitTransactionAsync("CleanupOrphanedLinks", false, CancellationToken.None).ConfigureAwait(false);
-                            }
-                            catch { }
-                            throw;
-                        }
                         finally
                         {
                             //If the scanner is still running for some reason, make sure we kill it now

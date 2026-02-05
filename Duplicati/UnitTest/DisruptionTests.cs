@@ -1386,6 +1386,10 @@ namespace Duplicati.UnitTest
 
             Assert.IsTrue(failedUpload, "First upload should have failed");
 
+            // Run again to clean up any temporary volumes left from the failed backup
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+
             // Verify database state - check for orphaned IndexBlockLink entries
             using (var db = await LocalDatabase.CreateLocalDatabaseAsync(testopts["dbpath"], "test", true, null, CancellationToken.None))
             {
@@ -1397,8 +1401,8 @@ namespace Duplicati.UnitTest
                     FROM IndexBlockLink ibl
                     LEFT JOIN RemoteVolume rv_block ON ibl.BlockVolumeID = rv_block.ID
                     LEFT JOIN RemoteVolume rv_index ON ibl.IndexVolumeID = rv_index.ID
-                    WHERE rv_block.State IN ('Temporary', 'Uploading')
-                       OR rv_index.State IN ('Temporary', 'Uploading')
+                    WHERE rv_block.State IN ('Temporary', 'Uploading', 'Deleted', 'Deleting')
+                       OR rv_index.State IN ('Temporary', 'Uploading', 'Deleted', 'Deleting')
                        OR rv_block.ID IS NULL
                        OR rv_index.ID IS NULL
                 ";

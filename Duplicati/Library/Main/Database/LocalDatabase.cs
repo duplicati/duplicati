@@ -2894,24 +2894,6 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Removes a link between an index volume and a block volume.
-        /// </summary>
-        /// <param name="indexVolumeID">The ID of the index volume.</param>
-        /// <param name="blockVolumeID">The ID of the block volume.</param>
-        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
-        public async Task RemoveIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID, CancellationToken token)
-        {
-            if (indexVolumeID <= 0 || blockVolumeID <= 0)
-                return;
-
-            await using var cmd = m_connection.CreateCommand(m_rtr);
-            cmd.SetCommandAndParameters(@"DELETE FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = @IndexVolumeId AND ""BlockVolumeID"" = @BlockVolumeId");
-            cmd.SetParameterValue("@IndexVolumeId", indexVolumeID);
-            cmd.SetParameterValue("@BlockVolumeId", blockVolumeID);
-            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-        }
-
-        /// <summary>
         /// Removes IndexBlockLink entries that reference volumes in Temporary or Uploading state
         /// </summary>
         public async Task RemoveOrphanedIndexBlockLinksAsync(CancellationToken token)
@@ -2920,13 +2902,19 @@ namespace Duplicati.Library.Main.Database
             cmd.CommandText = @"
                 DELETE FROM ""IndexBlockLink""
                 WHERE ""BlockVolumeID"" IN (
-                    SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" IN ('Temporary', 'Uploading')
+                    SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" IN (@States)
                 )
                 OR ""IndexVolumeID"" IN (
-                    SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" IN ('Temporary', 'Uploading')
+                    SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" IN (@States)
                 )
             ";
-            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            var count = await cmd
+                .ExpandInClauseParameterMssqlite("@States", [RemoteVolumeState.Temporary.ToString()])
+                .ExecuteNonQueryAsync(token)
+                .ConfigureAwait(false);
+
+            if (count > 0)
+                Logging.Log.WriteVerboseMessage(LOGTAG, "RemoveOrphanedIndexBlockLinks", null, "Removed {0} orphaned IndexBlockLink entries", count);
         }
 
         /// <summary>

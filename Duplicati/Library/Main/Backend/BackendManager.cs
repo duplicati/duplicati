@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -309,8 +308,7 @@ internal partial class BackendManager : IBackendManager
             Unencrypted = false,
             TrackedInDb = true,
             IndexVolumeFinishedCallback = indexVolumeFinished,
-            OnDbUpdate = onDbUpdate ?? PutOperation.OnDbUpdateDefault,
-            BlockVolumeID = volume.VolumeID
+            OnDbUpdate = onDbUpdate ?? PutOperation.OnDbUpdateDefault
         };
 
         // Prepare encryption

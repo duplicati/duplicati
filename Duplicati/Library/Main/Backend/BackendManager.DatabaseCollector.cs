@@ -68,13 +68,6 @@ partial class BackendManager
         private sealed record RenameRemoteVolume(string Oldname, string Newname) : IRemoteOperationEntry;
 
         /// <summary>
-        /// Logs a removal of an index block link
-        /// </summary>
-        /// <param name="IndexVolumeID">The ID of the index volume</param>
-        /// <param name="BlockVolumeID">The ID of the block volume</param>
-        private sealed record IndexBlockLinkRemoval(long IndexVolumeID, long BlockVolumeID) : IRemoteOperationEntry;
-
-        /// <summary>
         /// Logs an operation performed on the remote destination
         /// </summary>
         /// <param name="action">The action of the operation</param>
@@ -108,17 +101,6 @@ partial class BackendManager
         {
             lock (m_dbqueuelock)
                 m_dbqueue.Add(new RenameRemoteVolume(oldname, newname));
-        }
-
-        /// <summary>
-        /// Logs a removal of an index block link
-        /// </summary>
-        /// <param name="indexVolumeID">The ID of the index volume</param>
-        /// <param name="blockVolumeID">The ID of the block volume</param>
-        public void LogIndexBlockLinkRemoval(long indexVolumeID, long blockVolumeID)
-        {
-            lock (m_dbqueuelock)
-                m_dbqueue.Add(new IndexBlockLinkRemoval(indexVolumeID, blockVolumeID));
         }
 
         /// <summary>
@@ -167,9 +149,6 @@ partial class BackendManager
                         .ConfigureAwait(false);
                 else if (e is RenameRemoteVolume rename)
                     await db.RenameRemoteFile(rename.Oldname, rename.Newname, cancellationToken)
-                        .ConfigureAwait(false);
-                else if (e is IndexBlockLinkRemoval linkRemoval)
-                    await db.RemoveIndexBlockLinkAsync(linkRemoval.IndexVolumeID, linkRemoval.BlockVolumeID, cancellationToken)
                         .ConfigureAwait(false);
                 else if (e != null)
                     Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);

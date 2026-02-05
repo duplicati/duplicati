@@ -62,7 +62,7 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// The database is fixed so it does not mess up the system where the test is performed
         /// </summary>
-        protected readonly string DBFILE = Path.Combine(BASEFOLDER, "autotest.sqlite");
+        protected readonly string DBFILE = Path.Combine(BASEFOLDER, "autotest1.sqlite");
 
         /// <summary>
         /// Value indicating if all output is redirected to TestContext.Progress,
