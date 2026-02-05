@@ -76,7 +76,6 @@ namespace Duplicati.UnitTest
                     // Use Path.Combine for cross-platform path handling
                     var searchPath = Path.Combine(DATAFOLDER, "duplicate.txt");
                     // Normalize path separators for the database query
-                    searchPath = searchPath.Replace(Path.DirectorySeparatorChar, '/');
                     cmd.CommandText = @"
                         SELECT ""ID"" FROM ""File""
                         WHERE ""Path"" = @Path
@@ -292,7 +291,8 @@ namespace Duplicati.UnitTest
                     // Use Path.Combine for cross-platform path handling
                     var searchPath = Path.Combine(DATAFOLDER, "test.txt");
                     // Normalize path separators for the database query
-                    searchPath = searchPath.Replace(Path.DirectorySeparatorChar, '/');
+                    // Need to replace both types of separators to handle cross-platform paths
+                    searchPath = searchPath.Replace('\\', '/');
                     cmd.CommandText = @"
                         SELECT ""ID"" FROM ""File""
                         WHERE ""Path"" = @Path
