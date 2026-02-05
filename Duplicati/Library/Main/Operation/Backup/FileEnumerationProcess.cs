@@ -311,10 +311,18 @@ namespace Duplicati.Library.Main.Operation.Backup
 #endif
                     try
                     {
+                        // Guard against duplicate paths from the source provider
+                        var known = new HashSet<string>(Library.Utility.Utility.ClientFilenameStringComparer);
+
                         // We only filter new items, as we assume the input is already filtered
                         await foreach (var r in e.Enumerate(cancellationToken).ConfigureAwait(false))
                             if (await filter(r).ConfigureAwait(false))
-                                work.Push(r);
+                            {
+                                if (known.Add(r.Path))
+                                    work.Push(r);
+                                else
+                                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "DuplicatePath", null, "Duplicate path found: {0}", r.Path);
+                            }
                     }
                     catch (Exception ex)
                     {
