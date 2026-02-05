@@ -73,13 +73,16 @@ namespace Duplicati.UnitTest
                     // Get the FileID for our test file
                     // The "File" view already combines Prefix + Path
                     // We need to search for the path ending with our filename
-                    var searchPath = "/duplicate.txt";
+                    // Use Path.Combine for cross-platform path handling
+                    var searchPath = Path.Combine(DATAFOLDER, "duplicate.txt");
+                    // Normalize path separators for the database query
+                    searchPath = searchPath.Replace(Path.DirectorySeparatorChar, '/');
                     cmd.CommandText = @"
                         SELECT ""ID"" FROM ""File""
-                        WHERE ""Path"" LIKE @Path
+                        WHERE ""Path"" = @Path
                         ORDER BY ""ID"" DESC LIMIT 1
                     ";
-                    cmd.Parameters.AddWithValue("@Path", "%" + searchPath);
+                    cmd.Parameters.AddWithValue("@Path", searchPath);
                     var fileId = Convert.ToInt64(await cmd.ExecuteScalarAsync() ?? 0);
                     Assert.Greater(fileId, 0, "Should have a file entry");
 
@@ -286,13 +289,16 @@ namespace Duplicati.UnitTest
 
                     // Get the FileID for our test file
                     // The "File" view already combines Prefix + Path
-                    var searchPath = "/test.txt";
+                    // Use Path.Combine for cross-platform path handling
+                    var searchPath = Path.Combine(DATAFOLDER, "test.txt");
+                    // Normalize path separators for the database query
+                    searchPath = searchPath.Replace(Path.DirectorySeparatorChar, '/');
                     cmd.CommandText = @"
                         SELECT ""ID"" FROM ""File""
-                        WHERE ""Path"" LIKE @Path
+                        WHERE ""Path"" = @Path
                         ORDER BY ""ID"" DESC LIMIT 1
                     ";
-                    cmd.Parameters.AddWithValue("@Path", "%" + searchPath);
+                    cmd.Parameters.AddWithValue("@Path", searchPath);
                     var fileId = Convert.ToInt64(await cmd.ExecuteScalarAsync() ?? 0);
 
                     // Get the existing FileLookup entry details to create a duplicate
