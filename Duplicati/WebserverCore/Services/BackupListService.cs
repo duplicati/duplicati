@@ -313,7 +313,7 @@ public class BackupListService(Connection connection) : IBackupListService
                 IsTemporary = x.Backup.IsTemporary,
                 IsUnencryptedOrPassphraseStored = x.IsUnencryptedOrPassphraseStored,
                 Metadata = x.Backup.Metadata,
-                Sources = x.Backup.Sources,
+                Sources = Server.SourceMasking.MaskSources(x.Backup.Sources, Connection.PasswordFieldNames),
                 Settings = x.Backup.Settings?.Select(y => new Dto.SettingDto()
                 {
                     Name = y.Name,

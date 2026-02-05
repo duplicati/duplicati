@@ -95,6 +95,12 @@ namespace Duplicati.Server.Serialization.Interface
         /// Masks sensitive information in the backup settings and target URL
         /// </summary>
         void MaskSensitiveInformation();
+
+        /// <summary>
+        /// Unmasks sensitive information in the backup settings and target URL
+        /// </summary>
+        /// <param name="previous">The previous backup configuration to restore sensitive information from</param>
+        void UnmaskSensitiveInformation(IBackup previous);
     }
 }
 

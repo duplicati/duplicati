@@ -142,11 +142,40 @@ namespace Duplicati.Server.Database
             this.Settings = this.Settings.Where((setting) => !Connection.PasswordFieldNames.Contains(setting.Name)).ToArray();
         }
 
+        /// <summary>
+        /// Sanitizes the sources from any fields in the PasswordFieldNames list.
+        /// </summary>
+        private void SanitizeSources()
+        {
+            if (this.Sources == null)
+                return;
+
+            for (int i = 0; i < this.Sources.Length; i++)
+            {
+                if (SourceMasking.IsSpecialSource(this.Sources[i]))
+                {
+                    var urlString = SourceMasking.ExtractUrl(this.Sources[i]);
+                    var url = new Library.Utility.Uri(urlString);
+
+                    if (url.Query != null)
+                    {
+                        var filteredParameters = Library.Utility.Uri.ParseQueryString(url.Query, false);
+                        foreach (var field in Connection.PasswordFieldNames)
+                            filteredParameters.Remove(field);
+
+                        url = url.SetQuery(Library.Utility.Uri.BuildUriQuery(filteredParameters));
+                        this.Sources[i] = SourceMasking.ReplaceUrl(this.Sources[i], url.ToString());
+                    }
+                }
+            }
+        }
+
         /// <inheritdoc/>
         public void RemoveSensitiveInformation()
         {
             SanitizeTargetUrl();
             SanitizeSettings();
+            SanitizeSources();
         }
 
         /// <inheritdoc/>
@@ -154,6 +183,7 @@ namespace Duplicati.Server.Database
         {
             var protectedNames = Connection.PasswordFieldNames;
             TargetURL = QuerystringMasking.Mask(TargetURL, protectedNames);
+            Sources = SourceMasking.MaskSources(Sources, protectedNames);
 
             foreach (var setting in this.Settings)
                 if (protectedNames.Contains(setting.Name))
@@ -167,6 +197,7 @@ namespace Duplicati.Server.Database
                 throw new ArgumentNullException(nameof(previous));
 
             TargetURL = QuerystringMasking.Unmask(TargetURL, previous.TargetURL);
+            Sources = SourceMasking.UnmaskSources(Sources, previous.Sources);
 
             var prevSettings = previous.Settings.ToDictionary(x => x.Name, x => x.Value, StringComparer.OrdinalIgnoreCase);
             foreach (var setting in this.Settings)

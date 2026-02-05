@@ -31,7 +31,16 @@
     <Content Include="lvm-scripts\remove-lvm-snapshot.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="../../../Tools/MacOSPhotosNative/libDuplicatiPhotos.dylib" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <Content Include="apfs-scripts\create-apfs-snapshot.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="apfs-scripts\find-volume.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="apfs-scripts\remove-apfs-snapshot.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="../../../Tools/MacOSPhotosNative/libDuplicatiPhotos.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
