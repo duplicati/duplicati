@@ -47,7 +47,7 @@ public class DestinationVerify : IEndpointV2
         {
             if (destinationType == RemoteDestinationType.SourceProvider)
             {
-                using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, cancelToken);
                 await wrapper.SourceProvider.Test(cancelToken);
                 // Technically we also count folders as files here, but really we just want to know if there is data to backup
                 var anyFiles = await wrapper.SourceProvider.Enumerate(cancelToken).AnyAsync(cancelToken);
@@ -60,7 +60,7 @@ public class DestinationVerify : IEndpointV2
             }
             else if (destinationType == RemoteDestinationType.RestoreDestinationProvider)
             {
-                using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, cancelToken);
                 await wrapper.RestoreDestinationProvider.Test(cancelToken);
 
                 return DestinationTestResponseDto.Create(
@@ -71,7 +71,7 @@ public class DestinationVerify : IEndpointV2
             }
             else
             {
-                using var wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, cancelToken);
 
                 using (var b = wrapper.Backend)
                 {

@@ -67,9 +67,9 @@ public class SharedRemoteOperation
         return modules;
     }
 
-    public static async Task<(string Url, Dictionary<string, string?> Options)> ExpandUrl(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
+    public static async Task<(string Url, Dictionary<string, string?> Options)> ExpandUrl(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, CancellationToken cancelToken)
     {
-        url = UnmaskUrl(connection, url, backupId);
+        url = UnmaskUrl(connection, url, backupId, connectionStringId);
         var uri = new Library.Utility.Uri(url);
         var opts = ParseUrlOptions(connection, uri);
 
@@ -88,26 +88,26 @@ public class SharedRemoteOperation
         return (url, opts);
     }
 
-    public static async Task<BackendTupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
+    public static async Task<BackendTupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, CancellationToken cancelToken)
     {
-        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, cancelToken);
+        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, connectionStringId, cancelToken);
         var modules = ConfigureModules(opts);
         var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, opts);
         return new BackendTupleDisposeWrapper(backend, modules);
     }
 
-    public static async Task<SourceProviderTupleDisposeWrapper> GetSourceProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
+    public static async Task<SourceProviderTupleDisposeWrapper> GetSourceProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, CancellationToken cancelToken)
     {
-        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, cancelToken);
+        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, connectionStringId, cancelToken);
         var modules = ConfigureModules(opts);
         var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProviderForTesting(url, "", opts, cancelToken);
 
         return new SourceProviderTupleDisposeWrapper(sourceProvider, modules);
     }
 
-    public static async Task<RestoreDestinationProviderTupleDisposeWrapper> GetRestoreDestinationProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
+    public static async Task<RestoreDestinationProviderTupleDisposeWrapper> GetRestoreDestinationProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, CancellationToken cancelToken)
     {
-        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, cancelToken);
+        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, connectionStringId, cancelToken);
         var modules = ConfigureModules(opts);
         var restoreDestinationProvider = await Library.DynamicLoader.RestoreDestinationProviderLoader.GetRestoreDestinationProviderForTesting(url, opts, cancelToken);
 
@@ -132,9 +132,17 @@ public class SharedRemoteOperation
         }
     }
 
-    private static string UnmaskUrl(Connection connection, string maskedurl, string? backupId)
+    private static string UnmaskUrl(Connection connection, string maskedurl, string? backupId, long connectionStringId)
     {
-        var previousUrl = !string.IsNullOrWhiteSpace(backupId) ? connection.GetBackup(backupId)?.TargetURL : null;
+
+        string? previousUrl = null;
+
+        if (!string.IsNullOrWhiteSpace(backupId))
+            previousUrl = connection.GetBackup(backupId)?.TargetURL;
+
+        if (string.IsNullOrWhiteSpace(previousUrl) && connectionStringId > 0)
+            previousUrl = connection.GetConnectionString(connectionStringId)?.BaseUrl;
+
         var unmasked = string.IsNullOrWhiteSpace(previousUrl)
             ? maskedurl
             : QuerystringMasking.Unmask(maskedurl, previousUrl);
