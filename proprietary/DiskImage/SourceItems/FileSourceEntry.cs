@@ -1,0 +1,42 @@
+// Copyright (c) 2026 Duplicati Inc. All rights reserved.
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Duplicati.Library.Interface;
+using Duplicati.Proprietary.DiskImage.Filesystem;
+
+namespace Duplicati.Proprietary.DiskImage.SourceItems;
+
+internal class FileSourceEntry(string parentPath, IFilesystem filesystem, IFile file)
+    : DiskImageEntryBase(PathCombine(parentPath, file.Path ?? (file.Address?.ToString() ?? "unknown")))
+{
+    public override bool IsFolder => file.IsDirectory;
+    public override long Size => file.Size;
+
+    public override Task<Stream> OpenRead(CancellationToken cancellationToken)
+    {
+        return filesystem.OpenFileAsync(file, cancellationToken);
+    }
+
+    public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        if (IsFolder)
+        {
+            await foreach (var child in filesystem.ListFilesAsync(file, cancellationToken))
+            {
+                yield return new FileSourceEntry(this.Path, filesystem, child);
+            }
+        }
+    }
+
+    private static string PathCombine(string p1, string p2)
+    {
+        if (string.IsNullOrEmpty(p1)) return p2;
+        if (string.IsNullOrEmpty(p2)) return p1;
+        return p1.TrimEnd('/') + "/" + p2.TrimStart('/');
+    }
+}
