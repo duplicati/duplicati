@@ -295,7 +295,8 @@ namespace Duplicati.Library.Main.Operation
                             var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
                             // Only create the folder if the folder path is different from the target path
                             // (i.e., targetpath is not a root-level folder)
-                            if (!string.IsNullOrEmpty(folderpath) && folderpath != targetpath)
+                            // Also skip if the folder is outside the target destination
+                            if (!string.IsNullOrEmpty(folderpath) && folderpath != targetpath && (string.IsNullOrWhiteSpace(restoreDestination.TargetDestination) || Util.IsPathInsideTarget(folderpath, restoreDestination.TargetDestination)))
                             {
                                 if (await restoreDestination.CreateFolderIfNotExists(folderpath, cancellationToken).ConfigureAwait(false))
                                     Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for target {1}", folderpath, targetpath);

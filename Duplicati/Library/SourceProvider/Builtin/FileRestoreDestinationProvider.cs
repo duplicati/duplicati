@@ -138,69 +138,8 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
         if (allowRestoreOutsideTargetDirectory || string.IsNullOrWhiteSpace(TargetDestination))
             return;
 
-        var fullPath = Path.GetFullPath(path);
-        var fullTarget = Path.GetFullPath(TargetDestination);
-
-        // Resolve the target destination once
-        var realTarget = GetFinalPath(fullTarget);
-
-        // Resolve the path of the file/folder we are about to create
-        var realPath = GetFinalPath(fullPath);
-
-        // Normalize both paths to ensure consistent comparison
-        // This handles cases where paths differ only by trailing separators
-        var normalizedTarget = realTarget.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        var normalizedPath = realPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-
-        // If the paths are equal after normalization, it's valid
-        if (string.Equals(normalizedPath, normalizedTarget, StringComparison.OrdinalIgnoreCase))
-            return;
-
-        var relative = Path.GetRelativePath(realTarget, realPath);
-
-        if (relative.StartsWith("..") || Path.IsPathRooted(relative))
+        if (!Util.IsPathInsideTarget(path, TargetDestination))
             throw new UserInformationException($"Path traversal detected: {path} resolves outside {TargetDestination}", "RestorePathTraversal");
-    }
-
-    /// <summary>
-    /// Get the final resolved path, accounting for symlinks in existing segments.
-    /// </summary>
-    /// <param name="path">The path to resolve.</param>
-    /// <returns>The fully resolved path, with all symlinks resolved.</returns>
-    private string GetFinalPath(string path)
-    {
-        if (string.IsNullOrEmpty(path)) return path;
-
-        var current = Path.GetFullPath(path);
-        var ghostSegments = new Stack<string>();
-
-        // 1. Walk up the tree until we find a segment that exists on disk
-        while (!Path.Exists(current))
-        {
-            var parent = Path.GetDirectoryName(current);
-
-            // If we've reached the root and nothing exists (rare/impossible for absolute paths),
-            // we have to stop and return the original path.
-            if (string.IsNullOrEmpty(parent) || parent == current)
-                return path;
-
-            // Store the part that doesn't exist so we can put it back later
-            ghostSegments.Push(Path.GetFileName(current));
-            current = parent;
-        }
-
-        // 2. Resolve symlinks for the part of the path that actually exists
-        FileSystemInfo info = Directory.Exists(current)
-            ? new DirectoryInfo(current)
-            : new FileInfo(current);
-
-        var resolvedPath = info.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? info.FullName;
-
-        // 3. Re-attach the non-existent segments to the resolved base path
-        while (ghostSegments.Count > 0)
-            resolvedPath = Path.Combine(resolvedPath, ghostSegments.Pop());
-
-        return resolvedPath;
     }
 
     /// <inheritdoc />
@@ -215,16 +154,15 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
         // Make the symlink first, otherwise we cannot apply metadata to it
         if (metadata.TryGetValue("CoreSymlinkTarget", out var k))
         {
-            if (!allowRestoreOutsideTargetDirectory)
+            if (!allowRestoreOutsideTargetDirectory && !string.IsNullOrWhiteSpace(TargetDestination))
             {
                 var fullPath = Path.GetFullPath(path);
                 var parent = Path.GetDirectoryName(fullPath);
                 if (!string.IsNullOrEmpty(parent))
                 {
                     var target = Path.GetFullPath(Path.Combine(parent, k));
-                    var fullTarget = Path.GetFullPath(TargetDestination);
 
-                    if (!Util.AppendDirSeparator(target).StartsWith(Util.AppendDirSeparator(fullTarget), StringComparison.Ordinal))
+                    if (!Util.IsPathInsideTarget(target, TargetDestination))
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "SymlinkTargetOutside", null, "Skipping creation of symlink {0} -> {1} because it points outside the restore target", path, k);
                         return Task.FromResult(false);
