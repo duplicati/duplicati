@@ -146,6 +146,16 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
 
         // Resolve the path of the file/folder we are about to create
         var realPath = GetFinalPath(fullPath);
+
+        // Normalize both paths to ensure consistent comparison
+        // This handles cases where paths differ only by trailing separators
+        var normalizedTarget = realTarget.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var normalizedPath = realPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        // If the paths are equal after normalization, it's valid
+        if (string.Equals(normalizedPath, normalizedTarget, StringComparison.OrdinalIgnoreCase))
+            return;
+
         var relative = Path.GetRelativePath(realTarget, realPath);
 
         if (relative.StartsWith("..") || Path.IsPathRooted(relative))

@@ -867,7 +867,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 filehasher.Initialize();
 
                 // Open both files, as the target file is still being read to produce the overall file hash, if all the blocks are present across both the target and original files.
-                using var f_original = await restoreDestination.OpenRead(file.OriginalPath, cancellationToken).ConfigureAwait(false);
+                // Note: The original file is the source file on the local system (not within the restore destination),
+                // so we use File.OpenRead directly instead of restoreDestination.OpenRead
+                using var f_original = File.OpenRead(file.OriginalPath);
                 using var f_target = options.Dryrun ?
                     (await restoreDestination.FileExists(file.TargetPath, cancellationToken).ConfigureAwait(false) ?
                         await restoreDestination.OpenRead(file.TargetPath, cancellationToken).ConfigureAwait(false) :
