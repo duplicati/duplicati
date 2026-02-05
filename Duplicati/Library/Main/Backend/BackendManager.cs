@@ -308,7 +308,7 @@ internal partial class BackendManager : IBackendManager
             Unencrypted = false,
             TrackedInDb = true,
             IndexVolumeFinishedCallback = indexVolumeFinished,
-            OnDbUpdate = onDbUpdate ?? PutOperation.OnDbUpdateDefault
+            OnDbUpdate = onDbUpdate ?? PutOperation.OnDbUpdateDefault,
         };
 
         // Prepare encryption

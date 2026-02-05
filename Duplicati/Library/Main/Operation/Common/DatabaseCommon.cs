@@ -174,11 +174,6 @@ namespace Duplicati.Library.Main.Operation.Common
             );
         }
 
-        public Task RemoveOrphanedIndexBlockLinksAsync(CancellationToken token)
-        {
-            return RunOnMain(() => m_db.RemoveOrphanedIndexBlockLinksAsync(token));
-        }
-
         protected override void Dispose(bool isDisposing)
         {
             if (m_workerSource.IsCancellationRequested)
