@@ -878,10 +878,11 @@ namespace Duplicati.Library.Main.Operation
                                 (fe.Path.Length > 2 && fe.Path[1] == ':' && (fe.Path[2] == '\\' || fe.Path[2] == '/')) ||
                                 fe.Path.StartsWith("\\\\");
 
-                            // Check for relative path segments
-                            var hasRelativeSegments = fe.Path.Contains("/../") || fe.Path.Contains("\\..\\")
-                                || fe.Path.EndsWith("/..") || fe.Path.EndsWith("\\..")
-                                || fe.Path.StartsWith("../") || fe.Path.StartsWith("..\\");
+                            // Check for relative path segments (accounting for mixed path separators)
+                            var normalizedPath = fe.Path.Replace('\\', '/');
+                            var hasRelativeSegments = normalizedPath.Contains("/../")
+                                || normalizedPath.EndsWith("/..")
+                                || normalizedPath.StartsWith("../");
 
                             if (hasRelativeSegments)
                             {
