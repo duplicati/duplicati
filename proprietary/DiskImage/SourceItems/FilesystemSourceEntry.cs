@@ -12,7 +12,7 @@ using Duplicati.Proprietary.DiskImage.Filesystem;
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 
 internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
-    : DiskImageEntryBase(PathCombine(parentPath, "fs"))
+    : DiskImageEntryBase(PathCombine(parentPath, $"fs_{filesystem.Type}"))
 {
     public override bool IsFolder => true;
 

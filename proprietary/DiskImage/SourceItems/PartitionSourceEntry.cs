@@ -13,7 +13,7 @@ using Duplicati.Proprietary.DiskImage.Filesystem;
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 
 internal class PartitionSourceEntry(string parentPath, IPartition partition)
-    : DiskImageEntryBase(PathCombine(parentPath, $"partition_{partition.PartitionNumber}"))
+    : DiskImageEntryBase(PathCombine(parentPath, $"part_{partition.PartitionTable.TableType}_{partition.PartitionNumber}"))
 {
     public override bool IsFolder => true;
     public override long Size => partition.Size;
