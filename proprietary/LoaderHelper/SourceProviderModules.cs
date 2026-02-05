@@ -35,7 +35,8 @@ public static class SourceProviderModules
     /// </summary>
     private static Lazy<IReadOnlyList<ISourceProviderModule>> LicensedSourceProvidersLazy = new(() =>
         new ISourceProviderModule?[] {
-            LicenseHelper.AvailableOffice365FeatureSeats > 0 ? new Office365.SourceProvider() : null
+            LicenseHelper.AvailableOffice365FeatureSeats > 0 ? new Office365.SourceProvider() : null,
+            new DiskImage.SourceProvider()
         }
         .WhereNotNull()
         .ToList()
