@@ -53,6 +53,10 @@ public sealed record DestinationTestRequestDto
     /// The backup ID, if known
     /// </summary>
     public string? BackupId { get; init; }
+    /// <summary>
+    /// The connection string ID, if known
+    /// </summary>
+    public long? ConnectionStringId { get; init; }
 
     /// <summary>
     /// Any additional options to pass to the destination

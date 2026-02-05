@@ -60,7 +60,10 @@ public sealed record BackupAndScheduleInputDto
         /// The backup target url
         /// </summary>
         public string TargetURL { get; init; } = "";
-
+        /// <summary>
+        /// The connection string ID, or -1 if not used
+        /// </summary>
+        public long ConnectionStringID { get; init; } = -1;
         /// <summary>
         /// The backup source folders and files
         /// </summary>
