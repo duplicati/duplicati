@@ -20,7 +20,7 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition)
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (partition.FilesystemType != FileSystemType.Unknown)
+        if (partition.FilesystemType == FileSystemType.Unknown)
         {
             var fs = new UnknownFilesystem(partition);
             yield return new FilesystemSourceEntry(this.Path, fs);
