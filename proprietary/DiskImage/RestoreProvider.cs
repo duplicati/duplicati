@@ -27,7 +27,6 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     private readonly string _restorePath;
     private readonly bool _skipPartitionTable;
     private readonly bool _validateSize;
-    private readonly bool _hasSetOverwriteOption;
     private IRawDisk? _targetDisk;
     private bool _disposed;
 
@@ -51,7 +50,6 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         _restorePath = null!;
         _skipPartitionTable = false;
         _validateSize = true;
-        _hasSetOverwriteOption = false;
     }
 
     /// <summary>
@@ -67,7 +65,6 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         _skipPartitionTable = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION);
         _validateSize = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_VALIDATE_SIZE_OPTION);
-        _hasSetOverwriteOption = Utility.ParseBoolOption(options, "overwrite");
     }
 
     /// <inheritdoc />
@@ -88,9 +85,6 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <inheritdoc />
     public async Task Initialize(CancellationToken cancel)
     {
-        if (!_hasSetOverwriteOption)
-            throw new UserInformationException(Strings.RestoreOverwriteNotSet, "OverwriteOptionNotSet");
-
         if (OperatingSystem.IsWindows())
         {
             if (string.IsNullOrEmpty(_devicePath))
