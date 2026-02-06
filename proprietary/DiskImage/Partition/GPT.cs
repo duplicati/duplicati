@@ -443,6 +443,29 @@ public class GPT : IPartitionTable
         throw new InvalidOperationException("No protective MBR available.");
     }
 
+    public async Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken)
+    {
+        if (!m_parsed)
+            throw new InvalidOperationException("GPT header not parsed.");
+
+        if (m_rawDisk == null)
+            throw new InvalidOperationException("No raw disk available for reading GPT data.");
+
+        // Calculate the total size needed:
+        // - Protective MBR (512 bytes)
+        // - GPT Header (1 sector)
+        // - Partition Entries (m_partitionEntryLba sectors)
+        long partitionEntriesEnd = m_partitionEntryLba * m_bytesPerSector + (m_numPartitionEntries * m_partitionEntrySize);
+        long totalSize = partitionEntriesEnd;
+
+        // Read all the data
+        using var stream = await m_rawDisk.ReadBytesAsync(0, (int)totalSize, cancellationToken).ConfigureAwait(false);
+        var buffer = new byte[totalSize];
+        await stream.ReadAtLeastAsync(buffer, (int)totalSize, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        return new MemoryStream(buffer, writable: false);
+    }
+
     private async Task<bool> VerifyBackupHeaderAsync(CancellationToken token)
     {
         if (m_rawDisk == null)

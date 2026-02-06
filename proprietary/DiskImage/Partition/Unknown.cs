@@ -71,6 +71,13 @@ public class UnknownPartitionTable : IPartitionTable
         throw new NotSupportedException("Unknown partition table does not have a protective MBR.");
     }
 
+    public Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken)
+    {
+        // For unknown partition tables, return empty data
+        // The disk will be treated as one big partition with unknown filesystem
+        return Task.FromResult<Stream>(new MemoryStream(Array.Empty<byte>(), writable: false));
+    }
+
     public void Dispose()
     {
         if (m_disposed)

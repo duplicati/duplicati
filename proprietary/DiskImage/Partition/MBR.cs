@@ -246,6 +246,15 @@ public class MBR : IPartitionTable
         throw new NotSupportedException("MBR partition tables do not have a protective MBR. Use GetPartitionAsync instead.");
     }
 
+    public Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken)
+    {
+        if (!m_parsed || m_mbrBytes == null)
+            throw new InvalidOperationException("MBR not parsed.");
+
+        // Return the MBR sector (512 bytes)
+        return Task.FromResult<Stream>(new MemoryStream(m_mbrBytes, writable: false));
+    }
+
     public void Dispose()
     {
         Dispose(true);

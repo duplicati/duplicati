@@ -45,7 +45,7 @@ public static class PartitionTableFactory
         {
             PartitionTableType.GPT => await CreateGPTAsync(disk, mbrBytes, cancellationToken).ConfigureAwait(false),
             PartitionTableType.MBR => await CreateMBRAsync(disk, mbrBytes, cancellationToken).ConfigureAwait(false),
-            _ => null
+            _ => new UnknownPartitionTable(disk)
         };
     }
 
@@ -77,7 +77,7 @@ public static class PartitionTableFactory
         {
             PartitionTableType.GPT => await CreateGPTAsync(bytes, sectorSize, cancellationToken).ConfigureAwait(false),
             PartitionTableType.MBR => await CreateMBRAsync(mbrBytes, sectorSize, cancellationToken).ConfigureAwait(false),
-            _ => null
+            _ => new UnknownPartitionTable(null)
         };
     }
 

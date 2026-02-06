@@ -93,4 +93,11 @@ public interface IPartitionTable : IDisposable
     /// Gets the protective MBR (for GPT disks).
     /// </summary>
     Task<Stream> GetProtectiveMbrAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets the raw partition table data for backup/restore purposes.
+    /// For MBR: returns the MBR sector (512 bytes).
+    /// For GPT: returns the protective MBR + GPT header + partition entries.
+    /// </summary>
+    Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken);
 }

@@ -48,20 +48,21 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
         {
             metadata["disk:PartitionTableType"] = table.TableType.ToString();
 
-            // For GPT disks, include the protective MBR info
-            if (table.TableType == PartitionTableType.GPT)
+            // Get the full partition table data for restore
+            try
             {
-                try
+                using var tableData = await table.GetPartitionTableDataAsync(cancellationToken);
+                metadata["disk:PartitionTableDataSize"] = tableData.Length.ToString();
+
+                // For GPT disks, also record specific info
+                if (table.TableType == PartitionTableType.GPT)
                 {
-                    using var protectiveMbr = await table.GetProtectiveMbrAsync(cancellationToken);
-                    using var ms = new MemoryStream();
-                    await protectiveMbr.CopyToAsync(ms, cancellationToken);
-                    metadata["disk:ProtectiveMbrSize"] = ms.Length.ToString();
+                    metadata["disk:HasProtectiveMbr"] = "true";
                 }
-                catch
-                {
-                    // Protective MBR not available
-                }
+            }
+            catch
+            {
+                // Partition table data not available
             }
         }
 

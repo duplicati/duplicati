@@ -225,12 +225,21 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         var processedCount = 0;
 
         // Group items by type for ordered restoration
+        var partitionTableItems = GetMetadataByType("partition_table");
         var diskItems = GetMetadataByType("disk");
         var partitionItems = GetMetadataByType("partition");
         var blockItems = GetMetadataByType("block");
         var fileItems = GetMetadataByType("file");
 
-        // Restore disk-level items first (partition tables)
+        // Restore partition table items first (if available)
+        if (!_skipPartitionTable && partitionTableItems.Count > 0)
+        {
+            await RestorePartitionTableItems(partitionTableItems, cancel);
+            processedCount += partitionTableItems.Count;
+            progressCallback?.Invoke(processedCount / (double)totalItems);
+        }
+
+        // Restore disk-level items (full disk image)
         if (!_skipPartitionTable && diskItems.Count > 0)
         {
             await RestoreDiskItems(diskItems, cancel);
@@ -272,7 +281,56 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     }
 
     /// <summary>
-    /// Restores disk-level items (partition tables, boot sectors).
+    /// Restores partition table items (MBR or GPT).
+    /// </summary>
+    private async Task RestorePartitionTableItems(List<KeyValuePair<string, Dictionary<string, string?>>> items, CancellationToken cancel)
+    {
+        foreach (var item in items)
+        {
+            if (cancel.IsCancellationRequested)
+                break;
+
+            var path = item.Key;
+            var metadata = item.Value;
+
+            if (!_temporaryFiles.TryGetValue(path, out var tempFile))
+                continue;
+
+            try
+            {
+                // Extract metadata for logging
+                metadata.TryGetValue("partition_table:Type", out var tableType);
+                metadata.TryGetValue("partition_table:Size", out var tableSizeStr);
+                metadata.TryGetValue("disk:SectorSize", out var sectorSizeStr);
+
+                Log.WriteInformationMessage(LOGTAG, "RestorePartitionTableMetadata",
+                    $"Restoring partition table (Type: {tableType}, Size: {tableSizeStr}, SectorSize: {sectorSizeStr})");
+
+                // Read the data from temp file
+                byte[] data;
+                using (var stream = SystemIO.IO_OS.FileOpenRead(tempFile))
+                {
+                    data = new byte[stream.Length];
+                    await stream.ReadExactlyAsync(data, cancel);
+                }
+
+                // Write partition table to disk starting at offset 0
+                // For MBR: this is the 512-byte MBR sector
+                // For GPT: this includes protective MBR + GPT header + partition entries
+                await _targetDisk!.WriteBytesAsync(0, data, cancel);
+
+                Log.WriteInformationMessage(LOGTAG, "RestorePartitionTable", $"Restored partition table: {path} (Type: {tableType})");
+            }
+            catch (Exception ex)
+            {
+                Log.WriteErrorMessage(LOGTAG, "RestorePartitionTableFailed", ex, $"Failed to restore partition table: {path}");
+                throw;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Restores disk-level items (full disk image).
     /// </summary>
     private async Task RestoreDiskItems(List<KeyValuePair<string, Dictionary<string, string?>>> items, CancellationToken cancel)
     {
@@ -318,8 +376,9 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                 }
 
                 // Write to disk (offset 0 for partition table/boot sector)
-                // TODO in the future, write the correct GPT table: primary at offset 0, secondary at end of disk. The header should also be updated to have correct offsets and CRCs.
                 await _targetDisk!.WriteBytesAsync(0, data, cancel);
+
+                // TODO for GPT disks, we may also need to write the backup GPT header at the end of the disk. The fields in the header should also reflect this. Furthermore, if the GUID of the disk has changed, we may need to update these as well.
 
                 Log.WriteInformationMessage(LOGTAG, "RestoreDiskItem", $"Restored disk item: {path} (Table: {partitionTableType})");
             }
