@@ -47,8 +47,11 @@ public class DestinationVerify : IEndpointV2
         {
             if (destinationType == RemoteDestinationType.SourceProvider)
             {
-                using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
-                await wrapper.SourceProvider.Test(cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.SourcePrefix, cancelToken);
+
+                // We do not call TestAsync here, because we may have read-only access to the source, and test will verify write access
+                // Instead we just check if we can enumerate the files, which is the main thing we need to verify for a source provider
+
                 // Technically we also count folders as files here, but really we just want to know if there is data to backup
                 var anyFiles = await wrapper.SourceProvider.Enumerate(cancelToken).AnyAsync(cancelToken);
 
@@ -60,7 +63,9 @@ public class DestinationVerify : IEndpointV2
             }
             else if (destinationType == RemoteDestinationType.RestoreDestinationProvider)
             {
-                using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.SourcePrefix, cancelToken);
+
+                // Here we do call TestAsync, because we need to verify write access
                 await wrapper.RestoreDestinationProvider.Test(cancelToken);
 
                 return DestinationTestResponseDto.Create(
