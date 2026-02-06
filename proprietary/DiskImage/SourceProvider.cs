@@ -31,7 +31,8 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     public SourceProvider(string url, string mountPoint, Dictionary<string, string?> options)
     {
         _mountPoint = mountPoint;
-        _devicePath = options.GetValueOrDefault(OptionsHelper.DISK_DEVICE_OPTION) ?? "";
+        var uri = new Library.Utility.Uri(url);
+        _devicePath = uri.HostAndPath;
     }
 
     public string MountedPath => _mountPoint;

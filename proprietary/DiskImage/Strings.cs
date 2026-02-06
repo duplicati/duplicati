@@ -11,9 +11,6 @@ internal static class Strings
     public static string ProviderDescription => LC.L(
         "Expose disks, partitions, and filesystems as a virtual folder structure.");
 
-    public static string DiskDeviceOptionShort => LC.L("Disk device path.");
-    public static string DiskDeviceOptionLong => LC.L("The device path of the disk to back up (e.g., \\\\.\\PhysicalDrive0).");
-
     public static string RestoreProviderDisplayName => LC.L("Disk Image Restore Provider");
 
     public static string RestoreProviderDescription => LC.L(

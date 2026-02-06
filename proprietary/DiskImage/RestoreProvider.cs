@@ -63,8 +63,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     {
         var uri = new Library.Utility.Uri(url);
         _restorePath = uri.HostAndPath;
+        _devicePath = uri.HostAndPath;
 
-        _devicePath = options.GetValueOrDefault(OptionsHelper.DISK_DEVICE_OPTION) ?? "";
         _skipPartitionTable = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION);
         _validateSize = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_VALIDATE_SIZE_OPTION);
         _hasSetOverwriteOption = Utility.ParseBoolOption(options, "overwrite");
