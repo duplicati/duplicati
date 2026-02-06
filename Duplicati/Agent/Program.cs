@@ -90,6 +90,17 @@ public static class Program
         string SecretProviderPattern
     );
 
+    private static string GetDefaultRegistrationUrl()
+    {
+        // Also support the standard Server URL environment variable for the registration URL
+        // so the same preload or ENV works regardless of if the agent or server is being run
+        var servervar = Environment.GetEnvironmentVariable("DUPLICATI__REGISTER_REMOTE_CONTROL");
+        if (!string.IsNullOrEmpty(servervar))
+            return servervar;
+
+        return RegisterForRemote.DefaultRegisterationUrl;
+    }
+
     [STAThread]
     public static Task<int> Main(string[] args)
     {
@@ -97,7 +108,7 @@ public static class Program
 
         var runcmd = new Command("run", "Runs the agent")
         {
-            new Option<string>("--agent-registration-url", description: "The server URL to connect to", getDefaultValue: () => RegisterForRemote.DefaultRegisterationUrl),
+            new Option<string>("--agent-registration-url", description: "The server URL to connect to", getDefaultValue: () => GetDefaultRegistrationUrl()),
             new Option<FileInfo>("--agent-settings-file", description: "The file to use for the agent settings", getDefaultValue: () => new FileInfo(Settings.DefaultSettingsFile)),
             new Option<string?>("--agent-settings-file-passphrase", description: "The passphrase for the agent settings file", getDefaultValue: () => null),
             new Option<bool>("--agent-register-only", description: "Only register the agent, then exit", getDefaultValue: () => false),
@@ -191,7 +202,7 @@ public static class Program
     private static Task<int> RegisterAgent(string agentRegistrationUrl, FileInfo agentSettingsFile, string? agentSettingsFilePassphrase, string? secretProvider, string secretProviderPattern)
         => RunAgent(new CommandLineArguments(
             AgentRegistrationUrl: string.IsNullOrWhiteSpace(agentRegistrationUrl)
-                ? RegisterForRemote.DefaultRegisterationUrl
+                ? GetDefaultRegistrationUrl()
                 : agentRegistrationUrl,
             AgentSettingsFile: agentSettingsFile,
             AgentSettingsFilePassphrase: agentSettingsFilePassphrase,
