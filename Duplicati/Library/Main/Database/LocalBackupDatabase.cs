@@ -1955,5 +1955,48 @@ namespace Duplicati.Library.Main.Database
             else
                 return !m_blocklistHashes.Add(hash);
         }
+
+        /// <summary>
+        /// Removes duplicate path entries from the specified fileset, keeping the entry with the highest FileID.
+        /// </summary>
+        /// <param name="filesetId">The ID of the fileset to clean up.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the cleanup is finished.</returns>
+        public async Task RemoveDuplicatePathsFromFileset(long filesetId, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+
+            // Find and delete duplicate paths, keeping the one with the highest FileID
+            // Note: FilesetEntry doesn't have an ID column, so we use rowid (or the composite key)
+            var sql = @"
+                DELETE FROM ""FilesetEntry""
+                WHERE (""FilesetID"", ""FileID"") IN (
+                    SELECT ""FilesetID"", ""FileID"" FROM (
+                        SELECT
+                            fe.""FilesetID"",
+                            fe.""FileID"",
+                            ROW_NUMBER() OVER (
+                                PARTITION BY f.""Path""
+                                ORDER BY fe.""FileID"" DESC
+                            ) as rn
+                        FROM ""FilesetEntry"" fe
+                        JOIN ""File"" f ON fe.""FileID"" = f.""ID""
+                        WHERE fe.""FilesetID"" = @FilesetId
+                    ) WHERE rn > 1
+                )
+            ";
+
+            var deletedCount = await cmd
+                .SetCommandAndParameters(sql)
+                .SetParameterValue("@FilesetId", filesetId)
+                .ExecuteNonQueryAsync(token)
+                .ConfigureAwait(false);
+
+            if (deletedCount > 0)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "RemovedDuplicatePaths", null,
+                    "Removed {0} duplicate path entries from fileset {1}", deletedCount, filesetId);
+            }
+        }
     }
 }
