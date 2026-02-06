@@ -674,7 +674,10 @@ namespace Duplicati.Library.Modules.Builtin
             ".tencentcloudapi.com",
             ".rabata.io",
             ".internxt.com",
-            ".cloudflarestorage.com"
+            ".cloudflarestorage.com",
+            ".storage.selcloud.ru",
+            ".srvstorage.uz",
+            ".srvstorage.kz"
         ], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
