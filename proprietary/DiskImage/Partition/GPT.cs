@@ -604,9 +604,83 @@ public class GPT : IPartitionTable
             return RawDisk.ReadBytesAsync(StartOffset, (int)Math.Min(Size, int.MaxValue), cancellationToken);
         }
 
+        public Task<Stream> OpenWriteAsync(CancellationToken cancellationToken)
+        {
+            if (RawDisk == null)
+                throw new InvalidOperationException("RawDisk not available.");
+            // Return a stream that wraps the raw disk write capability
+            return Task.FromResult<Stream>(new PartitionWriteStream(RawDisk, StartOffset, Size));
+        }
+
         public void Dispose()
         {
             // No unmanaged resources to dispose
+        }
+    }
+
+    /// <summary>
+    /// A stream that writes data to a partition on the raw disk.
+    /// </summary>
+    private class PartitionWriteStream : Stream
+    {
+        private readonly IRawDisk _disk;
+        private readonly long _startOffset;
+        private readonly long _maxSize;
+        private readonly MemoryStream _buffer;
+        private bool _disposed = false;
+
+        public PartitionWriteStream(IRawDisk disk, long startOffset, long maxSize)
+        {
+            _disk = disk;
+            _startOffset = startOffset;
+            _maxSize = maxSize;
+            _buffer = new MemoryStream();
+        }
+
+        public override bool CanRead => false;
+        public override bool CanSeek => true;
+        public override bool CanWrite => true;
+        public override long Length => _buffer.Length;
+        public override long Position
+        {
+            get => _buffer.Position;
+            set => _buffer.Position = value;
+        }
+
+        public override void Flush() => _buffer.Flush();
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => _buffer.Seek(offset, origin);
+        public override void SetLength(long value)
+        {
+            if (value > _maxSize)
+                throw new IOException($"Cannot write beyond partition size of {_maxSize} bytes.");
+            _buffer.SetLength(value);
+        }
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            if (_buffer.Position + count > _maxSize)
+                throw new IOException($"Cannot write beyond partition size of {_maxSize} bytes.");
+            _buffer.Write(buffer, offset, count);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // Write all buffered data to disk
+                    _buffer.Position = 0;
+                    var data = _buffer.ToArray();
+                    if (data.Length > 0)
+                    {
+                        _disk.WriteBytesAsync(_startOffset, data, CancellationToken.None).GetAwaiter().GetResult();
+                    }
+                    _buffer.Dispose();
+                }
+                _disposed = true;
+            }
+            base.Dispose(disposing);
         }
     }
 }

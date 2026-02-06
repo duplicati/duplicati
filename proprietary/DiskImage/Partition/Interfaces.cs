@@ -58,6 +58,13 @@ public interface IPartition : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Stream for reading partition data.</returns>
     Task<Stream> OpenReadAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Creates a stream to write the raw partition data.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Stream for writing partition data.</returns>
+    Task<Stream> OpenWriteAsync(CancellationToken cancellationToken);
 }
 
 /// <summary>

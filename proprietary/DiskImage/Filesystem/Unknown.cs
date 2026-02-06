@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.Partition;
 
 namespace Duplicati.Proprietary.DiskImage.Filesystem;
@@ -102,5 +103,71 @@ public class UnknownFilesystem : IFilesystem
         var buffer = new byte[file.Size];
         await partitionStream.ReadExactlyAsync(buffer, 0, buffer.Length, cancellationToken);
         return new MemoryStream(buffer);
+    }
+
+    public Task<Stream> CreateFileAsync(IFile? file, long address, long size, CancellationToken cancellationToken)
+    {
+        if (m_partition.PartitionTable.RawDisk == null)
+            throw new InvalidOperationException("Cannot write to partition without a raw disk.");
+
+        // Create a stream that writes directly to the partition at the specified address
+        var writeStream = new UnknownFilesystemWriteStream(m_partition.PartitionTable.RawDisk, address, size);
+        return Task.FromResult<Stream>(writeStream);
+    }
+
+    /// <summary>
+    /// A stream that writes data directly to a specific address on the raw disk.
+    /// </summary>
+    private class UnknownFilesystemWriteStream : Stream
+    {
+        private readonly IRawDisk _disk;
+        private readonly long _startAddress;
+        private readonly long _expectedSize;
+        private readonly MemoryStream _buffer;
+        private bool _disposed = false;
+
+        public UnknownFilesystemWriteStream(IRawDisk disk, long startAddress, long expectedSize)
+        {
+            _disk = disk;
+            _startAddress = startAddress;
+            _expectedSize = expectedSize;
+            _buffer = new MemoryStream();
+        }
+
+        public override bool CanRead => false;
+        public override bool CanSeek => true;
+        public override bool CanWrite => true;
+        public override long Length => _buffer.Length;
+        public override long Position
+        {
+            get => _buffer.Position;
+            set => _buffer.Position = value;
+        }
+
+        public override void Flush() => _buffer.Flush();
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => _buffer.Seek(offset, origin);
+        public override void SetLength(long value) => _buffer.SetLength(value);
+        public override void Write(byte[] buffer, int offset, int count) => _buffer.Write(buffer, offset, count);
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // Write all buffered data to disk
+                    _buffer.Position = 0;
+                    var data = _buffer.ToArray();
+                    if (data.Length > 0)
+                    {
+                        _disk.WriteBytesAsync(_startAddress, data, CancellationToken.None).GetAwaiter().GetResult();
+                    }
+                    _buffer.Dispose();
+                }
+                _disposed = true;
+            }
+            base.Dispose(disposing);
+        }
     }
 }
