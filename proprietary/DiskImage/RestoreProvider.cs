@@ -556,15 +556,294 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     }
 
     /// <inheritdoc />
-    public Task<Stream> OpenRead(string path, CancellationToken cancel)
+    public async Task<Stream> OpenRead(string path, CancellationToken cancel)
     {
-        throw new NotSupportedException("Restore provider does not support reading files.");
+        path = NormalizePath(path);
+
+        // Get metadata for this path to determine the strategy
+        if (!_metadata.TryGetValue(path, out var metadata))
+        {
+            throw new InvalidOperationException($"No metadata found for path: {path}. WriteMetadata must be called before OpenRead.");
+        }
+
+        // Determine the item type
+        metadata.TryGetValue("diskimage:Type", out var typeStr);
+
+        return typeStr switch
+        {
+            "partition_table" => await OpenReadPartitionTable(metadata, cancel),
+            "disk" => await OpenReadDisk(metadata, cancel),
+            "partition" => await OpenReadPartition(metadata, cancel),
+            "block" or "file" => await OpenReadThroughFilesystem(path, metadata, cancel),
+            _ => throw new NotSupportedException($"Unsupported item type for reading: {typeStr}")
+        };
+    }
+
+    /// <summary>
+    /// Opens a stream for reading partition table data.
+    /// </summary>
+    private Task<Stream> OpenReadPartitionTable(Dictionary<string, string?> metadata, CancellationToken cancel)
+    {
+        if (_targetDisk == null)
+            throw new InvalidOperationException("Target disk not initialized.");
+
+        // Read the partition table from the target disk (first 34 sectors for GPT, first sector for MBR)
+        // For now, read a reasonable amount that covers both MBR and GPT primary header
+        return _targetDisk.ReadBytesAsync(0, 34 * _targetDisk.SectorSize, cancel);
+    }
+
+    /// <summary>
+    /// Opens a stream for reading disk-level data.
+    /// </summary>
+    private Task<Stream> OpenReadDisk(Dictionary<string, string?> metadata, CancellationToken cancel)
+    {
+        if (_targetDisk == null)
+            throw new InvalidOperationException("Target disk not initialized.");
+
+        // Read the entire disk or a portion of it
+        // For disk-level items, we typically want to read from the beginning
+        metadata.TryGetValue("disk:Size", out var sizeStr);
+        long.TryParse(sizeStr, out var size);
+
+        var readSize = size > 0 ? Math.Min(size, _targetDisk.Size) : _targetDisk.Size;
+        return _targetDisk.ReadBytesAsync(0, (int)Math.Min(readSize, int.MaxValue), cancel);
+    }
+
+    /// <summary>
+    /// Opens a stream for reading partition data.
+    /// </summary>
+    private Task<Stream> OpenReadPartition(Dictionary<string, string?> metadata, CancellationToken cancel)
+    {
+        if (_targetDisk == null)
+            throw new InvalidOperationException("Target disk not initialized.");
+
+        metadata.TryGetValue("partition:StartOffset", out var offsetStr);
+        if (!long.TryParse(offsetStr, out var offset))
+        {
+            metadata.TryGetValue("partition_offset", out offsetStr);
+            long.TryParse(offsetStr, out offset);
+        }
+
+        metadata.TryGetValue("partition:Size", out var sizeStr);
+        long.TryParse(sizeStr, out var size);
+
+        var readSize = size > 0 ? Math.Min(size, _targetDisk.Size - offset) : _targetDisk.Size - offset;
+        return _targetDisk.ReadBytesAsync(offset, (int)Math.Min(readSize, int.MaxValue), cancel);
+    }
+
+    /// <summary>
+    /// Opens a stream for reading through the filesystem layer.
+    /// </summary>
+    private async Task<Stream> OpenReadThroughFilesystem(string path, Dictionary<string, string?> metadata, CancellationToken cancel)
+    {
+        // Parse metadata to get partition and filesystem information
+        metadata.TryGetValue("filesystem:PartitionNumber", out var partitionNumberStr);
+        metadata.TryGetValue("filesystem:PartitionStartOffset", out var partitionOffsetStr);
+        metadata.TryGetValue("filesystem:Type", out var filesystemTypeStr);
+        metadata.TryGetValue("filesystem:BlockSize", out var blockSizeStr);
+        metadata.TryGetValue("block:Address", out var addressStr);
+        metadata.TryGetValue("file:Size", out var sizeStr);
+
+        // Fallback to old key format for address
+        if (string.IsNullOrEmpty(addressStr))
+            metadata.TryGetValue("block_address", out addressStr);
+
+        // Parse values
+        int partitionNumber = int.TryParse(partitionNumberStr, out var pn) ? pn : 1;
+        long partitionStartOffset = long.TryParse(partitionOffsetStr, out var pso) ? pso : 0;
+        long address = long.TryParse(addressStr, out var addr) ? addr : 0;
+        long size = long.TryParse(sizeStr, out var sz) ? sz : 0;
+        int blockSize = int.TryParse(blockSizeStr, out var bs) ? bs : 1024 * 1024;
+
+        Enum.TryParse<FileSystemType>(filesystemTypeStr, out var filesystemType);
+
+        // Get or create the partition instance
+        var partition = await GetOrCreatePartitionAsync(partitionNumber, partitionStartOffset, cancel);
+
+        // Get or create the filesystem instance
+        var filesystem = await GetOrCreateFilesystemAsync(partitionNumber, partition, filesystemType, blockSize, cancel);
+
+        // Create a file reference for reading
+        var file = new UnknownFilesystemFile
+        {
+            Address = address,
+            Size = size
+        };
+
+        // Open read stream through the filesystem
+        return await filesystem.OpenFileAsync(file, cancel);
     }
 
     /// <inheritdoc />
-    public Task<Stream> OpenReadWrite(string path, CancellationToken cancel)
+    public async Task<Stream> OpenReadWrite(string path, CancellationToken cancel)
     {
-        throw new NotSupportedException("Restore provider does not support read-write operations. Use OpenWrite instead.");
+        path = NormalizePath(path);
+
+        // Get metadata for this path to determine the strategy
+        if (!_metadata.TryGetValue(path, out var metadata))
+        {
+            throw new InvalidOperationException($"No metadata found for path: {path}. WriteMetadata must be called before OpenReadWrite.");
+        }
+
+        // Determine the item type
+        metadata.TryGetValue("diskimage:Type", out var typeStr);
+
+        // For block/file items, we can support read-write through the filesystem layer
+        if (typeStr == "block" || typeStr == "file")
+        {
+            return await OpenReadWriteThroughFilesystem(path, metadata, cancel);
+        }
+
+        // For other types, read-write doesn't make sense during restore
+        throw new NotSupportedException($"OpenReadWrite is not supported for item type: {typeStr}");
+    }
+
+    /// <summary>
+    /// Opens a stream for read-write access through the filesystem layer.
+    /// This allows reading existing data and writing new data.
+    /// </summary>
+    private async Task<Stream> OpenReadWriteThroughFilesystem(string path, Dictionary<string, string?> metadata, CancellationToken cancel)
+    {
+        // Parse metadata to get partition and filesystem information
+        metadata.TryGetValue("filesystem:PartitionNumber", out var partitionNumberStr);
+        metadata.TryGetValue("filesystem:PartitionStartOffset", out var partitionOffsetStr);
+        metadata.TryGetValue("filesystem:Type", out var filesystemTypeStr);
+        metadata.TryGetValue("filesystem:BlockSize", out var blockSizeStr);
+        metadata.TryGetValue("block:Address", out var addressStr);
+        metadata.TryGetValue("file:Size", out var sizeStr);
+
+        // Fallback to old key format for address
+        if (string.IsNullOrEmpty(addressStr))
+            metadata.TryGetValue("block_address", out addressStr);
+
+        // Parse values
+        int partitionNumber = int.TryParse(partitionNumberStr, out var pn) ? pn : 1;
+        long partitionStartOffset = long.TryParse(partitionOffsetStr, out var pso) ? pso : 0;
+        long address = long.TryParse(addressStr, out var addr) ? addr : 0;
+        long size = long.TryParse(sizeStr, out var sz) ? sz : 0;
+        int blockSize = int.TryParse(blockSizeStr, out var bs) ? bs : 1024 * 1024;
+
+        Enum.TryParse<FileSystemType>(filesystemTypeStr, out var filesystemType);
+
+        // Get or create the partition instance
+        var partition = await GetOrCreatePartitionAsync(partitionNumber, partitionStartOffset, cancel);
+
+        // Get or create the filesystem instance
+        var filesystem = await GetOrCreateFilesystemAsync(partitionNumber, partition, filesystemType, blockSize, cancel);
+
+        // Create a file reference
+        var file = new UnknownFilesystemFile
+        {
+            Address = address,
+            Size = size
+        };
+
+        // Create a read-write stream that wraps both read and write capabilities
+        return new ReadWriteFilesystemStream(filesystem, partition, file, address, size);
+    }
+
+    /// <summary>
+    /// A stream that supports both reading and writing through the filesystem layer.
+    /// </summary>
+    private class ReadWriteFilesystemStream : Stream
+    {
+        private readonly IFilesystem _filesystem;
+        private readonly IPartition _partition;
+        private readonly IFile _file;
+        private readonly long _address;
+        private readonly long _size;
+        private readonly MemoryStream _writeBuffer;
+        private bool _disposed = false;
+
+        public ReadWriteFilesystemStream(IFilesystem filesystem, IPartition partition, IFile file, long address, long size)
+        {
+            _filesystem = filesystem;
+            _partition = partition;
+            _file = file;
+            _address = address;
+            _size = size;
+            _writeBuffer = new MemoryStream();
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => true;
+        public override bool CanWrite => true;
+        public override long Length => _size;
+
+        public override long Position
+        {
+            get => _writeBuffer.Position;
+            set => _writeBuffer.Position = value;
+        }
+
+        public override void Flush() => _writeBuffer.Flush();
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            // Read directly from the partition at the specified address
+            if (_partition.PartitionTable.RawDisk == null)
+                throw new InvalidOperationException("Raw disk not available for reading.");
+
+            var disk = _partition.PartitionTable.RawDisk;
+            var sectorSize = disk.SectorSize;
+            var startSector = (_address + _writeBuffer.Position) / sectorSize;
+            var sectorOffset = (int)((_address + _writeBuffer.Position) % sectorSize);
+            var bytesToRead = Math.Min(count, (int)(_size - _writeBuffer.Position));
+            var sectorCount = (sectorOffset + bytesToRead + sectorSize - 1) / sectorSize;
+
+            if (bytesToRead <= 0)
+                return 0;
+
+            // Read the sectors containing the requested data
+            var readTask = disk.ReadSectorsAsync(startSector, sectorCount, CancellationToken.None);
+            readTask.Wait();
+            using var sectorStream = readTask.Result;
+            var sectorData = new byte[sectorStream.Length];
+            sectorStream.ReadExactly(sectorData, 0, sectorData.Length);
+
+            // Copy the relevant portion to the output buffer
+            var actualRead = Math.Min(bytesToRead, sectorData.Length - sectorOffset);
+            Array.Copy(sectorData, sectorOffset, buffer, offset, actualRead);
+
+            _writeBuffer.Position += actualRead;
+            return actualRead;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => _writeBuffer.Seek(offset, origin);
+
+        public override void SetLength(long value)
+        {
+            if (value > _size)
+                throw new IOException($"Cannot extend file beyond original size of {_size} bytes.");
+            _writeBuffer.SetLength(value);
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            if (_writeBuffer.Position + count > _size)
+                throw new IOException($"Cannot write beyond file size of {_size} bytes.");
+            _writeBuffer.Write(buffer, offset, count);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // Write buffered data to disk
+                    _writeBuffer.Position = 0;
+                    var data = _writeBuffer.ToArray();
+                    if (data.Length > 0 && _partition.PartitionTable.RawDisk != null)
+                    {
+                        _partition.PartitionTable.RawDisk.WriteBytesAsync(_address, data, CancellationToken.None).GetAwaiter().GetResult();
+                    }
+                    _writeBuffer.Dispose();
+                }
+                _disposed = true;
+            }
+            base.Dispose(disposing);
+        }
     }
 
     /// <inheritdoc />
