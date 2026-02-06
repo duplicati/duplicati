@@ -33,6 +33,23 @@ internal class FileSourceEntry(string parentPath, IFilesystem filesystem, IFile 
         }
     }
 
+    public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+    {
+        var metadata = await base.GetMinorMetadata(cancellationToken);
+
+        // Add file/block-level metadata
+        metadata["diskimage:Type"] = "block";
+        metadata["file:Path"] = file.Path;
+        metadata["file:Size"] = file.Size.ToString();
+        metadata["file:IsDirectory"] = file.IsDirectory.ToString();
+        metadata["filesystem:Type"] = filesystem.Type.ToString();
+
+        if (file.Address.HasValue)
+            metadata["block:Address"] = file.Address.Value.ToString();
+
+        return metadata;
+    }
+
     private static string PathCombine(string p1, string p2)
     {
         if (string.IsNullOrEmpty(p1)) return p2;

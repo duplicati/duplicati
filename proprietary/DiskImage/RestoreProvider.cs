@@ -289,6 +289,26 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
             try
             {
+                // Extract metadata for logging
+                metadata.TryGetValue("disk:DevicePath", out var sourceDevicePath);
+                metadata.TryGetValue("disk:Size", out var sourceSizeStr);
+                metadata.TryGetValue("disk:SectorSize", out var sectorSizeStr);
+                metadata.TryGetValue("disk:PartitionTableType", out var partitionTableType);
+                metadata.TryGetValue("disk:Sectors", out var sectorsStr);
+
+                Log.WriteInformationMessage(LOGTAG, "RestoreDiskItemMetadata",
+                    $"Restoring disk from {sourceDevicePath} (Size: {sourceSizeStr}, SectorSize: {sectorSizeStr}, Table: {partitionTableType}, Sectors: {sectorsStr})");
+
+                // Validate size if source metadata is available
+                if (_validateSize && long.TryParse(sourceSizeStr, out var sourceSize))
+                {
+                    if (_targetDisk!.Size < sourceSize)
+                    {
+                        throw new InvalidOperationException(
+                            string.Format(Strings.RestoreTargetTooSmall, _targetDisk.Size, sourceSize));
+                    }
+                }
+
                 // Read the data from temp file
                 byte[] data;
                 using (var stream = SystemIO.IO_OS.FileOpenRead(tempFile))
@@ -301,7 +321,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                 // TODO in the future, write the correct GPT table: primary at offset 0, secondary at end of disk. The header should also be updated to have correct offsets and CRCs.
                 await _targetDisk!.WriteBytesAsync(0, data, cancel);
 
-                Log.WriteInformationMessage(LOGTAG, "RestoreDiskItem", $"Restored disk item: {path}");
+                Log.WriteInformationMessage(LOGTAG, "RestoreDiskItem", $"Restored disk item: {path} (Table: {partitionTableType})");
             }
             catch (Exception ex)
             {
@@ -329,12 +349,26 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
             try
             {
-                // Get partition offset from metadata
-                if (!metadata.TryGetValue("partition_offset", out var offsetStr) || !long.TryParse(offsetStr, out var offset))
+                // Get partition metadata
+                metadata.TryGetValue("partition:Number", out var partitionNumber);
+                metadata.TryGetValue("partition:Type", out var partitionType);
+                metadata.TryGetValue("partition:Name", out var partitionName);
+                metadata.TryGetValue("partition:FilesystemType", out var filesystemType);
+                metadata.TryGetValue("partition:VolumeGuid", out var volumeGuid);
+
+                // Get partition offset from metadata (use new key format, fallback to old)
+                if (!metadata.TryGetValue("partition:StartOffset", out var offsetStr) || !long.TryParse(offsetStr, out var offset))
                 {
-                    Log.WriteWarningMessage(LOGTAG, "RestorePartitionNoOffset", null, $"No partition offset found for: {path}");
-                    continue;
+                    // Fallback to old key format for backward compatibility
+                    if (!metadata.TryGetValue("partition_offset", out offsetStr) || !long.TryParse(offsetStr, out offset))
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "RestorePartitionNoOffset", null, $"No partition offset found for: {path}");
+                        continue;
+                    }
                 }
+
+                Log.WriteInformationMessage(LOGTAG, "RestorePartitionItemMetadata",
+                    $"Restoring partition #{partitionNumber} (Type: {partitionType}, Name: {partitionName}, FS: {filesystemType}, GUID: {volumeGuid})");
 
                 // Read the data from temp file
                 byte[] data;
@@ -347,7 +381,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                 // Write to partition location
                 await _targetDisk!.WriteBytesAsync(offset, data, cancel);
 
-                Log.WriteInformationMessage(LOGTAG, "RestorePartitionItem", $"Restored partition item: {path} at offset {offset}");
+                Log.WriteInformationMessage(LOGTAG, "RestorePartitionItem", $"Restored partition item: {path} (Partition #{partitionNumber}, Offset: {offset})");
             }
             catch (Exception ex)
             {
@@ -375,12 +409,24 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
             try
             {
-                // Get block address from metadata
-                if (!metadata.TryGetValue("block_address", out var addressStr) || !long.TryParse(addressStr, out var address))
+                // Get block metadata
+                metadata.TryGetValue("file:Path", out var filePath);
+                metadata.TryGetValue("file:Size", out var fileSize);
+                metadata.TryGetValue("filesystem:Type", out var filesystemType);
+
+                // Get block address from metadata (use new key format, fallback to old)
+                if (!metadata.TryGetValue("block:Address", out var addressStr) || !long.TryParse(addressStr, out var address))
                 {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreBlockNoAddress", null, $"No block address found for: {path}");
-                    continue;
+                    // Fallback to old key format for backward compatibility
+                    if (!metadata.TryGetValue("block_address", out addressStr) || !long.TryParse(addressStr, out address))
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "RestoreBlockNoAddress", null, $"No block address found for: {path}");
+                        continue;
+                    }
                 }
+
+                Log.WriteInformationMessage(LOGTAG, "RestoreBlockItemMetadata",
+                    $"Restoring block from {filePath} (Size: {fileSize}, FS: {filesystemType})");
 
                 // Read the data from temp file
                 byte[] data;

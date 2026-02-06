@@ -30,4 +30,41 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
             }
         }
     }
+
+    public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+    {
+        var metadata = await base.GetMinorMetadata(cancellationToken);
+
+        // Add disk-level metadata
+        metadata["diskimage:Type"] = "disk";
+        metadata["disk:DevicePath"] = disk.DevicePath;
+        metadata["disk:Size"] = disk.Size.ToString();
+        metadata["disk:SectorSize"] = disk.SectorSize.ToString();
+        metadata["disk:Sectors"] = disk.Sectors.ToString();
+
+        // Add partition table metadata if available
+        var table = await PartitionTableFactory.CreateAsync(disk, cancellationToken);
+        if (table != null)
+        {
+            metadata["disk:PartitionTableType"] = table.TableType.ToString();
+
+            // For GPT disks, include the protective MBR info
+            if (table.TableType == PartitionTableType.GPT)
+            {
+                try
+                {
+                    using var protectiveMbr = await table.GetProtectiveMbrAsync(cancellationToken);
+                    using var ms = new MemoryStream();
+                    await protectiveMbr.CopyToAsync(ms, cancellationToken);
+                    metadata["disk:ProtectiveMbrSize"] = ms.Length.ToString();
+                }
+                catch
+                {
+                    // Protective MBR not available
+                }
+            }
+        }
+
+        return metadata;
+    }
 }

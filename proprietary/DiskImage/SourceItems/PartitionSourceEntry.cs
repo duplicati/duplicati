@@ -27,6 +27,28 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition)
         }
     }
 
+    public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+    {
+        var metadata = await base.GetMinorMetadata(cancellationToken);
+
+        // Add partition-level metadata
+        metadata["diskimage:Type"] = "partition";
+        metadata["partition:Number"] = partition.PartitionNumber.ToString();
+        metadata["partition:Type"] = partition.Type.ToString();
+        metadata["partition:StartOffset"] = partition.StartOffset.ToString();
+        metadata["partition:Size"] = partition.Size.ToString();
+        metadata["partition:FilesystemType"] = partition.FilesystemType.ToString();
+        metadata["partition:TableType"] = partition.PartitionTable.TableType.ToString();
+
+        if (!string.IsNullOrEmpty(partition.Name))
+            metadata["partition:Name"] = partition.Name;
+
+        if (partition.VolumeGuid.HasValue)
+            metadata["partition:VolumeGuid"] = partition.VolumeGuid.Value.ToString();
+
+        return metadata;
+    }
+
     private static string PathCombine(string p1, string p2)
     {
         if (string.IsNullOrEmpty(p1)) return p2;
