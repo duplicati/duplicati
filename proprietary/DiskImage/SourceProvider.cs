@@ -16,7 +16,6 @@ namespace Duplicati.Proprietary.DiskImage;
 public sealed class SourceProvider : ISourceProviderModule, IDisposable
 {
     private readonly string _devicePath;
-    private readonly string _mountPoint;
     private IRawDisk? _disk;
     private bool _disposed;
 
@@ -25,17 +24,18 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     public SourceProvider()
     {
         _devicePath = null!;
-        _mountPoint = null!;
     }
 
     public SourceProvider(string url, string mountPoint, Dictionary<string, string?> options)
     {
-        _mountPoint = mountPoint;
+        if (!string.IsNullOrEmpty(mountPoint))
+            throw new UserInformationException("Mount point option is not supported for DiskImage provider. The entire disk will be mounted/treated as root.", "MountPointNotSupported");
+
         var uri = new Library.Utility.Uri(url);
         _devicePath = uri.HostAndPath;
     }
 
-    public string MountedPath => _mountPoint;
+    public string MountedPath => $"root{System.IO.Path.DirectorySeparatorChar}";
 
     public string DisplayName => Strings.ProviderDisplayName;
 
