@@ -43,6 +43,7 @@
     <ProjectReference Include="..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj" />
     <ProjectReference Include="..\Tools\Duplicati.Tools.csproj" />
     <ProjectReference Include="..\..\Tools\RemoteSynchronization\RemoteSynchronization.csproj" />
+    <ProjectReference Include="..\WebserverCore\Duplicati.WebserverCore.csproj" />
   </ItemGroup>
 
   <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->

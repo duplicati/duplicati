@@ -859,6 +859,31 @@ public class DuplicatiServerClient : IDisposable
         return await PostAsync<ResponseEnvelope<DestinationTestResponseDto>>("/api/v2/destination/test", request, cancellationToken).ConfigureAwait(false);
     }
 
+    // V1 Folder Status Methods
+
+    /// <summary>
+    /// Gets the backup status for all source folders across all backups (V1).
+    /// Used by the Windows Shell Extension to show overlay icons on backed up folders.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token. Optional, defaults to <see cref="CancellationToken.None"/>.</param>
+    /// <returns>The list of folder statuses.</returns>
+    public async Task<FolderStatusDto[]> GetFolderStatusesV1Async(CancellationToken cancellationToken = default)
+    {
+        return await GetAsync<FolderStatusDto[]>("/api/v1/folderstatus", cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets the backup status for a specific folder path (V1).
+    /// Used by the Windows Shell Extension to show overlay icons on backed up folders.
+    /// </summary>
+    /// <param name="path">The folder path to check.</param>
+    /// <param name="cancellationToken">The cancellation token. Optional, defaults to <see cref="CancellationToken.None"/>.</param>
+    /// <returns>The folder status.</returns>
+    public async Task<FolderStatusDto> GetFolderStatusV1Async(string path, CancellationToken cancellationToken = default)
+    {
+        return await GetAsync<FolderStatusDto>($"/api/v1/folderstatus/{Uri.EscapeDataString(path)}", cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Releases all resources used by the <see cref="DuplicatiServerClient"/>.
     /// </summary>
