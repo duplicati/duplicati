@@ -124,6 +124,8 @@ async function createBackup(page: Page) {
     .getByPlaceholder("Add a direct path")
     .fill(SOURCE_FOLDER + path.sep);
   await page
+    .locator("app-toggle-card")
+    .filter({ has: page.locator("h3").filter({ hasText: "Paths" }) })
     .locator("button")
     .filter({ has: page.locator("sh-icon").filter({ hasText: "plus" }) })
     .click();
@@ -258,7 +260,7 @@ async function directRestoreFromFiles(page: Page) {
     .filter({ hasText: "Manually type path" })
     .click();
   await page.fill("#destination-custom-0-other", DESTINATION_FOLDER);
-  await page.locator("button").filter({ hasText: "Test destination" }).click();
+  await page.locator("button").filter({ hasText: "Test now" }).click();
   await page.locator("button").filter({ hasText: "Continue" }).click();
   await page.fill("#password", PASSWORD);
   await page.locator("button").filter({ hasText: "Continue" }).click();
