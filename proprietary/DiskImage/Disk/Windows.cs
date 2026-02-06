@@ -18,10 +18,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private SafeHFILE? m_deviceHandle;
         private bool m_disposed = false;
         private bool m_initialized = false;
+        private bool m_writeable = false;
         private uint m_sectorSize = 0;
         private long m_size = 0;
 
         public string DevicePath { get { return m_devicePath; } }
+
+        public bool IsWriteable => m_writeable;
 
         public Windows(string devicePath)
         {
@@ -65,15 +68,23 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             }
         }
 
-        public async Task<bool> InitializeAsync(CancellationToken cancellationToken)
+        public Task<bool> InitializeAsync(CancellationToken cancellationToken)
+            => InitializeAsync(false, cancellationToken);
+
+        public async Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
         {
             if (m_initialized)
                 return true;
 
+            // Determine access rights
+            var access = enableWrite
+                ? Kernel32.FileAccess.GENERIC_READ | Kernel32.FileAccess.GENERIC_WRITE
+                : Kernel32.FileAccess.GENERIC_READ;
+
             // Open the device
             m_deviceHandle = CreateFile(
                 m_devicePath,
-                Kernel32.FileAccess.GENERIC_READ,
+                access,
                 FILE_SHARE.FILE_SHARE_READ | FILE_SHARE.FILE_SHARE_WRITE,
                 null,
                 CreationOption.OPEN_EXISTING,
@@ -96,6 +107,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             DeviceIoControl(m_deviceHandle, IOControlCode.IOCTL_DISK_GET_LENGTH_INFO, out GET_LENGTH_INFORMATION lengthInfo);
             m_size = lengthInfo.Length;
 
+            m_writeable = enableWrite;
             m_initialized = true;
             return true;
         }
@@ -148,5 +160,41 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             return new MemoryStream(buffer.AsBytes().ToArray(), 0, (int)bytesRead, false);
         }
 
+        public async Task<int> WriteSectorsAsync(long startSector, byte[] data, CancellationToken cancellationToken)
+        {
+            if (!m_initialized)
+                throw new InvalidOperationException("Disk not initialized.");
+
+            if (!m_writeable)
+                throw new InvalidOperationException("Disk not opened for write access.");
+
+            long offset = startSector * m_sectorSize;
+            return await WriteBytesAsync(offset, data, cancellationToken);
+        }
+
+        public async Task<int> WriteBytesAsync(long offset, byte[] data, CancellationToken cancellationToken)
+        {
+            if (!m_initialized)
+                throw new InvalidOperationException("Disk not initialized.");
+
+            if (!m_writeable)
+                throw new InvalidOperationException("Disk not opened for write access.");
+
+            if (m_deviceHandle == null || m_deviceHandle.IsInvalid)
+                throw new InvalidOperationException("Device handle is invalid.");
+
+            // Move file pointer to the desired offset
+            SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
+
+            using var buffer = new SafeHGlobalHandle(data.Length);
+            Marshal.Copy(data, 0, buffer.DangerousGetHandle(), data.Length);
+
+            bool result = WriteFile(m_deviceHandle, buffer, (uint)data.Length, out uint bytesWritten, IntPtr.Zero);
+
+            if (!result)
+                throw new IOException("Failed to write to disk.");
+
+            return (int)bytesWritten;
+        }
     }
 }

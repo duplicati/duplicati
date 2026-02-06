@@ -35,7 +35,8 @@ public static class RestoreDestinationProviderModules
     /// </summary>
     private static readonly Lazy<IReadOnlyList<IRestoreDestinationProviderModule>> LicensedRestoreDestinationProvidersLazy = new(() =>
         new IRestoreDestinationProviderModule?[] {
-            LicenseHelper.AvailableOffice365FeatureSeats > 0 ? new Office365.RestoreProvider() : null
+            LicenseHelper.AvailableOffice365FeatureSeats > 0 ? new Office365.RestoreProvider() : null,
+            new DiskImage.RestoreProvider()
         }
         .WhereNotNull()
         .ToList()

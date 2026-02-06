@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Duplicati.Proprietary.DiskImage.Disk;
 
 /// <summary>
-/// Low-level disk access interface for raw disk reading.
+/// Low-level disk access interface for raw disk reading and writing.
 /// </summary>
 public interface IRawDisk : IDisposable
 {
@@ -31,11 +31,24 @@ public interface IRawDisk : IDisposable
     int Sectors { get; }
 
     /// <summary>
+    /// Gets whether the disk is opened for write access.
+    /// </summary>
+    bool IsWriteable { get; }
+
+    /// <summary>
     /// Initializes the disk access interface.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>True if initialization was successful.</returns>
     Task<bool> InitializeAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Initializes the disk access interface with write access.
+    /// </summary>
+    /// <param name="enableWrite">Whether to enable write access.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if initialization was successful.</returns>
+    Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken);
 
     /// <summary>
     /// Finalizes the disk access interface.
@@ -61,4 +74,22 @@ public interface IRawDisk : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Stream containing the raw data.</returns>
     Task<Stream> ReadBytesAsync(long offset, int length, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Writes raw sectors to the disk.
+    /// </summary>
+    /// <param name="startSector">The starting sector number.</param>
+    /// <param name="data">The data to write (must be sector-aligned).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The number of bytes written.</returns>
+    Task<int> WriteSectorsAsync(long startSector, byte[] data, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Writes a specific byte range to the disk.
+    /// </summary>
+    /// <param name="offset">The byte offset.</param>
+    /// <param name="data">The data to write.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The number of bytes written.</returns>
+    Task<int> WriteBytesAsync(long offset, byte[] data, CancellationToken cancellationToken);
 }

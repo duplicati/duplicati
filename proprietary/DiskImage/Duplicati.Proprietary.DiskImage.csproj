@@ -9,6 +9,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Duplicati\Library\Interface\Duplicati.Library.Interface.csproj" />
+    <ProjectReference Include="..\..\Duplicati\Library\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\..\Duplicati\Library\Localization\Duplicati.Library.Localization.csproj" />
+    <ProjectReference Include="..\..\Duplicati\Library\Logging\Duplicati.Library.Logging.csproj" />
   </ItemGroup>
 
   <ItemGroup>
