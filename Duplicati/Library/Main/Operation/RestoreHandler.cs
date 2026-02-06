@@ -52,6 +52,42 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
+        /// Checks if the tempdir has enough free space relative to the volume size.
+        /// Logs a warning if free space is less than 4 times the volume size.
+        /// </summary>
+        private void CheckTempDirFreeSpace()
+        {
+            try
+            {
+                // Get the tempdir path
+                var tempDir = TempFolder.SystemTempPath;
+
+                // Get free space in tempdir using the Utility method
+                var spaceInfo = Library.Utility.Utility.GetFreeSpaceForPath(tempDir);
+                if (spaceInfo == null)
+                {
+                    // Could not determine free space, skip the check
+                    return;
+                }
+
+                // Get the volume size from options
+                var volumeSize = m_options.VolumeSize;
+
+                // Check if free space is less than 4 times the volume size
+                if (spaceInfo.Value.FreeSpace < volumeSize * Library.Utility.Utility.VOLUME_SIZE_FREE_SPACE_MULTIPLIER)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "TempDirLowSpace", null,
+                        $"The temporary folder '{tempDir}' has limited free space ({Library.Utility.Utility.FormatSizeString(spaceInfo.Value.FreeSpace)}). " +
+                        $"It is recommended to have at least {Library.Utility.Utility.VOLUME_SIZE_FREE_SPACE_MULTIPLIER} times the volume size ({Library.Utility.Utility.FormatSizeString(volumeSize * Library.Utility.Utility.VOLUME_SIZE_FREE_SPACE_MULTIPLIER)}) available for optimal restore operation.");
+                }
+            }
+            catch
+            {
+                // Ignore errors during free space check
+            }
+        }
+
+        /// <summary>
         /// Gets the compression module by parsing the filename
         /// </summary>
         /// <param name="filename">The filename to parse</param>
@@ -105,6 +141,9 @@ namespace Duplicati.Library.Main.Operation
         public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
+
+            // Check tempdir free space before starting restore
+            CheckTempDirFreeSpace();
 
             // Set the restore path in the results for logging purposes
             var restorePath = restoreDestination.TargetDestination;
