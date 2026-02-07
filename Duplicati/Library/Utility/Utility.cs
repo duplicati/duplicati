@@ -1664,10 +1664,10 @@ namespace Duplicati.Library.Utility
                 return null;
 
             var idx = url.IndexOf("://");
-            if (idx < 0 && idx < 15 && idx + "://".Length < url.Length)
+            if (idx < 0 || idx > 15)
                 return null;
 
-            return url.Substring(0, idx);
+            return url[..idx];
         }
 
         /// <summary>
