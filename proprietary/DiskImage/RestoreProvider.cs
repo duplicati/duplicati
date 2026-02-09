@@ -241,6 +241,12 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         // Determine the item type
         metadata.TryGetValue("diskimage:Type", out var typeStr);
 
+        // Autodetect geometry file by path if not explicitly marked
+        if (typeStr == null && IsGeometryFile(path))
+        {
+            return OpenWriteGeometry(path, metadata, cancel);
+        }
+
         return typeStr switch
         {
             "partition_table" => OpenWritePartitionTable(path, metadata, cancel),
@@ -1083,10 +1089,18 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <inheritdoc />
     public IList<string> GetPriorityFiles()
     {
-        // Return the single consolidated geometry metadata file
-        // This file contains all geometry information needed to reconstruct
-        // the disk, partition table, partitions, and filesystems
-        return new List<string> { "geometry.json" };
+        // The restore provider autodetects the geometry file during restore
+        // by checking if any restored file ends with "geometry.json"
+        // This method returns empty list since we don't pre-specify the file
+        return Array.Empty<string>();
+    }
+
+    /// <summary>
+    /// Checks if a file path is the geometry metadata file.
+    /// </summary>
+    private static bool IsGeometryFile(string path)
+    {
+        return path.EndsWith("geometry.json", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <inheritdoc />
