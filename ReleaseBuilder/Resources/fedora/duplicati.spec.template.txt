@@ -114,13 +114,18 @@ install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.default %{buildroo
 
 %files
 %doc changelog.txt licenses/license.txt
-#GUI_ONLY#%{_datadir}/*/*
-%{_exec_prefix}/lib/*
-%{_exec_prefix}/bin/*
+#GUI_ONLY#%{_datadir}/pixmaps/%{namer}.png
+#GUI_ONLY#%{_datadir}/applications/%{namer}.desktop
+%{_exec_prefix}/lib/%{installname}/
+%{_exec_prefix}/bin/duplicati*
 %config(noreplace) %{_sysconfdir}/sysconfig/%{installname}
+%{_unitdir}/%{installname}.service
 #AGENT_ONLY#%{_presetdir}/50-%{installname}.preset
 
 %changelog
+* Mon Feb 9 2026 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20260209.git
+- Changed ownership logic for files to avoid accidentially owning base folders
+
 * Mon May 19 2025 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20250519.git
 - Fixed config files not being overwritten
 - Moved agent files into separate folder to allow cli and agent to co-exist
