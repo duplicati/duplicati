@@ -38,6 +38,13 @@ Source4:	%{installname}.default
 BuildRequires:  systemd
 
 Requires:	bash
+#GUI_ONLY#%ifarch x86_64 aarch64
+#GUI_ONLY#Requires: libICE.so.6()(64bit)
+#GUI_ONLY#Requires: libSM.so.6()(64bit)
+#GUI_ONLY#%else
+#GUI_ONLY#Requires: libICE.so.6
+#GUI_ONLY#Requires: libSM.so.6
+#GUI_ONLY#%endif
 %DEPENDS%
 
 %PROVIDES%
@@ -125,6 +132,7 @@ install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.default %{buildroo
 %changelog
 * Mon Feb 9 2026 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20260209.git
 - Changed ownership logic for files to avoid accidentially owning base folders
+- Changed logic for finding libICE and libSM so it is compatible with OpenSUSE and Fedora
 
 * Mon May 19 2025 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20250519.git
 - Fixed config files not being overwritten
