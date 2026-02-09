@@ -18,8 +18,11 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition)
     public override bool IsFolder => true;
     public override long Size => partition.Size;
 
+    public IPartition Partition => partition;
+
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        // Then yield the filesystem entry
         if (partition.FilesystemType == FileSystemType.Unknown)
         {
             var fs = new UnknownFilesystem(partition);

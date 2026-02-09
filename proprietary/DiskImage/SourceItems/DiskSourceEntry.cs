@@ -21,13 +21,101 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        // Create a consolidated geometry metadata object
+        var geometryMetadata = new GeometryMetadata
+        {
+            Version = 1,
+            Disk = new DiskGeometry
+            {
+                DevicePath = disk.DevicePath,
+                Size = disk.Size,
+                SectorSize = disk.SectorSize,
+                Sectors = disk.Sectors,
+                TableType = PartitionTableType.Unknown // Will be updated if partition table is found
+            },
+            Partitions = new List<PartitionGeometry>(),
+            Filesystems = new List<FilesystemGeometry>()
+        };
+
         var table = await PartitionTableFactory.CreateAsync(disk, cancellationToken);
         if (table != null)
         {
+            // Update disk geometry with partition table type
+            geometryMetadata.Disk!.TableType = table.TableType;
+
+            // Add partition table geometry
+            geometryMetadata.PartitionTable = new PartitionTableGeometry
+            {
+                Type = table.TableType,
+                SectorSize = disk.SectorSize,
+                Size = 0, // Will be updated below
+                HasProtectiveMbr = table.TableType == PartitionTableType.GPT,
+                HeaderSize = table.TableType == PartitionTableType.GPT ? 92 : 0,
+                MbrSize = table.TableType == PartitionTableType.MBR ? 512 : 0
+            };
+
+            // Get the actual partition table data size
+            try
+            {
+                using var tableData = await table.GetPartitionTableDataAsync(cancellationToken);
+                geometryMetadata.PartitionTable.Size = tableData.Length;
+            }
+            catch
+            {
+                // Use estimated sizes if we can't get the actual data
+                geometryMetadata.PartitionTable.Size = table.TableType switch
+                {
+                    PartitionTableType.MBR => 512,
+                    PartitionTableType.GPT => 512 + 512 + (128 * 4),
+                    _ => 0
+                };
+            }
+
+            // First, yield the consolidated geometry metadata file
+            yield return new GeometrySourceEntry(this.Path, geometryMetadata);
+
+            // Also yield the partition table as a regular entry
+            yield return new PartitionTableSourceEntry(this.Path, table, disk);
+
+            // Then enumerate partitions and collect their geometry
             await foreach (var partition in table.EnumeratePartitions(cancellationToken))
             {
-                yield return new PartitionSourceEntry(this.Path, partition);
+                // Add partition geometry to the consolidated metadata
+                geometryMetadata.Partitions.Add(new PartitionGeometry
+                {
+                    Number = partition.PartitionNumber,
+                    Type = partition.Type,
+                    StartOffset = partition.StartOffset,
+                    Size = partition.Size,
+                    Name = partition.Name,
+                    FilesystemType = partition.FilesystemType,
+                    VolumeGuid = partition.VolumeGuid,
+                    TableType = partition.PartitionTable.TableType
+                });
+
+                // Create partition source entry which will add filesystem geometry
+                var partitionEntry = new PartitionSourceEntry(this.Path, partition);
+
+                // Pre-enumerate to collect filesystem geometry
+                await foreach (var child in partitionEntry.Enumerate(cancellationToken))
+                {
+                    if (child is FilesystemSourceEntry fsEntry)
+                    {
+                        // Collect filesystem geometry
+                        var fsGeometry = await fsEntry.GetFilesystemGeometry(cancellationToken);
+                        if (fsGeometry != null)
+                        {
+                            geometryMetadata.Filesystems.Add(fsGeometry);
+                        }
+                    }
+                    yield return child;
+                }
             }
+        }
+        else
+        {
+            // No partition table found, still yield the disk geometry
+            yield return new GeometrySourceEntry(this.Path, geometryMetadata);
         }
     }
 

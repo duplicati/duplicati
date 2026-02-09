@@ -55,6 +55,12 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     private readonly ConcurrentDictionary<int, IFilesystem> _filesystemCache = new();
 
     /// <summary>
+    /// Stores geometry metadata parsed from restored geometry files.
+    /// Used to reconstruct disk, partition, and filesystem structures.
+    /// </summary>
+    private readonly Dictionary<string, GeometryMetadata> _geometryMetadata = new();
+
+    /// <summary>
     /// Represents a pending write operation.
     /// </summary>
     private abstract class PendingWrite : IDisposable
@@ -240,6 +246,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             "partition_table" => OpenWritePartitionTable(path, metadata, cancel),
             "disk" => OpenWriteDisk(path, metadata, cancel),
             "partition" => OpenWritePartition(path, metadata, cancel),
+            "geometry" => OpenWriteGeometry(path, metadata, cancel),
             "block" or "file" => OpenWriteThroughFilesystem(path, metadata, cancel),
             _ => throw new NotSupportedException($"Unsupported item type: {typeStr}")
         };
@@ -317,6 +324,57 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                 old.Dispose();
                 return pendingWrite;
             });
+        });
+
+        return Task.FromResult<Stream>(wrapper);
+    }
+
+    /// <summary>
+    /// Opens a stream for writing geometry metadata (stored in memory until Finalize).
+    /// </summary>
+    private Task<Stream> OpenWriteGeometry(string path, Dictionary<string, string?> metadata, CancellationToken cancel)
+    {
+        var stream = new MemoryStream();
+
+        var wrapper = new CaptureStream(stream, data =>
+        {
+            try
+            {
+                // Parse the geometry metadata from the JSON data
+                var json = System.Text.Encoding.UTF8.GetString(data);
+                var geometry = GeometryMetadata.FromJson(json);
+
+                if (geometry != null)
+                {
+                    _geometryMetadata[path] = geometry;
+                    Log.WriteInformationMessage(LOGTAG, "GeometryMetadataReceived",
+                        $"Received consolidated geometry metadata for {path} (Version: {geometry.Version})");
+
+                    // Store the geometry metadata in the regular metadata dictionary as well
+                    metadata["geometry:Parsed"] = "true";
+                    metadata["geometry:Version"] = geometry.Version.ToString();
+
+                    if (geometry.Disk != null)
+                    {
+                        metadata["geometry:DiskTableType"] = geometry.Disk.TableType.ToString();
+                    }
+
+                    if (geometry.Partitions != null)
+                    {
+                        metadata["geometry:PartitionCount"] = geometry.Partitions.Count.ToString();
+                    }
+
+                    if (geometry.Filesystems != null)
+                    {
+                        metadata["geometry:FilesystemCount"] = geometry.Filesystems.Count.ToString();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "GeometryMetadataParseFailed", ex,
+                    $"Failed to parse geometry metadata for {path}");
+            }
         });
 
         return Task.FromResult<Stream>(wrapper);
@@ -472,6 +530,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
     /// <summary>
     /// Gets or creates a partition instance for the specified partition number.
+    /// Uses geometry metadata if available to reconstruct the partition structure.
     /// </summary>
     private Task<IPartition> GetOrCreatePartitionAsync(int partitionNumber, long startOffset, PartitionTableType tableType, CancellationToken cancel)
     {
@@ -479,6 +538,17 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         {
             if (_targetDisk == null)
                 throw new InvalidOperationException("Target disk not initialized.");
+
+            // Try to find geometry metadata for this partition
+            var partitionGeometry = FindPartitionGeometry(partitionNumber);
+            if (partitionGeometry != null)
+            {
+                // Use geometry metadata to reconstruct the partition
+                Log.WriteInformationMessage(LOGTAG, "UsingPartitionGeometry",
+                    $"Using geometry metadata for partition #{partitionNumber}");
+                startOffset = partitionGeometry.StartOffset;
+                tableType = partitionGeometry.TableType;
+            }
 
             // Create a partition table wrapper with the correct type
             var partitionTable = new TargetPartitionTable(_targetDisk, tableType);
@@ -495,11 +565,23 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
     /// <summary>
     /// Gets or creates a filesystem instance for the specified partition.
+    /// Uses geometry metadata if available to reconstruct the filesystem structure.
     /// </summary>
     private Task<IFilesystem> GetOrCreateFilesystemAsync(int partitionNumber, IPartition partition, FileSystemType filesystemType, int blockSize, CancellationToken cancel)
     {
         return Task.FromResult(_filesystemCache.GetOrAdd(partitionNumber, _ =>
         {
+            // Try to find filesystem geometry metadata for this partition
+            var fsGeometry = FindFilesystemGeometry(partitionNumber);
+            if (fsGeometry != null)
+            {
+                // Use geometry metadata to reconstruct the filesystem
+                Log.WriteInformationMessage(LOGTAG, "UsingFilesystemGeometry",
+                    $"Using geometry metadata for filesystem on partition #{partitionNumber}");
+                filesystemType = fsGeometry.Type;
+                blockSize = fsGeometry.BlockSize;
+            }
+
             // For unknown filesystems (or any filesystem we don't have specific support for),
             // use the UnknownFilesystem which handles raw block access
             IFilesystem filesystem = filesystemType switch
@@ -512,6 +594,52 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
             return filesystem;
         }));
+    }
+
+    /// <summary>
+    /// Finds partition geometry metadata for the specified partition number.
+    /// Searches through all consolidated geometry metadata entries.
+    /// </summary>
+    private PartitionGeometry? FindPartitionGeometry(int partitionNumber)
+    {
+        foreach (var kvp in _geometryMetadata)
+        {
+            var geometry = kvp.Value;
+            if (geometry.Partitions != null)
+            {
+                foreach (var partition in geometry.Partitions)
+                {
+                    if (partition.Number == partitionNumber)
+                    {
+                        return partition;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Finds filesystem geometry metadata for the specified partition number.
+    /// Searches through all consolidated geometry metadata entries.
+    /// </summary>
+    private FilesystemGeometry? FindFilesystemGeometry(int partitionNumber)
+    {
+        foreach (var kvp in _geometryMetadata)
+        {
+            var geometry = kvp.Value;
+            if (geometry.Filesystems != null)
+            {
+                foreach (var filesystem in geometry.Filesystems)
+                {
+                    if (filesystem.PartitionNumber == partitionNumber)
+                    {
+                        return filesystem;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /// <summary>
@@ -951,6 +1079,15 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <inheritdoc />
     public Task DeleteFile(string path, CancellationToken cancel)
         => Task.CompletedTask;
+
+    /// <inheritdoc />
+    public IList<string> GetPriorityFiles()
+    {
+        // Return the single consolidated geometry metadata file
+        // This file contains all geometry information needed to reconstruct
+        // the disk, partition table, partitions, and filesystems
+        return new List<string> { "geometry.json" };
+    }
 
     /// <inheritdoc />
     public async Task Finalize(Action<double>? progressCallback, CancellationToken cancel)

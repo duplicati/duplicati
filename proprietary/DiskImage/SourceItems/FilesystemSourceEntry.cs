@@ -17,12 +17,38 @@ internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
 {
     public override bool IsFolder => true;
 
+    public IFilesystem Filesystem => filesystem;
+
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        // Yield the files in the filesystem
         await foreach (var file in filesystem.ListFilesAsync(cancellationToken))
         {
             yield return new FileSourceEntry(this.Path, filesystem, file);
         }
+    }
+
+    /// <summary>
+    /// Gets the filesystem geometry metadata for this filesystem.
+    /// </summary>
+    public async Task<FilesystemGeometry?> GetFilesystemGeometry(CancellationToken cancellationToken)
+    {
+        var fsMetadata = await filesystem.GetFilesystemMetadataAsync(cancellationToken);
+        int blockSize = 1024 * 1024; // Default 1MB blocks
+
+        if (fsMetadata is UnkownFilesystemMetadata unknownMeta)
+        {
+            blockSize = unknownMeta.BlockSize;
+        }
+
+        return new FilesystemGeometry
+        {
+            Type = filesystem.Type,
+            PartitionNumber = filesystem.Partition.PartitionNumber,
+            PartitionStartOffset = filesystem.Partition.StartOffset,
+            BlockSize = blockSize,
+            Metadata = fsMetadata != null ? JsonSerializer.Serialize(fsMetadata) : null
+        };
     }
 
     public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

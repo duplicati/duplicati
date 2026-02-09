@@ -20,10 +20,12 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 
 #nullable enable
@@ -50,6 +52,18 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="options">The restore options</param>
         /// <param name="result">The restore results</param>
         public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, RestoreResults result)
+            => Run(channels, db, options, result, null);
+
+        /// <summary>
+        /// Runs the file lister process that lists the files that need to be restored
+        /// and sends them to the <see cref="FileProcessor"/>.
+        /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
+        /// <param name="db">The restore database, which is queried for the file list.</param>
+        /// <param name="options">The restore options</param>
+        /// <param name="result">The restore results</param>
+        /// <param name="restoreDestination">The restore destination provider, used to get priority files.</param>
+        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, RestoreResults result, IRestoreDestinationProvider? restoreDestination)
         {
             return AutomationExtensions.RunTask(
             new
@@ -77,9 +91,33 @@ namespace Duplicati.Library.Main.Operation.Restore
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_get_files?.Stop();
 
+                    // Get priority files from the restore destination provider
+                    var priorityFiles = restoreDestination?.GetPriorityFiles() ?? Array.Empty<string>();
+
                     sw_write_file?.Start();
-                    foreach (var file in files)
-                        await self.Output.WriteAsync(file).ConfigureAwait(false);
+
+                    // First, send priority files (if any) to be restored first
+                    if (priorityFiles.Count > 0)
+                    {
+                        var priorityFileSet = new HashSet<string>(priorityFiles, StringComparer.OrdinalIgnoreCase);
+                        var priorityFileList = files.Where(f => priorityFileSet.Any(pf => f.TargetPath.EndsWith(pf, StringComparison.OrdinalIgnoreCase))).ToList();
+                        var remainingFiles = files.Where(f => !priorityFileSet.Any(pf => f.TargetPath.EndsWith(pf, StringComparison.OrdinalIgnoreCase))).ToList();
+
+                        // Send priority files first
+                        foreach (var file in priorityFileList)
+                            await self.Output.WriteAsync(file).ConfigureAwait(false);
+
+                        // Then send remaining files
+                        foreach (var file in remainingFiles)
+                            await self.Output.WriteAsync(file).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // No priority files, send all files in order
+                        foreach (var file in files)
+                            await self.Output.WriteAsync(file).ConfigureAwait(false);
+                    }
+
                     sw_write_file?.Stop();
 
                     if (!options.SkipMetadata)

@@ -148,5 +148,12 @@ public interface IRestoreDestinationProvider : IDisposable
     /// <returns>A task that completes when the deletion is done</returns>
     Task DeleteFile(string path, CancellationToken cancel);
 
-
+    /// <summary>
+    /// Gets a list of priority files that should be restored first.
+    /// These files are typically metadata files needed to reconstruct
+    /// the target structure (e.g., disk geometry, partition tables) before
+    /// the actual data files are restored.
+    /// </summary>
+    /// <returns>A list of file paths that should be restored first, in order of priority.</returns>
+    IList<string> GetPriorityFiles();
 }

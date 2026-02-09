@@ -358,6 +358,13 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         => throw new NotImplementedException("File deletion is not supported in Office365 RestoreProvider");
 
     /// <inheritdoc />
+    public IList<string> GetPriorityFiles()
+    {
+        // Office365 restore doesn't have special priority files
+        return Array.Empty<string>();
+    }
+
+    /// <inheritdoc />
     public async Task Finalize(Action<double>? progressCallback, CancellationToken cancel)
     {
         var totalFiles = _metadata.Count;

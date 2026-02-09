@@ -166,4 +166,11 @@ public class FileRestoreDestinationProvider(string mountedPath) : IRestoreDestin
         SystemIO.IO_OS.SetMetadata(path, metadata, restorePermissions);
         return Task.FromResult(wrote_something);
     }
+
+    /// <inheritdoc />
+    public IList<string> GetPriorityFiles()
+    {
+        // File-based restore doesn't have special priority files
+        return Array.Empty<string>();
+    }
 }
