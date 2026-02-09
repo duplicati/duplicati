@@ -71,15 +71,12 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
                 };
             }
 
-            // First, yield the consolidated geometry metadata file
-            yield return new GeometrySourceEntry(this.Path, geometryMetadata);
-
-            // Also yield the partition table as a regular entry
-            yield return new PartitionTableSourceEntry(this.Path, table, disk);
-
-            // Then enumerate partitions and collect their geometry
+            // First, enumerate partitions and collect their geometry
+            var partitions = new List<IPartition>();
             await foreach (var partition in table.EnumeratePartitions(cancellationToken))
             {
+                partitions.Add(partition);
+
                 // Add partition geometry to the consolidated metadata
                 geometryMetadata.Partitions.Add(new PartitionGeometry
                 {
@@ -108,6 +105,18 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
                             geometryMetadata.Filesystems.Add(fsGeometry);
                         }
                     }
+                }
+            }
+
+            // Now yield the consolidated geometry metadata file with all geometry collected
+            yield return new GeometrySourceEntry(this.Path, geometryMetadata);
+
+            // Then yield the actual partition and filesystem entries
+            foreach (var partition in partitions)
+            {
+                var partitionEntry = new PartitionSourceEntry(this.Path, partition);
+                await foreach (var child in partitionEntry.Enumerate(cancellationToken))
+                {
                     yield return child;
                 }
             }

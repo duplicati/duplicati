@@ -76,13 +76,6 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
 
         var root = new DiskSourceEntry(this, _disk);
         yield return root;
-
-        // Also enumerate partition table as a separate entry for backup/restore
-        var table = await PartitionTableFactory.CreateAsync(_disk, cancellationToken);
-        if (table != null)
-        {
-            yield return new PartitionTableSourceEntry(root.Path, table, _disk);
-        }
     }
 
     public async Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
