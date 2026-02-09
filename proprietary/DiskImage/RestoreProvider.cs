@@ -1089,10 +1089,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <inheritdoc />
     public IList<string> GetPriorityFiles()
     {
-        // The restore provider autodetects the geometry file during restore
-        // by checking if any restored file ends with "geometry.json"
-        // This method returns empty list since we don't pre-specify the file
-        return Array.Empty<string>();
+        return ["geometry.json"];
     }
 
     /// <summary>
