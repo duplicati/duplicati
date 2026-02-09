@@ -233,9 +233,20 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         path = NormalizePath(path);
 
         // Get metadata for this path to determine the write strategy
+        // For geometry files, metadata may not exist yet since the geometry file
+        // is what provides the metadata for other files
         if (!_metadata.TryGetValue(path, out var metadata))
         {
-            throw new InvalidOperationException($"No metadata found for path: {path}. WriteMetadata must be called before OpenWrite.");
+            // If this is a geometry file, create empty metadata and proceed
+            if (IsGeometryFile(path))
+            {
+                metadata = new Dictionary<string, string?>();
+                _metadata.TryAdd(path, metadata);
+            }
+            else
+            {
+                throw new InvalidOperationException($"No metadata found for path: {path}. WriteMetadata must be called before OpenWrite.");
+            }
         }
 
         // Determine the item type
@@ -800,22 +811,57 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         path = NormalizePath(path);
 
         // Get metadata for this path to determine the strategy
+        // For geometry files, metadata may not exist yet since the geometry file
+        // is what provides the metadata for other files
         if (!_metadata.TryGetValue(path, out var metadata))
         {
-            throw new InvalidOperationException($"No metadata found for path: {path}. WriteMetadata must be called before OpenRead.");
+            // If this is a geometry file, create empty metadata and proceed
+            if (IsGeometryFile(path))
+            {
+                metadata = new Dictionary<string, string?>();
+                _metadata.TryAdd(path, metadata);
+            }
+            else
+            {
+                throw new InvalidOperationException($"No metadata found for path: {path}. WriteMetadata must be called before OpenRead.");
+            }
         }
 
         // Determine the item type
         metadata.TryGetValue("diskimage:Type", out var typeStr);
+
+        // Autodetect geometry file by path if not explicitly marked
+        if (typeStr == null && IsGeometryFile(path))
+        {
+            return await OpenReadGeometry(path, metadata, cancel);
+        }
 
         return typeStr switch
         {
             "partition_table" => await OpenReadPartitionTable(metadata, cancel),
             "disk" => await OpenReadDisk(metadata, cancel),
             "partition" => await OpenReadPartition(metadata, cancel),
+            "geometry" => await OpenReadGeometry(path, metadata, cancel),
             "block" or "file" => await OpenReadThroughFilesystem(path, metadata, cancel),
             _ => throw new NotSupportedException($"Unsupported item type for reading: {typeStr}")
         };
+    }
+
+    /// <summary>
+    /// Opens a stream for reading geometry metadata.
+    /// </summary>
+    private Task<Stream> OpenReadGeometry(string path, Dictionary<string, string?> metadata, CancellationToken cancel)
+    {
+        if (_geometryMetadata.TryGetValue(path, out var geometry))
+        {
+            var json = geometry.ToJson();
+            var data = System.Text.Encoding.UTF8.GetBytes(json);
+            return Task.FromResult<Stream>(new MemoryStream(data));
+        }
+
+        // If not found in cache, return empty stream or throw?
+        // For reads, if it doesn't exist, it's effectively empty or missing.
+        return Task.FromResult<Stream>(new MemoryStream());
     }
 
     /// <summary>
@@ -898,13 +944,30 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         path = NormalizePath(path);
 
         // Get metadata for this path to determine the strategy
+        // For geometry files, metadata may not exist yet since the geometry file
+        // is what provides the metadata for other files
         if (!_metadata.TryGetValue(path, out var metadata))
         {
-            throw new InvalidOperationException($"No metadata found for path: {path}. WriteMetadata must be called before OpenReadWrite.");
+            // If this is a geometry file, create empty metadata and proceed
+            if (IsGeometryFile(path))
+            {
+                metadata = new Dictionary<string, string?>();
+                _metadata.TryAdd(path, metadata);
+                return await OpenReadWriteGeometry(path, metadata, cancel);
+            }
+            else
+            {
+                throw new InvalidOperationException($"No metadata found for path: {path}. WriteMetadata must be called before OpenReadWrite.");
+            }
         }
 
         // Determine the item type
         metadata.TryGetValue("diskimage:Type", out var typeStr);
+
+        if (typeStr == "geometry")
+        {
+            return await OpenReadWriteGeometry(path, metadata, cancel);
+        }
 
         // For block/file items, we can support read-write through the filesystem layer
         if (typeStr == "block" || typeStr == "file")
@@ -914,6 +977,51 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         // For other types, read-write doesn't make sense during restore
         throw new NotSupportedException($"OpenReadWrite is not supported for item type: {typeStr}");
+    }
+
+    /// <summary>
+    /// Opens a stream for read-write access to geometry metadata.
+    /// </summary>
+    private async Task<Stream> OpenReadWriteGeometry(string path, Dictionary<string, string?> metadata, CancellationToken cancel)
+    {
+        // For read-write, we return a stream that can be read from (current state)
+        // and written to (updating the state).
+        var currentData = Array.Empty<byte>();
+        if (_geometryMetadata.TryGetValue(path, out var geometry))
+        {
+            var json = geometry.ToJson();
+            currentData = System.Text.Encoding.UTF8.GetBytes(json);
+        }
+
+        var stream = new MemoryStream();
+        if (currentData.Length > 0)
+        {
+            await stream.WriteAsync(currentData, 0, currentData.Length, cancel);
+            stream.Position = 0;
+        }
+
+        var wrapper = new CaptureStream(stream, data =>
+        {
+            try
+            {
+                var json = System.Text.Encoding.UTF8.GetString(data);
+                var newGeometry = GeometryMetadata.FromJson(json);
+                if (newGeometry != null)
+                {
+                    _geometryMetadata[path] = newGeometry;
+                    // Update metadata as well
+                    metadata["geometry:Parsed"] = "true";
+                    metadata["geometry:Version"] = newGeometry.Version.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "GeometryMetadataParseFailed", ex,
+                    $"Failed to parse geometry metadata for {path} during ReadWrite");
+            }
+        });
+
+        return wrapper;
     }
 
     /// <summary>
