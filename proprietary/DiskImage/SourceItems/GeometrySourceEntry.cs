@@ -26,7 +26,7 @@ internal class GeometrySourceEntry : DiskImageEntryBase
     }
 
     public override bool IsFolder => false;
-    public override bool IsMetaEntry => true;
+    public override bool IsMetaEntry => false;
     public override long Size => Encoding.UTF8.GetByteCount(_metadata.ToJson());
 
     public GeometryMetadata Metadata => _metadata;
