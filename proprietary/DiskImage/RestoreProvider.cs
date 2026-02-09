@@ -323,15 +323,90 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     }
 
     /// <summary>
-    /// Opens a stream for writing through the filesystem layer.
-    /// This instantiates the appropriate filesystem type from metadata and writes through it.
+    /// Parses a path to extract partition and filesystem information.
+    /// Expected path format: root/part_{PartitionTableType}_{PartitionNumber}/fs_{FileSystemType}/...
     /// </summary>
-    private async Task<Stream> OpenWriteThroughFilesystem(string path, Dictionary<string, string?> metadata, CancellationToken cancel)
+    private static bool TryParsePath(string path, out int partitionNumber, out PartitionTableType partitionTableType, out FileSystemType filesystemType)
     {
-        // Parse metadata to get partition and filesystem information
-        metadata.TryGetValue("filesystem:PartitionNumber", out var partitionNumberStr);
+        partitionNumber = 0;
+        partitionTableType = PartitionTableType.Unknown;
+        filesystemType = FileSystemType.Unknown;
+
+        if (string.IsNullOrEmpty(path))
+            return false;
+
+        // Normalize path separators
+        path = path.Replace('\\', '/');
+        var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        // Find partition segment (e.g., "part_GPT_1" or "part_MBR_2")
+        foreach (var segment in segments)
+        {
+            if (segment.StartsWith("part_", StringComparison.OrdinalIgnoreCase))
+            {
+                var parts = segment.Split('_');
+                if (parts.Length >= 3)
+                {
+                    // Parse partition table type (second part)
+                    if (Enum.TryParse<PartitionTableType>(parts[1], true, out var ptType))
+                    {
+                        partitionTableType = ptType;
+                    }
+
+                    // Parse partition number (third part)
+                    if (int.TryParse(parts[2], out var pn))
+                    {
+                        partitionNumber = pn;
+                    }
+                }
+            }
+            else if (segment.StartsWith("fs_", StringComparison.OrdinalIgnoreCase))
+            {
+                var parts = segment.Split('_');
+                if (parts.Length >= 2)
+                {
+                    // Reconstruct filesystem type from remaining parts (e.g., "fs_Unknown" or "fs_NTFS")
+                    var fsTypeStr = string.Join("_", parts[1..]);
+                    if (Enum.TryParse<FileSystemType>(fsTypeStr, true, out var fsType))
+                    {
+                        filesystemType = fsType;
+                    }
+                }
+            }
+        }
+
+        return partitionNumber > 0;
+    }
+
+    /// <summary>
+    /// Represents the context for filesystem operations parsed from path and metadata.
+    /// </summary>
+    private readonly struct FilesystemContext
+    {
+        public int PartitionNumber { get; init; }
+        public PartitionTableType PartitionTableType { get; init; }
+        public FileSystemType FilesystemType { get; init; }
+        public long PartitionStartOffset { get; init; }
+        public long Address { get; init; }
+        public long Size { get; init; }
+        public int BlockSize { get; init; }
+    }
+
+    /// <summary>
+    /// Parses path and metadata to create a filesystem operation context.
+    /// Parses the filesystem type and partition type from the given path,
+    /// while extracting geometry (offsets, sizes) from metadata.
+    /// </summary>
+    private FilesystemContext ParseFilesystemContext(string path, Dictionary<string, string?> metadata)
+    {
+        // Parse filesystem and partition types from the path
+        if (!TryParsePath(path, out var partitionNumber, out var partitionTableType, out var filesystemType))
+        {
+            throw new InvalidOperationException($"Unable to parse partition information from path: {path}");
+        }
+
+        // Extract geometry from metadata (still needed for positioning)
         metadata.TryGetValue("filesystem:PartitionStartOffset", out var partitionOffsetStr);
-        metadata.TryGetValue("filesystem:Type", out var filesystemTypeStr);
         metadata.TryGetValue("filesystem:BlockSize", out var blockSizeStr);
         metadata.TryGetValue("block:Address", out var addressStr);
         metadata.TryGetValue("file:Size", out var sizeStr);
@@ -340,50 +415,79 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         if (string.IsNullOrEmpty(addressStr))
             metadata.TryGetValue("block_address", out addressStr);
 
-        // Parse values
-        int partitionNumber = int.TryParse(partitionNumberStr, out var pn) ? pn : 1;
+        // Parse geometry values
         long partitionStartOffset = long.TryParse(partitionOffsetStr, out var pso) ? pso : 0;
         long address = long.TryParse(addressStr, out var addr) ? addr : 0;
         long size = long.TryParse(sizeStr, out var sz) ? sz : 0;
         int blockSize = int.TryParse(blockSizeStr, out var bs) ? bs : 1024 * 1024; // Default 1MB blocks
 
-        Enum.TryParse<FileSystemType>(filesystemTypeStr, out var filesystemType);
+        return new FilesystemContext
+        {
+            PartitionNumber = partitionNumber,
+            PartitionTableType = partitionTableType,
+            FilesystemType = filesystemType,
+            PartitionStartOffset = partitionStartOffset,
+            Address = address,
+            Size = size,
+            BlockSize = blockSize
+        };
+    }
 
-        // Get or create the partition instance
-        var partition = await GetOrCreatePartitionAsync(partitionNumber, partitionStartOffset, cancel);
+    /// <summary>
+    /// Gets or creates partition and filesystem instances for the given context.
+    /// </summary>
+    private async Task<(IPartition Partition, IFilesystem Filesystem)> GetPartitionAndFilesystemAsync(
+        FilesystemContext context, CancellationToken cancel)
+    {
+        var partition = await GetOrCreatePartitionAsync(
+            context.PartitionNumber, context.PartitionStartOffset, context.PartitionTableType, cancel);
 
-        // Get or create the filesystem instance
-        var filesystem = await GetOrCreateFilesystemAsync(partitionNumber, partition, filesystemType, blockSize, cancel);
+        var filesystem = await GetOrCreateFilesystemAsync(
+            context.PartitionNumber, partition, context.FilesystemType, context.BlockSize, cancel);
+
+        return (partition, filesystem);
+    }
+
+    /// <summary>
+    /// Opens a stream for writing through the filesystem layer.
+    /// Parses the filesystem type and partition type from the given path,
+    /// then reconstructs a file matching the given filesystem and hands off the write.
+    /// Disk/partition/filesystem geometry is extracted from metadata.
+    /// </summary>
+    private async Task<Stream> OpenWriteThroughFilesystem(string path, Dictionary<string, string?> metadata, CancellationToken cancel)
+    {
+        var context = ParseFilesystemContext(path, metadata);
+        var (partition, filesystem) = await GetPartitionAndFilesystemAsync(context, cancel);
 
         // Create a file reference for writing
         var file = new UnknownFilesystemFile
         {
-            Address = address,
-            Size = size
+            Address = context.Address,
+            Size = context.Size
         };
 
         // Open write stream through the filesystem
-        return await filesystem.CreateFileAsync(file, address, size, cancel);
+        return await filesystem.CreateFileAsync(file, context.Address, context.Size, cancel);
     }
 
     /// <summary>
     /// Gets or creates a partition instance for the specified partition number.
     /// </summary>
-    private Task<IPartition> GetOrCreatePartitionAsync(int partitionNumber, long startOffset, CancellationToken cancel)
+    private Task<IPartition> GetOrCreatePartitionAsync(int partitionNumber, long startOffset, PartitionTableType tableType, CancellationToken cancel)
     {
         return Task.FromResult(_partitionCache.GetOrAdd(partitionNumber, _ =>
         {
             if (_targetDisk == null)
                 throw new InvalidOperationException("Target disk not initialized.");
 
-            // Create a minimal partition table wrapper for the target disk
-            var partitionTable = new TargetPartitionTable(_targetDisk);
+            // Create a partition table wrapper with the correct type
+            var partitionTable = new TargetPartitionTable(_targetDisk, tableType);
 
             // Create a synthetic partition that represents the target partition
             var partition = new TargetPartition(partitionTable, partitionNumber, startOffset, _targetDisk.Size);
 
             Log.WriteInformationMessage(LOGTAG, "CreatedPartition",
-                $"Created target partition #{partitionNumber} at offset {startOffset}");
+                $"Created target partition #{partitionNumber} at offset {startOffset} (TableType: {tableType})");
 
             return partition;
         }));
@@ -416,11 +520,12 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     private class TargetPartitionTable : IPartitionTable
     {
         public IRawDisk? RawDisk { get; }
-        public PartitionTableType TableType => PartitionTableType.Unknown;
+        public PartitionTableType TableType { get; }
 
-        public TargetPartitionTable(IRawDisk rawDisk)
+        public TargetPartitionTable(IRawDisk rawDisk, PartitionTableType tableType = PartitionTableType.Unknown)
         {
             RawDisk = rawDisk;
+            TableType = tableType;
         }
 
         public IAsyncEnumerable<IPartition> EnumeratePartitions(CancellationToken cancellationToken)
@@ -633,41 +738,20 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
     /// <summary>
     /// Opens a stream for reading through the filesystem layer.
+    /// Parses the filesystem type and partition type from the given path,
+    /// then reconstructs a file matching the given filesystem and hands off the read.
+    /// Disk/partition/filesystem geometry is extracted from metadata.
     /// </summary>
     private async Task<Stream> OpenReadThroughFilesystem(string path, Dictionary<string, string?> metadata, CancellationToken cancel)
     {
-        // Parse metadata to get partition and filesystem information
-        metadata.TryGetValue("filesystem:PartitionNumber", out var partitionNumberStr);
-        metadata.TryGetValue("filesystem:PartitionStartOffset", out var partitionOffsetStr);
-        metadata.TryGetValue("filesystem:Type", out var filesystemTypeStr);
-        metadata.TryGetValue("filesystem:BlockSize", out var blockSizeStr);
-        metadata.TryGetValue("block:Address", out var addressStr);
-        metadata.TryGetValue("file:Size", out var sizeStr);
-
-        // Fallback to old key format for address
-        if (string.IsNullOrEmpty(addressStr))
-            metadata.TryGetValue("block_address", out addressStr);
-
-        // Parse values
-        int partitionNumber = int.TryParse(partitionNumberStr, out var pn) ? pn : 1;
-        long partitionStartOffset = long.TryParse(partitionOffsetStr, out var pso) ? pso : 0;
-        long address = long.TryParse(addressStr, out var addr) ? addr : 0;
-        long size = long.TryParse(sizeStr, out var sz) ? sz : 0;
-        int blockSize = int.TryParse(blockSizeStr, out var bs) ? bs : 1024 * 1024;
-
-        Enum.TryParse<FileSystemType>(filesystemTypeStr, out var filesystemType);
-
-        // Get or create the partition instance
-        var partition = await GetOrCreatePartitionAsync(partitionNumber, partitionStartOffset, cancel);
-
-        // Get or create the filesystem instance
-        var filesystem = await GetOrCreateFilesystemAsync(partitionNumber, partition, filesystemType, blockSize, cancel);
+        var context = ParseFilesystemContext(path, metadata);
+        var (partition, filesystem) = await GetPartitionAndFilesystemAsync(context, cancel);
 
         // Create a file reference for reading
         var file = new UnknownFilesystemFile
         {
-            Address = address,
-            Size = size
+            Address = context.Address,
+            Size = context.Size
         };
 
         // Open read stream through the filesystem
@@ -700,46 +784,24 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
     /// <summary>
     /// Opens a stream for read-write access through the filesystem layer.
-    /// This allows reading existing data and writing new data.
+    /// Parses the filesystem type and partition type from the given path,
+    /// then reconstructs a file matching the given filesystem and hands off the read-write.
+    /// Disk/partition/filesystem geometry is extracted from metadata.
     /// </summary>
     private async Task<Stream> OpenReadWriteThroughFilesystem(string path, Dictionary<string, string?> metadata, CancellationToken cancel)
     {
-        // Parse metadata to get partition and filesystem information
-        metadata.TryGetValue("filesystem:PartitionNumber", out var partitionNumberStr);
-        metadata.TryGetValue("filesystem:PartitionStartOffset", out var partitionOffsetStr);
-        metadata.TryGetValue("filesystem:Type", out var filesystemTypeStr);
-        metadata.TryGetValue("filesystem:BlockSize", out var blockSizeStr);
-        metadata.TryGetValue("block:Address", out var addressStr);
-        metadata.TryGetValue("file:Size", out var sizeStr);
-
-        // Fallback to old key format for address
-        if (string.IsNullOrEmpty(addressStr))
-            metadata.TryGetValue("block_address", out addressStr);
-
-        // Parse values
-        int partitionNumber = int.TryParse(partitionNumberStr, out var pn) ? pn : 1;
-        long partitionStartOffset = long.TryParse(partitionOffsetStr, out var pso) ? pso : 0;
-        long address = long.TryParse(addressStr, out var addr) ? addr : 0;
-        long size = long.TryParse(sizeStr, out var sz) ? sz : 0;
-        int blockSize = int.TryParse(blockSizeStr, out var bs) ? bs : 1024 * 1024;
-
-        Enum.TryParse<FileSystemType>(filesystemTypeStr, out var filesystemType);
-
-        // Get or create the partition instance
-        var partition = await GetOrCreatePartitionAsync(partitionNumber, partitionStartOffset, cancel);
-
-        // Get or create the filesystem instance
-        var filesystem = await GetOrCreateFilesystemAsync(partitionNumber, partition, filesystemType, blockSize, cancel);
+        var context = ParseFilesystemContext(path, metadata);
+        var (partition, filesystem) = await GetPartitionAndFilesystemAsync(context, cancel);
 
         // Create a file reference
         var file = new UnknownFilesystemFile
         {
-            Address = address,
-            Size = size
+            Address = context.Address,
+            Size = context.Size
         };
 
         // Create a read-write stream that wraps both read and write capabilities
-        return new ReadWriteFilesystemStream(filesystem, partition, file, address, size);
+        return new ReadWriteFilesystemStream(filesystem, partition, file, context.Address, context.Size);
     }
 
     /// <summary>
