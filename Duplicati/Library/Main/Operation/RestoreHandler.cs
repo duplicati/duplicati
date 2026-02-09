@@ -363,8 +363,13 @@ namespace Duplicati.Library.Main.Operation
             Restore.DeadlockTimer.initial_threshold = (int)TimeSpan.FromMinutes(1).TotalMilliseconds * Math.Max(1, (int)(volsize / (10L * 1024L * 1024L)));
             Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
 
+            // Initialize priority files synchronization
+            var priorityFiles = restoreDestination.GetPriorityFiles();
+            Restore.FileProcessor.priority_files_remaining = priorityFiles.Count;
+            Restore.FileProcessor.priority_files_completed = new TaskCompletionSource();
+
             // Create the process network
-            var filelister = Restore.FileLister.Run(channels, database, m_options, m_result, restoreDestination);
+            var filelister = Restore.FileLister.Run(channels, database, m_options, m_result, priorityFiles);
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], restoreDestination, m_options, m_result)).ToArray();
             var blockmanager = Restore.BlockManager.Run(channels, database, fileprocessor_requests, fileprocessor_responses, m_options, m_result);
             var volumecache = Restore.VolumeManager.Run(channels, m_options, m_result);
