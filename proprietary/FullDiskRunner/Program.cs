@@ -62,7 +62,7 @@ if (filecount == 0) return;
 
 var firstFile = await fs.ListFilesAsync(CancellationToken.None).FirstAsync();
 
-using var fileStream = await fs.OpenFileAsync(firstFile, CancellationToken.None);
+using var fileStream = await fs.OpenReadStreamAsync(firstFile, CancellationToken.None);
 
 // Copy to a buffer
 var buffer = new byte[firstFile.Size];

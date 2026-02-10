@@ -19,7 +19,7 @@ internal class FileSourceEntry(string parentPath, IFilesystem filesystem, IFile 
 
     public override Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        return filesystem.OpenFileAsync(file, cancellationToken);
+        return filesystem.OpenReadStreamAsync(file, cancellationToken);
     }
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)

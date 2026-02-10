@@ -44,17 +44,15 @@ public interface IFilesystem : IDisposable
     /// <throws cref="ArgumentException">Thrown if <paramref name="directory"/> is not a directory.</throws>
     IAsyncEnumerable<IFile> ListFilesAsync(IFile directory, CancellationToken cancellationToken);
 
-    Task<Stream> OpenFileAsync(IFile file, CancellationToken cancellationToken);
+    Task<Stream> OpenReadStreamAsync(IFile file, CancellationToken cancellationToken);
+    Task<Stream> OpenWriteStreamAsync(IFile file, CancellationToken cancellationToken);
+    Task<Stream> OpenReadWriteStreamAsync(IFile file, CancellationToken cancellationToken);
+    Task<long> GetFileLengthAsync(IFile file, CancellationToken cancellationToken);
 
-    /// <summary>
-    /// Opens a file for writing. Creates the file if it doesn't exist.
-    /// </summary>
-    /// <param name="file">The file to write to. If null, a new file will be created at the specified address.</param>
-    /// <param name="address">The address/offset to write to.</param>
-    /// <param name="size">The expected size of the file.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A stream for writing to the file.</returns>
-    Task<Stream> CreateFileAsync(IFile? file, long address, long size, CancellationToken cancellationToken);
+    Task<Stream> OpenReadStreamAsync(string path, CancellationToken cancellationToken);
+    Task<Stream> OpenWriteStreamAsync(string path, CancellationToken cancellationToken);
+    Task<Stream> OpenReadWriteStreamAsync(string path, CancellationToken cancellationToken);
+    Task<long> GetFileLengthAsync(string path, CancellationToken cancellationToken);
 }
 
 public interface IFile
