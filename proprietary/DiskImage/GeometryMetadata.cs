@@ -40,16 +40,22 @@ public class GeometryMetadata
     public List<FilesystemGeometry>? Filesystems { get; set; }
 
     /// <summary>
+    /// JSON serialization options.
+    /// </summary>
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        WriteIndented = true
+    };
+
+    /// <summary>
     /// Serializes this metadata to a JSON string.
     /// </summary>
     public string ToJson()
     {
-        return JsonSerializer.Serialize(this, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            WriteIndented = true
-        });
+        return JsonSerializer.Serialize(this, _jsonOptions);
     }
 
     /// <summary>
@@ -57,11 +63,7 @@ public class GeometryMetadata
     /// </summary>
     public static GeometryMetadata? FromJson(string json)
     {
-        return JsonSerializer.Deserialize<GeometryMetadata>(json, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        });
+        return JsonSerializer.Deserialize<GeometryMetadata>(json, _jsonOptions);
     }
 }
 
