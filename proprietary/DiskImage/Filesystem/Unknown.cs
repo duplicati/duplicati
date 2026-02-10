@@ -67,7 +67,7 @@ public class UnknownFilesystem : IFilesystem
 
         for (long i = 0; i < blockCount; i++)
         {
-            long address = m_partition.StartOffset + i * blockSize;
+            long address = i * blockSize;
             long size = Math.Min(blockSize, totalSize - i * blockSize);
 
             yield return new UnknownFilesystemFile()
@@ -126,9 +126,9 @@ public class UnknownFilesystem : IFilesystem
         long address = unknownFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
         long size = unknownFile.Size;
 
-        BoundsCheck(address - m_partition.StartOffset, size);
+        BoundsCheck(address, size);
 
-        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, address, size, readEnabled: true, writeEnabled: false);
+        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, size, readEnabled: true, writeEnabled: false);
     }
 
     public async Task<Stream> OpenReadStreamAsync(string path, CancellationToken cancellationToken)
@@ -150,9 +150,9 @@ public class UnknownFilesystem : IFilesystem
         long address = unknownFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
         long size = unknownFile.Size;
 
-        BoundsCheck(address - m_partition.StartOffset, size);
+        BoundsCheck(address, size);
 
-        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, address, size, readEnabled: false, writeEnabled: true);
+        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, size, readEnabled: false, writeEnabled: true);
     }
 
     public async Task<Stream> OpenWriteStreamAsync(string path, CancellationToken cancellationToken)
@@ -174,9 +174,9 @@ public class UnknownFilesystem : IFilesystem
         long address = unknownFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
         long size = unknownFile.Size;
 
-        BoundsCheck(address - m_partition.StartOffset, size);
+        BoundsCheck(address, size);
 
-        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, address, size, readEnabled: true, writeEnabled: true);
+        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, size, readEnabled: true, writeEnabled: true);
     }
 
     public async Task<Stream> OpenReadWriteStreamAsync(string path, CancellationToken cancellationToken)
@@ -202,8 +202,7 @@ public class UnknownFilesystem : IFilesystem
     {
         long address = ParsePathToAddress(path);
         long totalSize = m_partition.Size;
-        long offsetInPartition = address - m_partition.StartOffset;
-        long size = Math.Min((long)m_blockSize, totalSize - offsetInPartition);
+        long size = Math.Min((long)m_blockSize, totalSize - address);
 
         return Task.FromResult(size);
     }
@@ -216,15 +215,16 @@ public class UnknownFilesystem : IFilesystem
         private readonly IRawDisk _disk = disk;
         private readonly long _address = address;
         private readonly long _size = size;
-        private readonly MemoryStream _buffer = new MemoryStream();
+        private readonly MemoryStream _buffer = new();
+        private bool _validData = false;
         private bool _disposed = false;
-        private bool _readEnabled = readEnabled;
-        private bool _writeEnabled = writeEnabled;
+        private readonly bool _readEnabled = readEnabled;
+        private readonly bool _writeEnabled = writeEnabled;
 
         public override bool CanRead => _readEnabled;
         public override bool CanWrite => _writeEnabled;
         public override bool CanSeek => true;
-        public override long Length => _buffer.Length;
+        public override long Length => _size;
         public override long Position
         {
             get => _buffer.Position;
@@ -240,7 +240,18 @@ public class UnknownFilesystem : IFilesystem
             if (!_readEnabled)
                 throw new NotSupportedException("Read is not supported on this stream.");
 
-            return _buffer.Read(buffer, offset, count);
+            if (!_validData)
+            {
+                // Load the data from disk into the buffer on the first read
+                using var data = _disk.ReadBytesAsync(_address, (int)_size, CancellationToken.None).GetAwaiter().GetResult();
+                data.CopyTo(_buffer);
+                _buffer.Position = 0;
+                _validData = true;
+            }
+
+            var res = _buffer.Read(buffer, offset, count);
+
+            return res;
         }
 
         public override void Write(byte[] buffer, int offset, int count)
@@ -249,6 +260,7 @@ public class UnknownFilesystem : IFilesystem
                 throw new NotSupportedException("Write is not supported on this stream.");
 
             _buffer.Write(buffer, offset, count);
+            _validData = true;
         }
 
         protected override void Dispose(bool disposing)
