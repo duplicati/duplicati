@@ -37,7 +37,7 @@ internal class ContactPhotoSourceEntry(string parentPath, Photo photo, int index
             { "gsuite:Name", $"{photo.Metadata?.Source?.Type ?? ""}-photo-{index}.jpg".TrimStart('-') },
             { "gsuite:Id", photo.Metadata?.Source?.Id ?? photo.Url },
             { "gsuite:Url", photo.Url },
-            { "gsuite:Default", photo.Default__.ToString() },
+            { "gsuite:Default", photo.Default__?.ToString() },
             { "gsuite:MetadataSourceId", photo.Metadata?.Source?.Id },
             { "gsuite:MetadataSourceType", photo.Metadata?.Source?.Type }
         }

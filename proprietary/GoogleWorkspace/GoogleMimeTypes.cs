@@ -80,9 +80,10 @@ public static class GoogleMimeTypes
     /// <returns>true if the MIME type represents a Google Workspace document; otherwise, false.</returns>
     public static bool IsGoogleDoc(string mimeType)
     {
-        return mimeType.StartsWith(GoogleAppsPrefix, StringComparison.Ordinal) &&
-               mimeType != Folder &&
-               mimeType != Shortcut;
+        return !string.IsNullOrWhiteSpace(mimeType) &&
+            mimeType.StartsWith(GoogleAppsPrefix, StringComparison.Ordinal) &&
+            mimeType != Folder &&
+            mimeType != Shortcut;
     }
 
     /// <summary>
