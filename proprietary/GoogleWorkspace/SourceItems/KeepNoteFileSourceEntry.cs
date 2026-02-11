@@ -26,7 +26,7 @@ internal class KeepNoteFileSourceEntry(string parentPath, Note note)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.KeepNote.ToString() },
             { "gsuite:Name", "note.json" },
-            { "gsuite:id", note.Name }
+            { "gsuite:Id", note.Name }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

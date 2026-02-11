@@ -32,7 +32,7 @@ internal class GmailSettingsSourceEntry(SourceProvider provider, string userId, 
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.GmailSettings.ToString() },
             { "gsuite:Name", "Settings" },
-            { "gsuite:id", "Settings" }
+            { "gsuite:Id", "Settings" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

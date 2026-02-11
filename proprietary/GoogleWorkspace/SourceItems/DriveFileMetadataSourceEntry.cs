@@ -24,7 +24,7 @@ internal class DriveFileMetadataSourceEntry(string parentPath, File file)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.DriveFileMetadata.ToString() },
             { "gsuite:Name", "metadata.json" },
-            { "gsuite:id", file.Id }
+            { "gsuite:Id", file.Id }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

@@ -43,7 +43,7 @@ internal class GmailMessageSourceEntry(SourceProvider provider, string userId, s
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.GmailMessage.ToString() },
             { "gsuite:Name", string.IsNullOrWhiteSpace(subject) ? message.Id : subject },
-            { "gsuite:id", message.Id },
+            { "gsuite:Id", message.Id },
             { "gsuite:ThreadId", message.ThreadId },
             { "gsuite:Snippet", message.Snippet },
         }

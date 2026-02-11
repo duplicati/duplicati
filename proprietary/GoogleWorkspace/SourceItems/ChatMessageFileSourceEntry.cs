@@ -26,7 +26,7 @@ internal class ChatMessageFileSourceEntry(string parentPath, Message message)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.ChatMessage.ToString() },
             { "gsuite:Name", "message.json" },
-            { "gsuite:id", message.Name }
+            { "gsuite:Id", message.Name }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

@@ -28,7 +28,7 @@ internal class OrganizationalUnitsSourceEntry(SourceProvider provider, string pa
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.OrganizationalUnit.ToString() },
             { "gsuite:Name", "organizational_units.json" },
-            { "gsuite:id", "organizational_units" }
+            { "gsuite:Id", "organizational_units" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

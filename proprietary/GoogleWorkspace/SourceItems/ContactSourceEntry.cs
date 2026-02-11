@@ -35,7 +35,7 @@ internal class ContactSourceEntry(string parentPath, Person person)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.Contact.ToString() },
             { "gsuite:Name", person.Names?.FirstOrDefault()?.DisplayName ?? person.ResourceName },
-            { "gsuite:id", person.ResourceName },
+            { "gsuite:Id", person.ResourceName },
             { "gsuite:Etag", person.ETag }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

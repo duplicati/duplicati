@@ -41,7 +41,7 @@ internal class ChatSpaceSourceEntry(SourceProvider provider, string parentPath, 
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.ChatSpace.ToString() },
             { "gsuite:Name", space.DisplayName ?? space.Name },
-            { "gsuite:id", space.Name },
+            { "gsuite:Id", space.Name },
             { "gsuite:SpaceType", space.Type }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

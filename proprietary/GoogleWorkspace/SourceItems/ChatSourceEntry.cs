@@ -40,7 +40,7 @@ internal class ChatSourceEntry(SourceProvider provider, string parentPath)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.UserChat.ToString() },
             { "gsuite:Name", "Chat" },
-            { "gsuite:id", "Chat" }
+            { "gsuite:Id", "Chat" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

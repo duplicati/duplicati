@@ -27,7 +27,7 @@ internal class UserProfileSourceEntry(SourceProvider provider, string parentPath
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.UserProfile.ToString() },
             { "gsuite:Name", "profile.json" },
-            { "gsuite:id", userId }
+            { "gsuite:Id", userId }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

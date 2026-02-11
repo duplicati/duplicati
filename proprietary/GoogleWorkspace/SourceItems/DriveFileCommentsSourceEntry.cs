@@ -29,7 +29,7 @@ internal class DriveFileCommentsSourceEntry(SourceProvider provider, string pare
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.DriveFileComment.ToString() },
             { "gsuite:Name", "comments.json" },
-            { "gsuite:id", file.Id }
+            { "gsuite:Id", file.Id }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

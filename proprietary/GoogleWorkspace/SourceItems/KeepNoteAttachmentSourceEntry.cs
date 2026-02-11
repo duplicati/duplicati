@@ -38,7 +38,7 @@ internal class KeepNoteAttachmentSourceEntry(SourceProvider provider, string par
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.KeepNoteAttachment.ToString() },
             { "gsuite:Name", attachment.Name.Split('/').Last() },
-            { "gsuite:id", attachment.Name },
+            { "gsuite:Id", attachment.Name },
             { "gsuite:MimeType", attachment.MimeType != null ? string.Join(",", attachment.MimeType) : null }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

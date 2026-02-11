@@ -56,7 +56,7 @@ internal class CalendarEventFileSourceEntry(string parentPath, Event evt)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.CalendarEvent.ToString() },
             { "gsuite:Name", "event.ics" },
-            { "gsuite:id", evt.Id },
+            { "gsuite:Id", evt.Id },
             { "gsuite:HtmlLink", evt.HtmlLink }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

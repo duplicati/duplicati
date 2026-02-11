@@ -57,7 +57,7 @@ internal class GmailSettingFileSourceEntry(SourceProvider provider, string userI
             { "gsuite:v", "1" },
             { "gsuite:Type", type.ToString() },
             { "gsuite:Name", filename },
-            { "gsuite:id", filename }
+            { "gsuite:Id", filename }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

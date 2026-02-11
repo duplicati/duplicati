@@ -16,9 +16,9 @@ internal class DriveFileRevisionContentSourceEntry(SourceProvider provider, stri
         var service = provider.ApiHelper.GetDriveService();
         var url = $"https://www.googleapis.com/drive/v3/files/{file.Id}/revisions/{revision.Id}?alt=media";
 
-        if (IsGoogleDoc(file.MimeType))
+        if (GoogleMimeTypes.IsGoogleDoc(file.MimeType))
         {
-            var exportMimeType = GetExportMimeType(file.MimeType);
+            var exportMimeType = GoogleMimeTypes.GetExportMimeType(file.MimeType);
             if (revision.ExportLinks != null && revision.ExportLinks.ContainsKey(exportMimeType))
             {
                 url = revision.ExportLinks[exportMimeType];
@@ -49,25 +49,6 @@ internal class DriveFileRevisionContentSourceEntry(SourceProvider provider, stri
         throw new FileNotFoundException($"Cannot download revision: {response.StatusCode}");
     }
 
-    private static bool IsGoogleDoc(string mimeType)
-    {
-        return mimeType.StartsWith("application/vnd.google-apps.") &&
-               mimeType != "application/vnd.google-apps.folder" &&
-               mimeType != "application/vnd.google-apps.shortcut";
-    }
-
-    private static string GetExportMimeType(string mimeType)
-    {
-        return mimeType switch
-        {
-            "application/vnd.google-apps.document" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.google-apps.spreadsheet" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.google-apps.presentation" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            "application/vnd.google-apps.script" => "application/vnd.google-apps.script+json",
-            _ => "application/pdf"
-        };
-    }
-
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
     {
         return Task.FromResult(new Dictionary<string, string?>
@@ -75,7 +56,7 @@ internal class DriveFileRevisionContentSourceEntry(SourceProvider provider, stri
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.DriveFileRevision.ToString() },
             { "gsuite:Name", revision.Id },
-            { "gsuite:id", revision.Id },
+            { "gsuite:Id", revision.Id },
             { "gsuite:MimeType", revision.MimeType }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

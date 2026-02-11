@@ -42,7 +42,7 @@ internal class TaskListSourceEntry(SourceProvider provider, string parentPath, T
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.TaskList.ToString() },
             { "gsuite:Name", taskList.Title },
-            { "gsuite:id", taskList.Id },
+            { "gsuite:Id", taskList.Id },
             { "gsuite:Updated", taskList.Updated }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

@@ -13,7 +13,7 @@ internal class SitesSourceEntry(SourceProvider provider, string parentPath)
     {
         var service = provider.ApiHelper.GetDriveService();
         var request = service.Files.List();
-        request.Q = "mimeType='application/vnd.google-apps.site' and trashed=false";
+        request.Q = $"mimeType='{GoogleMimeTypes.Site}' and trashed=false";
         request.SupportsAllDrives = true;
         request.IncludeItemsFromAllDrives = true;
         // Request all drives so we do not get user drives only
@@ -59,7 +59,7 @@ internal class SitesSourceEntry(SourceProvider provider, string parentPath)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.MetaRootSites.ToString() },
             { "gsuite:Name", "Sites" },
-            { "gsuite:id", "Sites" }
+            { "gsuite:Id", "Sites" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

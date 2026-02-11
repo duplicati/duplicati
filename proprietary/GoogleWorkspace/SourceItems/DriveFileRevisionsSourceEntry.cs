@@ -33,7 +33,7 @@ internal class DriveFileRevisionsSourceEntry(SourceProvider provider, string par
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.DriveFileRevision.ToString() }, // Folder
             { "gsuite:Name", "Revisions" },
-            { "gsuite:id", file.Id + "/revisions" }
+            { "gsuite:Id", file.Id + "/revisions" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

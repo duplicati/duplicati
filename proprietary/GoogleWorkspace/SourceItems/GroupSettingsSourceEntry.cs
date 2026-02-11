@@ -27,7 +27,7 @@ internal class GroupSettingsSourceEntry(SourceProvider provider, string parentPa
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.GroupSettings.ToString() },
             { "gsuite:Name", "settings.json" },
-            { "gsuite:id", groupEmail }
+            { "gsuite:Id", groupEmail }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

@@ -27,7 +27,7 @@ internal class TaskSourceEntry(string parentPath, GTask task)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.Task.ToString() },
             { "gsuite:Name", task.Title ?? task.Id },
-            { "gsuite:id", task.Id },
+            { "gsuite:Id", task.Id },
             { "gsuite:Status", task.Status },
             { "gsuite:Due", task.Due }
         }

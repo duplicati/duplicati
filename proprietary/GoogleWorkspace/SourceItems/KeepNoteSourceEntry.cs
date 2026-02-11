@@ -34,7 +34,7 @@ internal class KeepNoteSourceEntry(SourceProvider provider, string parentPath, N
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.KeepNote.ToString() },
             { "gsuite:Name", note.Title ?? note.Name },
-            { "gsuite:id", note.Name }
+            { "gsuite:Id", note.Name }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

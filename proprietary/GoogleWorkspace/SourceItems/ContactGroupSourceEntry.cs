@@ -24,7 +24,7 @@ internal class ContactGroupSourceEntry(string parentPath, ContactGroup group)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.ContactGroup.ToString() },
             { "gsuite:Name", group.FormattedName ?? group.Name },
-            { "gsuite:id", group.ResourceName },
+            { "gsuite:Id", group.ResourceName },
             { "gsuite:Etag", group.ETag }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

@@ -49,7 +49,7 @@ internal class CalendarSourceEntry(SourceProvider provider, string parentPath, C
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.Calendar.ToString() },
             { "gsuite:Name", calendar.SummaryOverride ?? calendar.Summary },
-            { "gsuite:id", calendar.Id },
+            { "gsuite:Id", calendar.Id },
             { "gsuite:Description", calendar.Description }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

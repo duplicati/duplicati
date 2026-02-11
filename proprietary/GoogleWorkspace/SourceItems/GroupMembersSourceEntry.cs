@@ -41,7 +41,7 @@ internal class GroupMembersSourceEntry(SourceProvider provider, string parentPat
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.GroupMember.ToString() },
             { "gsuite:Name", "members.json" },
-            { "gsuite:id", groupEmail }
+            { "gsuite:Id", groupEmail }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

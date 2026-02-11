@@ -29,7 +29,7 @@ internal class DriveFolderSourceEntry(SourceProvider provider, string userId, st
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
 
-                    if (file.MimeType == "application/vnd.google-apps.folder")
+                    if (file.MimeType == GoogleMimeTypes.Folder)
                     {
                         yield return new DriveFolderSourceEntry(provider, userId, this.Path, file.Name, file.Id);
                     }
@@ -50,7 +50,7 @@ internal class DriveFolderSourceEntry(SourceProvider provider, string userId, st
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.DriveFolder.ToString() },
             { "gsuite:Name", name },
-            { "gsuite:id", folderId }
+            { "gsuite:Id", folderId }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

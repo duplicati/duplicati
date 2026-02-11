@@ -41,7 +41,7 @@ internal class ContactsFolderSourceEntry(SourceProvider provider, string parentP
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.UserContacts.ToString() },
             { "gsuite:Name", "Contacts" },
-            { "gsuite:id", "Contacts" }
+            { "gsuite:Id", "Contacts" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

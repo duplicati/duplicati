@@ -97,7 +97,7 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
                 { "gsuite:v", "1" },
                 { "gsuite:Type", type.ToString() },
                 { "gsuite:Name", System.IO.Path.GetFileName(Path) },
-                { "gsuite:id", System.IO.Path.GetFileName(Path) }
+                { "gsuite:Id", System.IO.Path.GetFileName(Path) }
             }
             .Where(kv => !string.IsNullOrEmpty(kv.Value))
             .ToDictionary(kv => kv.Key, kv => kv.Value));

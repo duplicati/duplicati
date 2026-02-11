@@ -24,7 +24,7 @@ internal class SharedDriveMetadataSourceEntry(string parentPath, Drive drive)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.DriveFileMetadata.ToString() }, // Reuse or new type?
             { "gsuite:Name", "metadata.json" },
-            { "gsuite:id", drive.Id }
+            { "gsuite:Id", drive.Id }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

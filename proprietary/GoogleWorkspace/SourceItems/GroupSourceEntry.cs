@@ -26,7 +26,7 @@ internal class GroupSourceEntry(SourceProvider provider, string parentPath, Grou
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.Group.ToString() },
             { "gsuite:Name", group.Name ?? group.Email },
-            { "gsuite:id", group.Id },
+            { "gsuite:Id", group.Id },
             { "gsuite:Email", group.Email }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

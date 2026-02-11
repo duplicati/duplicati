@@ -44,7 +44,7 @@ internal class CalendarEventAttachmentSourceEntry(SourceProvider provider, strin
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.CalendarEventAttachment.ToString() },
             { "gsuite:Name", attachment.Title },
-            { "gsuite:id", attachment.FileId ?? attachment.FileUrl },
+            { "gsuite:Id", attachment.FileId ?? attachment.FileUrl },
             { "gsuite:MimeType", attachment.MimeType }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

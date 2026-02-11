@@ -25,7 +25,7 @@ internal class DriveSourceEntry(SourceProvider provider, string userId, string p
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.Drive.ToString() },
             { "gsuite:Name", "Drive" },
-            { "gsuite:id", "Drive" }
+            { "gsuite:Id", "Drive" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

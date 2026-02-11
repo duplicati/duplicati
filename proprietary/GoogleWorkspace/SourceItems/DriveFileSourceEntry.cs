@@ -35,7 +35,7 @@ internal class DriveFileSourceEntry(SourceProvider provider, string parentPath, 
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.DriveFile.ToString() },
             { "gsuite:Name", file.Name },
-            { "gsuite:id", file.Id },
+            { "gsuite:Id", file.Id },
             { "gsuite:MimeType", file.MimeType }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

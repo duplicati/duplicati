@@ -40,7 +40,7 @@ internal class KeepSourceEntry(SourceProvider provider, string parentPath)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.UserKeep.ToString() },
             { "gsuite:Name", "Keep" },
-            { "gsuite:id", "Keep" }
+            { "gsuite:Id", "Keep" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

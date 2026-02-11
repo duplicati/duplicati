@@ -26,7 +26,7 @@ internal class SiteSourceEntry(string parentPath, File file)
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.Site.ToString() },
             { "gsuite:Name", file.Name },
-            { "gsuite:id", file.Id },
+            { "gsuite:Id", file.Id },
             { "gsuite:MimeType", file.MimeType }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

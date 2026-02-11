@@ -40,7 +40,7 @@ internal class ContactGroupsFolderSourceEntry(SourceProvider provider, string pa
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.ContactGroup.ToString() }, // Or UserContactGroups?
             { "gsuite:Name", "Groups" },
-            { "gsuite:id", "Groups" }
+            { "gsuite:Id", "Groups" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

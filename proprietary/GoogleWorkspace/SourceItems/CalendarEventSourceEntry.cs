@@ -32,7 +32,7 @@ internal class CalendarEventSourceEntry(SourceProvider provider, string parentPa
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.CalendarEvent.ToString() },
             { "gsuite:Name", evt.Summary ?? evt.Id },
-            { "gsuite:id", evt.Id },
+            { "gsuite:Id", evt.Id },
             { "gsuite:HtmlLink", evt.HtmlLink }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

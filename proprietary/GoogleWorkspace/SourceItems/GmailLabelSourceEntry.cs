@@ -72,7 +72,7 @@ internal class GmailLabelSourceEntry(SourceProvider provider, string userId, str
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.GmailLabel.ToString() },
             { "gsuite:Name", label.Name },
-            { "gsuite:id", label.Id },
+            { "gsuite:Id", label.Id },
             { "gsuite:LabelType", label.Type }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

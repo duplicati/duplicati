@@ -44,7 +44,7 @@ internal class SharedDrivesSourceEntry(SourceProvider provider, string userId, s
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.SharedDrives.ToString() },
             { "gsuite:Name", "Shared Drives" },
-            { "gsuite:id", "Shared Drives" }
+            { "gsuite:Id", "Shared Drives" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

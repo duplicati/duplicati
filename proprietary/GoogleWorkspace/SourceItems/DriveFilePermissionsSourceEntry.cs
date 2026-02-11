@@ -28,7 +28,7 @@ internal class DriveFilePermissionsSourceEntry(SourceProvider provider, string p
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.DrivePermission.ToString() },
             { "gsuite:Name", "permissions.json" },
-            { "gsuite:id", file.Id }
+            { "gsuite:Id", file.Id }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

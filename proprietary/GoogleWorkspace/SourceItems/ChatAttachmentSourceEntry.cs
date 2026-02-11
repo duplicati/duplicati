@@ -35,7 +35,7 @@ internal class ChatAttachmentSourceEntry(string parentPath, Attachment attachmen
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.ChatAttachment.ToString() },
             { "gsuite:Name", attachment.ContentName ?? attachment.Name.Split('/').Last() },
-            { "gsuite:id", attachment.Name },
+            { "gsuite:Id", attachment.Name },
             { "gsuite:ContentType", attachment.ContentType }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
