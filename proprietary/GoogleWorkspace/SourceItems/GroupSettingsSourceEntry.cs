@@ -2,7 +2,6 @@
 
 using Duplicati.Library.Common.IO;
 using System.Text.Json;
-
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class GroupSettingsSourceEntry(SourceProvider provider, string parentPath, string groupEmail)
@@ -14,6 +13,7 @@ internal class GroupSettingsSourceEntry(SourceProvider provider, string parentPa
     {
         var service = provider.ApiHelper.GetGroupsSettingsService();
         var request = service.Groups.Get(groupEmail);
+        request.Alt = Google.Apis.Groupssettings.v1.GroupssettingsBaseServiceRequest<Google.Apis.Groupssettings.v1.Data.Groups>.AltEnum.Json;
         var settings = await request.ExecuteAsync(cancellationToken);
 
         var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
