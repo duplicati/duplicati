@@ -5,8 +5,8 @@ using Google.Apis.PeopleService.v1.Data;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ContactPhotoSourceEntry(string parentPath, Photo photo)
-    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, "photo.jpg"), DateTime.UnixEpoch, DateTime.UnixEpoch)
+internal class ContactPhotoSourceEntry(string parentPath, Photo photo, int index)
+    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, $"photo-{index}.jpg"), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
@@ -34,8 +34,12 @@ internal class ContactPhotoSourceEntry(string parentPath, Photo photo)
         {
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.ContactPhoto.ToString() },
-            { "gsuite:Name", "photo.jpg" },
-            { "gsuite:id", photo.Metadata?.Source?.Id ?? photo.Url }
+            { "gsuite:Name", $"{photo.Metadata?.Source?.Type ?? ""}-photo-{index}.jpg".TrimStart('-') },
+            { "gsuite:Id", photo.Metadata?.Source?.Id ?? photo.Url },
+            { "gsuite:Url", photo.Url },
+            { "gsuite:Default", photo.Default__.ToString() },
+            { "gsuite:MetadataSourceId", photo.Metadata?.Source?.Id },
+            { "gsuite:MetadataSourceType", photo.Metadata?.Source?.Type }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

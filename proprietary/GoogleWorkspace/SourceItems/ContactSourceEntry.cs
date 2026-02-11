@@ -17,13 +17,14 @@ internal class ContactSourceEntry(string parentPath, Person person)
 
         if (person.Photos != null)
         {
-            foreach (var photo in person.Photos)
+            foreach ((var photo, var index) in person.Photos.Select((x, index) => (x, index)))
             {
                 // Skip if it's the default placeholder (if we can detect it)
                 // Usually default photos have a specific URL pattern or metadata.
                 // For now, let's just include all photos.
                 if (cancellationToken.IsCancellationRequested) yield break;
-                yield return new ContactPhotoSourceEntry(this.Path, photo);
+                if (!string.IsNullOrWhiteSpace(photo.Url))
+                    yield return new ContactPhotoSourceEntry(this.Path, photo, index);
             }
         }
     }
