@@ -241,7 +241,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         // Normalize path separators
         path = NormalizePath(path);
-        var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries) ??
+        var segments = path.Split(System.IO.Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries) ??
             throw new InvalidOperationException($"Unable to parse path: {path}");
         // TODO also check for root/, but handle that later when the mount path issue is handled.
         if (segments.Length >= 2 && segments[^1] == "geometry.json")
