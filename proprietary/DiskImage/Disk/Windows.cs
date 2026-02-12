@@ -192,7 +192,15 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             bool result = WriteFile(m_deviceHandle, buffer, (uint)data.Length, out uint bytesWritten, IntPtr.Zero);
 
             if (!result)
-                throw new IOException("Failed to write to disk.");
+            {
+                // Error code 5 is "Access Denied", which can occur if the disk is mounted or online. It should be unmounted and offline for writing.
+                // Error code 19 is "the media is write protected", which can occur if the disk is write protected. To fix use diskpart:
+                // select disk <disk number>
+                // attributes disk clear readonly
+                var error = Marshal.GetLastWin32Error();
+                var msg = new System.ComponentModel.Win32Exception(error).Message;
+                throw new IOException($"Failed to write to disk. Win32 Error Code: {error}. Message: {msg}");
+            }
 
             return (int)bytesWritten;
         }
