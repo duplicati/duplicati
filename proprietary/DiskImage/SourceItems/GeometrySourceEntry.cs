@@ -20,7 +20,7 @@ internal class GeometrySourceEntry : DiskImageEntryBase
     private readonly GeometryMetadata _metadata;
 
     public GeometrySourceEntry(string parentPath, GeometryMetadata metadata)
-        : base(PathCombine(parentPath, "geometry.json"))
+        : base(System.IO.Path.Combine(parentPath, "geometry.json"))
     {
         _metadata = metadata;
     }
@@ -85,10 +85,4 @@ internal class GeometrySourceEntry : DiskImageEntryBase
         return metadata;
     }
 
-    private static string PathCombine(string p1, string p2)
-    {
-        if (string.IsNullOrEmpty(p1)) return p2;
-        if (string.IsNullOrEmpty(p2)) return p1;
-        return p1.TrimEnd('/') + "/" + p2.TrimStart('/');
-    }
 }

@@ -17,7 +17,7 @@ namespace Duplicati.Proprietary.DiskImage.SourceItems;
 /// This allows the partition table (MBR or GPT) to be backed up and restored separately.
 /// </summary>
 internal class PartitionTableSourceEntry(string parentPath, IPartitionTable table, IRawDisk disk)
-    : DiskImageEntryBase(PathCombine(parentPath, $"partition_table_{table.TableType}"))
+    : DiskImageEntryBase(System.IO.Path.Combine(parentPath, $"partition_table_{table.TableType}"))
 {
     public override bool IsFolder => false;
     public override bool IsMetaEntry => true;
@@ -79,10 +79,4 @@ internal class PartitionTableSourceEntry(string parentPath, IPartitionTable tabl
         }
     }
 
-    private static string PathCombine(string p1, string p2)
-    {
-        if (string.IsNullOrEmpty(p1)) return p2;
-        if (string.IsNullOrEmpty(p2)) return p1;
-        return p1.TrimEnd('/') + "/" + p2.TrimStart('/');
-    }
 }

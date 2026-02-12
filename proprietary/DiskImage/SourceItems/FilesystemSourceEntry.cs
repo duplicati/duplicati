@@ -13,7 +13,7 @@ using Duplicati.Proprietary.DiskImage.Filesystem;
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 
 internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
-    : DiskImageEntryBase(PathCombine(parentPath, $"fs_{filesystem.Type}{System.IO.Path.DirectorySeparatorChar}"))
+    : DiskImageEntryBase(System.IO.Path.Combine(parentPath, $"fs_{filesystem.Type}{System.IO.Path.DirectorySeparatorChar}"))
 {
     public override bool IsFolder => true;
 
@@ -84,10 +84,4 @@ internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
         return metadata;
     }
 
-    private static string PathCombine(string p1, string p2)
-    {
-        if (string.IsNullOrEmpty(p1)) return p2;
-        if (string.IsNullOrEmpty(p2)) return p1;
-        return p1.TrimEnd('/') + "/" + p2.TrimStart('/');
-    }
 }
