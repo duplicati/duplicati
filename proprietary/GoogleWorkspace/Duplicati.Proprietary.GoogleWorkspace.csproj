@@ -24,7 +24,7 @@
     <PackageReference Include="Google.Apis.Keep.v1" Version="1.69.0.3729" />
     <PackageReference Include="Google.Apis.GroupsSettings.v1" Version="1.68.0.2366" />
     <PackageReference Include="Google.Apis.HangoutsChat.v1" Version="1.68.0.3393" />
-    <PackageReference Include="Google.Apis.Auth" Version="1.69.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.70.0" />
   </ItemGroup>
 
 </Project>

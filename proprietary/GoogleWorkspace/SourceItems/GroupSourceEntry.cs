@@ -17,6 +17,12 @@ internal class GroupSourceEntry(SourceProvider provider, string parentPath, Grou
 
         if (cancellationToken.IsCancellationRequested) yield break;
         yield return new GroupMembersSourceEntry(provider, this.Path, group.Email);
+
+        if (cancellationToken.IsCancellationRequested) yield break;
+        yield return new GroupAliasesSourceEntry(provider, this.Path, group.Email);
+
+        if (cancellationToken.IsCancellationRequested) yield break;
+        yield return new GroupConversationsSourceEntry(provider, this.Path, group.Email);
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

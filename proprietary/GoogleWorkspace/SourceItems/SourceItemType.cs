@@ -46,6 +46,8 @@ public enum SourceItemType
     Group,
     GroupMember,
     GroupSettings,
+    GroupAliases,
+    GroupConversations,
     Site,
     ChatSpace,
     ChatMessage,
