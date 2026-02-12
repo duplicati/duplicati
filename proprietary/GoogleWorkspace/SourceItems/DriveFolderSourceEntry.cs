@@ -29,7 +29,7 @@ internal class DriveFolderSourceEntry(SourceProvider provider, string userId, st
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
 
-                    if (file.MimeType == GoogleMimeTypes.Folder)
+                    if (GoogleMimeTypes.IsFolder(file.MimeType))
                     {
                         yield return new DriveFolderSourceEntry(provider, userId, this.Path, file.Name, file.Id);
                     }

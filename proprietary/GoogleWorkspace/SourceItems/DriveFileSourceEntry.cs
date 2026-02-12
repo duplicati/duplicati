@@ -13,19 +13,22 @@ internal class DriveFileSourceEntry(SourceProvider provider, string parentPath, 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFileContentSourceEntry(provider, this.Path, file);
-
-        if (cancellationToken.IsCancellationRequested) yield break;
         yield return new DriveFileMetadataSourceEntry(this.Path, file);
 
         if (cancellationToken.IsCancellationRequested) yield break;
         yield return new DriveFilePermissionsSourceEntry(provider, this.Path, file);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFileCommentsSourceEntry(provider, this.Path, file);
+        yield return new DriveFileContentSourceEntry(provider, this.Path, file);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFileRevisionsSourceEntry(provider, this.Path, file);
+        yield return new DriveFileCommentsSourceEntry(provider, this.Path, file);
+
+        if (!GoogleMimeTypes.IsGoogleSite(file.MimeType) && !GoogleMimeTypes.IsShortcut(file.MimeType))
+        {
+            if (cancellationToken.IsCancellationRequested) yield break;
+            yield return new DriveFileRevisionsSourceEntry(provider, this.Path, file);
+        }
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

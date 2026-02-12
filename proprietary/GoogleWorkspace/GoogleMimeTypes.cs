@@ -79,12 +79,38 @@ public static class GoogleMimeTypes
     /// <param name="mimeType">The MIME type to check.</param>
     /// <returns>true if the MIME type represents a Google Workspace document; otherwise, false.</returns>
     public static bool IsGoogleDoc(string mimeType)
-    {
-        return !string.IsNullOrWhiteSpace(mimeType) &&
+        => !string.IsNullOrWhiteSpace(mimeType) &&
             mimeType.StartsWith(GoogleAppsPrefix, StringComparison.Ordinal) &&
-            mimeType != Folder &&
-            mimeType != Shortcut;
-    }
+            !IsGoogleSite(mimeType) &&
+            !IsShortcut(mimeType) &&
+            !IsFolder(mimeType);
+
+    /// <summary>
+    /// Determines whether the specified MIME type represents a Google Site.
+    /// </summary>
+    /// <param name="mimeType">The MIME type to check.</param>
+    /// <returns>true if the MIME type represents a Google Site; otherwise, false.</returns>
+    public static bool IsGoogleSite(string mimeType)
+        => !string.IsNullOrWhiteSpace(mimeType) &&
+            string.Equals(mimeType, Site, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Determines whether the specified MIME type represents a Google Drive shortcut.
+    /// </summary>
+    /// <param name="mimeType">The MIME type to check.</param>
+    /// <returns>true if the MIME type represents a Google Drive shortcut; otherwise, false.</returns>
+    public static bool IsShortcut(string mimeType)
+        => !string.IsNullOrWhiteSpace(mimeType) &&
+            string.Equals(mimeType, Shortcut, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Determines whether the specified MIME type represents a Google Drive folder.
+    /// </summary>
+    /// <param name="mimeType">The MIME type to check.</param>
+    /// <returns>true if the MIME type represents a Google Drive folder; otherwise, false.</returns>
+    public static bool IsFolder(string mimeType)
+        => !string.IsNullOrWhiteSpace(mimeType) &&
+            string.Equals(mimeType, Folder, StringComparison.Ordinal);
 
     /// <summary>
     /// Gets the appropriate export MIME type for a Google Workspace document.
@@ -92,8 +118,7 @@ public static class GoogleMimeTypes
     /// <param name="mimeType">The Google Workspace MIME type.</param>
     /// <returns>The export MIME type for the document.</returns>
     public static string GetExportMimeType(string mimeType)
-    {
-        return mimeType switch
+        => mimeType switch
         {
             Document => WordDocument,
             Spreadsheet => ExcelSpreadsheet,
@@ -101,5 +126,4 @@ public static class GoogleMimeTypes
             Script => ScriptJson,
             _ => Pdf
         };
-    }
 }
