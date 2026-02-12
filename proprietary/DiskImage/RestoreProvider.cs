@@ -191,50 +191,46 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     {
         // Example segment: "part_GPT_1"
         var parts = segment.Split('_');
-        if (parts.Length >= 3)
-            // Parse partition table type (second part)
-            if (Enum.TryParse<PartitionTableType>(parts[1], true, out var ptType))
-            {
-                // Parse partition number (third part)
-                if (int.TryParse(parts[2], out var pn))
-                {
-                    var partition = _partitions[pn - 1];
-                    if (partition.PartitionTable.TableType == ptType)
-                        return partition;
-                    else
-                        throw new InvalidOperationException($"Partition table type mismatch for segment: {segment}. Expected: {partition.PartitionTable.TableType}, Parsed: {ptType}");
-                }
-                else
-                    throw new InvalidOperationException($"Unable to parse partition number from segment: {segment}. Tried {parts[2]}");
-            }
-            else
-                throw new InvalidOperationException($"Unable to parse partition table type from segment: {segment}. Tried {parts[1]}");
-        else
+        if (parts.Length < 3)
             throw new InvalidOperationException($"Unable to parse partition information from segment: {segment}. Expected format: part_{{PartitionTableType}}_{{PartitionNumber}}");
+
+        // Parse partition table type (second part)
+        if (!Enum.TryParse<PartitionTableType>(parts[1], true, out var ptType))
+            throw new InvalidOperationException($"Unable to parse partition table type from segment: {segment}. Tried {parts[1]}");
+
+        // Parse partition number (third part)
+        if (!int.TryParse(parts[2], out var pn))
+            throw new InvalidOperationException($"Unable to parse partition number from segment: {segment}. Tried {parts[2]}");
+
+        // Find the partition in our reconstructed list
+        var partition = _partitions.FirstOrDefault(p =>
+            p.PartitionNumber == pn &&
+            p.PartitionTable.TableType == ptType);
+
+        if (partition == null)
+            throw new InvalidOperationException($"Partition not found for segment: {segment}. Partition number {pn} with table type {ptType} not in reconstructed partitions.");
+
+        return partition;
     }
 
-    public IFilesystem ParseFilesystem(string segment)
+    public IFilesystem ParseFilesystem(IPartition partition, string segment)
     {
         // Example segment: "fs_NTFS"
         var parts = segment.Split('_');
-        if (parts.Length >= 2)
-        {
-            // Reconstruct filesystem type from remaining parts (e.g., "fs_Unknown" or "fs_NTFS")
-            var fsTypeStr = string.Join('_', parts[1..]);
-            if (Enum.TryParse<FileSystemType>(fsTypeStr, true, out var fsType))
-            {
-                // TODO lookup filesystem information from metadata and return an IFilesystem instance
-                var fs = _filesystems.FirstOrDefault(f => f.Type == fsType);
-                if (fs != null)
-                    return fs;
-                else
-                    throw new InvalidOperationException($"No matching filesystem found for segment: {segment} with type {fsType}");
-            }
-            else
-                throw new InvalidOperationException($"Unable to parse filesystem type from segment: {segment}. Tried {fsTypeStr}");
-        }
-        else
+        if (parts.Length < 2)
             throw new InvalidOperationException($"Unable to parse filesystem information from segment: {segment}. Expected format: fs_{{FileSystemType}}");
+
+        // Reconstruct filesystem type from remaining parts (e.g., "fs_Unknown" or "fs_NTFS")
+        var fsTypeStr = string.Join('_', parts[1..]);
+        if (!Enum.TryParse<FileSystemType>(fsTypeStr, true, out var fsType))
+            throw new InvalidOperationException($"Unable to parse filesystem type from segment: {segment}. Tried {fsTypeStr}");
+
+        // Find the filesystem in our reconstructed list
+        var fs = _filesystems.FirstOrDefault(f => f.Partition.PartitionNumber == partition.PartitionNumber && f.Type == fsType);
+        if (fs == null)
+            throw new InvalidOperationException($"No matching filesystem found for segment: {segment} with type {fsType}");
+
+        return fs;
     }
 
     public (string, IPartition?, IFilesystem?) ParsePath(string path)
@@ -245,9 +241,11 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         // Normalize path separators
         path = NormalizePath(path);
-        if (path == "root/geometry.json")
+        var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries) ??
+            throw new InvalidOperationException($"Unable to parse path: {path}");
+        // TODO also check for root/, but handle that later when the mount path issue is handled.
+        if (segments.Length >= 2 && segments[^1] == "geometry.json")
             return ("geometry", null, null);
-        var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
         string? partitionSegment = segments.FirstOrDefault(s => s.StartsWith("part_", StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrEmpty(partitionSegment))
@@ -256,7 +254,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             string? filesystemSegment = segments.FirstOrDefault(s => s.StartsWith("fs_", StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrEmpty(filesystemSegment))
             {
-                var filesystem = ParseFilesystem(filesystemSegment);
+                var filesystem = ParseFilesystem(partition, filesystemSegment);
                 return ("file", partition, filesystem);
             }
             return ("partition", partition, null);
@@ -353,8 +351,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         return typeStr switch
         {
-            //"disk" => OpenReadDisk(path, cancel),
-            //"partition" => OpenReadPartition(path, partition!, cancel),
+            "disk" => OpenReadDisk(path, cancel),
+            "partition" => OpenReadPartition(path, partition!, cancel),
             "geometry" => OpenReadGeometry(cancel),
             "file" => filesystem!.OpenReadStreamAsync(path, cancel),
             _ => throw new NotSupportedException($"Unsupported item type: {typeStr}")
@@ -403,8 +401,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         return typeStr switch
         {
-            //"disk" => OpenReadWriteDisk(path, cancel),
-            //"partition" => OpenReadWritePartition(path, partition!, cancel),
+            "disk" => Task.FromResult((Stream)new MemoryStream()),
+            "partition" => Task.FromResult((Stream)new MemoryStream()),
             "geometry" => OpenReadWriteGeometry(cancel),
             "file" => filesystem!.OpenReadWriteStreamAsync(path, cancel),
             _ => throw new NotSupportedException($"Unsupported item type: {typeStr}")
@@ -441,7 +439,19 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                 if (newGeometry != null)
                 {
                     _geometryMetadata = newGeometry;
-                    Log.WriteInformationMessage(LOGTAG, "GeometryMetadataUpdated", $"Successfully updated geometry metadata during ReadWrite");
+
+                    // Clear existing reconstructed objects
+                    foreach (var part in _partitions)
+                        part.Dispose();
+                    _partitions.Clear();
+                    foreach (var fs in _filesystems)
+                        fs.Dispose();
+                    _filesystems.Clear();
+
+                    // Reconstruct disk, partition table, partitions, and filesystems from geometry metadata
+                    ReconstructFromGeometryMetadata();
+
+                    Log.WriteInformationMessage(LOGTAG, "GeometryMetadataUpdated", $"Successfully updated geometry metadata during ReadWrite. Reconstructed {_partitions.Count} partitions and {_filesystems.Count} filesystems.");
                 }
                 else
                 {
@@ -464,8 +474,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         return typeStr switch
         {
-            //"disk" => OpenReadWriteDisk(path, cancel),
-            //"partition" => OpenReadWritePartition(path, partition!, cancel),
+            "disk" => Task.FromResult(0L),
+            "partition" => Task.FromResult(0L),
             "geometry" => Task.FromResult((long)_geometryMetadata!.ToJson().Count()),
             "file" => filesystem!.GetFileLengthAsync(path, cancel),
             _ => throw new NotSupportedException($"Unsupported item type: {typeStr}")
@@ -578,6 +588,283 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         _pendingWrites.Clear();
 
         _disposed = true;
+    }
+
+    /// <summary>
+    /// Reconstructs IRawDisk, IPartitionTable, IPartition, and IFilesystem objects
+    /// from the geometry metadata. This is called when geometry.json is written during restore.
+    /// </summary>
+    private void ReconstructFromGeometryMetadata()
+    {
+        if (_geometryMetadata == null)
+            throw new InvalidOperationException("Geometry metadata is not available for reconstruction.");
+
+        if (_targetDisk == null)
+            throw new InvalidOperationException("Target disk is not initialized.");
+
+        // Create reconstructed partition table based on metadata
+        IPartitionTable? partitionTable = null;
+        if (_geometryMetadata.PartitionTable != null)
+        {
+            partitionTable = _geometryMetadata.PartitionTable.Type switch
+            {
+                PartitionTableType.GPT => new ReconstructedGPT(_targetDisk, _geometryMetadata),
+                PartitionTableType.MBR => new ReconstructedMBR(_targetDisk, _geometryMetadata),
+                _ => null
+            };
+        }
+
+        // Reconstruct partitions from metadata
+        if (_geometryMetadata.Partitions != null && partitionTable != null)
+        {
+            foreach (var partGeom in _geometryMetadata.Partitions)
+            {
+                var partition = new ReconstructedPartition(partitionTable, partGeom, _targetDisk);
+                _partitions.Add(partition);
+            }
+        }
+
+        // Reconstruct filesystems from metadata
+        if (_geometryMetadata.Filesystems != null)
+        {
+            foreach (var fsGeom in _geometryMetadata.Filesystems)
+            {
+                // Find the corresponding partition for this filesystem
+                var partition = _partitions.FirstOrDefault(p => p.PartitionNumber == fsGeom.PartitionNumber);
+                if (partition != null)
+                {
+                    var filesystem = CreateFilesystemFromGeometry(partition, fsGeom);
+                    if (filesystem != null)
+                        _filesystems.Add(filesystem);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates an IFilesystem instance from filesystem geometry metadata.
+    /// </summary>
+    private IFilesystem? CreateFilesystemFromGeometry(IPartition partition, FilesystemGeometry fsGeom)
+    {
+        return fsGeom.Type switch
+        {
+            // For now, we use UnknownFilesystem as the base implementation
+            // Specific filesystem implementations can be added later
+            _ => new UnknownFilesystem(partition, fsGeom.BlockSize)
+        };
+    }
+
+    /// <summary>
+    /// A reconstructed GPT partition table for restore operations.
+    /// This is a lightweight implementation that stores metadata from the backup.
+    /// </summary>
+    private class ReconstructedGPT : IPartitionTable
+    {
+        private readonly IRawDisk _rawDisk;
+        private readonly GeometryMetadata _geometry;
+        private bool _disposed = false;
+
+        public ReconstructedGPT(IRawDisk rawDisk, GeometryMetadata geometry)
+        {
+            _rawDisk = rawDisk;
+            _geometry = geometry;
+        }
+
+        public IRawDisk? RawDisk => _rawDisk;
+        public PartitionTableType TableType => PartitionTableType.GPT;
+
+        public IAsyncEnumerable<IPartition> EnumeratePartitions(CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("Enumeration not supported on reconstructed partition table.");
+        }
+
+        public Task<IPartition?> GetPartitionAsync(int partitionNumber, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("GetPartitionAsync not supported on reconstructed partition table.");
+        }
+
+        public Task<Stream> GetProtectiveMbrAsync(CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("GetProtectiveMbrAsync not supported on reconstructed partition table.");
+        }
+
+        public Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("GetPartitionTableDataAsync not supported on reconstructed partition table.");
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _disposed = true;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A reconstructed MBR partition table for restore operations.
+    /// This is a lightweight implementation that stores metadata from the backup.
+    /// </summary>
+    private class ReconstructedMBR : IPartitionTable
+    {
+        private readonly IRawDisk _rawDisk;
+        private readonly GeometryMetadata _geometry;
+        private bool _disposed = false;
+
+        public ReconstructedMBR(IRawDisk rawDisk, GeometryMetadata geometry)
+        {
+            _rawDisk = rawDisk;
+            _geometry = geometry;
+        }
+
+        public IRawDisk? RawDisk => _rawDisk;
+        public PartitionTableType TableType => PartitionTableType.MBR;
+
+        public IAsyncEnumerable<IPartition> EnumeratePartitions(CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("Enumeration not supported on reconstructed partition table.");
+        }
+
+        public Task<IPartition?> GetPartitionAsync(int partitionNumber, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("GetPartitionAsync not supported on reconstructed partition table.");
+        }
+
+        public Task<Stream> GetProtectiveMbrAsync(CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("MBR does not have a protective MBR.");
+        }
+
+        public Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("GetPartitionTableDataAsync not supported on reconstructed partition table.");
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _disposed = true;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A reconstructed partition for restore operations.
+    /// This is created from geometry metadata and associated with the target disk.
+    /// </summary>
+    private class ReconstructedPartition : IPartition
+    {
+        private readonly IPartitionTable _partitionTable;
+        private readonly IRawDisk _rawDisk;
+        private bool _disposed = false;
+
+        public ReconstructedPartition(IPartitionTable partitionTable, PartitionGeometry geometry, IRawDisk rawDisk)
+        {
+            _partitionTable = partitionTable;
+            _rawDisk = rawDisk;
+            PartitionNumber = geometry.Number;
+            Type = geometry.Type;
+            StartOffset = geometry.StartOffset;
+            Size = geometry.Size;
+            Name = geometry.Name;
+            FilesystemType = geometry.FilesystemType;
+            VolumeGuid = geometry.VolumeGuid;
+        }
+
+        public int PartitionNumber { get; }
+        public PartitionType Type { get; }
+        public IPartitionTable PartitionTable => _partitionTable;
+        public long StartOffset { get; }
+        public long Size { get; }
+        public string? Name { get; }
+        public FileSystemType FilesystemType { get; }
+        public Guid? VolumeGuid { get; }
+
+        public Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
+        {
+            return _rawDisk.ReadBytesAsync(StartOffset, (int)Math.Min(Size, int.MaxValue), cancellationToken);
+        }
+
+        public Task<Stream> OpenWriteAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<Stream>(new PartitionWriteStream(_rawDisk, StartOffset, Size));
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _disposed = true;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A stream that writes data to a partition on the raw disk.
+    /// </summary>
+    private class PartitionWriteStream : Stream
+    {
+        private readonly IRawDisk _disk;
+        private readonly long _startOffset;
+        private readonly long _maxSize;
+        private readonly MemoryStream _buffer;
+        private bool _disposed = false;
+
+        public PartitionWriteStream(IRawDisk disk, long startOffset, long maxSize)
+        {
+            _disk = disk;
+            _startOffset = startOffset;
+            _maxSize = maxSize;
+            _buffer = new MemoryStream();
+        }
+
+        public override bool CanRead => false;
+        public override bool CanSeek => true;
+        public override bool CanWrite => true;
+        public override long Length => _buffer.Length;
+        public override long Position
+        {
+            get => _buffer.Position;
+            set => _buffer.Position = value;
+        }
+
+        public override void Flush() => _buffer.Flush();
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => _buffer.Seek(offset, origin);
+        public override void SetLength(long value)
+        {
+            if (value > _maxSize)
+                throw new IOException($"Cannot write beyond partition size of {_maxSize} bytes.");
+            _buffer.SetLength(value);
+        }
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            if (_buffer.Position + count > _maxSize)
+                throw new IOException($"Cannot write beyond partition size of {_maxSize} bytes.");
+            _buffer.Write(buffer, offset, count);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // Write all buffered data to disk
+                    _buffer.Position = 0;
+                    var data = _buffer.ToArray();
+                    if (data.Length > 0)
+                    {
+                        _disk.WriteBytesAsync(_startOffset, data, CancellationToken.None).GetAwaiter().GetResult();
+                    }
+                    _buffer.Dispose();
+                }
+                _disposed = true;
+            }
+            base.Dispose(disposing);
+        }
     }
 
     /// <summary>
