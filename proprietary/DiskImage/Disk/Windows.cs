@@ -21,6 +21,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private bool m_writeable = false;
         private uint m_sectorSize = 0;
         private long m_size = 0;
+        private bool m_shouldFlush = false;
 
         public string DevicePath { get { return m_devicePath; } }
 
@@ -117,12 +118,15 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_disposed)
                 return;
 
-            var flushed = FlushFileBuffers(m_deviceHandle);
-            if (!flushed)
+            if (m_shouldFlush)
             {
-                var error = Marshal.GetLastWin32Error();
-                var msg = new System.ComponentModel.Win32Exception(error).Message;
-                Console.WriteLine($"Warning: Failed to flush file buffers. Win32 Error Code: {error}. Message: {msg}");
+                var flushed = FlushFileBuffers(m_deviceHandle);
+                if (!flushed)
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    var msg = new System.ComponentModel.Win32Exception(error).Message;
+                    Console.WriteLine($"Warning: Failed to flush file buffers. Win32 Error Code: {error}. Message: {msg}");
+                }
             }
             m_deviceHandle?.Dispose();
             m_deviceHandle = null;
@@ -249,6 +253,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 var msg = new System.ComponentModel.Win32Exception(error).Message;
                 throw new IOException($"Failed to write to disk. Win32 Error Code: {error}. Message: {msg}");
             }
+
+            m_shouldFlush = true;
 
             return (int)bytesWritten;
         }
