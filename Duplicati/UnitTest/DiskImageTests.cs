@@ -247,7 +247,7 @@ namespace Duplicati.UnitTest
             // List backup contents and verify geometry.json is present
             using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var listResults = c.List();
+                var listResults = c.List("*");
                 TestUtils.AssertResults(listResults);
 
                 // Check that geometry.json is in the backup
@@ -577,7 +577,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var listResults = c.List();
+                var listResults = c.List("*");
                 Assert.That(listResults.Files, Is.Not.Null);
 
                 var geometryFile = listResults.Files.FirstOrDefault(f => f.Path.EndsWith("geometry.json"));
@@ -645,7 +645,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var listResults = c.List();
+                var listResults = c.List("*");
                 Assert.That(listResults.Files, Is.Not.Null);
 
                 var geometryFile = listResults.Files.FirstOrDefault(f => f.Path.EndsWith("geometry.json"));
