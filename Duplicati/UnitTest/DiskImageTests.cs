@@ -397,7 +397,8 @@ namespace Duplicati.UnitTest
 
             // Initialize disk (the restore will overwrite this, but we need it formatted)
             DiskImageVhdHelper.InitializeDisk(_restoreDiskNumber, tableType);
-            DiskImageVhdHelper.CreateAndFormatPartition(_restoreDiskNumber, fsType);
+            var restoreDriveLetter = DiskImageVhdHelper.CreateAndFormatPartition(_restoreDiskNumber, fsType);
+            DiskImageVhdHelper.UnmountForWriting(_restoreVhdPath, restoreDriveLetter);
 
             return physicalDrivePath;
         }
