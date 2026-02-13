@@ -19,9 +19,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Duplicati.Library.Backend.Backblaze;
+using Duplicati.Library.Interface;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -44,7 +48,7 @@ namespace Duplicati.UnitTest
             return options;
         }
 
-        private static string ResolveDownloadUrl(B2 backend, string defaultDownloadUrl)
+        private static string ResolveDownloadUrl(B2 backend, string? defaultDownloadUrl)
         {
             var method = typeof(B2).GetMethod("ResolveDownloadUrl", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(method, "Expected helper method ResolveDownloadUrl to exist");
@@ -66,12 +70,41 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Backblaze")]
+        public void NormalizesCustomB2DownloadUrl()
+        {
+            var backend = new B2("b2://bucket/prefix", CreateOptions("  https://cdn.example.com/  "));
+            var result = ResolveDownloadUrl(backend, "https://f001.backblazeb2.com");
+
+            Assert.AreEqual("https://cdn.example.com", result);
+        }
+
+        [Test]
+        [Category("Backblaze")]
         public void FallsBackToAuthDownloadUrlWhenCustomNotProvided()
         {
             var backend = new B2("b2://bucket/prefix", CreateOptions());
             var result = ResolveDownloadUrl(backend, "https://f001.backblazeb2.com");
 
             Assert.AreEqual("https://f001.backblazeb2.com", result);
+        }
+
+        [Test]
+        [Category("Backblaze")]
+        public void ThrowsForInvalidCustomB2DownloadUrl()
+        {
+            Assert.Throws<UserInformationException>(() =>
+                new B2("b2://bucket/prefix", CreateOptions("not-a-valid-url")));
+        }
+
+        [Test]
+        [Category("Backblaze")]
+        public void ThrowsWhenNoDownloadUrlCanBeResolved()
+        {
+            var backend = new B2("b2://bucket/prefix", CreateOptions());
+
+            var ex = Assert.Throws<TargetInvocationException>(() => ResolveDownloadUrl(backend, null));
+            Assert.IsNotNull(ex?.InnerException);
+            Assert.IsInstanceOf<InvalidOperationException>(ex!.InnerException);
         }
     }
 }

@@ -221,7 +221,8 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         }
 
         _downloadUrl = null;
-        if (options.TryGetValue(B2_DOWNLOAD_URL_OPTION, out var option)) _downloadUrl = option;
+        if (options.TryGetValue(B2_DOWNLOAD_URL_OPTION, out var option))
+            _downloadUrl = ParseCustomDownloadUrl(option);
 
         // Parse lock mode option, default to Governance
         _lockMode = B2LockMode.Governance; // Default to governance
@@ -331,13 +332,46 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
     }
 
     /// <summary>
+    /// Normalizes and validates a user-supplied download URL override.
+    /// Returns null when no override is supplied.
+    /// </summary>
+    /// <param name="downloadUrl">User-provided b2-download-url value</param>
+    /// <returns>Normalized URL without trailing slash, or null if unset</returns>
+    /// <exception cref="UserInformationException">Thrown when the URL is invalid</exception>
+    private static string? ParseCustomDownloadUrl(string? downloadUrl)
+    {
+        if (string.IsNullOrWhiteSpace(downloadUrl))
+            return null;
+
+        var normalized = downloadUrl.Trim().TrimEnd('/');
+        if (!Uri.TryCreate(normalized, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            throw new UserInformationException(Strings.B2.InvalidDownloadUrlError(B2_DOWNLOAD_URL_OPTION, downloadUrl), "B2InvalidDownloadUrl");
+
+        return normalized;
+    }
+
+    /// <summary>
     /// Resolves the download URL used for file download operations.
     /// A user-provided b2-download-url overrides the API-provided URL.
     /// </summary>
     /// <param name="defaultDownloadUrl">Download URL from B2 authorization config</param>
     /// <returns>The effective download base URL</returns>
+    /// <exception cref="InvalidOperationException">Thrown when no valid URL can be resolved</exception>
     private string ResolveDownloadUrl(string? defaultDownloadUrl)
-        => string.IsNullOrWhiteSpace(_downloadUrl) ? defaultDownloadUrl ?? string.Empty : _downloadUrl;
+    {
+        var effectiveDownloadUrl = _downloadUrl;
+        if (string.IsNullOrWhiteSpace(effectiveDownloadUrl))
+        {
+            var normalizedDefaultUrl = defaultDownloadUrl?.Trim().TrimEnd('/');
+            if (string.IsNullOrWhiteSpace(normalizedDefaultUrl))
+                throw new InvalidOperationException("No valid Backblaze B2 download URL is available.");
+
+            effectiveDownloadUrl = normalizedDefaultUrl;
+        }
+
+        return effectiveDownloadUrl;
+    }
 
     /// <inheritdoc/>
     public IList<ICommandLineArgument> SupportedCommands =>

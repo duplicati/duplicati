@@ -41,6 +41,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string B2lockmodeDescriptionLong { get { return LC.L(@"Sets the lock mode for B2 object retention. Governance mode allows privileged users to bypass retention, while Compliance mode enforces strict retention that cannot be bypassed."); } }
         public static string B2lockmodeDescriptionShort { get { return LC.L(@"The lock mode for B2 object retention (Governance or Compliance)"); } }
         public static string InvalidPageSizeError(string argname, string? value) { return LC.L(@"The setting ""{0}"" is invalid for ""{1}"". It must be an integer larger than zero.", value, argname); }
+        public static string InvalidDownloadUrlError(string argname, string? value) { return LC.L(@"The setting ""{0}"" is invalid for ""{1}"". It must be an absolute HTTP or HTTPS URL.", value, argname); }
         public static string InvalidLockModeError(string argname, string? value) { return LC.L(@"The setting ""{0}"" is invalid for ""{1}"". It must be either ""Governance"" or ""Compliance"".", value, argname); }
     }
 }
