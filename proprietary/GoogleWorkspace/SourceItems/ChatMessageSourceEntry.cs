@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ChatMessageSourceEntry(string parentPath, Message message)
+internal class ChatMessageSourceEntry(SourceProvider provider, string parentPath, Message message, string userId)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, message.Name.Split('/').Last())),
         message.CreateTimeDateTimeOffset.HasValue ? message.CreateTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch,
         DateTime.UnixEpoch)
@@ -22,7 +22,7 @@ internal class ChatMessageSourceEntry(string parentPath, Message message)
             foreach (var attachment in message.Attachment)
             {
                 if (cancellationToken.IsCancellationRequested) yield break;
-                yield return new ChatAttachmentSourceEntry(this.Path, attachment);
+                yield return new ChatAttachmentSourceEntry(provider, this.Path, attachment, userId);
             }
         }
     }
@@ -33,10 +33,16 @@ internal class ChatMessageSourceEntry(string parentPath, Message message)
         {
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.ChatMessage.ToString() },
-            { "gsuite:Name", message.Name },
+            { "gsuite:Name", CapMessage(message.ArgumentText ?? message.Name) },
             { "gsuite:Id", message.Name }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));
+    }
+
+    private static string CapMessage(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        return input.Length <= 50 ? input : input[..47] + "...";
     }
 }

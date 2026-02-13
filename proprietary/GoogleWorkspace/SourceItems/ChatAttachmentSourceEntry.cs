@@ -1,31 +1,36 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using Duplicati.Library.Common.IO;
+using Google.Apis.Drive.v3;
 using Google.Apis.HangoutsChat.v1.Data;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ChatAttachmentSourceEntry(string parentPath, Attachment attachment)
+internal class ChatAttachmentSourceEntry(SourceProvider provider, string parentPath, Attachment attachment, string userId)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, attachment.ContentName ?? attachment.Name.Split('/').Last()), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrEmpty(attachment.DownloadUri))
+        // Check if the attachment is stored in Google Chat (not Drive)
+        if (attachment.AttachmentDataRef != null)
         {
-            using var client = new HttpClient();
-            var response = await client.GetAsync(attachment.DownloadUri, cancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                var stream = new MemoryStream();
-                await response.Content.CopyToAsync(stream, cancellationToken);
-                stream.Seek(0, SeekOrigin.Begin);
-                return stream;
-            }
+            var service = provider.ApiHelper.GetChatService(userId);
+            var request = service.Media.Download(attachment.AttachmentDataRef.ResourceName);
+            return await request.ExecuteAsStreamAsync(cancellationToken);
         }
 
-        throw new FileNotFoundException("Cannot download attachment");
+        // Check if the attachment is stored in Google Drive
+        if (attachment.DriveDataRef != null)
+        {
+            var driveService = provider.ApiHelper.GetDriveService(userId);
+            var driveRequest = driveService.Files.Get(attachment.DriveDataRef.DriveFileId);
+            driveRequest.Alt = FilesResource.GetRequest.AltEnum.Media;
+            return await driveRequest.ExecuteAsStreamAsync(cancellationToken);
+        }
+
+        throw new FileNotFoundException("Attachment contains no valid data reference.");
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

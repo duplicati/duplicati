@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class ChatSpaceSourceEntry(SourceProvider provider, string parentPath, Space space, string userId)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, space.DisplayName ?? space.Name)), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, (space.DisplayName ?? space.Name).Split('/').Last())), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -27,7 +27,7 @@ internal class ChatSpaceSourceEntry(SourceProvider provider, string parentPath, 
                 foreach (var message in messages.Messages)
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new ChatMessageSourceEntry(this.Path, message);
+                    yield return new ChatMessageSourceEntry(provider, this.Path, message, userId);
                 }
             }
             nextPageToken = messages.NextPageToken;
