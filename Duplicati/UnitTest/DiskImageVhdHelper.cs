@@ -23,15 +23,16 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
 
+using NUnit.Framework;
+
 namespace Duplicati.UnitTest
 {
     /// <summary>
-    /// Helper class for managing VHD (Virtual Hard Disk) files using diskpart.
+    /// Helper class for managing VHD (Virtual Hard Disk) files using PowerShell.
     /// This class provides methods to create, attach, format, and detach VHD files
     /// for testing disk image backup and restore operations.
     /// </summary>
@@ -66,16 +67,12 @@ namespace Duplicati.UnitTest
                 }
             }
 
-            // Create the VHD using diskpart
-            var script = $@"create vdisk file=""{vhdPath}"" maximum={sizeMB} type=expandable
-attach vdisk";
-            RunDiskpart(script);
+            // Create the VHD using PowerShell
+            var script = $@"New-VHD -Path '{vhdPath}' -SizeBytes {sizeMB}MB -Fixed | Out-Null; Mount-DiskImage -ImagePath '{vhdPath}' | Out-Null";
+            RunPowerShell(script);
 
-            // Wait a moment for the disk to be attached
-            Thread.Sleep(500);
-
-            // Get the disk number
-            int diskNumber = GetDiskNumber(vhdPath);
+            // Wait for the disk to be attached and get the disk number
+            int diskNumber = WaitForDiskAttachment(vhdPath, TimeSpan.FromSeconds(30));
             if (diskNumber < 0)
             {
                 throw new InvalidOperationException($"Failed to get disk number for VHD: {vhdPath}");
@@ -85,18 +82,72 @@ attach vdisk";
         }
 
         /// <summary>
+        /// Waits for a VHD to be attached and returns its disk number.
+        /// </summary>
+        /// <param name="vhdPath">The path to the VHD file.</param>
+        /// <param name="timeout">Maximum time to wait.</param>
+        /// <returns>The disk number, or -1 if not found within the timeout.</returns>
+        private static int WaitForDiskAttachment(string vhdPath, TimeSpan timeout)
+        {
+            var startTime = DateTime.UtcNow;
+            while (DateTime.UtcNow - startTime < timeout)
+            {
+                var diskNumber = GetDiskNumber(vhdPath);
+                if (diskNumber >= 0)
+                {
+                    return diskNumber;
+                }
+                Thread.Sleep(100);
+            }
+            return -1;
+        }
+
+        /// <summary>
         /// Initializes a disk with the specified partition table type (GPT or MBR).
         /// </summary>
         /// <param name="diskNumber">The disk number.</param>
         /// <param name="tableType">The partition table type ("gpt" or "mbr").</param>
         public static void InitializeDisk(int diskNumber, string tableType)
         {
-            var script = $@"select disk {diskNumber}
-convert {tableType.ToLowerInvariant()}";
-            RunDiskpart(script);
+            var partitionStyle = tableType.ToLowerInvariant() switch
+            {
+                "gpt" => "GPT",
+                "mbr" => "MBR",
+                _ => throw new ArgumentException($"Invalid partition table type: {tableType}", nameof(tableType))
+            };
 
-            // Wait for the conversion to complete
-            Thread.Sleep(200);
+            var script = $@"
+                $disk = Get-Disk -Number {diskNumber}
+                if ($disk.PartitionStyle -ne 'RAW') {{
+                    Clear-Disk -Number {diskNumber} -RemoveData -Confirm:$false
+                }}
+                Initialize-Disk -Number {diskNumber} -PartitionStyle {partitionStyle}
+            ";
+            RunPowerShell(script);
+
+            // Wait for the initialization to complete
+            WaitForDiskInitialization(diskNumber, TimeSpan.FromSeconds(30));
+        }
+
+        /// <summary>
+        /// Waits for a disk to be initialized.
+        /// </summary>
+        /// <param name="diskNumber">The disk number.</param>
+        /// <param name="timeout">Maximum time to wait.</param>
+        private static void WaitForDiskInitialization(int diskNumber, TimeSpan timeout)
+        {
+            var startTime = DateTime.UtcNow;
+            while (DateTime.UtcNow - startTime < timeout)
+            {
+                var script = $"(Get-Disk -Number {diskNumber}).PartitionStyle";
+                var result = RunPowerShell(script)?.Trim();
+                if (result == "GPT" || result == "MBR")
+                {
+                    return;
+                }
+                Thread.Sleep(100);
+            }
+            throw new TimeoutException($"Disk {diskNumber} initialization timed out");
         }
 
         /// <summary>
@@ -109,23 +160,58 @@ convert {tableType.ToLowerInvariant()}";
         /// <returns>The assigned drive letter.</returns>
         public static char CreateAndFormatPartition(int diskNumber, string fsType, long sizeMB = 0)
         {
-            var sizeArg = sizeMB > 0 ? $"size={sizeMB}" : "";
-            var fsTypeLower = fsType.ToLowerInvariant();
+            var fsTypeUpper = fsType.ToUpperInvariant();
 
             // Find an available drive letter
             char driveLetter = FindAvailableDriveLetter();
 
-            var script = $@"select disk {diskNumber}
-create partition primary {sizeArg}
-format fs={fsTypeLower} quick
-assign letter={driveLetter}";
+            var sizeParam = sizeMB > 0 ? $"-Size {sizeMB}MB" : "-UseMaximumSize";
 
-            RunDiskpart(script);
+            var script = $@"
+                $partition = New-Partition -DiskNumber {diskNumber} {sizeParam} -AssignDriveLetter
+                # Wait for the partition to be ready
+                $timeout = (Get-Date).AddSeconds(30)
+                while ((Get-Date) -lt $timeout) {{
+                    $vol = Get-Partition -DiskNumber {diskNumber} | Where-Object {{ $_.PartitionNumber -eq $partition.PartitionNumber }} | Get-Volume
+                    if ($vol) {{ break }}
+                    Start-Sleep -Milliseconds 100
+                }}
+                # Format the volume
+                $vol = Format-Volume -Partition $partition -FileSystem {fsTypeUpper} -NewFileSystemLabel 'TestVol' -Confirm:$false
+                # Get the assigned drive letter
+                (Get-Partition -DiskNumber {diskNumber} | Where-Object {{ $_.PartitionNumber -eq $partition.PartitionNumber }} | Get-Volume).DriveLetter
+            ";
 
-            // Wait for formatting to complete
-            Thread.Sleep(500);
+            var result = RunPowerShell(script);
+            var assignedLetter = result?.Trim();
 
-            return driveLetter;
+            if (!string.IsNullOrEmpty(assignedLetter) && assignedLetter.Length == 1 && char.IsLetter(assignedLetter[0]))
+            {
+                return char.ToUpperInvariant(assignedLetter[0]);
+            }
+
+            // Fallback: try to find the drive letter by checking the disk
+            return FindDriveLetterForDisk(diskNumber);
+        }
+
+        /// <summary>
+        /// Finds the drive letter assigned to a disk.
+        /// </summary>
+        /// <param name="diskNumber">The disk number.</param>
+        /// <returns>The drive letter, or throws if not found.</returns>
+        private static char FindDriveLetterForDisk(int diskNumber)
+        {
+            var script = $@"
+                Get-Partition -DiskNumber {diskNumber} | Get-Volume | Where-Object {{ $_.DriveLetter -ne $null }} | Select-Object -ExpandProperty DriveLetter
+            ";
+            var result = RunPowerShell(script)?.Trim();
+
+            if (!string.IsNullOrEmpty(result) && result.Length >= 1 && char.IsLetter(result[0]))
+            {
+                return char.ToUpperInvariant(result[0]);
+            }
+
+            throw new InvalidOperationException($"Could not find drive letter for disk {diskNumber}");
         }
 
         /// <summary>
@@ -180,9 +266,13 @@ assign letter={driveLetter}";
         {
             try
             {
-                var script = $@"select vdisk file=""{vhdPath}""
-detach vdisk";
-                RunDiskpart(script);
+                var script = $@"
+                    $image = Get-DiskImage -ImagePath '{vhdPath}' -ErrorAction SilentlyContinue
+                    if ($image -and $image.Attached) {{
+                        Dismount-DiskImage -ImagePath '{vhdPath}'
+                    }}
+                ";
+                RunPowerShell(script);
             }
             catch
             {
@@ -197,109 +287,85 @@ detach vdisk";
         /// <returns>The disk number, or -1 if not found.</returns>
         public static int GetDiskNumber(string vhdPath)
         {
-            // Use diskpart to list vdisks and find our disk number
-            var output = RunDiskpart("list vdisk");
-
-            // Parse the output to find the disk number
-            // The output format includes the VHD file path and associated disk number
-            var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (var line in lines)
+            try
             {
-                if (line.Contains(vhdPath, StringComparison.OrdinalIgnoreCase))
+                var script = $@"
+                    $diskImage = Get-DiskImage -ImagePath '{vhdPath}' -ErrorAction SilentlyContinue
+                    if ($diskImage -and $diskImage.Attached) {{
+                        Get-Disk | Where-Object {{ $_.Path -like '*{Path.GetFileName(vhdPath)}*' -or ($_ | Get-DiskImage).ImagePath -eq '{vhdPath}' }} | Select-Object -ExpandProperty Number
+                    }}
+                ";
+                var result = RunPowerShell(script)?.Trim();
+
+                if (!string.IsNullOrEmpty(result) && int.TryParse(result, out int diskNumber))
                 {
-                    // Try to extract disk number from the line
-                    // Format typically includes: Disk ###, State, Type, File
-                    var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                    for (int i = 0; i < parts.Length; i++)
-                    {
-                        if (parts[i].StartsWith("Disk", StringComparison.OrdinalIgnoreCase) &&
-                            i + 1 < parts.Length)
-                        {
-                            var diskNumStr = parts[i + 1].Trim();
-                            if (int.TryParse(diskNumStr, out int diskNumber))
-                            {
-                                return diskNumber;
-                            }
-                        }
-                    }
+                    return diskNumber;
+                }
+
+                // Alternative approach: query by disk image path
+                script = $@"
+                    Get-DiskImage -ImagePath '{vhdPath}' | Get-Disk | Select-Object -ExpandProperty Number
+                ";
+                result = RunPowerShell(script)?.Trim();
+
+                if (!string.IsNullOrEmpty(result) && int.TryParse(result, out diskNumber))
+                {
+                    return diskNumber;
                 }
             }
-
-            // Alternative approach: use WMI or check diskpart list disk output
-            // Try to find the disk by looking for recently attached disks
-            var listDiskOutput = RunDiskpart("list disk");
-            var diskLines = listDiskOutput.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-            // Find the highest disk number (usually the most recently attached VHD)
-            int maxDiskNumber = -1;
-            foreach (var line in diskLines)
+            catch (Exception ex)
             {
-                if (line.StartsWith("  Disk ", StringComparison.OrdinalIgnoreCase))
-                {
-                    var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 2 && int.TryParse(parts[1], out int diskNum))
-                    {
-                        if (diskNum > maxDiskNumber)
-                        {
-                            maxDiskNumber = diskNum;
-                        }
-                    }
-                }
+                TestContext.Progress.WriteLine($"Warning: PowerShell GetDiskNumber failed: {ex.Message}");
             }
 
-            return maxDiskNumber;
+            return -1;
         }
 
         /// <summary>
-        /// Runs a diskpart script and returns the output.
+        /// Runs a PowerShell script and returns the output.
         /// </summary>
-        /// <param name="script">The diskpart script to execute.</param>
-        /// <returns>The output from diskpart.</returns>
-        public static string RunDiskpart(string script)
+        /// <param name="script">The PowerShell script to execute.</param>
+        /// <returns>The output from PowerShell.</returns>
+        public static string RunPowerShell(string script)
         {
-            var scriptPath = Path.GetTempFileName() + ".txt";
-            try
+            var startInfo = new ProcessStartInfo
             {
-                File.WriteAllText(scriptPath, script, Encoding.ASCII);
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{EscapeForCommandLine(script)}\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                Verb = "runas" // Request elevation
+            };
 
-                var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "diskpart.exe",
-                        Arguments = $"/s \"{scriptPath}\"",
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        Verb = "runas" // Request elevation
-                    }
-                };
-
-                process.Start();
-                var output = process.StandardOutput.ReadToEnd();
-                var error = process.StandardError.ReadToEnd();
-                process.WaitForExit();
-
-                if (process.ExitCode != 0 && !string.IsNullOrEmpty(error))
-                {
-                    throw new InvalidOperationException($"diskpart failed with exit code {process.ExitCode}: {error}\nScript:\n{script}");
-                }
-
-                return output;
-            }
-            finally
+            using var process = Process.Start(startInfo);
+            if (process == null)
             {
-                try
-                {
-                    File.Delete(scriptPath);
-                }
-                catch
-                {
-                    // Ignore cleanup errors
-                }
+                throw new InvalidOperationException("Failed to start PowerShell process");
             }
+
+            var output = process.StandardOutput.ReadToEnd();
+            var error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0 && !string.IsNullOrEmpty(error))
+            {
+                throw new InvalidOperationException($"PowerShell failed with exit code {process.ExitCode}: {error}\nScript:\n{script}");
+            }
+
+            return output;
+        }
+
+        /// <summary>
+        /// Escapes a PowerShell script for use on the command line.
+        /// </summary>
+        /// <param name="script">The script to escape.</param>
+        /// <returns>The escaped script.</returns>
+        private static string EscapeForCommandLine(string script)
+        {
+            // Replace double quotes with escaped double quotes for command line
+            return script.Replace("\"", "\\\"");
         }
 
         /// <summary>
@@ -377,26 +443,35 @@ detach vdisk";
         }
 
         /// <summary>
-        /// Gets detailed information about a disk using diskpart.
+        /// Gets detailed information about a disk using PowerShell.
         /// </summary>
         /// <param name="diskNumber">The disk number.</param>
-        /// <returns>The diskpart output for the disk details.</returns>
+        /// <returns>The PowerShell output for the disk details.</returns>
         public static string GetDiskDetails(int diskNumber)
         {
-            var script = $@"select disk {diskNumber}
-detail disk";
-            return RunDiskpart(script);
+            var script = $@"
+                Write-Output ""Disk Details for Disk {diskNumber}:""
+                Write-Output ""================================""
+                Get-Disk -Number {diskNumber} | Format-List
+                Write-Output ''
+                Write-Output ""Partitions:""
+                Write-Output ""===========""
+                Get-Partition -DiskNumber {diskNumber} | Format-Table
+            ";
+            return RunPowerShell(script);
         }
 
         /// <summary>
         /// Gets the volume information for a drive letter.
         /// </summary>
         /// <param name="driveLetter">The drive letter.</param>
+        /// <returns>The volume information.</returns>
         public static string GetVolumeInfo(char driveLetter)
         {
-            var script = $@"select volume {driveLetter}
-detail volume";
-            return RunDiskpart(script);
+            var script = $@"
+                Get-Volume -DriveLetter {driveLetter} | Format-List
+            ";
+            return RunPowerShell(script);
         }
     }
 }
