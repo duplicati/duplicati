@@ -251,11 +251,13 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         // Normalize path separators
         path = NormalizePath(path);
+
+        if (IsGeometryFile(path))
+            return ("geometry", null, null);
+
         var segments = path.Split(System.IO.Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries) ??
             throw new InvalidOperationException($"Unable to parse path: {path}");
-        // TODO also check for root/, but handle that later when the mount path issue is handled.
-        if (segments.Length >= 2 && segments[^1] == "geometry.json")
-            return ("geometry", null, null);
+
 
         string? partitionSegment = segments.FirstOrDefault(s => s.StartsWith("part_", StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrEmpty(partitionSegment))
@@ -529,7 +531,20 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// </summary>
     private static bool IsGeometryFile(string path)
     {
-        return path.EndsWith("geometry.json", StringComparison.OrdinalIgnoreCase);
+        // Check for geometry.json (must be at root or top level)
+        // Valid paths: "geometry.json", "root/geometry.json"
+        if (!path.EndsWith("geometry.json", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        // TODO only check the last path for now.
+        return true;
+
+        // Normalize path separators
+        var normalized = path.Replace('\\', '/').TrimStart('/');
+        var segments = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        // Should be at most 2 segments (e.g. "root/geometry.json")
+        return segments.Length <= 2;
     }
 
     /// <inheritdoc />
