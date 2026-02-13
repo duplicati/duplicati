@@ -70,11 +70,12 @@ public class UnknownFilesystem : IFilesystem
             long address = i * blockSize;
             long size = Math.Min(blockSize, totalSize - i * blockSize);
 
-            yield return new UnknownFilesystemFile()
-            {
-                Address = address,
-                Size = size
-            };
+            if (size > 0)
+                yield return new UnknownFilesystemFile()
+                {
+                    Address = address,
+                    Size = size
+                };
         }
     }
 
