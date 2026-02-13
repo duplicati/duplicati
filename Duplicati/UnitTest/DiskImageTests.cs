@@ -61,8 +61,8 @@ namespace Duplicati.UnitTest
 
             // Create temp VHD paths
             var tempPath = Path.GetTempPath();
-            _sourceVhdPath = Path.Combine(tempPath, $"duplicati_test_source_{Guid.NewGuid()}.vhd");
-            _restoreVhdPath = Path.Combine(tempPath, $"duplicati_test_restore_{Guid.NewGuid()}.vhd");
+            _sourceVhdPath = Path.Combine(tempPath, $"duplicati_test_source_{Guid.NewGuid()}.vhdx");
+            _restoreVhdPath = Path.Combine(tempPath, $"duplicati_test_restore_{Guid.NewGuid()}.vhdx");
         }
 
         [TearDown]
