@@ -266,7 +266,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("DiskImage")]
-        public void Test_SourceProvider_Enumeration()
+        public async Task Test_SourceProvider_Enumeration()
         {
             TestContext.Progress.WriteLine("Test: SourceProvider Enumeration");
 
@@ -275,6 +275,8 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
 
             // Directly instantiate SourceProvider
+            // Note: When directly instantiating SourceProvider, we don't use the @ prefix
+            // The @ prefix is only for Controller to recognize it as a remote source
             var sourceUrl = $"diskimage://{physicalDrivePath}";
             using var provider = new SourceProvider(sourceUrl, "", new Dictionary<string, string?>());
 
@@ -410,9 +412,10 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>(TestOptions);
             options["enable-module"] = "diskimage";
+            options["concurrency-fileprocessors"] = "1";
 
             using var c = new Controller("file://" + TARGETFOLDER, options, null);
-            var sourceUrl = $"diskimage://{physicalDrivePath}";
+            var sourceUrl = $"@diskimage://{physicalDrivePath}";
             return c.Backup(new[] { sourceUrl });
         }
 
@@ -424,6 +427,7 @@ namespace Duplicati.UnitTest
             var options = new Dictionary<string, string>(TestOptions);
             options["restore-path"] = $"@diskimage://{restoreDrivePath}";
             options["overwrite"] = "true";
+            options["restore-file-processors"] = "1";
 
             using var c = new Controller("file://" + TARGETFOLDER, options, null);
             return c.Restore(new[] { "*" });
@@ -441,8 +445,7 @@ namespace Duplicati.UnitTest
             if (restoreDiskNumber < 0)
             {
                 // Re-attach the VHD if needed
-                DiskImageVhdHelper.RunDiskpart($"select vdisk file=\"{_restoreVhdPath}\"\nattach vdisk");
-                Thread.Sleep(500);
+                DiskImageVhdHelper.RunPowerShell($"Mount-DiskImage -ImagePath '{_restoreVhdPath}'");
                 restoreDiskNumber = DiskImageVhdHelper.GetDiskNumber(_restoreVhdPath);
             }
 
@@ -520,49 +523,20 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
-        /// Gets the drive letter for a disk number by querying diskpart.
+        /// Gets the drive letter for a disk number by querying PowerShell.
         /// </summary>
         private char GetDriveLetterForDisk(int diskNumber)
         {
-            // Use diskpart to find the drive letter for this disk
-            var output = DiskImageVhdHelper.RunDiskpart($"select disk {diskNumber}\nlist volume");
-            var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            // Use PowerShell to find the drive letter for this disk
+            var script = $@"Get-Partition -DiskNumber {diskNumber} | Get-Volume | Where-Object {{ $_.DriveLetter -ne $null }} | Select-Object -ExpandProperty DriveLetter";
+            var output = DiskImageVhdHelper.RunPowerShell(script)?.Trim();
 
-            foreach (var line in lines)
+            if (!string.IsNullOrEmpty(output) && output.Length >= 1 && char.IsLetter(output[0]))
             {
-                // Look for lines containing a drive letter (e.g., "  Volume 1     D   ")
-                var trimmed = line.Trim();
-                if (trimmed.Length > 0 && char.IsLetter(trimmed[0]))
+                var driveLetter = char.ToUpperInvariant(output[0]);
+                if (Directory.Exists($"{driveLetter}:\\"))
                 {
-                    // Try to extract drive letter
-                    var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var part in parts)
-                    {
-                        if (part.Length == 1 && char.IsLetter(part[0]))
-                        {
-                            // Verify this drive exists
-                            var driveLetter = char.ToUpperInvariant(part[0]);
-                            if (Directory.Exists($"{driveLetter}:\\"))
-                            {
-                                return driveLetter;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Alternative: check all drives to find one that matches our VHD
-            var drives = DriveInfo.GetDrives()
-                .Where(d => d.DriveType == DriveType.Fixed && d.IsReady)
-                .ToList();
-
-            // Return the first available drive letter that's not the source
-            foreach (var drive in drives)
-            {
-                var letter = char.ToUpperInvariant(drive.Name[0]);
-                if (letter != _sourceDriveLetter)
-                {
-                    return letter;
+                    return driveLetter;
                 }
             }
 
