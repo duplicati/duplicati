@@ -211,7 +211,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             // Pad to sector size if necessary
             int remainder = data.Length % (int)m_sectorSize;
-            int alignedLength = data.Length + ((int)m_sectorSize - remainder);
+            int alignedLength = remainder == 0
+                ? data.Length
+                : data.Length + ((int)m_sectorSize - remainder);
             using var buffer = new SafeHGlobalHandle(alignedLength);
             if (remainder != 0)
             {
