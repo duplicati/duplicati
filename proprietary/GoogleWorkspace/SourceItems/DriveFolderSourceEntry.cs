@@ -15,6 +15,8 @@ internal class DriveFolderSourceEntry(SourceProvider provider, string userId, st
         var request = service.Files.List();
         request.Q = $"'{folderId}' in parents and trashed = false";
         request.Fields = "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, size, description, parents)";
+        request.SupportsAllDrives = true;
+        request.IncludeItemsFromAllDrives = true;
 
         string? nextPageToken = null;
         do
