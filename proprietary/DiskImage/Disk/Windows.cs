@@ -117,6 +117,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_disposed)
                 return;
 
+            var flushed = FlushFileBuffers(m_deviceHandle);
+            if (!flushed)
+            {
+                var error = Marshal.GetLastWin32Error();
+                var msg = new System.ComponentModel.Win32Exception(error).Message;
+                Console.WriteLine($"Warning: Failed to flush file buffers. Win32 Error Code: {error}. Message: {msg}");
+            }
             m_deviceHandle?.Dispose();
             m_deviceHandle = null;
 
@@ -149,13 +156,23 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 throw new InvalidOperationException("Device handle is invalid.");
 
             // Move file pointer to the desired offset
-            SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
+            var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
+            if (!seeked)
+            {
+                var error = Marshal.GetLastWin32Error();
+                var msg = new System.ComponentModel.Win32Exception(error).Message;
+                throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
+            }
 
             using var buffer = new SafeHGlobalHandle(length);
             bool result = ReadFile(m_deviceHandle, buffer, (uint)length, out uint bytesRead, IntPtr.Zero);
 
             if (!result || bytesRead != length)
-                throw new IOException("Failed to read from disk.");
+            {
+                var error = Marshal.GetLastWin32Error();
+                var msg = new System.ComponentModel.Win32Exception(error).Message;
+                throw new IOException($"Failed to read from disk. Win32 Error Code: {error}. Message: {msg}");
+            }
 
             return new MemoryStream(buffer.AsBytes().ToArray(), 0, (int)bytesRead, false);
         }
@@ -184,9 +201,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 throw new InvalidOperationException("Device handle is invalid.");
 
             // Move file pointer to the desired offset
-            SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
-
-            using var buffer = new SafeHGlobalHandle(data.Length);
+            var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
+            if (!seeked)
+            {
+                var error = Marshal.GetLastWin32Error();
+                var msg = new System.ComponentModel.Win32Exception(error).Message;
+                throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
+            }
             Marshal.Copy(data, 0, buffer.DangerousGetHandle(), data.Length);
 
             bool result = WriteFile(m_deviceHandle, buffer, (uint)data.Length, out uint bytesWritten, IntPtr.Zero);
