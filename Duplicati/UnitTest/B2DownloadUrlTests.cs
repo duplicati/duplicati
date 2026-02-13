@@ -62,7 +62,7 @@ namespace Duplicati.UnitTest
         [Category("Backblaze")]
         public void UsesCustomB2DownloadUrlWhenProvided()
         {
-            var backend = new B2("b2://bucket/prefix", CreateOptions("https://cdn.example.com"));
+            using var backend = new B2("b2://bucket/prefix", CreateOptions("https://cdn.example.com"));
             var result = ResolveDownloadUrl(backend, "https://f001.backblazeb2.com");
 
             Assert.AreEqual("https://cdn.example.com", result);
@@ -72,7 +72,7 @@ namespace Duplicati.UnitTest
         [Category("Backblaze")]
         public void NormalizesCustomB2DownloadUrl()
         {
-            var backend = new B2("b2://bucket/prefix", CreateOptions("  https://cdn.example.com/  "));
+            using var backend = new B2("b2://bucket/prefix", CreateOptions("  https://cdn.example.com/  "));
             var result = ResolveDownloadUrl(backend, "https://f001.backblazeb2.com");
 
             Assert.AreEqual("https://cdn.example.com", result);
@@ -82,7 +82,7 @@ namespace Duplicati.UnitTest
         [Category("Backblaze")]
         public void FallsBackToAuthDownloadUrlWhenCustomNotProvided()
         {
-            var backend = new B2("b2://bucket/prefix", CreateOptions());
+            using var backend = new B2("b2://bucket/prefix", CreateOptions());
             var result = ResolveDownloadUrl(backend, "https://f001.backblazeb2.com");
 
             Assert.AreEqual("https://f001.backblazeb2.com", result);
@@ -100,7 +100,7 @@ namespace Duplicati.UnitTest
         [Category("Backblaze")]
         public void ThrowsWhenNoDownloadUrlCanBeResolved()
         {
-            var backend = new B2("b2://bucket/prefix", CreateOptions());
+            using var backend = new B2("b2://bucket/prefix", CreateOptions());
 
             var ex = Assert.Throws<TargetInvocationException>(() => ResolveDownloadUrl(backend, null));
             Assert.IsNotNull(ex?.InnerException);
