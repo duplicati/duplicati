@@ -8,12 +8,12 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class TaskListSourceEntry(SourceProvider provider, string parentPath, TaskList taskList)
+internal class TaskListSourceEntry(SourceProvider provider, string parentPath, string userId, TaskList taskList)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, taskList.Title)), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetTasksService();
+        var service = provider.ApiHelper.GetTasksService(userId);
         var request = service.Tasks.List(taskList.Id);
 
         string? nextPageToken = null;

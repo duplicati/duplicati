@@ -27,7 +27,8 @@ internal class SiteSourceEntry(string parentPath, File file)
             { "gsuite:Type", SourceItemType.Site.ToString() },
             { "gsuite:Name", file.Name },
             { "gsuite:Id", file.Id },
-            { "gsuite:MimeType", file.MimeType }
+            { "gsuite:MimeType", file.MimeType },
+            { "gsuite:WebViewLink", file.WebViewLink }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

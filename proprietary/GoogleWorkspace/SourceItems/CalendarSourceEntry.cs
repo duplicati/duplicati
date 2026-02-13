@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class CalendarSourceEntry(SourceProvider provider, string parentPath, CalendarListEntry calendar)
+internal class CalendarSourceEntry(SourceProvider provider, string parentPath, string userId, CalendarListEntry calendar)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, calendar.SummaryOverride ?? calendar.Summary)), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -18,9 +18,9 @@ internal class CalendarSourceEntry(SourceProvider provider, string parentPath, C
 
         if (cancellationToken.IsCancellationRequested) yield break;
         if (provider.ApiHelper.HasScope(CalendarService.Scope.Calendar))
-            yield return new CalendarAclSourceEntry(provider, this.Path, calendar.Id);
+            yield return new CalendarAclSourceEntry(provider, this.Path, userId, calendar.Id);
 
-        var service = provider.ApiHelper.GetCalendarService();
+        var service = provider.ApiHelper.GetCalendarService(userId);
         var request = service.Events.List(calendar.Id);
 
         string? nextPageToken = null;
@@ -35,7 +35,7 @@ internal class CalendarSourceEntry(SourceProvider provider, string parentPath, C
                 foreach (var evt in events.Items)
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new CalendarEventSourceEntry(provider, this.Path, evt);
+                    yield return new CalendarEventSourceEntry(provider, this.Path, userId, evt);
                 }
             }
             nextPageToken = events.NextPageToken;

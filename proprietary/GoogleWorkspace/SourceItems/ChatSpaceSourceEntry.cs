@@ -7,12 +7,12 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ChatSpaceSourceEntry(SourceProvider provider, string parentPath, Space space)
+internal class ChatSpaceSourceEntry(SourceProvider provider, string parentPath, Space space, string userId)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, space.DisplayName ?? space.Name)), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetChatService();
+        var service = provider.ApiHelper.GetChatService(userId);
         var request = service.Spaces.Messages.List(space.Name);
 
         string? nextPageToken = null;

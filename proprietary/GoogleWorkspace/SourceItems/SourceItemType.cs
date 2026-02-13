@@ -49,6 +49,7 @@ public enum SourceItemType
     GroupAliases,
     GroupConversations,
     Site,
+    ChatSpaceType,
     ChatSpace,
     ChatMessage,
     ChatAttachment

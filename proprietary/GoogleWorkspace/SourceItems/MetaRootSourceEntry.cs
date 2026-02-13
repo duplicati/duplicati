@@ -75,7 +75,7 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
         }
         else if (type == SourceItemType.MetaRootSharedDrives)
         {
-            yield return new SharedDrivesSourceEntry(provider, "me", this.Path);
+            yield return new SharedDrivesSourceEntry(provider, this.Path, null);
         }
         else if (type == SourceItemType.MetaRootSites)
         {

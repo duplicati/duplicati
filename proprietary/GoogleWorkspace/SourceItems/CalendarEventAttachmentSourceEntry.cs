@@ -5,7 +5,7 @@ using Google.Apis.Calendar.v3.Data;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class CalendarEventAttachmentSourceEntry(SourceProvider provider, string parentPath, EventAttachment attachment)
+internal class CalendarEventAttachmentSourceEntry(SourceProvider provider, string parentPath, string userId, EventAttachment attachment)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, attachment.Title), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
@@ -14,7 +14,7 @@ internal class CalendarEventAttachmentSourceEntry(SourceProvider provider, strin
     {
         if (!string.IsNullOrEmpty(attachment.FileId))
         {
-            var service = provider.ApiHelper.GetDriveService();
+            var service = provider.ApiHelper.GetDriveService(userId);
             var request = service.Files.Get(attachment.FileId);
             var stream = new MemoryStream();
             await request.DownloadAsync(stream, cancellationToken);

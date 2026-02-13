@@ -65,7 +65,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateCalendar([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetCalendarService();
+        var service = provider.ApiHelper.GetCalendarService(userId);
         var request = service.CalendarList.List();
 
         string? nextPageToken = null;
@@ -80,7 +80,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
                 foreach (var calendar in calendars.Items)
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new CalendarSourceEntry(provider, this.Path, calendar);
+                    yield return new CalendarSourceEntry(provider, this.Path, userId, calendar);
                 }
             }
             nextPageToken = calendars.NextPageToken;
@@ -90,21 +90,21 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateContacts([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new ContactsFolderSourceEntry(provider, this.Path);
+        yield return new ContactsFolderSourceEntry(provider, this.Path, userId);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new ContactGroupsFolderSourceEntry(provider, this.Path);
+        yield return new ContactGroupsFolderSourceEntry(provider, this.Path, userId);
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateDrive([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveSourceEntry(provider, userId, this.Path);
+        yield return new DriveSourceEntry(provider, this.Path, userId);
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateTasks([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetTasksService();
+        var service = provider.ApiHelper.GetTasksService(userId);
         var request = service.Tasklists.List();
 
         string? nextPageToken = null;
@@ -119,7 +119,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
                 foreach (var taskList in taskLists.Items)
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new TaskListSourceEntry(provider, this.Path, taskList);
+                    yield return new TaskListSourceEntry(provider, this.Path, userId, taskList);
                 }
             }
             nextPageToken = taskLists.NextPageToken;
@@ -129,13 +129,13 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateKeep([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new KeepSourceEntry(provider, this.Path);
+        yield return new KeepSourceEntry(provider, this.Path, userId);
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateChat([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new ChatSourceEntry(provider, this.Path);
+        yield return new ChatSourceEntry(provider, this.Path, userId);
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

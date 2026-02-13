@@ -6,31 +6,19 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ChatSourceEntry(SourceProvider provider, string parentPath)
+internal class ChatSourceEntry(SourceProvider provider, string parentPath, string userId)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Chat")), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetChatService();
-        var request = service.Spaces.List();
+        // Create a folder for each space type to organize the structure
+        var spaceTypes = new[] { "SPACE", "GROUP_CHAT", "DIRECT_MESSAGE" };
 
-        string? nextPageToken = null;
-        do
+        foreach (var spaceType in spaceTypes)
         {
             if (cancellationToken.IsCancellationRequested) yield break;
-            request.PageToken = nextPageToken;
-            var spaces = await request.ExecuteAsync(cancellationToken);
-
-            if (spaces.Spaces != null)
-            {
-                foreach (var space in spaces.Spaces)
-                {
-                    if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new ChatSpaceSourceEntry(provider, this.Path, space);
-                }
-            }
-            nextPageToken = spaces.NextPageToken;
-        } while (!string.IsNullOrEmpty(nextPageToken));
+            yield return new ChatSpaceTypeSourceEntry(provider, this.Path, spaceType, userId);
+        }
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

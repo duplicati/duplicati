@@ -6,14 +6,14 @@ using System.Text.Json;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class SharedDrivePermissionsSourceEntry(SourceProvider provider, string parentPath, Drive drive)
+internal class SharedDrivePermissionsSourceEntry(SourceProvider provider, string parentPath, string userId, Drive drive)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, "permissions.json"), drive.CreatedTimeDateTimeOffset.HasValue ? drive.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetDriveService();
+        var service = provider.ApiHelper.GetDriveService(userId);
         var request = service.Permissions.List(drive.Id);
         request.SupportsAllDrives = true;
         var permissions = await request.ExecuteAsync(cancellationToken);

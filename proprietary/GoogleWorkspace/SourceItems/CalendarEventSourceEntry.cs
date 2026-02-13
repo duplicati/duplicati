@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class CalendarEventSourceEntry(SourceProvider provider, string parentPath, Event evt)
+internal class CalendarEventSourceEntry(SourceProvider provider, string parentPath, string userId, Event evt)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, evt.Id)), evt.CreatedDateTimeOffset.HasValue ? evt.CreatedDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, evt.UpdatedDateTimeOffset.HasValue ? evt.UpdatedDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -20,7 +20,7 @@ internal class CalendarEventSourceEntry(SourceProvider provider, string parentPa
             foreach (var attachment in evt.Attachments)
             {
                 if (cancellationToken.IsCancellationRequested) yield break;
-                yield return new CalendarEventAttachmentSourceEntry(provider, this.Path, attachment);
+                yield return new CalendarEventAttachmentSourceEntry(provider, this.Path, userId, attachment);
             }
         }
     }

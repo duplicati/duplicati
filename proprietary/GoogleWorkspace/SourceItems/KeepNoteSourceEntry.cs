@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class KeepNoteSourceEntry(SourceProvider provider, string parentPath, Note note)
+internal class KeepNoteSourceEntry(SourceProvider provider, string parentPath, string userId, Note note)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, note.Title ?? note.Name)),
         note.CreateTimeDateTimeOffset.HasValue ? note.CreateTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch,
         note.UpdateTimeDateTimeOffset.HasValue ? note.UpdateTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
@@ -22,7 +22,7 @@ internal class KeepNoteSourceEntry(SourceProvider provider, string parentPath, N
             foreach (var attachment in note.Attachments)
             {
                 if (cancellationToken.IsCancellationRequested) yield break;
-                yield return new KeepNoteAttachmentSourceEntry(provider, this.Path, attachment);
+                yield return new KeepNoteAttachmentSourceEntry(provider, this.Path, userId, attachment);
             }
         }
     }

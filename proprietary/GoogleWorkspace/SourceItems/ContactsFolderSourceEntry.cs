@@ -6,12 +6,12 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ContactsFolderSourceEntry(SourceProvider provider, string parentPath)
+internal class ContactsFolderSourceEntry(SourceProvider provider, string parentPath, string userId)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Contacts")), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetPeopleService();
+        var service = provider.ApiHelper.GetPeopleService(userId);
         var request = service.People.Connections.List("people/me");
         request.PersonFields = "names,emailAddresses,phoneNumbers,photos";
 

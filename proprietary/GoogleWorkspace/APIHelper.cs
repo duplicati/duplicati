@@ -172,32 +172,52 @@ public class APIHelper
         return _directoryService!;
     }
 
-    public CalendarService GetCalendarService()
+    public CalendarService GetCalendarService(string? userId = null)
     {
+        if (userId != null)
+        {
+            return new CalendarService(GetServiceInitializer(userId));
+        }
         if (_calendarService == null) Initialize();
         return _calendarService!;
     }
 
-    public DriveService GetDriveService()
+    public DriveService GetDriveService(string? userId = null)
     {
+        if (userId != null)
+        {
+            return new DriveService(GetServiceInitializer(userId));
+        }
         if (_driveService == null) Initialize();
         return _driveService!;
     }
 
-    public PeopleServiceService GetPeopleService()
+    public PeopleServiceService GetPeopleService(string? userId = null)
     {
+        if (userId != null)
+        {
+            return new PeopleServiceService(GetServiceInitializer(userId));
+        }
         if (_peopleService == null) Initialize();
         return _peopleService!;
     }
 
-    public TasksService GetTasksService()
+    public TasksService GetTasksService(string? userId = null)
     {
+        if (userId != null)
+        {
+            return new TasksService(GetServiceInitializer(userId));
+        }
         if (_tasksService == null) Initialize();
         return _tasksService!;
     }
 
-    public KeepService GetKeepService()
+    public KeepService GetKeepService(string? userId = null)
     {
+        if (userId != null)
+        {
+            return new KeepService(GetServiceInitializer(userId));
+        }
         if (_keepService == null) Initialize();
         return _keepService!;
     }
@@ -208,9 +228,13 @@ public class APIHelper
         return _groupsSettingsService!;
     }
 
-    public HangoutsChatService GetChatService()
+    public HangoutsChatService GetChatService(string? userId = null)
     {
         if (_chatService == null) Initialize();
+        if (userId != null)
+        {
+            return new HangoutsChatService(GetServiceInitializer(userId));
+        }
         return _chatService!;
     }
 

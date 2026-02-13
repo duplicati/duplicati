@@ -6,12 +6,12 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class KeepSourceEntry(SourceProvider provider, string parentPath)
+internal class KeepSourceEntry(SourceProvider provider, string parentPath, string userId)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Keep")), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetKeepService();
+        var service = provider.ApiHelper.GetKeepService(userId);
         var request = service.Notes.List();
 
         string? nextPageToken = null;
@@ -26,7 +26,7 @@ internal class KeepSourceEntry(SourceProvider provider, string parentPath)
                 foreach (var note in notes.Notes)
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new KeepNoteSourceEntry(provider, this.Path, note);
+                    yield return new KeepNoteSourceEntry(provider, this.Path, userId, note);
                 }
             }
             nextPageToken = notes.NextPageToken;

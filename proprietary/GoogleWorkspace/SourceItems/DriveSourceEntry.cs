@@ -6,16 +6,16 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class DriveSourceEntry(SourceProvider provider, string userId, string parentPath)
+internal class DriveSourceEntry(SourceProvider provider, string parentPath, string userId)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Drive")), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFolderSourceEntry(provider, userId, this.Path, "My Drive", "root");
+        yield return new DriveFolderSourceEntry(provider, this.Path, userId, "My Drive", "root");
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new SharedDrivesSourceEntry(provider, userId, this.Path);
+        yield return new SharedDrivesSourceEntry(provider, this.Path, userId);
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

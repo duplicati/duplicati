@@ -5,14 +5,14 @@ using System.Text.Json;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class CalendarAclSourceEntry(SourceProvider provider, string parentPath, string calendarId)
+internal class CalendarAclSourceEntry(SourceProvider provider, string parentPath, string userId, string calendarId)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, "acl.json"), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetCalendarService();
+        var service = provider.ApiHelper.GetCalendarService(userId);
         var request = service.Acl.List(calendarId);
         var acl = await request.ExecuteAsync(cancellationToken);
 

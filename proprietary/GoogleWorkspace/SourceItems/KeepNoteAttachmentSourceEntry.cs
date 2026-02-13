@@ -5,7 +5,7 @@ using Google.Apis.Keep.v1.Data;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class KeepNoteAttachmentSourceEntry(SourceProvider provider, string parentPath, Attachment attachment)
+internal class KeepNoteAttachmentSourceEntry(SourceProvider provider, string parentPath, string userId, Attachment attachment)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, attachment.Name.Split('/').Last()), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
@@ -16,7 +16,7 @@ internal class KeepNoteAttachmentSourceEntry(SourceProvider provider, string par
         // attachment.Name is like "notes/123/attachments/456".
         // Docs say: GET https://keep.googleapis.com/v1/notes/{noteId}/attachments/{attachmentId}?alt=media
 
-        var service = provider.ApiHelper.GetKeepService();
+        var service = provider.ApiHelper.GetKeepService(userId);
         var url = $"https://keep.googleapis.com/v1/{attachment.Name}?alt=media";
 
         var response = await service.HttpClient.GetAsync(url, cancellationToken);
