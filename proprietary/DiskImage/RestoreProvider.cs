@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -22,6 +23,15 @@ namespace Duplicati.Proprietary.DiskImage;
 public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDisposable
 {
     private static readonly string LOGTAG = Log.LogTagFromType<RestoreProvider>();
+
+    // Constants for partition table synthesis
+    private const int MbrSize = 512;
+    private const int GptHeaderSize = 92;
+    private const ushort MbrBootSignature = 0xAA55;
+    private const byte ProtectiveMbrType = 0xEE;
+    private const long GptSignature = 0x5452415020494645; // "EFI PART" in little-endian
+    private const uint GptRevision = 0x00010000; // Version 1.0
+    private const int PartitionEntrySize = 128; // Standard GPT partition entry size
 
     private readonly string _devicePath;
     private readonly string _restorePath;
@@ -401,7 +411,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         return typeStr switch
         {
-            "disk" => Task.FromResult((Stream)new MemoryStream()),
+            "disk" => OpenWriteDisk(path, cancel), // For disk-level, we treat read-write as write since we only capture the data to be written during Finalize
             "partition" => Task.FromResult((Stream)new MemoryStream()),
             "geometry" => OpenReadWriteGeometry(cancel),
             "file" => filesystem!.OpenReadWriteStreamAsync(path, cancel),
@@ -430,7 +440,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             stream.Position = 0;
         }
 
-        var wrapper = new CaptureStream(stream, data =>
+        var wrapper = new CaptureStream(stream, async data =>
         {
             try
             {
@@ -450,6 +460,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
                     // Reconstruct disk, partition table, partitions, and filesystems from geometry metadata
                     ReconstructFromGeometryMetadata();
+
+                    using var _ = await OpenWriteDisk("disk", cancel); // Mark disk-level data as pending write for Finalize
 
                     Log.WriteInformationMessage(LOGTAG, "GeometryMetadataUpdated", $"Successfully updated geometry metadata during ReadWrite. Reconstructed {_partitions.Count} partitions and {_filesystems.Count} filesystems.");
                 }
@@ -541,10 +553,40 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         var diskItems = _pendingWrites.Where(kv => kv.Value is DiskPendingWrite).ToList();
         var partitionItems = _pendingWrites.Where(kv => kv.Value is PartitionPendingWrite).ToList();
 
-        // Restore disk-level items (full disk image)
+        // Restore disk-level items (partition table)
         if (!_skipPartitionTable && diskItems.Count > 0)
         {
-            // TODO currently a NOP operation
+            if (_geometryMetadata?.PartitionTable != null)
+            {
+                try
+                {
+                    var partitionTableData = SynthesizePartitionTable(_geometryMetadata);
+                    if (partitionTableData != null)
+                    {
+                        // Write primary partition table at the start of the disk
+                        await _targetDisk.WriteBytesAsync(0, partitionTableData, cancel).ConfigureAwait(false);
+                        Log.WriteInformationMessage(LOGTAG, "PartitionTableWritten",
+                            $"Successfully wrote {_geometryMetadata.PartitionTable.Type} partition table to disk.");
+
+                        // For GPT, also write the secondary GPT header at the end of the disk
+                        if (_geometryMetadata.PartitionTable.Type == PartitionTableType.GPT)
+                        {
+                            await WriteSecondaryGPT(partitionTableData, cancel).ConfigureAwait(false);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteErrorMessage(LOGTAG, "PartitionTableWriteFailed", ex,
+                        $"Failed to write partition table to disk: {ex.Message}");
+                    throw;
+                }
+            }
+            else
+            {
+                Log.WriteWarningMessage(LOGTAG, "NoPartitionTableMetadata", null,
+                    "Disk-level items pending but no partition table metadata available to write.");
+            }
             processedCount += diskItems.Count;
             progressCallback?.Invoke(processedCount / (double)totalItems);
         }
@@ -652,6 +694,457 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             // Specific filesystem implementations can be added later
             _ => new UnknownFilesystem(partition, fsGeom.BlockSize)
         };
+    }
+
+    /// <summary>
+    /// Synthesizes a partition table (MBR or GPT) from geometry metadata into a byte array.
+    /// Auto-detects whether to create MBR or GPT based on the metadata.
+    /// </summary>
+    /// <param name="metadata">The geometry metadata containing partition table information.</param>
+    /// <returns>A byte array containing the synthesized partition table data.</returns>
+    private byte[]? SynthesizePartitionTable(GeometryMetadata metadata)
+    {
+        if (metadata.PartitionTable == null)
+            return null;
+
+        return metadata.PartitionTable.Type switch
+        {
+            PartitionTableType.MBR => SynthesizeMBR(metadata),
+            PartitionTableType.GPT => SynthesizeGPT(metadata),
+            _ => null
+        };
+    }
+
+    /// <summary>
+    /// Synthesizes an MBR partition table from geometry metadata.
+    /// </summary>
+    private byte[] SynthesizeMBR(GeometryMetadata metadata)
+    {
+        var sectorSize = metadata.Disk?.SectorSize ?? MbrSize;
+        var mbrData = new byte[sectorSize];
+
+        // Boot code area (first 446 bytes) - typically zeros for new MBR
+        // Could copy from original if available, but zeros are fine for restore
+
+        // Partition entries start at offset 446
+        int partitionEntryOffset = 446;
+        int partitionEntrySize = 16;
+
+        if (metadata.Partitions != null)
+        {
+            // MBR supports up to 4 primary partitions
+            var mbrPartitions = metadata.Partitions
+                .Where(p => p.TableType == PartitionTableType.MBR)
+                .OrderBy(p => p.Number)
+                .Take(4)
+                .ToList();
+
+            for (int i = 0; i < mbrPartitions.Count && i < 4; i++)
+            {
+                var part = mbrPartitions[i];
+                int offset = partitionEntryOffset + (i * partitionEntrySize);
+
+                WriteMBRPartitionEntry(mbrData, offset, part, sectorSize);
+            }
+        }
+
+        // Boot signature at offset 510-511 (0xAA55)
+        mbrData[510] = 0x55;
+        mbrData[511] = 0xAA;
+
+        return mbrData;
+    }
+
+    /// <summary>
+    /// Writes a single MBR partition entry to the specified offset.
+    /// </summary>
+    private void WriteMBRPartitionEntry(byte[] mbrData, int offset, PartitionGeometry part, int sectorSize)
+    {
+        // Status byte (0x80 = bootable, 0x00 = not bootable)
+        // Default to not bootable, could be enhanced to detect bootable partitions
+        mbrData[offset] = 0x00;
+
+        // CHS start (3 bytes) - use LBA translation or zeros
+        // Modern systems use LBA, so we can set these to 0xFF for invalid CHS
+        mbrData[offset + 1] = 0xFF;
+        mbrData[offset + 2] = 0xFF;
+        mbrData[offset + 3] = 0xFF;
+
+        // Partition type byte
+        mbrData[offset + 4] = GetMBRPartitionTypeByte(part);
+
+        // CHS end (3 bytes) - use LBA translation or zeros
+        mbrData[offset + 5] = 0xFF;
+        mbrData[offset + 6] = 0xFF;
+        mbrData[offset + 7] = 0xFF;
+
+        // Start LBA (4 bytes, little-endian)
+        uint startLba = (uint)(part.StartOffset / sectorSize);
+        BitConverter.GetBytes(startLba).CopyTo(mbrData, offset + 8);
+
+        // Size in sectors (4 bytes, little-endian)
+        uint sizeInSectors = (uint)(part.Size / sectorSize);
+        BitConverter.GetBytes(sizeInSectors).CopyTo(mbrData, offset + 12);
+    }
+
+    /// <summary>
+    /// Gets the MBR partition type byte based on partition geometry.
+    /// </summary>
+    private byte GetMBRPartitionTypeByte(PartitionGeometry part)
+    {
+        // Map partition type and filesystem to MBR type byte
+        return part.FilesystemType switch
+        {
+            FileSystemType.NTFS => 0x07,
+            FileSystemType.FAT12 => 0x01,
+            FileSystemType.FAT16 => 0x06,
+            FileSystemType.FAT32 => 0x0C,  // LBA
+            FileSystemType.ExFAT => 0x07,  // Same as NTFS
+            _ => part.Type switch
+            {
+                PartitionType.EFI => 0xEF,
+                PartitionType.Extended => 0x0F,
+                _ => 0x07  // Default to NTFS/IFS type
+            }
+        };
+    }
+
+    /// <summary>
+    /// Synthesizes a GPT partition table from geometry metadata.
+    /// </summary>
+    private byte[] SynthesizeGPT(GeometryMetadata metadata)
+    {
+        var sectorSize = metadata.Disk?.SectorSize ?? MbrSize;
+        var diskSize = metadata.Disk?.Size ?? 0;
+        var diskSectors = diskSize / sectorSize;
+
+        // Calculate sizes
+        int numPartitionEntries = 128;  // Standard GPT supports 128 entries
+        int partitionEntriesSize = numPartitionEntries * PartitionEntrySize;
+        int partitionEntriesSectors = (partitionEntriesSize + sectorSize - 1) / sectorSize;
+
+        // Total GPT data: Protective MBR (1 sector) + GPT Header (1 sector) + Partition Entries
+        int totalGptSectors = 2 + partitionEntriesSectors;
+        long totalSize = totalGptSectors * sectorSize;
+
+        var gptData = new byte[totalSize];
+
+        // Write protective MBR at LBA 0
+        WriteProtectiveMBR(gptData, metadata, sectorSize, diskSectors);
+
+        // Write GPT header at LBA 1 (sectorSize offset)
+        WriteGPTHeader(gptData, metadata, sectorSize, partitionEntriesSectors, numPartitionEntries, diskSectors);
+
+        // Write partition entries starting at LBA 2 (2 * sectorSize offset)
+        WriteGPTPartitionEntries(gptData, metadata, sectorSize, partitionEntriesSectors);
+
+        return gptData;
+    }
+
+    /// <summary>
+    /// Writes the protective MBR for GPT.
+    /// </summary>
+    private void WriteProtectiveMBR(byte[] gptData, GeometryMetadata metadata, int sectorSize, long diskSectors)
+    {
+        // Boot code (first 446 bytes) - zeros
+
+        // Partition entry 1 (at offset 446): Protective MBR entry
+        // Status byte
+        gptData[446] = 0x00;
+
+        // CHS start
+        gptData[447] = 0x00;
+        gptData[448] = 0x02;
+        gptData[449] = 0x00;
+
+        // Partition type: 0xEE (GPT protective)
+        gptData[450] = ProtectiveMbrType;
+
+        // CHS end (max values for large disks)
+        gptData[451] = 0xFF;
+        gptData[452] = 0xFF;
+        gptData[453] = 0xFF;
+
+        // Start LBA = 1 (GPT header is at LBA 1)
+        BitConverter.GetBytes(1u).CopyTo(gptData, 454);
+
+        // Size in sectors (max 0xFFFFFFFF for protective MBR)
+        uint sizeInSectors = diskSectors > uint.MaxValue ? uint.MaxValue : (uint)(diskSectors - 1);
+        BitConverter.GetBytes(sizeInSectors).CopyTo(gptData, 458);
+
+        // Boot signature at offset 510-511
+        gptData[510] = 0x55;
+        gptData[511] = 0xAA;
+    }
+
+    /// <summary>
+    /// Writes the GPT header.
+    /// </summary>
+    private void WriteGPTHeader(byte[] gptData, GeometryMetadata metadata, int sectorSize,
+        int partitionEntriesSectors, int numPartitionEntries, long diskSectors)
+    {
+        int headerOffset = sectorSize;  // GPT header is at LBA 1
+
+        // Signature: "EFI PART" in little-endian
+        BitConverter.GetBytes(GptSignature).CopyTo(gptData, headerOffset + 0);
+
+        // Revision: 1.0 (0x00010000)
+        BitConverter.GetBytes(GptRevision).CopyTo(gptData, headerOffset + 8);
+
+        // Header size: 92 bytes
+        BitConverter.GetBytes((uint)GptHeaderSize).CopyTo(gptData, headerOffset + 12);
+
+        // CRC32 of header (calculated later) - set to 0 for now
+        BitConverter.GetBytes(0u).CopyTo(gptData, headerOffset + 16);
+
+        // Reserved: must be 0
+        BitConverter.GetBytes(0u).CopyTo(gptData, headerOffset + 20);
+
+        // Current LBA: 1 (this header is at LBA 1)
+        BitConverter.GetBytes((long)1).CopyTo(gptData, headerOffset + 24);
+
+        // Backup LBA: last sector of disk
+        long backupLba = diskSectors - 1;
+        BitConverter.GetBytes(backupLba).CopyTo(gptData, headerOffset + 32);
+
+        // First usable LBA: after partition entries
+        long firstUsableLba = 2 + partitionEntriesSectors;
+        BitConverter.GetBytes(firstUsableLba).CopyTo(gptData, headerOffset + 40);
+
+        // Last usable LBA: before backup header
+        long lastUsableLba = diskSectors - partitionEntriesSectors - 2;
+        BitConverter.GetBytes(lastUsableLba).CopyTo(gptData, headerOffset + 48);
+
+        // Disk GUID - generate new or use from metadata if available
+        var diskGuid = Guid.NewGuid();
+        diskGuid.ToByteArray().CopyTo(gptData, headerOffset + 56);
+
+        // Partition entry LBA: 2 (entries start at LBA 2)
+        BitConverter.GetBytes((long)2).CopyTo(gptData, headerOffset + 72);
+
+        // Number of partition entries
+        BitConverter.GetBytes((uint)numPartitionEntries).CopyTo(gptData, headerOffset + 80);
+
+        // Size of partition entry: 128 bytes
+        BitConverter.GetBytes((uint)PartitionEntrySize).CopyTo(gptData, headerOffset + 84);
+
+        // CRC32 of partition entries (calculated later)
+        BitConverter.GetBytes(0u).CopyTo(gptData, headerOffset + 88);
+
+        // Calculate and write CRC32 of header
+        uint headerCrc = CalculateCrc32(gptData, headerOffset, GptHeaderSize);
+        BitConverter.GetBytes(headerCrc).CopyTo(gptData, headerOffset + 16);
+    }
+
+    /// <summary>
+    /// Writes GPT partition entries.
+    /// </summary>
+    private void WriteGPTPartitionEntries(byte[] gptData, GeometryMetadata metadata, int sectorSize, int partitionEntriesSectors)
+    {
+        int entriesOffset = 2 * sectorSize;  // Entries start at LBA 2
+
+        if (metadata.Partitions == null)
+            return;
+
+        var gptPartitions = metadata.Partitions
+            .Where(p => p.TableType == PartitionTableType.GPT)
+            .OrderBy(p => p.Number)
+            .Take(128)  // GPT standard supports 128 entries
+            .ToList();
+
+        // Calculate partition entries CRC32
+        var entriesData = new byte[partitionEntriesSectors * sectorSize];
+
+        for (int i = 0; i < gptPartitions.Count; i++)
+        {
+            var part = gptPartitions[i];
+            int entryOffset = i * PartitionEntrySize;
+            WriteGPTPartitionEntry(entriesData, entryOffset, part, sectorSize);
+        }
+
+        // Copy entries to main buffer
+        entriesData.CopyTo(gptData, entriesOffset);
+
+        // Calculate and write CRC32 of partition entries to header
+        uint entriesCrc = CalculateCrc32(entriesData, 0, entriesData.Length);
+        int headerOffset = sectorSize;
+        BitConverter.GetBytes(entriesCrc).CopyTo(gptData, headerOffset + 88);
+
+        // Recalculate header CRC with updated partition entries CRC
+        uint headerCrc = CalculateCrc32(gptData, headerOffset, GptHeaderSize);
+        BitConverter.GetBytes(headerCrc).CopyTo(gptData, headerOffset + 16);
+    }
+
+    /// <summary>
+    /// Writes a single GPT partition entry.
+    /// </summary>
+    private void WriteGPTPartitionEntry(byte[] entriesData, int offset, PartitionGeometry part, int sectorSize)
+    {
+        // Partition type GUID (16 bytes)
+        var typeGuid = GetGPTPartitionTypeGuid(part);
+        typeGuid.ToByteArray().CopyTo(entriesData, offset + 0);
+
+        // Unique partition GUID (16 bytes) - use VolumeGuid if available, otherwise generate
+        var uniqueGuid = part.VolumeGuid ?? Guid.NewGuid();
+        uniqueGuid.ToByteArray().CopyTo(entriesData, offset + 16);
+
+        // Starting LBA (8 bytes)
+        long startLba = part.StartOffset / sectorSize;
+        BitConverter.GetBytes(startLba).CopyTo(entriesData, offset + 32);
+
+        // Ending LBA (8 bytes)
+        long sizeInSectors = part.Size / sectorSize;
+        long endLba = startLba + sizeInSectors - 1;
+        BitConverter.GetBytes(endLba).CopyTo(entriesData, offset + 40);
+
+        // Attributes (8 bytes) - default to 0
+        BitConverter.GetBytes((long)0).CopyTo(entriesData, offset + 48);
+
+        // Partition name (72 bytes, UTF-16LE)
+        string name = part.Name ?? $"Partition {part.Number}";
+        var nameBytes = Encoding.Unicode.GetBytes(name);
+        int nameLength = Math.Min(nameBytes.Length, 72);
+        Array.Copy(nameBytes, 0, entriesData, offset + 56, nameLength);
+        // Pad remainder with zeros (already zeroed)
+    }
+
+    /// <summary>
+    /// Gets the GPT partition type GUID based on partition geometry.
+    /// </summary>
+    private Guid GetGPTPartitionTypeGuid(PartitionGeometry part)
+    {
+        return part.Type switch
+        {
+            PartitionType.EFI => Guid.Parse("C12A7328-F81F-11D2-BA4B-00A0C93EC93B"),
+            PartitionType.MicrosoftReserved => Guid.Parse("E3C9E316-0B5C-4DB8-817D-F92DF00215AE"),
+            PartitionType.Recovery => Guid.Parse("DE94BBA4-06D1-4D40-A16A-BFD50179D6AC"),
+            PartitionType.LinuxFilesystem => Guid.Parse("0FC63DAF-8483-4772-8E79-3D69D8477DE4"),
+            PartitionType.LinuxSwap => Guid.Parse("0657FD6D-A4AB-43C4-84E5-0933C84B4F4F"),
+            PartitionType.LinuxLVM => Guid.Parse("E6D6D379-F507-44C2-A23C-238F2A3DF928"),
+            PartitionType.LinuxRAID => Guid.Parse("A19D880F-05FC-4D3B-A006-743F0F84911E"),
+            PartitionType.BIOSBoot => Guid.Parse("21686148-6449-6E6F-744E-656564454649"),
+            _ => Guid.Parse("EBD0A0A2-B9E5-4433-87C0-68B6B72699C7")  // Microsoft Basic Data (default)
+        };
+    }
+
+    /// <summary>
+    /// Calculates CRC32 checksum for the given data.
+    /// </summary>
+    private uint CalculateCrc32(byte[] data, int offset, int count)
+    {
+        uint crc = 0xFFFFFFFF;
+        for (int i = 0; i < count; i++)
+        {
+            byte b = data[offset + i];
+            crc ^= b;
+            for (int j = 0; j < 8; j++)
+            {
+                if ((crc & 1) != 0)
+                    crc = (crc >> 1) ^ 0xEDB88320;
+                else
+                    crc >>= 1;
+            }
+        }
+        return ~crc;
+    }
+
+    /// <summary>
+    /// Writes the secondary (backup) GPT header and partition entries to the end of the disk.
+    /// </summary>
+    private async Task WriteSecondaryGPT(byte[] primaryGptData, CancellationToken cancel)
+    {
+        if (_targetDisk == null || _geometryMetadata?.Disk == null)
+            return;
+
+        var sectorSize = _geometryMetadata.Disk.SectorSize;
+        var diskSectors = _geometryMetadata.Disk.Sectors;
+
+        // Calculate sizes
+        int numPartitionEntries = 128;
+        int partitionEntriesSize = numPartitionEntries * PartitionEntrySize;
+        int partitionEntriesSectors = (partitionEntriesSize + sectorSize - 1) / sectorSize;
+
+        // Secondary GPT layout:
+        // - Partition entries (before header)
+        // - Secondary GPT header (last sector)
+
+        // Read primary header to get disk GUID and other fields
+        int primaryHeaderOffset = sectorSize;
+        var diskGuid = new byte[16];
+        Array.Copy(primaryGptData, primaryHeaderOffset + 56, diskGuid, 0, 16);
+
+        // Read partition entries CRC from primary
+        byte[] partitionEntriesCrcBytes = new byte[4];
+        Array.Copy(primaryGptData, primaryHeaderOffset + 88, partitionEntriesCrcBytes, 0, 4);
+
+        // Create secondary header
+        var secondaryHeader = new byte[GptHeaderSize];
+
+        // Signature: "EFI PART"
+        BitConverter.GetBytes(GptSignature).CopyTo(secondaryHeader, 0);
+
+        // Revision: 1.0
+        BitConverter.GetBytes(GptRevision).CopyTo(secondaryHeader, 8);
+
+        // Header size: 92 bytes
+        BitConverter.GetBytes((uint)GptHeaderSize).CopyTo(secondaryHeader, 12);
+
+        // CRC32 (calculated later)
+        BitConverter.GetBytes(0u).CopyTo(secondaryHeader, 16);
+
+        // Reserved
+        BitConverter.GetBytes(0u).CopyTo(secondaryHeader, 20);
+
+        // Current LBA: last sector (backup header location)
+        long secondaryHeaderLba = diskSectors - 1;
+        BitConverter.GetBytes(secondaryHeaderLba).CopyTo(secondaryHeader, 24);
+
+        // Backup LBA: 1 (primary header location)
+        BitConverter.GetBytes((long)1).CopyTo(secondaryHeader, 32);
+
+        // First usable LBA
+        long firstUsableLba = 2 + partitionEntriesSectors;
+        BitConverter.GetBytes(firstUsableLba).CopyTo(secondaryHeader, 40);
+
+        // Last usable LBA
+        long lastUsableLba = diskSectors - partitionEntriesSectors - 2;
+        BitConverter.GetBytes(lastUsableLba).CopyTo(secondaryHeader, 48);
+
+        // Disk GUID (same as primary)
+        diskGuid.CopyTo(secondaryHeader, 56);
+
+        // Partition entry LBA: right before the secondary header
+        long secondaryEntriesLba = diskSectors - partitionEntriesSectors - 1;
+        BitConverter.GetBytes(secondaryEntriesLba).CopyTo(secondaryHeader, 72);
+
+        // Number of partition entries
+        BitConverter.GetBytes((uint)numPartitionEntries).CopyTo(secondaryHeader, 80);
+
+        // Size of partition entry
+        BitConverter.GetBytes((uint)PartitionEntrySize).CopyTo(secondaryHeader, 84);
+
+        // Partition entries CRC32 (same as primary)
+        partitionEntriesCrcBytes.CopyTo(secondaryHeader, 88);
+
+        // Calculate and write CRC32 of secondary header
+        uint headerCrc = CalculateCrc32(secondaryHeader, 0, GptHeaderSize);
+        BitConverter.GetBytes(headerCrc).CopyTo(secondaryHeader, 16);
+
+        // Write secondary partition entries (same as primary)
+        long entriesStartOffset = 2 * sectorSize;
+        int entriesByteSize = partitionEntriesSectors * sectorSize;
+        var partitionEntries = new byte[entriesByteSize];
+        Array.Copy(primaryGptData, entriesStartOffset, partitionEntries, 0, entriesByteSize);
+
+        long secondaryEntriesOffset = secondaryEntriesLba * sectorSize;
+        await _targetDisk.WriteBytesAsync(secondaryEntriesOffset, partitionEntries, cancel).ConfigureAwait(false);
+
+        // Write secondary header at the last sector
+        long secondaryHeaderOffset = secondaryHeaderLba * sectorSize;
+        await _targetDisk.WriteBytesAsync(secondaryHeaderOffset, secondaryHeader, cancel).ConfigureAwait(false);
+
+        Log.WriteInformationMessage(LOGTAG, "SecondaryGPTWritten",
+            $"Successfully wrote secondary GPT header at LBA {secondaryHeaderLba} and partition entries at LBA {secondaryEntriesLba}.");
     }
 
     /// <summary>
