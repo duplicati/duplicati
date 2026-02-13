@@ -1,6 +1,8 @@
-﻿using Duplicati.Proprietary.DiskImage;
+﻿using System.Runtime.InteropServices;
+using Duplicati.Proprietary.DiskImage;
 using Duplicati.Proprietary.DiskImage.Filesystem;
 using Duplicati.Proprietary.DiskImage.Partition;
+using Vanara.InteropServices;
 
 // TODO this project is just a test project to test the disk image library. Remove later, or elevate to a proper tool.
 
@@ -11,12 +13,24 @@ if (Environment.OSVersion.Platform != PlatformID.Win32NT)
     return;
 }
 
-using var disk = new Duplicati.Proprietary.DiskImage.Disk.Windows(@"\\.\PhysicalDrive0");
+using var disk = new Duplicati.Proprietary.DiskImage.Disk.Windows(@"\\.\PhysicalDrive2");
 var initialized = await disk.InitializeAsync(CancellationToken.None);
 if (!initialized)
 {
     Console.WriteLine("Failed to initialize disk.");
     return;
+}
+
+// Raw dump entire disk
+if (true)
+{
+    using var rawoutstream = System.IO.File.OpenWrite("rawdisk_small_org.bin");
+    for (int i = 0; i < disk.Sectors; i += 16)
+    {
+        var read = await disk.ReadSectorsAsync(i, 16, CancellationToken.None);
+        await read.CopyToAsync(rawoutstream);
+    }
+    Console.WriteLine("Raw disk dump completed.");
 }
 
 var table = await PartitionTableFactory.CreateAsync(disk, CancellationToken.None);
@@ -33,7 +47,7 @@ await foreach (var partition in table.EnumeratePartitions(CancellationToken.None
 {
     Console.WriteLine($"Partition {partition.PartitionNumber}: {partition.Name}");
     Console.WriteLine($"  Type: {partition.Type}");
-    Console.WriteLine($"  Size: {partition.Size} bytes ({partition.Size / (1024 * 1024 * 1024)} GB)");
+    Console.WriteLine($"  Size: {partition.Size} bytes ({(double)partition.Size / (1024 * 1024 * 1024)} GB)");
     Console.WriteLine($"  Offset: {partition.StartOffset} bytes");
 }
 
@@ -44,7 +58,7 @@ if (table.TableType == PartitionTableType.GPT)
     Console.WriteLine($"Protective MBR retrieved successfully ({mbrStream.Length} bytes).");
 }
 
-var firstPartition = await table.GetPartitionAsync(1, CancellationToken.None);
+var firstPartition = await table.GetPartitionAsync(2, CancellationToken.None);
 
 if (firstPartition == null)
 {
@@ -56,16 +70,19 @@ using var fs = new UnknownFilesystem(firstPartition);
 
 var filecount = await fs.ListFilesAsync(CancellationToken.None).CountAsync();
 
-Console.WriteLine($"Listed {filecount} files in the unknown filesystem of the first partition.");
+Console.WriteLine($"Listed {filecount} files in the unknown filesystem of partition {firstPartition.PartitionNumber}.");
 
 if (filecount == 0) return;
 
-var firstFile = await fs.ListFilesAsync(CancellationToken.None).FirstAsync();
+using var outstream = System.IO.File.OpenWrite("test.bin");
 
-using var fileStream = await fs.OpenReadStreamAsync(firstFile, CancellationToken.None);
+if (false)
+    await foreach (var file in fs.ListFilesAsync(CancellationToken.None))
+    {
+        using var fileStream = await fs.OpenReadStreamAsync(file, CancellationToken.None);
 
-// Copy to a buffer
-var buffer = new byte[firstFile.Size];
-await fileStream.ReadExactlyAsync(buffer, 0, buffer.Length, CancellationToken.None);
-
-Console.WriteLine($"Read {buffer.Length} bytes from the first file in the unknown filesystem.");
+        // Copy to a buffer
+        var buffer = new byte[file.Size];
+        await fileStream.ReadExactlyAsync(buffer, 0, buffer.Length, CancellationToken.None);
+        outstream.Write(buffer, 0, buffer.Length);
+    }
