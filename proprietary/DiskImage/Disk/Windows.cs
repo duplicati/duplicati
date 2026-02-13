@@ -208,9 +208,34 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 var msg = new System.ComponentModel.Win32Exception(error).Message;
                 throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
             }
+
+            // Pad to sector size if necessary
+            int remainder = data.Length % (int)m_sectorSize;
+            int alignedLength = data.Length + ((int)m_sectorSize - remainder);
+            using var buffer = new SafeHGlobalHandle(alignedLength);
+            if (remainder != 0)
+            {
+                // Read existing data to fill the remainder
+                bool readResult = ReadFile(m_deviceHandle, buffer, (uint)alignedLength, out uint bytesRead, IntPtr.Zero);
+                if (!readResult)
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    var msg = new System.ComponentModel.Win32Exception(error).Message;
+                    throw new IOException($"Failed to read existing data for padding. Win32 Error Code: {error}. Message: {msg}");
+                }
+                // Seek back to the original offset after reading
+                var seekedBack = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
+                if (!seekedBack)
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    var msg = new System.ComponentModel.Win32Exception(error).Message;
+                    throw new IOException($"Failed to seek back to offset after reading. Win32 Error Code: {error}. Message: {msg}");
+                }
+            }
+
             Marshal.Copy(data, 0, buffer.DangerousGetHandle(), data.Length);
 
-            bool result = WriteFile(m_deviceHandle, buffer, (uint)data.Length, out uint bytesWritten, IntPtr.Zero);
+            bool result = WriteFile(m_deviceHandle, buffer, (uint)alignedLength, out uint bytesWritten, IntPtr.Zero);
 
             if (!result)
             {
