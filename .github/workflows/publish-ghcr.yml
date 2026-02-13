@@ -1,0 +1,66 @@
+name: Publish GHCR Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Duplicati version (numeric)
+        required: true
+        default: "2.2.0.3001"
+      channel:
+        description: Release channel
+        required: true
+        default: "debug"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create dummy changelog file
+        working-directory: ./ReleaseBuilder
+        run: echo "## Changed" > ./changelog-news.txt
+
+      - name: Build and push docker image
+        working-directory: ./ReleaseBuilder
+        env:
+          UPDATER_KEYFILE: ./testfile.key1
+          WIX: ""
+        run: >-
+          dotnet run -- build "${{ inputs.channel }}"
+          --git-stash-push=false
+          --keep-builds=true
+          --disable-authenticode=true
+          --disable-signcode=true
+          --disable-notarize-signing=true
+          --disable-gpg-signing=true
+          --disable-s3-upload=true
+          --disable-github-upload=true
+          --disable-update-server-reload=true
+          --disable-discourse-announce=true
+          --disable-clean-source=true
+          --password=test1234
+          --version="${{ inputs.version }}"
+          --targets linux-x64-cli.docker
+          --docker-repo ghcr.io/${{ github.repository_owner }}/duplicati
