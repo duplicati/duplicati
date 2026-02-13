@@ -222,6 +222,7 @@ namespace Duplicati.UnitTest
             VerifyPartitionTableMatches();
 
             // Verify data matches byte-for-byte
+            DiskImageVhdHelper.MountForReading(_restoreVhdPath);
             VerifyRestoredData(_sourceDriveLetter);
         }
 

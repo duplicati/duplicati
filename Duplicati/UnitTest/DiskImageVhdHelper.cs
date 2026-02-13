@@ -280,6 +280,52 @@ namespace Duplicati.UnitTest
             }
         }
 
+        public static void UnmountForWriting(string vhdPath, char driveLetter)
+        {
+            // Remove the drive letter
+            var diskNumber = GetDiskNumber(vhdPath);
+            var script = $@"
+                Get-Volume -Drive {driveLetter} | Get-Partition | Remove-PartitionAccessPath -AccessPath {driveLetter}:\
+            ";
+            RunPowerShell(script);
+
+            // Pull the disk offline to ensure it's not in use
+            script = $@"
+                Set-Disk -Number {diskNumber} -IsOffline $true
+            ";
+            RunPowerShell(script);
+
+            // Clear the readonly flag
+            script = $@"
+                Set-Disk -Number {diskNumber} -IsReadOnly $false
+            ";
+            RunPowerShell(script);
+        }
+
+        public static void MountForReading(string vhdPath, char? driveLetter = null)
+        {
+            if (driveLetter is null)
+            {
+                driveLetter = FindAvailableDriveLetter();
+            }
+            try
+            {
+                var diskNumber = GetDiskNumber(vhdPath);
+                if (diskNumber >= 0)
+                {
+                    var script = $@"
+                        Set-Disk -Number {diskNumber} -IsOffline $false
+                        Get-Partition -DiskNumber {diskNumber} | Set-Partition -NewDriveLetter {driveLetter}
+                    ";
+                    RunPowerShell(script);
+                }
+            }
+            catch (Exception ex)
+            {
+                TestContext.Progress.WriteLine($"Warning: Failed to mount VHD for reading: {ex.Message}");
+            }
+        }
+
         /// <summary>
         /// Gets the disk number for an attached VHD.
         /// </summary>
