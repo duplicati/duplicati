@@ -159,6 +159,15 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_deviceHandle == null || m_deviceHandle.IsInvalid)
                 throw new InvalidOperationException("Device handle is invalid.");
 
+            if (offset % SectorSize != 0)
+                throw new InvalidOperationException($"Address {offset:X016} is not a multiple of the sector size {SectorSize}");
+
+            if (length % SectorSize != 0)
+                throw new InvalidOperationException($"The requested length of {length} is not a multiple of sector size {SectorSize}");
+
+            if (offset + length > Size)
+                throw new InvalidOperationException($"The requested read would read beyond disk size: {offset} + {length} > {Size}");
+
             // Move file pointer to the desired offset
             var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
             if (!seeked)
