@@ -330,6 +330,15 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         throw new FileMissingException();
     }
 
+    /// <summary>
+    /// Resolves the download URL used for file download operations.
+    /// A user-provided b2-download-url overrides the API-provided URL.
+    /// </summary>
+    /// <param name="defaultDownloadUrl">Download URL from B2 authorization config</param>
+    /// <returns>The effective download base URL</returns>
+    private string ResolveDownloadUrl(string? defaultDownloadUrl)
+        => string.IsNullOrWhiteSpace(_downloadUrl) ? defaultDownloadUrl ?? string.Empty : _downloadUrl;
+
     /// <inheritdoc/>
     public IList<ICommandLineArgument> SupportedCommands =>
         new List<ICommandLineArgument>([
@@ -417,12 +426,13 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
             await RebuildFileCache(cancellationToken).ConfigureAwait(false);
 
         var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+        var downloadUrl = ResolveDownloadUrl(config.DownloadUrl);
 
         using var request = _filecache != null && _filecache.ContainsKey(remotename)
             ? await _b2AuthHelper.CreateRequestAsync(
-                $"{config.DownloadUrl}/b2api/v1/b2_download_file_by_id?fileId={Utility.Uri.UrlEncode(await GetFileId(remotename, cancellationToken))}", HttpMethod.Get, cancellationToken).ConfigureAwait(false)
+                $"{downloadUrl}/b2api/v1/b2_download_file_by_id?fileId={Utility.Uri.UrlEncode(await GetFileId(remotename, cancellationToken))}", HttpMethod.Get, cancellationToken).ConfigureAwait(false)
             : await _b2AuthHelper.CreateRequestAsync(
-                $"{config.DownloadUrl}/{_urlencodedPrefix}{Utility.Uri.UrlPathEncode(remotename)}", HttpMethod.Get, cancellationToken).ConfigureAwait(false);
+                $"{downloadUrl}/{_urlencodedPrefix}{Utility.Uri.UrlPathEncode(remotename)}", HttpMethod.Get, cancellationToken).ConfigureAwait(false);
 
         HttpResponseMessage? response = null;
         try
@@ -699,10 +709,11 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
     public async Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
     {
         var config = await _b2AuthHelper.GetConfigAsync(cancelToken);
+        var downloadUrl = ResolveDownloadUrl(config.DownloadUrl);
         return new string?[] {
             B2AuthHelper.AUTH_URL,
             config.APIUrl,
-            config.DownloadUrl
+            downloadUrl
         }.WhereNotNullOrWhiteSpace()
         .Select(x => new System.Uri(x).Host)
         .Distinct()
