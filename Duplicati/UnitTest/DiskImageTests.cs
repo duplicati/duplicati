@@ -294,9 +294,17 @@ namespace Duplicati.UnitTest
             // Verify hierarchy: disk → partition → filesystem → files
             Assert.That(entries.Count, Is.GreaterThan(0), "Should have at least one entry (the disk)");
 
+            // Fetch the rest of the enumaration.
             // Check for disk entry
             var diskEntry = entries.FirstOrDefault(e => e.IsRootEntry);
             Assert.That(diskEntry, Is.Not.Null, "Should have a root disk entry");
+
+            await foreach (var entry in diskEntry!.Enumerate(CancellationToken.None))
+            {
+                entries.Add(entry);
+            }
+
+            TestContext.Progress.WriteLine($"Total entries found: {entries.Count}");
 
             // Check for geometry.json
             var geometryEntry = entries.FirstOrDefault(e => e.Path.EndsWith("geometry.json"));
