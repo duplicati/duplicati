@@ -222,7 +222,6 @@ namespace Duplicati.UnitTest
             VerifyPartitionTableMatches();
 
             // Verify data matches byte-for-byte
-            DiskImageVhdHelper.MountForReading(_restoreVhdPath);
             VerifyRestoredData(_sourceDriveLetter);
         }
 
@@ -461,6 +460,13 @@ namespace Duplicati.UnitTest
             var restoreDriveLetter = GetDriveLetterForDisk(restoreDiskNumber);
             if (restoreDriveLetter == '\0')
             {
+                TestContext.Progress.WriteLine("Restored VHD not mounted, attempting to mount...");
+                restoreDriveLetter = DiskImageVhdHelper.MountForReading(_restoreVhdPath);
+            }
+
+            if (restoreDriveLetter == '\0')
+            {
+                // Second attempt to get drive letter after mounting failed
                 Assert.Fail("Could not find drive letter for restored VHD");
                 return;
             }

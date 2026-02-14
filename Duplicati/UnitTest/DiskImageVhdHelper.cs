@@ -302,12 +302,10 @@ namespace Duplicati.UnitTest
             RunPowerShell(script);
         }
 
-        public static void MountForReading(string vhdPath, char? driveLetter = null)
+        public static char MountForReading(string vhdPath, char? driveLetter = null)
         {
-            if (driveLetter is null)
-            {
-                driveLetter = FindAvailableDriveLetter();
-            }
+            driveLetter ??= FindAvailableDriveLetter();
+
             try
             {
                 var diskNumber = GetDiskNumber(vhdPath);
@@ -324,6 +322,8 @@ namespace Duplicati.UnitTest
             {
                 TestContext.Progress.WriteLine($"Warning: Failed to mount VHD for reading: {ex.Message}");
             }
+
+            return driveLetter.Value;
         }
 
         /// <summary>
