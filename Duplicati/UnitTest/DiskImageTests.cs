@@ -486,18 +486,21 @@ namespace Duplicati.UnitTest
         /// </summary>
         private void CompareDirectories(string sourcePath, string restorePath)
         {
-            // Get all files in source
-            var sourceFiles = Directory.GetFiles(sourcePath, "*", SearchOption.AllDirectories).OrderBy(f => f).ToList();
-            var restoreFiles = Directory.GetFiles(restorePath, "*", SearchOption.AllDirectories).OrderBy(f => f).ToList();
+            var options = new EnumerationOptions
+            {
+                RecurseSubdirectories = true,
+                IgnoreInaccessible = true,
+                AttributesToSkip = FileAttributes.System | FileAttributes.ReparsePoint
+            };
 
-            // Normalize paths for comparison (remove drive letter)
-            var sourceRelativePaths = sourceFiles.Select(f => f.Substring(3)).ToList();
-            var restoreRelativePaths = restoreFiles.Select(f => f.Substring(3)).ToList();
+            // Get all files in source, except for system files, which cannot be read directly
+            var sourceFiles = Directory.EnumerateFiles(sourcePath, "*", options).Select(f => Path.GetRelativePath(sourcePath, f)).OrderBy(f => f).ToList();
+            var restoreFiles = Directory.EnumerateFiles(restorePath, "*", options).Select(f => Path.GetRelativePath(restorePath, f)).OrderBy(f => f).ToList();
 
             // Check that all source files exist in restore
-            foreach (var relativePath in sourceRelativePaths)
+            foreach (var relativePath in sourceFiles)
             {
-                Assert.That(restoreRelativePaths, Does.Contain(relativePath),
+                Assert.That(restoreFiles, Does.Contain(relativePath),
                     $"Restored drive should contain file: {relativePath}");
             }
 
