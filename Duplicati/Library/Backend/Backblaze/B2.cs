@@ -344,8 +344,8 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
             return null;
 
         var normalized = downloadUrl.Trim().TrimEnd('/');
-        if (!Uri.TryCreate(normalized, UriKind.Absolute, out var uri)
-            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        if (!System.Uri.TryCreate(normalized, System.UriKind.Absolute, out var uri)
+            || (uri.Scheme != System.Uri.UriSchemeHttp && uri.Scheme != System.Uri.UriSchemeHttps))
             throw new UserInformationException(Strings.B2.InvalidDownloadUrlError(B2_DOWNLOAD_URL_OPTION, downloadUrl), "B2InvalidDownloadUrl");
 
         return normalized;
