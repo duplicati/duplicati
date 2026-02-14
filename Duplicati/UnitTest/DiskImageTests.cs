@@ -281,11 +281,11 @@ namespace Duplicati.UnitTest
             using var provider = new SourceProvider(sourceUrl, "", new Dictionary<string, string?>());
 
             // Initialize the provider
-            provider.Initialize(CancellationToken.None).Wait();
+            await provider.Initialize(CancellationToken.None);
 
             // Enumerate entries
             var entries = new List<ISourceProviderEntry>();
-            foreach (var entry in provider.Enumerate(CancellationToken.None).ToBlockingEnumerable())
+            await foreach (var entry in provider.Enumerate(CancellationToken.None))
             {
                 entries.Add(entry);
                 TestContext.Progress.WriteLine($"Found entry: {entry.Path} (IsFolder: {entry.IsFolder}, Size: {entry.Size})");
