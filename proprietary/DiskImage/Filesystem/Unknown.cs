@@ -276,47 +276,79 @@ public class UnknownFilesystem : IFilesystem
     /// <summary>
     /// A stream that writes data directly to a specific address on the raw disk.
     /// </summary>
-    private class UnknownFilesystemStream(IRawDisk disk, long address, long size, bool readEnabled, bool writeEnabled) : Stream
+    private class UnknownFilesystemStream : Stream
     {
         /// <summary>
         /// The raw disk to read from.
         /// </summary>
-        private readonly IRawDisk _disk = disk;
+        private readonly IRawDisk _disk;
 
         /// <summary>
         /// The starting address on the disk for this stream.
         /// </summary>
-        private readonly long _address = address;
+        private readonly long _address;
 
         /// <summary>
         /// The size of the stream in bytes.
         /// </summary>
-        private readonly long _size = size;
+        private readonly long _size;
 
         /// <summary>
         /// The buffer used to store data before writing to disk.
         /// </summary>
-        private readonly MemoryStream _buffer = new();
+        private readonly byte[] _buffer;
+
+        /// <summary>
+        /// The current position within the buffer.
+        /// </summary>
+        private long _position;
 
         /// <summary>
         /// Indicates whether the data in the buffer is valid (has been read from disk).
         /// </summary>
-        private bool _validData = false;
+        private bool _validData;
 
         /// <summary>
         /// Indicates whether the stream has been disposed.
         /// </summary>
-        private bool _disposed = false;
+        private bool _disposed;
 
         /// <summary>
         /// Indicates whether the stream supports reading.
         /// </summary>
-        private readonly bool _readEnabled = readEnabled;
+        private readonly bool _readEnabled;
 
         /// <summary>
         /// Indicates whether the stream supports writing.
         /// </summary>
-        private readonly bool _writeEnabled = writeEnabled;
+        private readonly bool _writeEnabled;
+
+        /// <summary>
+        /// Indicates whether the buffer has been modified (dirty).
+        /// </summary>
+        private bool _dirty;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UnknownFilesystemStream"/> class.
+        /// </summary>
+        /// <param name="disk">The raw disk to read from/write to.</param>
+        /// <param name="address">The starting address on the disk for this stream.</param>
+        /// <param name="size">The size of the stream in bytes.</param>
+        /// <param name="readEnabled">Whether reading is enabled.</param>
+        /// <param name="writeEnabled">Whether writing is enabled.</param>
+        public UnknownFilesystemStream(IRawDisk disk, long address, long size, bool readEnabled, bool writeEnabled)
+        {
+            _disk = disk;
+            _address = address;
+            _size = size;
+            _readEnabled = readEnabled;
+            _writeEnabled = writeEnabled;
+            _buffer = new byte[size];
+            _position = 0;
+            _validData = false;
+            _disposed = false;
+            _dirty = false;
+        }
 
         public override bool CanRead => _readEnabled;
         public override bool CanWrite => _writeEnabled;
@@ -324,31 +356,70 @@ public class UnknownFilesystem : IFilesystem
         public override long Length => _size;
         public override long Position
         {
-            get => _buffer.Position;
-            set => _buffer.Position = value;
+            get => _position;
+            set
+            {
+                if (value < 0 || value > _size)
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                _position = value;
+            }
         }
 
-        public override void Flush() => _buffer.Flush();
-        public override long Seek(long offset, SeekOrigin origin) => _buffer.Seek(offset, origin);
-        public override void SetLength(long value) => _buffer.SetLength(value);
+        public override void Flush()
+        {
+            // No-op - data is written on dispose
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            long newPosition = origin switch
+            {
+                SeekOrigin.Begin => offset,
+                SeekOrigin.Current => _position + offset,
+                SeekOrigin.End => _size + offset,
+                _ => throw new ArgumentException("Invalid seek origin", nameof(origin))
+            };
+
+            if (newPosition < 0 || newPosition > _size)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+
+            _position = newPosition;
+            return _position;
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException("Cannot change the length of this stream.");
+        }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
             if (!_readEnabled)
                 throw new NotSupportedException("Read is not supported on this stream.");
 
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (buffer.Length - offset < count)
+                throw new ArgumentException("Invalid offset and count for buffer length");
+
             if (!_validData)
             {
                 // Load the data from disk into the buffer on the first read
-                using var data = _disk.ReadBytesAsync(_address, (int)_size, CancellationToken.None).GetAwaiter().GetResult();
-                data.CopyTo(_buffer);
-                _buffer.Position = 0;
+                _disk.ReadBytesAsync(_address, _buffer.AsMemory(), CancellationToken.None).GetAwaiter().GetResult();
                 _validData = true;
             }
 
-            var res = _buffer.Read(buffer, offset, count);
+            int bytesToRead = (int)Math.Min(count, _size - _position);
+            if (bytesToRead <= 0)
+                return 0;
 
-            return res;
+            Buffer.BlockCopy(_buffer, (int)_position, buffer, offset, bytesToRead);
+            _position += bytesToRead;
+            return bytesToRead;
         }
 
         public override void Write(byte[] buffer, int offset, int count)
@@ -356,28 +427,107 @@ public class UnknownFilesystem : IFilesystem
             if (!_writeEnabled)
                 throw new NotSupportedException("Write is not supported on this stream.");
 
-            _buffer.Write(buffer, offset, count);
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (buffer.Length - offset < count)
+                throw new ArgumentException("Invalid offset and count for buffer length");
+
+            if (_position + count > _size)
+                throw new ArgumentException("Write would exceed stream size");
+
+            Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
+            _position += count;
             _validData = true;
+            _dirty = true;
+        }
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            if (!_readEnabled)
+                throw new NotSupportedException("Read is not supported on this stream.");
+
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (buffer.Length - offset < count)
+                throw new ArgumentException("Invalid offset and count for buffer length");
+
+            if (!_validData)
+            {
+                // Load the data from disk into the buffer on the first read
+                await _disk.ReadBytesAsync(_address, _buffer.AsMemory(), cancellationToken);
+                _validData = true;
+            }
+
+            int bytesToRead = (int)Math.Min(count, _size - _position);
+            if (bytesToRead <= 0)
+                return 0;
+
+            Buffer.BlockCopy(_buffer, (int)_position, buffer, offset, bytesToRead);
+            _position += bytesToRead;
+            return bytesToRead;
+        }
+
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            if (!_writeEnabled)
+                throw new NotSupportedException("Write is not supported on this stream.");
+
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (buffer.Length - offset < count)
+                throw new ArgumentException("Invalid offset and count for buffer length");
+
+            if (_position + count > _size)
+                throw new ArgumentException("Write would exceed stream size");
+
+            Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
+            _position += count;
+            _validData = true;
+            _dirty = true;
+
+            await Task.CompletedTask;
         }
 
         protected override void Dispose(bool disposing)
         {
             if (!_disposed)
             {
-                if (disposing && _writeEnabled)
+                if (disposing && _writeEnabled && _dirty)
                 {
                     // Write all buffered data to disk
-                    _buffer.Position = 0;
-                    var data = _buffer.ToArray();
-                    if (data.Length > 0)
-                    {
-                        _disk.WriteBytesAsync(_address, data, CancellationToken.None).GetAwaiter().GetResult();
-                    }
-                    _buffer.Dispose();
+                    _disk.WriteBytesAsync(_address, _buffer.AsMemory(0, (int)_size), CancellationToken.None).GetAwaiter().GetResult();
                 }
                 _disposed = true;
             }
             base.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// Asynchronously releases the unmanaged resources used by the <see cref="UnknownFilesystemStream"/>.
+        /// </summary>
+        public override async ValueTask DisposeAsync()
+        {
+            if (!_disposed)
+            {
+                if (_writeEnabled && _dirty)
+                {
+                    // Write all buffered data to disk
+                    await _disk.WriteBytesAsync(_address, _buffer.AsMemory(0, (int)_size), CancellationToken.None);
+                }
+                _disposed = true;
+            }
         }
     }
 }
