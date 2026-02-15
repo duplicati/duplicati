@@ -614,7 +614,7 @@ namespace Duplicati.UnitTest
 
                     using (var restoreController = new Controller("file://" + TARGETFOLDER, restoreOptions, null))
                     {
-                        var restoreResults = restoreController.Restore(new[] { geometryFile.Path });
+                        var restoreResults = restoreController.Restore(new[] { geometryFile!.Path });
                         TestUtils.AssertResults(restoreResults);
                     }
 
@@ -682,7 +682,7 @@ namespace Duplicati.UnitTest
 
                     using (var restoreController = new Controller("file://" + TARGETFOLDER, restoreOptions, null))
                     {
-                        var restoreResults = restoreController.Restore(new[] { geometryFile.Path });
+                        var restoreResults = restoreController.Restore(new[] { geometryFile!.Path });
 
                         // Ignore NoFilesRestored warning as geometry.json is a special metadata file
                         var hasRelevantWarnings = restoreResults.Warnings.Any(w => !w.Contains("NoFilesRestored"));

@@ -29,6 +29,8 @@ using System.Threading;
 
 using NUnit.Framework;
 
+#nullable enable
+
 namespace Duplicati.UnitTest
 {
     /// <summary>
