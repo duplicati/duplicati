@@ -12,14 +12,14 @@ namespace Duplicati.Proprietary.DiskImage.Partition;
 /// </summary>
 public static class PartitionTableFactory
 {
-    // MBR constants
-    private const int MbrSize = 512;
-    private const ushort MbrBootSignature = 0xAA55;
-    private const byte ProtectiveMbrType = 0xEE;
+    // MBR constants (from PartitionConstants)
+    private const int MbrSize = PartitionConstants.MbrSize;
+    private const ushort MbrBootSignature = PartitionConstants.MbrBootSignature;
+    private const byte ProtectiveMbrType = PartitionConstants.ProtectiveMbrType;
 
-    // GPT constants
-    private const int HeaderSize = 92;
-    private const long GptSignature = 0x5452415020494645; // "EFI PART" in little-endian
+    // GPT constants (from PartitionConstants)
+    private const int HeaderSize = PartitionConstants.GptHeaderSize;
+    private const long GptSignature = PartitionConstants.GptSignature;
 
     /// <summary>
     /// Creates a partition table instance by auto-detecting the partition table type.

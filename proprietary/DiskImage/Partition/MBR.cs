@@ -14,11 +14,11 @@ namespace Duplicati.Proprietary.DiskImage.Partition;
 /// </summary>
 public class MBR : IPartitionTable
 {
-    // Constants for MBR parsing
-    private const int MbrSize = 512;
-    private const int PartitionEntrySize = 16;
-    private const int MaxPartitionEntries = 4;
-    private const ushort MbrBootSignature = 0xAA55;
+    // Constants for MBR parsing (from PartitionConstants)
+    private const int MbrSize = PartitionConstants.MbrSize;
+    private const int PartitionEntrySize = PartitionConstants.MbrPartitionEntrySize;
+    private const int MaxPartitionEntries = PartitionConstants.MaxMbrPartitionEntries;
+    private const ushort MbrBootSignature = PartitionConstants.MbrBootSignature;
 
     // Internal state
     private bool m_parsed = false;

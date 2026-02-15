@@ -25,14 +25,14 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 {
     private static readonly string LOGTAG = Log.LogTagFromType<RestoreProvider>();
 
-    // Constants for partition table synthesis
-    private const int MbrSize = 512;
-    private const int GptHeaderSize = 92;
-    private const ushort MbrBootSignature = 0xAA55;
-    private const byte ProtectiveMbrType = 0xEE;
-    private const long GptSignature = 0x5452415020494645; // "EFI PART" in little-endian
-    private const uint GptRevision = 0x00010000; // Version 1.0
-    private const int PartitionEntrySize = 128; // Standard GPT partition entry size
+    // Constants for partition table synthesis (from PartitionConstants)
+    private const int MbrSize = PartitionConstants.MbrSize;
+    private const int GptHeaderSize = PartitionConstants.GptHeaderSize;
+    private const ushort MbrBootSignature = PartitionConstants.MbrBootSignature;
+    private const byte ProtectiveMbrType = PartitionConstants.ProtectiveMbrType;
+    private const long GptSignature = PartitionConstants.GptSignature;
+    private const uint GptRevision = PartitionConstants.GptRevision;
+    private const int PartitionEntrySize = PartitionConstants.GptPartitionEntrySize;
 
     private readonly string _devicePath;
     private readonly string _restorePath;

@@ -15,12 +15,12 @@ namespace Duplicati.Proprietary.DiskImage.Partition;
 /// </summary>
 public class GPT : IPartitionTable
 {
-    // Constants for GPT parsing
-    private const int HeaderSize = 92;
-    private const long GptSignature = 0x5452415020494645; // "EFI PART" in little-endian
-    private const int MbrSize = 512;
-    private const ushort MbrBootSignature = 0xAA55;
-    private const byte ProtectiveMbrType = 0xEE;
+    // Constants for GPT parsing (from PartitionConstants)
+    private const int HeaderSize = PartitionConstants.GptHeaderSize;
+    private const long GptSignature = PartitionConstants.GptSignature;
+    private const int MbrSize = PartitionConstants.MbrSize;
+    private const ushort MbrBootSignature = PartitionConstants.MbrBootSignature;
+    private const byte ProtectiveMbrType = PartitionConstants.ProtectiveMbrType;
 
     // Internal state
     private bool m_parsed = false;
