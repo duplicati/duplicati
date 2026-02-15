@@ -182,7 +182,11 @@ public static class PartitionTableFactory
     private static async Task<IPartitionTable> CreateMBRAsync(IRawDisk disk, byte[] mbrBytes, CancellationToken cancellationToken)
     {
         var mbr = new MBR(disk);
-        await mbr.ParseAsync(disk, cancellationToken).ConfigureAwait(false);
+        // Use the already read bytes to avoid race conditions and redundant reads
+        if (!await mbr.ParseAsync(mbrBytes, disk.SectorSize, cancellationToken).ConfigureAwait(false))
+        {
+            throw new InvalidOperationException("Failed to parse MBR from validated bytes.");
+        }
         return mbr;
     }
 
