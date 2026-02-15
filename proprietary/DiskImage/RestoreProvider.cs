@@ -702,8 +702,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         {
             partitionTable = _geometryMetadata.PartitionTable.Type switch
             {
-                PartitionTableType.GPT => new ReconstructedGPT(_targetDisk, _geometryMetadata),
-                PartitionTableType.MBR => new ReconstructedMBR(_targetDisk, _geometryMetadata),
+                PartitionTableType.GPT => new ReconstructedPartitionTable(_targetDisk, _geometryMetadata, PartitionTableType.GPT),
+                PartitionTableType.MBR => new ReconstructedPartitionTable(_targetDisk, _geometryMetadata, PartitionTableType.MBR),
                 PartitionTableType.Unknown => new UnknownPartitionTable(_targetDisk),
                 _ => null
             };
@@ -1254,101 +1254,6 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             $"Successfully wrote secondary GPT header at LBA {secondaryHeaderLba} and partition entries at LBA {secondaryEntriesLba}.");
     }
 
-    /// <summary>
-    /// A reconstructed GPT partition table for restore operations.
-    /// This is a lightweight implementation that stores metadata from the backup.
-    /// </summary>
-    private class ReconstructedGPT : IPartitionTable
-    {
-        private readonly IRawDisk _rawDisk;
-        private readonly GeometryMetadata _geometry;
-        private bool _disposed = false;
-
-        public ReconstructedGPT(IRawDisk rawDisk, GeometryMetadata geometry)
-        {
-            _rawDisk = rawDisk;
-            _geometry = geometry;
-        }
-
-        public IRawDisk? RawDisk => _rawDisk;
-        public PartitionTableType TableType => PartitionTableType.GPT;
-
-        public IAsyncEnumerable<IPartition> EnumeratePartitions(CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("Enumeration not supported on reconstructed partition table.");
-        }
-
-        public Task<IPartition?> GetPartitionAsync(int partitionNumber, CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("GetPartitionAsync not supported on reconstructed partition table.");
-        }
-
-        public Task<Stream> GetProtectiveMbrAsync(CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("GetProtectiveMbrAsync not supported on reconstructed partition table.");
-        }
-
-        public Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("GetPartitionTableDataAsync not supported on reconstructed partition table.");
-        }
-
-        public void Dispose()
-        {
-            if (!_disposed)
-            {
-                _disposed = true;
-            }
-        }
-    }
-
-    /// <summary>
-    /// A reconstructed MBR partition table for restore operations.
-    /// This is a lightweight implementation that stores metadata from the backup.
-    /// </summary>
-    private class ReconstructedMBR : IPartitionTable
-    {
-        private readonly IRawDisk _rawDisk;
-        private readonly GeometryMetadata _geometry;
-        private bool _disposed = false;
-
-        public ReconstructedMBR(IRawDisk rawDisk, GeometryMetadata geometry)
-        {
-            _rawDisk = rawDisk;
-            _geometry = geometry;
-        }
-
-        public IRawDisk? RawDisk => _rawDisk;
-        public PartitionTableType TableType => PartitionTableType.MBR;
-
-        public IAsyncEnumerable<IPartition> EnumeratePartitions(CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("Enumeration not supported on reconstructed partition table.");
-        }
-
-        public Task<IPartition?> GetPartitionAsync(int partitionNumber, CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("GetPartitionAsync not supported on reconstructed partition table.");
-        }
-
-        public Task<Stream> GetProtectiveMbrAsync(CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("MBR does not have a protective MBR.");
-        }
-
-        public Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("GetPartitionTableDataAsync not supported on reconstructed partition table.");
-        }
-
-        public void Dispose()
-        {
-            if (!_disposed)
-            {
-                _disposed = true;
-            }
-        }
-    }
 
     /// <summary>
     /// A stream that captures the written data when disposed and invokes a callback.
