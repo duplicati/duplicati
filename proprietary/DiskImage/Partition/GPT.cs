@@ -676,7 +676,7 @@ public class GPT : IPartitionTable
         Array.Copy(backupHeaderBytes, copyForCrc, HeaderSize);
         BitConverter.TryWriteBytes(copyForCrc.AsSpan(16), 0u);
 
-        uint calculatedCrc = CalculateCrc32(copyForCrc, 0, HeaderSize);
+        uint calculatedCrc = Crc32.Calculate(copyForCrc, 0, HeaderSize);
         if (storedCrc != calculatedCrc)
             return false;
 
@@ -710,31 +710,6 @@ public class GPT : IPartitionTable
         if (BitConverter.ToUInt32(backupHeaderBytes, 88) != m_partitionEntryCrc32) return false;
 
         return true;
-    }
-
-    /// <summary>
-    /// Calculates the CRC32 checksum for the given buffer.
-    /// </summary>
-    /// <param name="buffer">The buffer containing the data.</param>
-    /// <param name="offset">The offset in the buffer to start calculating the CRC32.</param>
-    /// <param name="count">The number of bytes to include in the CRC32 calculation.</param>
-    /// <returns>The calculated CRC32 checksum.</returns>
-    private static uint CalculateCrc32(byte[] buffer, int offset, int count)
-    {
-        uint crc = 0xFFFFFFFF;
-        for (int i = 0; i < count; i++)
-        {
-            byte b = buffer[offset + i];
-            crc ^= b;
-            for (int j = 0; j < 8; j++)
-            {
-                if ((crc & 1) != 0)
-                    crc = (crc >> 1) ^ 0xEDB88320;
-                else
-                    crc >>= 1;
-            }
-        }
-        return ~crc;
     }
 
     /// <inheritdoc />

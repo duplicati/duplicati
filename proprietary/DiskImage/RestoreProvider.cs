@@ -1022,7 +1022,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         BitConverter.GetBytes(0u).CopyTo(gptData, headerOffset + 88);
 
         // Calculate and write CRC32 of header
-        uint headerCrc = CalculateCrc32(gptData, headerOffset, GptHeaderSize);
+        uint headerCrc = Crc32.Calculate(gptData, headerOffset, GptHeaderSize);
         BitConverter.GetBytes(headerCrc).CopyTo(gptData, headerOffset + 16);
     }
 
@@ -1060,12 +1060,12 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         entriesData.CopyTo(gptData, entriesOffset);
 
         // Calculate and write CRC32 of partition entries to header
-        uint entriesCrc = CalculateCrc32(entriesData, 0, entriesData.Length);
+        uint entriesCrc = Crc32.Calculate(entriesData, 0, entriesData.Length);
         int headerOffset = sectorSize;
         BitConverter.GetBytes(entriesCrc).CopyTo(gptData, headerOffset + 88);
 
         // Recalculate header CRC with updated partition entries CRC
-        uint headerCrc = CalculateCrc32(gptData, headerOffset, GptHeaderSize);
+        uint headerCrc = Crc32.Calculate(gptData, headerOffset, GptHeaderSize);
         BitConverter.GetBytes(headerCrc).CopyTo(gptData, headerOffset + 16);
     }
 
@@ -1125,31 +1125,6 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             PartitionType.BIOSBoot => Guid.Parse("21686148-6449-6E6F-744E-656564454649"),
             _ => Guid.Parse("EBD0A0A2-B9E5-4433-87C0-68B6B72699C7")  // Microsoft Basic Data (default)
         };
-    }
-
-    /// <summary>
-    /// Calculates CRC32 checksum for the given data.
-    /// </summary>
-    /// <param name="data">The data buffer.</param>
-    /// <param name="offset">The offset in the buffer to start calculation.</param>
-    /// <param name="count">The number of bytes to calculate.</param>
-    /// <returns>The CRC32 checksum.</returns>
-    private uint CalculateCrc32(byte[] data, int offset, int count)
-    {
-        uint crc = 0xFFFFFFFF;
-        for (int i = 0; i < count; i++)
-        {
-            byte b = data[offset + i];
-            crc ^= b;
-            for (int j = 0; j < 8; j++)
-            {
-                if ((crc & 1) != 0)
-                    crc = (crc >> 1) ^ 0xEDB88320;
-                else
-                    crc >>= 1;
-            }
-        }
-        return ~crc;
     }
 
     /// <summary>
@@ -1234,7 +1209,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         partitionEntriesCrcBytes.CopyTo(secondaryHeader, 88);
 
         // Calculate and write CRC32 of secondary header
-        uint headerCrc = CalculateCrc32(secondaryHeader, 0, GptHeaderSize);
+        uint headerCrc = Crc32.Calculate(secondaryHeader, 0, GptHeaderSize);
         BitConverter.GetBytes(headerCrc).CopyTo(secondaryHeader, 16);
 
         // Write secondary partition entries (same as primary)
