@@ -168,9 +168,8 @@ namespace Duplicati.Library.Main.Operation
                                     if (!Path.IsPathRooted(mountpoint))
                                         throw new UserInformationException(string.Format("The mountpoint \"{0}\" is not a valid rooted mountpoint", mountpoint), "InvalidMountpoint");
                                     mountpoint = Path.GetFullPath(mountpoint);
+                                    mountpoint = Util.AppendDirSeparator(mountpoint);
                                 }
-
-                                mountpoint = Util.AppendDirSeparator(mountpoint);
                                 var backendurl = m.Groups["url"].Value;
 
                                 ISourceProvider provider;
