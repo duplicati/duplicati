@@ -1,5 +1,6 @@
 
 using System;
+using System.Buffers;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -26,6 +27,11 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private uint m_sectorSize = 0;
         private long m_size = 0;
         private bool m_shouldFlush = false;
+
+        // Reusable aligned native buffer for zero-copy I/O
+        private SafeHGlobalHandle? m_alignedBuffer;
+        private int m_alignedBufferSize = 0;
+        private readonly SemaphoreSlim m_ioLock = new(1, 1);
 
         /// <inheritdoc />
         public string DevicePath { get { return m_devicePath; } }
@@ -148,6 +154,12 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             m_deviceHandle?.Dispose();
             m_deviceHandle = null;
 
+            m_alignedBuffer?.Dispose();
+            m_alignedBuffer = null;
+            m_alignedBufferSize = 0;
+
+            m_ioLock.Dispose();
+
             m_disposed = true;
         }
 
@@ -173,11 +185,30 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         /// <inheritdoc />
         public async Task<Stream> ReadBytesAsync(long offset, int length, CancellationToken cancellationToken)
         {
+            // Rent a pooled buffer and read directly into it
+            var buffer = ArrayPool<byte>.Shared.Rent(length);
+            try
+            {
+                int bytesRead = await ReadBytesAsync(offset, buffer.AsMemory(0, length), cancellationToken);
+                return new PooledMemoryStream(buffer, bytesRead);
+            }
+            catch
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<int> ReadBytesAsync(long offset, Memory<byte> destination, CancellationToken cancellationToken)
+        {
             if (!m_initialized)
                 throw new InvalidOperationException("Disk not initialized.");
 
             if (m_deviceHandle == null || m_deviceHandle.IsInvalid)
                 throw new InvalidOperationException("Device handle is invalid.");
+
+            int length = destination.Length;
 
             if (offset % SectorSize != 0)
                 throw new InvalidOperationException($"Address {offset:X016} is not a multiple of the sector size {SectorSize}");
@@ -188,26 +219,47 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (offset + length > Size)
                 throw new InvalidOperationException($"The requested read would read beyond disk size: {offset} + {length} > {Size}");
 
-            // Move file pointer to the desired offset
-            var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
-            if (!seeked)
+            await m_ioLock.WaitAsync(cancellationToken);
+            try
             {
-                var error = Marshal.GetLastWin32Error();
-                var msg = new System.ComponentModel.Win32Exception(error).Message;
-                throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
+                // Ensure reusable buffer is large enough
+                EnsureAlignedBuffer(length);
+
+                // Move file pointer to the desired offset
+                var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
+                if (!seeked)
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    var msg = new System.ComponentModel.Win32Exception(error).Message;
+                    throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
+                }
+
+                bool result = ReadFile(m_deviceHandle, m_alignedBuffer!, (uint)length, out uint bytesRead, IntPtr.Zero);
+
+                if (!result || bytesRead != length)
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    var msg = new System.ComponentModel.Win32Exception(error).Message;
+                    throw new IOException($"Failed to read from disk. Win32 Error Code: {error}. Message: {msg}");
+                }
+
+                // Copy from native buffer to destination
+                unsafe
+                {
+                    var srcPtr = (byte*)m_alignedBuffer!.DangerousGetHandle().ToPointer();
+                    var destSpan = destination.Span;
+                    for (int i = 0; i < bytesRead; i++)
+                    {
+                        destSpan[i] = srcPtr[i];
+                    }
+                }
+
+                return (int)bytesRead;
             }
-
-            using var buffer = new SafeHGlobalHandle(length);
-            bool result = ReadFile(m_deviceHandle, buffer, (uint)length, out uint bytesRead, IntPtr.Zero);
-
-            if (!result || bytesRead != length)
+            finally
             {
-                var error = Marshal.GetLastWin32Error();
-                var msg = new System.ComponentModel.Win32Exception(error).Message;
-                throw new IOException($"Failed to read from disk. Win32 Error Code: {error}. Message: {msg}");
+                m_ioLock.Release();
             }
-
-            return new MemoryStream(buffer.AsBytes().ToArray(), 0, (int)bytesRead, false);
         }
 
         /// <inheritdoc />
@@ -225,6 +277,10 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
         /// <inheritdoc />
         public async Task<int> WriteBytesAsync(long offset, byte[] data, CancellationToken cancellationToken)
+            => await WriteBytesAsync(offset, data.AsMemory(), cancellationToken);
+
+        /// <inheritdoc />
+        public async Task<int> WriteBytesAsync(long offset, ReadOnlyMemory<byte> data, CancellationToken cancellationToken)
         {
             if (!m_initialized)
                 throw new InvalidOperationException("Disk not initialized.");
@@ -235,59 +291,95 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_deviceHandle == null || m_deviceHandle.IsInvalid)
                 throw new InvalidOperationException("Device handle is invalid.");
 
-            // Move file pointer to the desired offset
-            var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
-            if (!seeked)
-            {
-                var error = Marshal.GetLastWin32Error();
-                var msg = new System.ComponentModel.Win32Exception(error).Message;
-                throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
-            }
+            int dataLength = data.Length;
 
             // Pad to sector size if necessary
-            int remainder = data.Length % (int)m_sectorSize;
+            int remainder = dataLength % (int)m_sectorSize;
             int alignedLength = remainder == 0
-                ? data.Length
-                : data.Length + ((int)m_sectorSize - remainder);
-            using var buffer = new SafeHGlobalHandle(alignedLength);
-            if (remainder != 0)
+                ? dataLength
+                : dataLength + ((int)m_sectorSize - remainder);
+
+            await m_ioLock.WaitAsync(cancellationToken);
+            try
             {
-                // Read existing data to fill the remainder
-                bool readResult = ReadFile(m_deviceHandle, buffer, (uint)alignedLength, out uint bytesRead, IntPtr.Zero);
-                if (!readResult)
+                // Ensure reusable buffer is large enough
+                EnsureAlignedBuffer(alignedLength);
+
+                // Move file pointer to the desired offset
+                var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
+                if (!seeked)
                 {
                     var error = Marshal.GetLastWin32Error();
                     var msg = new System.ComponentModel.Win32Exception(error).Message;
-                    throw new IOException($"Failed to read existing data for padding. Win32 Error Code: {error}. Message: {msg}");
+                    throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
                 }
-                // Seek back to the original offset after reading
-                var seekedBack = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
-                if (!seekedBack)
+
+                if (remainder != 0)
                 {
+                    // Read existing data to fill the remainder
+                    bool readResult = ReadFile(m_deviceHandle, m_alignedBuffer!, (uint)alignedLength, out uint bytesRead, IntPtr.Zero);
+                    if (!readResult)
+                    {
+                        var error = Marshal.GetLastWin32Error();
+                        var msg = new System.ComponentModel.Win32Exception(error).Message;
+                        throw new IOException($"Failed to read existing data for padding. Win32 Error Code: {error}. Message: {msg}");
+                    }
+                    // Seek back to the original offset after reading
+                    var seekedBack = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
+                    if (!seekedBack)
+                    {
+                        var error = Marshal.GetLastWin32Error();
+                        var msg = new System.ComponentModel.Win32Exception(error).Message;
+                        throw new IOException($"Failed to seek back to offset after reading. Win32 Error Code: {error}. Message: {msg}");
+                    }
+                }
+
+                // Copy data from managed buffer to native buffer
+                unsafe
+                {
+                    var destPtr = (byte*)m_alignedBuffer!.DangerousGetHandle().ToPointer();
+                    var srcSpan = data.Span;
+                    for (int i = 0; i < dataLength; i++)
+                    {
+                        destPtr[i] = srcSpan[i];
+                    }
+                }
+
+                bool result = WriteFile(m_deviceHandle, m_alignedBuffer!, (uint)alignedLength, out uint bytesWritten, IntPtr.Zero);
+
+                if (!result)
+                {
+                    // Error code 5 is "Access Denied", which can occur if the disk is mounted or online. It should be unmounted and offline for writing.
+                    // Error code 19 is "the media is write protected", which can occur if the disk is write protected. To fix use diskpart:
+                    // select disk <disk number>
+                    // attributes disk clear readonly
                     var error = Marshal.GetLastWin32Error();
                     var msg = new System.ComponentModel.Win32Exception(error).Message;
-                    throw new IOException($"Failed to seek back to offset after reading. Win32 Error Code: {error}. Message: {msg}");
+                    throw new IOException($"Failed to write to disk. Win32 Error Code: {error}. Message: {msg}");
                 }
+
+                m_shouldFlush = true;
+
+                return (int)bytesWritten;
             }
-
-            Marshal.Copy(data, 0, buffer.DangerousGetHandle(), data.Length);
-
-            bool result = WriteFile(m_deviceHandle, buffer, (uint)alignedLength, out uint bytesWritten, IntPtr.Zero);
-
-            if (!result)
+            finally
             {
-                // Error code 5 is "Access Denied", which can occur if the disk is mounted or online. It should be unmounted and offline for writing.
-                // Error code 19 is "the media is write protected", which can occur if the disk is write protected. To fix use diskpart:
-                // select disk <disk number>
-                // attributes disk clear readonly
-                var error = Marshal.GetLastWin32Error();
-                var msg = new System.ComponentModel.Win32Exception(error).Message;
-                throw new IOException($"Failed to write to disk. Win32 Error Code: {error}. Message: {msg}");
+                m_ioLock.Release();
             }
+        }
 
-            m_shouldFlush = true;
+        /// <summary>
+        /// Ensures the reusable aligned buffer is at least the specified size.
+        /// Reallocates if necessary. Must be called while holding m_ioLock.
+        /// </summary>
+        private void EnsureAlignedBuffer(int requiredSize)
+        {
+            if (m_alignedBufferSize >= requiredSize)
+                return;
 
-            return (int)bytesWritten;
+            m_alignedBuffer?.Dispose();
+            m_alignedBuffer = new SafeHGlobalHandle(requiredSize);
+            m_alignedBufferSize = requiredSize;
         }
     }
 }
