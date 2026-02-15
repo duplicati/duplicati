@@ -22,12 +22,13 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition)
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        // Then yield the filesystem entry
-        if (partition.FilesystemType == FileSystemType.Unknown)
+        var fs = partition.FilesystemType switch
         {
-            var fs = new UnknownFilesystem(partition);
-            yield return new FilesystemSourceEntry(this.Path, fs);
-        }
+
+            FileSystemType.Unknown => new UnknownFilesystem(partition),
+            _ => new UnknownFilesystem(partition)
+        };
+        yield return new FilesystemSourceEntry(this.Path, fs);
     }
 
     public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
