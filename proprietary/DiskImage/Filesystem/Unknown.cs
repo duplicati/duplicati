@@ -1,5 +1,6 @@
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -295,8 +296,14 @@ public class UnknownFilesystem : IFilesystem
 
         /// <summary>
         /// The buffer used to store data before writing to disk.
+        /// Rented from ArrayPool to avoid LOH allocations for large buffers.
         /// </summary>
         private readonly byte[] _buffer;
+
+        /// <summary>
+        /// Indicates whether the buffer was rented from the ArrayPool and needs to be returned.
+        /// </summary>
+        private readonly bool _bufferRented;
 
         /// <summary>
         /// The current position within the buffer.
@@ -343,7 +350,9 @@ public class UnknownFilesystem : IFilesystem
             _size = size;
             _readEnabled = readEnabled;
             _writeEnabled = writeEnabled;
-            _buffer = new byte[size];
+            // Rent buffer from ArrayPool to avoid LOH allocations for large buffers (typically 1 MB)
+            _buffer = ArrayPool<byte>.Shared.Rent((int)size);
+            _bufferRented = true;
             _position = 0;
             _validData = false;
             _disposed = false;
@@ -409,7 +418,8 @@ public class UnknownFilesystem : IFilesystem
             if (!_validData)
             {
                 // Load the data from disk into the buffer on the first read
-                _disk.ReadBytesAsync(_address, _buffer.AsMemory(), CancellationToken.None).GetAwaiter().GetResult();
+                // Use _size to limit the read to the actual data size, not the potentially larger rented buffer
+                _disk.ReadBytesAsync(_address, _buffer.AsMemory(0, (int)_size), CancellationToken.None).GetAwaiter().GetResult();
                 _validData = true;
             }
 
@@ -462,7 +472,8 @@ public class UnknownFilesystem : IFilesystem
             if (!_validData)
             {
                 // Load the data from disk into the buffer on the first read
-                await _disk.ReadBytesAsync(_address, _buffer.AsMemory(), cancellationToken);
+                // Use _size to limit the read to the actual data size, not the potentially larger rented buffer
+                await _disk.ReadBytesAsync(_address, _buffer.AsMemory(0, (int)_size), cancellationToken);
                 _validData = true;
             }
 
@@ -504,10 +515,18 @@ public class UnknownFilesystem : IFilesystem
         {
             if (!_disposed)
             {
-                if (disposing && _writeEnabled && _dirty)
+                if (disposing)
                 {
-                    // Write all buffered data to disk
-                    _disk.WriteBytesAsync(_address, _buffer.AsMemory(0, (int)_size), CancellationToken.None).GetAwaiter().GetResult();
+                    if (_writeEnabled && _dirty)
+                    {
+                        // Write all buffered data to disk
+                        _disk.WriteBytesAsync(_address, _buffer.AsMemory(0, (int)_size), CancellationToken.None).GetAwaiter().GetResult();
+                    }
+                    // Return the rented buffer to the pool
+                    if (_bufferRented)
+                    {
+                        ArrayPool<byte>.Shared.Return(_buffer);
+                    }
                 }
                 _disposed = true;
             }
@@ -525,6 +544,11 @@ public class UnknownFilesystem : IFilesystem
                 {
                     // Write all buffered data to disk
                     await _disk.WriteBytesAsync(_address, _buffer.AsMemory(0, (int)_size), CancellationToken.None);
+                }
+                // Return the rented buffer to the pool
+                if (_bufferRented)
+                {
+                    ArrayPool<byte>.Shared.Return(_buffer);
                 }
                 _disposed = true;
             }

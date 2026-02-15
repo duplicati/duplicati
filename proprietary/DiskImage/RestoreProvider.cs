@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -1395,6 +1396,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         private readonly long _startOffset;
         private readonly long _maxSize;
         private readonly byte[] _buffer;
+        private readonly bool _bufferRented;
         private long _position;
         private long _length;
         private bool _disposed = false;
@@ -1404,7 +1406,9 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             _disk = disk;
             _startOffset = startOffset;
             _maxSize = maxSize;
-            _buffer = new byte[maxSize];
+            // Rent buffer from ArrayPool to avoid LOH allocations for large buffers
+            _buffer = ArrayPool<byte>.Shared.Rent((int)maxSize);
+            _bufferRented = true;
             _position = 0;
             _length = 0;
         }
@@ -1468,6 +1472,11 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                     if (_length > 0)
                     {
                         _disk.WriteBytesAsync(_startOffset, _buffer.AsMemory(0, (int)_length), CancellationToken.None).GetAwaiter().GetResult();
+                    }
+                    // Return the rented buffer to the pool
+                    if (_bufferRented)
+                    {
+                        ArrayPool<byte>.Shared.Return(_buffer);
                     }
                 }
                 _disposed = true;

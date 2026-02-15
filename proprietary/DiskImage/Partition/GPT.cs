@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -149,25 +150,37 @@ public class GPT : IPartitionTable
 
         m_bytesPerSector = m_rawDisk.SectorSize;
 
-        // Read the GPT header (LBA 1) - read a full sector, then extract header
-        using var bytestream = await m_rawDisk.ReadBytesAsync(m_bytesPerSector, (int)m_bytesPerSector, token)
-            .ConfigureAwait(false);
-
-        // Rent a pooled buffer for the header to avoid LOH allocation
-        m_headerBytes = new byte[HeaderSize];
-        await bytestream.ReadAtLeastAsync(m_headerBytes, HeaderSize, cancellationToken: token)
-            .ConfigureAwait(false);
-        var result = await ParseHeaderAsync(m_headerBytes.AsSpan(), token)
-            .ConfigureAwait(false);
-
-        if (result)
+        // Read the GPT header (LBA 1) directly into a pooled buffer
+        // Rent a sector-sized buffer, read into it, then copy just the header portion
+        var sectorBuffer = ArrayPool<byte>.Shared.Rent((int)m_bytesPerSector);
+        try
         {
-            // Verify backup header
-            if (!await VerifyBackupHeaderAsync(token).ConfigureAwait(false))
-                return false;
-        }
+            int bytesRead = await m_rawDisk.ReadBytesAsync(m_bytesPerSector, sectorBuffer.AsMemory(0, (int)m_bytesPerSector), token)
+                .ConfigureAwait(false);
 
-        return result;
+            if (bytesRead < HeaderSize)
+                return false;
+
+            // Copy header data to the long-lived header buffer
+            m_headerBytes = new byte[HeaderSize];
+            sectorBuffer.AsSpan(0, HeaderSize).CopyTo(m_headerBytes);
+
+            var result = await ParseHeaderAsync(m_headerBytes.AsSpan(), token)
+                .ConfigureAwait(false);
+
+            if (result)
+            {
+                // Verify backup header
+                if (!await VerifyBackupHeaderAsync(token).ConfigureAwait(false))
+                    return false;
+            }
+
+            return result;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(sectorBuffer);
+        }
     }
 
     /// <summary>
@@ -264,15 +277,23 @@ public class GPT : IPartitionTable
 
         // Read all partition entries in one go
         long totalSize = m_partitionEntrySize * m_numPartitionEntries;
-        var buffer = new byte[totalSize];
 
-        using var stream = await m_rawDisk.ReadBytesAsync(partitionEntriesOffset, (int)totalSize, token)
-            .ConfigureAwait(false);
-        await stream.ReadAtLeastAsync(buffer, (int)totalSize, cancellationToken: token)
-            .ConfigureAwait(false);
+        // Rent buffer from ArrayPool to avoid allocation for partition entries
+        var buffer = ArrayPool<byte>.Shared.Rent((int)totalSize);
+        try
+        {
+            using var stream = await m_rawDisk.ReadBytesAsync(partitionEntriesOffset, (int)totalSize, token)
+                .ConfigureAwait(false);
+            await stream.ReadAtLeastAsync(buffer, (int)totalSize, cancellationToken: token)
+                .ConfigureAwait(false);
 
-        return await ParsePartitionEntriesAsync(buffer, token)
-            .ConfigureAwait(false);
+            return await ParsePartitionEntriesAsync(buffer.AsSpan(0, (int)totalSize), token)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
     }
 
     /// <summary>
