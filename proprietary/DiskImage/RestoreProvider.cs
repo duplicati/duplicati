@@ -667,6 +667,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             {
                 PartitionTableType.GPT => new ReconstructedGPT(_targetDisk, _geometryMetadata),
                 PartitionTableType.MBR => new ReconstructedMBR(_targetDisk, _geometryMetadata),
+                PartitionTableType.Unknown => new UnknownPartitionTable(_targetDisk),
                 _ => null
             };
         }
