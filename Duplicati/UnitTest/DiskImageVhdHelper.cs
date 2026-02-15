@@ -594,6 +594,8 @@ namespace Duplicati.UnitTest
             {
                 var script = $@"
                     Set-Disk -Number {diskNumber} -IsOffline $false
+                    Update-Disk -Number {diskNumber}
+                    Update-HostStorageCache
                 ";
                 RunPowerShell(script);
             }
@@ -610,6 +612,8 @@ namespace Duplicati.UnitTest
                 {
                     var script = $@"
                         Set-Disk -Number {diskNumber} -IsOffline $false
+                        Update-Disk -Number {diskNumber}
+                        Update-HostStorageCache
                         Get-Partition -DiskNumber {diskNumber} | Set-Partition -NewDriveLetter {driveLetter}
                     ";
                     RunPowerShell(script);
