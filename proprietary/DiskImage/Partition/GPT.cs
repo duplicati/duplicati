@@ -96,9 +96,8 @@ public class GPT : IPartitionTable
         if (!await ParseProtectiveMbrAsync(bytes, sectorSize, token).ConfigureAwait(false))
             return false;
 
-        // Now parse the GPT header (LBA 1)
-        m_headerBytes = bytes[sectorSize..(sectorSize + HeaderSize)];
-        var parsedHeader = await ParseHeaderAsync(m_headerBytes, token).ConfigureAwait(false);
+        // Now parse the GPT header (LBA 1) - use span slicing to avoid allocation
+        var parsedHeader = await ParseHeaderAsync(bytes.AsSpan(sectorSize, HeaderSize), token).ConfigureAwait(false);
 
         if (!parsedHeader)
             return false;
@@ -148,15 +147,17 @@ public class GPT : IPartitionTable
         if (m_rawDisk == null)
             throw new InvalidOperationException("No raw disk available for reading GPT header.");
 
-        m_headerBytes = new byte[HeaderSize];
         m_bytesPerSector = m_rawDisk.SectorSize;
 
-        // Read the GPT header (LBA 1)
+        // Read the GPT header (LBA 1) - read a full sector, then extract header
         using var bytestream = await m_rawDisk.ReadBytesAsync(m_bytesPerSector, (int)m_bytesPerSector, token)
             .ConfigureAwait(false);
+
+        // Rent a pooled buffer for the header to avoid LOH allocation
+        m_headerBytes = new byte[HeaderSize];
         await bytestream.ReadAtLeastAsync(m_headerBytes, HeaderSize, cancellationToken: token)
             .ConfigureAwait(false);
-        var result = await ParseHeaderAsync(m_headerBytes, token)
+        var result = await ParseHeaderAsync(m_headerBytes.AsSpan(), token)
             .ConfigureAwait(false);
 
         if (result)
@@ -176,62 +177,69 @@ public class GPT : IPartitionTable
     /// <param name="token">Cancellation token.</param>
     /// <returns>True if parsing was successful.</returns>
     public async Task<bool> ParseHeaderAsync(byte[] bytes, CancellationToken token)
+        => await ParseHeaderAsync(bytes.AsSpan(), token).ConfigureAwait(false);
+
+    /// <summary>
+    /// Parses the GPT header from a span of bytes.
+    /// </summary>
+    /// <param name="bytes">The header bytes.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
+    public Task<bool> ParseHeaderAsync(ReadOnlySpan<byte> bytes, CancellationToken token)
     {
         if (bytes.Length < HeaderSize)
             throw new ArgumentException($"Byte array must be at least {HeaderSize} bytes long.", nameof(bytes));
 
         // Read signature (8 bytes, little-endian)
-        m_signature = BitConverter.ToInt64(bytes, 0);
+        m_signature = BitConverter.ToInt64(bytes.Slice(0, 8));
 
         // Verify signature
         if (m_signature != GptSignature)
-            return false;
+            return Task.FromResult(false);
 
         // Read revision (4 bytes)
-        m_revision = BitConverter.ToUInt32(bytes, 8);
+        m_revision = BitConverter.ToUInt32(bytes.Slice(8, 4));
 
         // Read header size (4 bytes)
-        m_headerSize = BitConverter.ToUInt32(bytes, 12);
+        m_headerSize = BitConverter.ToUInt32(bytes.Slice(12, 4));
 
         // Read header CRC32 (4 bytes)
-        m_headerCrc32 = BitConverter.ToUInt32(bytes, 16);
+        m_headerCrc32 = BitConverter.ToUInt32(bytes.Slice(16, 4));
 
         // Reserved - must be zero (4 bytes at offset 20)
-        var reserved = BitConverter.ToUInt32(bytes, 20);
+        var reserved = BitConverter.ToUInt32(bytes.Slice(20, 4));
         if (reserved != 0)
-            return false;
+            return Task.FromResult(false);
 
         // Current LBA (8 bytes at offset 24)
-        m_currentLba = BitConverter.ToInt64(bytes, 24);
+        m_currentLba = BitConverter.ToInt64(bytes.Slice(24, 8));
 
         // Backup LBA (8 bytes at offset 32)
-        m_backupLba = BitConverter.ToInt64(bytes, 32);
+        m_backupLba = BitConverter.ToInt64(bytes.Slice(32, 8));
 
         // First usable LBA (8 bytes at offset 40)
-        m_firstUsableLba = BitConverter.ToInt64(bytes, 40);
+        m_firstUsableLba = BitConverter.ToInt64(bytes.Slice(40, 8));
 
         // Last usable LBA (8 bytes at offset 48)
-        m_lastUsableLba = BitConverter.ToInt64(bytes, 48);
+        m_lastUsableLba = BitConverter.ToInt64(bytes.Slice(48, 8));
 
         // Disk GUID (16 bytes at offset 56)
-        var diskGuidBytes = new byte[16];
-        Array.Copy(bytes, 56, diskGuidBytes, 0, 16);
-        m_diskGuid = new Guid(diskGuidBytes);
+        m_diskGuid = new Guid(bytes.Slice(56, 16));
 
         // Partition entry LBA (8 bytes at offset 72)
-        m_partitionEntryLba = BitConverter.ToInt64(bytes, 72);
+        m_partitionEntryLba = BitConverter.ToInt64(bytes.Slice(72, 8));
 
         // Number of partition entries (4 bytes at offset 80)
-        m_numPartitionEntries = BitConverter.ToUInt32(bytes, 80);
+        m_numPartitionEntries = BitConverter.ToUInt32(bytes.Slice(80, 4));
 
         // Size of partition entry (4 bytes at offset 84)
-        m_partitionEntrySize = BitConverter.ToUInt32(bytes, 84);
+        m_partitionEntrySize = BitConverter.ToUInt32(bytes.Slice(84, 4));
 
         // Partition entry CRC32 (4 bytes at offset 88)
-        m_partitionEntryCrc32 = BitConverter.ToUInt32(bytes, 88);
+        m_partitionEntryCrc32 = BitConverter.ToUInt32(bytes.Slice(88, 4));
 
         m_parsed = true;
-        return true;
+        return Task.FromResult(true);
     }
 
     /// <summary>
@@ -273,10 +281,19 @@ public class GPT : IPartitionTable
     /// <param name="buffer">The byte array containing the partition entries.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>True if parsing was successful.</returns>
-    private async Task<bool> ParsePartitionEntriesAsync(byte[] buffer, CancellationToken token)
+    private Task<bool> ParsePartitionEntriesAsync(byte[] buffer, CancellationToken token)
+        => ParsePartitionEntriesAsync(buffer.AsSpan(), token);
+
+    /// <summary>
+    /// Parses the partition entries from a span of bytes.
+    /// </summary>
+    /// <param name="buffer">The span containing the partition entries.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
+    private Task<bool> ParsePartitionEntriesAsync(ReadOnlySpan<byte> buffer, CancellationToken token)
     {
         if (m_partitions != null)
-            return false;
+            return Task.FromResult(false);
 
         m_partitions = [];
 
@@ -301,13 +318,13 @@ public class GPT : IPartitionTable
             if (isEmpty)
                 continue;
 
-            // Parse partition entry
-            var partition = ParsePartitionEntry(buffer, offset, i + 1);
+            // Parse partition entry - use span slicing to avoid allocation
+            var partition = ParsePartitionEntry(buffer.Slice(offset, (int)m_partitionEntrySize), i + 1);
             if (partition != null)
                 m_partitions.Add(partition!);
         }
 
-        return true;
+        return Task.FromResult(true);
     }
 
     /// <summary>
@@ -318,30 +335,33 @@ public class GPT : IPartitionTable
     /// <param name="partitionNumber">The partition number.</param>
     /// <returns>The parsed partition entry, or null if the entry is empty.</returns>
     private GPTPartition? ParsePartitionEntry(byte[] buffer, int offset, int partitionNumber)
+        => ParsePartitionEntry(buffer.AsSpan(offset), partitionNumber);
+
+    /// <summary>
+    /// Parses a single partition entry from a span of bytes.
+    /// </summary>
+    /// <param name="entrySpan">The span containing the partition entry.</param>
+    /// <param name="partitionNumber">The partition number.</param>
+    /// <returns>The parsed partition entry, or null if the entry is empty.</returns>
+    private GPTPartition? ParsePartitionEntry(ReadOnlySpan<byte> entrySpan, int partitionNumber)
     {
         // Partition type GUID (16 bytes at offset 0)
-        var typeGuidBytes = new byte[16];
-        Array.Copy(buffer, offset, typeGuidBytes, 0, 16);
-        var typeGuid = new Guid(typeGuidBytes);
+        var typeGuid = new Guid(entrySpan.Slice(0, 16));
 
         // Unique partition GUID (16 bytes at offset 16)
-        var uniqueGuidBytes = new byte[16];
-        Array.Copy(buffer, offset + 16, uniqueGuidBytes, 0, 16);
-        var uniqueGuid = new Guid(uniqueGuidBytes);
+        var uniqueGuid = new Guid(entrySpan.Slice(16, 16));
 
         // Starting LBA (8 bytes at offset 32)
-        long startingLba = BitConverter.ToInt64(buffer, offset + 32);
+        long startingLba = BitConverter.ToInt64(entrySpan.Slice(32, 8));
 
         // Ending LBA (8 bytes at offset 40)
-        long endingLba = BitConverter.ToInt64(buffer, offset + 40);
+        long endingLba = BitConverter.ToInt64(entrySpan.Slice(40, 8));
 
         // Attributes (8 bytes at offset 48)
-        long attributes = BitConverter.ToInt64(buffer, offset + 48);
+        long attributes = BitConverter.ToInt64(entrySpan.Slice(48, 8));
 
         // Partition name (36 UTF-16LE characters = 72 bytes at offset 56)
-        var nameBytes = new byte[72];
-        Array.Copy(buffer, offset + 56, nameBytes, 0, 72);
-        string name = System.Text.Encoding.Unicode.GetString(nameBytes).TrimEnd('\0');
+        string name = System.Text.Encoding.Unicode.GetString(entrySpan.Slice(56, 72)).TrimEnd('\0');
 
         // Calculate byte offsets and size
         long startOffset = startingLba * m_bytesPerSector;
