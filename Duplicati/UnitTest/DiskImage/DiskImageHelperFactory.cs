@@ -27,7 +27,7 @@ using System.Runtime.InteropServices;
 namespace Duplicati.UnitTest.DiskImage
 {
     /// <summary>
-    /// Factory class for creating the appropriate IDiskImageHelper implementation
+    /// Factory class for creating the appropriate <see cref="IDiskImageHelper"/> implementation
     /// based on the host operating system.
     /// </summary>
     public static class DiskImageHelperFactory
@@ -35,7 +35,7 @@ namespace Duplicati.UnitTest.DiskImage
         /// <summary>
         /// Creates and returns the appropriate disk image helper for the current operating system.
         /// </summary>
-        /// <returns>An IDiskImageHelper implementation for the current OS.</returns>
+        /// <returns>An <see cref="IDiskImageHelper"/> implementation for the current OS.</returns>
         /// <exception cref="PlatformNotSupportedException">Thrown when the current OS is not supported.</exception>
         public static IDiskImageHelper Create()
         {
@@ -60,6 +60,7 @@ namespace Duplicati.UnitTest.DiskImage
         /// <summary>
         /// Gets a value indicating whether disk image operations are supported on the current platform.
         /// </summary>
+        /// <value><c>true</c> if disk image operations are supported; otherwise, <c>false</c>.</value>
         public static bool IsSupported
         {
             get
@@ -73,6 +74,7 @@ namespace Duplicati.UnitTest.DiskImage
         /// <summary>
         /// Gets the name of the current platform.
         /// </summary>
+        /// <value>The platform name ("Windows", "Linux", "macOS", or "Unknown").</value>
         public static string CurrentPlatformName
         {
             get

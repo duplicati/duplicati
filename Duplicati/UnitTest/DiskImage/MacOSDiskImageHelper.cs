@@ -27,90 +27,106 @@ using System.IO;
 namespace Duplicati.UnitTest.DiskImage
 {
     /// <summary>
-    /// macOS implementation of IDiskImageHelper using hdiutil and standard macOS tools.
-    /// This is a stub implementation that throws NotImplementedException for all operations.
+    /// macOS implementation of <see cref="IDiskImageHelper"/> using hdiutil and standard macOS tools.
+    /// This is a stub implementation that throws <see cref="NotImplementedException"/> for all operations.
     /// </summary>
     internal class MacOSDiskImageHelper : IDiskImageHelper
     {
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public string CreateAndAttachDisk(string imagePath, long sizeMB)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public int GetDiskNumber(string imagePath)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public void InitializeDisk(int diskNumber, string tableType)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public char CreateAndFormatPartition(int diskNumber, string fsType, long sizeMB = 0)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public void FlushVolume(char driveLetter)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public void PopulateTestData(char driveLetter, int fileCount = 10, int fileSizeKB = 10)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public void DetachDisk(string imagePath)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public void UnmountForWriting(string imagePath, char? driveLetter = null)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public void BringOnline(string imagePath)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public char MountForReading(string imagePath, char? driveLetter = null)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public void CleanupDisk(string imagePath)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public string GetDiskDetails(int diskNumber)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
         public string GetVolumeInfo(char driveLetter)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        /// On macOS, checks if running as root.
+        /// </remarks>
         public bool HasRequiredPrivileges()
         {
             // On macOS, check if running as root (UID 0)

@@ -36,16 +36,28 @@ public class MBR : IPartitionTable
     // Partition storage
     private List<IPartition>? m_partitions;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MBR"/> class.
+    /// </summary>
+    /// <param name="disk">The raw disk to parse, or null for byte array parsing.</param>
     public MBR(IRawDisk? disk)
     {
         m_rawDisk = disk;
     }
 
     // IPartitionTable implementation
+    /// <inheritdoc />
     public IRawDisk? RawDisk { get => m_rawDisk; }
 
+    /// <inheritdoc />
     public PartitionTableType TableType => PartitionTableType.MBR;
 
+    /// <summary>
+    /// Parses the MBR partition table from the raw disk.
+    /// </summary>
+    /// <param name="disk">The raw disk to parse.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
     public async Task<bool> ParseAsync(IRawDisk disk, CancellationToken token)
     {
         m_bytesPerSector = disk.SectorSize;
@@ -60,6 +72,13 @@ public class MBR : IPartitionTable
         return result;
     }
 
+    /// <summary>
+    /// Parses the MBR partition table from a byte array.
+    /// </summary>
+    /// <param name="bytes">The raw disk bytes.</param>
+    /// <param name="sectorSize">The sector size in bytes.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
     public async Task<bool> ParseAsync(byte[] bytes, int sectorSize, CancellationToken token)
     {
         m_bytesPerSector = sectorSize;
@@ -69,6 +88,14 @@ public class MBR : IPartitionTable
         return await ParseMBRBytesAsync(m_mbrBytes, token).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Parses the MBR partition table from the given byte array containing the MBR sector.
+    /// Assumes the byte array is at least 512 bytes and contains the MBR data.
+    /// </summary>
+    /// <param name="bytes">The byte array containing the MBR sector.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
+    /// <exception cref="ArgumentException">Thrown if the byte array is smaller than the MBR size.</exception>
     private async Task<bool> ParseMBRBytesAsync(byte[] bytes, CancellationToken token)
     {
         if (bytes.Length < MbrSize)
@@ -120,6 +147,13 @@ public class MBR : IPartitionTable
         return true;
     }
 
+    /// <summary>
+    /// Parses a single partition entry from the MBR.
+    /// </summary>
+    /// <param name="bytes">The byte array containing the MBR sector.</param>
+    /// <param name="offset">The offset within the byte array where the partition entry starts.</param>
+    /// <param name="entryNumber">The partition entry number (1-based).</param>
+    /// <returns>The parsed MBR partition entry, or null if the entry is empty or invalid.</returns>
     private MBRPartitionEntry? ParsePartitionEntry(byte[] bytes, int offset, int entryNumber)
     {
         // Read partition type byte
@@ -162,6 +196,11 @@ public class MBR : IPartitionTable
         };
     }
 
+    /// <summary>
+    /// Determines the partition type based on the partition type byte.
+    /// </summary>
+    /// <param name="typeByte">The partition type byte from the MBR.</param>
+    /// <returns>The determined partition type.</returns>
     private static PartitionType DeterminePartitionType(byte typeByte)
     {
         // MBR partition type byte mappings
@@ -192,6 +231,11 @@ public class MBR : IPartitionTable
         };
     }
 
+    /// <summary>
+    /// Determines the filesystem type based on the partition type byte.
+    /// </summary>
+    /// <param name="entry">The MBR partition entry.</param>
+    /// <returns>The determined filesystem type.</returns>
     private static FileSystemType DetermineFilesystemType(MBRPartitionEntry entry)
     {
         // Determine filesystem type based on partition type byte
@@ -207,10 +251,19 @@ public class MBR : IPartitionTable
     }
 
     // MBR-specific properties
+    /// <summary>
+    /// Gets the MBR boot signature (0xAA55).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if MBR has not been parsed.</exception>
     public ushort MbrBootSignatureValue => m_parsed ? m_mbrBootSignature : throw new InvalidOperationException("MBR not parsed.");
+
+    /// <summary>
+    /// Gets the number of partition entries.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if MBR has not been parsed.</exception>
     public int NumPartitionEntries => m_parsed ? (m_partitionEntries?.Count ?? 0) : throw new InvalidOperationException("MBR not parsed.");
 
-    // IPartitionTable methods
+    /// <inheritdoc />
     public async IAsyncEnumerable<IPartition> EnumeratePartitions([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (!m_parsed)
@@ -226,6 +279,7 @@ public class MBR : IPartitionTable
         }
     }
 
+    /// <inheritdoc />
     public async Task<IPartition?> GetPartitionAsync(int partitionNumber, CancellationToken cancellationToken)
     {
         if (!m_parsed)
@@ -240,12 +294,14 @@ public class MBR : IPartitionTable
         return null;
     }
 
+    /// <inheritdoc />
     public Task<Stream> GetProtectiveMbrAsync(CancellationToken cancellationToken)
     {
         // MBR doesn't have a protective MBR - it IS the MBR
         throw new NotSupportedException("MBR partition tables do not have a protective MBR. Use GetPartitionAsync instead.");
     }
 
+    /// <inheritdoc />
     public Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken)
     {
         if (!m_parsed || m_mbrBytes == null)
@@ -255,12 +311,17 @@ public class MBR : IPartitionTable
         return Task.FromResult<Stream>(new MemoryStream(m_mbrBytes, writable: false));
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Disposes the MBR instance, releasing any resources. After disposal, the instance should not be used.
+    /// </summary>
+    /// <param name="disposing">Indicates whether the method is called from Dispose (true) or from a finalizer (false).</param>
     protected virtual void Dispose(bool disposing)
     {
         if (!m_disposed)
@@ -284,16 +345,37 @@ public class MBR : IPartitionTable
     /// </summary>
     private class MBRPartitionEntry
     {
+        /// <summary>Gets the entry number (1-4).</summary>
         public int EntryNumber { get; init; }
+
+        /// <summary>Gets the partition type.</summary>
         public PartitionType PartitionType { get; init; }
+
+        /// <summary>Gets the raw partition type byte.</summary>
         public byte PartitionTypeByte { get; init; }
+
+        /// <summary>Gets the starting LBA.</summary>
         public uint StartLBA { get; init; }
+
+        /// <summary>Gets the size in sectors.</summary>
         public uint SizeInSectors { get; init; }
+
+        /// <summary>Gets the starting head (CHS).</summary>
         public byte StartHead { get; init; }
+
+        /// <summary>Gets the starting sector (CHS).</summary>
         public byte StartSector { get; init; }
+
+        /// <summary>Gets the starting cylinder (CHS).</summary>
         public ushort StartCylinder { get; init; }
+
+        /// <summary>Gets the ending head (CHS).</summary>
         public byte EndHead { get; init; }
+
+        /// <summary>Gets the ending sector (CHS).</summary>
         public byte EndSector { get; init; }
+
+        /// <summary>Gets the ending cylinder (CHS).</summary>
         public ushort EndCylinder { get; init; }
     }
 
@@ -302,19 +384,43 @@ public class MBR : IPartitionTable
     /// </summary>
     private class MBRPartition : IPartition
     {
+        /// <inheritdoc />
         public int PartitionNumber { get; init; }
+
+        /// <inheritdoc />
         public PartitionType Type { get; init; }
+
+        /// <inheritdoc />
         public required IPartitionTable PartitionTable { get; init; }
+
+        /// <inheritdoc />
         public long StartOffset { get; init; }
+
+        /// <inheritdoc />
         public long Size { get; init; }
+
+        /// <inheritdoc />
         public string? Name { get; init; }
+
+        /// <inheritdoc />
         public FileSystemType FilesystemType { get; init; }
+
+        /// <inheritdoc />
         public Guid? VolumeGuid { get; init; }
+
+        /// <summary>Gets the raw disk reference.</summary>
         public required IRawDisk? RawDisk { get; init; }
+
+        /// <summary>Gets the starting LBA.</summary>
         public long StartingLba { get; init; }
+
+        /// <summary>Gets the ending LBA.</summary>
         public long EndingLba { get; init; }
+
+        /// <summary>Gets the partition attributes.</summary>
         public long Attributes { get; init; }
 
+        /// <inheritdoc />
         public Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
         {
             if (RawDisk == null)
@@ -322,6 +428,7 @@ public class MBR : IPartitionTable
             return RawDisk.ReadBytesAsync(StartOffset, (int)Math.Min(Size, int.MaxValue), cancellationToken);
         }
 
+        /// <inheritdoc />
         public Task<Stream> OpenWriteAsync(CancellationToken cancellationToken)
         {
             if (RawDisk == null)
@@ -330,6 +437,7 @@ public class MBR : IPartitionTable
             return Task.FromResult<Stream>(new PartitionWriteStream(RawDisk, StartOffset, Size));
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             // No unmanaged resources to dispose

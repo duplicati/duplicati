@@ -12,13 +12,22 @@ using Duplicati.Proprietary.DiskImage.Filesystem;
 
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 
+/// <summary>
+/// Represents a filesystem as a source entry for backup operations.
+/// Acts as a container for files within a partition.
+/// </summary>
 internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
     : DiskImageEntryBase(System.IO.Path.Combine(parentPath, $"fs_{filesystem.Type}{System.IO.Path.DirectorySeparatorChar}"))
 {
+    /// <inheritdoc />
     public override bool IsFolder => true;
 
+    /// <summary>
+    /// Gets the underlying filesystem instance.
+    /// </summary>
     public IFilesystem Filesystem => filesystem;
 
+    /// <inheritdoc />
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         // Yield the files in the filesystem
@@ -31,6 +40,8 @@ internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
     /// <summary>
     /// Gets the filesystem geometry metadata for this filesystem.
     /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The filesystem geometry metadata, or null if not available.</returns>
     public async Task<FilesystemGeometry?> GetFilesystemGeometry(CancellationToken cancellationToken)
     {
         var fsMetadata = await filesystem.GetFilesystemMetadataAsync(cancellationToken);
@@ -51,6 +62,7 @@ internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
         };
     }
 
+    /// <inheritdoc />
     public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
     {
         var metadata = await base.GetMinorMetadata(cancellationToken);

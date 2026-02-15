@@ -11,17 +11,25 @@ using Duplicati.Proprietary.DiskImage.Filesystem;
 
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 
+/// <summary>
+/// Represents a file within a filesystem as a source entry for backup operations.
+/// </summary>
 internal class FileSourceEntry(string parentPath, IFilesystem filesystem, IFile file)
     : DiskImageEntryBase(System.IO.Path.Combine(parentPath, file.Path ?? file.Address?.ToString("X016") ?? "unknown"))
 {
+    /// <inheritdoc />
     public override bool IsFolder => file.IsDirectory;
+
+    /// <inheritdoc />
     public override long Size => file.Size;
 
+    /// <inheritdoc />
     public override Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
         return filesystem.OpenReadStreamAsync(file, cancellationToken);
     }
 
+    /// <inheritdoc />
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (IsFolder)
@@ -33,6 +41,7 @@ internal class FileSourceEntry(string parentPath, IFilesystem filesystem, IFile 
         }
     }
 
+    /// <inheritdoc />
     public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
     {
         var metadata = await base.GetMinorMetadata(cancellationToken);

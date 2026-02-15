@@ -48,11 +48,13 @@ namespace Duplicati.UnitTest.DiskImage
         /// <summary>
         /// Gets a value indicating whether the PowerShell session is running.
         /// </summary>
+        /// <value><c>true</c> if the session is running; otherwise, <c>false</c>.</value>
         public bool IsRunning => _process != null && !_process.HasExited;
 
         /// <summary>
         /// Ensures the PowerShell session is started.
         /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown if the session has been disposed.</exception>
         public void EnsureStarted()
         {
             lock (_lock)
@@ -71,6 +73,10 @@ namespace Duplicati.UnitTest.DiskImage
             }
         }
 
+        /// <summary>
+        /// Starts the PowerShell process with elevated privileges.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown if the PowerShell process cannot be started.</exception>
         private void StartProcess()
         {
             var startInfo = new ProcessStartInfo
@@ -104,6 +110,11 @@ namespace Duplicati.UnitTest.DiskImage
             _process.BeginErrorReadLine();
         }
 
+        /// <summary>
+        /// Handles the output data received from the PowerShell process.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data.</param>
         private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e.Data != null)
@@ -119,6 +130,11 @@ namespace Duplicati.UnitTest.DiskImage
             }
         }
 
+        /// <summary>
+        /// Handles the error data received from the PowerShell process.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data.</param>
         private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e.Data != null)
@@ -135,6 +151,8 @@ namespace Duplicati.UnitTest.DiskImage
         /// </summary>
         /// <param name="script">The PowerShell script to execute.</param>
         /// <returns>The output from PowerShell.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the PowerShell process is not running.</exception>
+        /// <exception cref="TimeoutException">Thrown if the command times out.</exception>
         public string ExecuteScript(string script)
         {
             lock (_lock)
@@ -251,7 +269,7 @@ namespace Duplicati.UnitTest.DiskImage
     }
 
     /// <summary>
-    /// Windows implementation of IDiskImageHelper using PowerShell and VHD files.
+    /// Windows implementation of <see cref="IDiskImageHelper"/> using PowerShell and VHD files.
     /// </summary>
     internal class WindowsDiskImageHelper : IDiskImageHelper
     {
@@ -262,6 +280,7 @@ namespace Duplicati.UnitTest.DiskImage
         /// <summary>
         /// Gets the shared PowerShell session, creating it if necessary.
         /// </summary>
+        /// <returns>The shared <see cref="PowerShellSession"/> instance.</returns>
         private static PowerShellSession GetSession()
         {
             lock (_sessionLock)
@@ -372,6 +391,7 @@ namespace Duplicati.UnitTest.DiskImage
         /// </summary>
         /// <param name="diskNumber">The disk number.</param>
         /// <param name="timeout">Maximum time to wait.</param>
+        /// <exception cref="TimeoutException">Thrown if initialization times out.</exception>
         private static void WaitForDiskInitialization(int diskNumber, TimeSpan timeout)
         {
             var startTime = DateTime.UtcNow;
@@ -429,7 +449,8 @@ namespace Duplicati.UnitTest.DiskImage
         /// Finds the drive letter assigned to a disk.
         /// </summary>
         /// <param name="diskNumber">The disk number.</param>
-        /// <returns>The drive letter, or throws if not found.</returns>
+        /// <returns>The drive letter.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if drive letter cannot be found.</exception>
         private static char FindDriveLetterForDisk(int diskNumber)
         {
             var script = $@"
@@ -703,6 +724,7 @@ namespace Duplicati.UnitTest.DiskImage
         /// Finds an available drive letter that is not currently in use.
         /// </summary>
         /// <returns>An available drive letter.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if no available drive letters are found.</exception>
         private static char FindAvailableDriveLetter()
         {
             var usedDrives = DriveInfo.GetDrives()

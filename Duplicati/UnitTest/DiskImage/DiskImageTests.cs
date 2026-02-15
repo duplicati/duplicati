@@ -51,6 +51,10 @@ namespace Duplicati.UnitTest
         private char _sourceDriveLetter;
         private DiskImage.IDiskImageHelper _diskHelper = null!;
 
+        /// <summary>
+        /// Sets up the test environment before each test.
+        /// Creates the disk helper and temporary VHD paths.
+        /// </summary>
         [SetUp]
         public void DiskImageSetUp()
         {
@@ -69,6 +73,10 @@ namespace Duplicati.UnitTest
             _restoreVhdPath = Path.Combine(tempPath, $"duplicati_test_restore_{Guid.NewGuid()}.vhdx");
         }
 
+        /// <summary>
+        /// Cleans up the test environment after each test.
+        /// Detaches and deletes VHD files.
+        /// </summary>
         [TearDown]
         public void DiskImageTearDown()
         {
@@ -362,6 +370,10 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Sets up a source VHD with a single partition.
         /// </summary>
+        /// <param name="sizeMB">The size of the VHD in megabytes.</param>
+        /// <param name="tableType">The partition table type ("gpt" or "mbr").</param>
+        /// <param name="fsType">The filesystem type ("ntfs", "fat32", etc.).</param>
+        /// <returns>The physical drive path.</returns>
         private string SetupSourceVhd(int sizeMB, string tableType, string fsType)
         {
             // Create and attach VHD
@@ -384,6 +396,10 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Sets up a source VHD with multiple partitions.
         /// </summary>
+        /// <param name="sizeMB">The size of the VHD in megabytes.</param>
+        /// <param name="tableType">The partition table type ("gpt" or "mbr").</param>
+        /// <param name="partitions">Array of tuples containing filesystem type and size for each partition.</param>
+        /// <returns>The physical drive path.</returns>
         private string SetupSourceVhdMultiplePartitions(int sizeMB, string tableType, (string fsType, int sizeMB)[] partitions)
         {
             // Create and attach VHD
@@ -413,6 +429,10 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Sets up a restore target VHD with the specified geometry.
         /// </summary>
+        /// <param name="sizeMB">The size of the VHD in megabytes.</param>
+        /// <param name="tableType">The partition table type ("gpt" or "mbr").</param>
+        /// <param name="fsType">The filesystem type ("ntfs", "fat32", etc.).</param>
+        /// <returns>The physical drive path.</returns>
         private string SetupRestoreVhd(int sizeMB, string tableType, string fsType)
         {
             // Create and attach VHD
@@ -430,6 +450,8 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Runs a backup operation using the Controller.
         /// </summary>
+        /// <param name="physicalDrivePath">The physical drive path to backup.</param>
+        /// <returns>The backup results.</returns>
         private IBackupResults RunBackup(string physicalDrivePath)
         {
             var options = new Dictionary<string, string>(TestOptions);
@@ -444,6 +466,8 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Runs a restore operation using the Controller.
         /// </summary>
+        /// <param name="restoreDrivePath">The physical drive path to restore to.</param>
+        /// <returns>The restore results.</returns>
         private IRestoreResults RunRestore(string restoreDrivePath)
         {
             _diskHelper.UnmountForWriting(_restoreVhdPath);
@@ -464,6 +488,7 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Verifies that the restored data matches the original data.
         /// </summary>
+        /// <param name="originalDriveLetter">The drive letter of the original source drive.</param>
         private void VerifyRestoredData(char originalDriveLetter)
         {
             TestContext.Progress.WriteLine("Verifying restored data...");
@@ -533,6 +558,8 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Recursively compares two directories for structural and content equality.
         /// </summary>
+        /// <param name="sourcePath">The source directory path.</param>
+        /// <param name="restorePath">The restored directory path.</param>
         private void CompareDirectories(string sourcePath, string restorePath)
         {
             var options = new EnumerationOptions
@@ -577,6 +604,8 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Gets the drive letter for a disk number by querying PowerShell.
         /// </summary>
+        /// <param name="diskNumber">The disk number.</param>
+        /// <returns>The drive letter, or '\0' if not found.</returns>
         private char GetDriveLetterForDisk(int diskNumber)
         {
             // Use PowerShell to find the drive letter for this disk
@@ -666,6 +695,7 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Verifies that the partition table type matches the expected type.
         /// </summary>
+        /// <param name="expectedType">The expected partition table type.</param>
         private void VerifyPartitionTableType(PartitionTableType expectedType)
         {
             TestContext.Progress.WriteLine($"Verifying partition table type is {expectedType}...");
@@ -769,6 +799,8 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Parses partition information from diskpart detail disk output.
         /// </summary>
+        /// <param name="output">The diskpart output text.</param>
+        /// <returns>A list of tuples containing partition size and type.</returns>
         private List<(long Size, string Type)> ParsePartitionsFromDiskpartOutput(string output)
         {
             var partitions = new List<(long Size, string Type)>();

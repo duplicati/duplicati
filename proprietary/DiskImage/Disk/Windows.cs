@@ -11,6 +11,10 @@ using static Vanara.PInvoke.Kernel32;
 
 namespace Duplicati.Proprietary.DiskImage.Disk
 {
+    /// <summary>
+    /// Windows implementation of the <see cref="IRawDisk"/> interface for raw disk access.
+    /// Uses Windows API calls via Vanara.PInvoke to read from and write to physical disk devices.
+    /// </summary>
     [SupportedOSPlatform("windows")]
     public class Windows : IRawDisk
     {
@@ -23,10 +27,17 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private long m_size = 0;
         private bool m_shouldFlush = false;
 
+        /// <inheritdoc />
         public string DevicePath { get { return m_devicePath; } }
 
+        /// <inheritdoc />
         public bool IsWriteable => m_writeable;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Windows"/> class.
+        /// </summary>
+        /// <param name="devicePath">The Windows device path (e.g., "\\.\PhysicalDrive0").</param>
+        /// <exception cref="PlatformNotSupportedException">Thrown when not running on Windows.</exception>
         public Windows(string devicePath)
         {
             // Check if windows platform
@@ -36,6 +47,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             m_devicePath = devicePath;
         }
 
+        /// <inheritdoc />
         public long Size
         {
             get
@@ -47,6 +59,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             }
         }
 
+        /// <inheritdoc />
         public int SectorSize
         {
             get
@@ -58,6 +71,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             }
         }
 
+        /// <inheritdoc />
         public int Sectors
         {
             get
@@ -69,9 +83,11 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             }
         }
 
+        /// <inheritdoc />
         public Task<bool> InitializeAsync(CancellationToken cancellationToken)
             => InitializeAsync(false, cancellationToken);
 
+        /// <inheritdoc />
         public async Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
         {
             if (m_initialized)
@@ -113,6 +129,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             return true;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (m_disposed)
@@ -134,12 +151,14 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             m_disposed = true;
         }
 
+        /// <inheritdoc />
         public Task<bool> FinalizeAsync(CancellationToken cancellationToken)
         {
             Dispose();
             return Task.FromResult(true);
         }
 
+        /// <inheritdoc />
         public async Task<Stream> ReadSectorsAsync(long startSector, int sectorCount, CancellationToken cancellationToken)
         {
             if (!m_initialized)
@@ -151,6 +170,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             return await ReadBytesAsync(offset, length, cancellationToken);
         }
 
+        /// <inheritdoc />
         public async Task<Stream> ReadBytesAsync(long offset, int length, CancellationToken cancellationToken)
         {
             if (!m_initialized)
@@ -190,6 +210,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             return new MemoryStream(buffer.AsBytes().ToArray(), 0, (int)bytesRead, false);
         }
 
+        /// <inheritdoc />
         public async Task<int> WriteSectorsAsync(long startSector, byte[] data, CancellationToken cancellationToken)
         {
             if (!m_initialized)
@@ -202,6 +223,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             return await WriteBytesAsync(offset, data, cancellationToken);
         }
 
+        /// <inheritdoc />
         public async Task<int> WriteBytesAsync(long offset, byte[] data, CancellationToken cancellationToken)
         {
             if (!m_initialized)

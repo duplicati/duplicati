@@ -12,14 +12,25 @@ using Duplicati.Proprietary.DiskImage.Filesystem;
 
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 
+/// <summary>
+/// Represents a partition as a source entry for backup operations.
+/// Acts as a container for the filesystem within the partition.
+/// </summary>
 internal class PartitionSourceEntry(string parentPath, IPartition partition)
     : DiskImageEntryBase(System.IO.Path.Combine(parentPath, $"part_{partition.PartitionTable.TableType}_{partition.PartitionNumber}{System.IO.Path.DirectorySeparatorChar}"))
 {
+    /// <inheritdoc />
     public override bool IsFolder => true;
+
+    /// <inheritdoc />
     public override long Size => partition.Size;
 
+    /// <summary>
+    /// Gets the underlying partition instance.
+    /// </summary>
     public IPartition Partition => partition;
 
+    /// <inheritdoc />
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var fs = partition.FilesystemType switch
@@ -31,6 +42,7 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition)
         yield return new FilesystemSourceEntry(this.Path, fs);
     }
 
+    /// <inheritdoc />
     public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
     {
         var metadata = await base.GetMinorMetadata(cancellationToken);

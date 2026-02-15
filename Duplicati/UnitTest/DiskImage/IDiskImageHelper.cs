@@ -129,7 +129,7 @@ namespace Duplicati.UnitTest.DiskImage
         /// <summary>
         /// Checks if the current process has the necessary privileges to perform disk operations.
         /// </summary>
-        /// <returns>True if running with sufficient privileges, false otherwise.</returns>
+        /// <returns><c>true</c> if running with sufficient privileges; otherwise, <c>false</c>.</returns>
         bool HasRequiredPrivileges();
     }
 }

@@ -12,13 +12,23 @@ using Duplicati.Proprietary.DiskImage.Partition;
 
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 
+/// <summary>
+/// Represents a disk as a source entry for backup operations.
+/// This is the root entry in the disk image hierarchy.
+/// </summary>
 internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
     : DiskImageEntryBase(provider.MountedPath)
 {
+    /// <inheritdoc />
     public override bool IsFolder => true;
+
+    /// <inheritdoc />
     public override bool IsRootEntry => true;
+
+    /// <inheritdoc />
     public override long Size => disk.Size;
 
+    /// <inheritdoc />
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         // Create a consolidated geometry metadata object
@@ -128,6 +138,7 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
         }
     }
 
+    /// <inheritdoc />
     public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
     {
         var metadata = await base.GetMinorMetadata(cancellationToken);

@@ -155,7 +155,7 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Checks if the current process is running with administrator privileges.
         /// </summary>
-        /// <returns>True if running as administrator, false otherwise.</returns>
+        /// <returns><c>true</c> if running as administrator; otherwise, <c>false</c>.</returns>
         public static bool IsAdministrator()
         {
             return _helper.HasRequiredPrivileges();

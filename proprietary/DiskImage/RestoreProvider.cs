@@ -197,6 +197,13 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         return Task.FromResult(false);
     }
 
+    /// <summary>
+    /// Parses a partition segment from the path and returns the corresponding partition.
+    /// The segment is expected to be in the format "part_{PartitionTableType}_{PartitionNumber}", e.g. "part_GPT_1".
+    /// </summary>
+    /// <param name="segment">The partition segment string.</param>
+    /// <returns>The corresponding partition.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the partition segment cannot be parsed or the partition is not found.</exception>
     public IPartition ParsePartition(string segment)
     {
         // Example segment: "part_GPT_1"
@@ -223,6 +230,14 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         return partition;
     }
 
+    /// <summary>
+    /// Parses a filesystem segment from the path and returns the corresponding filesystem.
+    /// The segment is expected to be in the format "fs_{FileSystemType}", e.g. "fs_NTFS".
+    /// </summary>
+    /// <param name="partition">The partition to which the filesystem belongs.</param>
+    /// <param name="segment">The filesystem segment string.</param>
+    /// <returns>The corresponding filesystem.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the filesystem segment cannot be parsed or the filesystem is not found.</exception>
     public IFilesystem ParseFilesystem(IPartition partition, string segment)
     {
         // Example segment: "fs_NTFS"
@@ -243,6 +258,14 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         return fs;
     }
 
+    /// <summary>
+    /// Parses the given path to determine if it refers to a disk-level item, partition, or file, and returns the corresponding objects.
+    /// The path is expected to be in the format:
+    /// root/part_{PartitionTableType}_{PartitionNumber}/fs_{FileSystemType}/path/to/file
+    /// </summary>
+    /// <param name="path">The path to parse.</param>
+    /// <returns>A tuple containing the item type, partition, and filesystem.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the path cannot be parsed.</exception>
     public (string, IPartition?, IFilesystem?) ParsePath(string path)
     {
         // For disk image restore, the path is expected to be in the format:
@@ -424,6 +447,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Opens a stream for read-write access to geometry metadata.
     /// </summary>
+    /// <param name="cancel">Cancellation token.</param>
+    /// <returns>A stream for read-write access to geometry metadata.</returns>
     private async Task<Stream> OpenReadWriteGeometry(CancellationToken cancel)
     {
         // For read-write, we return a stream that can be read from (current state)
@@ -482,6 +507,12 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         return wrapper;
     }
 
+    /// <summary>
+    /// Gets the length of a file at the specified path.
+    /// </summary>
+    /// <param name="path">The path to the file.</param>
+    /// <param name="cancel">Cancellation token.</param>
+    /// <returns>The file length in bytes.</returns>
     public Task<long> GetFileLength(string path, CancellationToken cancel)
     {
         var (typeStr, partition, filesystem) = ParsePath(path);
@@ -529,6 +560,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Checks if a file path is the geometry metadata file.
     /// </summary>
+    /// <param name="path">The file path to check.</param>
+    /// <returns><c>true</c> if the path is the geometry file; otherwise, <c>false</c>.</returns>
     private static bool IsGeometryFile(string path)
     {
         // Check for geometry.json (must be at root or top level)
@@ -625,6 +658,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Normalizes the given path.
     /// </summary>
+    /// <param name="path">The path to normalize.</param>
+    /// <returns>The normalized path.</returns>
     private string NormalizePath(string path)
     {
         // Remove any leading/trailing separators and normalize
@@ -651,6 +686,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// Reconstructs IRawDisk, IPartitionTable, IPartition, and IFilesystem objects
     /// from the geometry metadata. This is called when geometry.json is written during restore.
     /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if geometry metadata or target disk is not available.</exception>
     private void ReconstructFromGeometryMetadata()
     {
         if (_geometryMetadata == null)
@@ -702,6 +738,9 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Creates an IFilesystem instance from filesystem geometry metadata.
     /// </summary>
+    /// <param name="partition">The partition to create the filesystem for.</param>
+    /// <param name="fsGeom">The filesystem geometry metadata.</param>
+    /// <returns>An IFilesystem instance, or null if the filesystem type is not supported.</returns>
     private IFilesystem? CreateFilesystemFromGeometry(IPartition partition, FilesystemGeometry fsGeom)
     {
         return fsGeom.Type switch
@@ -734,6 +773,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Synthesizes an MBR partition table from geometry metadata.
     /// </summary>
+    /// <param name="metadata">The geometry metadata containing partition information.</param>
+    /// <returns>A byte array containing the synthesized MBR partition table.</returns>
     private byte[] SynthesizeMBR(GeometryMetadata metadata)
     {
         var sectorSize = metadata.Disk?.SectorSize ?? MbrSize;
@@ -774,6 +815,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Writes a single MBR partition entry to the specified offset.
     /// </summary>
+    /// <param name="mbrData">The MBR data buffer.</param>
+    /// <param name="offset">The offset in the buffer to write the entry.</param>
+    /// <param name="part">The partition geometry.</param>
+    /// <param name="sectorSize">The sector size in bytes.</param>
     private void WriteMBRPartitionEntry(byte[] mbrData, int offset, PartitionGeometry part, int sectorSize)
     {
         // Status byte (0x80 = bootable, 0x00 = not bootable)
@@ -806,6 +851,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Gets the MBR partition type byte based on partition geometry.
     /// </summary>
+    /// <param name="part">The partition geometry.</param>
+    /// <returns>The MBR partition type byte.</returns>
     private byte GetMBRPartitionTypeByte(PartitionGeometry part)
     {
         // Map partition type and filesystem to MBR type byte
@@ -828,6 +875,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Synthesizes a GPT partition table from geometry metadata.
     /// </summary>
+    /// <param name="metadata">The geometry metadata containing partition information.</param>
+    /// <returns>A byte array containing the synthesized GPT partition table.</returns>
     private byte[] SynthesizeGPT(GeometryMetadata metadata)
     {
         var sectorSize = metadata.Disk?.SectorSize ?? MbrSize;
@@ -860,6 +909,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Writes the protective MBR for GPT.
     /// </summary>
+    /// <param name="gptData">The GPT data buffer.</param>
+    /// <param name="metadata">The geometry metadata.</param>
+    /// <param name="sectorSize">The sector size in bytes.</param>
+    /// <param name="diskSectors">The total number of sectors on the disk.</param>
     private void WriteProtectiveMBR(byte[] gptData, GeometryMetadata metadata, int sectorSize, long diskSectors)
     {
         // Boot code (first 446 bytes) - zeros
@@ -896,6 +949,12 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Writes the GPT header.
     /// </summary>
+    /// <param name="gptData">The GPT data buffer.</param>
+    /// <param name="metadata">The geometry metadata.</param>
+    /// <param name="sectorSize">The sector size in bytes.</param>
+    /// <param name="partitionEntriesSectors">The number of sectors for partition entries.</param>
+    /// <param name="numPartitionEntries">The number of partition entries.</param>
+    /// <param name="diskSectors">The total number of sectors on the disk.</param>
     private void WriteGPTHeader(byte[] gptData, GeometryMetadata metadata, int sectorSize,
         int partitionEntriesSectors, int numPartitionEntries, long diskSectors)
     {
@@ -955,6 +1014,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Writes GPT partition entries.
     /// </summary>
+    /// <param name="gptData">The GPT data buffer.</param>
+    /// <param name="metadata">The geometry metadata.</param>
+    /// <param name="sectorSize">The sector size in bytes.</param>
+    /// <param name="partitionEntriesSectors">The number of sectors for partition entries.</param>
     private void WriteGPTPartitionEntries(byte[] gptData, GeometryMetadata metadata, int sectorSize, int partitionEntriesSectors)
     {
         int entriesOffset = 2 * sectorSize;  // Entries start at LBA 2
@@ -994,6 +1057,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Writes a single GPT partition entry.
     /// </summary>
+    /// <param name="entriesData">The partition entries buffer.</param>
+    /// <param name="offset">The offset in the buffer to write the entry.</param>
+    /// <param name="part">The partition geometry.</param>
+    /// <param name="sectorSize">The sector size in bytes.</param>
     private void WriteGPTPartitionEntry(byte[] entriesData, int offset, PartitionGeometry part, int sectorSize)
     {
         // Partition type GUID (16 bytes)
@@ -1027,6 +1094,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Gets the GPT partition type GUID based on partition geometry.
     /// </summary>
+    /// <param name="part">The partition geometry.</param>
+    /// <returns>The GPT partition type GUID.</returns>
     private Guid GetGPTPartitionTypeGuid(PartitionGeometry part)
     {
         return part.Type switch
@@ -1046,6 +1115,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Calculates CRC32 checksum for the given data.
     /// </summary>
+    /// <param name="data">The data buffer.</param>
+    /// <param name="offset">The offset in the buffer to start calculation.</param>
+    /// <param name="count">The number of bytes to calculate.</param>
+    /// <returns>The CRC32 checksum.</returns>
     private uint CalculateCrc32(byte[] data, int offset, int count)
     {
         uint crc = 0xFFFFFFFF;
@@ -1067,6 +1140,9 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Writes the secondary (backup) GPT header and partition entries to the end of the disk.
     /// </summary>
+    /// <param name="primaryGptData">The primary GPT data.</param>
+    /// <param name="cancel">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task WriteSecondaryGPT(byte[] primaryGptData, CancellationToken cancel)
     {
         if (_targetDisk == null || _geometryMetadata?.Disk == null)

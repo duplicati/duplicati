@@ -8,6 +8,10 @@ using Duplicati.Proprietary.DiskImage.Disk;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
 
+/// <summary>
+/// Represents a GPT (GUID Partition Table) partition table.
+/// GPT is the modern partition table format used on UEFI-based systems.
+/// </summary>
 public class GPT : IPartitionTable
 {
     // Constants for GPT parsing
@@ -45,16 +49,26 @@ public class GPT : IPartitionTable
     // Partition storage
     private List<IPartition>? m_partitions;
 
-    // IPartitionTable implementation
+    /// <inheritdoc />
     public IRawDisk? RawDisk { get => m_rawDisk; }
 
+    /// <inheritdoc />
     public PartitionTableType TableType => PartitionTableType.GPT;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GPT"/> class.
+    /// </summary>
+    /// <param name="disk">The raw disk to parse, or null for byte array parsing.</param>
     public GPT(IRawDisk? disk)
     {
         m_rawDisk = disk;
     }
 
+    /// <summary>
+    /// Parses the GPT partition table from the raw disk.
+    /// </summary>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
     public async Task<bool> ParseAsync(CancellationToken token)
     {
         var parsedHeader = await ParseHeaderAsync(token)
@@ -67,6 +81,13 @@ public class GPT : IPartitionTable
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Parses the GPT partition table from a byte array.
+    /// </summary>
+    /// <param name="bytes">The raw disk bytes.</param>
+    /// <param name="sectorSize">The sector size in bytes.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
     public async Task<bool> ParseAsync(byte[] bytes, int sectorSize, CancellationToken token)
     {
         m_bytesPerSector = sectorSize;
@@ -117,6 +138,11 @@ public class GPT : IPartitionTable
         return true;
     }
 
+    /// <summary>
+    /// Parses the GPT header from the raw disk.
+    /// </summary>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
     public async Task<bool> ParseHeaderAsync(CancellationToken token)
     {
         if (m_rawDisk == null)
@@ -143,6 +169,12 @@ public class GPT : IPartitionTable
         return result;
     }
 
+    /// <summary>
+    /// Parses the GPT header from a byte array.
+    /// </summary>
+    /// <param name="bytes">The header bytes.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
     public async Task<bool> ParseHeaderAsync(byte[] bytes, CancellationToken token)
     {
         if (bytes.Length < HeaderSize)
@@ -202,6 +234,12 @@ public class GPT : IPartitionTable
         return true;
     }
 
+    /// <summary>
+    /// Parses the partition entries from the disk.
+    /// </summary>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the raw disk is not available or if the header has not been parsed.</exception>
     private async Task<bool> ParsePartitionEntriesAsync(CancellationToken token)
     {
         if (m_rawDisk == null)
@@ -229,6 +267,12 @@ public class GPT : IPartitionTable
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Parses the partition entries from a byte array.
+    /// </summary>
+    /// <param name="buffer">The byte array containing the partition entries.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if parsing was successful.</returns>
     private async Task<bool> ParsePartitionEntriesAsync(byte[] buffer, CancellationToken token)
     {
         if (m_partitions != null)
@@ -266,6 +310,13 @@ public class GPT : IPartitionTable
         return true;
     }
 
+    /// <summary>
+    /// Parses a single partition entry from a byte array.
+    /// </summary>
+    /// <param name="buffer">The byte array containing the partition entry.</param>
+    /// <param name="offset">The offset in the byte array where the partition entry starts.</param>
+    /// <param name="partitionNumber">The partition number.</param>
+    /// <returns>The parsed partition entry, or null if the entry is empty.</returns>
     private GPTPartition? ParsePartitionEntry(byte[] buffer, int offset, int partitionNumber)
     {
         // Partition type GUID (16 bytes at offset 0)
@@ -319,6 +370,11 @@ public class GPT : IPartitionTable
         };
     }
 
+    /// <summary>
+    /// Determines the partition type based on the partition type GUID.
+    /// </summary>
+    /// <param name="typeGuid">The partition type GUID.</param>
+    /// <returns>The corresponding <see cref="PartitionType"/>.</returns>
     private static PartitionType DeterminePartitionType(Guid typeGuid)
     {
         // Common GPT partition type GUIDs
@@ -340,6 +396,13 @@ public class GPT : IPartitionTable
         };
     }
 
+    /// <summary>
+    /// Determines the filesystem type based on the partition name and type GUID.
+    /// Uses heuristics based on common naming patterns and known GUIDs.
+    /// </summary>
+    /// <param name="name">The partition name.</param>
+    /// <param name="typeGuid">The partition type GUID.</param>
+    /// <returns>The corresponding <see cref="FileSystemType"/>.</returns>
     private static FileSystemType DetermineFilesystemType(string name, Guid typeGuid)
     {
         if (!string.IsNullOrEmpty(name))
@@ -371,21 +434,85 @@ public class GPT : IPartitionTable
     }
 
     // GPT-specific properties
+    /// <summary>
+    /// Gets the GPT signature ("EFI PART" in little-endian).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public long Signature => m_parsed ? m_signature : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the GPT revision number.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public uint Revision => m_parsed ? m_revision : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the GPT header size in bytes.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public uint HeaderSizeField => m_parsed ? m_headerSize : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the CRC32 checksum of the GPT header.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public uint HeaderCrc32 => m_parsed ? m_headerCrc32 : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the LBA (Logical Block Address) of the current GPT header.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public long CurrentLba => m_parsed ? m_currentLba : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the LBA of the backup GPT header.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public long BackupLba => m_parsed ? m_backupLba : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the first usable LBA for partitions.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public long FirstUsableLba => m_parsed ? m_firstUsableLba : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the last usable LBA for partitions.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public long LastUsableLba => m_parsed ? m_lastUsableLba : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the disk GUID.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public Guid DiskGuid => m_parsed ? m_diskGuid : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the LBA where partition entries start.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public long PartitionEntryLba => m_parsed ? m_partitionEntryLba : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the number of partition entries.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public uint NumPartitionEntries => m_parsed ? m_numPartitionEntries : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the size of each partition entry in bytes.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public uint PartitionEntrySizeField => m_parsed ? m_partitionEntrySize : throw new InvalidOperationException("GPT header not parsed.");
+
+    /// <summary>
+    /// Gets the CRC32 checksum of the partition entries.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if GPT header has not been parsed.</exception>
     public uint PartitionEntryCrc32 => m_parsed ? m_partitionEntryCrc32 : throw new InvalidOperationException("GPT header not parsed.");
 
-    // IPartitionTable methods
+    /// <inheritdoc />
     public async IAsyncEnumerable<IPartition> EnumeratePartitions([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (!m_parsed)
@@ -405,6 +532,7 @@ public class GPT : IPartitionTable
         }
     }
 
+    /// <inheritdoc />
     public async Task<IPartition?> GetPartitionAsync(int partitionNumber, CancellationToken cancellationToken)
     {
         if (!m_parsed)
@@ -423,6 +551,7 @@ public class GPT : IPartitionTable
         return null;
     }
 
+    /// <inheritdoc />
     public async Task<Stream> GetProtectiveMbrAsync(CancellationToken cancellationToken)
     {
         if (!m_parsed)
@@ -443,6 +572,7 @@ public class GPT : IPartitionTable
         throw new InvalidOperationException("No protective MBR available.");
     }
 
+    /// <inheritdoc />
     public async Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken)
     {
         if (!m_parsed)
@@ -466,6 +596,11 @@ public class GPT : IPartitionTable
         return new MemoryStream(buffer, writable: false);
     }
 
+    /// <summary>
+    /// Verifies the backup GPT header.
+    /// </summary>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>True if the backup header is valid, false otherwise.</returns>
     private async Task<bool> VerifyBackupHeaderAsync(CancellationToken token)
     {
         if (m_rawDisk == null)
@@ -536,6 +671,13 @@ public class GPT : IPartitionTable
         return true;
     }
 
+    /// <summary>
+    /// Calculates the CRC32 checksum for the given buffer.
+    /// </summary>
+    /// <param name="buffer">The buffer containing the data.</param>
+    /// <param name="offset">The offset in the buffer to start calculating the CRC32.</param>
+    /// <param name="count">The number of bytes to include in the CRC32 calculation.</param>
+    /// <returns>The calculated CRC32 checksum.</returns>
     private static uint CalculateCrc32(byte[] buffer, int offset, int count)
     {
         uint crc = 0xFFFFFFFF;
@@ -554,12 +696,17 @@ public class GPT : IPartitionTable
         return ~crc;
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Disposes the GPT instance, releasing any resources. After disposal, the instance should not be used.
+    /// </summary>
+    /// <param name="disposing">Indicates whether the method is called from Dispose (true) or from a finalizer (false).</param>
     protected virtual void Dispose(bool disposing)
     {
         if (!m_disposed)
@@ -584,19 +731,32 @@ public class GPT : IPartitionTable
     /// </summary>
     private class GPTPartition : IPartition
     {
+        /// <inheritdoc />
         public int PartitionNumber { get; init; }
+        /// <inheritdoc />
         public PartitionType Type { get; init; }
+        /// <inheritdoc />
         public required IPartitionTable PartitionTable { get; init; }
+        /// <inheritdoc />
         public long StartOffset { get; init; }
+        /// <inheritdoc />
         public long Size { get; init; }
+        /// <inheritdoc />
         public string? Name { get; init; }
+        /// <inheritdoc />
         public FileSystemType FilesystemType { get; init; }
+        /// <inheritdoc />
         public Guid? VolumeGuid { get; init; }
+        /// <inheritdoc />
         public required IRawDisk? RawDisk { get; init; }
+        /// <inheritdoc />
         public long StartingLba { get; init; }
+        /// <inheritdoc />
         public long EndingLba { get; init; }
+        /// <inheritdoc />
         public long Attributes { get; init; }
 
+        /// <inheritdoc />
         public Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
         {
             if (RawDisk == null)
@@ -604,6 +764,7 @@ public class GPT : IPartitionTable
             return RawDisk.ReadBytesAsync(StartOffset, (int)Math.Min(Size, int.MaxValue), cancellationToken);
         }
 
+        /// <inheritdoc />
         public Task<Stream> OpenWriteAsync(CancellationToken cancellationToken)
         {
             if (RawDisk == null)
@@ -612,6 +773,7 @@ public class GPT : IPartitionTable
             return Task.FromResult<Stream>(new PartitionWriteStream(RawDisk, StartOffset, Size));
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             // No unmanaged resources to dispose
