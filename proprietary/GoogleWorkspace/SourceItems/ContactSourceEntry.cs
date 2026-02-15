@@ -13,7 +13,8 @@ internal class ContactSourceEntry(string parentPath, Person person)
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new ContactFileSourceEntry(this.Path, person);
+        yield return new ContactVCFSourceEntry(this.Path, person);
+        yield return new ContactDetailsSourceEntry(this.Path, person);
 
         if (person.Photos != null)
         {

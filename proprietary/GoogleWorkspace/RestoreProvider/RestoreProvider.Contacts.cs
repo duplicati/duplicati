@@ -51,6 +51,111 @@ partial class RestoreProvider
             return _targetUserId;
         }
 
+        /// <summary>
+        /// Cleans contact metadata and removes read-only fields that cannot be sent during creation.
+        /// </summary>
+        private static void CleanContactMetadata(Person contact)
+        {
+            // Remove top-level read-only properties
+            contact.ResourceName = null;
+            contact.ETag = null;
+            contact.Metadata = null;
+            contact.Photos = null; // Photos are read-only and must be uploaded separately
+
+            // Remove source IDs from fields as they are not allowed during creation
+            if (contact.Names != null)
+            {
+                foreach (var name in contact.Names)
+                {
+                    name.Metadata = null;
+                }
+            }
+            if (contact.EmailAddresses != null)
+            {
+                foreach (var email in contact.EmailAddresses)
+                {
+                    email.Metadata = null;
+                }
+            }
+            if (contact.PhoneNumbers != null)
+            {
+                foreach (var phone in contact.PhoneNumbers)
+                {
+                    phone.Metadata = null;
+                }
+            }
+            if (contact.Addresses != null)
+            {
+                foreach (var address in contact.Addresses)
+                {
+                    address.Metadata = null;
+                }
+            }
+            if (contact.Organizations != null)
+            {
+                foreach (var org in contact.Organizations)
+                {
+                    org.Metadata = null;
+                }
+            }
+            if (contact.ImClients != null)
+            {
+                foreach (var im in contact.ImClients)
+                {
+                    im.Metadata = null;
+                }
+            }
+            if (contact.Birthdays != null)
+            {
+                foreach (var birthday in contact.Birthdays)
+                {
+                    birthday.Metadata = null;
+                }
+            }
+            if (contact.Biographies != null)
+            {
+                foreach (var bio in contact.Biographies)
+                {
+                    bio.Metadata = null;
+                }
+            }
+            if (contact.Nicknames != null)
+            {
+                foreach (var nickname in contact.Nicknames)
+                {
+                    nickname.Metadata = null;
+                }
+            }
+            if (contact.Occupations != null)
+            {
+                foreach (var occupation in contact.Occupations)
+                {
+                    occupation.Metadata = null;
+                }
+            }
+            if (contact.Relations != null)
+            {
+                foreach (var relation in contact.Relations)
+                {
+                    relation.Metadata = null;
+                }
+            }
+            if (contact.Locations != null)
+            {
+                foreach (var location in contact.Locations)
+                {
+                    location.Metadata = null;
+                }
+            }
+            if (contact.Events != null)
+            {
+                foreach (var evt in contact.Events)
+                {
+                    evt.Metadata = null;
+                }
+            }
+        }
+
         public async Task<string?> CreateContact(string userId, Person contact, CancellationToken cancel)
         {
             var peopleService = Provider._apiHelper.GetPeopleService(userId);
@@ -83,12 +188,28 @@ partial class RestoreProvider
             }
 
             // Clean up properties that shouldn't be sent on creation
-            contact.ResourceName = null;
-            contact.ETag = null;
-            contact.Metadata = null;
+            CleanContactMetadata(contact);
 
             var createdContact = await peopleService.People.CreateContact(contact).ExecuteAsync(cancel);
             return createdContact.ResourceName;
+        }
+
+        public async Task UploadContactPhoto(string userId, string contactResourceName, Stream photoStream, CancellationToken cancel)
+        {
+            var peopleService = Provider._apiHelper.GetPeopleService(userId);
+
+            // Read the photo data into a byte array
+            using var memoryStream = new MemoryStream();
+            await photoStream.CopyToAsync(memoryStream, cancel);
+            var photoBytes = memoryStream.ToArray();
+
+            // Upload the photo using the updateContactPhoto endpoint
+            var updateRequest = new Google.Apis.PeopleService.v1.Data.UpdateContactPhotoRequest
+            {
+                PhotoBytes = Convert.ToBase64String(photoBytes)
+            };
+
+            await peopleService.People.UpdateContactPhoto(updateRequest, contactResourceName).ExecuteAsync(cancel);
         }
 
         public async Task<string?> CreateContactGroup(string userId, ContactGroup group, CancellationToken cancel)
@@ -153,11 +274,13 @@ partial class RestoreProvider
             try
             {
                 var originalPath = contact.Key;
-                var contentEntry = _temporaryFiles.GetValueOrDefault(originalPath);
+                // Look for content.json in the contact folder
+                var contentJsonPath = SystemIO.IO_OS.PathCombine(originalPath, "content.json");
+                var contentEntry = _temporaryFiles.GetValueOrDefault(contentJsonPath);
 
                 if (contentEntry == null)
                 {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreContactsMissingContent", null, $"Missing content for contact {originalPath}, skipping.");
+                    Log.WriteWarningMessage(LOGTAG, "RestoreContactsMissingContent", null, $"Missing content.json for contact {originalPath}, skipping.");
                     continue;
                 }
 
@@ -173,16 +296,72 @@ partial class RestoreProvider
                     continue;
                 }
 
-                await ContactRestore.CreateContact(userId, contactData, cancel);
+                var createdResourceName = await ContactRestore.CreateContact(userId, contactData, cancel);
 
+                // Restore contact photos if any exist
+                if (!string.IsNullOrEmpty(createdResourceName))
+                {
+                    await RestoreContactPhotos(userId, originalPath, createdResourceName, cancel);
+                }
+
+                // Clean up metadata and temporary files
                 _metadata.TryRemove(originalPath, out _);
-                _temporaryFiles.TryRemove(originalPath, out var contentFile);
+                _metadata.TryRemove(contentJsonPath, out _);
+                _temporaryFiles.TryRemove(contentJsonPath, out var contentFile);
                 contentFile?.Dispose();
+
+                // Discard the contact.vcf file if it exists
+                var vcfPath = SystemIO.IO_OS.PathCombine(originalPath, "contact.vcf");
+                if (_temporaryFiles.TryRemove(vcfPath, out var vcfFile))
+                {
+                    vcfFile?.Dispose();
+                    _metadata.TryRemove(vcfPath, out _);
+                }
             }
             catch (Exception ex)
             {
                 Log.WriteErrorMessage(LOGTAG, "RestoreContactsFailed", ex, $"Failed to restore contact {contact.Key}");
             }
+        }
+    }
+
+    private async Task RestoreContactPhotos(string userId, string contactPath, string contactResourceName, CancellationToken cancel)
+    {
+        // Look for photo files in the contact folder (photo-0.jpg, photo-1.jpg, etc.)
+        var photoIndex = 0;
+        while (true)
+        {
+            var photoPath = SystemIO.IO_OS.PathCombine(contactPath, $"photo-{photoIndex}.jpg");
+            if (!_temporaryFiles.TryGetValue(photoPath, out var photoEntry))
+            {
+                // No more photos found
+                break;
+            }
+
+            try
+            {
+                using (var photoStream = SystemIO.IO_OS.FileOpenRead(photoEntry))
+                {
+                    await ContactRestore.UploadContactPhoto(userId, contactResourceName, photoStream, cancel);
+                }
+
+                Log.WriteInformationMessage(LOGTAG, "RestoreContactPhotoSuccess", $"Successfully restored photo {photoIndex} for contact {contactResourceName}");
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreContactPhotoFailed", ex, $"Failed to restore photo {photoIndex} for contact {contactResourceName}");
+            }
+            finally
+            {
+                // Clean up the photo file
+                if (_temporaryFiles.TryRemove(photoPath, out var photoFile))
+                {
+                    photoFile?.Dispose();
+                }
+                _metadata.TryRemove(photoPath, out _);
+            }
+
+            photoIndex++;
         }
     }
 

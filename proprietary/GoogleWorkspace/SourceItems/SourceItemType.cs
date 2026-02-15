@@ -35,6 +35,8 @@ public enum SourceItemType
     CalendarEventAttachment,
     CalendarEventACL,
     Contact,
+    ContactVCF,
+    ContactDetails,
     ContactGroup,
     ContactPhoto,
     TaskList,

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ContactFileSourceEntry(string parentPath, Person person)
+internal class ContactVCFSourceEntry(string parentPath, Person person)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, "contact.vcf"), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
@@ -52,7 +52,7 @@ internal class ContactFileSourceEntry(string parentPath, Person person)
         return Task.FromResult(new Dictionary<string, string?>
         {
             { "gsuite:v", "1" },
-            { "gsuite:Type", SourceItemType.Contact.ToString() },
+            { "gsuite:Type", SourceItemType.ContactVCF.ToString() },
             { "gsuite:Name", person.Names?.FirstOrDefault()?.DisplayName ?? person.ResourceName },
             { "gsuite:Id", person.ResourceName },
             { "gsuite:Etag", person.ETag }
