@@ -150,27 +150,11 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateRecursive(ISourceProviderEntry parent, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         yield return parent;
-        if (parent.IsFolder)
+        if (parent.IsFolder && parent is DiskImageEntryBase dse)
         {
-            // This is a bit simplified, we need to cast to something that can enumerate
-            if (parent is DiskSourceEntry dse)
-            {
-                await foreach (var child in dse.Enumerate(cancellationToken))
-                    await foreach (var e in EnumerateRecursive(child, cancellationToken))
-                        yield return e;
-            }
-            else if (parent is PartitionSourceEntry pse)
-            {
-                await foreach (var child in pse.Enumerate(cancellationToken))
-                    await foreach (var e in EnumerateRecursive(child, cancellationToken))
-                        yield return e;
-            }
-            else if (parent is FilesystemSourceEntry fse)
-            {
-                await foreach (var child in fse.Enumerate(cancellationToken))
-                    await foreach (var e in EnumerateRecursive(child, cancellationToken))
-                        yield return e;
-            }
+            await foreach (var child in dse.Enumerate(cancellationToken))
+                await foreach (var e in EnumerateRecursive(child, cancellationToken))
+                    yield return e;
         }
     }
 
