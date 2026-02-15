@@ -32,12 +32,273 @@ using NUnit.Framework;
 namespace Duplicati.UnitTest
 {
     /// <summary>
+    /// Manages a persistent PowerShell session for executing commands.
+    /// This avoids the overhead of starting a new PowerShell process for each command.
+    /// </summary>
+    internal sealed class PowerShellSession : IDisposable
+    {
+        private Process? _process;
+        private readonly object _lock = new();
+        private bool _disposed;
+        private readonly StringBuilder _outputBuffer = new();
+        private readonly StringBuilder _errorBuffer = new();
+        private readonly ManualResetEventSlim _outputAvailable = new(false);
+
+        /// <summary>
+        /// Gets a value indicating whether the PowerShell session is running.
+        /// </summary>
+        public bool IsRunning => _process != null && !_process.HasExited;
+
+        /// <summary>
+        /// Ensures the PowerShell session is started.
+        /// </summary>
+        public void EnsureStarted()
+        {
+            lock (_lock)
+            {
+                if (_disposed)
+                {
+                    throw new ObjectDisposedException(nameof(PowerShellSession));
+                }
+
+                if (_process != null && !_process.HasExited)
+                {
+                    return;
+                }
+
+                StartProcess();
+            }
+        }
+
+        private void StartProcess()
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"& { while ($true) { $cmd = Read-Host; if ($cmd -eq 'EXIT_SESSION') { break }; try { $output = Invoke-Expression $cmd 2>&1; $output | Out-String -Stream; Write-Output \"___ENDOFCOMMAND___\" } catch { $_.Exception.Message; Write-Output \"___ENDOFCOMMAND___\" } } }\"",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                Verb = "runas" // Request elevation
+            };
+
+            _process = Process.Start(startInfo);
+            if (_process == null)
+            {
+                throw new InvalidOperationException("Failed to start PowerShell process");
+            }
+
+            // Clear any startup output
+            _outputBuffer.Clear();
+            _errorBuffer.Clear();
+            _outputAvailable.Reset();
+
+            // Attach event handlers for async reading
+            _process.OutputDataReceived += OnOutputDataReceived;
+            _process.ErrorDataReceived += OnErrorDataReceived;
+
+            _process.BeginOutputReadLine();
+            _process.BeginErrorReadLine();
+        }
+
+        private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data != null)
+            {
+                lock (_outputBuffer)
+                {
+                    _outputBuffer.AppendLine(e.Data);
+                    if (e.Data.Contains("___ENDOFCOMMAND___"))
+                    {
+                        _outputAvailable.Set();
+                    }
+                }
+            }
+        }
+
+        private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data != null)
+            {
+                lock (_errorBuffer)
+                {
+                    _errorBuffer.AppendLine(e.Data);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Executes a PowerShell script and returns the output.
+        /// </summary>
+        /// <param name="script">The PowerShell script to execute.</param>
+        /// <returns>The output from PowerShell.</returns>
+        public string ExecuteScript(string script)
+        {
+            lock (_lock)
+            {
+                EnsureStarted();
+
+                if (_process == null || _process.HasExited)
+                {
+                    throw new InvalidOperationException("PowerShell process is not running");
+                }
+
+                // Clear previous output and reset the event
+                lock (_outputBuffer)
+                {
+                    _outputBuffer.Clear();
+                }
+                lock (_errorBuffer)
+                {
+                    _errorBuffer.Clear();
+                }
+                _outputAvailable.Reset();
+
+                // Write the script to stdin using base64 encoding to handle special characters
+                var encodedScript = Convert.ToBase64String(Encoding.UTF8.GetBytes(script));
+                var command = $"[System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('{encodedScript}')) | Invoke-Expression";
+
+                _process.StandardInput.WriteLine(command);
+
+                // Wait for output with a timeout
+                var timeout = TimeSpan.FromSeconds(60);
+                if (!_outputAvailable.Wait(timeout))
+                {
+                    throw new TimeoutException($"PowerShell command timed out after {timeout.TotalSeconds} seconds.\nScript:\n{script}");
+                }
+
+                // Give a bit more time for all output to arrive
+                Thread.Sleep(50);
+
+                lock (_outputBuffer)
+                {
+                    var rawOutput = _outputBuffer.ToString();
+                    _outputBuffer.Clear();
+
+                    // Remove the end marker and any lines that contain our base64 command
+                    var lines = rawOutput.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    var filteredLines = lines
+                        .Where(line => !line.Contains("___ENDOFCOMMAND___"))
+                        .Where(line => !line.Contains("FromBase64String"))
+                        .Where(line => !line.Contains(encodedScript.Substring(0, Math.Min(20, encodedScript.Length))))
+                        .ToList();
+
+                    var output = string.Join(Environment.NewLine, filteredLines).Trim();
+
+                    lock (_errorBuffer)
+                    {
+                        var error = _errorBuffer.ToString().Trim();
+                        _errorBuffer.Clear();
+
+                        if (!string.IsNullOrEmpty(error))
+                        {
+                            throw new InvalidOperationException($"PowerShell error: {error}\nScript:\n{script}");
+                        }
+                    }
+
+                    return output;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Disposes the PowerShell session.
+        /// </summary>
+        public void Dispose()
+        {
+            lock (_lock)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+
+                if (_process != null)
+                {
+                    // Unregister event handlers
+                    _process.OutputDataReceived -= OnOutputDataReceived;
+                    _process.ErrorDataReceived -= OnErrorDataReceived;
+
+                    if (!_process.HasExited)
+                    {
+                        try
+                        {
+                            _process.StandardInput.WriteLine("EXIT_SESSION");
+                            if (!_process.WaitForExit(5000))
+                            {
+                                _process.Kill();
+                            }
+                        }
+                        catch
+                        {
+                            // Ignore errors during cleanup
+                            try { _process.Kill(); } catch { }
+                        }
+                    }
+
+                    _process.Dispose();
+                    _process = null;
+                }
+
+                _outputAvailable.Dispose();
+            }
+        }
+    }
+
+    /// <summary>
     /// Helper class for managing VHD (Virtual Hard Disk) files using PowerShell.
     /// This class provides methods to create, attach, format, and detach VHD files
     /// for testing disk image backup and restore operations.
     /// </summary>
     internal static class DiskImageVhdHelper
     {
+        // Static PowerShell session that persists across method calls
+        private static PowerShellSession? _session;
+        private static readonly object _sessionLock = new();
+
+        /// <summary>
+        /// Gets the shared PowerShell session, creating it if necessary.
+        /// </summary>
+        private static PowerShellSession GetSession()
+        {
+            lock (_sessionLock)
+            {
+                if (_session == null)
+                {
+                    _session = new PowerShellSession();
+                }
+                return _session;
+            }
+        }
+
+        /// <summary>
+        /// Disposes the shared PowerShell session.
+        /// Call this when done with all VHD operations.
+        /// </summary>
+        public static void DisposeSession()
+        {
+            lock (_sessionLock)
+            {
+                _session?.Dispose();
+                _session = null;
+            }
+        }
+
+        /// <summary>
+        /// Runs a PowerShell script using the persistent session.
+        /// </summary>
+        /// <param name="script">The PowerShell script to execute.</param>
+        /// <returns>The output from PowerShell.</returns>
+        public static string RunPowerShell(string script)
+        {
+            var session = GetSession();
+            return session.ExecuteScript(script);
+        }
+
         /// <summary>
         /// Creates a VHD file, attaches it to the system, and returns the physical drive path.
         /// </summary>
@@ -365,53 +626,6 @@ namespace Duplicati.UnitTest
             }
 
             return -1;
-        }
-
-        /// <summary>
-        /// Runs a PowerShell script and returns the output.
-        /// </summary>
-        /// <param name="script">The PowerShell script to execute.</param>
-        /// <returns>The output from PowerShell.</returns>
-        public static string RunPowerShell(string script)
-        {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{EscapeForCommandLine(script)}\"",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                Verb = "runas" // Request elevation
-            };
-
-            using var process = Process.Start(startInfo);
-            if (process == null)
-            {
-                throw new InvalidOperationException("Failed to start PowerShell process");
-            }
-
-            var output = process.StandardOutput.ReadToEnd();
-            var error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0 && !string.IsNullOrEmpty(error))
-            {
-                throw new InvalidOperationException($"PowerShell failed with exit code {process.ExitCode}: {error}\nScript:\n{script}");
-            }
-
-            return output;
-        }
-
-        /// <summary>
-        /// Escapes a PowerShell script for use on the command line.
-        /// </summary>
-        /// <param name="script">The script to escape.</param>
-        /// <returns>The escaped script.</returns>
-        private static string EscapeForCommandLine(string script)
-        {
-            // Replace double quotes with escaped double quotes for command line
-            return script.Replace("\"", "\\\"");
         }
 
         /// <summary>

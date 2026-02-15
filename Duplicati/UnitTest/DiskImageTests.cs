@@ -86,6 +86,15 @@ namespace Duplicati.UnitTest
             {
                 TestContext.Progress.WriteLine($"Warning: Failed to cleanup restore VHD: {ex.Message}");
             }
+
+            try
+            {
+                DiskImageVhdHelper.DisposeSession();
+            }
+            catch (Exception ex)
+            {
+                TestContext.Progress.WriteLine($"Warning: Failed to dispose PowerShell session: {ex.Message}");
+            }
         }
 
         /// <summary>
