@@ -250,12 +250,28 @@ namespace Duplicati.Library.Main.Operation.Restore
                             else
                             {
                                 var foldername = SystemIO.IO_OS.PathGetDirectoryName(file.TargetPath);
-                                if (await restoreDestination.CreateFolderIfNotExists(foldername, results.TaskControl.ProgressToken).ConfigureAwait(false))
-                                    Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
+                                try
+                                {
+                                    if (await restoreDestination.CreateFolderIfNotExists(foldername, results.TaskControl.ProgressToken).ConfigureAwait(false))
+                                        Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logging.Log.WriteErrorMessage(LOGTAG, "CreateMissingFolder", ex, @$"Error when trying to create missing folder ""{foldername}"" for file ""{file.TargetPath}""");
+                                }
 
                                 // Create an empty file, or truncate to 0
-                                using var fs = await restoreDestination.OpenWrite(file.TargetPath, results.TaskControl.ProgressToken).ConfigureAwait(false);
-                                fs.SetLength(0);
+                                try
+                                {
+                                    using var fs = await restoreDestination.OpenWrite(file.TargetPath, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                                    fs.SetLength(0);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logging.Log.WriteErrorMessage(LOGTAG, "CreateEmptyFile", ex, "Error when creating empty file {0}", file.TargetPath);
+                                    continue;
+                                }
+
                                 if (missing_blocks.Count != 0)
                                 {
                                     await block_request.WriteAsync(
@@ -303,8 +319,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 else
                                 {
                                     var foldername = SystemIO.IO_OS.PathGetDirectoryName(file.TargetPath);
-                                    if (await restoreDestination.CreateFolderIfNotExists(foldername, results.TaskControl.ProgressToken).ConfigureAwait(false))
-                                        Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
+                                    try
+                                    {
+                                        if (await restoreDestination.CreateFolderIfNotExists(foldername, results.TaskControl.ProgressToken).ConfigureAwait(false))
+                                            Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Logging.Log.WriteErrorMessage(LOGTAG, "CreateMissingFolder", ex, @$"Error when trying to create missing folder ""{foldername}"" for file ""{file.TargetPath}""");
+                                    }
 
                                     fs = await restoreDestination.OpenReadWrite(file.TargetPath, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                 }
@@ -785,8 +808,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 // Reopen file with write permission
                                 fi.IsReadOnly = false; // The metadata handler will revert this back later.
-                                using var f = await restoreDestination.OpenWrite(file.TargetPath, cancellationToken).ConfigureAwait(false);
-                                f.SetLength(file.Length);
+                                try
+                                {
+                                    using var f = await restoreDestination.OpenWrite(file.TargetPath, cancellationToken).ConfigureAwait(false);
+                                    f.SetLength(file.Length);
+                                }
+                                catch (Exception)
+                                {
+                                    lock (results)
+                                    {
+                                        results.BrokenLocalFiles.Add(file.TargetPath);
+                                    }
+                                    throw;
+                                }
                             }
                         }
                     }
@@ -833,7 +867,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 filehasher.Initialize();
 
                 // Open both files, as the target file is still being read to produce the overall file hash, if all the blocks are present across both the target and original files.
-                using var f_original = await restoreDestination.OpenRead(file.OriginalPath, cancellationToken).ConfigureAwait(false);
+                // Note: The original file is the source file on the local system (not within the restore destination),
+                // so we use File.OpenRead directly instead of restoreDestination.OpenRead
+                using var f_original = File.OpenRead(file.OriginalPath);
                 using var f_target = options.Dryrun ?
                     (await restoreDestination.FileExists(file.TargetPath, cancellationToken).ConfigureAwait(false) ?
                         await restoreDestination.OpenRead(file.TargetPath, cancellationToken).ConfigureAwait(false) :

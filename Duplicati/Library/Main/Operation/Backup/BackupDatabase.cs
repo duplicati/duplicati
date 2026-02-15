@@ -198,6 +198,14 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
+        public Task RemoveDuplicatePathsFromFilesetAsync(long filesetId, CancellationToken cancellationToken)
+        {
+            return RunOnMain(async () =>
+                await m_database
+                    .RemoveDuplicatePathsFromFileset(filesetId, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
 
         public Task MoveBlockToVolumeAsync(string blockkey, long size, long sourcevolumeid, long targetvolumeid, CancellationToken cancellationToken)
         {

@@ -878,6 +878,10 @@ namespace Duplicati.Library.Main.Operation
                         .CommitTransactionAsync("CommitAfterUpload", true, m_taskReader.ProgressToken)
                         .ConfigureAwait(false);
 
+                    // Remove any duplicate paths from the fileset
+                    await db.RemoveDuplicatePathsFromFilesetAsync(filesetid, m_taskReader.ProgressToken)
+                        .ConfigureAwait(false);
+
                     // If this throws, we should roll back the transaction
                     if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                     {

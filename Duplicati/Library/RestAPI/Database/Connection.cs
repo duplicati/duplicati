@@ -422,7 +422,13 @@ namespace Duplicati.Server.Database
         {
             lock (m_lock)
                 return ReadFromDb(
-                    (rd) => ConvertToString(rd, 0),
+                    (rd) =>
+                    {
+                        var s = ConvertToString(rd, 0);
+                        return EncryptedFieldHelper.IsEncryptedString(s)
+                            ? EncryptedFieldHelper.Decrypt(s, m_key)
+                            : s;
+                    },
                     cmd => cmd.SetCommandAndParameters(@"SELECT ""Path"" FROM ""Source"" WHERE ""BackupID"" = @Id")
                         .SetParameterValue("@Id", id))
                     .ToArray();
@@ -439,8 +445,17 @@ namespace Duplicati.Server.Database
                         .SetParameterValue("@Id", id),
                     values,
                     cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Source"" (""BackupID"", ""Path"") VALUES (@BackupId, @Path)"),
-                    (cmd, f) => cmd.SetParameterValue("@BackupId", id)
-                        .SetParameterValue("@Path", f)
+                    (cmd, f) =>
+                    {
+                        if (SourceMasking.IsSpecialSource(f) && UrlContainsPasswordPlaceholder(SourceMasking.ExtractUrl(f)))
+                            throw new Exception("Attempted to save a source with a placeholder password");
+
+                        cmd.SetParameterValue("@BackupId", id)
+                        .SetParameterValue("@Path",
+                            m_encryptSensitiveFields && SourceMasking.IsSpecialSource(f)
+                                ? EncryptedFieldHelper.Encrypt(f, m_key)
+                                : f);
+                    }
                 );
 
                 if (transaction == null)
@@ -604,6 +619,9 @@ namespace Duplicati.Server.Database
 
             if (item.Sources == null || item.Sources.Any(x => string.IsNullOrWhiteSpace(x)) || item.Sources.Length == 0)
                 return "Invalid source list";
+
+            if (item.Sources.Any(x => SourceMasking.IsSpecialSource(x) && UrlContainsPasswordPlaceholder(SourceMasking.ExtractUrl(x))))
+                return "Source is password placeholder value";
 
             var disabled_encryption = false;
             var passphrase = string.Empty;

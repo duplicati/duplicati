@@ -1289,6 +1289,67 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
+        /// Fixes duplicate paths in filesets by removing duplicate entries,
+        /// keeping the entry with the highest FileID (most recent).
+        /// </summary>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
+        public async Task FixDuplicatePathsInFilesets(CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
+
+            // Count duplicates across all filesets
+            var countSql = @"
+                SELECT COUNT(*) FROM (
+                    SELECT
+                        fe.""FilesetID"",
+                        f.""Path"",
+                        COUNT(*) as cnt
+                    FROM ""FilesetEntry"" fe
+                    JOIN ""File"" f ON fe.""FileID"" = f.""ID""
+                    GROUP BY fe.""FilesetID"", f.""Path""
+                    HAVING cnt > 1
+                )
+            ";
+
+            var duplicateCount = await cmd.ExecuteScalarInt64Async(countSql, 0, token)
+                .ConfigureAwait(false);
+
+            if (duplicateCount > 0)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "DuplicatePathsInFilesets",
+                    "Found {0} duplicate paths across filesets, repairing", duplicateCount);
+
+                // Delete duplicates, keeping the one with highest FileID in each fileset
+                // Note: FilesetEntry doesn't have an ID column, so we use the composite key
+                var deleteSql = @"
+                    DELETE FROM ""FilesetEntry""
+                    WHERE (""FilesetID"", ""FileID"") IN (
+                        SELECT ""FilesetID"", ""FileID"" FROM (
+                            SELECT
+                                fe.""FilesetID"",
+                                fe.""FileID"",
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY fe.""FilesetID"", f.""Path""
+                                    ORDER BY fe.""FileID"" DESC
+                                ) as rn
+                            FROM ""FilesetEntry"" fe
+                            JOIN ""File"" f ON fe.""FileID"" = f.""ID""
+                        ) WHERE rn > 1
+                    )
+                ";
+
+                var deletedCount = await cmd.ExecuteNonQueryAsync(deleteSql, token)
+                    .ConfigureAwait(false);
+
+                Logging.Log.WriteInformationMessage(LOGTAG, "DuplicatePathsInFilesetsFixed",
+                    "Removed {0} duplicate path entries from filesets", deletedCount);
+
+                await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
         /// Fixes missing blocklist hashes in the database.
         /// </summary>
         /// <param name="blockhashalgorithm">The hash algorithm used for the blocklist hashes.</param>
