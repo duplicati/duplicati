@@ -67,9 +67,20 @@ public class SharedRemoteOperation
         return modules;
     }
 
-    public static async Task<(string Url, Dictionary<string, string?> Options)> ExpandUrl(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
+    /// <summary>
+    /// This method will unmask the URL if needed, apply secrets from the secret provider, and merge in remote control storage API credentials if it's a Duplicati backend URL. 
+    /// It returns the expanded URL and the options used for the expansion, which may be needed for later operations to ensure consistency.
+    /// </summary>
+    /// <param name="connection">The database connection</param>
+    /// <param name="applicationSettings">The application settings</param>
+    /// <param name="url">The URL to expand</param>
+    /// <param name="backupId">The backup ID</param>
+    /// <param name="sourcePrefix">The prefix, if this is a remote source</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The unmasked URL and the options after the expansion</returns>
+    public static async Task<(string Url, Dictionary<string, string?> Options)> ExpandUrl(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, string? sourcePrefix, CancellationToken cancelToken)
     {
-        url = UnmaskUrl(connection, url, backupId);
+        url = UnmaskUrl(connection, url, backupId, sourcePrefix);
         var uri = new Library.Utility.Uri(url);
         var opts = ParseUrlOptions(connection, uri);
 
@@ -90,24 +101,24 @@ public class SharedRemoteOperation
 
     public static async Task<BackendTupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
     {
-        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, cancelToken);
+        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, null, cancelToken);
         var modules = ConfigureModules(opts);
         var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, opts);
         return new BackendTupleDisposeWrapper(backend, modules);
     }
 
-    public static async Task<SourceProviderTupleDisposeWrapper> GetSourceProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
+    public static async Task<SourceProviderTupleDisposeWrapper> GetSourceProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, string? sourcePrefix, CancellationToken cancelToken)
     {
-        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, cancelToken);
+        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, sourcePrefix, cancelToken);
         var modules = ConfigureModules(opts);
         var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProviderForTesting(url, "", opts, cancelToken);
 
         return new SourceProviderTupleDisposeWrapper(sourceProvider, modules);
     }
 
-    public static async Task<RestoreDestinationProviderTupleDisposeWrapper> GetRestoreDestinationProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, CancellationToken cancelToken)
+    public static async Task<RestoreDestinationProviderTupleDisposeWrapper> GetRestoreDestinationProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, string? sourcePrefix, CancellationToken cancelToken)
     {
-        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, cancelToken);
+        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, sourcePrefix, cancelToken);
         var modules = ConfigureModules(opts);
         var restoreDestinationProvider = await Library.DynamicLoader.RestoreDestinationProviderLoader.GetRestoreDestinationProviderForTesting(url, opts, cancelToken);
 
@@ -132,9 +143,22 @@ public class SharedRemoteOperation
         }
     }
 
-    private static string UnmaskUrl(Connection connection, string maskedurl, string? backupId)
+    /// <summary>
+    /// Unmask the URL if it is masked
+    /// </summary>
+    /// <param name="connection">The database connection</param>
+    /// <param name="maskedurl">The masked URL</param>
+    /// <param name="backupId">The backup ID</param>
+    /// <param name="prefix">The prefix, if this is a remote source</param>
+    /// <returns>The unmasked URL</returns>
+    private static string UnmaskUrl(Connection connection, string maskedurl, string? backupId, string? prefix)
     {
-        var previousUrl = !string.IsNullOrWhiteSpace(backupId) ? connection.GetBackup(backupId)?.TargetURL : null;
+        var backup = !string.IsNullOrWhiteSpace(backupId) ? connection.GetBackup(backupId) : null;
+        var previousUrl = backup?.TargetURL;
+
+        if (!string.IsNullOrWhiteSpace(prefix) && backup?.Sources != null)
+            previousUrl = backup.Sources?.FirstOrDefault(s => s.StartsWith(prefix, StringComparison.Ordinal));
+
         var unmasked = string.IsNullOrWhiteSpace(previousUrl)
             ? maskedurl
             : QuerystringMasking.Unmask(maskedurl, previousUrl);

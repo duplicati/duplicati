@@ -63,7 +63,11 @@ namespace Duplicati.UnitTest
             }
 
             // Backup all files
-            Dictionary<string, string> restoreOptions = new(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
+            Dictionary<string, string> restoreOptions = new(this.TestOptions)
+            {
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["allow-restore-outside-target-directory"] = "true" // For this test, we restore symlinks that point outside the restore target 
+            };
             using (Controller c = new("file://" + this.TARGETFOLDER, this.TestOptions, null))
             {
                 IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
@@ -128,7 +132,11 @@ namespace Duplicati.UnitTest
             }
 
             // Backup all files with given symlink policy
-            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["allow-restore-outside-target-directory"] = "true" // For this test, we restore symlinks that point outside the restore target
+            };
             Dictionary<string, string> backupOptions = new Dictionary<string, string>(this.TestOptions) { ["symlink-policy"] = symlinkPolicy.ToString() };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
             {

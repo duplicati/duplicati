@@ -138,6 +138,7 @@ partial class BackendManager
             Context.Statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, RemoteFilename, Size);
 
             string? result = null;
+            bool deleteSucceeded = false;
             try
             {
                 if (!string.IsNullOrWhiteSpace(Context.Options.SoftDeletePrefix))
@@ -148,6 +149,7 @@ partial class BackendManager
                 {
                     await backend.DeleteAsync(RemoteFilename, cancelToken).ConfigureAwait(false);
                 }
+                deleteSucceeded = true;
             }
             catch (Exception ex)
             {
@@ -171,7 +173,10 @@ partial class BackendManager
                     }
 
                     if (recovered)
+                    {
                         Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileSuccess", LC.L($"Listing indicates file {RemoteFilename} was deleted correctly"));
+                        deleteSucceeded = true;
+                    }
                     else
                         Logging.Log.WriteWarningMessage(LOGTAG, "DeleteRemoteFileFailed", ex, LC.L($"Listing confirms file {RemoteFilename} was not deleted"));
                 }
@@ -188,8 +193,11 @@ partial class BackendManager
                 // We log that the operation was performed, and the result
                 Context.Database.LogRemoteOperation("delete", RemoteFilename, result);
 
-                // We also log the new state of the file, so it will be attempted to be re-deleted on later listings
-                Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Deleted, -1, null);
+                if (deleteSucceeded)
+                {
+                    // We also log the new state of the file, so it will be attempted to be re-deleted on later listings
+                    Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Deleted, -1, null);
+                }
             }
 
             Context.Statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, RemoteFilename, Size);

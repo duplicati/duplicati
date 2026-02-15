@@ -1403,6 +1403,7 @@ namespace Duplicati.Library.Main.Operation
 
             await db.FixDuplicateMetahash(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db.FixDuplicateFileentries(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await db.FixDuplicatePathsInFilesets(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db
                 .FixDuplicateBlocklistHashes(m_options.Blocksize, m_options.BlockhashSize, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);

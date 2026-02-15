@@ -100,7 +100,7 @@ async function createBackup(page: Page) {
   await page.locator("button").filter({ hasText: "Continue" }).click();
   await page
     .locator(
-      'app-destination-list-item:has-text("File system") button:has-text("Choose")'
+      'app-destination-list-item:has-text("File system") button:has-text("Choose")',
     )
     .click();
   await page
@@ -108,7 +108,7 @@ async function createBackup(page: Page) {
     .filter({ hasText: "Manually type path" })
     .click();
   await page.fill("#destination-custom-0-other", DESTINATION_FOLDER);
-  await page.locator("button").filter({ hasText: "Test destination" }).click();
+  await page.locator("button").filter({ hasText: "Test now" }).click();
 
   await page
     .locator("footer")
@@ -124,6 +124,8 @@ async function createBackup(page: Page) {
     .getByPlaceholder("Add a direct path")
     .fill(SOURCE_FOLDER + path.sep);
   await page
+    .locator("app-toggle-card")
+    .filter({ has: page.locator("h3").filter({ hasText: "Paths" }) })
     .locator("button")
     .filter({ has: page.locator("sh-icon").filter({ hasText: "plus" }) })
     .click();
@@ -258,7 +260,7 @@ async function directRestoreFromFiles(page: Page) {
     .filter({ hasText: "Manually type path" })
     .click();
   await page.fill("#destination-custom-0-other", DESTINATION_FOLDER);
-  await page.locator("button").filter({ hasText: "Test destination" }).click();
+  await page.locator("button").filter({ hasText: "Test now" }).click();
   await page.locator("button").filter({ hasText: "Continue" }).click();
   await page.fill("#password", PASSWORD);
   await page.locator("button").filter({ hasText: "Continue" }).click();
@@ -319,7 +321,7 @@ async function restoreFromConfigFile(page: Page) {
 
   await page.setInputFiles(
     'input[type="file"][accept=".json,.aes"]',
-    downloadPath
+    downloadPath,
   );
 
   await page.fill("[formcontrolname='passphrase']", CONFIG_FILE_PASSWORD);

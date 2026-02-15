@@ -170,6 +170,7 @@ namespace Duplicati.Library.Main.Operation
                                     mountpoint = Path.GetFullPath(mountpoint);
                                 }
 
+                                mountpoint = Util.AppendDirSeparator(mountpoint);
                                 var backendurl = m.Groups["url"].Value;
 
                                 ISourceProvider provider;
@@ -881,6 +882,10 @@ namespace Duplicati.Library.Main.Operation
                     // Make sure we have the database up-to-date
                     await db
                         .CommitTransactionAsync("CommitAfterUpload", true, m_taskReader.ProgressToken)
+                        .ConfigureAwait(false);
+
+                    // Remove any duplicate paths from the fileset
+                    await db.RemoveDuplicatePathsFromFilesetAsync(filesetid, m_taskReader.ProgressToken)
                         .ConfigureAwait(false);
 
                     // If this throws, we should roll back the transaction

@@ -92,7 +92,7 @@ public class WebModule : IWebModule
         using var client = new SourceProvider(url, "", forwardoptions);
         await client.Initialize(cancellationToken);
 
-        var targetEntry = await client.GetEntry(path ?? "", isFolder: true, cancellationToken).ConfigureAwait(false);
+        var targetEntry = await client.GetEntry((path ?? "").TrimStart('/'), isFolder: true, cancellationToken).ConfigureAwait(false);
         if (targetEntry == null)
             throw new DirectoryNotFoundException($"Path not found: {path}");
 

@@ -391,24 +391,45 @@ namespace Duplicati.Library.Main.Database
                 }
                 else
                 {
-                    RemovedFileSize = await cmd.ExecuteScalarInt64Async($@"
-                        SELECT SUM(""Length"") FROM (
-                            SELECT ""C"".""Length""
+                    RemovedFileSize = await cmd.SetCommandAndParameters($@"
+                        SELECT COALESCE(SUM(""Size""), 0) FROM (
+                            SELECT DISTINCT ""D"".""ID"", ""D"".""Size""
                             FROM
                                 ""{m_tablename}"" ""A""
                                 INNER JOIN ""FileLookup"" ""B"" ON ""A"".""FileID"" = ""B"".""ID""
-                                INNER JOIN ""Blockset"" ""C"" ON ""B"".""BlocksetID"" = ""C"".""ID""
+                                INNER JOIN ""BlocksetEntry"" ""C"" ON ""B"".""BlocksetID"" = ""C"".""BlocksetID""
+                                INNER JOIN ""Block"" ""D"" ON ""C"".""BlockID"" = ""D"".""ID""
+                            WHERE ""D"".""ID"" NOT IN (
+                                SELECT DISTINCT ""BE"".""BlockID""
+                                FROM ""FilesetEntry"" ""FE""
+                                INNER JOIN ""FileLookup"" ""FL"" ON ""FE"".""FileID"" = ""FL"".""ID""
+                                INNER JOIN ""BlocksetEntry"" ""BE"" ON ""FL"".""BlocksetID"" = ""BE"".""BlocksetID""
+                                WHERE ""FE"".""FilesetID"" = @ParentID
+                                AND ""FE"".""FileID"" NOT IN (SELECT ""FileID"" FROM ""{m_tablename}"")
+                            )
 
-                            UNION ALL
+                            UNION
 
-                            SELECT ""C"".""Length""
+                            SELECT DISTINCT ""D"".""ID"", ""D"".""Size""
                             FROM
                                 ""{m_tablename}"" ""A""
                                 INNER JOIN ""FileLookup"" ""B"" ON ""A"".""FileID"" = ""B"".""ID""
-                                INNER JOIN ""Metadataset"" ""D"" ON ""B"".""MetadataID"" = ""D"".""ID""
-                                INNER JOIN ""Blockset"" ""C"" ON ""D"".""BlocksetID"" = ""C"".""ID""
+                                INNER JOIN ""Metadataset"" ""M"" ON ""B"".""MetadataID"" = ""M"".""ID""
+                                INNER JOIN ""BlocksetEntry"" ""C"" ON ""M"".""BlocksetID"" = ""C"".""BlocksetID""
+                                INNER JOIN ""Block"" ""D"" ON ""C"".""BlockID"" = ""D"".""ID""
+                            WHERE ""D"".""ID"" NOT IN (
+                                SELECT DISTINCT ""BE"".""BlockID""
+                                FROM ""FilesetEntry"" ""FE""
+                                INNER JOIN ""FileLookup"" ""FL"" ON ""FE"".""FileID"" = ""FL"".""ID""
+                                INNER JOIN ""Metadataset"" ""MS"" ON ""FL"".""MetadataID"" = ""MS"".""ID""
+                                INNER JOIN ""BlocksetEntry"" ""BE"" ON ""MS"".""BlocksetID"" = ""BE"".""BlocksetID""
+                                WHERE ""FE"".""FilesetID"" = @ParentID
+                                AND ""FE"".""FileID"" NOT IN (SELECT ""FileID"" FROM ""{m_tablename}"")
+                            )
                         )
-                    ", 0, token)
+                    ")
+                    .SetParameterValue("@ParentID", ParentID)
+                    .ExecuteScalarInt64Async(0, token)
                     .ConfigureAwait(false);
                 }
 

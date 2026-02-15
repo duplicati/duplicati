@@ -1958,14 +1958,15 @@ namespace Duplicati.Library.Main.Database
                     FROM ""RemoteVolume""
                     WHERE
                         ""Type"" = @Type
-                        AND ""State"" != @State
+                        AND ""State"" NOT IN (@DeletedState, @DeletingState)
                         AND ""ID"" NOT IN (
                             SELECT ""VolumeID""
                             FROM ""Fileset""
                         )
                 ");
                 cmd.SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
-                cmd.SetParameterValue("@State", RemoteVolumeState.Deleted.ToString());
+                cmd.SetParameterValue("@DeletedState", RemoteVolumeState.Deleted.ToString());
+                cmd.SetParameterValue("@DeletingState", RemoteVolumeState.Deleting.ToString());
                 var volumesMissingFilests = await cmd.ExecuteScalarInt64Async(0, token)
                     .ConfigureAwait(false);
 
@@ -1981,14 +1982,15 @@ namespace Duplicati.Library.Main.Database
                             FROM ""RemoteVolume""
                             WHERE
                                 ""Type"" = @Type
-                                AND ""State"" != @State
+                                AND ""State"" NOT IN (@DeletedState, @DeletingState)
                                 AND ""ID"" NOT IN (
                                     SELECT ""VolumeID""
                                     FROM ""Fileset""
                                 )
                         ");
                         cmd.SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
-                        cmd.SetParameterValue("@State", RemoteVolumeState.Deleted.ToString());
+                        cmd.SetParameterValue("@DeletedState", RemoteVolumeState.Deleted.ToString());
+                        cmd.SetParameterValue("@DeletingState", RemoteVolumeState.Deleting.ToString());
                         await using var reader = await cmd.ExecuteReaderAsync(token)
                             .ConfigureAwait(false);
                         if (await reader.ReadAsync(token).ConfigureAwait(false))
@@ -2490,6 +2492,7 @@ namespace Duplicati.Library.Main.Database
             cmd.SetCommandAndParameters(LIST_FILESETS);
             cmd.SetParameterValue("@FilesetId", filesetId);
 
+            string? lastFilePath = null;
             await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
                 if (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
@@ -2509,6 +2512,32 @@ namespace Duplicati.Library.Main.Database
                         var metablockhash = rd.ConvertValueToString(9);
                         //var metablocksize = rd.ConvertValueToInt64(10, -1);
                         var metablocklisthash = rd.ConvertValueToString(11);
+
+                        // Check for duplicate paths in regular files and skip them
+                        if (path == lastFilePath)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "DuplicatePathInFileset", null,
+                                "Duplicate path detected in fileset {0}: {1}. Skipping duplicate entry.",
+                                filesetId, path);
+
+
+                            if (blrd == null)
+                            {
+                                more = await rd.ReadAsync(token).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                // Skip any blocks in the reader for this entry
+                                await using (var en = blrd.GetEnumerator(token))
+                                    if (await en.MoveNextAsync().ConfigureAwait(false) && !string.IsNullOrEmpty(en.Current))
+                                        while (await en.MoveNextAsync().ConfigureAwait(false))
+                                        { }
+
+                                more = blrd.MoreData;
+                            }
+                            continue;
+                        }
+                        lastFilePath = path;
 
                         if (blockhash == filehash)
                             blockhash = null;

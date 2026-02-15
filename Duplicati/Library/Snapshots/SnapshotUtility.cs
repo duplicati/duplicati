@@ -49,6 +49,10 @@ namespace Duplicati.Library.Snapshots
             {
                 return CreateLinuxSnapshot(paths, followSymlinks);
             }
+            else if (OperatingSystem.IsMacOS())
+            {
+                return CreateMacOSSnapshot(paths, followSymlinks);
+            }
             else if (OperatingSystem.IsWindows())
             {
                 return CreateWindowsSnapshot(paths, options, followSymlinks);
@@ -97,10 +101,22 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("linux")]
-        [SupportedOSPlatform("macOS")]
         private static ISnapshotService CreateLinuxSnapshot(IEnumerable<string> folders, bool followSymlinks)
         {
             return new LinuxSnapshot(folders, followSymlinks);
+        }
+
+        /// <summary>
+        /// Loads a snapshot implementation for macOS
+        /// </summary>
+        /// <param name="folders">The list of folders to create snapshots of</param>
+        /// <param name="followSymlinks">Whether to follow symlinks</param>
+        /// <returns>The ISnapshotService implementation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("macOS")]
+        private static ISnapshotService CreateMacOSSnapshot(IEnumerable<string> folders, bool followSymlinks)
+        {
+            return new MacOSSnapshot(folders, followSymlinks);
         }
 
         /// <summary>

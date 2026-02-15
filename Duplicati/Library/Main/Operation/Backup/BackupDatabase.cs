@@ -198,6 +198,14 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
+        public Task RemoveDuplicatePathsFromFilesetAsync(long filesetId, CancellationToken cancellationToken)
+        {
+            return RunOnMain(async () =>
+                await m_database
+                    .RemoveDuplicatePathsFromFileset(filesetId, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
 
         public Task MoveBlockToVolumeAsync(string blockkey, long size, long sourcevolumeid, long targetvolumeid, CancellationToken cancellationToken)
         {
@@ -246,15 +254,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                     .UpdateRemoteVolume(indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, cancellationToken)
                     .ConfigureAwait(false);
             });
-        }
-
-        public Task AppendFilesFromPreviousSetAsync(CancellationToken cancellationToken)
-        {
-            return RunOnMain(async () =>
-                await m_database
-                    .AppendFilesFromPreviousSet(null, cancellationToken)
-                    .ConfigureAwait(false)
-            );
         }
 
         public Task AppendFilesFromPreviousSetAsync(string[] deletedFilelist, CancellationToken cancellationToken)

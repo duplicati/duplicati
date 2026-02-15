@@ -9,11 +9,20 @@ public static class LicenseHelper
 {
     public static LicenseData? LicenseData => licenseData.Value;
 
-    public static int AvailableOffice365FeatureSeats => GetFeatureSeats(DuplicatiLicenseFeatures.Office365);
+    public static int AvailableOffice365UserSeats => GetFeatureSeats(DuplicatiLicenseFeatures.Office365Users);
+    public static int AvailableOffice365GroupSeats => GetFeatureSeats(DuplicatiLicenseFeatures.Office365Groups);
+    public static int AvailableOffice365SiteSeats => GetFeatureSeats(DuplicatiLicenseFeatures.Office365Sites);
+
+    public static bool IsOffice365Enabled =>
+        AvailableOffice365UserSeats > 0 ||
+        AvailableOffice365GroupSeats > 0 ||
+        AvailableOffice365SiteSeats > 0;
 
     private static Dictionary<string, int> UnlicensedSeats = new Dictionary<string, int>
     {
-        { DuplicatiLicenseFeatures.Office365, 5 },
+        { DuplicatiLicenseFeatures.Office365Users, 5 },
+        { DuplicatiLicenseFeatures.Office365Groups, 5 },
+        { DuplicatiLicenseFeatures.Office365Sites, 5 },
     };
 
     private static int GetDefaultSeats(string feature)

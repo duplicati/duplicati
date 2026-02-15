@@ -356,7 +356,7 @@ namespace Duplicati.Library.Main
         private IEnumerable<ICommandLineArgument> GetOSConditionalCommands()
         {
             var items = new List<ICommandLineArgument>();
-            if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+            if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
                 yield return new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, DEFAULT_SNAPSHOT_POLICY.ToString(), null, Enum.GetNames(typeof(OptimizationStrategy)));
 
             if (OperatingSystem.IsWindows())
@@ -520,6 +520,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong, "false", null, null, Strings.Options.PatchwithlocalblocksDeprecated("restore-with-local-blocks")),
             new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
             new CommandLineArgument("dont-compress-restore-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontcompressrestorepathsShort, Strings.Options.DontcompressrestorepathsLong, "false"),
+            new CommandLineArgument("allow-restore-outside-target-directory", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowRestoreOutsideTargetDirectoryShort, Strings.Options.AllowRestoreOutsideTargetDirectoryLong, "false"),
 
             new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
             new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
@@ -1476,6 +1477,11 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <value><c>true</c> if no local db is used; otherwise, <c>false</c>.</value>
         public bool DontCompressRestorePaths => GetBool("dont-compress-restore-paths");
+
+        /// <summary>
+        /// Gets a value indicating whether to allow restore outside target directory.
+        /// </summary>
+        public bool AllowRestoreOutsideTargetDirectory => GetBool("allow-restore-outside-target-directory");
 
         /// <summary>
         /// Gets a flag indicating if block hashes are checked before being applied

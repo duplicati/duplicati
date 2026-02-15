@@ -50,7 +50,7 @@ public enum B2LockMode
 /// <summary>
 /// Backblaze B2 Backend
 /// </summary>
-public class B2 : IStreamingBackend, ILockingBackend
+public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
 {
     /// <summary>
     /// The option key for specifying the Backblaze B2 account ID
@@ -707,6 +707,23 @@ public class B2 : IStreamingBackend, ILockingBackend
         .Select(x => new System.Uri(x).Host)
         .Distinct()
         .ToArray();
+    }
+
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+    {
+        var sourceFileId = await GetFileId(oldname, cancellationToken).ConfigureAwait(false);
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+
+        // Copy file
+        await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
+            await _b2AuthHelper.PostAndGetJsonDataAsync<FileEntity>(
+                $"{config.APIUrl}/b2api/v1/b2_copy_file",
+                new CopyFileRequest(sourceFileId, _urlencodedPrefix + Utility.Uri.UrlPathEncode(newname)),
+                ct).ConfigureAwait(false)
+        ).ConfigureAwait(false);
+
+        // Delete old file
+        await DeleteAsync(oldname, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

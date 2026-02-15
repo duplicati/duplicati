@@ -14,7 +14,7 @@ public static class Configuration
 
     private static Lazy<string[]> LicensedAPIExtensionsLazy = new(() =>
         new string?[] {
-            LicenseHelper.AvailableOffice365FeatureSeats > 0 ? "office365" : null
+            LicenseHelper.IsOffice365Enabled ? "office365" : null
         }
         .WhereNotNull()
         .ToArray()

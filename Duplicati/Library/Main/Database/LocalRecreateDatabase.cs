@@ -1476,6 +1476,10 @@ namespace Duplicati.Library.Main.Database
                     ""Size"",
                     ""VolumeID""
                 FROM ""{tmptablename}""
+                WHERE ""VolumeID"" IN (
+                    SELECT ""ID""
+                    FROM ""RemoteVolume""
+                )
             ", token)
                 .ConfigureAwait(false);
 

@@ -1276,15 +1276,15 @@ public partial class RestoreProvider
 
             if (target.Type == SourceItemType.Group)
             {
-                _targetGroupId = target.Metadata["o365:Id"]!;
+                _targetGroupId = target.Metadata.GetValueOrDefault("o365:Id");
             }
             else if (target.Type == SourceItemType.GroupTeams)
             {
-                _targetGroupId = target.Metadata["o365:Id"]!;
+                _targetGroupId = target.Metadata.GetValueOrDefault("o365:Id");
             }
             else if (target.Type == SourceItemType.GroupChannel)
             {
-                _targetGroupId = target.Metadata["o365:GroupId"]!;
+                _targetGroupId = target.Metadata.GetValueOrDefault("o365:GroupId");
             }
             else
             {
@@ -1333,7 +1333,7 @@ public partial class RestoreProvider
                 if (string.IsNullOrWhiteSpace(groupId))
                     return null;
 
-                channelId = target.Metadata["o365:Id"];
+                channelId = target.Metadata.GetValueOrDefault("o365:Id");
                 if (string.IsNullOrWhiteSpace(channelId))
                     return null;
 

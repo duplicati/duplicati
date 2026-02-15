@@ -381,13 +381,14 @@ partial class RestoreProvider
 
             if (target.Type == SourceItemType.User)
             {
-                _targetUserId = target.Metadata["o365:Id"]!;
-                _targetCalendarId = await GetDefaultRestoreTargetCalendar(_targetUserId, cancel);
+                _targetUserId = target.Metadata.GetValueOrDefault("o365:Id");
+                if (!string.IsNullOrWhiteSpace(_targetUserId))
+                    _targetCalendarId = await GetDefaultRestoreTargetCalendar(_targetUserId, cancel);
             }
             else if (target.Type == SourceItemType.UserCalendar || target.Type == SourceItemType.Calendar)
             {
                 _targetUserId = target.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
-                _targetCalendarId = target.Metadata["o365:Id"];
+                _targetCalendarId = target.Metadata.GetValueOrDefault("o365:Id");
             }
             else
             {
