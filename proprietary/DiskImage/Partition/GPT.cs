@@ -788,7 +788,9 @@ public class GPT : IPartitionTable
         private readonly IRawDisk _disk;
         private readonly long _startOffset;
         private readonly long _maxSize;
-        private readonly MemoryStream _buffer;
+        private readonly byte[] _buffer;
+        private long _position;
+        private long _length;
         private bool _disposed = false;
 
         public PartitionWriteStream(IRawDisk disk, long startOffset, long maxSize)
@@ -796,33 +798,58 @@ public class GPT : IPartitionTable
             _disk = disk;
             _startOffset = startOffset;
             _maxSize = maxSize;
-            _buffer = new MemoryStream();
+            _buffer = new byte[maxSize];
+            _position = 0;
+            _length = 0;
         }
 
         public override bool CanRead => false;
         public override bool CanSeek => true;
         public override bool CanWrite => true;
-        public override long Length => _buffer.Length;
+        public override long Length => _length;
         public override long Position
         {
-            get => _buffer.Position;
-            set => _buffer.Position = value;
+            get => _position;
+            set
+            {
+                if (value < 0 || value > _maxSize)
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                _position = value;
+            }
         }
 
-        public override void Flush() => _buffer.Flush();
+        public override void Flush() { }
         public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        public override long Seek(long offset, SeekOrigin origin) => _buffer.Seek(offset, origin);
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            long newPosition = origin switch
+            {
+                SeekOrigin.Begin => offset,
+                SeekOrigin.Current => _position + offset,
+                SeekOrigin.End => _length + offset,
+                _ => throw new ArgumentOutOfRangeException(nameof(origin))
+            };
+            if (newPosition < 0 || newPosition > _maxSize)
+                throw new IOException("Cannot seek beyond partition size.");
+            _position = newPosition;
+            return _position;
+        }
         public override void SetLength(long value)
         {
             if (value > _maxSize)
                 throw new IOException($"Cannot write beyond partition size of {_maxSize} bytes.");
-            _buffer.SetLength(value);
+            _length = value;
+            if (_position > _length)
+                _position = _length;
         }
         public override void Write(byte[] buffer, int offset, int count)
         {
-            if (_buffer.Position + count > _maxSize)
+            if (_position + count > _maxSize)
                 throw new IOException($"Cannot write beyond partition size of {_maxSize} bytes.");
-            _buffer.Write(buffer, offset, count);
+            Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
+            _position += count;
+            if (_position > _length)
+                _length = _position;
         }
 
         protected override void Dispose(bool disposing)
@@ -832,13 +859,10 @@ public class GPT : IPartitionTable
                 if (disposing)
                 {
                     // Write all buffered data to disk
-                    _buffer.Position = 0;
-                    var data = _buffer.ToArray();
-                    if (data.Length > 0)
+                    if (_length > 0)
                     {
-                        _disk.WriteBytesAsync(_startOffset, data, CancellationToken.None).GetAwaiter().GetResult();
+                        _disk.WriteBytesAsync(_startOffset, _buffer.AsMemory(0, (int)_length), CancellationToken.None).GetAwaiter().GetResult();
                     }
-                    _buffer.Dispose();
                 }
                 _disposed = true;
             }
