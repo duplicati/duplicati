@@ -481,6 +481,21 @@ namespace Duplicati.UnitTest
         /// <param name="driveLetter">The drive letter to populate.</param>
         /// <param name="fileCount">The number of files to create.</param>
         /// <param name="fileSizeKB">The size of each file in KB.</param>
+        public static void FlushVolume(char driveLetter)
+        {
+            try
+            {
+                var script = $@"
+                    Write-VolumeCache -DriveLetter {driveLetter}
+                ";
+                RunPowerShell(script);
+            }
+            catch (Exception ex)
+            {
+                TestContext.Progress.WriteLine($"Warning: Failed to flush volume cache: {ex.Message}");
+            }
+        }
+
         public static void PopulateTestData(char driveLetter, int fileCount = 10, int fileSizeKB = 10)
         {
             var drivePath = $"{driveLetter}:\\";
@@ -541,14 +556,23 @@ namespace Duplicati.UnitTest
             }
         }
 
-        public static void UnmountForWriting(string vhdPath, char driveLetter)
+        public static void UnmountForWriting(string vhdPath, char? driveLetter = null)
         {
-            // Remove the drive letter
             var diskNumber = GetDiskNumber(vhdPath);
-            var script = $@"
-                Get-Volume -Drive {driveLetter} | Get-Partition | Remove-PartitionAccessPath -AccessPath {driveLetter}:\
-            ";
-            RunPowerShell(script);
+            if (driveLetter == null)
+            {
+                try { driveLetter = FindDriveLetterForDisk(diskNumber); } catch { }
+            }
+
+            string script = string.Empty;
+            if (driveLetter != null && driveLetter != '\0')
+            {
+                // Remove the drive letter
+                script = $@"
+                    Get-Volume -Drive {driveLetter} | Get-Partition | Remove-PartitionAccessPath -AccessPath {driveLetter}:\
+                ";
+                RunPowerShell(script);
+            }
 
             // Pull the disk offline to ensure it's not in use
             script = $@"
@@ -561,6 +585,18 @@ namespace Duplicati.UnitTest
                 Set-Disk -Number {diskNumber} -IsReadOnly $false
             ";
             RunPowerShell(script);
+        }
+
+        public static void BringOnline(string vhdPath)
+        {
+            var diskNumber = GetDiskNumber(vhdPath);
+            if (diskNumber >= 0)
+            {
+                var script = $@"
+                    Set-Disk -Number {diskNumber} -IsOffline $false
+                ";
+                RunPowerShell(script);
+            }
         }
 
         public static char MountForReading(string vhdPath, char? driveLetter = null)

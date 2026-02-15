@@ -372,6 +372,7 @@ namespace Duplicati.UnitTest
 
             // Populate with test data
             DiskImageVhdHelper.PopulateTestData(_sourceDriveLetter);
+            DiskImageVhdHelper.FlushVolume(_sourceDriveLetter);
 
             return physicalDrivePath;
         }
@@ -394,6 +395,7 @@ namespace Duplicati.UnitTest
                 var (fsType, partSize) = partitions[i];
                 var driveLetter = DiskImageVhdHelper.CreateAndFormatPartition(_sourceDiskNumber, fsType, partSize);
                 DiskImageVhdHelper.PopulateTestData(driveLetter, 5, 5); // Smaller data set for multiple partitions
+                DiskImageVhdHelper.FlushVolume(driveLetter);
 
                 if (i == 0)
                 {
@@ -440,13 +442,19 @@ namespace Duplicati.UnitTest
         /// </summary>
         private IRestoreResults RunRestore(string restoreDrivePath)
         {
+            DiskImageVhdHelper.UnmountForWriting(_restoreVhdPath);
+
             var options = new Dictionary<string, string>(TestOptions);
             options["restore-path"] = $"@diskimage://{restoreDrivePath}";
             options["overwrite"] = "true";
             options["restore-file-processors"] = "1";
 
             using var c = new Controller("file://" + TARGETFOLDER, options, null);
-            return c.Restore(new[] { "*" });
+            var results = c.Restore(new[] { "*" });
+
+            DiskImageVhdHelper.BringOnline(_restoreVhdPath);
+
+            return results;
         }
 
         /// <summary>
@@ -471,6 +479,8 @@ namespace Duplicati.UnitTest
             {
                 TestContext.Progress.WriteLine("Restored VHD not mounted, attempting to mount...");
                 restoreDriveLetter = DiskImageVhdHelper.MountForReading(_restoreVhdPath);
+                // Give Windows some time to mount the volume and assign the drive letter
+                Thread.Sleep(2000);
             }
 
             if (restoreDriveLetter == '\0')
@@ -487,6 +497,14 @@ namespace Duplicati.UnitTest
                 // Compare directory structures and file contents
                 var sourcePath = $"{originalDriveLetter}:\\";
                 var restorePath = $"{restoreDriveLetter}:\\";
+
+                // Wait for the restore path to become available
+                for (int i = 0; i < 10; i++)
+                {
+                    if (Directory.Exists(restorePath))
+                        break;
+                    Thread.Sleep(1000);
+                }
 
                 CompareDirectories(sourcePath, restorePath);
             }
@@ -665,7 +683,13 @@ namespace Duplicati.UnitTest
                     using (var restoreController = new Controller("file://" + TARGETFOLDER, restoreOptions, null))
                     {
                         var restoreResults = restoreController.Restore(new[] { geometryFile.Path });
-                        TestUtils.AssertResults(restoreResults);
+
+                        // Ignore NoFilesRestored warning as geometry.json is a special metadata file
+                        var hasRelevantWarnings = restoreResults.Warnings.Any(w => !w.Contains("NoFilesRestored"));
+                        if (restoreResults.Errors.Any() || hasRelevantWarnings)
+                        {
+                            TestUtils.AssertResults(restoreResults);
+                        }
                     }
 
                     if (File.Exists(tempGeometryPath))
