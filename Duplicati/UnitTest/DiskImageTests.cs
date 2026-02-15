@@ -49,12 +49,16 @@ namespace Duplicati.UnitTest
         private int _sourceDiskNumber = -1;
         private int _restoreDiskNumber = -1;
         private char _sourceDriveLetter;
+        private DiskImage.IDiskImageHelper _diskHelper = null!;
 
         [SetUp]
         public void DiskImageSetUp()
         {
+            // Create the appropriate disk image helper for the current platform
+            _diskHelper = DiskImage.DiskImageHelperFactory.Create();
+
             // Check for admin privileges
-            if (!DiskImageVhdHelper.IsAdministrator())
+            if (!_diskHelper.HasRequiredPrivileges())
             {
                 Assert.Ignore("DiskImage tests require administrator privileges");
             }
@@ -71,7 +75,7 @@ namespace Duplicati.UnitTest
             // Cleanup VHDs
             try
             {
-                DiskImageVhdHelper.CleanupVhd(_sourceVhdPath);
+                _diskHelper.CleanupDisk(_sourceVhdPath);
             }
             catch (Exception ex)
             {
@@ -80,7 +84,7 @@ namespace Duplicati.UnitTest
 
             try
             {
-                DiskImageVhdHelper.CleanupVhd(_restoreVhdPath);
+                _diskHelper.CleanupDisk(_restoreVhdPath);
             }
             catch (Exception ex)
             {
@@ -89,11 +93,11 @@ namespace Duplicati.UnitTest
 
             try
             {
-                DiskImageVhdHelper.DisposeSession();
+                _diskHelper.Dispose();
             }
             catch (Exception ex)
             {
-                TestContext.Progress.WriteLine($"Warning: Failed to dispose PowerShell session: {ex.Message}");
+                TestContext.Progress.WriteLine($"Warning: Failed to dispose disk helper: {ex.Message}");
             }
         }
 
@@ -361,18 +365,18 @@ namespace Duplicati.UnitTest
         private string SetupSourceVhd(int sizeMB, string tableType, string fsType)
         {
             // Create and attach VHD
-            var physicalDrivePath = DiskImageVhdHelper.CreateAndAttachVhd(_sourceVhdPath, sizeMB);
-            _sourceDiskNumber = DiskImageVhdHelper.GetDiskNumber(_sourceVhdPath);
+            var physicalDrivePath = _diskHelper.CreateAndAttachDisk(_sourceVhdPath, sizeMB);
+            _sourceDiskNumber = _diskHelper.GetDiskNumber(_sourceVhdPath);
 
             // Initialize disk
-            DiskImageVhdHelper.InitializeDisk(_sourceDiskNumber, tableType);
+            _diskHelper.InitializeDisk(_sourceDiskNumber, tableType);
 
             // Create and format partition
-            _sourceDriveLetter = DiskImageVhdHelper.CreateAndFormatPartition(_sourceDiskNumber, fsType);
+            _sourceDriveLetter = _diskHelper.CreateAndFormatPartition(_sourceDiskNumber, fsType);
 
             // Populate with test data
-            DiskImageVhdHelper.PopulateTestData(_sourceDriveLetter);
-            DiskImageVhdHelper.FlushVolume(_sourceDriveLetter);
+            _diskHelper.PopulateTestData(_sourceDriveLetter);
+            _diskHelper.FlushVolume(_sourceDriveLetter);
 
             return physicalDrivePath;
         }
@@ -383,19 +387,19 @@ namespace Duplicati.UnitTest
         private string SetupSourceVhdMultiplePartitions(int sizeMB, string tableType, (string fsType, int sizeMB)[] partitions)
         {
             // Create and attach VHD
-            var physicalDrivePath = DiskImageVhdHelper.CreateAndAttachVhd(_sourceVhdPath, sizeMB);
-            _sourceDiskNumber = DiskImageVhdHelper.GetDiskNumber(_sourceVhdPath);
+            var physicalDrivePath = _diskHelper.CreateAndAttachDisk(_sourceVhdPath, sizeMB);
+            _sourceDiskNumber = _diskHelper.GetDiskNumber(_sourceVhdPath);
 
             // Initialize disk
-            DiskImageVhdHelper.InitializeDisk(_sourceDiskNumber, tableType);
+            _diskHelper.InitializeDisk(_sourceDiskNumber, tableType);
 
             // Create and format partitions
             for (int i = 0; i < partitions.Length; i++)
             {
                 var (fsType, partSize) = partitions[i];
-                var driveLetter = DiskImageVhdHelper.CreateAndFormatPartition(_sourceDiskNumber, fsType, partSize);
-                DiskImageVhdHelper.PopulateTestData(driveLetter, 5, 5); // Smaller data set for multiple partitions
-                DiskImageVhdHelper.FlushVolume(driveLetter);
+                var driveLetter = _diskHelper.CreateAndFormatPartition(_sourceDiskNumber, fsType, partSize);
+                _diskHelper.PopulateTestData(driveLetter, 5, 5); // Smaller data set for multiple partitions
+                _diskHelper.FlushVolume(driveLetter);
 
                 if (i == 0)
                 {
@@ -412,13 +416,13 @@ namespace Duplicati.UnitTest
         private string SetupRestoreVhd(int sizeMB, string tableType, string fsType)
         {
             // Create and attach VHD
-            var physicalDrivePath = DiskImageVhdHelper.CreateAndAttachVhd(_restoreVhdPath, sizeMB);
-            _restoreDiskNumber = DiskImageVhdHelper.GetDiskNumber(_restoreVhdPath);
+            var physicalDrivePath = _diskHelper.CreateAndAttachDisk(_restoreVhdPath, sizeMB);
+            _restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
 
             // Initialize disk (the restore will overwrite this, but we need it formatted)
-            DiskImageVhdHelper.InitializeDisk(_restoreDiskNumber, tableType);
-            var restoreDriveLetter = DiskImageVhdHelper.CreateAndFormatPartition(_restoreDiskNumber, fsType);
-            DiskImageVhdHelper.UnmountForWriting(_restoreVhdPath, restoreDriveLetter);
+            _diskHelper.InitializeDisk(_restoreDiskNumber, tableType);
+            var restoreDriveLetter = _diskHelper.CreateAndFormatPartition(_restoreDiskNumber, fsType);
+            _diskHelper.UnmountForWriting(_restoreVhdPath, restoreDriveLetter);
 
             return physicalDrivePath;
         }
@@ -442,7 +446,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         private IRestoreResults RunRestore(string restoreDrivePath)
         {
-            DiskImageVhdHelper.UnmountForWriting(_restoreVhdPath);
+            _diskHelper.UnmountForWriting(_restoreVhdPath);
 
             var options = new Dictionary<string, string>(TestOptions);
             options["restore-path"] = $"@diskimage://{restoreDrivePath}";
@@ -452,7 +456,7 @@ namespace Duplicati.UnitTest
             using var c = new Controller("file://" + TARGETFOLDER, options, null);
             var results = c.Restore(new[] { "*" });
 
-            DiskImageVhdHelper.BringOnline(_restoreVhdPath);
+            _diskHelper.BringOnline(_restoreVhdPath);
 
             return results;
         }
@@ -465,12 +469,16 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Verifying restored data...");
 
             // Attach the restored VHD to get its drive letter
-            var restoreDiskNumber = DiskImageVhdHelper.GetDiskNumber(_restoreVhdPath);
+            var restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
             if (restoreDiskNumber < 0)
             {
-                // Re-attach the VHD if needed
-                DiskImageVhdHelper.RunPowerShell($"Mount-DiskImage -ImagePath '{_restoreVhdPath}'");
-                restoreDiskNumber = DiskImageVhdHelper.GetDiskNumber(_restoreVhdPath);
+                // Re-attach the VHD if needed - for Windows, we need to use the static method
+                // since this is a special case for re-attaching
+                if (_diskHelper is DiskImage.WindowsDiskImageHelper)
+                {
+                    DiskImage.WindowsDiskImageHelper.RunPowerShell($"Mount-DiskImage -ImagePath '{_restoreVhdPath}'");
+                }
+                restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
             }
 
             // Get the drive letter for the restored partition
@@ -478,7 +486,7 @@ namespace Duplicati.UnitTest
             if (restoreDriveLetter == '\0')
             {
                 TestContext.Progress.WriteLine("Restored VHD not mounted, attempting to mount...");
-                restoreDriveLetter = DiskImageVhdHelper.MountForReading(_restoreVhdPath);
+                restoreDriveLetter = _diskHelper.MountForReading(_restoreVhdPath);
                 // Give Windows some time to mount the volume and assign the drive letter
                 Thread.Sleep(2000);
             }
@@ -513,7 +521,7 @@ namespace Duplicati.UnitTest
                 // Detach the restored VHD
                 try
                 {
-                    DiskImageVhdHelper.DetachVhd(_restoreVhdPath);
+                    _diskHelper.DetachDisk(_restoreVhdPath);
                 }
                 catch (Exception ex)
                 {
@@ -573,7 +581,7 @@ namespace Duplicati.UnitTest
         {
             // Use PowerShell to find the drive letter for this disk
             var script = $@"Get-Partition -DiskNumber {diskNumber} | Get-Volume | Where-Object {{ $_.DriveLetter -ne $null }} | Select-Object -ExpandProperty DriveLetter";
-            var output = DiskImageVhdHelper.RunPowerShell(script)?.Trim();
+            var output = DiskImage.WindowsDiskImageHelper.RunPowerShell(script)?.Trim();
 
             if (!string.IsNullOrEmpty(output) && output.Length >= 1 && char.IsLetter(output[0]))
             {
@@ -730,12 +738,12 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Verifying partition table matches...");
 
             // Get source disk details
-            var sourceDetails = DiskImageVhdHelper.GetDiskDetails(_sourceDiskNumber);
+            var sourceDetails = _diskHelper.GetDiskDetails(_sourceDiskNumber);
             TestContext.Progress.WriteLine("Source disk details:\n" + sourceDetails);
 
             // Get restore disk details
-            var restoreDiskNumber = DiskImageVhdHelper.GetDiskNumber(_restoreVhdPath);
-            var restoreDetails = DiskImageVhdHelper.GetDiskDetails(restoreDiskNumber);
+            var restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
+            var restoreDetails = _diskHelper.GetDiskDetails(restoreDiskNumber);
             TestContext.Progress.WriteLine("Restore disk details:\n" + restoreDetails);
 
             // Parse partition information from diskpart output
