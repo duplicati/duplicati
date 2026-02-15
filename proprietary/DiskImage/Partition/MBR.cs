@@ -123,7 +123,7 @@ public class MBR : IPartitionTable
     private MBRPartitionEntry? ParsePartitionEntry(byte[] bytes, int offset, int entryNumber)
     {
         // Read partition type byte
-        byte partitionType = bytes[offset];
+        byte partitionType = bytes[offset + 4];
 
         // Skip empty entries
         if (partitionType == 0)
