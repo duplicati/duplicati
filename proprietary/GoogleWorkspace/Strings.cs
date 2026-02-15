@@ -24,8 +24,10 @@ internal static class Strings
         public static string GoogleIncludedRootTypesLong => LC.L("Comma-separated list of root types to include (e.g. Users, Groups, SharedDrives).");
         public static string GoogleIncludedUserTypesShort => LC.L("Included User Types");
         public static string GoogleIncludedUserTypesLong => LC.L("Comma-separated list of user types to include (e.g. Gmail, Drive, Calendar).");
-        public static string GoogleRequestedScopesShort => LC.L("Requested Scopes");
-        public static string GoogleRequestedScopesLong => LC.L("Comma-separated list of scopes to request. If not provided, the scopes will be calculated based on the included root and user types.");
+        public static string GoogleIgnoreExistingOptionShort => LC.L("Ignore existing items");
+        public static string GoogleIgnoreExistingOptionLong => LC.L("If set, existing items in the destination will not be overwritten.");
+        public static string GoogleAvoidCalendarAclOptionShort => LC.L("Avoid reading calendar ACLs");
+        public static string GoogleAvoidCalendarAclOptionLong => LC.L("Calendar ACLs require write permissions to be able to read them. If the account does not have write permissions, this option can be used to avoid reading them.");
     }
 
     internal static class Common
@@ -42,6 +44,16 @@ internal static class Strings
         public static string WebModulePathLong => LC.L("The path to list.");
     }
 
+    internal static class CalendarAclSourceEntry
+    {
+        public static string ForbiddenAccessError(string optionname, string scopename) => LC.L($"Access to calendar ACLs was denied. Use the --{optionname} option to avoid reading them or grant the scope {scopename}.");
+    }
+
     public static string MetadataStorageNotEnabled(string optionname) => LC.L(
         $"Storing metadata content in the database must be enabled to use the Google Workspace source provider. Use the option: --{optionname}");
+
+    public static string RestoreTargetMissingOverwriteOption(string originalOptionName, string alternateOptionName) => LC.L($"The Google Workspace restore target must have the --{originalOptionName} option set to true. Use the provider specific option --{alternateOptionName} to avoid overwriting existing items.");
+
+    public static string InvalidRestoreTargetType(string? type) => LC.L($"Invalid restore target type: {type}");
+    public static string RestoreTargetNotFound(string path) => LC.L($"Restore target path not found: {path}");
 }

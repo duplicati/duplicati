@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class CalendarEventFileSourceEntry(string parentPath, Event evt)
+internal class CalendarEventICSSourceEntry(string parentPath, Event evt)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, "event.ics"),
         evt.CreatedDateTimeOffset.HasValue ? evt.CreatedDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch,
         evt.UpdatedDateTimeOffset.HasValue ? evt.UpdatedDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
@@ -54,7 +54,7 @@ internal class CalendarEventFileSourceEntry(string parentPath, Event evt)
         return Task.FromResult(new Dictionary<string, string?>
         {
             { "gsuite:v", "1" },
-            { "gsuite:Type", SourceItemType.CalendarEvent.ToString() },
+            { "gsuite:Type", SourceItemType.CalendarEventICS.ToString() },
             { "gsuite:Name", "event.ics" },
             { "gsuite:Id", evt.Id },
             { "gsuite:HtmlLink", evt.HtmlLink }

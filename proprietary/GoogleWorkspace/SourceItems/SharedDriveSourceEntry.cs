@@ -3,11 +3,12 @@
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Google.Apis.Drive.v3.Data;
+using Google.Apis.Drive.v3;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class SharedDriveSourceEntry(SourceProvider provider, string parentPath, string userId, Drive drive)
+internal class SharedDriveSourceEntry(string parentPath, string userId, Drive drive, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, drive.Name)), drive.CreatedTimeDateTimeOffset.HasValue ? drive.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -16,9 +17,9 @@ internal class SharedDriveSourceEntry(SourceProvider provider, string parentPath
         yield return new SharedDriveMetadataSourceEntry(this.Path, drive);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new SharedDrivePermissionsSourceEntry(provider, this.Path, userId, drive);
+        yield return new SharedDrivePermissionsSourceEntry(this.Path, drive, driveService);
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFolderSourceEntry(provider, this.Path, userId, "Content", drive.Id);
+        yield return new DriveFolderSourceEntry(this.Path, userId, "Content", drive.Id, driveService);
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

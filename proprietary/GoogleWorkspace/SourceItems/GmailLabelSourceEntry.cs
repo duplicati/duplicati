@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class GmailLabelSourceEntry(SourceProvider provider, string userId, string parentPath, Label label)
+internal class GmailLabelSourceEntry(string userId, string parentPath, Label label, GmailService service)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, label.Name)), null, null)
 {
     public override IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
@@ -19,7 +19,6 @@ internal class GmailLabelSourceEntry(SourceProvider provider, string userId, str
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateMessages([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetGmailService(userId);
         var request = service.Users.Messages.List(userId);
         request.LabelIds = new[] { label.Id };
 
@@ -57,7 +56,7 @@ internal class GmailLabelSourceEntry(SourceProvider provider, string userId, str
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    yield return new GmailMessageSourceEntry(provider, userId, this.Path, message);
+                    yield return new GmailMessageSourceEntry(userId, this.Path, message, service);
                 }
             }
 

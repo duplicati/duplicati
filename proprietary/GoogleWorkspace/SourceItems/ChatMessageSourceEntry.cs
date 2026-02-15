@@ -3,11 +3,13 @@
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Google.Apis.HangoutsChat.v1.Data;
+using Google.Apis.HangoutsChat.v1;
+using Google.Apis.Drive.v3;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ChatMessageSourceEntry(SourceProvider provider, string parentPath, Message message, string userId)
+internal class ChatMessageSourceEntry(string parentPath, Message message, HangoutsChatService chatService, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, message.Name.Split('/').Last())),
         message.CreateTimeDateTimeOffset.HasValue ? message.CreateTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch,
         DateTime.UnixEpoch)
@@ -22,7 +24,7 @@ internal class ChatMessageSourceEntry(SourceProvider provider, string parentPath
             foreach (var attachment in message.Attachment)
             {
                 if (cancellationToken.IsCancellationRequested) yield break;
-                yield return new ChatAttachmentSourceEntry(provider, this.Path, attachment, userId);
+                yield return new ChatAttachmentSourceEntry(this.Path, attachment, chatService, driveService);
             }
         }
     }

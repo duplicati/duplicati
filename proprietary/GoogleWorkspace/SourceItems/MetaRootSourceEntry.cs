@@ -2,6 +2,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Google.Apis.Drive.v3;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
@@ -16,7 +17,7 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
 
         if (type == SourceItemType.MetaRootUsers)
         {
-            var service = provider.ApiHelper.GetDirectoryService();
+            var service = provider.ApiHelper.GetDirectoryServiceForUsers();
             var request = service.Users.List();
             request.Customer = "my_customer";
 
@@ -47,7 +48,7 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
         }
         else if (type == SourceItemType.MetaRootGroups)
         {
-            var service = provider.ApiHelper.GetDirectoryService();
+            var service = provider.ApiHelper.GetDirectoryServiceForGroups();
             var request = service.Groups.List();
             request.Customer = "my_customer";
 
@@ -75,7 +76,8 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
         }
         else if (type == SourceItemType.MetaRootSharedDrives)
         {
-            yield return new SharedDrivesSourceEntry(provider, this.Path, null);
+            var driveService = provider.ApiHelper.GetDriveService();
+            yield return new SharedDrivesSourceEntry(provider, this.Path, null, driveService);
         }
         else if (type == SourceItemType.MetaRootSites)
         {

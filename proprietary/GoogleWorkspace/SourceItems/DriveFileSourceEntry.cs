@@ -2,12 +2,13 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Google.Apis.Drive.v3;
 using System.Runtime.CompilerServices;
 using File = Google.Apis.Drive.v3.Data.File;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class DriveFileSourceEntry(SourceProvider provider, string parentPath, File file)
+internal class DriveFileSourceEntry(string parentPath, File file, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, file.Name)), file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -16,18 +17,18 @@ internal class DriveFileSourceEntry(SourceProvider provider, string parentPath, 
         yield return new DriveFileMetadataSourceEntry(this.Path, file);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFilePermissionsSourceEntry(provider, this.Path, file);
+        yield return new DriveFilePermissionsSourceEntry(this.Path, file, driveService);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFileContentSourceEntry(provider, this.Path, file);
+        yield return new DriveFileContentSourceEntry(this.Path, file, driveService);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFileCommentsSourceEntry(provider, this.Path, file);
+        yield return new DriveFileCommentsSourceEntry(this.Path, file, driveService);
 
         if (!GoogleMimeTypes.IsGoogleSite(file.MimeType) && !GoogleMimeTypes.IsShortcut(file.MimeType))
         {
             if (cancellationToken.IsCancellationRequested) yield break;
-            yield return new DriveFileRevisionsSourceEntry(provider, this.Path, file);
+            yield return new DriveFileRevisionsSourceEntry(this.Path, file, driveService);
         }
     }
 

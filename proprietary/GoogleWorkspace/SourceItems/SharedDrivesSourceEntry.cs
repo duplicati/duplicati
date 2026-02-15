@@ -2,17 +2,17 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Google.Apis.Drive.v3;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class SharedDrivesSourceEntry(SourceProvider provider, string parentPath, string? userId)
+internal class SharedDrivesSourceEntry(SourceProvider provider, string parentPath, string? userId, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Shared Drives")), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = userId != null ? provider.ApiHelper.GetDriveService(userId) : provider.ApiHelper.GetDriveService();
-        var request = service.Drives.List();
+        var request = driveService.Drives.List();
 
         string? nextPageToken = null;
         do
@@ -30,7 +30,7 @@ internal class SharedDrivesSourceEntry(SourceProvider provider, string parentPat
                     if (!provider.LicenseApprovedForEntry(Path, GoogleRootType.SharedDrives, drive.Id))
                         yield break;
 
-                    yield return new SharedDriveSourceEntry(provider, this.Path, userId!, drive);
+                    yield return new SharedDriveSourceEntry(this.Path, userId!, drive, driveService);
                 }
             }
             nextPageToken = drives.NextPageToken;

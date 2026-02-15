@@ -2,17 +2,17 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Google.Apis.PeopleService.v1;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ContactGroupsFolderSourceEntry(SourceProvider provider, string parentPath, string userId)
+internal class ContactGroupsFolderSourceEntry(string parentPath, PeopleServiceService peopleService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Groups")), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetPeopleService(userId);
-        var request = service.ContactGroups.List();
+        var request = peopleService.ContactGroups.List();
 
         string? nextPageToken = null;
         do

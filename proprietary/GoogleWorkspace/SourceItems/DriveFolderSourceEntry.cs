@@ -2,17 +2,17 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Google.Apis.Drive.v3;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class DriveFolderSourceEntry(SourceProvider provider, string parentPath, string userId, string name, string folderId)
+internal class DriveFolderSourceEntry(string parentPath, string userId, string name, string folderId, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, name)), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetDriveService(userId);
-        var request = service.Files.List();
+        var request = driveService.Files.List();
         request.Q = $"'{folderId}' in parents and trashed = false";
         request.Fields = "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, size, description, parents)";
         request.SupportsAllDrives = true;
@@ -33,11 +33,11 @@ internal class DriveFolderSourceEntry(SourceProvider provider, string parentPath
 
                     if (GoogleMimeTypes.IsFolder(file.MimeType))
                     {
-                        yield return new DriveFolderSourceEntry(provider, this.Path, userId, file.Name, file.Id);
+                        yield return new DriveFolderSourceEntry(this.Path, userId, file.Name, file.Id, driveService);
                     }
                     else
                     {
-                        yield return new DriveFileSourceEntry(provider, this.Path, file);
+                        yield return new DriveFileSourceEntry(this.Path, file, driveService);
                     }
                 }
             }

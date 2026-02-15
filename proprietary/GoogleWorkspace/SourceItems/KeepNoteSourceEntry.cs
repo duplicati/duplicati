@@ -3,11 +3,12 @@
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Google.Apis.Keep.v1.Data;
+using Google.Apis.Keep.v1;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class KeepNoteSourceEntry(SourceProvider provider, string parentPath, string userId, Note note)
+internal class KeepNoteSourceEntry(string parentPath, Note note, KeepService keepService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, note.Title ?? note.Name)),
         note.CreateTimeDateTimeOffset.HasValue ? note.CreateTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch,
         note.UpdateTimeDateTimeOffset.HasValue ? note.UpdateTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
@@ -22,7 +23,7 @@ internal class KeepNoteSourceEntry(SourceProvider provider, string parentPath, s
             foreach (var attachment in note.Attachments)
             {
                 if (cancellationToken.IsCancellationRequested) yield break;
-                yield return new KeepNoteAttachmentSourceEntry(provider, this.Path, userId, attachment);
+                yield return new KeepNoteAttachmentSourceEntry(this.Path, attachment, keepService);
             }
         }
     }

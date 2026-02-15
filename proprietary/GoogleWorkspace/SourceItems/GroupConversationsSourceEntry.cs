@@ -37,7 +37,7 @@ internal class GroupConversationsSourceEntry(SourceProvider provider, string par
 
         try
         {
-            var service = provider.ApiHelper.GetDirectoryService();
+            var service = provider.ApiHelper.GetDirectoryServiceForGroups();
             var request = service.Members.List(groupEmail);
 
             string? nextPageToken = null;

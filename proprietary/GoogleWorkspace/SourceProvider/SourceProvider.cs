@@ -69,7 +69,12 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     /// <summary>
     /// Whether this provider is being used for a restore operation.
     /// </summary>
-    internal bool UsedForRestoreOperation { get; set; } = false;
+    internal bool UsedForRestoreOperation { get; private init; }
+
+    /// <summary>
+    /// Whether to avoid reading calendar ACLs.
+    /// </summary>
+    internal bool AvoidCalendarAcl { get; private init; }
 
     /// <summary>
     /// Indicates whether the metadata storage option has been set.
@@ -87,13 +92,20 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     }
 
     public SourceProvider(string url, string mountPoint, Dictionary<string, string?> options)
+        : this(url, mountPoint, options, false)
+    {
+    }
+
+    public SourceProvider(string url, string mountPoint, Dictionary<string, string?> options, bool usedForRestoreOperation)
     {
         _hasSetMetadataStorageOption = Library.Utility.Utility.ParseBoolOption(options, "store-metadata-content-in-database");
 
         _mountPoint = mountPoint;
         _options = OptionsHelper.ParseOptions(options);
 
-        _apiHelper = new APIHelper(_options);
+        _apiHelper = new APIHelper(_options, usedForRestoreOperation);
+        UsedForRestoreOperation = usedForRestoreOperation;
+        AvoidCalendarAcl = Library.Utility.Utility.ParseBoolOption(options, OptionsHelper.GOOGLE_AVOID_CALENDAR_ACL_OPTION);
     }
 
     public string Key => OptionsHelper.ModuleKey;
@@ -102,7 +114,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
 
     public string Description => Strings.Common.Description;
 
-    public IList<ICommandLineArgument> SupportedCommands => OptionsHelper.SupportedCommands;
+    public IList<ICommandLineArgument> SupportedCommands => OptionsHelper.SourceProviderSupportedCommands;
 
     public string MountedPath => _mountPoint;
 
@@ -180,7 +192,6 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (!_hasSetMetadataStorageOption)
             throw new UserInformationException(Strings.MetadataStorageNotEnabled("store-metadata-content-in-database"), "DatabaseMetadataStorageNotEnabled");
 
-        _apiHelper.Initialize();
         return Task.CompletedTask;
     }
 

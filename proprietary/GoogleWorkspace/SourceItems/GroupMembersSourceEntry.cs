@@ -12,7 +12,7 @@ internal class GroupMembersSourceEntry(SourceProvider provider, string parentPat
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetDirectoryService();
+        var service = provider.ApiHelper.GetDirectoryServiceForGroups();
         var request = service.Members.List(groupEmail);
         var members = new List<Google.Apis.Admin.Directory.directory_v1.Data.Member>();
 

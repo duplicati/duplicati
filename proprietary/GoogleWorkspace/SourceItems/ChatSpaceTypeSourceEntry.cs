@@ -2,7 +2,8 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Google.Apis.HangoutsChat.v1.Data;
+using Google.Apis.Drive.v3;
+using Google.Apis.HangoutsChat.v1;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
@@ -10,7 +11,7 @@ namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 /// <summary>
 /// Represents a folder containing all spaces of a specific type (SPACE, GROUP_CHAT, or DIRECT_MESSAGE).
 /// </summary>
-internal class ChatSpaceTypeSourceEntry(SourceProvider provider, string parentPath, string spaceType, string userId)
+internal class ChatSpaceTypeSourceEntry(string parentPath, string spaceType, HangoutsChatService chatService, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, GetDisplayName(spaceType))), null, null)
 {
     private static string GetDisplayName(string spaceType) => spaceType switch
@@ -23,8 +24,7 @@ internal class ChatSpaceTypeSourceEntry(SourceProvider provider, string parentPa
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetChatService(userId);
-        var request = service.Spaces.List();
+        var request = chatService.Spaces.List();
         request.Filter = $"space_type = \"{spaceType}\"";
 
         string? nextPageToken = null;
@@ -39,7 +39,7 @@ internal class ChatSpaceTypeSourceEntry(SourceProvider provider, string parentPa
                 foreach (var space in spaces.Spaces)
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new ChatSpaceSourceEntry(provider, this.Path, space, userId);
+                    yield return new ChatSpaceSourceEntry(this.Path, space, chatService, driveService);
                 }
             }
             nextPageToken = spaces.NextPageToken;

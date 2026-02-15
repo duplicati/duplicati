@@ -12,7 +12,7 @@ internal class UserProfileSourceEntry(SourceProvider provider, string parentPath
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetDirectoryService();
+        var service = provider.ApiHelper.GetDirectoryServiceForUsers();
         var request = service.Users.Get(userId);
         var user = await request.ExecuteAsync(cancellationToken);
 

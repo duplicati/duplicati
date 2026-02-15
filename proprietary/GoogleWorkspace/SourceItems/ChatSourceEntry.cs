@@ -2,11 +2,13 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Google.Apis.Drive.v3;
+using Google.Apis.HangoutsChat.v1;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ChatSourceEntry(SourceProvider provider, string parentPath, string userId)
+internal class ChatSourceEntry(string parentPath, HangoutsChatService chatService, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Chat")), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -17,7 +19,7 @@ internal class ChatSourceEntry(SourceProvider provider, string parentPath, strin
         foreach (var spaceType in spaceTypes)
         {
             if (cancellationToken.IsCancellationRequested) yield break;
-            yield return new ChatSpaceTypeSourceEntry(provider, this.Path, spaceType, userId);
+            yield return new ChatSpaceTypeSourceEntry(this.Path, spaceType, chatService, driveService);
         }
     }
 

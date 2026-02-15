@@ -12,7 +12,7 @@ internal class GroupAliasesSourceEntry(SourceProvider provider, string parentPat
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetDirectoryService();
+        var service = provider.ApiHelper.GetDirectoryServiceForGroups();
         var request = service.Groups.Get(groupEmail);
         var group = await request.ExecuteAsync(cancellationToken);
 

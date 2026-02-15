@@ -3,18 +3,18 @@
 using Duplicati.Library.Common.IO;
 using System.Text.Json;
 using File = Google.Apis.Drive.v3.Data.File;
+using Google.Apis.Drive.v3;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class DriveFilePermissionsSourceEntry(SourceProvider provider, string parentPath, File file)
+internal class DriveFilePermissionsSourceEntry(string parentPath, File file, DriveService driveService)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, "permissions.json"), file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetDriveService();
-        var request = service.Permissions.List(file.Id);
+        var request = driveService.Permissions.List(file.Id);
         request.SupportsAllDrives = true;
         var permissions = await request.ExecuteAsync(cancellationToken);
 

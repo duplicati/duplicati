@@ -2,6 +2,7 @@
 
 using System.Text.Json;
 using Duplicati.Library.Common.IO;
+using Google.Apis.Gmail.v1;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
@@ -13,14 +14,13 @@ internal enum GmailSettingType
     Signatures
 }
 
-internal class GmailSettingFileSourceEntry(SourceProvider provider, string userId, string parentPath, string filename, GmailSettingType type)
+internal class GmailSettingFileSourceEntry(string userId, string parentPath, string filename, GmailSettingType type, GmailService service)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, filename), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetGmailService(userId);
         object? data = null;
 
         switch (type)

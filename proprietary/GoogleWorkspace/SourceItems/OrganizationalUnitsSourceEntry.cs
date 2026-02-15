@@ -12,7 +12,7 @@ internal class OrganizationalUnitsSourceEntry(SourceProvider provider, string pa
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetDirectoryService();
+        var service = provider.ApiHelper.GetDirectoryServiceForOrgUnits();
         var request = service.Orgunits.List("my_customer");
         request.Type = Google.Apis.Admin.Directory.directory_v1.OrgunitsResource.ListRequest.TypeEnum.All;
         var orgUnits = await request.ExecuteAsync(cancellationToken);

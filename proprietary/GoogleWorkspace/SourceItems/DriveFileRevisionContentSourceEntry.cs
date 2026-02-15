@@ -3,17 +3,17 @@
 using Duplicati.Library.Common.IO;
 using Google.Apis.Drive.v3.Data;
 using File = Google.Apis.Drive.v3.Data.File;
+using Google.Apis.Drive.v3;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class DriveFileRevisionContentSourceEntry(SourceProvider provider, string parentPath, File file, Revision revision)
+internal class DriveFileRevisionContentSourceEntry(string parentPath, File file, Revision revision, DriveService driveService)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, revision.Id), revision.ModifiedTimeDateTimeOffset.HasValue ? revision.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, revision.ModifiedTimeDateTimeOffset.HasValue ? revision.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {
     public override long Size => revision.Size ?? -1;
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetDriveService();
         var url = $"https://www.googleapis.com/drive/v3/files/{file.Id}/revisions/{revision.Id}?alt=media";
 
         if (GoogleMimeTypes.IsGoogleDoc(file.MimeType))
@@ -37,7 +37,7 @@ internal class DriveFileRevisionContentSourceEntry(SourceProvider provider, stri
             }
         }
 
-        var response = await service.HttpClient.GetAsync(url, cancellationToken);
+        var response = await driveService.HttpClient.GetAsync(url, cancellationToken);
         if (response.IsSuccessStatusCode)
         {
             var stream = new MemoryStream();

@@ -6,7 +6,7 @@ using Google.Apis.Gmail.v1;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class GmailMessageSourceEntry(SourceProvider provider, string userId, string parentPath, Message message)
+internal class GmailMessageSourceEntry(string userId, string parentPath, Message message, GmailService service)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, message.Id + ".eml"),
            message.InternalDate.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(message.InternalDate.Value).UtcDateTime : DateTime.UnixEpoch,
            message.InternalDate.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(message.InternalDate.Value).UtcDateTime : DateTime.UnixEpoch)
@@ -15,7 +15,6 @@ internal class GmailMessageSourceEntry(SourceProvider provider, string userId, s
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetGmailService(userId);
         var request = service.Users.Messages.Get(userId, message.Id);
         request.Format = UsersResource.MessagesResource.GetRequest.FormatEnum.Raw;
         var msg = await request.ExecuteAsync(cancellationToken);

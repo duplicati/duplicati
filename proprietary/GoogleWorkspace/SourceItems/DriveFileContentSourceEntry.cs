@@ -2,22 +2,21 @@
 
 using Duplicati.Library.Common.IO;
 using File = Google.Apis.Drive.v3.Data.File;
+using Google.Apis.Drive.v3;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class DriveFileContentSourceEntry(SourceProvider provider, string parentPath, File file)
+internal class DriveFileContentSourceEntry(string parentPath, File file, DriveService driveService)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, "content"), file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {
     public override long Size => file.Size ?? -1;
 
     public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetDriveService();
-
         if (GoogleMimeTypes.IsGoogleDoc(file.MimeType))
         {
             var exportMimeType = GoogleMimeTypes.GetExportMimeType(file.MimeType);
-            var request = service.Files.Export(file.Id, exportMimeType);
+            var request = driveService.Files.Export(file.Id, exportMimeType);
             var stream = new MemoryStream();
             await request.DownloadAsync(stream, cancellationToken);
             stream.Seek(0, SeekOrigin.Begin);
@@ -25,7 +24,7 @@ internal class DriveFileContentSourceEntry(SourceProvider provider, string paren
         }
         else
         {
-            var request = service.Files.Get(file.Id);
+            var request = driveService.Files.Get(file.Id);
             var stream = new MemoryStream();
             await request.DownloadAsync(stream, cancellationToken);
             stream.Seek(0, SeekOrigin.Begin);

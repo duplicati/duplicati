@@ -39,9 +39,10 @@ public static class OptionsHelper
     public const string GOOGLE_ADMIN_EMAIL_OPTION = "google-admin-email";
     public const string GOOGLE_INCLUDED_ROOT_TYPES_OPTION = "google-included-root-types";
     public const string GOOGLE_INCLUDED_USER_TYPES_OPTION = "google-included-user-types";
-    public const string GOOGLE_REQUESTED_SCOPES_OPTION = "google-requested-scopes";
+    public const string GOOGLE_IGNORE_EXISTING_OPTION = "google-ignore-existing";
+    public const string GOOGLE_AVOID_CALENDAR_ACL_OPTION = "google-ignore-calendar-acl";
 
-    public static readonly ICommandLineArgument[] SupportedCommands =
+    private static readonly ICommandLineArgument[] SupportedCommands =
     [
         new CommandLineArgument(GOOGLE_CLIENT_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.GoogleClientIdShort, Strings.Options.GoogleClientIdLong, null, [AuthOptionsHelper.AuthUsernameOption]),
         new CommandLineArgument(GOOGLE_CLIENT_SECRET_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Options.GoogleClientSecretShort, Strings.Options.GoogleClientSecretLong, null, [AuthOptionsHelper.AuthPasswordOption]),
@@ -49,9 +50,20 @@ public static class OptionsHelper
         new CommandLineArgument(GOOGLE_SERVICE_ACCOUNT_JSON_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Options.GoogleServiceAccountJsonShort, Strings.Options.GoogleServiceAccountJsonLong),
         new CommandLineArgument(GOOGLE_SERVICE_ACCOUNT_FILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Options.GoogleServiceAccountFileShort, Strings.Options.GoogleServiceAccountFileLong),
         new CommandLineArgument(GOOGLE_ADMIN_EMAIL_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.GoogleAdminEmailShort, Strings.Options.GoogleAdminEmailLong),
+    ];
+
+    public static readonly ICommandLineArgument[] RestoreSupportedCommands =
+    [
+        ..SupportedCommands,
+        new CommandLineArgument(GOOGLE_IGNORE_EXISTING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleIgnoreExistingOptionShort, Strings.Options.GoogleIgnoreExistingOptionLong),
+    ];
+
+    public static readonly ICommandLineArgument[] SourceProviderSupportedCommands =
+    [
+        ..SupportedCommands,
         new CommandLineArgument(GOOGLE_INCLUDED_ROOT_TYPES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.Options.GoogleIncludedRootTypesShort, Strings.Options.GoogleIncludedRootTypesLong, string.Join(",", Enum.GetValues<GoogleRootType>().Select(n => n.ToString())), null, Enum.GetNames(typeof(GoogleRootType))),
         new CommandLineArgument(GOOGLE_INCLUDED_USER_TYPES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.Options.GoogleIncludedUserTypesShort, Strings.Options.GoogleIncludedUserTypesLong, string.Join(",", Enum.GetValues<GoogleUserType>().Select(n => n.ToString())), null, Enum.GetNames(typeof(GoogleUserType))),
-        new CommandLineArgument(GOOGLE_REQUESTED_SCOPES_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.GoogleRequestedScopesShort, Strings.Options.GoogleRequestedScopesLong),
+        new CommandLineArgument(GOOGLE_AVOID_CALENDAR_ACL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleAvoidCalendarAclOptionShort, Strings.Options.GoogleAvoidCalendarAclOptionLong),
     ];
 
     public class GoogleWorkspaceOptions
@@ -63,7 +75,6 @@ public static class OptionsHelper
         public string? AdminEmail { get; set; }
         public GoogleRootType[] IncludedRootTypes { get; set; } = Enum.GetValues<GoogleRootType>().ToArray();
         public GoogleUserType[] IncludedUserTypes { get; set; } = Enum.GetValues<GoogleUserType>().ToArray();
-        public string[]? RequestedScopes { get; set; }
     }
 
     public static GoogleWorkspaceOptions ParseOptions(Dictionary<string, string?> options)
@@ -97,11 +108,6 @@ public static class OptionsHelper
 
         result.IncludedRootTypes = Enum.GetValues<GoogleRootType>().Where(n => includedRootTypes.HasFlag(n)).ToArray();
         result.IncludedUserTypes = Enum.GetValues<GoogleUserType>().Where(n => includedUserTypes.HasFlag(n)).ToArray();
-
-        if (options.ContainsKey(GOOGLE_REQUESTED_SCOPES_OPTION))
-        {
-            result.RequestedScopes = options[GOOGLE_REQUESTED_SCOPES_OPTION]?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
-        }
 
         return result;
     }

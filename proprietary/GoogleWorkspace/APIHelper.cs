@@ -24,73 +24,31 @@ public class APIHelper
     private readonly string? _refreshToken;
     private readonly string? _serviceAccountJson;
     private readonly string? _adminEmail;
-    private readonly OptionsHelper.GoogleWorkspaceOptions _options;
-    private readonly HashSet<string> _scopes;
+    private readonly bool _isRestoreOperation;
 
-    private GmailService? _gmailService;
-    private DirectoryService? _directoryService;
-    private CalendarService? _calendarService;
+    private DirectoryService? _directoryServiceForUsers;
+    private DirectoryService? _directoryServiceForGroups;
+    private DirectoryService? _directoryServiceForOrgUnits;
     private DriveService? _driveService;
-    private PeopleServiceService? _peopleService;
-    private TasksService? _tasksService;
-    private KeepService? _keepService;
     private GroupssettingsService? _groupsSettingsService;
-    private HangoutsChatService? _chatService;
 
-    private static readonly Dictionary<GoogleRootType, string[]> _rootTypeScopes = new()
+    public APIHelper(OptionsHelper.GoogleWorkspaceOptions options, bool isRestoreOperation)
     {
-        { GoogleRootType.Users, [DirectoryService.Scope.AdminDirectoryUserReadonly] },
-        { GoogleRootType.Groups, [DirectoryService.Scope.AdminDirectoryGroupReadonly, GroupssettingsService.Scope.AppsGroupsSettings] },
-        { GoogleRootType.SharedDrives, [DriveService.Scope.DriveReadonly] },
-        { GoogleRootType.Sites, [DriveService.Scope.DriveReadonly] },
-        { GoogleRootType.OrganizationalUnits, [DirectoryService.Scope.AdminDirectoryOrgunitReadonly] }
-    };
-
-    private static readonly Dictionary<GoogleUserType, string[]> _userTypeScopes = new()
-    {
-        { GoogleUserType.Gmail, [GmailService.Scope.GmailReadonly] },
-        { GoogleUserType.Drive, [DriveService.Scope.DriveReadonly] },
-        { GoogleUserType.Calendar, [CalendarService.Scope.CalendarReadonly] },
-        { GoogleUserType.Contacts, [PeopleServiceService.Scope.ContactsReadonly] },
-        { GoogleUserType.Tasks, [TasksService.Scope.TasksReadonly] },
-        { GoogleUserType.Keep, [KeepService.Scope.KeepReadonly] },
-        { GoogleUserType.Chat, [HangoutsChatService.Scope.ChatSpacesReadonly, HangoutsChatService.Scope.ChatMessagesReadonly, HangoutsChatService.Scope.ChatMembershipsReadonly] }
-    };
-
-    public APIHelper(OptionsHelper.GoogleWorkspaceOptions options)
-    {
-        _options = options;
         _clientId = options.ClientId;
         _clientSecret = options.ClientSecret;
         _refreshToken = options.RefreshToken;
         _serviceAccountJson = options.ServiceAccountJson;
         _adminEmail = options.AdminEmail;
-        _scopes = GetConfiguredScopes();
+        _isRestoreOperation = isRestoreOperation;
     }
 
-    public void Initialize()
-    {
-        var initializer = GetServiceInitializer();
-
-        _gmailService = new GmailService(initializer);
-        _directoryService = new DirectoryService(initializer);
-        _calendarService = new CalendarService(initializer);
-        _driveService = new DriveService(initializer);
-        _peopleService = new PeopleServiceService(initializer);
-        _tasksService = new TasksService(initializer);
-        _keepService = new KeepService(initializer);
-        _groupsSettingsService = new GroupssettingsService(initializer);
-        _chatService = new HangoutsChatService(initializer);
-    }
-
-    private BaseClientService.Initializer GetServiceInitializer(string? userId = null)
+    private BaseClientService.Initializer GetServiceInitializer(string? userId, IEnumerable<string> scopes)
     {
         var backoffInitializer = new BackOffInitializer();
-
         if (!string.IsNullOrEmpty(_serviceAccountJson))
         {
             var credential = GoogleCredential.FromJson(_serviceAccountJson)
-                .CreateScoped(_scopes.ToArray());
+                .CreateScoped(scopes.ToArray());
 
             var userToImpersonate = userId ?? _adminEmail;
             if (!string.IsNullOrEmpty(userToImpersonate))
@@ -132,110 +90,139 @@ public class APIHelper
 
     public void TestConnection()
     {
-        if (_gmailService == null) Initialize();
-        _gmailService!.Users.GetProfile("me").Execute();
+        // Test connection by getting the Gmail service
+        var gmailService = GetGmailService("me");
+        gmailService.Users.GetProfile("me").Execute();
     }
-
-    private HashSet<string> GetConfiguredScopes()
-    {
-        var scopes = new HashSet<string>();
-        if (_options.RequestedScopes != null && _options.RequestedScopes.Length > 0)
-        {
-            scopes.UnionWith(_options.RequestedScopes);
-        }
-        else
-        {
-            foreach (var type in _options.IncludedRootTypes)
-                if (_rootTypeScopes.TryGetValue(type, out var s))
-                    scopes.UnionWith(s);
-
-            foreach (var type in _options.IncludedUserTypes)
-                if (_userTypeScopes.TryGetValue(type, out var s))
-                    scopes.UnionWith(s);
-        }
-        return scopes;
-    }
-
-    public bool HasScope(string scope)
-    {
-        return _scopes.Contains(scope);
-    }
-
     public GmailService GetGmailService(string userId)
     {
-        return new GmailService(GetServiceInitializer(userId));
+        var scopes = _isRestoreOperation
+            ? new[] { "https://www.googleapis.com/auth/gmail.modify" }
+            : new[] { GmailService.Scope.GmailReadonly };
+        return new GmailService(GetServiceInitializer(userId, scopes));
     }
 
-    public DirectoryService GetDirectoryService()
+    public DirectoryService GetDirectoryServiceForUsers()
     {
-        if (_directoryService == null) Initialize();
-        return _directoryService!;
-    }
-
-    public CalendarService GetCalendarService(string? userId = null)
-    {
-        if (userId != null)
+        if (_directoryServiceForUsers == null)
         {
-            return new CalendarService(GetServiceInitializer(userId));
+            var scopes = _isRestoreOperation
+                ? new[] { DirectoryService.Scope.AdminDirectoryUser }
+                : new[] { DirectoryService.Scope.AdminDirectoryUserReadonly };
+            _directoryServiceForUsers = new DirectoryService(GetServiceInitializer(null, scopes));
         }
-        if (_calendarService == null) Initialize();
-        return _calendarService!;
+        return _directoryServiceForUsers!;
+    }
+
+    public DirectoryService GetDirectoryServiceForGroups()
+    {
+        if (_directoryServiceForGroups == null)
+        {
+            var scopes = _isRestoreOperation
+                ? new[] { DirectoryService.Scope.AdminDirectoryGroup }
+                : new[] { DirectoryService.Scope.AdminDirectoryGroupReadonly };
+            _directoryServiceForGroups = new DirectoryService(GetServiceInitializer(null, scopes));
+        }
+        return _directoryServiceForGroups!;
+    }
+
+    public DirectoryService GetDirectoryServiceForOrgUnits()
+    {
+        if (_directoryServiceForOrgUnits == null)
+        {
+            var scopes = _isRestoreOperation
+                ? new[] { DirectoryService.Scope.AdminDirectoryOrgunit }
+                : new[] { DirectoryService.Scope.AdminDirectoryOrgunitReadonly };
+            _directoryServiceForOrgUnits = new DirectoryService(GetServiceInitializer(null, scopes));
+        }
+        return _directoryServiceForOrgUnits!;
+    }
+
+    public CalendarService GetCalendarService(string userId)
+    {
+        var scopes = _isRestoreOperation
+            ? new[] { CalendarService.Scope.Calendar }
+            : new[] { CalendarService.Scope.CalendarReadonly };
+
+        return new CalendarService(GetServiceInitializer(userId, scopes));
+    }
+
+    public CalendarService GetCalendarAclService(string userId)
+    {
+        // ACL reading requires WRITE permissions
+        var scopes = new[] { CalendarService.Scope.Calendar };
+        return new CalendarService(GetServiceInitializer(userId, scopes));
     }
 
     public DriveService GetDriveService(string? userId = null)
     {
+        var scopes = _isRestoreOperation
+            ? new[] { DriveService.Scope.Drive }
+            : new[] { DriveService.Scope.DriveReadonly };
+
         if (userId != null)
         {
-            return new DriveService(GetServiceInitializer(userId));
+            return new DriveService(GetServiceInitializer(userId, scopes));
         }
-        if (_driveService == null) Initialize();
+        if (_driveService == null)
+        {
+            _driveService = new DriveService(GetServiceInitializer(null, scopes));
+        }
         return _driveService!;
     }
 
-    public PeopleServiceService GetPeopleService(string? userId = null)
+    public PeopleServiceService GetPeopleService(string userId)
     {
-        if (userId != null)
-        {
-            return new PeopleServiceService(GetServiceInitializer(userId));
-        }
-        if (_peopleService == null) Initialize();
-        return _peopleService!;
+        var scopes = _isRestoreOperation
+            ? new[] { "https://www.googleapis.com/auth/contacts" }
+            : new[] { PeopleServiceService.Scope.ContactsReadonly };
+
+        return new PeopleServiceService(GetServiceInitializer(userId, scopes));
     }
 
-    public TasksService GetTasksService(string? userId = null)
+    public TasksService GetTasksService(string userId)
     {
-        if (userId != null)
-        {
-            return new TasksService(GetServiceInitializer(userId));
-        }
-        if (_tasksService == null) Initialize();
-        return _tasksService!;
+        var scopes = _isRestoreOperation
+            ? new[] { TasksService.Scope.Tasks }
+            : new[] { TasksService.Scope.TasksReadonly };
+
+        return new TasksService(GetServiceInitializer(userId, scopes));
     }
 
-    public KeepService GetKeepService(string? userId = null)
+    public KeepService GetKeepService(string userId)
     {
-        if (userId != null)
-        {
-            return new KeepService(GetServiceInitializer(userId));
-        }
-        if (_keepService == null) Initialize();
-        return _keepService!;
+        var scopes = _isRestoreOperation
+            ? new[] { KeepService.Scope.Keep }
+            : new[] { KeepService.Scope.KeepReadonly };
+
+        return new KeepService(GetServiceInitializer(userId, scopes));
     }
 
     public GroupssettingsService GetGroupsSettingsService()
     {
-        if (_groupsSettingsService == null) Initialize();
+        if (_groupsSettingsService == null)
+        {
+            var scopes = new[] { GroupssettingsService.Scope.AppsGroupsSettings };
+            _groupsSettingsService = new GroupssettingsService(GetServiceInitializer(null, scopes));
+        }
         return _groupsSettingsService!;
     }
 
-    public HangoutsChatService GetChatService(string? userId = null)
+    public HangoutsChatService GetChatService(string userId)
     {
-        if (_chatService == null) Initialize();
-        if (userId != null)
-        {
-            return new HangoutsChatService(GetServiceInitializer(userId));
-        }
-        return _chatService!;
+        var scopes = _isRestoreOperation
+            ? new[]
+            {
+                HangoutsChatService.Scope.ChatMessages
+            }
+            : new[]
+            {
+                HangoutsChatService.Scope.ChatSpacesReadonly,
+                HangoutsChatService.Scope.ChatMessagesReadonly,
+                HangoutsChatService.Scope.ChatMembershipsReadonly
+            };
+
+        return new HangoutsChatService(GetServiceInitializer(userId, scopes));
     }
 
     private class CompositeHttpClientInitializer : IConfigurableHttpClientInitializer

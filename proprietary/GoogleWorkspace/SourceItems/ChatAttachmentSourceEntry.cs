@@ -3,10 +3,11 @@
 using Duplicati.Library.Common.IO;
 using Google.Apis.Drive.v3;
 using Google.Apis.HangoutsChat.v1.Data;
+using Google.Apis.HangoutsChat.v1;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ChatAttachmentSourceEntry(SourceProvider provider, string parentPath, Attachment attachment, string userId)
+internal class ChatAttachmentSourceEntry(string parentPath, Attachment attachment, HangoutsChatService chatService, DriveService driveService)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, attachment.ContentName ?? attachment.Name.Split('/').Last()), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
@@ -16,15 +17,13 @@ internal class ChatAttachmentSourceEntry(SourceProvider provider, string parentP
         // Check if the attachment is stored in Google Chat (not Drive)
         if (attachment.AttachmentDataRef != null)
         {
-            var service = provider.ApiHelper.GetChatService(userId);
-            var request = service.Media.Download(attachment.AttachmentDataRef.ResourceName);
+            var request = chatService.Media.Download(attachment.AttachmentDataRef.ResourceName);
             return await request.ExecuteAsStreamAsync(cancellationToken);
         }
 
         // Check if the attachment is stored in Google Drive
         if (attachment.DriveDataRef != null)
         {
-            var driveService = provider.ApiHelper.GetDriveService(userId);
             var driveRequest = driveService.Files.Get(attachment.DriveDataRef.DriveFileId);
             driveRequest.Alt = FilesResource.GetRequest.AltEnum.Media;
             return await driveRequest.ExecuteAsStreamAsync(cancellationToken);

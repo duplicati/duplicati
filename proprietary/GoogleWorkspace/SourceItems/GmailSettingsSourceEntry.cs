@@ -2,27 +2,28 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Google.Apis.Gmail.v1;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class GmailSettingsSourceEntry(SourceProvider provider, string userId, string parentPath)
+internal class GmailSettingsSourceEntry(string userId, string parentPath, GmailService service)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Settings")), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
             yield break;
-        yield return new GmailSettingFileSourceEntry(provider, userId, this.Path, "filters.json", GmailSettingType.Filters);
+        yield return new GmailSettingFileSourceEntry(userId, this.Path, "filters.json", GmailSettingType.Filters, service);
         if (cancellationToken.IsCancellationRequested)
             yield break;
-        yield return new GmailSettingFileSourceEntry(provider, userId, this.Path, "forwarding.json", GmailSettingType.Forwarding);
+        yield return new GmailSettingFileSourceEntry(userId, this.Path, "forwarding.json", GmailSettingType.Forwarding, service);
         if (cancellationToken.IsCancellationRequested)
             yield break;
-        yield return new GmailSettingFileSourceEntry(provider, userId, this.Path, "vacation.json", GmailSettingType.Vacation);
+        yield return new GmailSettingFileSourceEntry(userId, this.Path, "vacation.json", GmailSettingType.Vacation, service);
         if (cancellationToken.IsCancellationRequested)
             yield break;
-        yield return new GmailSettingFileSourceEntry(provider, userId, this.Path, "signatures.json", GmailSettingType.Signatures);
+        yield return new GmailSettingFileSourceEntry(userId, this.Path, "signatures.json", GmailSettingType.Signatures, service);
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
