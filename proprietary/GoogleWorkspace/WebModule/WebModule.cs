@@ -37,7 +37,6 @@ public class WebModule : IWebModule
         SourceItemType.UserKeep.ToString(),
         SourceItemType.UserChat.ToString(),
         SourceItemType.GmailLabel.ToString(),
-        SourceItemType.Drive.ToString(),
         SourceItemType.DriveFolder.ToString(),
         SourceItemType.Calendar.ToString(),
         SourceItemType.TaskList.ToString(),

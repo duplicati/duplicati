@@ -34,11 +34,7 @@ partial class RestoreProvider
             string? driveId = null;
             string? userId = null;
 
-            if (target.Type == SourceItemType.Drive)
-            {
-                driveId = target.Metadata.GetValueOrDefault("gsuite:Id");
-            }
-            else if (target.Type == SourceItemType.DriveFolder)
+            if (target.Type == SourceItemType.DriveFolder)
             {
                 driveId = target.Metadata.GetValueOrDefault("gsuite:DriveId");
                 _cachedDefaultFolderId = target.Metadata.GetValueOrDefault("gsuite:Id");

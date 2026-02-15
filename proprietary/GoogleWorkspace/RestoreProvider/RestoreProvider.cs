@@ -517,7 +517,6 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                 case SourceItemType.UserTasks:
                 case SourceItemType.UserKeep:
                 case SourceItemType.UserChat:
-                case SourceItemType.Drive:
                 case SourceItemType.Calendar:
                     toRemove.Add(kv.Key);
                     break;

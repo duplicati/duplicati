@@ -105,7 +105,10 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         var driveService = provider.ApiHelper.GetDriveService(userId);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveSourceEntry(provider, this.Path, userId, driveService);
+        yield return new DriveFolderSourceEntry(this.Path, userId, "My Drive", "root", driveService);
+
+        if (cancellationToken.IsCancellationRequested) yield break;
+        yield return new SharedDrivesSourceEntry(provider, this.Path, userId, driveService);
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateTasks([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -134,10 +137,29 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateKeep([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var service = provider.ApiHelper.GetKeepService(userId);
-
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new KeepSourceEntry(this.Path, service);
+
+        var service = provider.ApiHelper.GetKeepService(userId);
+        var request = service.Notes.List();
+
+        string? nextPageToken = null;
+        do
+        {
+            if (cancellationToken.IsCancellationRequested) yield break;
+            request.PageToken = nextPageToken;
+            var notes = await request.ExecuteAsync(cancellationToken);
+
+            if (notes.Notes != null)
+            {
+                foreach (var note in notes.Notes)
+                {
+                    if (cancellationToken.IsCancellationRequested) yield break;
+                    yield return new KeepNoteSourceEntry(this.Path, note, service);
+                }
+            }
+            nextPageToken = notes.NextPageToken;
+        } while (!string.IsNullOrEmpty(nextPageToken));
+
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateChat([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -145,8 +167,11 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         var service = provider.ApiHelper.GetChatService(userId);
         var driveService = provider.ApiHelper.GetDriveService(userId);
 
-        if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new ChatSourceEntry(this.Path, service, driveService);
+        foreach (var spaceType in new[] { "SPACE", "GROUP_CHAT", "DIRECT_MESSAGE" })
+        {
+            if (cancellationToken.IsCancellationRequested) yield break;
+            yield return new ChatSpaceTypeSourceEntry(this.Path, spaceType, service, driveService);
+        }
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

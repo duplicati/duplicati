@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class ContactsFolderSourceEntry(string parentPath, PeopleServiceService peopleService)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Contacts")), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Entries")), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -40,8 +40,7 @@ internal class ContactsFolderSourceEntry(string parentPath, PeopleServiceService
         {
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.UserContacts.ToString() },
-            { "gsuite:Name", "Contacts" },
-            { "gsuite:Id", "Contacts" }
+            { "gsuite:Name", "Entries" }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

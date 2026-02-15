@@ -20,7 +20,6 @@ public enum SourceItemType
     GmailMessage,
     GmailAttachment,
     GmailSettings,
-    Drive,
     DriveFile,
     DriveFolder,
     DrivePermission,

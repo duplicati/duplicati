@@ -2,7 +2,6 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Google.Apis.Drive.v3;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
@@ -77,11 +76,50 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
         else if (type == SourceItemType.MetaRootSharedDrives)
         {
             var driveService = provider.ApiHelper.GetDriveService();
-            yield return new SharedDrivesSourceEntry(provider, this.Path, null, driveService);
+            await foreach (var n in SharedDrivesSourceEntry.EnumerateSharedDrives(provider, this.Path, null, driveService, cancellationToken))
+                yield return n;
         }
         else if (type == SourceItemType.MetaRootSites)
         {
-            yield return new SitesSourceEntry(provider, this.Path);
+            var service = provider.ApiHelper.GetDriveService();
+            var request = service.Files.List();
+            request.Q = $"mimeType='{GoogleMimeTypes.Site}' and trashed=false";
+            request.SupportsAllDrives = true;
+            request.IncludeItemsFromAllDrives = true;
+            // Request all drives so we do not get user drives only
+            request.Corpora = "allDrives";
+
+            string? nextPageToken = null;
+            do
+            {
+                if (cancellationToken.IsCancellationRequested) yield break;
+                request.PageToken = nextPageToken;
+
+                Google.Apis.Drive.v3.Data.FileList? files = null;
+                try
+                {
+                    files = await request.ExecuteAsync(cancellationToken);
+                }
+                catch
+                {
+                    // Fallback or ignore
+                    yield break;
+                }
+
+                if (files != null && files.Files != null)
+                {
+                    foreach (var file in files.Files)
+                    {
+                        if (cancellationToken.IsCancellationRequested) yield break;
+
+                        if (!provider.LicenseApprovedForEntry(Path, GoogleRootType.Sites, file.Id))
+                            yield break;
+
+                        yield return new SiteSourceEntry(this.Path, file);
+                    }
+                }
+                nextPageToken = files?.NextPageToken;
+            } while (!string.IsNullOrEmpty(nextPageToken));
         }
         else if (type == SourceItemType.MetaRootOrganizationalUnits)
         {
