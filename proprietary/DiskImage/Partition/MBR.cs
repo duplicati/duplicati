@@ -203,32 +203,7 @@ public class MBR : IPartitionTable
     /// <returns>The determined partition type.</returns>
     private static PartitionType DeterminePartitionType(byte typeByte)
     {
-        // MBR partition type byte mappings
-        return typeByte switch
-        {
-            0x01 => PartitionType.Primary,      // FAT12
-            0x04 => PartitionType.Primary,      // FAT16 (less than 32MB)
-            0x06 => PartitionType.Primary,      // FAT16
-            0x07 => PartitionType.Primary,      // NTFS or IFS
-            0x0B => PartitionType.Primary,      // FAT32 (CHS)
-            0x0C => PartitionType.Primary,      // FAT32 (LBA)
-            0x0E => PartitionType.Primary,      // FAT16 (LBA)
-            0x0F => PartitionType.Extended,     // Extended (LBA)
-            0x11 => PartitionType.Primary,      // Hidden FAT12 (CHS)
-            0x14 => PartitionType.Primary,      // Hidden FAT16 (CHS, less than 32MB)
-            0x16 => PartitionType.Primary,      // Hidden FAT16
-            0x17 => PartitionType.Primary,      // Hidden NTFS
-            0x1B => PartitionType.Primary,      // Hidden FAT32 (CHS)
-            0x1C => PartitionType.Primary,      // Hidden FAT32 (LBA)
-            0x1E => PartitionType.Primary,      // Hidden FAT16 (LBA)
-            0x5 => PartitionType.Extended,      // Extended (CHS)
-            0x85 => PartitionType.Logical,      // Linux extended
-            0x8E => PartitionType.Primary,      // Linux LVM
-            0xEE => PartitionType.Protective,   // GPT protective
-            0xEF => PartitionType.EFI,          // EFI System Partition
-            0xFD => PartitionType.Primary,      // Linux RAID
-            _ => PartitionType.Unknown
-        };
+        return MbrPartitionTypes.ToPartitionType(typeByte);
     }
 
     /// <summary>
@@ -238,16 +213,7 @@ public class MBR : IPartitionTable
     /// <returns>The determined filesystem type.</returns>
     private static FileSystemType DetermineFilesystemType(MBRPartitionEntry entry)
     {
-        // Determine filesystem type based on partition type byte
-        return entry.PartitionTypeByte switch
-        {
-            0x01 or 0x11 or 0x81 => FileSystemType.FAT12,
-            0x04 or 0x06 or 0x0E or 0x14 or 0x16 or 0x1E => FileSystemType.FAT16,
-            0x0B or 0x0C or 0x1B or 0x1C => FileSystemType.FAT32,
-            0x07 or 0x17 => FileSystemType.NTFS,
-            0xEF => FileSystemType.Unknown, // EFI System Partition, actual FS unknown
-            _ => FileSystemType.Unknown
-        };
+        return MbrPartitionTypes.ToFilesystemType(entry.PartitionTypeByte);
     }
 
     // MBR-specific properties

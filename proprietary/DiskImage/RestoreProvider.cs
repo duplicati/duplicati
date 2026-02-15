@@ -870,21 +870,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <returns>The MBR partition type byte.</returns>
     private byte GetMBRPartitionTypeByte(PartitionGeometry part)
     {
-        // Map partition type and filesystem to MBR type byte
-        return part.FilesystemType switch
-        {
-            FileSystemType.NTFS => 0x07,
-            FileSystemType.FAT12 => 0x01,
-            FileSystemType.FAT16 => 0x06,
-            FileSystemType.FAT32 => 0x0C,  // LBA
-            FileSystemType.ExFAT => 0x07,  // Same as NTFS
-            _ => part.Type switch
-            {
-                PartitionType.EFI => 0xEF,
-                PartitionType.Extended => 0x0F,
-                _ => 0x07  // Default to NTFS/IFS type
-            }
-        };
+        return MbrPartitionTypes.ToTypeByte(part.FilesystemType, part.Type);
     }
 
     /// <summary>
