@@ -418,23 +418,7 @@ public class GPT : IPartitionTable
     /// <returns>The corresponding <see cref="PartitionType"/>.</returns>
     private static PartitionType DeterminePartitionType(Guid typeGuid)
     {
-        // Common GPT partition type GUIDs
-        return typeGuid.ToString().ToUpper() switch
-        {
-            "C12A7328-F81F-11D2-BA4B-00A0C93EC93B" => PartitionType.EFI,
-            "E3C9E316-0B5C-4DB8-817D-F92DF00215AE" => PartitionType.MicrosoftReserved,
-            "EBD0A0A2-B9E5-4433-87C0-68B6B72699C7" => PartitionType.Primary, // Microsoft Basic Data
-            "DE94BBA4-06D1-4D40-A16A-BFD50179D6AC" => PartitionType.Recovery, // Windows Recovery
-            "0FC63DAF-8483-4772-8E79-3D69D8477DE4" => PartitionType.LinuxFilesystem,
-            "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F" => PartitionType.LinuxSwap,
-            "E6D6D379-F507-44C2-A23C-238F2A3DF928" => PartitionType.LinuxLVM,
-            "A19D880F-05FC-4D3B-A006-743F0F84911E" => PartitionType.LinuxRAID,
-            "48465300-0000-11AA-AA11-00306543ECAC" => PartitionType.AppleHFS,
-            "7C3457EF-0000-11AA-AA11-00306543ECAC" => PartitionType.AppleAPFS,
-            "426F6F74-0000-11AA-AA11-00306543ECAC" => PartitionType.AppleBoot,
-            "21686148-6449-6E6F-744E-656564454649" => PartitionType.BIOSBoot,
-            _ => PartitionType.Unknown
-        };
+        return GptPartitionTypeGuids.ToPartitionType(typeGuid);
     }
 
     /// <summary>
