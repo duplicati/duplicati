@@ -364,7 +364,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             try
             {
                 // Parse the geometry metadata from the JSON data
-                var json = System.Text.Encoding.UTF8.GetString(data);
+                var json = System.Text.Encoding.UTF8.GetString(data.Span);
                 _geometryMetadata = GeometryMetadata.FromJson(json);
 
                 Log.WriteInformationMessage(LOGTAG, "GeometryMetadataParsed", "Successfully parsed geometry metadata from geometry.json during OpenWrite");
@@ -471,7 +471,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         {
             try
             {
-                var json = System.Text.Encoding.UTF8.GetString(data);
+                var json = System.Text.Encoding.UTF8.GetString(data.Span);
                 var newGeometry = GeometryMetadata.FromJson(json);
                 if (newGeometry != null)
                 {
@@ -1482,10 +1482,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     private class CaptureStream : Stream
     {
         private readonly MemoryStream _innerStream;
-        private readonly Action<byte[]> _onCaptured;
+        private readonly Action<ReadOnlyMemory<byte>> _onCaptured;
         private bool _disposed = false;
 
-        public CaptureStream(MemoryStream innerStream, Action<byte[]> onCaptured)
+        public CaptureStream(MemoryStream innerStream, Action<ReadOnlyMemory<byte>> onCaptured)
         {
             _innerStream = innerStream;
             _onCaptured = onCaptured;
@@ -1515,7 +1515,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                 {
                     // Capture the data before disposing
                     _innerStream.Position = 0;
-                    var data = _innerStream.ToArray();
+                    var data = _innerStream.GetBuffer().AsMemory(0, (int)_innerStream.Length);
                     _onCaptured(data);
                     _innerStream.Dispose();
                 }
