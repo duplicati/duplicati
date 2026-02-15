@@ -8,72 +8,6 @@ using Duplicati.Proprietary.DiskImage.Disk;
 namespace Duplicati.Proprietary.DiskImage.Partition;
 
 /// <summary>
-/// Represents an unknown partition type.
-/// Used when the partition type cannot be determined.
-/// </summary>
-public class UnknownPartition : IPartition
-{
-    /// <inheritdoc />
-    public IPartitionTable PartitionTable { get; }
-
-    /// <inheritdoc />
-    public int PartitionNumber => 1;
-
-    /// <inheritdoc />
-    public PartitionType Type => PartitionType.Unknown;
-
-    /// <inheritdoc />
-    public long StartOffset => 0;
-
-    /// <inheritdoc />
-    public long Size { get; }
-
-    /// <inheritdoc />
-    public string? Name => null;
-
-    /// <inheritdoc />
-    public FileSystemType FilesystemType => FileSystemType.Unknown;
-
-    /// <inheritdoc />
-    public Guid? VolumeGuid => null;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UnknownPartition"/> class.
-    /// </summary>
-    /// <param name="partitionTable">The parent partition table.</param>
-    /// <param name="size">The partition size in bytes.</param>
-    public UnknownPartition(IPartitionTable partitionTable, long size)
-    {
-        PartitionTable = partitionTable;
-        Size = size;
-    }
-
-    /// <inheritdoc />
-    public async Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
-    {
-        if (PartitionTable.RawDisk == null)
-            throw new InvalidOperationException("No raw disk available for reading partition data.");
-
-        return await PartitionTable.RawDisk.ReadBytesAsync(StartOffset, (int)Size, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc />
-    public Task<Stream> OpenWriteAsync(CancellationToken cancellationToken)
-    {
-        if (PartitionTable.RawDisk == null)
-            throw new InvalidOperationException("No raw disk available for writing partition data.");
-        return Task.FromResult<Stream>(new PartitionWriteStream(PartitionTable.RawDisk, StartOffset, Size));
-    }
-
-    /// <inheritdoc />
-    public void Dispose()
-    {
-        // Nothing to dispose here
-    }
-
-}
-
-/// <summary>
 /// Represents an unknown partition table type.
 /// Treats the entire disk as a single partition when the partition table type cannot be determined.
 /// </summary>
@@ -118,7 +52,21 @@ public class UnknownPartitionTable : IPartitionTable
         if (partitionNumber != 1 || m_rawDisk == null)
             return Task.FromResult<IPartition?>(null);
 
-        return Task.FromResult<IPartition?>(new UnknownPartition(this, m_rawDisk.Size));
+        return Task.FromResult<IPartition?>(new BasePartition
+        {
+            PartitionNumber = 1,
+            Type = PartitionType.Unknown,
+            PartitionTable = this,
+            StartOffset = 0,
+            Size = m_rawDisk.Size,
+            Name = null,
+            FilesystemType = FileSystemType.Unknown,
+            VolumeGuid = null,
+            RawDisk = m_rawDisk,
+            StartingLba = 0,
+            EndingLba = 0,
+            Attributes = 0
+        });
     }
 
     /// <inheritdoc />

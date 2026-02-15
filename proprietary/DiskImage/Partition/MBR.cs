@@ -126,7 +126,7 @@ public class MBR : IPartitionTable
                 if (m_partitions == null)
                     m_partitions = [];
 
-                m_partitions.Add(new MBRPartition
+                m_partitions.Add(new BasePartition
                 {
                     PartitionNumber = i + 1,
                     Type = entry.PartitionType,
@@ -377,71 +377,6 @@ public class MBR : IPartitionTable
 
         /// <summary>Gets the ending cylinder (CHS).</summary>
         public ushort EndCylinder { get; init; }
-    }
-
-    /// <summary>
-    /// Represents an MBR partition.
-    /// </summary>
-    private class MBRPartition : IPartition
-    {
-        /// <inheritdoc />
-        public int PartitionNumber { get; init; }
-
-        /// <inheritdoc />
-        public PartitionType Type { get; init; }
-
-        /// <inheritdoc />
-        public required IPartitionTable PartitionTable { get; init; }
-
-        /// <inheritdoc />
-        public long StartOffset { get; init; }
-
-        /// <inheritdoc />
-        public long Size { get; init; }
-
-        /// <inheritdoc />
-        public string? Name { get; init; }
-
-        /// <inheritdoc />
-        public FileSystemType FilesystemType { get; init; }
-
-        /// <inheritdoc />
-        public Guid? VolumeGuid { get; init; }
-
-        /// <summary>Gets the raw disk reference.</summary>
-        public required IRawDisk? RawDisk { get; init; }
-
-        /// <summary>Gets the starting LBA.</summary>
-        public long StartingLba { get; init; }
-
-        /// <summary>Gets the ending LBA.</summary>
-        public long EndingLba { get; init; }
-
-        /// <summary>Gets the partition attributes.</summary>
-        public long Attributes { get; init; }
-
-        /// <inheritdoc />
-        public Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
-        {
-            if (RawDisk == null)
-                throw new InvalidOperationException("RawDisk not available.");
-            return RawDisk.ReadBytesAsync(StartOffset, (int)Math.Min(Size, int.MaxValue), cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public Task<Stream> OpenWriteAsync(CancellationToken cancellationToken)
-        {
-            if (RawDisk == null)
-                throw new InvalidOperationException("RawDisk not available.");
-            // Return a stream that wraps the raw disk write capability
-            return Task.FromResult<Stream>(new PartitionWriteStream(RawDisk, StartOffset, Size));
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            // No unmanaged resources to dispose
-        }
     }
 
 }

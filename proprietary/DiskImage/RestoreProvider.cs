@@ -714,7 +714,21 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         {
             foreach (var partGeom in _geometryMetadata.Partitions)
             {
-                var partition = new ReconstructedPartition(partitionTable, partGeom, _targetDisk);
+                var partition = new BasePartition
+                {
+                    PartitionNumber = partGeom.Number,
+                    Type = partGeom.Type,
+                    PartitionTable = partitionTable,
+                    StartOffset = partGeom.StartOffset,
+                    Size = partGeom.Size,
+                    Name = partGeom.Name,
+                    FilesystemType = partGeom.FilesystemType,
+                    VolumeGuid = partGeom.VolumeGuid,
+                    RawDisk = _targetDisk,
+                    StartingLba = 0,
+                    EndingLba = 0,
+                    Attributes = 0
+                };
                 _partitions.Add(partition);
             }
         }
@@ -1325,57 +1339,6 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         public Task<Stream> GetPartitionTableDataAsync(CancellationToken cancellationToken)
         {
             throw new NotSupportedException("GetPartitionTableDataAsync not supported on reconstructed partition table.");
-        }
-
-        public void Dispose()
-        {
-            if (!_disposed)
-            {
-                _disposed = true;
-            }
-        }
-    }
-
-    /// <summary>
-    /// A reconstructed partition for restore operations.
-    /// This is created from geometry metadata and associated with the target disk.
-    /// </summary>
-    private class ReconstructedPartition : IPartition
-    {
-        private readonly IPartitionTable _partitionTable;
-        private readonly IRawDisk _rawDisk;
-        private bool _disposed = false;
-
-        public ReconstructedPartition(IPartitionTable partitionTable, PartitionGeometry geometry, IRawDisk rawDisk)
-        {
-            _partitionTable = partitionTable;
-            _rawDisk = rawDisk;
-            PartitionNumber = geometry.Number;
-            Type = geometry.Type;
-            StartOffset = geometry.StartOffset;
-            Size = geometry.Size;
-            Name = geometry.Name;
-            FilesystemType = geometry.FilesystemType;
-            VolumeGuid = geometry.VolumeGuid;
-        }
-
-        public int PartitionNumber { get; }
-        public PartitionType Type { get; }
-        public IPartitionTable PartitionTable => _partitionTable;
-        public long StartOffset { get; }
-        public long Size { get; }
-        public string? Name { get; }
-        public FileSystemType FilesystemType { get; }
-        public Guid? VolumeGuid { get; }
-
-        public Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
-        {
-            return _rawDisk.ReadBytesAsync(StartOffset, (int)Math.Min(Size, int.MaxValue), cancellationToken);
-        }
-
-        public Task<Stream> OpenWriteAsync(CancellationToken cancellationToken)
-        {
-            return Task.FromResult<Stream>(new PartitionWriteStream(_rawDisk, StartOffset, Size));
         }
 
         public void Dispose()

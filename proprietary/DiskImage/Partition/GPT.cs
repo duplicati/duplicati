@@ -355,7 +355,7 @@ public class GPT : IPartitionTable
     /// <param name="offset">The offset in the byte array where the partition entry starts.</param>
     /// <param name="partitionNumber">The partition number.</param>
     /// <returns>The parsed partition entry, or null if the entry is empty.</returns>
-    private GPTPartition? ParsePartitionEntry(byte[] buffer, int offset, int partitionNumber)
+    private BasePartition? ParsePartitionEntry(byte[] buffer, int offset, int partitionNumber)
         => ParsePartitionEntry(buffer.AsSpan(offset), partitionNumber);
 
     /// <summary>
@@ -364,7 +364,7 @@ public class GPT : IPartitionTable
     /// <param name="entrySpan">The span containing the partition entry.</param>
     /// <param name="partitionNumber">The partition number.</param>
     /// <returns>The parsed partition entry, or null if the entry is empty.</returns>
-    private GPTPartition? ParsePartitionEntry(ReadOnlySpan<byte> entrySpan, int partitionNumber)
+    private BasePartition? ParsePartitionEntry(ReadOnlySpan<byte> entrySpan, int partitionNumber)
     {
         // Partition type GUID (16 bytes at offset 0)
         var typeGuid = new Guid(entrySpan.Slice(0, 16));
@@ -394,7 +394,7 @@ public class GPT : IPartitionTable
         // Determine filesystem type based on partition name and known patterns
         FileSystemType fsType = DetermineFilesystemType(name, typeGuid);
 
-        return new GPTPartition
+        return new BasePartition
         {
             PartitionNumber = partitionNumber,
             Type = partitionType,
@@ -764,60 +764,6 @@ public class GPT : IPartitionTable
                 }
             }
             m_disposed = true;
-        }
-    }
-
-    /// <summary>
-    /// Represents a GPT partition entry.
-    /// </summary>
-    private class GPTPartition : IPartition
-    {
-        /// <inheritdoc />
-        public int PartitionNumber { get; init; }
-        /// <inheritdoc />
-        public PartitionType Type { get; init; }
-        /// <inheritdoc />
-        public required IPartitionTable PartitionTable { get; init; }
-        /// <inheritdoc />
-        public long StartOffset { get; init; }
-        /// <inheritdoc />
-        public long Size { get; init; }
-        /// <inheritdoc />
-        public string? Name { get; init; }
-        /// <inheritdoc />
-        public FileSystemType FilesystemType { get; init; }
-        /// <inheritdoc />
-        public Guid? VolumeGuid { get; init; }
-        /// <inheritdoc />
-        public required IRawDisk? RawDisk { get; init; }
-        /// <inheritdoc />
-        public long StartingLba { get; init; }
-        /// <inheritdoc />
-        public long EndingLba { get; init; }
-        /// <inheritdoc />
-        public long Attributes { get; init; }
-
-        /// <inheritdoc />
-        public Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
-        {
-            if (RawDisk == null)
-                throw new InvalidOperationException("RawDisk not available.");
-            return RawDisk.ReadBytesAsync(StartOffset, (int)Math.Min(Size, int.MaxValue), cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public Task<Stream> OpenWriteAsync(CancellationToken cancellationToken)
-        {
-            if (RawDisk == null)
-                throw new InvalidOperationException("RawDisk not available.");
-            // Return a stream that wraps the raw disk write capability
-            return Task.FromResult<Stream>(new PartitionWriteStream(RawDisk, StartOffset, Size));
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            // No unmanaged resources to dispose
         }
     }
 
