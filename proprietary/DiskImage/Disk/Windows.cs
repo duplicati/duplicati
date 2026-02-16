@@ -95,19 +95,20 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         /// <inheritdoc />
         public async Task<bool> AutoUnmountAsync(CancellationToken cancellationToken)
         {
+
+            if (!int.TryParse(m_devicePath.TrimEnd('/', '\\')[^1..], out var number))
+                throw new InvalidDataException($"Failed to parse device number from {m_devicePath}");
             var script = @$"
-                $disk = Get-Disk -DevicePath '{m_devicePath}'
-                if ($disk -eq $null) {{
-                    exit 1
+                Get-Partition -DiskNumber {number} |
+                Where-Object DriveLetter -ne $null |
+                ForEach-Object {{
+                    Remove-PartitionAccessPath `
+                        -DiskNumber {number} `
+                        -PartitionNumber $_.PartitionNumber `
+                        -AccessPath ""$($_.DriveLetter):\""
                 }}
-                $volumes = Get-Volume -DiskNumber $disk.Number
-                foreach ($vol in $volumes) {{
-                    if ($vol.DriveLetter) {{
-                        Dismount-Volume -DriveLetter $vol.DriveLetter -Force
-                    }}
-                }}
-                Set-Disk -Number $disk.Number -IsOffline $true
-                Set-Disk -Number $disk.Number -IsReadOnly $false
+                Set-Disk -Number {number} -IsOffline $true
+                Set-Disk -Number {number} -IsReadOnly $false
             ";
 
             var psi = new ProcessStartInfo
