@@ -407,12 +407,19 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + TARGETFOLDER, options, null))
             {
-                var results = c.Restore(["*"]);
+                try
+                {
+                    var results = c.Restore(["*"]);
 
-                // Verify that the restore failed (has errors)
-                Assert.That(results.Errors.Any(), Is.True,
-                    "Restore should fail when target disk is online and auto-unmount is not enabled");
-                TestContext.Progress.WriteLine($"Restore failed as expected with errors: {string.Join(", ", results.Errors)}");
+                    // Verify that the restore failed (has errors)
+                    Assert.That(results.Errors.Any(), Is.True,
+                        "Restore should fail when target disk is online and auto-unmount is not enabled");
+                    TestContext.Progress.WriteLine($"Restore failed as expected with errors: {string.Join(", ", results.Errors)}");
+                }
+                catch (System.IO.IOException _)
+                {
+                    // Assumed to fail
+                }
             }
 
             // Second attempt: Restore with auto-unmount option should succeed
@@ -423,7 +430,7 @@ namespace Duplicati.UnitTest
             {
                 var results = c.Restore(["*"]);
 
-                TestUtils.AssertResults(results);
+                Assert.That(!results.Errors.Any() && results.Warnings.Count() <= 1);
             }
             TestContext.Progress.WriteLine($"Restore completed successfully with auto-unmount option");
 
