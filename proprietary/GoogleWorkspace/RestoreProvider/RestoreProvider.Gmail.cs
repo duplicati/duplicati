@@ -122,49 +122,110 @@ partial class RestoreProvider
             }
         }
 
-        public async Task RestoreMessage(string userId, string labelId, Stream messageStream, Stream? metadataStream, CancellationToken cancel)
+        public async Task<string?> RestoreLabelFromMetadata(string userId, Dictionary<string, string?> metadata, CancellationToken cancel)
         {
-            var message = await JsonSerializer.DeserializeAsync<Message>(messageStream, cancellationToken: cancel);
-            if (message == null) return;
+            var labelName = metadata.GetValueOrDefault("gsuite:Name");
+            if (string.IsNullOrWhiteSpace(labelName))
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreLabelMissingName", null, "Label name is missing in metadata, skipping.");
+                return null;
+            }
 
             var gmailService = Provider._apiHelper.GetGmailService(userId);
 
-            // Check for duplicates by Message-Id if available
-            if (!Provider._ignoreExisting && metadataStream != null)
+            // Check if label already exists
+            var labelsResponse = await gmailService.Users.Labels.List(userId).ExecuteAsync(cancel);
+            var existingLabel = labelsResponse.Labels?.FirstOrDefault(l =>
+                l.Name?.Equals(labelName, StringComparison.OrdinalIgnoreCase) == true);
+
+            if (existingLabel != null && Provider._ignoreExisting)
             {
-                var metadata = await JsonSerializer.DeserializeAsync<Dictionary<string, string?>>(metadataStream, cancellationToken: cancel);
-                var messageId = metadata?.GetValueOrDefault("Message-Id");
+                Log.WriteInformationMessage(LOGTAG, "RestoreLabelSkipExisting", $"Label {labelName} already exists, skipping.");
+                return existingLabel.Id;
+            }
 
-                if (!string.IsNullOrWhiteSpace(messageId))
+            // Build label from metadata
+            var label = new Label
+            {
+                Name = labelName,
+                LabelListVisibility = metadata.GetValueOrDefault("gsuite:LabelListVisibility") ?? "labelShow",
+                MessageListVisibility = metadata.GetValueOrDefault("gsuite:MessageListVisibility") ?? "show"
+            };
+
+            // Add color if present in metadata
+            var colorBackground = metadata.GetValueOrDefault("gsuite:ColorBackground");
+            var colorText = metadata.GetValueOrDefault("gsuite:ColorText");
+            if (!string.IsNullOrEmpty(colorBackground) || !string.IsNullOrEmpty(colorText))
+            {
+                label.Color = new LabelColor
                 {
-                    // Search for existing message
-                    var searchResponse = await gmailService.Users.Messages.List(userId).ExecuteAsync(cancel);
-                    if (searchResponse.Messages?.Any() == true)
-                    {
-                        foreach (var existingMsg in searchResponse.Messages)
-                        {
-                            var fullMsg = await gmailService.Users.Messages.Get(userId, existingMsg.Id).ExecuteAsync(cancel);
-                            var headers = fullMsg.Payload?.Headers;
-                            var existingMessageId = headers?.FirstOrDefault(h => h.Name == "Message-Id")?.Value;
+                    BackgroundColor = colorBackground,
+                    TextColor = colorText
+                };
+            }
 
-                            if (existingMessageId == messageId)
-                            {
-                                Log.WriteInformationMessage(LOGTAG, "RestoreMessageSkipDuplicate", $"Message with Message-Id {messageId} already exists, skipping.");
-                                return;
-                            }
+            if (existingLabel != null)
+            {
+                // Update existing label
+                var updatedLabel = await gmailService.Users.Labels.Update(label, userId, existingLabel.Id).ExecuteAsync(cancel);
+                Log.WriteInformationMessage(LOGTAG, "RestoreLabelUpdated", $"Updated existing label: {labelName}");
+                return updatedLabel.Id;
+            }
+            else
+            {
+                // Create new label
+                var createdLabel = await gmailService.Users.Labels.Create(label, userId).ExecuteAsync(cancel);
+                Log.WriteInformationMessage(LOGTAG, "RestoreLabelCreated", $"Created new label: {labelName}");
+                return createdLabel.Id;
+            }
+        }
+
+        public async Task RestoreMessage(string userId, string labelId, Stream messageStream, string? messageId, CancellationToken cancel)
+        {
+            var gmailService = Provider._apiHelper.GetGmailService(userId);
+
+            // Check for duplicates by Message-Id if available
+            if (!Provider._ignoreExisting && !string.IsNullOrWhiteSpace(messageId))
+            {
+                // Search for existing message
+                var searchResponse = await gmailService.Users.Messages.List(userId).ExecuteAsync(cancel);
+                if (searchResponse.Messages?.Any() == true)
+                {
+                    foreach (var existingMsg in searchResponse.Messages)
+                    {
+                        var fullMsg = await gmailService.Users.Messages.Get(userId, existingMsg.Id).ExecuteAsync(cancel);
+                        var headers = fullMsg.Payload?.Headers;
+                        var existingMessageId = headers?.FirstOrDefault(h => h.Name == "Message-Id")?.Value;
+
+                        if (existingMessageId == messageId)
+                        {
+                            Log.WriteInformationMessage(LOGTAG, "RestoreMessageSkipDuplicate", $"Message with Message-Id {messageId} already exists, skipping.");
+                            return;
                         }
                     }
                 }
             }
 
+            // Read the EML content and base64url encode it
+            using var memoryStream = new MemoryStream();
+            await messageStream.CopyToAsync(memoryStream, cancel);
+            var rawBytes = memoryStream.ToArray();
+            var base64UrlRaw = ToBase64Url(rawBytes);
+
             // Import the message
             var importRequest = new Message
             {
-                Raw = message.Raw,
+                Raw = base64UrlRaw,
                 LabelIds = new List<string> { labelId }
             };
 
             await gmailService.Users.Messages.Import(importRequest, userId).ExecuteAsync(cancel);
+        }
+
+        private static string ToBase64Url(byte[] bytes)
+        {
+            var base64 = Convert.ToBase64String(bytes);
+            return base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
         }
 
         public async Task RestoreSettings(string userId, Stream settingsStream, CancellationToken cancel)
@@ -234,22 +295,16 @@ partial class RestoreProvider
             try
             {
                 var originalPath = label.Key;
-                var contentEntry = _temporaryFiles.GetValueOrDefault(originalPath);
+                var metadata = label.Value;
 
-                if (contentEntry == null)
+                // Restore label using metadata (no content entry needed for labels)
+                var newLabelId = await GmailRestore.RestoreLabelFromMetadata(userId, metadata, cancel);
+                if (newLabelId != null)
                 {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreGmailLabelsMissingContent", null, $"Missing content for label {originalPath}, skipping.");
-                    continue;
-                }
-
-                using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
-                {
-                    await GmailRestore.RestoreLabel(userId, contentStream, cancel);
+                    _restoredLabelMap[originalPath] = newLabelId;
                 }
 
                 _metadata.TryRemove(originalPath, out _);
-                _temporaryFiles.TryRemove(originalPath, out var contentFile);
-                contentFile?.Dispose();
             }
             catch (Exception ex)
             {
@@ -279,17 +334,18 @@ partial class RestoreProvider
             try
             {
                 var originalPath = message.Key;
-                var contentPath = SystemIO.IO_OS.PathCombine(originalPath, "content.json");
-                var metadataPath = SystemIO.IO_OS.PathCombine(originalPath, "metadata.json");
+                var metadata = message.Value;
 
-                var contentEntry = _temporaryFiles.GetValueOrDefault(contentPath);
-                var metadataEntry = _temporaryFiles.GetValueOrDefault(metadataPath);
-
-                if (contentEntry == null)
+                // Find the .eml file in the message folder
+                _temporaryFiles.TryGetValue(originalPath, out var emlTempFile);
+                if (emlTempFile == null)
                 {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreGmailMessagesMissingContent", null, $"Missing content for message {originalPath}, skipping.");
+                    Log.WriteWarningMessage(LOGTAG, "RestoreGmailMessagesMissingContent", null, $"Missing .eml file for message {originalPath}, skipping.");
                     continue;
                 }
+
+                // Get Message-Id from metadata for duplicate detection
+                var messageId = metadata.GetValueOrDefault("gsuite:Message-Id");
 
                 // Determine target label
                 var targetLabelId = defaultLabelId;
@@ -299,29 +355,14 @@ partial class RestoreProvider
                     targetLabelId = mappedLabelId;
                 }
 
-                using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
+                using (var contentStream = SystemIO.IO_OS.FileOpenRead(emlTempFile))
                 {
-                    Stream? metadataStream = null;
-                    if (metadataEntry != null)
-                        metadataStream = SystemIO.IO_OS.FileOpenRead(metadataEntry);
-
-                    try
-                    {
-                        await GmailRestore.RestoreMessage(userId, targetLabelId, contentStream, metadataStream, cancel);
-                    }
-                    finally
-                    {
-                        metadataStream?.Dispose();
-                    }
+                    await GmailRestore.RestoreMessage(userId, targetLabelId, contentStream, messageId, cancel);
                 }
 
                 _metadata.TryRemove(originalPath, out _);
-                _metadata.TryRemove(contentPath, out _);
-                _metadata.TryRemove(metadataPath, out _);
-                _temporaryFiles.TryRemove(contentPath, out var cFile);
-                _temporaryFiles.TryRemove(metadataPath, out var mFile);
-                cFile?.Dispose();
-                mFile?.Dispose();
+                _temporaryFiles.TryRemove(originalPath, out var emlFile);
+                emlFile?.Dispose();
             }
             catch (Exception ex)
             {

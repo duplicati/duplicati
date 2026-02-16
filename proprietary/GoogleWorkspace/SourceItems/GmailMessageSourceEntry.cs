@@ -36,6 +36,7 @@ internal class GmailMessageSourceEntry(string userId, string parentPath, Message
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
     {
         var subject = message.Payload?.Headers?.FirstOrDefault(h => h.Name?.Equals("Subject", StringComparison.OrdinalIgnoreCase) == true)?.Value;
+        var messageId = message.Payload?.Headers?.FirstOrDefault(h => h.Name?.Equals("Message-Id", StringComparison.OrdinalIgnoreCase) == true)?.Value;
 
         return Task.FromResult(new Dictionary<string, string?>
         {
@@ -45,6 +46,7 @@ internal class GmailMessageSourceEntry(string userId, string parentPath, Message
             { "gsuite:Id", message.Id },
             { "gsuite:ThreadId", message.ThreadId },
             { "gsuite:Snippet", message.Snippet },
+            { "gsuite:Message-Id", messageId },
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

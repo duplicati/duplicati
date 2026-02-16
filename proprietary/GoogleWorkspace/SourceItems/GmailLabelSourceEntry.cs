@@ -66,15 +66,26 @@ internal class GmailLabelSourceEntry(string userId, string parentPath, Label lab
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
     {
-        return Task.FromResult(new Dictionary<string, string?>
+        var metadata = new Dictionary<string, string?>
         {
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.GmailLabel.ToString() },
             { "gsuite:Name", label.Name },
             { "gsuite:Id", label.Id },
-            { "gsuite:LabelType", label.Type }
+            { "gsuite:LabelType", label.Type },
+            { "gsuite:LabelListVisibility", label.LabelListVisibility },
+            { "gsuite:MessageListVisibility", label.MessageListVisibility }
+        };
+
+        // Add color information if present
+        if (label.Color != null)
+        {
+            metadata["gsuite:ColorBackground"] = label.Color.BackgroundColor;
+            metadata["gsuite:ColorText"] = label.Color.TextColor;
         }
-        .Where(kv => !string.IsNullOrEmpty(kv.Value))
-        .ToDictionary(kv => kv.Key, kv => kv.Value));
+
+        return Task.FromResult(metadata
+            .Where(kv => !string.IsNullOrEmpty(kv.Value))
+            .ToDictionary(kv => kv.Key, kv => kv.Value));
     }
 }
