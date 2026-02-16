@@ -139,10 +139,11 @@ partial class RestoreProvider
             Acl? acl;
             try
             {
-                acl = await JsonSerializer.DeserializeAsync<Acl>(aclStream, cancellationToken: cancel);
+                acl = await JsonSerializer.DeserializeAsync<Acl>(aclStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
             }
-            catch
+            catch (Exception ex)
             {
+                Log.WriteWarningMessage(LOGTAG, "RestoreCalendarAclInvalid", ex, $"Invalid ACL data for calendar {calendarId}");
                 return;
             }
 

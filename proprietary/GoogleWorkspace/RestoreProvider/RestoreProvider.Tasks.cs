@@ -237,7 +237,7 @@ partial class RestoreProvider
                 Google.Apis.Tasks.v1.Data.Task? taskData;
                 using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                 {
-                    taskData = await JsonSerializer.DeserializeAsync<Google.Apis.Tasks.v1.Data.Task>(contentStream, cancellationToken: cancel);
+                    taskData = await JsonSerializer.DeserializeAsync<Google.Apis.Tasks.v1.Data.Task>(contentStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
                 }
 
                 if (taskData == null)

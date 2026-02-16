@@ -70,14 +70,14 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
     private readonly ConcurrentDictionary<string, string> _restoredDriveFolderMap = new();
 
     /// <summary>
-    /// Map of restored calendars to their corresponding IDs
-    /// </summary>
-    private readonly ConcurrentDictionary<string, string> _restoredCalendarMap = new();
-
-    /// <summary>
     /// Map of restored task lists to their corresponding IDs
     /// </summary>
     private readonly ConcurrentDictionary<string, string> _restoredTaskListMap = new();
+
+    /// <summary>
+    /// Map of restored Drive files to their corresponding IDs
+    /// </summary>
+    private readonly ConcurrentDictionary<string, string> _restoredDriveFileMap = new();
 
     /// <summary>
     /// Whether to overwrite existing items

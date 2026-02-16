@@ -25,7 +25,8 @@ internal class DriveFileSourceEntry(string parentPath, File file, DriveService d
         if (cancellationToken.IsCancellationRequested) yield break;
         yield return new DriveFileCommentsSourceEntry(this.Path, file, driveService);
 
-        if (!GoogleMimeTypes.IsGoogleSite(file.MimeType) && !GoogleMimeTypes.IsShortcut(file.MimeType))
+        // Skip revisions for Google Workspace files (Docs, Sheets, Slides, Sites, Shortcuts) as they cannot be exported
+        if (!GoogleMimeTypes.IsGoogleSite(file.MimeType) && !GoogleMimeTypes.IsShortcut(file.MimeType) && !GoogleMimeTypes.IsGoogleDoc(file.MimeType))
         {
             if (cancellationToken.IsCancellationRequested) yield break;
             yield return new DriveFileRevisionsSourceEntry(this.Path, file, driveService);

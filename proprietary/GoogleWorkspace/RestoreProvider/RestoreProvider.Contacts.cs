@@ -287,7 +287,7 @@ partial class RestoreProvider
                 Person? contactData;
                 using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                 {
-                    contactData = await JsonSerializer.DeserializeAsync<Person>(contentStream, cancellationToken: cancel);
+                    contactData = await JsonSerializer.DeserializeAsync<Person>(contentStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
                 }
 
                 if (contactData == null)
@@ -397,7 +397,7 @@ partial class RestoreProvider
                 ContactGroup? groupData;
                 using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                 {
-                    groupData = await JsonSerializer.DeserializeAsync<ContactGroup>(contentStream, cancellationToken: cancel);
+                    groupData = await JsonSerializer.DeserializeAsync<ContactGroup>(contentStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
                 }
 
                 if (groupData == null)
@@ -415,7 +415,7 @@ partial class RestoreProvider
                     try
                     {
                         using var membersStream = SystemIO.IO_OS.FileOpenRead(membersEntry);
-                        var members = await JsonSerializer.DeserializeAsync<List<string>>(membersStream, cancellationToken: cancel);
+                        var members = await JsonSerializer.DeserializeAsync<List<string>>(membersStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
 
                         if (members != null && newGroupResourceName != null)
                         {

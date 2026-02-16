@@ -78,7 +78,7 @@ public static class GoogleMimeTypes
     /// </summary>
     /// <param name="mimeType">The MIME type to check.</param>
     /// <returns>true if the MIME type represents a Google Workspace document; otherwise, false.</returns>
-    public static bool IsGoogleDoc(string mimeType)
+    public static bool IsGoogleDoc(string? mimeType)
         => !string.IsNullOrWhiteSpace(mimeType) &&
             mimeType.StartsWith(GoogleAppsPrefix, StringComparison.Ordinal) &&
             !IsGoogleSite(mimeType) &&
@@ -90,7 +90,7 @@ public static class GoogleMimeTypes
     /// </summary>
     /// <param name="mimeType">The MIME type to check.</param>
     /// <returns>true if the MIME type represents a Google Site; otherwise, false.</returns>
-    public static bool IsGoogleSite(string mimeType)
+    public static bool IsGoogleSite(string? mimeType)
         => !string.IsNullOrWhiteSpace(mimeType) &&
             string.Equals(mimeType, Site, StringComparison.Ordinal);
 
@@ -99,7 +99,7 @@ public static class GoogleMimeTypes
     /// </summary>
     /// <param name="mimeType">The MIME type to check.</param>
     /// <returns>true if the MIME type represents a Google Drive shortcut; otherwise, false.</returns>
-    public static bool IsShortcut(string mimeType)
+    public static bool IsShortcut(string? mimeType)
         => !string.IsNullOrWhiteSpace(mimeType) &&
             string.Equals(mimeType, Shortcut, StringComparison.Ordinal);
 
@@ -108,7 +108,7 @@ public static class GoogleMimeTypes
     /// </summary>
     /// <param name="mimeType">The MIME type to check.</param>
     /// <returns>true if the MIME type represents a Google Drive folder; otherwise, false.</returns>
-    public static bool IsFolder(string mimeType)
+    public static bool IsFolder(string? mimeType)
         => !string.IsNullOrWhiteSpace(mimeType) &&
             string.Equals(mimeType, Folder, StringComparison.Ordinal);
 

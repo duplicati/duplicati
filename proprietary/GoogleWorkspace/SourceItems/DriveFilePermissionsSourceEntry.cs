@@ -16,6 +16,7 @@ internal class DriveFilePermissionsSourceEntry(string parentPath, File file, Dri
     {
         var request = driveService.Permissions.List(file.Id);
         request.SupportsAllDrives = true;
+        request.Fields = "permissions(id,role,type,emailAddress,domain,allowFileDiscovery)";
         var permissions = await request.ExecuteAsync(cancellationToken);
 
         var json = JsonSerializer.Serialize(permissions, new JsonSerializerOptions { WriteIndented = true });

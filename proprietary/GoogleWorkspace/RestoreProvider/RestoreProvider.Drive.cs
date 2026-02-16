@@ -16,30 +16,26 @@ partial class RestoreProvider
 
     internal class DriveRestoreHelper(RestoreProvider Provider)
     {
-        private string? _cachedDefaultDriveId = null;
         private string? _cachedDefaultFolderId = null;
-        private bool _defaultDriveIdChecked = false;
+        private bool _defaultFolderIdChecked = false;
 
-        public async Task<(string? DriveId, string? FolderId)> GetDefaultDriveAndFolder(CancellationToken cancel)
+        public async Task<string?> GetDefaultFolder(CancellationToken cancel)
         {
-            if (_defaultDriveIdChecked)
-                return (_cachedDefaultDriveId, _cachedDefaultFolderId);
+            if (_defaultFolderIdChecked)
+                return _cachedDefaultFolderId;
 
-            _defaultDriveIdChecked = true;
+            _defaultFolderIdChecked = true;
 
             var target = Provider.RestoreTarget;
             if (target == null)
-                return (null, null);
+                return null;
 
-            string? driveId = null;
-            string? userId = null;
 
             if (target.Type == SourceItemType.DriveFolder)
-            {
-                driveId = target.Metadata.GetValueOrDefault("gsuite:DriveId");
-                _cachedDefaultFolderId = target.Metadata.GetValueOrDefault("gsuite:Id");
-            }
-            else if (target.Type == SourceItemType.User)
+                return _cachedDefaultFolderId = target.Metadata.GetValueOrDefault("gsuite:Id");
+
+            string? userId;
+            if (target.Type == SourceItemType.User)
             {
                 userId = target.Metadata.GetValueOrDefault("gsuite:Id");
             }
@@ -47,63 +43,46 @@ partial class RestoreProvider
             {
                 userId = target.Path.TrimStart('/').Split('/').Skip(1).FirstOrDefault();
             }
-
-            if (!string.IsNullOrWhiteSpace(userId) && string.IsNullOrWhiteSpace(driveId))
+            else
             {
-                try
-                {
-                    var driveService = Provider._apiHelper.GetDriveService(userId);
-                    var drive = await driveService.Drives.Get("root").ExecuteAsync(cancel);
-                    driveId = drive.Id;
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteErrorMessage(LOGTAG, "GetDefaultDriveIdFailed", ex, $"Failed to get user drive");
-                }
+                return _cachedDefaultFolderId = null;
             }
 
-            if (driveId != null && string.IsNullOrWhiteSpace(_cachedDefaultFolderId))
+            // Create "Restored" folder
+            try
             {
-                _cachedDefaultDriveId = driveId;
+                var driveService = Provider._apiHelper.GetDriveService(userId);
 
-                // Create "Restored" folder
-                try
+                // Check if folder already exists
+                var listRequest = driveService.Files.List();
+                listRequest.Q = $"mimeType='{GoogleMimeTypes.Folder}' and name='Restored' and 'root' in parents and trashed=false";
+                listRequest.Spaces = "drive";
+                var existingFolders = await listRequest.ExecuteAsync(cancel);
+
+                if (existingFolders.Files?.Count > 0)
                 {
-                    var driveService = Provider._apiHelper.GetDriveService(userId ?? "me");
-
-                    // Check if folder already exists
-                    var listRequest = driveService.Files.List();
-                    listRequest.Q = $"mimeType='application/vnd.google-apps.folder' and name='Restored' and 'root' in parents and trashed=false";
-                    listRequest.Spaces = "drive";
-                    var existingFolders = await listRequest.ExecuteAsync(cancel);
-
-                    if (existingFolders.Files?.Count > 0)
-                    {
-                        _cachedDefaultFolderId = existingFolders.Files[0].Id;
-                    }
-                    else
-                    {
-                        // Create new folder
-                        var folderMetadata = new Google.Apis.Drive.v3.Data.File
-                        {
-                            Name = "Restored",
-                            MimeType = "application/vnd.google-apps.folder",
-                            Parents = new List<string> { "root" }
-                        };
-
-                        var createdFolder = await driveService.Files.Create(folderMetadata).ExecuteAsync(cancel);
-                        _cachedDefaultFolderId = createdFolder.Id;
-                    }
+                    _cachedDefaultFolderId = existingFolders.Files[0].Id;
                 }
-                catch (Exception ex)
+                else
                 {
-                    Log.WriteWarningMessage(LOGTAG, "CreateRestoredFolderFailed", ex, $"Failed to create 'Restored' folder in drive {driveId}");
-                    // Fallback to root
-                    _cachedDefaultFolderId = "root";
+                    // Create new folder
+                    var folderMetadata = new Google.Apis.Drive.v3.Data.File
+                    {
+                        Name = "Restored",
+                        MimeType = GoogleMimeTypes.Folder,
+                        Parents = new List<string> { "root" }
+                    };
+
+                    var createdFolder = await driveService.Files.Create(folderMetadata).ExecuteAsync(cancel);
+                    _cachedDefaultFolderId = createdFolder.Id;
                 }
             }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "CreateRestoredFolderFailed", ex, $"Failed to create 'Restored' folder for user {userId}");
+            }
 
-            return (_cachedDefaultDriveId, _cachedDefaultFolderId);
+            return _cachedDefaultFolderId;
         }
 
         public async Task<string?> CreateFolder(string userId, string parentFolderId, string name, CancellationToken cancel)
@@ -112,7 +91,7 @@ partial class RestoreProvider
 
             // Check if folder already exists
             var listRequest = driveService.Files.List();
-            listRequest.Q = $"mimeType='application/vnd.google-apps.folder' and name='{name.Replace("'", "\\'")}' and '{parentFolderId}' in parents and trashed=false";
+            listRequest.Q = $"mimeType='{GoogleMimeTypes.Folder}' and name='{name.Replace("'", "\\'")}' and '{parentFolderId}' in parents and trashed=false";
             listRequest.Spaces = "drive";
             var existingFolders = await listRequest.ExecuteAsync(cancel);
 
@@ -131,7 +110,7 @@ partial class RestoreProvider
             var folderMetadata = new Google.Apis.Drive.v3.Data.File
             {
                 Name = name,
-                MimeType = "application/vnd.google-apps.folder",
+                MimeType = GoogleMimeTypes.Folder,
                 Parents = new List<string> { parentFolderId }
             };
 
@@ -149,17 +128,14 @@ partial class RestoreProvider
                 var listRequest = driveService.Files.List();
                 listRequest.Q = $"name='{name.Replace("'", "\\'")}' and '{parentFolderId}' in parents and trashed=false";
                 listRequest.Spaces = "drive";
+                listRequest.Fields = "nextPageToken, files(id, name, size)";
                 var existingFiles = await listRequest.ExecuteAsync(cancel);
+                var existingFile = existingFiles.Files?.FirstOrDefault(x => x.Size == contentStream.Length);
 
-                if (existingFiles.Files?.Count > 0)
+                if (existingFile != null)
                 {
-                    var existingFile = existingFiles.Files[0];
-                    // Check if it's the same file by size
-                    if (existingFile.Size == contentStream.Length)
-                    {
-                        Log.WriteInformationMessage(LOGTAG, "UploadFileSkipDuplicate", $"File {name} already exists with same size, skipping.");
-                        return existingFile.Id;
-                    }
+                    Log.WriteInformationMessage(LOGTAG, "UploadFileSkipDuplicate", $"File {name} already exists with same size, skipping.");
+                    return existingFile.Id;
                 }
             }
 
@@ -171,7 +147,7 @@ partial class RestoreProvider
             };
 
             // For Google Workspace files, we need to handle them differently
-            if (mimeType?.StartsWith("application/vnd.google-apps.") == true)
+            if (mimeType != null && GoogleMimeTypes.IsGoogleDoc(mimeType))
             {
                 // Create the file
                 var createdFile = await driveService.Files.Create(fileMetadata).ExecuteAsync(cancel);
@@ -192,28 +168,156 @@ partial class RestoreProvider
             }
         }
 
+        public async Task<string?> UploadFileRevision(string userId, string fileId, Stream contentStream, string? mimeType, CancellationToken cancel)
+        {
+            var driveService = Provider._apiHelper.GetDriveService(userId);
+
+            // For Google Workspace files, revisions cannot be uploaded directly
+            if (mimeType != null && GoogleMimeTypes.IsGoogleDoc(mimeType))
+            {
+                // Google Workspace files don't support direct revision uploads
+                // Revisions are created automatically when the file is edited
+                Log.WriteInformationMessage(LOGTAG, "UploadFileRevisionSkipGoogleDoc", "Skipping revision upload for Google Workspace file.");
+                return fileId;
+            }
+
+            // Upload new revision for binary files
+            var uploadRequest = driveService.Files.Update(new Google.Apis.Drive.v3.Data.File(), fileId, contentStream, mimeType ?? "application/octet-stream");
+            var uploadResult = await uploadRequest.UploadAsync(cancel);
+
+            if (uploadResult.Status == UploadStatus.Failed)
+            {
+                throw new Exception($"Failed to upload file revision: {uploadResult.Exception?.Message}");
+            }
+
+            return fileId;
+        }
+
+        public async Task<string?> CreateGoogleWorkspaceFile(string userId, string parentFolderId, string name, string? mimeType, CancellationToken cancel)
+        {
+            var driveService = Provider._apiHelper.GetDriveService(userId);
+
+            var fileMetadata = new Google.Apis.Drive.v3.Data.File
+            {
+                Name = name,
+                MimeType = mimeType ?? GoogleMimeTypes.Document,
+                Parents = new List<string> { parentFolderId }
+            };
+
+            var createdFile = await driveService.Files.Create(fileMetadata).ExecuteAsync(cancel);
+            return createdFile.Id;
+        }
+
+        public async Task<string?> ImportGoogleWorkspaceFile(string userId, string parentFolderId, string name, Stream contentStream, string? targetMimeType, CancellationToken cancel)
+        {
+            var driveService = Provider._apiHelper.GetDriveService(userId);
+
+            var fileMetadata = new Google.Apis.Drive.v3.Data.File
+            {
+                Name = name,
+                Parents = new List<string> { parentFolderId }
+            };
+
+            // Upload with convert=true to import the file as a Google Workspace file
+            var uploadRequest = driveService.Files.Create(fileMetadata, contentStream, targetMimeType ?? "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+            uploadRequest.SupportsAllDrives = true;
+            var uploadResult = await uploadRequest.UploadAsync(cancel);
+
+            if (uploadResult.Status == UploadStatus.Failed)
+            {
+                throw new Exception($"Failed to import file: {uploadResult.Exception?.Message}");
+            }
+
+            return uploadRequest.ResponseBody?.Id;
+        }
+
+        public async Task UpdateFileMetadata(string userId, string fileId, Stream metadataStream, CancellationToken cancel)
+        {
+            var driveService = Provider._apiHelper.GetDriveService(userId);
+
+            try
+            {
+                var metadata = await JsonSerializer.DeserializeAsync<Google.Apis.Drive.v3.Data.File>(metadataStream, cancellationToken: cancel);
+                if (metadata == null) return;
+
+                // Only update fields that can be modified
+                var updateMetadata = new Google.Apis.Drive.v3.Data.File
+                {
+                    Name = metadata.Name,
+                    Description = metadata.Description,
+                    ModifiedTimeRaw = metadata.ModifiedTimeRaw,
+                    // Note: CreatedTime cannot be changed after file creation
+                };
+
+                await driveService.Files.Update(updateMetadata, fileId).ExecuteAsync(cancel);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "UpdateFileMetadataFailed", ex, $"Failed to update metadata for file {fileId}");
+            }
+        }
+
+        public async Task RestoreComments(string userId, string fileId, Stream commentsStream, CancellationToken cancel)
+        {
+            var driveService = Provider._apiHelper.GetDriveService(userId);
+
+            try
+            {
+                var comments = await JsonSerializer.DeserializeAsync<Google.Apis.Drive.v3.Data.CommentList>(commentsStream, cancellationToken: cancel);
+                if (comments?.Comments == null) return;
+
+                foreach (var comment in comments.Comments)
+                {
+                    try
+                    {
+                        var newComment = new Google.Apis.Drive.v3.Data.Comment
+                        {
+                            Content = comment.Content,
+                            QuotedFileContent = comment.QuotedFileContent,
+                            Anchor = comment.Anchor
+                        };
+
+                        await driveService.Comments.Create(newComment, fileId).ExecuteAsync(cancel);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "RestoreCommentFailed", ex, $"Failed to restore comment for file {fileId}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreCommentsFailed", ex, $"Failed to restore comments for file {fileId}");
+            }
+        }
+
         public async Task RestorePermissions(string userId, string fileId, Stream permissionsStream, CancellationToken cancel)
         {
             var driveService = Provider._apiHelper.GetDriveService(userId);
 
-            List<Permission>? permissions;
+            PermissionList? permissionList;
             try
             {
-                permissions = await JsonSerializer.DeserializeAsync<List<Permission>>(permissionsStream, cancellationToken: cancel);
+                permissionList = await JsonSerializer.DeserializeAsync<PermissionList>(permissionsStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
             }
-            catch
+            catch (Exception ex)
             {
+                Log.WriteWarningMessage(LOGTAG, "RestorePermissionsFailed", ex, $"Failed to deserialize permissions for file {fileId}");
                 return;
             }
 
-            if (permissions == null || permissions.Count == 0) return;
+            if (permissionList?.Permissions == null || permissionList.Permissions.Count == 0) return;
 
-            foreach (var permission in permissions)
+            foreach (var permission in permissionList.Permissions)
             {
                 try
                 {
                     // Skip owner permissions (can't change ownership easily)
                     if (permission.Role == "owner") continue;
+
+                    // Skip permissions with invalid email addresses (e.g., internal Google Chat/Spaces identifiers)
+                    if (!string.IsNullOrEmpty(permission.EmailAddress) && !IsValidEmailAddress(permission.EmailAddress))
+                        continue;
 
                     var newPermission = new Permission
                     {
@@ -232,6 +336,13 @@ partial class RestoreProvider
                 }
             }
         }
+
+        private static bool IsValidEmailAddress(string email)
+        {
+            // Basic email validation - must contain @ and not contain path-like prefixes
+            // This filters out internal Google identifiers like "/namespaced-roster/..."
+            return email.Contains('@') && !email.StartsWith('/');
+        }
     }
 
     private async Task RestoreDriveFolders(CancellationToken cancel)
@@ -243,7 +354,7 @@ partial class RestoreProvider
         if (folders.Count == 0)
             return;
 
-        (var driveId, var defaultFolderId) = await DriveRestore.GetDefaultDriveAndFolder(cancel);
+        var defaultFolderId = await DriveRestore.GetDefaultFolder(cancel);
 
         string? userId = null;
         if (RestoreTarget.Type == SourceItemType.User)
@@ -318,7 +429,7 @@ partial class RestoreProvider
         if (files.Count == 0)
             return;
 
-        (var driveId, var defaultFolderId) = await DriveRestore.GetDefaultDriveAndFolder(cancel);
+        var defaultFolderId = await DriveRestore.GetDefaultFolder(cancel);
 
         string? userId = null;
         if (RestoreTarget.Type == SourceItemType.User)
@@ -348,14 +459,6 @@ partial class RestoreProvider
             try
             {
                 var originalPath = file.Key;
-                var contentEntry = _temporaryFiles.GetValueOrDefault(originalPath);
-
-                if (contentEntry == null)
-                {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreDriveFilesMissingContent", null, $"Missing content for file {originalPath}, skipping.");
-                    continue;
-                }
-
                 var metadata = file.Value;
                 var displayName = metadata.GetValueOrDefault("gsuite:Name") ?? Path.GetFileName(originalPath);
                 var mimeType = metadata.GetValueOrDefault("gsuite:MimeType");
@@ -369,19 +472,171 @@ partial class RestoreProvider
                     parentId = mappedParentId;
                 }
 
-                using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
+                // Get the content file path (stored at originalPath + "/content")
+                var contentPath = SystemIO.IO_OS.PathCombine(originalPath, "content");
+                var contentEntry = _temporaryFiles.GetValueOrDefault(contentPath);
+
+                string? fileId = null;
+
+                if (contentEntry != null)
                 {
-                    await DriveRestore.UploadFile(userId, parentId, displayName, contentStream, mimeType, cancel);
+                    // For Google Workspace files, the content is an exported format that needs to be imported
+                    if (GoogleMimeTypes.IsGoogleDoc(mimeType))
+                    {
+                        // Get the export MIME type for the Google Workspace file
+                        var exportMimeType = GoogleMimeTypes.GetExportMimeType(mimeType!);
+
+                        using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
+                        {
+                            fileId = await DriveRestore.ImportGoogleWorkspaceFile(userId, parentId, displayName, contentStream, exportMimeType, cancel);
+                        }
+                    }
+                    else
+                    {
+                        // For regular binary files, upload directly
+                        using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
+                        {
+                            fileId = await DriveRestore.UploadFile(userId, parentId, displayName, contentStream, mimeType, cancel);
+                        }
+                    }
+
+                    _metadata.TryRemove(contentPath, out _);
+                    _temporaryFiles.TryRemove(contentPath, out var contentFile);
+                    contentFile?.Dispose();
+                }
+                else
+                {
+                    // No content available, create empty Google Workspace file if applicable
+                    if (mimeType != null && GoogleMimeTypes.IsGoogleDoc(mimeType))
+                    {
+                        fileId = await DriveRestore.CreateGoogleWorkspaceFile(userId, parentId, displayName, mimeType, cancel);
+                    }
+                    else
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "RestoreDriveFilesMissingContent", null, $"Missing content for file {originalPath}, skipping.");
+                        continue;
+                    }
+                }
+
+                if (fileId != null)
+                {
+                    _restoredDriveFileMap[originalPath] = fileId;
+
+                    // Now restore any revisions for this file
+                    await RestoreDriveFileRevisions(userId, fileId, originalPath, mimeType, cancel);
+
+                    // Restore metadata (modified time, description, etc.)
+                    await RestoreDriveFileMetadata(userId, fileId, originalPath, cancel);
+
+                    // Restore comments
+                    await RestoreDriveFileComments(userId, fileId, originalPath, cancel);
                 }
 
                 _metadata.TryRemove(originalPath, out _);
-                _temporaryFiles.TryRemove(originalPath, out var contentFile);
-                contentFile?.Dispose();
             }
             catch (Exception ex)
             {
                 Log.WriteErrorMessage(LOGTAG, "RestoreDriveFilesFailed", ex, $"Failed to restore file {file.Key}");
             }
+        }
+    }
+
+    private async Task RestoreDriveFileRevisions(string userId, string fileId, string originalFilePath, string? mimeType, CancellationToken cancel)
+    {
+        // Find all revisions for this file
+        // Revisions are stored at originalFilePath + "/Revisions/" + revisionId
+        var revisionPrefix = SystemIO.IO_OS.PathCombine(originalFilePath, "Revisions");
+
+        var revisionEntries = _temporaryFiles
+            .Where(kv => kv.Key.StartsWith(revisionPrefix + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (revisionEntries.Count == 0)
+            return;
+
+        // Sort revisions by path to maintain chronological order
+        var sortedRevisions = revisionEntries.OrderBy(r => r.Key).ToList();
+
+        foreach (var revisionEntry in sortedRevisions)
+        {
+            if (cancel.IsCancellationRequested)
+                break;
+
+            try
+            {
+                using (var contentStream = SystemIO.IO_OS.FileOpenRead(revisionEntry.Value))
+                {
+                    await DriveRestore.UploadFileRevision(userId, fileId, contentStream, mimeType, cancel);
+                }
+
+                _temporaryFiles.TryRemove(revisionEntry.Key, out var tempFile);
+                tempFile?.Dispose();
+
+                // Also remove from metadata if present
+                _metadata.TryRemove(revisionEntry.Key, out _);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreDriveFileRevisionFailed", ex, $"Failed to restore revision {revisionEntry.Key} for file {fileId}");
+            }
+        }
+
+        // Clean up the Revisions folder metadata entry if it exists
+        var revisionsFolderPath = Util.AppendDirSeparator(revisionPrefix);
+        _metadata.TryRemove(revisionsFolderPath, out _);
+    }
+
+    private async Task RestoreDriveFileMetadata(string userId, string fileId, string originalFilePath, CancellationToken cancel)
+    {
+        var metadataPath = SystemIO.IO_OS.PathCombine(originalFilePath, "metadata.json");
+        var metadataEntry = _temporaryFiles.GetValueOrDefault(metadataPath);
+
+        if (metadataEntry == null)
+            return;
+
+        try
+        {
+            using (var contentStream = SystemIO.IO_OS.FileOpenRead(metadataEntry))
+            {
+                await DriveRestore.UpdateFileMetadata(userId, fileId, contentStream, cancel);
+            }
+
+            _temporaryFiles.TryRemove(metadataPath, out var tempFile);
+            tempFile?.Dispose();
+
+            // Also remove from metadata if present
+            _metadata.TryRemove(metadataPath, out _);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteWarningMessage(LOGTAG, "RestoreDriveFileMetadataFailed", ex, $"Failed to restore metadata for file {fileId}");
+        }
+    }
+
+    private async Task RestoreDriveFileComments(string userId, string fileId, string originalFilePath, CancellationToken cancel)
+    {
+        var commentsPath = SystemIO.IO_OS.PathCombine(originalFilePath, "comments.json");
+        var commentsEntry = _temporaryFiles.GetValueOrDefault(commentsPath);
+
+        if (commentsEntry == null)
+            return;
+
+        try
+        {
+            using (var contentStream = SystemIO.IO_OS.FileOpenRead(commentsEntry))
+            {
+                await DriveRestore.RestoreComments(userId, fileId, contentStream, cancel);
+            }
+
+            _temporaryFiles.TryRemove(commentsPath, out var tempFile);
+            tempFile?.Dispose();
+
+            // Also remove from metadata if present
+            _metadata.TryRemove(commentsPath, out _);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteWarningMessage(LOGTAG, "RestoreDriveFileCommentsFailed", ex, $"Failed to restore comments for file {fileId}");
         }
     }
 
@@ -437,9 +692,14 @@ partial class RestoreProvider
                     {
                         fileId = folderId;
                     }
+                    // Check if it's a file (using the restored file map)
+                    else if (_restoredDriveFileMap.TryGetValue(parentPath, out var restoredFileId))
+                    {
+                        fileId = restoredFileId;
+                    }
                     else
                     {
-                        // It might be a file - check metadata
+                        // It might be a file - check metadata (fallback for older backups)
                         var fileMetadata = _metadata.FirstOrDefault(m => m.Key == parentPath.TrimEnd(Path.DirectorySeparatorChar));
                         if (!string.IsNullOrEmpty(fileMetadata.Key))
                         {

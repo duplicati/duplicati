@@ -92,36 +92,6 @@ partial class RestoreProvider
             return createdLabel.Id;
         }
 
-        public async Task RestoreLabel(string userId, Stream labelStream, CancellationToken cancel)
-        {
-            var label = await JsonSerializer.DeserializeAsync<Label>(labelStream, cancellationToken: cancel);
-            if (label == null) return;
-
-            var gmailService = Provider._apiHelper.GetGmailService(userId);
-
-            // Check if label already exists
-            var labelsResponse = await gmailService.Users.Labels.List(userId).ExecuteAsync(cancel);
-            var existingLabel = labelsResponse.Labels?.FirstOrDefault(l =>
-                l.Name?.Equals(label.Name, StringComparison.OrdinalIgnoreCase) == true);
-
-            if (existingLabel != null && Provider._ignoreExisting)
-            {
-                Log.WriteInformationMessage(LOGTAG, "RestoreLabelSkipExisting", $"Label {label.Name} already exists, skipping.");
-                return;
-            }
-
-            if (existingLabel != null)
-            {
-                // Update existing label
-                await gmailService.Users.Labels.Update(label, userId, existingLabel.Id).ExecuteAsync(cancel);
-            }
-            else
-            {
-                // Create new label
-                await gmailService.Users.Labels.Create(label, userId).ExecuteAsync(cancel);
-            }
-        }
-
         public async Task<string?> RestoreLabelFromMetadata(string userId, Dictionary<string, string?> metadata, CancellationToken cancel)
         {
             var labelName = metadata.GetValueOrDefault("gsuite:Name");
@@ -230,7 +200,7 @@ partial class RestoreProvider
 
         public async Task RestoreSettings(string userId, Stream settingsStream, CancellationToken cancel)
         {
-            var settings = await JsonSerializer.DeserializeAsync<ImapSettings>(settingsStream, cancellationToken: cancel);
+            var settings = await JsonSerializer.DeserializeAsync<ImapSettings>(settingsStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
             if (settings == null) return;
 
             var gmailService = Provider._apiHelper.GetGmailService(userId);
@@ -239,7 +209,7 @@ partial class RestoreProvider
 
         public async Task RestoreFilter(string userId, Stream filterStream, CancellationToken cancel)
         {
-            var filter = await JsonSerializer.DeserializeAsync<Filter>(filterStream, cancellationToken: cancel);
+            var filter = await JsonSerializer.DeserializeAsync<Filter>(filterStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
             if (filter == null) return;
 
             var gmailService = Provider._apiHelper.GetGmailService(userId);
@@ -248,7 +218,7 @@ partial class RestoreProvider
 
         public async Task RestoreForwarding(string userId, Stream forwardingStream, CancellationToken cancel)
         {
-            var forwarding = await JsonSerializer.DeserializeAsync<AutoForwarding>(forwardingStream, cancellationToken: cancel);
+            var forwarding = await JsonSerializer.DeserializeAsync<AutoForwarding>(forwardingStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
             if (forwarding == null) return;
 
             var gmailService = Provider._apiHelper.GetGmailService(userId);
@@ -257,7 +227,7 @@ partial class RestoreProvider
 
         public async Task RestoreVacation(string userId, Stream vacationStream, CancellationToken cancel)
         {
-            var vacation = await JsonSerializer.DeserializeAsync<VacationSettings>(vacationStream, cancellationToken: cancel);
+            var vacation = await JsonSerializer.DeserializeAsync<VacationSettings>(vacationStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
             if (vacation == null) return;
 
             var gmailService = Provider._apiHelper.GetGmailService(userId);
@@ -266,7 +236,7 @@ partial class RestoreProvider
 
         public async Task RestoreSignature(string userId, string sendAsEmail, Stream signatureStream, CancellationToken cancel)
         {
-            var sendAs = await JsonSerializer.DeserializeAsync<SendAs>(signatureStream, cancellationToken: cancel);
+            var sendAs = await JsonSerializer.DeserializeAsync<SendAs>(signatureStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
             if (sendAs == null) return;
 
             var gmailService = Provider._apiHelper.GetGmailService(userId);
