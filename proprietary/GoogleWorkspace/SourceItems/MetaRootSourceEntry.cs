@@ -123,10 +123,6 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
         }
         else if (type == SourceItemType.MetaRootOrganizationalUnits)
         {
-            // OrganizationalUnits is a single file containing all OUs, so we check license once
-            if (!provider.LicenseApprovedForEntry(Path, GoogleRootType.OrganizationalUnits, "organizational_units"))
-                yield break;
-
             yield return new OrganizationalUnitsSourceEntry(provider, this.Path);
         }
     }

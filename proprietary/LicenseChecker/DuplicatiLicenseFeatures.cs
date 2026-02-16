@@ -42,9 +42,4 @@ public static class DuplicatiLicenseFeatures
     /// The feature indicating support for Google Workspace site backups
     /// </summary>
     public const string GoogleWorkspaceSites = "duplicati:googleworkspace:sites";
-
-    /// <summary>
-    /// The feature indicating support for Google Workspace organizational unit backups
-    /// </summary>
-    public const string GoogleWorkspaceOrganizationalUnits = "duplicati:googleworkspace:organizationalunits";
 }

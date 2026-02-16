@@ -17,7 +17,6 @@ public static class LicenseHelper
     public static int AvailableGoogleWorkspaceGroupSeats => GetFeatureSeats(DuplicatiLicenseFeatures.GoogleWorkspaceGroups);
     public static int AvailableGoogleWorkspaceSharedDriveSeats => GetFeatureSeats(DuplicatiLicenseFeatures.GoogleWorkspaceSharedDrives);
     public static int AvailableGoogleWorkspaceSiteSeats => GetFeatureSeats(DuplicatiLicenseFeatures.GoogleWorkspaceSites);
-    public static int AvailableGoogleWorkspaceOrganizationalUnitSeats => GetFeatureSeats(DuplicatiLicenseFeatures.GoogleWorkspaceOrganizationalUnits);
 
     public static bool IsOffice365Enabled =>
         AvailableOffice365UserSeats > 0 ||
@@ -28,8 +27,7 @@ public static class LicenseHelper
         AvailableGoogleWorkspaceUserSeats > 0 ||
         AvailableGoogleWorkspaceGroupSeats > 0 ||
         AvailableGoogleWorkspaceSharedDriveSeats > 0 ||
-        AvailableGoogleWorkspaceSiteSeats > 0 ||
-        AvailableGoogleWorkspaceOrganizationalUnitSeats > 0;
+        AvailableGoogleWorkspaceSiteSeats > 0;
 
     private static Dictionary<string, int> UnlicensedSeats = new Dictionary<string, int>
     {
@@ -39,8 +37,7 @@ public static class LicenseHelper
         { DuplicatiLicenseFeatures.GoogleWorkspaceUsers, 5 },
         { DuplicatiLicenseFeatures.GoogleWorkspaceGroups, 5 },
         { DuplicatiLicenseFeatures.GoogleWorkspaceSharedDrives, 5 },
-        { DuplicatiLicenseFeatures.GoogleWorkspaceSites, 5 },
-        { DuplicatiLicenseFeatures.GoogleWorkspaceOrganizationalUnits, 5 },
+        { DuplicatiLicenseFeatures.GoogleWorkspaceSites, 5 }
     };
 
     private static int GetDefaultSeats(string feature)

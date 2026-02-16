@@ -40,10 +40,6 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     /// The current number of sites that has been enumerated.
     /// </summary>
     private int _siteCount = 0;
-    /// <summary>
-    /// The current number of organizational units that has been enumerated.
-    /// </summary>
-    private int _organizationalUnitCount = 0;
 
     /// <summary>
     /// Whether a license warning has been issued for users.
@@ -61,10 +57,6 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     /// Whether a license warning has been issued for sites.
     /// </summary>
     private int _siteLicenseWarningIssued = 0;
-    /// <summary>
-    /// Whether a license warning has been issued for organizational units.
-    /// </summary>
-    private int _organizationalUnitLicenseWarningIssued = 0;
 
     /// <summary>
     /// Whether this provider is being used for a restore operation.
@@ -264,17 +256,6 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
                 return false;
             }
         }
-        else if (type == GoogleRootType.OrganizationalUnits)
-        {
-            var approved = LicenseChecker.LicenseHelper.AvailableGoogleWorkspaceOrganizationalUnitSeats;
-            var current = _organizationalUnitCount;
-            if (current >= approved)
-            {
-                if (Interlocked.Exchange(ref _organizationalUnitLicenseWarningIssued, 1) == 0)
-                    Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Google Workspace feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
-                return false;
-            }
-        }
         else
         {
             // Unknown type, allow it
@@ -291,8 +272,6 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
                 Interlocked.Increment(ref _sharedDriveCount);
             else if (type == GoogleRootType.Sites)
                 Interlocked.Increment(ref _siteCount);
-            else if (type == GoogleRootType.OrganizationalUnits)
-                Interlocked.Increment(ref _organizationalUnitCount);
         }
 
         return true;
