@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class DriveFolderSourceEntry(string parentPath, string userId, string name, string folderId, DriveService driveService)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, name)), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, folderId)), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {

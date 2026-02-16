@@ -10,7 +10,7 @@ using Google.Apis.Drive.v3;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class CalendarSourceEntry(string parentPath, string userId, CalendarListEntry calendar, CalendarService service, DriveService driveService, CalendarService? aclService)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, calendar.SummaryOverride ?? calendar.Summary)), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, calendar.Id)), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {

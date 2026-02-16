@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, string name, SourceItemType type)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, name)), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, type.ToString())), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -136,8 +136,8 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
             {
                 { "gsuite:v", "1" },
                 { "gsuite:Type", type.ToString() },
-                { "gsuite:Name", System.IO.Path.GetFileName(Path) },
-                { "gsuite:Id", System.IO.Path.GetFileName(Path) }
+                { "gsuite:Name", name },
+                { "gsuite:Id", type.ToString() }
             }
             .Where(kv => !string.IsNullOrEmpty(kv.Value))
             .ToDictionary(kv => kv.Key, kv => kv.Value));

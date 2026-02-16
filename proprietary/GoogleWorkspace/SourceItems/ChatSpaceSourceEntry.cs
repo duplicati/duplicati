@@ -10,7 +10,7 @@ using Google.Apis.Drive.v3;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class ChatSpaceSourceEntry(string parentPath, Space space, HangoutsChatService chatService, DriveService driveService)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, (space.DisplayName ?? space.Name).Split('/').Last())), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, space.Name.Split('/').Last())), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {

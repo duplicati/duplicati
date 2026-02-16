@@ -10,7 +10,7 @@ using System.Runtime.CompilerServices;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class GmailLabelSourceEntry(string userId, string parentPath, Label label, GmailService service)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, label.Name)), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, label.Id)), null, null)
 {
     public override IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
     {

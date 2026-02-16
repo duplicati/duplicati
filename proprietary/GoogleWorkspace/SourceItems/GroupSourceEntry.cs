@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class GroupSourceEntry(SourceProvider provider, string parentPath, Group group)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, group.Name ?? group.Email)), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, group.Id)), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {

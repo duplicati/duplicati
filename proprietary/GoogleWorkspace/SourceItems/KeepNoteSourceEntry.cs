@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class KeepNoteSourceEntry(string parentPath, Note note, KeepService keepService)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, note.Title ?? note.Name)),
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, note.Name.Split('/').Last())),
         note.CreateTimeDateTimeOffset.HasValue ? note.CreateTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch,
         note.UpdateTimeDateTimeOffset.HasValue ? note.UpdateTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {

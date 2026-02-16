@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class SharedDriveSourceEntry(string parentPath, string userId, Drive drive, DriveService driveService)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, drive.Name)), drive.CreatedTimeDateTimeOffset.HasValue ? drive.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, DateTime.UnixEpoch)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, drive.Id)), drive.CreatedTimeDateTimeOffset.HasValue ? drive.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -29,7 +29,8 @@ internal class SharedDriveSourceEntry(string parentPath, string userId, Drive dr
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.SharedDrives.ToString() }, // Or specific type?
             { "gsuite:Name", drive.Name },
-            { "gsuite:Id", drive.Id }
+            { "gsuite:Id", drive.Id },
+            { "gsuite:Kind", drive.Kind }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

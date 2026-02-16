@@ -12,7 +12,7 @@ namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 /// Represents a folder containing all spaces of a specific type (SPACE, GROUP_CHAT, or DIRECT_MESSAGE).
 /// </summary>
 internal class ChatSpaceTypeSourceEntry(string parentPath, string spaceType, HangoutsChatService chatService, DriveService driveService)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, GetDisplayName(spaceType))), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, spaceType)), null, null)
 {
     private static string GetDisplayName(string spaceType) => spaceType switch
     {
