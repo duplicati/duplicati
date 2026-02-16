@@ -10,7 +10,7 @@ using Task = System.Threading.Tasks.Task;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class TaskListSourceEntry(string parentPath, TaskList taskList, TasksService tasksService)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, taskList.Title)), null, null)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, taskList.Id)), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -43,7 +43,10 @@ internal class TaskListSourceEntry(string parentPath, TaskList taskList, TasksSe
             { "gsuite:Type", SourceItemType.TaskList.ToString() },
             { "gsuite:Name", taskList.Title },
             { "gsuite:Id", taskList.Id },
-            { "gsuite:Updated", taskList.Updated }
+            { "gsuite:Updated", taskList.Updated },
+            { "gsuite:ETag", taskList.ETag },
+            { "gsuite:Kind", taskList.Kind },
+            { "gsuite:SelfLink", taskList.SelfLink }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

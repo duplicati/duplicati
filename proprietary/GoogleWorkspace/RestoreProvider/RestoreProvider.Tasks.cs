@@ -111,6 +111,30 @@ partial class RestoreProvider
             var createdTask = await tasksService.Tasks.Insert(task, taskListId).ExecuteAsync(cancel);
             return createdTask.Id;
         }
+
+        public async Task<string> GetOrCreateRestoredTaskList(string userId, CancellationToken cancel)
+        {
+            const string RESTORED_TASKLIST_NAME = "Restored";
+
+            var tasksService = Provider._apiHelper.GetTasksService(userId);
+
+            // Check if task list already exists
+            var existingLists = await tasksService.Tasklists.List().ExecuteAsync(cancel);
+            var existingList = existingLists.Items?.FirstOrDefault(l =>
+                l.Title?.Equals(RESTORED_TASKLIST_NAME, StringComparison.OrdinalIgnoreCase) == true);
+
+            if (existingList != null)
+                return existingList.Id;
+
+            // Create new task list
+            var newTaskList = new TaskList
+            {
+                Title = RESTORED_TASKLIST_NAME
+            };
+
+            var createdList = await tasksService.Tasklists.Insert(newTaskList).ExecuteAsync(cancel);
+            return createdList.Id;
+        }
     }
 
     private async System.Threading.Tasks.Task RestoreTaskLists(CancellationToken cancel)
@@ -134,25 +158,13 @@ partial class RestoreProvider
             try
             {
                 var originalPath = taskList.Key;
-                var contentEntry = _temporaryFiles.GetValueOrDefault(originalPath);
+                var metadata = taskList.Value;
 
-                if (contentEntry == null)
+                // Create TaskList from metadata
+                var taskListData = new TaskList
                 {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreTaskListsMissingContent", null, $"Missing content for task list {originalPath}, skipping.");
-                    continue;
-                }
-
-                TaskList? taskListData;
-                using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
-                {
-                    taskListData = await JsonSerializer.DeserializeAsync<TaskList>(contentStream, cancellationToken: cancel);
-                }
-
-                if (taskListData == null)
-                {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreTaskListsInvalidContent", null, $"Invalid content for task list {originalPath}, skipping.");
-                    continue;
-                }
+                    Title = metadata.GetValueOrDefault("gsuite:Name") ?? "Unnamed Task List"
+                };
 
                 var newListId = await TaskRestore.CreateTaskList(userId, taskListData, cancel);
                 if (newListId != null)
@@ -161,8 +173,6 @@ partial class RestoreProvider
                 }
 
                 _metadata.TryRemove(originalPath, out _);
-                _temporaryFiles.TryRemove(originalPath, out var contentFile);
-                contentFile?.Dispose();
             }
             catch (Exception ex)
             {
@@ -184,6 +194,9 @@ partial class RestoreProvider
         if (string.IsNullOrWhiteSpace(userId))
             return;
 
+        // Get or create the "Restored" task list for orphaned tasks
+        string? restoredTaskListId = null;
+
         foreach (var task in tasks)
         {
             if (cancel.IsCancellationRequested)
@@ -200,12 +213,25 @@ partial class RestoreProvider
                     continue;
                 }
 
-                // Find parent task list
+                // Find parent task list - tasks are stored under their tasklist's path
                 var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
-                if (parentPath == null || !_restoredTaskListMap.TryGetValue(parentPath, out var listId))
+
+                // Try to find the parent task list in our restored map
+                string? listId = null;
+                if (!string.IsNullOrEmpty(parentPath) && _restoredTaskListMap.TryGetValue(parentPath, out var mappedListId))
                 {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreTasksMissingParent", null, $"Could not find parent list for task {originalPath}, skipping.");
-                    continue;
+                    listId = mappedListId;
+                }
+
+                // If no parent list found, use/create the "Restored" task list
+                if (listId == null)
+                {
+                    if (restoredTaskListId == null)
+                    {
+                        restoredTaskListId = await TaskRestore.GetOrCreateRestoredTaskList(userId, cancel);
+                    }
+                    listId = restoredTaskListId;
+                    Log.WriteInformationMessage(LOGTAG, "RestoreTasksToRestoredList", $"Task {originalPath} has no parent list, adding to 'Restored' task list.");
                 }
 
                 Google.Apis.Tasks.v1.Data.Task? taskData;
