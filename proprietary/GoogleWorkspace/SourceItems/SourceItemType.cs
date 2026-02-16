@@ -44,6 +44,7 @@ public enum SourceItemType
     UserKeep,
     UserChat,
     KeepNote,
+    KeepNoteContent,
     KeepNoteAttachment,
     UserProfile,
     OrganizationalUnit,

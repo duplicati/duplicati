@@ -24,7 +24,7 @@ internal class KeepNoteFileSourceEntry(string parentPath, Note note)
         return Task.FromResult(new Dictionary<string, string?>
         {
             { "gsuite:v", "1" },
-            { "gsuite:Type", SourceItemType.KeepNote.ToString() },
+            { "gsuite:Type", SourceItemType.KeepNoteContent.ToString() },
             { "gsuite:Name", "note.json" },
             { "gsuite:Id", note.Name }
         }
