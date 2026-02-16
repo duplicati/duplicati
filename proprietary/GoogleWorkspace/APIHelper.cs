@@ -90,9 +90,18 @@ public class APIHelper
 
     public void TestConnection()
     {
-        // Test connection by getting the Gmail service
-        var gmailService = GetGmailService("me");
-        gmailService.Users.GetProfile("me").Execute();
+        if (_isRestoreOperation)
+        {
+            // Test connection by listing shared drives (Drive API is used for restore operations)
+            var driveService = GetDriveService();
+            driveService.Drives.List().Execute();
+        }
+        else
+        {
+            // Test connection by getting the Gmail service
+            var gmailService = GetGmailService("me");
+            gmailService.Users.GetProfile("me").Execute();
+        }
     }
     public GmailService GetGmailService(string userId)
     {
