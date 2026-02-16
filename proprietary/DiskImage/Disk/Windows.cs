@@ -1,6 +1,7 @@
 
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -19,6 +20,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
     [SupportedOSPlatform("windows")]
     public class Windows : IRawDisk
     {
+        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Windows>();
+
         private readonly string m_devicePath;
         private SafeHFILE? m_deviceHandle;
         private bool m_disposed = false;
@@ -87,6 +90,55 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
                 return (int)(m_size / m_sectorSize);
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> AutoUnmountAsync(CancellationToken cancellationToken)
+        {
+            var script = @$"
+                $disk = Get-Disk -DevicePath '{m_devicePath}'
+                if ($disk -eq $null) {{
+                    exit 1
+                }}
+                $volumes = Get-Volume -DiskNumber $disk.Number
+                foreach ($vol in $volumes) {{
+                    if ($vol.DriveLetter) {{
+                        Dismount-Volume -DriveLetter $vol.DriveLetter -Force
+                    }}
+                }}
+                Set-Disk -Number $disk.Number -IsOffline $true
+                Set-Disk -Number $disk.Number -IsReadOnly $false
+            ";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command -",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var p = new Process { StartInfo = psi };
+
+            p.Start();
+
+            p.StandardInput.WriteLine(script);
+            p.StandardInput.Close();
+
+            string output = p.StandardOutput.ReadToEnd();
+            string error = p.StandardError.ReadToEnd();
+
+            p.WaitForExit();
+
+            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "autounmount", output, null);
+
+            if (!string.IsNullOrWhiteSpace(error))
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "autounmount", null, error, null);
+
+            return p.ExitCode == 0;
         }
 
         /// <inheritdoc />

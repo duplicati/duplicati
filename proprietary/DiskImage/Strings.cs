@@ -32,6 +32,16 @@ internal static class Strings
         "Restore disk images to physical disks, partitions, and filesystems.");
 
     /// <summary>
+    /// Short description for the auto unmount option.
+    /// </summary>
+    public static string DiskRestoreAutoUnmountShort => LC.L("Auto unmount target disk.");
+
+    /// <summary>
+    /// Long description for the auto unmount option.
+    /// </summary>
+    public static string DiskRestoreAutoUnmountLong => LC.L("If set, the target disk will automatically unmount all volumes, pull the disk offline, and clear the readonly attributes before restore operations. This is a requirement for restore on Windows.");
+
+    /// <summary>
     /// Short description for the skip partition table option.
     /// </summary>
     public static string DiskRestoreSkipPartitionTableShort => LC.L("Skip partition table restore.");

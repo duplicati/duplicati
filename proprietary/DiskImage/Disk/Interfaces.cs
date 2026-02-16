@@ -36,6 +36,13 @@ public interface IRawDisk : IDisposable
     bool IsWriteable { get; }
 
     /// <summary>
+    /// Automatically unmounts the target disk.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if the disk was successfully unmounted.</returns>
+    Task<bool> AutoUnmountAsync(CancellationToken cancellationToken);
+
+    /// <summary>
     /// Initializes the disk access interface.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>

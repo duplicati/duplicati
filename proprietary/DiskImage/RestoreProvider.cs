@@ -25,6 +25,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
     private readonly string _devicePath;
     private readonly string _restorePath;
+    private readonly bool _autoUnmount;
     private readonly bool _skipPartitionTable;
     private readonly bool _validateSize;
     private readonly bool _hasSetOverwriteOption;
@@ -113,6 +114,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         _skipPartitionTable = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION);
         _validateSize = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_VALIDATE_SIZE_OPTION);
+        _autoUnmount = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_AUTO_UNMOUNT_OPTION);
         _hasSetOverwriteOption = Utility.ParseBoolOption(options, "overwrite");
     }
 
@@ -134,19 +136,20 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <inheritdoc />
     public async Task Initialize(CancellationToken cancel)
     {
-        if (OperatingSystem.IsWindows())
-        {
-            if (string.IsNullOrEmpty(_devicePath))
-                throw new UserInformationException("Disk device path is not specified.", "DiskDeviceNotSpecified");
+        if (string.IsNullOrEmpty(_devicePath))
+            throw new UserInformationException("Disk device path is not specified.", "DiskDeviceNotSpecified");
 
+        if (OperatingSystem.IsWindows())
             _targetDisk = new Windows(_devicePath);
-            if (!await _targetDisk.InitializeAsync(enableWrite: true, cancel))
-                throw new UserInformationException(string.Format(Strings.RestoreDeviceNotWriteable, _devicePath), "DiskInitializeFailed");
-        }
         else
-        {
             throw new PlatformNotSupportedException(Strings.RestorePlatformNotSupported);
-        }
+
+        if (_autoUnmount)
+            if (!await _targetDisk.AutoUnmountAsync(cancel).ConfigureAwait(false))
+                throw new UserInformationException($"Failed to auto unmount target disk: {_devicePath}. Ensure the disk is not in use and you have sufficient permissions.", "DiskAutoUnmountFailed");
+
+        if (!await _targetDisk.InitializeAsync(enableWrite: true, cancel))
+            throw new UserInformationException(string.Format(Strings.RestoreDeviceNotWriteable, _devicePath), "DiskInitializeFailed");
 
         // Validate target size if requested
         if (_validateSize)
