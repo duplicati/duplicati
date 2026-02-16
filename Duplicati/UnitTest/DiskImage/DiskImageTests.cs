@@ -365,6 +365,75 @@ namespace Duplicati.UnitTest
             VerifyPartitionTableType(PartitionTableType.MBR);
         }
 
+        /// <summary>
+        /// Test Scenario 8: Auto Unmount Option - Verify that restore fails when disk is online
+        /// and succeeds when auto-unmount option is enabled.
+        /// </summary>
+        [Test]
+        [Category("DiskImage")]
+        public void Test_AutoUnmountOption_RestoreWhileOnline()
+        {
+            TestContext.Progress.WriteLine("Test: Auto Unmount Option - Restore While Disk Online");
+
+            // Setup source VHD: 100MB, GPT, single NTFS partition
+            var sourceDrivePath = SetupSourceVhd(100, "gpt", "ntfs");
+            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
+
+            // Backup
+            var backupResults = RunBackup(sourceDrivePath);
+            TestUtils.AssertResults(backupResults);
+            TestContext.Progress.WriteLine($"Backup completed successfully");
+
+            // Create and attach VHD
+            var restoreDrivePath = _diskHelper.CreateAndAttachDisk(_restoreVhdPath, 100);
+            _restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
+
+            // Initialize disk (the restore will overwrite this, but we need it formatted)
+            _diskHelper.InitializeDisk(_restoreDiskNumber, "gpt");
+            _diskHelper.CreateAndFormatPartition(_restoreDiskNumber, "ntfs");
+            TestContext.Progress.WriteLine($"Restore VHD created and kept online at: {_restoreVhdPath}");
+
+            // First attempt: Restore without auto-unmount option should fail
+            // because the disk is online and in use
+            TestContext.Progress.WriteLine("Attempting restore without auto-unmount (should fail)...");
+            var options = new Dictionary<string, string>(TestOptions)
+            {
+                ["restore-path"] = $"@diskimage://{restoreDrivePath}",
+                ["overwrite"] = "true",
+                ["restore-file-processors"] = "1",
+                // Explicitly disable auto-unmount (though it's disabled by default)
+                ["diskimage-restore-auto-unmount"] = "false"
+            };
+
+            using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            {
+                var results = c.Restore(["*"]);
+
+                // Verify that the restore failed (has errors)
+                Assert.That(results.Errors.Any(), Is.True,
+                    "Restore should fail when target disk is online and auto-unmount is not enabled");
+                TestContext.Progress.WriteLine($"Restore failed as expected with errors: {string.Join(", ", results.Errors)}");
+            }
+
+            // Second attempt: Restore with auto-unmount option should succeed
+            TestContext.Progress.WriteLine("Attempting restore with auto-unmount enabled (should succeed)...");
+
+            options["diskimage-restore-auto-unmount"] = "true";
+            using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            {
+                var results = c.Restore(["*"]);
+
+                TestUtils.AssertResults(results);
+            }
+            TestContext.Progress.WriteLine($"Restore completed successfully with auto-unmount option");
+
+            // Verify partition table matches
+            VerifyPartitionTableMatches();
+
+            // Verify data matches byte-for-byte
+            VerifyRestoredData(_sourceDriveLetter);
+        }
+
         #region Helper Methods
 
         /// <summary>
