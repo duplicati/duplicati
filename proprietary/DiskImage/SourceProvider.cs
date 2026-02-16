@@ -99,9 +99,15 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             if (!await _disk.InitializeAsync(cancellationToken))
                 throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
         }
+        else if (OperatingSystem.IsMacOS())
+        {
+            _disk = new Mac(_devicePath);
+            if (!await _disk.InitializeAsync(cancellationToken))
+                throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
+        }
         else
         {
-            throw new PlatformNotSupportedException("DiskImage source provider is currently only supported on Windows.");
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
         }
     }
 
