@@ -1,7 +1,6 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Logging;
 using Duplicati.Proprietary.GoogleWorkspace.SourceItems;
@@ -9,61 +8,6 @@ using Google.Apis.HangoutsChat.v1.Data;
 using Google.Apis.Upload;
 
 namespace Duplicati.Proprietary.GoogleWorkspace;
-
-/// <summary>
-/// Helper class for JSON serialization that respects Newtonsoft.Json ignore attributes
-/// when using System.Text.Json.
-/// </summary>
-internal static class GoogleChatJsonHelper
-{
-    private static readonly JsonSerializerOptions _options;
-
-    static GoogleChatJsonHelper()
-    {
-        _options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = null, // Use exact C# member names (PascalCase)
-            TypeInfoResolver = new DefaultJsonTypeInfoResolver
-            {
-                Modifiers = { RespectNewtonsoftJsonIgnore }
-            }
-        };
-    }
-
-    /// <summary>
-    /// Gets the JSON serializer options that respect Newtonsoft.Json ignore attributes.
-    /// </summary>
-    public static JsonSerializerOptions Options => _options;
-
-    /// <summary>
-    /// Modifier that ignores properties marked with Newtonsoft.Json.JsonIgnoreAttribute.
-    /// </summary>
-    private static void RespectNewtonsoftJsonIgnore(JsonTypeInfo typeInfo)
-    {
-        // Collect properties to remove
-        var propertiesToRemove = new List<JsonPropertyInfo>();
-
-        foreach (var property in typeInfo.Properties)
-        {
-            // Check if the property has Newtonsoft.Json.JsonIgnoreAttribute
-            var propertyInfo = property.AttributeProvider as System.Reflection.PropertyInfo;
-            if (propertyInfo != null)
-            {
-                var hasJsonIgnore = propertyInfo.GetCustomAttributes(typeof(Newtonsoft.Json.JsonIgnoreAttribute), inherit: true).Any();
-                if (hasJsonIgnore)
-                {
-                    propertiesToRemove.Add(property);
-                }
-            }
-        }
-
-        // Remove the ignored properties from the type info
-        foreach (var property in propertiesToRemove)
-        {
-            typeInfo.Properties.Remove(property);
-        }
-    }
-}
 
 partial class RestoreProvider
 {
@@ -146,9 +90,6 @@ partial class RestoreProvider
 
             // Clean up properties that shouldn't be sent on creation
             space.Name = null;
-#pragma warning disable CS0618 // Type or member is obsolete
-            space.CreateTime = null;
-#pragma warning restore CS0618 // Type or member is obsolete
             space.CreateTimeDateTimeOffset = null;
             space.SpaceHistoryState = null;
             space.Type = null;
@@ -185,10 +126,6 @@ partial class RestoreProvider
 
             // Clean up properties that shouldn't be sent on creation
             message.Name = null;
-#pragma warning disable CS0618 // Type or member is obsolete
-            message.CreateTime = null;
-            message.LastUpdateTime = null;
-#pragma warning restore CS0618 // Type or member is obsolete
             message.CreateTimeDateTimeOffset = null;
             message.LastUpdateTimeDateTimeOffset = null;
             message.AccessoryWidgets = null;
@@ -214,10 +151,6 @@ partial class RestoreProvider
 
             // Clean up properties that shouldn't be sent on creation
             message.Name = null;
-#pragma warning disable CS0618 // Type or member is obsolete
-            message.CreateTime = null;
-            message.LastUpdateTime = null;
-#pragma warning restore CS0618 // Type or member is obsolete
             message.CreateTimeDateTimeOffset = null;
             message.LastUpdateTimeDateTimeOffset = null;
 
@@ -319,7 +252,7 @@ partial class RestoreProvider
                 Space? spaceData;
                 using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                 {
-                    spaceData = await JsonSerializer.DeserializeAsync<Space>(contentStream, GoogleChatJsonHelper.Options, cancellationToken: cancel);
+                    spaceData = await JsonSerializer.DeserializeAsync<Space>(contentStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
                 }
 
                 if (spaceData == null)
@@ -386,7 +319,7 @@ partial class RestoreProvider
                 Message? messageData;
                 using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                 {
-                    messageData = await JsonSerializer.DeserializeAsync<Message>(contentStream, GoogleChatJsonHelper.Options, cancellationToken: cancel);
+                    messageData = await JsonSerializer.DeserializeAsync<Message>(contentStream, GoogleApiJsonDeserializer.Options, cancellationToken: cancel);
                 }
 
                 if (messageData == null)

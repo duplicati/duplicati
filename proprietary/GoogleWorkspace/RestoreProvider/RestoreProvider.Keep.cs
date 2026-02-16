@@ -79,10 +79,6 @@ partial class RestoreProvider
 
             // Clean up properties that shouldn't be sent on creation
             note.Name = null;
-#pragma warning disable CS0618 // Type or member is obsolete
-            note.CreateTime = null;
-            note.UpdateTime = null;
-#pragma warning restore CS0618 // Type or member is obsolete
             note.CreateTimeDateTimeOffset = null;
             note.UpdateTimeDateTimeOffset = null;
 
