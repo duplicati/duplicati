@@ -85,7 +85,7 @@ partial class RestoreProvider
             return _cachedDefaultFolderId;
         }
 
-        public async Task<string?> CreateFolder(string userId, string parentFolderId, string name, CancellationToken cancel)
+        public async Task<string?> CreateFolder(string? userId, string parentFolderId, string name, CancellationToken cancel)
         {
             var driveService = Provider._apiHelper.GetDriveService(userId);
 
@@ -93,6 +93,8 @@ partial class RestoreProvider
             var listRequest = driveService.Files.List();
             listRequest.Q = $"mimeType='{GoogleMimeTypes.Folder}' and name='{name.Replace("'", "\\'")}' and '{parentFolderId}' in parents and trashed=false";
             listRequest.Spaces = "drive";
+            listRequest.SupportsAllDrives = true;
+            listRequest.IncludeItemsFromAllDrives = true;
             var existingFolders = await listRequest.ExecuteAsync(cancel);
 
             if (existingFolders.Files?.Count > 0)
@@ -114,11 +116,13 @@ partial class RestoreProvider
                 Parents = new List<string> { parentFolderId }
             };
 
-            var createdFolder = await driveService.Files.Create(folderMetadata).ExecuteAsync(cancel);
+            var createRequest = driveService.Files.Create(folderMetadata);
+            createRequest.SupportsAllDrives = true;
+            var createdFolder = await createRequest.ExecuteAsync(cancel);
             return createdFolder.Id;
         }
 
-        public async Task<string?> UploadFile(string userId, string parentFolderId, string name, Stream contentStream, string? mimeType, CancellationToken cancel)
+        public async Task<string?> UploadFile(string? userId, string parentFolderId, string name, Stream contentStream, string? mimeType, CancellationToken cancel)
         {
             var driveService = Provider._apiHelper.GetDriveService(userId);
 
@@ -129,6 +133,8 @@ partial class RestoreProvider
                 listRequest.Q = $"name='{name.Replace("'", "\\'")}' and '{parentFolderId}' in parents and trashed=false";
                 listRequest.Spaces = "drive";
                 listRequest.Fields = "nextPageToken, files(id, name, size)";
+                listRequest.SupportsAllDrives = true;
+                listRequest.IncludeItemsFromAllDrives = true;
                 var existingFiles = await listRequest.ExecuteAsync(cancel);
                 var existingFile = existingFiles.Files?.FirstOrDefault(x => x.Size == contentStream.Length);
 
@@ -150,13 +156,16 @@ partial class RestoreProvider
             if (mimeType != null && GoogleMimeTypes.IsGoogleDoc(mimeType))
             {
                 // Create the file
-                var createdFile = await driveService.Files.Create(fileMetadata).ExecuteAsync(cancel);
+                var createRequest = driveService.Files.Create(fileMetadata);
+                createRequest.SupportsAllDrives = true;
+                var createdFile = await createRequest.ExecuteAsync(cancel);
                 return createdFile.Id;
             }
             else
             {
                 // Upload binary content
                 var uploadRequest = driveService.Files.Create(fileMetadata, contentStream, mimeType ?? "application/octet-stream");
+                uploadRequest.SupportsAllDrives = true;
                 var uploadResult = await uploadRequest.UploadAsync(cancel);
 
                 if (uploadResult.Status == UploadStatus.Failed)
@@ -168,7 +177,7 @@ partial class RestoreProvider
             }
         }
 
-        public async Task<string?> UploadFileRevision(string userId, string fileId, Stream contentStream, string? mimeType, CancellationToken cancel)
+        public async Task<string?> UploadFileRevision(string? userId, string fileId, Stream contentStream, string? mimeType, CancellationToken cancel)
         {
             var driveService = Provider._apiHelper.GetDriveService(userId);
 
@@ -183,6 +192,7 @@ partial class RestoreProvider
 
             // Upload new revision for binary files
             var uploadRequest = driveService.Files.Update(new Google.Apis.Drive.v3.Data.File(), fileId, contentStream, mimeType ?? "application/octet-stream");
+            uploadRequest.SupportsAllDrives = true;
             var uploadResult = await uploadRequest.UploadAsync(cancel);
 
             if (uploadResult.Status == UploadStatus.Failed)
@@ -193,7 +203,7 @@ partial class RestoreProvider
             return fileId;
         }
 
-        public async Task<string?> CreateGoogleWorkspaceFile(string userId, string parentFolderId, string name, string? mimeType, CancellationToken cancel)
+        public async Task<string?> CreateGoogleWorkspaceFile(string? userId, string parentFolderId, string name, string? mimeType, CancellationToken cancel)
         {
             var driveService = Provider._apiHelper.GetDriveService(userId);
 
@@ -204,11 +214,13 @@ partial class RestoreProvider
                 Parents = new List<string> { parentFolderId }
             };
 
-            var createdFile = await driveService.Files.Create(fileMetadata).ExecuteAsync(cancel);
+            var createRequest = driveService.Files.Create(fileMetadata);
+            createRequest.SupportsAllDrives = true;
+            var createdFile = await createRequest.ExecuteAsync(cancel);
             return createdFile.Id;
         }
 
-        public async Task<string?> ImportGoogleWorkspaceFile(string userId, string parentFolderId, string name, Stream contentStream, string? targetMimeType, CancellationToken cancel)
+        public async Task<string?> ImportGoogleWorkspaceFile(string? userId, string parentFolderId, string name, Stream contentStream, string? targetMimeType, CancellationToken cancel)
         {
             var driveService = Provider._apiHelper.GetDriveService(userId);
 
@@ -231,7 +243,7 @@ partial class RestoreProvider
             return uploadRequest.ResponseBody?.Id;
         }
 
-        public async Task UpdateFileMetadata(string userId, string fileId, Stream metadataStream, CancellationToken cancel)
+        public async Task UpdateFileMetadata(string? userId, string fileId, Stream metadataStream, CancellationToken cancel)
         {
             var driveService = Provider._apiHelper.GetDriveService(userId);
 
@@ -249,7 +261,9 @@ partial class RestoreProvider
                     // Note: CreatedTime cannot be changed after file creation
                 };
 
-                await driveService.Files.Update(updateMetadata, fileId).ExecuteAsync(cancel);
+                var updateRequest = driveService.Files.Update(updateMetadata, fileId);
+                updateRequest.SupportsAllDrives = true;
+                await updateRequest.ExecuteAsync(cancel);
             }
             catch (Exception ex)
             {
@@ -257,7 +271,7 @@ partial class RestoreProvider
             }
         }
 
-        public async Task RestoreComments(string userId, string fileId, Stream commentsStream, CancellationToken cancel)
+        public async Task RestoreComments(string? userId, string fileId, Stream commentsStream, CancellationToken cancel)
         {
             var driveService = Provider._apiHelper.GetDriveService(userId);
 
@@ -291,7 +305,7 @@ partial class RestoreProvider
             }
         }
 
-        public async Task RestorePermissions(string userId, string fileId, Stream permissionsStream, bool isSharedDrive, CancellationToken cancel)
+        public async Task RestorePermissions(string? userId, string fileId, Stream permissionsStream, bool isSharedDrive, CancellationToken cancel)
         {
             var driveService = Provider._apiHelper.GetDriveService(userId);
 
@@ -336,7 +350,9 @@ partial class RestoreProvider
                         AllowFileDiscovery = permission.AllowFileDiscovery
                     };
 
-                    await driveService.Permissions.Create(newPermission, fileId).ExecuteAsync(cancel);
+                    var createPermissionRequest = driveService.Permissions.Create(newPermission, fileId);
+                    createPermissionRequest.SupportsAllDrives = true;
+                    await createPermissionRequest.ExecuteAsync(cancel);
                 }
                 catch (Exception ex)
                 {
@@ -378,9 +394,11 @@ partial class RestoreProvider
             userId = RestoreTarget.Metadata.GetValueOrDefault("gsuite:UserId");
         }
 
-        if (string.IsNullOrWhiteSpace(userId))
+        // For shared drive folders, userId may be null - we can still restore using the service account
+        // or admin credentials without user impersonation
+        if (string.IsNullOrWhiteSpace(userId) && RestoreTarget.Type != SourceItemType.DriveFolder)
         {
-            Log.WriteWarningMessage(LOGTAG, "RestoreDriveFoldersMissingUser", null, "Could not determine target user for Drive folder restore.");
+            Log.WriteWarningMessage(LOGTAG, "RestoreDriveFoldersMissingUser", null, $"Could not determine target user for Drive folder restore ({RestoreTarget.Type}).");
             return;
         }
 
@@ -453,9 +471,11 @@ partial class RestoreProvider
             userId = RestoreTarget.Metadata.GetValueOrDefault("gsuite:UserId");
         }
 
-        if (string.IsNullOrWhiteSpace(userId))
+        // For shared drive folders, userId may be null - we can still restore using the service account
+        // or admin credentials without user impersonation
+        if (string.IsNullOrWhiteSpace(userId) && RestoreTarget.Type != SourceItemType.DriveFolder)
         {
-            Log.WriteWarningMessage(LOGTAG, "RestoreDriveFilesMissingUser", null, "Could not determine target user for Drive file restore.");
+            Log.WriteWarningMessage(LOGTAG, "RestoreDriveFilesMissingUser", null, $"Could not determine target user for Drive file restore ({RestoreTarget.Type}).");
             return;
         }
 
@@ -549,7 +569,7 @@ partial class RestoreProvider
         }
     }
 
-    private async Task RestoreDriveFileRevisions(string userId, string fileId, string originalFilePath, string? mimeType, CancellationToken cancel)
+    private async Task RestoreDriveFileRevisions(string? userId, string fileId, string originalFilePath, string? mimeType, CancellationToken cancel)
     {
         // Find all revisions for this file
         // Revisions are stored at originalFilePath + "/Revisions/" + revisionId
@@ -594,7 +614,7 @@ partial class RestoreProvider
         _metadata.TryRemove(revisionsFolderPath, out _);
     }
 
-    private async Task RestoreDriveFileMetadata(string userId, string fileId, string originalFilePath, CancellationToken cancel)
+    private async Task RestoreDriveFileMetadata(string? userId, string fileId, string originalFilePath, CancellationToken cancel)
     {
         var metadataPath = SystemIO.IO_OS.PathCombine(originalFilePath, "metadata.json");
         var metadataEntry = _temporaryFiles.GetValueOrDefault(metadataPath);
@@ -621,7 +641,7 @@ partial class RestoreProvider
         }
     }
 
-    private async Task RestoreDriveFileComments(string userId, string fileId, string originalFilePath, CancellationToken cancel)
+    private async Task RestoreDriveFileComments(string? userId, string fileId, string originalFilePath, CancellationToken cancel)
     {
         var commentsPath = SystemIO.IO_OS.PathCombine(originalFilePath, "comments.json");
         var commentsEntry = _temporaryFiles.GetValueOrDefault(commentsPath);
@@ -666,16 +686,22 @@ partial class RestoreProvider
         {
             userId = RestoreTarget.Path.TrimStart('/').Split('/').Skip(1).FirstOrDefault();
         }
-
-        if (string.IsNullOrWhiteSpace(userId))
+        else if (RestoreTarget.Type == SourceItemType.DriveFolder)
         {
-            Log.WriteWarningMessage(LOGTAG, "RestoreDrivePermissionsMissingUser", null, "Could not determine target user for Drive permission restore.");
+            userId = RestoreTarget.Metadata.GetValueOrDefault("gsuite:UserId");
+        }
+
+        // For shared drive folders, userId may be null - we can still restore using the service account
+        // or admin credentials without user impersonation
+        if (string.IsNullOrWhiteSpace(userId) && RestoreTarget.Type != SourceItemType.DriveFolder)
+        {
+            Log.WriteWarningMessage(LOGTAG, "RestoreDrivePermissionsMissingUser", null, $"Could not determine target user for Drive permission restore ({RestoreTarget.Type}).");
             return;
         }
 
         // Determine if the restore target is a shared drive
         // The "fileOrganizer" role is only valid for shared drives
-        bool isSharedDrive = RestoreTarget.Type == SourceItemType.SharedDrives;
+        bool isSharedDrive = RestoreTarget.Type == SourceItemType.SharedDrives || RestoreTarget.Type == SourceItemType.DriveFolder;
 
         foreach (var permission in permissions)
         {
