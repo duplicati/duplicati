@@ -162,7 +162,24 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         if (_targetDisk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
-        // TODO Test write access by trying to read disk info (we already opened for write during Initialize)
+        if (!_targetDisk.IsWriteable)
+            throw new InvalidOperationException("Target disk is not writeable.");
+
+        // Check if we have permission to write to the target device by reading
+        // a sector and then writing it back.
+        try
+        {
+            using var sectorStream = await _targetDisk.ReadSectorsAsync(0, 1, cancellationToken).ConfigureAwait(false);
+            var sector = new byte[_targetDisk.SectorSize];
+            await sectorStream.ReadAsync(sector, cancellationToken).ConfigureAwait(false);
+            await _targetDisk.WriteBytesAsync(0, sector, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteErrorMessage(LOGTAG, "RestoreDeviceNotWriteable", ex, $"Failed to write to target device: {_devicePath}. Ensure the device is not in use, is not write-protected, not mounted, and you have sufficient permissions.");
+            throw;
+        }
+
         Log.WriteInformationMessage(LOGTAG, "RestoreTestSuccess", $"Successfully opened target device: {_devicePath}, Size: {_targetDisk.Size} bytes, SectorSize: {_targetDisk.SectorSize}");
         await Task.CompletedTask;
     }
@@ -756,9 +773,6 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             _ => new UnknownFilesystem(partition, fsGeom.BlockSize)
         };
     }
-
-
-
 
     /// <summary>
     /// A stream that captures the written data when disposed and invokes a callback.
