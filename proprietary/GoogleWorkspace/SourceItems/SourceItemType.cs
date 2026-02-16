@@ -55,6 +55,8 @@ public enum SourceItemType
     Site,
     ChatSpaceType,
     ChatSpace,
+    ChatSpaceContent,
     ChatMessage,
+    ChatMessageContent,
     ChatAttachment
 }

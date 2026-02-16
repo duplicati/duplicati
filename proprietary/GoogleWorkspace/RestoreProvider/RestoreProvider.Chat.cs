@@ -1,12 +1,69 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Logging;
 using Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 using Google.Apis.HangoutsChat.v1.Data;
+using Google.Apis.Upload;
 
 namespace Duplicati.Proprietary.GoogleWorkspace;
+
+/// <summary>
+/// Helper class for JSON serialization that respects Newtonsoft.Json ignore attributes
+/// when using System.Text.Json.
+/// </summary>
+internal static class GoogleChatJsonHelper
+{
+    private static readonly JsonSerializerOptions _options;
+
+    static GoogleChatJsonHelper()
+    {
+        _options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = null, // Use exact C# member names (PascalCase)
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver
+            {
+                Modifiers = { RespectNewtonsoftJsonIgnore }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Gets the JSON serializer options that respect Newtonsoft.Json ignore attributes.
+    /// </summary>
+    public static JsonSerializerOptions Options => _options;
+
+    /// <summary>
+    /// Modifier that ignores properties marked with Newtonsoft.Json.JsonIgnoreAttribute.
+    /// </summary>
+    private static void RespectNewtonsoftJsonIgnore(JsonTypeInfo typeInfo)
+    {
+        // Collect properties to remove
+        var propertiesToRemove = new List<JsonPropertyInfo>();
+
+        foreach (var property in typeInfo.Properties)
+        {
+            // Check if the property has Newtonsoft.Json.JsonIgnoreAttribute
+            var propertyInfo = property.AttributeProvider as System.Reflection.PropertyInfo;
+            if (propertyInfo != null)
+            {
+                var hasJsonIgnore = propertyInfo.GetCustomAttributes(typeof(Newtonsoft.Json.JsonIgnoreAttribute), inherit: true).Any();
+                if (hasJsonIgnore)
+                {
+                    propertiesToRemove.Add(property);
+                }
+            }
+        }
+
+        // Remove the ignored properties from the type info
+        foreach (var property in propertiesToRemove)
+        {
+            typeInfo.Properties.Remove(property);
+        }
+    }
+}
 
 partial class RestoreProvider
 {
@@ -58,10 +115,13 @@ partial class RestoreProvider
 
         public async Task<string?> CreateSpace(string userId, Space space, CancellationToken cancel)
         {
-            var chatService = Provider._apiHelper.GetChatService(userId);
+            var chatService = Provider._apiHelper.GetChatCreateSpaceService(userId);
+
+            if (string.IsNullOrWhiteSpace(space.DisplayName))
+                space.DisplayName = "Restored Space";
 
             // Check for duplicates by display name if available
-            if (!Provider._ignoreExisting && !string.IsNullOrWhiteSpace(space.DisplayName))
+            if (!Provider._ignoreExisting)
             {
                 try
                 {
@@ -81,11 +141,41 @@ partial class RestoreProvider
                 }
             }
 
+            // Store the original space history state to set after creation
+            var originalHistoryState = space.SpaceHistoryState;
+
             // Clean up properties that shouldn't be sent on creation
             space.Name = null;
+#pragma warning disable CS0618 // Type or member is obsolete
+            space.CreateTime = null;
+#pragma warning restore CS0618 // Type or member is obsolete
             space.CreateTimeDateTimeOffset = null;
+            space.SpaceHistoryState = null;
+            space.Type = null;
+            space.SpaceType = "SPACE";
+            space.SingleUserBotDm = null;
 
             var createdSpace = await chatService.Spaces.Create(space).ExecuteAsync(cancel);
+
+            // If there was a history state, update the space to set it
+            if (!string.IsNullOrEmpty(originalHistoryState) && !string.IsNullOrEmpty(createdSpace.Name))
+            {
+                try
+                {
+                    var updateSpace = new Space
+                    {
+                        SpaceHistoryState = originalHistoryState
+                    };
+                    var updateRequest = chatService.Spaces.Patch(updateSpace, createdSpace.Name);
+                    updateRequest.UpdateMask = "spaceHistoryState";
+                    await updateRequest.ExecuteAsync(cancel);
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "UpdateSpaceHistoryStateFailed", ex, $"Failed to update space history state for {createdSpace.Name}");
+                }
+            }
+
             return createdSpace.Name;
         }
 
@@ -101,6 +191,7 @@ partial class RestoreProvider
 #pragma warning restore CS0618 // Type or member is obsolete
             message.CreateTimeDateTimeOffset = null;
             message.LastUpdateTimeDateTimeOffset = null;
+            message.AccessoryWidgets = null;
 
             // Note: Creating messages in Chat API has limitations
             // Messages can typically only be created by the user who is sending them
@@ -116,6 +207,75 @@ partial class RestoreProvider
                 return null;
             }
         }
+
+        public async Task<string?> CreateMessageWithAttachment(string userId, string spaceName, Message message, string attachmentFileName, Stream attachmentStream, string? contentType, CancellationToken cancel)
+        {
+            var chatService = Provider._apiHelper.GetChatService(userId);
+
+            // Clean up properties that shouldn't be sent on creation
+            message.Name = null;
+#pragma warning disable CS0618 // Type or member is obsolete
+            message.CreateTime = null;
+            message.LastUpdateTime = null;
+#pragma warning restore CS0618 // Type or member is obsolete
+            message.CreateTimeDateTimeOffset = null;
+            message.LastUpdateTimeDateTimeOffset = null;
+
+            try
+            {
+                // For Chat API, attachments need to be handled differently
+                // We upload the attachment to Drive first, then reference it in the message
+                // This is a workaround since the Chat API doesn't support direct binary uploads
+                // in the same way as other Google APIs
+                var driveService = Provider._apiHelper.GetDriveService(userId);
+
+                // Upload attachment to Drive
+                var fileMetadata = new Google.Apis.Drive.v3.Data.File
+                {
+                    Name = attachmentFileName
+                };
+
+                var uploadRequest = driveService.Files.Create(fileMetadata, attachmentStream, contentType ?? "application/octet-stream");
+                var uploadResult = await uploadRequest.UploadAsync(cancel);
+
+                if (uploadResult.Status == UploadStatus.Failed)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "CreateMessageAttachmentUploadFailed", uploadResult.Exception, $"Failed to upload attachment to Drive for message in space {spaceName}.");
+                    // Fall back to creating message without attachment
+                    return await CreateMessage(userId, spaceName, message, cancel);
+                }
+
+                var fileId = uploadRequest.ResponseBody?.Id;
+                if (string.IsNullOrEmpty(fileId))
+                {
+                    Log.WriteWarningMessage(LOGTAG, "CreateMessageAttachmentNoFileId", null, $"No file ID returned after uploading attachment for message in space {spaceName}.");
+                    return await CreateMessage(userId, spaceName, message, cancel);
+                }
+
+                // Set up attachment in the message
+                message.Attachment = new List<Attachment>
+                {
+                    new Attachment
+                    {
+                        DriveDataRef = new DriveDataRef
+                        {
+                            DriveFileId = fileId
+                        },
+                        ContentName = attachmentFileName,
+                        ContentType = contentType
+                    }
+                };
+
+                // Create the message with the Drive attachment reference
+                var createdMessage = await chatService.Spaces.Messages.Create(message, spaceName).ExecuteAsync(cancel);
+                return createdMessage.Name;
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "CreateMessageWithAttachmentFailed", ex, $"Failed to create message with attachment in space {spaceName}. Note: Chat API has limitations on message creation.");
+                return null;
+            }
+        }
     }
 
     private async Task RestoreChatMessages(CancellationToken cancel)
@@ -124,8 +284,8 @@ partial class RestoreProvider
             throw new InvalidOperationException("Restore target entry is not set");
 
         // Note: Google Chat API has significant limitations for restoring messages
-        // Messages can typically only be created by the user who authored them
-        // This implementation attempts to restore spaces but may not be able to restore messages
+        // Messages will appear as being created by the impersonated user, not the original sender
+        // To fix this, the Import API would need to be used
 
         var spaces = GetMetadataByType(SourceItemType.ChatSpace);
         var messages = GetMetadataByType(SourceItemType.ChatMessage);
@@ -137,7 +297,8 @@ partial class RestoreProvider
         if (string.IsNullOrWhiteSpace(userId))
             return;
 
-        // First, restore spaces
+        // First, restore spaces and build a map of original space paths to created space names
+        var spacePathToNameMap = new Dictionary<string, string>();
         foreach (var space in spaces)
         {
             if (cancel.IsCancellationRequested)
@@ -146,7 +307,8 @@ partial class RestoreProvider
             try
             {
                 var originalPath = space.Key;
-                var contentEntry = _temporaryFiles.GetValueOrDefault(originalPath);
+                var contentJsonPath = SystemIO.IO_OS.PathCombine(originalPath, "content.json");
+                var contentEntry = _temporaryFiles.GetValueOrDefault(contentJsonPath);
 
                 if (contentEntry == null)
                 {
@@ -157,7 +319,7 @@ partial class RestoreProvider
                 Space? spaceData;
                 using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                 {
-                    spaceData = await JsonSerializer.DeserializeAsync<Space>(contentStream, cancellationToken: cancel);
+                    spaceData = await JsonSerializer.DeserializeAsync<Space>(contentStream, GoogleChatJsonHelper.Options, cancellationToken: cancel);
                 }
 
                 if (spaceData == null)
@@ -166,10 +328,15 @@ partial class RestoreProvider
                     continue;
                 }
 
-                await ChatRestore.CreateSpace(userId, spaceData, cancel);
+                var createdSpaceName = await ChatRestore.CreateSpace(userId, spaceData, cancel);
+                if (!string.IsNullOrEmpty(createdSpaceName))
+                {
+                    spacePathToNameMap[originalPath] = createdSpaceName;
+                }
 
                 _metadata.TryRemove(originalPath, out _);
-                _temporaryFiles.TryRemove(originalPath, out var contentFile);
+                _metadata.TryRemove(contentJsonPath, out _);
+                _temporaryFiles.TryRemove(contentJsonPath, out var contentFile);
                 contentFile?.Dispose();
             }
             catch (Exception ex)
@@ -178,11 +345,10 @@ partial class RestoreProvider
             }
         }
 
-        // Log warning about message restoration limitations
-        if (messages.Count > 0)
-        {
-            Log.WriteWarningMessage(LOGTAG, "RestoreChatMessagesLimitation", null, $"Found {messages.Count} chat messages to restore. Note: Google Chat API has limitations on message creation - messages can typically only be created by the original author. These messages may not be restorable.");
-        }
+        // Group attachments by message path
+        var attachments = GetMetadataByType(SourceItemType.ChatAttachment)
+            .GroupBy(k => Util.AppendDirSeparator(Path.GetDirectoryName(k.Key.TrimEnd(Path.DirectorySeparatorChar)) ?? ""))
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         // Attempt to restore messages (will likely fail due to API limitations)
         foreach (var message in messages)
@@ -193,7 +359,8 @@ partial class RestoreProvider
             try
             {
                 var originalPath = message.Key;
-                var contentEntry = _temporaryFiles.GetValueOrDefault(originalPath);
+                var messageJsonPath = SystemIO.IO_OS.PathCombine(originalPath, "message.json");
+                var contentEntry = _temporaryFiles.GetValueOrDefault(messageJsonPath);
 
                 if (contentEntry == null)
                 {
@@ -201,9 +368,14 @@ partial class RestoreProvider
                     continue;
                 }
 
-                // Get space name from parent path
+                // Get space name from the restored spaces map
+                // The message's parent path corresponds to the space path
                 var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
-                var spaceName = message.Value.GetValueOrDefault("gsuite:SpaceName");
+                if (!spacePathToNameMap.TryGetValue(parentPath, out var spaceName) || string.IsNullOrWhiteSpace(spaceName))
+                {
+                    // Fallback to metadata if available
+                    spaceName = message.Value.GetValueOrDefault("gsuite:SpaceName");
+                }
 
                 if (string.IsNullOrWhiteSpace(spaceName))
                 {
@@ -214,7 +386,7 @@ partial class RestoreProvider
                 Message? messageData;
                 using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                 {
-                    messageData = await JsonSerializer.DeserializeAsync<Message>(contentStream, cancellationToken: cancel);
+                    messageData = await JsonSerializer.DeserializeAsync<Message>(contentStream, GoogleChatJsonHelper.Options, cancellationToken: cancel);
                 }
 
                 if (messageData == null)
@@ -223,10 +395,55 @@ partial class RestoreProvider
                     continue;
                 }
 
-                await ChatRestore.CreateMessage(userId, spaceName, messageData, cancel);
+                // Check for attachments
+                var messagePathWithSep = Util.AppendDirSeparator(originalPath);
+                if (attachments.TryGetValue(messagePathWithSep, out var messageAttachments) && messageAttachments.Count > 0)
+                {
+                    // For now, we only support one attachment per message via media upload
+                    // Additional attachments would need to be handled separately
+                    var att = messageAttachments.First();
+                    var attPath = att.Key;
+                    var attMetadata = att.Value;
+                    var attFileName = attMetadata.GetValueOrDefault("gsuite:Name") ?? "attachment";
+                    var attContentType = attMetadata.GetValueOrDefault("gsuite:ContentType") ?? "application/octet-stream";
+
+                    if (_temporaryFiles.TryRemove(attPath, out var attContent))
+                    {
+                        try
+                        {
+                            using var attStream = SystemIO.IO_OS.FileOpenRead(attContent);
+                            await ChatRestore.CreateMessageWithAttachment(userId, spaceName, messageData, attFileName, attStream, attContentType, cancel);
+
+                            // Clean up all attachments for this message
+                            foreach (var attachment in messageAttachments)
+                            {
+                                _metadata.TryRemove(attachment.Key, out _);
+                                if (_temporaryFiles.TryRemove(attachment.Key, out var attFile))
+                                {
+                                    attFile?.Dispose();
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.WriteWarningMessage(LOGTAG, "RestoreChatMessageAttachmentFailed", ex, $"Failed to restore attachment for message {originalPath}");
+                            // Fall back to creating message without attachment
+                            await ChatRestore.CreateMessage(userId, spaceName, messageData, cancel);
+                        }
+                    }
+                    else
+                    {
+                        await ChatRestore.CreateMessage(userId, spaceName, messageData, cancel);
+                    }
+                }
+                else
+                {
+                    await ChatRestore.CreateMessage(userId, spaceName, messageData, cancel);
+                }
 
                 _metadata.TryRemove(originalPath, out _);
-                _temporaryFiles.TryRemove(originalPath, out var contentFile);
+                _metadata.TryRemove(messageJsonPath, out _);
+                _temporaryFiles.TryRemove(messageJsonPath, out var contentFile);
                 contentFile?.Dispose();
             }
             catch (Exception ex)

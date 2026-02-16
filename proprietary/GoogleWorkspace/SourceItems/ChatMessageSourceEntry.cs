@@ -17,7 +17,7 @@ internal class ChatMessageSourceEntry(string parentPath, Message message, Hangou
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new ChatMessageFileSourceEntry(this.Path, message);
+        yield return new ChatMessageContentSourceEntry(this.Path, message);
 
         if (message.Attachment != null)
         {
@@ -36,6 +36,7 @@ internal class ChatMessageSourceEntry(string parentPath, Message message, Hangou
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.ChatMessage.ToString() },
             { "gsuite:Name", CapMessage(message.ArgumentText ?? message.Name) },
+            { "gsuite:SpaceName", message.Space.Name },
             { "gsuite:Id", message.Name }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

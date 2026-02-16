@@ -14,6 +14,8 @@ internal class ChatSpaceSourceEntry(string parentPath, Space space, HangoutsChat
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        yield return new ChatSpaceContentSourceEntry(this.Path, space);
+
         var request = chatService.Spaces.Messages.List(space.Name);
 
         string? nextPageToken = null;
@@ -43,7 +45,7 @@ internal class ChatSpaceSourceEntry(string parentPath, Space space, HangoutsChat
             { "gsuite:Type", SourceItemType.ChatSpace.ToString() },
             { "gsuite:Name", space.DisplayName ?? space.Name },
             { "gsuite:Id", space.Name },
-            { "gsuite:SpaceType", space.Type }
+            { "gsuite:SpaceType", space.Type },
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

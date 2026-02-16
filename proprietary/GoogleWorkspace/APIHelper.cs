@@ -225,6 +225,12 @@ public class APIHelper
         return new HangoutsChatService(GetServiceInitializer(userId, scopes));
     }
 
+    public HangoutsChatService GetChatCreateSpaceService(string userId)
+    {
+        var scopes = new[] { HangoutsChatService.Scope.ChatSpaces };
+        return new HangoutsChatService(GetServiceInitializer(userId, scopes));
+    }
+
     private class CompositeHttpClientInitializer : IConfigurableHttpClientInitializer
     {
         private readonly IConfigurableHttpClientInitializer[] _initializers;
