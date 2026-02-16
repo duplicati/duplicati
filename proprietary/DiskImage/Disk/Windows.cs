@@ -355,7 +355,12 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                     // attributes disk clear readonly
                     var error = Marshal.GetLastWin32Error();
                     var msg = new System.ComponentModel.Win32Exception(error).Message;
-                    throw new IOException($"Failed to write to disk. Win32 Error Code: {error}. Message: {msg}");
+                    var hint = error == 5
+                        ? "The disk may be mounted or online. Try unmounting and taking the disk offline before writing."
+                        : error == 19
+                            ? "The disk may be write protected. Try clearing the readonly attribute using diskpart."
+                            : "Check the error code and message for more details.";
+                    throw new IOException($"Failed to write to disk. Win32 Error Code: {error}. Message: {msg}. Hint: {hint}");
                 }
 
                 m_shouldFlush = true;
