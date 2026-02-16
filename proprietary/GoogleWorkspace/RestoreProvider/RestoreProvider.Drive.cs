@@ -291,7 +291,7 @@ partial class RestoreProvider
             }
         }
 
-        public async Task RestorePermissions(string userId, string fileId, Stream permissionsStream, CancellationToken cancel)
+        public async Task RestorePermissions(string userId, string fileId, Stream permissionsStream, bool isSharedDrive, CancellationToken cancel)
         {
             var driveService = Provider._apiHelper.GetDriveService(userId);
 
@@ -318,6 +318,14 @@ partial class RestoreProvider
                     // Skip permissions with invalid email addresses (e.g., internal Google Chat/Spaces identifiers)
                     if (!string.IsNullOrEmpty(permission.EmailAddress) && !IsValidEmailAddress(permission.EmailAddress))
                         continue;
+
+                    // The "fileOrganizer" role is only valid for shared drives
+                    // Skip this role when restoring to a non-shared drive (e.g., user's My Drive)
+                    if ((permission.Role == "fileOrganizer" || permission.Role == "organizer") && !isSharedDrive)
+                    {
+                        Log.WriteInformationMessage(LOGTAG, "RestorePermissionSkipOrganizer", $"Skipping fileOrganizer role for file {fileId} - not a shared drive");
+                        continue;
+                    }
 
                     var newPermission = new Permission
                     {
@@ -665,6 +673,10 @@ partial class RestoreProvider
             return;
         }
 
+        // Determine if the restore target is a shared drive
+        // The "fileOrganizer" role is only valid for shared drives
+        bool isSharedDrive = RestoreTarget.Type == SourceItemType.SharedDrives;
+
         foreach (var permission in permissions)
         {
             if (cancel.IsCancellationRequested)
@@ -716,7 +728,7 @@ partial class RestoreProvider
 
                 using (var contentStream = SystemIO.IO_OS.FileOpenRead(contentEntry))
                 {
-                    await DriveRestore.RestorePermissions(userId, fileId, contentStream, cancel);
+                    await DriveRestore.RestorePermissions(userId, fileId, contentStream, isSharedDrive, cancel);
                 }
 
                 _metadata.TryRemove(originalPath, out _);
