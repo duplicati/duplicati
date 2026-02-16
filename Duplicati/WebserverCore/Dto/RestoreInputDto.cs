@@ -30,4 +30,13 @@ namespace Duplicati.WebserverCore.Dto;
 /// <param name="overwrite">Whether to overwrite existing files</param>
 /// <param name="permissions">Whether to restore permissions</param>
 /// <param name="skip_metadata">Whether to skip metadata</param>
-public sealed record RestoreInputDto(string[]? paths, string? passphrase, string time, string? restore_path, bool? overwrite, bool? permissions, bool? skip_metadata);
+/// <param name="source_prefix">The source prefix to use, if the destination is a masked remote source</param>
+public sealed record RestoreInputDto(
+    string[]? paths,
+    string? passphrase,
+    string time,
+    string? restore_path,
+    bool? overwrite,
+    bool? permissions,
+    bool? skip_metadata,
+    string? source_prefix);
