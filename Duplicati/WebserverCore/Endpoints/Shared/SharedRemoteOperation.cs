@@ -157,7 +157,11 @@ public class SharedRemoteOperation
         var previousUrl = backup?.TargetURL;
 
         if (!string.IsNullOrWhiteSpace(prefix) && backup?.Sources != null)
-            previousUrl = backup.Sources?.FirstOrDefault(s => s.StartsWith(prefix, StringComparison.Ordinal));
+        {
+            previousUrl = backup.Sources?.FirstOrDefault(s => s.StartsWith(prefix + '|', StringComparison.Ordinal));
+            if (!string.IsNullOrWhiteSpace(previousUrl))
+                previousUrl = previousUrl.Split('|', 2).LastOrDefault();
+        }
 
         var unmasked = string.IsNullOrWhiteSpace(previousUrl)
             ? maskedurl
