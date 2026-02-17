@@ -16,7 +16,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
     /// Uses POSIX API calls via P/Invoke to read from and write to physical disk devices.
     /// </summary>
     [SupportedOSPlatform("macos")]
-    public class Mac : IRawDisk
+    public partial class Mac : IRawDisk
     {
         private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Mac>();
 
