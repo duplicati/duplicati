@@ -203,7 +203,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             {
                 // Get block size (sector size)
                 uint blockSize = 0;
-                if (ioctl(m_fileDescriptor, DKIOCGETBLOCKSIZE, ref blockSize) < 0)
+                if (ioctl_uint32(m_fileDescriptor, DKIOCGETBLOCKSIZE, ref blockSize) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
                     close(m_fileDescriptor);
@@ -215,7 +215,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
                 // Get block count
                 ulong blockCount = 0;
-                if (ioctl(m_fileDescriptor, DKIOCGETBLOCKCOUNT, ref blockCount) < 0)
+                if (ioctl_uint64(m_fileDescriptor, DKIOCGETBLOCKCOUNT, ref blockCount) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
                     close(m_fileDescriptor);
@@ -478,11 +478,11 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
         #region P/Invoke Declarations
 
-        [DllImport("libc", SetLastError = true)]
-        private static extern int open(string pathname, int flags);
+        [LibraryImport("libSystem_ioctl_wrapper.dylib", SetLastError = true)]
+        internal static partial int ioctl_uint32(int fd, ulong request, ref uint value);
 
-        [DllImport("libc", SetLastError = true)]
-        private static extern int close(int fd);
+        [LibraryImport("libSystem_ioctl_wrapper.dylib", SetLastError = true)]
+        internal static partial int ioctl_uint64(int fd, ulong request, ref ulong value);
 
         [LibraryImport("libSystem", SetLastError = true)]
         private static partial int open([MarshalAs(UnmanagedType.LPStr)] string pathname, int flags);
