@@ -152,7 +152,7 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
         var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
 
         // Make the symlink first, otherwise we cannot apply metadata to it
-        if (metadata.TryGetValue("CoreSymlinkTarget", out var k))
+        if (metadata.TryGetValue("CoreSymlinkTarget", out var k) && !string.IsNullOrWhiteSpace(k))
         {
             if (!allowRestoreOutsideTargetDirectory && !string.IsNullOrWhiteSpace(TargetDestination))
             {
