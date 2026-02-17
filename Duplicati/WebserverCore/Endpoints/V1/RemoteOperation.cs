@@ -31,7 +31,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
 {
     public class RemoteOperation : IEndpointV1
     {
-        private record RemoteOperationInput(string path, string? backupId, long? connectionStringId);
+        private record RemoteOperationInput(string path, string? backupId, long? connectionStringId, string? sourcePrefix);
 
         public static void Map(RouteGroupBuilder group)
         {
@@ -40,7 +40,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                 .RequireAuthorization();
 
             group.MapPost("/remoteoperation/test", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromQuery] bool? autocreate, [FromQuery] Dto.V2.RemoteDestinationType? type, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
-                => ExecuteTest(connection, applicationSettings, input.path, input.backupId, input.connectionStringId, autocreate ?? false, type ?? Dto.V2.RemoteDestinationType.Backend, cancelToken))
+                => ExecuteTest(connection, applicationSettings, input.path, input.backupId, input.connectionStringId, input.sourcePrefix, autocreate ?? false, type ?? Dto.V2.RemoteDestinationType.Backend, cancelToken))
                 .RequireAuthorization();
 
             group.MapPost("/remoteoperation/create", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
@@ -54,19 +54,19 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             return new Dto.GetDbPathDto(!string.IsNullOrWhiteSpace(path), path);
         }
 
-        private static async Task ExecuteTest(Connection connection, IApplicationSettings applicationSettings, string maskedurl, string? backupId, long? connectionStringId, bool autoCreate, Dto.V2.RemoteDestinationType type, CancellationToken cancelToken)
+        private static async Task ExecuteTest(Connection connection, IApplicationSettings applicationSettings, string maskedurl, string? backupId, long? connectionStringId, string? sourcePrefix, bool autoCreate, Dto.V2.RemoteDestinationType type, CancellationToken cancelToken)
         {
             try
             {
                 if (type == Dto.V2.RemoteDestinationType.SourceProvider)
                 {
-                    using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, maskedurl, backupId, connectionStringId ?? -1, cancelToken);
+                    using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, maskedurl, backupId, connectionStringId ?? -1, sourcePrefix, cancelToken);
                     using (var s = wrapper.SourceProvider)
                         await s.Test(cancelToken).ConfigureAwait(false);
                 }
                 else if (type == Dto.V2.RemoteDestinationType.RestoreDestinationProvider)
                 {
-                    using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, maskedurl, backupId, connectionStringId ?? -1, cancelToken);
+                    using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, maskedurl, backupId, connectionStringId ?? -1, sourcePrefix, cancelToken);
                     using (var r = wrapper.RestoreDestinationProvider)
                         await r.Test(cancelToken).ConfigureAwait(false);
                 }

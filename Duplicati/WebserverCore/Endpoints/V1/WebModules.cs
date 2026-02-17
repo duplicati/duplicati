@@ -55,7 +55,7 @@ public record WebModules : IEndpointV1
         var url = options.GetValueOrDefault("url");
         if (!string.IsNullOrWhiteSpace(url))
         {
-            var (newUrl, opts) = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, url, options.GetValueOrDefault("backup-id"), Library.Utility.Utility.ParseLongOption(options, "connection-string-id", -1), cancellationToken);
+            var (newUrl, opts) = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, url, options.GetValueOrDefault("backup-id"), Library.Utility.Utility.ParseLongOption(options, "connection-string-id", -1), options.GetValueOrDefault("source-prefix"), cancellationToken);
             options["url"] = newUrl;
             foreach (var k in opts.Keys)
                 options[k] = opts[k];

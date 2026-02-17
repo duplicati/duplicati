@@ -811,6 +811,7 @@ namespace Duplicati.UnitTest
 
                     var sb = new StringBuilder();
                     sb.AppendLine(e.Message);
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "Remotevolume", null));
                     sb.AppendLine(TestUtils.DumpTable(cmd, "File", null));
                     sb.AppendLine(TestUtils.DumpTable(cmd, "FilesetEntry", null));
                     sb.AppendLine(TestUtils.DumpTable(cmd, "Fileset", null));

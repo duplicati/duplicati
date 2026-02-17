@@ -315,8 +315,8 @@ namespace Duplicati.Library.Main.Database
                 ";
 
                 cmd.SetCommandAndParameters(sql)
-                    .ExpandInClauseParameterMssqlite("@Paths", items.ToArray());
-                foreach ((var x, var i) in items.Select((x, i) => (x, i)))
+                    .ExpandInClauseParameterMssqlite("@Paths", slice.ToArray());
+                foreach ((var x, var i) in slice.Select((x, i) => (x, i)))
                     cmd.SetParameterValue($"@Message{i}", "%" + x + "%");
 
                 await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
@@ -338,6 +338,13 @@ namespace Duplicati.Library.Main.Database
         /// <returns>An asynchronous enumerable of remote volume results.</returns>
         public async IAsyncEnumerable<Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
         {
+            var itemsList = items.ToList();
+            if (itemsList.Count == 0)
+                yield break;
+
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, itemsList, token)
+                .ConfigureAwait(false);
+
             var sql = $@"
                 SELECT DISTINCT ""Name""
                 FROM (
@@ -403,9 +410,9 @@ namespace Duplicati.Library.Main.Database
                 )
             ";
 
-            await using var cmd = m_connection
-                .CreateCommand(sql)
-                .ExpandInClauseParameterMssqlite("@Names", items.ToArray());
+            await using var cmd = m_connection.CreateCommand(sql);
+            await cmd.ExpandInClauseParameterMssqliteAsync("@Names", tmptable, token)
+                .ConfigureAwait(false);
             await using var rd = await cmd
                 .ExecuteReaderAsync(token)
                 .ConfigureAwait(false);

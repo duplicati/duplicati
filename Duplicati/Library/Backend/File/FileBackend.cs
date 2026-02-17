@@ -24,8 +24,6 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Backend
 {
@@ -451,72 +449,12 @@ namespace Duplicati.Library.Backend
                 throw new FileMissingException(Strings.FileBackend.FileNotFoundError(ex.Message), ex);
         }
 
-        /// <summary>
-        /// Gets the drive or volume information for the specified path.
-        /// </summary>
-        /// <returns>The drive or volume information, or null if it could not be determined.</returns>
-        private DriveInfo? GetDrive()
-        {
-            string root;
-            if (!OperatingSystem.IsWindows())
-            {
-                string path = Util.AppendDirSeparator(systemIO.PathGetFullPath(m_path));
-
-                // If the built-in .NET DriveInfo works, use it
-                try { return new DriveInfo(path); }
-                catch { }
-
-                root = "/";
-
-                //Find longest common prefix from mounted devices
-                //TODO: Can trick this with symlinks, where the symlink is on one mounted volume,
-                // and the actual storage is on another
-                foreach (var di in DriveInfo.GetDrives())
-                    if (path.StartsWith(Util.AppendDirSeparator(di.Name), StringComparison.Ordinal) && di.Name.Length > root.Length)
-                        root = di.Name;
-            }
-            else
-            {
-                root = systemIO.GetPathRoot(m_path);
-            }
-
-            // On Windows, DriveInfo is only valid for lettered drives. (e.g., not for UNC paths and shares)
-            // So only attempt to get it if we aren't on Windows or if the root starts with a letter.
-            if (!OperatingSystem.IsWindows() || (root.Length > 0 && char.IsLetter(root[0])))
-            {
-                try
-                {
-                    return new DriveInfo(root);
-                }
-                catch (ArgumentException)
-                {
-                    // If there was a problem, fall back to returning null
-                }
-            }
-
-            return null;
-        }
-
         /// <inheritdoc />
         public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
         {
-            var driveInfo = this.GetDrive();
-            if (driveInfo != null)
-            {
-                // Check that the total space is above 0, because Mono sometimes reports 0 for unknown file systems
-                // If the drive actually has a total size of 0, this should be obvious immediately due to write errors
-                if (driveInfo.TotalSize > 0)
-                {
-                    return Task.FromResult<IQuotaInfo?>(new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace));
-                }
-            }
-
-            if (OperatingSystem.IsWindows())
-            {
-                // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
-                // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
-                return Task.FromResult<IQuotaInfo?>(GetDiskFreeSpace(m_path));
-            }
+            var spaceInfo = Utility.Utility.GetFreeSpaceForPath(m_path);
+            if (spaceInfo != null)
+                return Task.FromResult<IQuotaInfo?>(new QuotaInfo(spaceInfo.Value.TotalSpace, spaceInfo.Value.FreeSpace));
 
             return Task.FromResult<IQuotaInfo?>(null);
         }
@@ -534,50 +472,6 @@ namespace Duplicati.Library.Backend
             systemIO.FileMove(source, target);
 
             return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Get the disk free space using the Win32 API's GetDiskFreeSpaceEx function.
-        /// </summary>
-        /// <param name="directory">Directory</param>
-        /// <returns>Quota info</returns>
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        [SupportedOSPlatform("windows")]
-        public static QuotaInfo? GetDiskFreeSpace(string directory)
-        {
-            ulong available;
-            ulong total;
-            if (WindowsDriveHelper.GetDiskFreeSpaceEx(directory, out available, out total, out _))
-            {
-                return new QuotaInfo((long)total, (long)available);
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Provides helper methods for working with Windows drives.
-        /// </summary>
-        [SupportedOSPlatform("windows")]
-        private static class WindowsDriveHelper
-        {
-            /// <summary>
-            /// Gets the free disk space for the specified directory using the Win32 API.
-            /// </summary>
-            /// <param name="lpDirectoryName">The directory name to check</param>
-            /// <param name="lpFreeBytesAvailable">The available free bytes</param>
-            /// <param name="lpTotalNumberOfBytes">The total number of bytes</param>
-            /// <param name="lpTotalNumberOfFreeBytes">The total number of free bytes</param>
-            /// <returns></returns>
-            [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            public static extern bool GetDiskFreeSpaceEx(
-                string lpDirectoryName,
-                out ulong lpFreeBytesAvailable,
-                out ulong lpTotalNumberOfBytes,
-                out ulong lpTotalNumberOfFreeBytes);
         }
 
         /// <summary>

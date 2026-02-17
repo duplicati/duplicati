@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -243,6 +244,69 @@ namespace Duplicati.UnitTest
             // Verify the exception message mentions the count of orphaned files
             Assert.That(caughtException!.Message, Does.Contain("3"));
             Assert.That(caughtException.Message, Does.Contain("file(s)"));
+        }
+
+        /// <summary>
+        /// Tests that RemoveRemoteVolumes works correctly with a large number of volume names
+        /// that triggers the temporary table code path (when count > CHUNK_SIZE = 128).
+        /// </summary>
+        [Test]
+        [Category("Database")]
+        public async Task RemoveRemoteVolumes_WithLargeInput_UsesTemporaryTable()
+        {
+            using var dbfile = new TempFile();
+            using var db = SQLiteLoader.LoadConnection(dbfile);
+
+            // Use DatabaseUpgrader to create the schema from embedded resources
+            DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+
+            using var cmd = db.CreateCommand();
+
+            // Insert an operation record (required for LocalDatabase initialization)
+            cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES ('Test', 0)";
+            cmd.ExecuteNonQuery();
+
+            // Create 150 remote volumes (exceeds CHUNK_SIZE of 128) to trigger temporary table path
+            // Set DeleteGraceTime to 0 so they can be deleted immediately (grace time has passed)
+            var volumeNames = new List<string>();
+            for (int i = 0; i < 150; i++)
+            {
+                var volumeName = $"test-volume-{i}.zip";
+                volumeNames.Add(volumeName);
+
+                // Set DeleteGraceTime = 0 so the volume can be deleted (grace time has passed)
+                cmd.CommandText = $@"
+                    INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
+                    VALUES ({i + 1}, 1, '{volumeName}', 'Blocks', 'Deleted', 0, 0, 0, 0)";
+                cmd.ExecuteNonQuery();
+            }
+
+            // Close the connection so LocalDatabase can open it
+            db.Close();
+
+            // Create LocalDatabase instance
+            await using var localDb = await LocalDatabase.CreateLocalDatabaseAsync(
+                dbfile,
+                "TestOperation",
+                true,
+                null,
+                CancellationToken.None
+            );
+
+            // Act: Call RemoveRemoteVolumes with 150 volume names
+            // This should trigger the temporary table code path
+            Assert.DoesNotThrowAsync(async () =>
+            {
+                await localDb.RemoveRemoteVolumes(volumeNames, CancellationToken.None);
+            });
+
+            // Assert: Verify all volumes were deleted
+            // The m_removeremotevolumeCommand deletes volumes where DeleteGraceTime < @Now OR State != @State
+            // Since State is 'Deleted' and @State is 'Deleted', and DeleteGraceTime is 0, they should be deleted
+            using var verifyCmd = localDb.Connection.CreateCommand();
+            verifyCmd.CommandText = @"SELECT COUNT(*) FROM ""Remotevolume"" WHERE ""Name"" LIKE 'test-volume-%'";
+            var count = (long)verifyCmd.ExecuteScalar()!;
+            Assert.That(count, Is.EqualTo(0), "All 150 volumes should have been deleted");
         }
     }
 }

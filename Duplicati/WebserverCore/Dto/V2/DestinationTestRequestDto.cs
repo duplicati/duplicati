@@ -67,5 +67,13 @@ public sealed record DestinationTestRequestDto
     /// </summary>
     public required bool AutoCreate { get; init; } = false;
 
+    /// <summary>
+    /// The type of remote destination
+    /// </summary>
     public RemoteDestinationType? DestinationType { get; init; }
+
+    /// <summary>
+    /// The source prefix to identify the source provider connection string
+    /// </summary>
+    public string? SourcePrefix { get; init; }
 }

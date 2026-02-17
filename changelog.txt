@@ -1,3 +1,118 @@
+2026-02-06 - 2.2.0.104_canary_2026-02-06
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this versions
+
+## Locking and protection
+This version extends on the remote file locking feature added in 2.2.0.103, to now also include locking support for Google Cloud Storage (GCS), as well as a policy mode option for Azure Blob Storage.
+
+This version also adds a new option `--soft-delete-prefix` which enables the soft-delete feature.
+When soft-delete is enabled, files are renamed (or moved) to a new location instead of being deleted.
+For destinations that support lifecycle management, this can be used to setup access such that Duplicati cannot delete a file, but can rename/move it.
+When Duplicati wants to delete a file, it will instead rename/move the file to a new location, and the lifecycle management or other tool can be used to delete the files with a specific prefix after a certain period of time.
+
+## Remote sources
+Remote sources have been supported, even in the current stable release, but the usage required some difficult manual string construction.
+This version adds support for remote sources in the UI, and makes it easier to use remote sources, with a prominent button on the source page.
+
+Besides making remote sources easier to use, this version also adds support for using Box, Dropbox, OneDrive and Google Drive as remote sources.
+
+## Office 365
+This version adds support for backing up Office 365 tenants, including mailboxes, calendars, contacts, OneDrive, Planner, Tasks, Teams, Sites, and more.
+
+Like the rest of Duplicati, the source code for this is available, but unlike the rest of Duplicati, this feature is not OSI open-source, and requires a license to use in production.
+In the current version, there is a limit of 5 users + 5 sites + 5 groups for testing.
+
+If you prefer a clean OSI open-source build, you can set the environment variable `DUPLICATI_DISABLE_PROPRIETARY_MODULES` or simply delete the files named `Duplicati.Proprietary.*` from your installation.
+
+## Templating engine for reporting
+Thanks to @AndyBodnar, it is now possible to use a Handlebars template to format the report output, which is especially nice for crafting emails.
+
+## Quality of life fixes
+This version now saves the current state of the commandline-inside-the-UI feature, so when you go back, it will retain the setup, making it much simpler to iterate and try out commands.
+
+We also added the long-requested "Edit as text" option to the source paths and filters, so you can now either use the UI or edit the paths and filters as text.
+
+The releases now also include an AppImage for Linux, so it can be used on Linux without needing to install it.
+
+Finally, we added support for the Hungarian, Czech and Polish languages. Thanks to the super translators!
+
+## Bugfixes
+This version includes a number of bugfixes targeting stability, where Duplicati now handles more edge cases, and is more robust against errors.
+
+Additionally:
+ - The `--dry-run` option has been fixed to strictly not touch data.
+ - The `--changed-files` option has been fixed to not introduce extra dangling file entries.
+ - The purge operation has been fixed to count size reduction more correct, use a faster query, and an option to disable size stats, should it still be too slow.
+ - Filen MFA login was updated a bit but the fix does not create long-lived tokens yet.
+
+
+## Detailed list of changes:
+- Added check for temporary space before starting server + restore operation
+- Fixed an issue with testing on remote sources when masked
+- Added support for reading `DUPLICATI__REGISTER_REMOTE_CONTROL` environment variable from Agent
+- Added Selectel S3 hostnames
+- Prevent restore outside of designated target folder
+- Added macOS snapshot support
+- Added encryption and masking of remote sources in logs and UI
+- Improved SSL certificate handling for WebDAV when testing
+- Added Office 365 backup support
+- Fixed cross-OS remote source path handling
+- Implemented rename operation on backends
+- Fixed purge size calculation to only include blocks once
+- Added guard against invalid entries in DeletedVolume table
+- Fixed manual changelist logic for `--changed-files` option
+- Fixed issue with failed delete causing database inconsistency
+- Handle missing blocks on recreate to prevent database issues
+- Improved support for remote sources
+- Fixed dry run functionality
+- Added support for GCS object locking
+- Added restore path to log output, thanks @WhiteElephantIsNotARobot 
+- Improved commandline execute functionality
+- Added automatic 3-2-1 backup rule support
+- Fixed issue with missing log entries when errors occurred
+- Added soft delete support
+- Improved query for purge broken files with `--reduced-purge-statistics` option
+- Fixed missing event on data update
+- Fixed Filen MFA login (but still broken)
+- Fixed cross-OS restore issues
+- Added AppImage builds
+- Added policy mode for Azure locking
+- Added templating engine support, thanks @AndyBodnar
+- Fixed spelling mistake for supplementary groups
+- Updated S3 NuGet dependencies
+
+## ngclient changes:
+- Added Selectel to list of S3 providers
+- Added autocomplete attributes to password fields
+- Fixed issues with masked urls not correctly working with test buttons
+- Fixed an issue with setting a blank path on initial load of FileTree
+- Fixed an issue that prevented save of an unencrypted backup
+- Fixed issue with recursive loading of paths in FileTree not working
+- Fixed issue with FileTree resetting the path on load in some cases
+- Updated FileTree to show which folder is currently expanding
+- Fixed a loading race that could clear an input
+- Rewrote most of the test handling for backends to use a shared component
+- Fixed wrongly saving draft backups while editing
+- Avoid requesting invalid data in FileTree browser
+- Added tooltip showing current file being processed
+- Keep state when navigating back to commandline UI
+- Added placeholder and hints to the commandline screen
+- Validate input before saving a backup to give better error message
+- Changed button text on theme switcher to indicate an action
+- Show SSH as "SFTP (SSH)"
+- Added new locales
+- Updated locales
+- Updated browser mapping
+- Fixed broken link to usagereporter
+- Hide button with no action in source view
+- Updated source lists and filter lists to allow "Edit as text"
+- Fixed bug with Create Folder and masked urls
+- Added support for Office 365 backup and restore
+- Fixed typo preventing TrayIcon login toggle from working
+- Added button to add remote sources to a backup
+
 2026-01-08 - 2.2.0.103_canary_2026-01-08
 ==========
 This release is a canary release intended to be used for testing.
