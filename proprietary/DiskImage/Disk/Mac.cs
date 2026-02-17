@@ -193,7 +193,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_fileDescriptor < 0)
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: errno {errorCode}");
+                string errorMessage = GetErrnoMessage(errorCode);
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
                 return Task.FromResult(false);
             }
 
@@ -251,7 +252,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 if (fcntl(m_fileDescriptor, F_FULLFSYNC, 0) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
-                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "dispose", null, $"Failed to flush data: errno {errorCode}");
+                    string errorMessage = GetErrnoMessage(errorCode);
+                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "dispose", null, $"Failed to flush data: {errorMessage} (errno: {errorCode})");
                 }
             }
 
@@ -337,7 +339,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                             if (bytesRead.ToInt64() < 0)
                             {
                                 int errorCode = Marshal.GetLastWin32Error();
-                                throw new IOException($"Failed to read from disk at offset {offset + totalBytesRead}: errno {errorCode}");
+                                string errorMessage = GetErrnoMessage(errorCode);
+                                throw new IOException($"Failed to read from disk at offset {offset + totalBytesRead}: {errorMessage} (errno: {errorCode})");
                             }
                             if (bytesRead.ToInt64() == 0)
                             {
@@ -416,7 +419,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                                 if (bytesRead.ToInt64() < 0)
                                 {
                                     int errorCode = Marshal.GetLastWin32Error();
-                                    throw new IOException($"Failed to read existing data for padding at offset {offset}: errno {errorCode}");
+                                    string errorMessage = GetErrnoMessage(errorCode);
+                                    throw new IOException($"Failed to read existing data for padding at offset {offset}: {errorMessage} (errno: {errorCode})");
                                 }
                             }
                         }
@@ -442,12 +446,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                                 if (bytesWritten.ToInt64() < 0)
                                 {
                                     int errorCode = Marshal.GetLastWin32Error();
+                                    string errorMessage = GetErrnoMessage(errorCode);
                                     string hint = errorCode == 13  // EACCES
                                         ? "The disk may be mounted or you don't have sufficient permissions. Try unmounting the disk before writing."
                                         : errorCode == 30  // EROFS
                                             ? "The disk is read-only."
                                             : "Check the error code for more details.";
-                                    throw new IOException($"Failed to write to disk at offset {offset + totalBytesWritten}: errno {errorCode}. {hint}");
+                                    throw new IOException($"Failed to write to disk at offset {offset + totalBytesWritten}: {errorMessage} (errno: {errorCode}). {hint}");
                                 }
                                 totalBytesWritten += (int)bytesWritten.ToInt64();
                             }
@@ -492,8 +497,31 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private static extern unsafe IntPtr pread(int fd, byte* buf, IntPtr count, long offset);
 
         [DllImport("libc", SetLastError = true)]
-        private static extern unsafe IntPtr pwrite(int fd, byte* buf, IntPtr count, long offset);
+        private static extern IntPtr strerror(int errnum);
 
         #endregion
+
+        /// <summary>
+        /// Gets the error message corresponding to the specified errno value.
+        /// </summary>
+        /// <param name="errno">The error number.</param>
+        /// <returns>A string describing the error.</returns>
+        private static string GetErrnoMessage(int errno)
+        {
+            try
+            {
+                IntPtr msgPtr = strerror(errno);
+                var result = msgPtr != IntPtr.Zero
+                    ? Marshal.PtrToStringUTF8(msgPtr) ?? $"Unknown error (errno: {errno})"
+                    : $"Unknown error (errno: {errno})";
+
+                Console.WriteLine($"strerror({errno}) returned: {result}");
+                return result;
+            }
+            catch
+            {
+                return $"Unknown error (errno: {errno})";
+            }
+        }
     }
 }
