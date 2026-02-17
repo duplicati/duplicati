@@ -48,7 +48,9 @@ public sealed class S3Tests : BaseTest
     }
 
     /// <summary>
-    /// Performs tests with selected client. The S3 tests don't have any additional parameters to be set or tested.
+    /// Performs tests with selected client.
+    /// Optionally set TESTCREDENTIAL_S3_SERVER_NAME to include s3-server-name in the tested URI,
+    /// e.g. "server.host:9000" or "https://server.host:9000".
     /// </summary>
     /// <param name="client">client to be used, either aws or minio</param>
     /// <returns></returns>
@@ -62,6 +64,10 @@ public sealed class S3Tests : BaseTest
         ]);
 
         var testUri = $"s3://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_BUCKETNAME")}/?s3-location-constraint={Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_REGION")}&s3-storage-class=&s3-client={client}&auth-username={Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_KEY")}&auth-password={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_SECRET")!)}";
+        var serverName = Environment.GetEnvironmentVariable("TESTCREDENTIAL_S3_SERVER_NAME");
+        if (!string.IsNullOrWhiteSpace(serverName))
+            testUri += $"&s3-server-name={Uri.EscapeDataString(serverName)}";
+
         var exitCode = CommandLine.BackendTester.Program.Main(
             new[]
             {
