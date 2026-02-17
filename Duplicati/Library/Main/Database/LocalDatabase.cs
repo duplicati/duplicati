@@ -529,6 +529,9 @@ namespace Duplicati.Library.Main.Database
             if (ids == null || ids.Length == 0)
                 yield break;
 
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, ids, token)
+                .ConfigureAwait(false);
+
             await using var cmd = m_connection.CreateCommand();
             cmd.SetTransaction(m_rtr);
 
@@ -584,7 +587,8 @@ namespace Duplicati.Library.Main.Database
                 WHERE rv.""ID"" IN (SELECT ""VolumeID"" FROM combined);
             ");
 
-            cmd.ExpandInClauseParameterMssqlite("@FilesetIds", ids);
+            await cmd.ExpandInClauseParameterMssqliteAsync("@FilesetIds", tmptable, token)
+                .ConfigureAwait(false);
 
             await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
@@ -1036,13 +1040,19 @@ namespace Duplicati.Library.Main.Database
             ", token)
                 .ConfigureAwait(false);
 
-            await deletecmd.SetCommandAndParameters($@"
-                INSERT OR IGNORE INTO ""{volidstable}""
-                SELECT ""ID""
-                FROM ""RemoteVolume""
-                WHERE ""Name"" IN (@VolumeNames)
-            ")
-                .ExpandInClauseParameterMssqlite("@VolumeNames", [.. names])
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, names, token)
+                .ConfigureAwait(false);
+
+            deletecmd.SetCommandAndParameters($@"
+                    INSERT OR IGNORE INTO ""{volidstable}""
+                    SELECT ""ID""
+                    FROM ""RemoteVolume""
+                    WHERE ""Name"" IN (@VolumeNames)
+                ");
+
+            await deletecmd.ExpandInClauseParameterMssqliteAsync("@VolumeNames", tmptable, token)
+                .ConfigureAwait(false);
+            await deletecmd
                 .ExecuteNonQueryAsync(token)
                 .ConfigureAwait(false);
 
@@ -3228,6 +3238,9 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when awaited contains the ID of the empty metadata blockset, or -1 if no suitable blockset is found</returns>
         public async Task<long> GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, CancellationToken token)
         {
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, blockVolumeIds, token)
+                .ConfigureAwait(false);
+
             await using var cmd = Connection.CreateCommand(@"
                 SELECT ""ID""
                 FROM ""Blockset""
@@ -3245,16 +3258,19 @@ namespace Duplicati.Library.Main.Database
                     )
             ")
                 .SetTransaction(m_rtr)
-                .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
                 .SetParameterValue("@EmptyHash", emptyHash)
                 .SetParameterValue("@EmptyHashSize", emptyHashSize);
+
+            await cmd.ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
+                .ConfigureAwait(false);
 
             var res = await cmd.ExecuteScalarInt64Async(-1, token)
                 .ConfigureAwait(false);
 
             // No empty block found, try to find a zero-length block instead
             if (res < 0 && emptyHashSize != 0)
-                res = await cmd.SetCommandAndParameters(@"
+            {
+                cmd.SetCommandAndParameters(@"
                     SELECT ""ID""
                     FROM ""Blockset""
                     WHERE
@@ -3269,14 +3285,20 @@ namespace Duplicati.Library.Main.Database
                                 AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
                         )
                 ")
-                  .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
-                  .SetParameterValue("@EmptyHashSize", 0)
+                .SetParameterValue("@EmptyHashSize", 0);
+
+                await cmd.ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
+                         .ConfigureAwait(false);
+
+                res = await cmd
                   .ExecuteScalarInt64Async(-1, token)
                   .ConfigureAwait(false);
+            }
 
             // No empty block found, pick the smallest one
             if (res < 0)
-                res = await cmd.SetCommandAndParameters(@"
+            {
+                cmd.SetCommandAndParameters(@"
                     SELECT ""Blockset"".""ID""
                     FROM
                         ""BlocksetEntry"",
@@ -3291,10 +3313,16 @@ namespace Duplicati.Library.Main.Database
                         AND ""Blockset"".""Length"" > 0
                     ORDER BY ""Blockset"".""Length"" ASC
                     LIMIT 1
-                ")
-                  .ExpandInClauseParameterMssqlite("@BlockVolumeIds", blockVolumeIds)
+                ");
+
+                await cmd
+                  .ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
+                  .ConfigureAwait(false);
+
+                res = await cmd
                   .ExecuteScalarInt64Async(-1, token)
                   .ConfigureAwait(false);
+            }
 
             return res;
         }

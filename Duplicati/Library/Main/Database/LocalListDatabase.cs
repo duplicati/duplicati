@@ -976,10 +976,14 @@ namespace Duplicati.Library.Main.Database
             if (limit <= 0)
                 limit = long.MaxValue;
 
-            await using var cmd = m_connection.CreateCommand();
-
-            if (prefixIds.Count() == 0)
+            var prefixIdsList = prefixIds.ToList();
+            if (prefixIdsList.Count == 0)
                 return new PaginatedResults<IListFolderEntry>(0, (int)limit, 0, 0, Enumerable.Empty<IListFolderEntry>());
+
+            await using var prefixIdsTable = await TemporaryDbValueList.CreateAsync(this, prefixIdsList, token)
+                .ConfigureAwait(false);
+
+            await using var cmd = m_connection.CreateCommand();
 
             // Then query the matching files
             cmd.SetCommandAndParameters($@"
@@ -1016,10 +1020,12 @@ namespace Duplicati.Library.Main.Database
             ")
                 .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
                 .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-                .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
                 .SetParameterValue("@filesetid", filesetid)
                 .SetParameterValue("@limit", limit)
                 .SetParameterValue("@offset", offset);
+
+            await cmd.ExpandInClauseParameterMssqliteAsync("@PrefixIds", prefixIdsTable, token)
+                .ConfigureAwait(false);
 
             var results = new List<IListFolderEntry>();
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
@@ -1056,7 +1062,7 @@ namespace Duplicati.Library.Main.Database
             else
             {
                 // Get the total count of files for the given fileset and prefix IDs
-                totalCount = await cmd.SetCommandAndParameters($@"
+                cmd.SetCommandAndParameters($@"
                     SELECT COUNT(*)
                     FROM ""FilesetEntry"" ""fe""
                     INNER JOIN ""FileLookup"" ""fl""
@@ -1065,9 +1071,12 @@ namespace Duplicati.Library.Main.Database
                         ""fe"".""FilesetID"" = @filesetid
                         AND ""fl"".""PrefixID"" IN (@PrefixIds)
                 ")
-                    .ExpandInClauseParameterMssqlite("@PrefixIds", prefixIds)
-                    .SetParameterValue("@filesetid", filesetid)
-                    .ExecuteScalarInt64Async(0, token)
+                    .SetParameterValue("@filesetid", filesetid);
+
+                await cmd.ExpandInClauseParameterMssqliteAsync("@PrefixIds", prefixIdsTable, token)
+                    .ConfigureAwait(false);
+
+                totalCount = await cmd.ExecuteScalarInt64Async(0, token)
                     .ConfigureAwait(false);
             }
 
@@ -1086,19 +1095,21 @@ namespace Duplicati.Library.Main.Database
         public async IAsyncEnumerable<long> GetPrefixIds(IEnumerable<string> prefixes, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand();
+            await using var prefixesTable = await TemporaryDbValueList.CreateAsync(this, prefixes, token)
+                .ConfigureAwait(false);
 
             // Map folders to prefix IDs
             cmd.SetCommandAndParameters($@"
                 SELECT ""ID""
                 FROM ""PathPrefix""
                 WHERE ""Prefix"" IN (@Prefixes)
-            ")
-                .ExpandInClauseParameter("@Prefixes", prefixes);
+            ");
+
+            await cmd.ExpandInClauseParameterMssqliteAsync("@Prefixes", prefixesTable, token)
+                .ConfigureAwait(false);
 
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
-            {
                 yield return rd.ConvertValueToInt64(0);
-            }
         }
 
         /// <summary>
@@ -1157,6 +1168,9 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A task that when awaited returns the extended folder entries.</returns>
         public async Task<Dictionary<long, Dictionary<string, string?>>> GetMetadataForFilesetIds(IEnumerable<long> filesetIds, CancellationToken token)
         {
+            await using var filesetIdsTable = await TemporaryDbValueList.CreateAsync(this, filesetIds, token)
+                .ConfigureAwait(false);
+
             await using var cmd = m_connection.CreateCommand();
             cmd.SetCommandAndParameters(@"
                 SELECT
@@ -1171,8 +1185,11 @@ namespace Duplicati.Library.Main.Database
                 WHERE md.""Content"" IS NOT NULL
                 AND fe.""FileID"" IN (@Ids)
             ")
-                .SetTransaction(m_rtr)
-                .ExpandInClauseParameter("@Ids", filesetIds);
+                .SetTransaction(m_rtr);
+
+            await cmd
+                .ExpandInClauseParameterMssqliteAsync("@Ids", filesetIdsTable, token)
+                .ConfigureAwait(false);
 
             var map = new Dictionary<long, Dictionary<string, string?>>();
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token))
@@ -1236,6 +1253,12 @@ namespace Duplicati.Library.Main.Database
                 .ToDictionaryAsync(x => x.FilesetId, x => x.Version, cancellationToken: token)
                 .ConfigureAwait(false);
 
+            await using var filesetIdTable = filesetIds != null && filesetIds.Length > 0
+                ? await TemporaryDbValueList.CreateAsync(this, filesetIds, token).ConfigureAwait(false)
+                : null;
+            await using var pathsTable = await TemporaryDbValueList.CreateAsync(this, paths, token)
+                .ConfigureAwait(false);
+
             // Then fetch the actual data
             var fetchSql = @$"
                 SELECT
@@ -1270,14 +1293,18 @@ namespace Duplicati.Library.Main.Database
             ";
 
             cmd.SetCommandAndParameters(fetchSql)
-               .ExpandInClauseParameter("@Paths", paths)
-               .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
-               .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-               .SetParameterValue("@limit", limit)
-               .SetParameterValue("@offset", offset);
+                .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
+                .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
+                .SetParameterValue("@limit", limit)
+                .SetParameterValue("@offset", offset);
 
-            if (filesetIds != null && filesetIds.Length > 0)
-                cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
+
+            await cmd.ExpandInClauseParameterMssqliteAsync("@Paths", pathsTable, token)
+                .ConfigureAwait(false);
+
+            if (filesetIdTable != null)
+                await cmd.ExpandInClauseParameterMssqliteAsync("@FilesetIds", filesetIdTable, token)
+                    .ConfigureAwait(false);
 
             var results = new List<IListFileVersion>();
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
@@ -1322,11 +1349,14 @@ namespace Duplicati.Library.Main.Database
                         ON ""fe"".""FileID"" = ""fl"".""ID""
                 ";
 
-                cmd.SetCommandAndParameters(countSql + "\n" + countWhere)
-                   .ExpandInClauseParameter("@Paths", paths);
+                cmd.SetCommandAndParameters(countSql + "\n" + countWhere);
 
-                if (filesetIds != null && filesetIds.Length > 0)
-                    cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
+                await cmd.ExpandInClauseParameterMssqliteAsync("@Paths", pathsTable, token)
+                    .ConfigureAwait(false);
+
+                if (filesetIdTable != null)
+                    await cmd.ExpandInClauseParameterMssqliteAsync("@FilesetIds", filesetIdTable, token)
+                        .ConfigureAwait(false);
 
                 totalCount = await cmd.ExecuteScalarInt64Async(0, token)
                     .ConfigureAwait(false);
@@ -1360,6 +1390,16 @@ namespace Duplicati.Library.Main.Database
                 throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
             if (limit <= 0)
                 limit = long.MaxValue;
+
+            await using var filesetIdTable = filesetIds != null && filesetIds.Length > 0
+                ? await TemporaryDbValueList.CreateAsync(this, filesetIds, token)
+                    .ConfigureAwait(false)
+                : null;
+
+            await using var pathsTable = pathprefixes != null && pathprefixes.Any()
+                ? await TemporaryDbValueList.CreateAsync(this, pathprefixes, token)
+                    .ConfigureAwait(false)
+                : null;
 
             await using var cmd = m_connection.CreateCommand();
 
@@ -1438,9 +1478,9 @@ namespace Duplicati.Library.Main.Database
                             ");
                         else
                             caseWhenParts.Add($@"
-                                WHEN pp.""Prefix"" || fl.""Path"" GLOB {propName}
-                                THEN {(filterExpression.Result ? "0" : "1")}
-                            ");
+                            WHEN pp.""Prefix"" || fl.""Path"" GLOB {propName}
+                            THEN {(filterExpression.Result ? "0" : "1")}
+                        ");
                     }
                 }
                 else
@@ -1452,9 +1492,9 @@ namespace Duplicati.Library.Main.Database
             // Build WHERE clauses
             var whereClauses = new List<string>();
 
-            if (pathprefixes != null && pathprefixes.Any())
+            if (pathsTable != null)
                 whereClauses.Add(@"pp.""Prefix"" IN (@PathPrefixes)");
-            if (filesetIds != null && filesetIds.Length > 0)
+            if (filesetIdTable != null)
                 whereClauses.Add(@"fe.""FilesetID"" IN (@FilesetIds)");
 
             if (caseWhenParts.Any())
@@ -1538,11 +1578,13 @@ namespace Duplicati.Library.Main.Database
                .SetParameterValue("@limit", limit)
                .SetParameterValue("@offset", offset);
 
-            if (pathprefixes != null && pathprefixes.Any())
-                cmd.ExpandInClauseParameter("@PathPrefixes", pathprefixes);
+            if (pathsTable != null)
+                await cmd.ExpandInClauseParameterMssqliteAsync("@PathPrefixes", pathsTable, token)
+                        .ConfigureAwait(false);
 
-            if (filesetIds != null && filesetIds.Length > 0)
-                cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
+            if (filesetIdTable != null)
+                await cmd.ExpandInClauseParameterMssqliteAsync("@FilesetIds", filesetIdTable, token)
+                    .ConfigureAwait(false);
 
             var results = new List<ISearchFileVersion>();
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
@@ -1589,11 +1631,13 @@ namespace Duplicati.Library.Main.Database
                    .SetParameterValues(filterProps)
                    .SetParameterValue("@DefaultBehavior", defaultBehavior);
 
-                if (pathprefixes != null && pathprefixes.Any())
-                    cmd.ExpandInClauseParameter("@PathPrefixes", pathprefixes);
+                if (pathsTable != null)
+                    await cmd.ExpandInClauseParameterMssqliteAsync("@PathPrefixes", pathsTable, token)
+                        .ConfigureAwait(false);
 
-                if (filesetIds != null && filesetIds.Length > 0)
-                    cmd.ExpandInClauseParameterMssqlite("@FilesetIds", filesetIds);
+                if (filesetIdTable != null)
+                    await cmd.ExpandInClauseParameterMssqliteAsync("@FilesetIds", filesetIdTable, token)
+                        .ConfigureAwait(false);
 
                 totalCount = await cmd.ExecuteScalarInt64Async(0, token)
                     .ConfigureAwait(false);
