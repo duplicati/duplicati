@@ -34,7 +34,7 @@ partial class RestoreProvider
             }
             else if (target.Type == SourceItemType.UserKeep)
             {
-                _targetUserId = target.Path.TrimStart('/').Split('/').Skip(1).FirstOrDefault();
+                _targetUserId = target.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
             }
             else
             {
