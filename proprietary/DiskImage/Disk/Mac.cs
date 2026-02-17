@@ -484,20 +484,23 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         [DllImport("libc", SetLastError = true)]
         private static extern int close(int fd);
 
-        [DllImport("libc", SetLastError = true)]
-        private static extern int ioctl(int fd, uint request, ref uint arg);
+        [LibraryImport("libSystem", SetLastError = true)]
+        private static partial int open([MarshalAs(UnmanagedType.LPStr)] string pathname, int flags);
 
-        [DllImport("libc", SetLastError = true)]
-        private static extern int ioctl(int fd, uint request, ref ulong arg);
+        [LibraryImport("libSystem", SetLastError = true)]
+        private static partial int close(int fd);
 
-        [DllImport("libc", SetLastError = true)]
-        private static extern int fcntl(int fd, int cmd, int arg);
+        [LibraryImport("libSystem", SetLastError = true)]
+        private static partial int fcntl(int fd, int cmd, int arg);
 
-        [DllImport("libc", SetLastError = true)]
-        private static extern unsafe IntPtr pread(int fd, byte* buf, IntPtr count, long offset);
+        [LibraryImport("libSystem", SetLastError = true)]
+        private static unsafe partial IntPtr pread(int fd, byte* buf, IntPtr count, long offset);
 
-        [DllImport("libc", SetLastError = true)]
-        private static extern IntPtr strerror(int errnum);
+        [LibraryImport("libSystem", SetLastError = true)]
+        private static unsafe partial IntPtr pwrite(int fd, byte* buf, IntPtr count, long offset);
+
+        [LibraryImport("libSystem", SetLastError = true)]
+        private static partial IntPtr strerror(int errnum);
 
         #endregion
 
