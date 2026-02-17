@@ -21,8 +21,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Mac>();
 
         // Disk ioctl constants from <sys/disk.h>
-        private const uint DKIOCGETBLOCKSIZE = 0x40046418;  // _IOR('d', 24, uint32_t)
-        private const uint DKIOCGETBLOCKCOUNT = 0x40046419; // _IOR('d', 25, uint64_t)
+        private const ulong DKIOCGETBLOCKSIZE = 0x4004_6418;  // _IOR('d', 24, uint32_t)
+        private const ulong DKIOCGETBLOCKCOUNT = 0x4008_6419; // _IOR('d', 25, uint64_t)
 
         // File open flags
         private const int O_RDONLY = 0x0000;
