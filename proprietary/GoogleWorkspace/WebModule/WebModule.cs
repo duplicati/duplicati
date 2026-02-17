@@ -94,7 +94,7 @@ public class WebModule : IWebModule
         foreach (var key in uri.QueryParameters.AllKeys)
             forwardoptions[key!] = uri.QueryParameters[key];
 
-        using var client = new SourceProvider(url, "", forwardoptions);
+        using var client = new SourceProvider(url, "", forwardoptions, true);
         await client.Initialize(cancellationToken);
 
         var targetEntry = await client.GetEntry((path ?? "").TrimStart('/'), isFolder: true, cancellationToken).ConfigureAwait(false);
