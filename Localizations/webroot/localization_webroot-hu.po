@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Kiss István <gail7.mailbox@gmail.com>, 2017
 # Dávid Harmath <willteam35@gmail.com>, 2019

@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Stefan Kostic <reddevilserbia@gmail.com>, 2017
 # Milan Marinković <xaoc994@gmail.com>, 2017

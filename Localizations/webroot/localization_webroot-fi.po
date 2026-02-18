@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Hese <heikki.nikula@iki.fi>, 2020
 # Kari Koskinen <kakoskin@gmail.com>, 2024

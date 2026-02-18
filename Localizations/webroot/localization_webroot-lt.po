@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Darius Žitkevičius <skystis@gmail.com>, 2024
 # 
