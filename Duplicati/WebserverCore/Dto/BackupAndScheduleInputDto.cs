@@ -83,6 +83,12 @@ public sealed record BackupAndScheduleInputDto
         /// The backup metadata
         /// </summary>
         public IDictionary<string, string>? Metadata { get; init; }
+
+        /// <summary>
+        /// Additional target URLs for remote synchronization
+        /// These are used by RemoteSynchronizationModule and are separate from the primary TargetURL
+        /// </summary>
+        public IEnumerable<TargetUrlInputDto>? AdditionalTargetURLs { get; init; }
     }
 
     /// <summary>

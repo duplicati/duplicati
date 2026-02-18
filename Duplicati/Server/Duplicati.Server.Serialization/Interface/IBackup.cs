@@ -101,6 +101,12 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         /// <param name="previous">The previous backup configuration to restore sensitive information from</param>
         void UnmaskSensitiveInformation(IBackup previous);
+
+        /// <summary>
+        /// Additional target URLs for remote synchronization
+        /// These are used by RemoteSynchronizationModule and are separate from the primary TargetURL
+        /// </summary>
+        IEnumerable<ITargetUrlEntry> AdditionalTargetURLs { get; set; }
     }
 }
 

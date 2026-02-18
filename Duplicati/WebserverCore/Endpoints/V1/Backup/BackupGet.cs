@@ -139,6 +139,14 @@ public class BackupGet : IEndpointV1
                 DBPathExists = File.Exists(bk.DBPath),
                 IsTemporary = bk.IsTemporary,
                 IsUnencryptedOrPassphraseStored = false,
+                AdditionalTargetURLs = bk.AdditionalTargetURLs?.Select(x => new Dto.TargetUrlDto
+                {
+                    UrlKey = x.TargetUrlKey,
+                    TargetUrl = x.TargetUrl,
+                    Mode = x.Mode,
+                    Interval = x.Interval,
+                    Options = x.Options
+                }).ToArray() ?? Array.Empty<Dto.TargetUrlDto>(),
             },
             sourcenames
         );

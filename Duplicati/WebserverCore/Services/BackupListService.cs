@@ -65,7 +65,15 @@ public class BackupListService(Connection connection) : IBackupListService
                     Include = x.Include,
                     Expression = x.Expression
                 }).ToArray(),
-                Metadata = data.Backup.Metadata ?? new Dictionary<string, string>()
+                Metadata = data.Backup.Metadata ?? new Dictionary<string, string>(),
+                AdditionalTargetURLs = data.Backup.AdditionalTargetURLs?.Select(x => new TargetUrlEntry
+                {
+                    TargetUrlKey = x.UrlKey ?? Guid.NewGuid().ToString("D"),
+                    TargetUrl = x.TargetUrl,
+                    Mode = x.Mode ?? "inline",
+                    Interval = x.Interval,
+                    Options = x.Options
+                }).ToList() ?? new List<TargetUrlEntry>()
             };
 
             if (backup.ConnectionStringID > 0)
@@ -330,7 +338,15 @@ public class BackupListService(Connection connection) : IBackupListService
                 TargetURL = x.Backup.TargetURL,
                 DBPath = x.Backup.DBPath,
                 DBPathExists = File.Exists(x.Backup.DBPath),
-                Tags = x.Backup.Tags
+                Tags = x.Backup.Tags,
+                AdditionalTargetURLs = x.Backup.AdditionalTargetURLs?.Select(t => new Dto.TargetUrlDto
+                {
+                    UrlKey = t.TargetUrlKey,
+                    TargetUrl = t.TargetUrl,
+                    Mode = t.Mode,
+                    Interval = t.Interval,
+                    Options = t.Options
+                }).ToArray() ?? Array.Empty<Dto.TargetUrlDto>()
             },
             Schedule = x.Schedule == null ? null : new Dto.ScheduleDto()
             {

@@ -92,4 +92,10 @@ public sealed record BackupDto
     /// Gets a value indicating if backup is unencrypted or passphrase is stored
     /// </summary>
     public required bool IsUnencryptedOrPassphraseStored { get; init; }
+
+    /// <summary>
+    /// Additional target URLs for remote synchronization
+    /// These are separate from the primary TargetURL and are used by RemoteSynchronizationModule
+    /// </summary>
+    public required IEnumerable<TargetUrlDto> AdditionalTargetURLs { get; init; }
 }

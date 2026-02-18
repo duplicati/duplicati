@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Server;
 using Duplicati.Server.Database;
-using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -82,7 +81,15 @@ public class BackupPutDelete : IEndpointV1
                     Include = x.Include,
                     Expression = x.Expression
                 }).ToArray(),
-                Metadata = input.Backup.Metadata
+                Metadata = input.Backup.Metadata,
+                AdditionalTargetURLs = input.Backup.AdditionalTargetURLs?.Select(x => new TargetUrlEntry
+                {
+                    TargetUrlKey = x.UrlKey ?? Guid.NewGuid().ToString("D"),
+                    TargetUrl = x.TargetUrl,
+                    Mode = x.Mode ?? "inline",
+                    Interval = x.Interval,
+                    Options = x.Options
+                }).ToList() ?? new List<TargetUrlEntry>()
             };
 
             if (backup.ConnectionStringID > 0 && backup.ConnectionStringID != existing.ConnectionStringID)

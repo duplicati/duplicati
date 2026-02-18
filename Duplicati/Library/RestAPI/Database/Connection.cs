@@ -35,6 +35,7 @@ using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.RegularExpressions;
 using Duplicati.WebserverCore.Abstractions;
+using System.Text.Json;
 
 #nullable enable
 
@@ -806,6 +807,10 @@ namespace Duplicati.Server.Database
                     // Don't update the metadata if no new content is given
                     if (item.Metadata != null)
                         SetMetadata(item.Metadata, id, tr);
+
+                    // Save additional target URLs if present
+                    if (item.AdditionalTargetURLs != null)
+                        SetBackupTargetUrls(id, item.AdditionalTargetURLs.Cast<TargetUrlEntry>(), tr);
 
                     if (updateSchedule)
                     {
@@ -1627,6 +1632,117 @@ namespace Duplicati.Server.Database
                     cmd => (cmd.GetInt64(0).ToString(), cmd.GetString(1)),
                     cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"" FROM ""Backup"" WHERE ""ConnectionStringID"" = @ID").SetParameterValue("@ID", id)
                 ).ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Gets the additional target URLs for a backup
+        /// </summary>
+        /// <param name="backupId">The backup ID</param>
+        /// <returns>The list of additional target URLs</returns>
+        internal List<TargetUrlEntry> GetBackupTargetUrls(long backupId)
+        {
+            lock (m_lock)
+            {
+                return ReadFromDb(
+                    (rd) => new TargetUrlEntry()
+                    {
+                        ID = ConvertToInt64(rd, 0),
+                        BackupID = ConvertToInt64(rd, 1),
+                        TargetUrlKey = ConvertToString(rd, 2) ?? "",
+                        TargetUrl = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 3) ?? "", m_key),
+                        Mode = ConvertToString(rd, 4) ?? "inline",
+                        Interval = ConvertToString(rd, 5),
+                        Options = ParseOptionsJson(ConvertToString(rd, 6)),
+                        CreatedAt = ConvertToDateTime(rd, 7),
+                        UpdatedAt = ConvertToDateTime(rd, 8)
+                    },
+                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""BackupID"", ""TargetUrlKey"", ""TargetURL"", ""Mode"", ""Interval"", ""Options"", ""CreatedAt"", ""UpdatedAt"" FROM ""BackupTargetUrl"" WHERE ""BackupID"" = @Id")
+                        .SetParameterValue("@Id", backupId))
+                    .ToList();
+            }
+        }
+
+        /// <summary>
+        /// Parses the options JSON string into a dictionary
+        /// </summary>
+        /// <param name="json">The JSON string</param>
+        /// <returns>The dictionary or null if empty</returns>
+        private static Dictionary<string, object>? ParseOptionsJson(string? json)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(json))
+                    return JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            }
+            catch
+            {
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Sets the additional target URLs for a backup
+        /// </summary>
+        /// <param name="backupId">The backup ID</param>
+        /// <param name="targets">The target URLs to set</param>
+        /// <param name="transaction">The database transaction</param>
+        internal void SetBackupTargetUrls(long backupId, IEnumerable<TargetUrlEntry> targets, IDbTransaction? transaction = null)
+        {
+            lock (m_lock)
+            {
+                var tr = transaction ?? m_connection.BeginTransaction();
+                try
+                {
+                    // Delete existing entries
+                    using (var cmd = m_connection.CreateCommand(tr))
+                        cmd.SetCommandAndParameters(@"DELETE FROM ""BackupTargetUrl"" WHERE ""BackupID"" = @Id")
+                            .SetParameterValue("@Id", backupId)
+                            .ExecuteNonQuery();
+
+                    // Insert new entries
+                    var now = DateTime.UtcNow;
+                    foreach (var target in targets)
+                    {
+                        if (UrlContainsPasswordPlaceholder(target.TargetUrl))
+                            throw new Exception("Attempted to save a target URL with the password placeholder");
+
+                        var encryptedUrl = m_encryptSensitiveFields
+                            ? EncryptedFieldHelper.Encrypt(target.TargetUrl, m_key)
+                            : target.TargetUrl;
+
+                        var optionsJson = target.Options != null
+                            ? JsonSerializer.Serialize(target.Options)
+                            : null;
+
+                        using (var cmd = m_connection.CreateCommand(tr))
+                        {
+                            cmd.SetCommandAndParameters(@"INSERT INTO ""BackupTargetUrl"" (""BackupID"", ""TargetUrlKey"", ""TargetURL"", ""Mode"", ""Interval"", ""Options"", ""CreatedAt"", ""UpdatedAt"") VALUES (@BackupId, @TargetUrlKey, @TargetUrl, @Mode, @Interval, @Options, @CreatedAt, @UpdatedAt)");
+                            cmd.SetParameterValue("@BackupId", backupId);
+                            cmd.SetParameterValue("@TargetUrlKey", target.TargetUrlKey);
+                            cmd.SetParameterValue("@TargetUrl", encryptedUrl);
+                            cmd.SetParameterValue("@Mode", target.Mode);
+                            cmd.SetParameterValue("@Interval", target.Interval);
+                            cmd.SetParameterValue("@Options", optionsJson);
+                            cmd.SetParameterValue("@CreatedAt", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(now));
+                            cmd.SetParameterValue("@UpdatedAt", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(now));
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+                    if (transaction == null)
+                    {
+                        tr.Commit();
+                        tr.Dispose();
+                    }
+                }
+                catch
+                {
+                    if (transaction == null)
+                        tr.Dispose();
+                    throw;
+                }
             }
         }
 
