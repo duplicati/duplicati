@@ -240,7 +240,7 @@ public partial class RestoreProvider
 
                 while (true)
                 {
-                    var parentDir = Util.AppendDirSeparator(Path.GetDirectoryName(currentPath.TrimEnd(Path.DirectorySeparatorChar)));
+                    var parentDir = Util.AppendDirSeparator(Path.GetDirectoryName(currentPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
                     if (string.IsNullOrEmpty(parentDir)) break;
 
                     if (_restoredSharePointListMap.TryGetValue(parentDir, out var mappedListId))
@@ -307,7 +307,7 @@ public partial class RestoreProvider
 
                     // Determine parent ID
                     string parentId;
-                    var itemParentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+                    var itemParentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
 
                     try
                     {
@@ -441,7 +441,7 @@ public partial class RestoreProvider
         if (_restoredSharePointFolderMap.TryGetValue(currentPath, out var cachedId))
             return cachedId;
 
-        var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(currentPath.TrimEnd(Path.DirectorySeparatorChar)));
+        var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(currentPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
 
         // Safety check to prevent infinite recursion if we go above listPath
         if (string.IsNullOrEmpty(parentPath) || currentPath.Length <= listPath.Length)

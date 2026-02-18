@@ -256,7 +256,7 @@ public partial class RestoreProvider
                 var displayName = metadata.GetValueOrDefault("o365:Name") ?? metadata.GetValueOrDefault("o365:DisplayName") ?? "Restored Section Group";
 
                 // Find parent
-                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
 
                 string? parentId = null;
                 bool isNotebookParent = false;
@@ -310,7 +310,7 @@ public partial class RestoreProvider
                 var displayName = metadata.GetValueOrDefault("o365:Name") ?? metadata.GetValueOrDefault("o365:DisplayName") ?? "Restored Section";
 
                 // Find parent
-                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
 
                 string? parentId = null;
                 bool isNotebookParent = false;
@@ -360,7 +360,7 @@ public partial class RestoreProvider
             if (!filePath.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(filePath.TrimEnd(Path.DirectorySeparatorChar)));
+            var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(filePath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
             if (parentPath == null)
                 continue;
 
