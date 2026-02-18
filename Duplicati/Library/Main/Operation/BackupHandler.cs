@@ -156,7 +156,7 @@ namespace Duplicati.Library.Main.Operation
                         foreach (var url in entry)
                         {
                             var sanitizedUrl = Library.Utility.Utility.GetUrlWithoutCredentials(url);
-                            var m = Regex.Match(url, @"^@(?<mountpoint>[^|]+\|)*(?<url>.+)$", RegexOptions.IgnoreCase);
+                            var m = Regex.Match(url, @"^@(?<mountpoint>[^|]+\|)+(?<url>.+)$", RegexOptions.IgnoreCase);
                             if (m.Success)
                             {
                                 var mountpoint = m.Groups["mountpoint"].Value;
@@ -186,7 +186,6 @@ namespace Duplicati.Library.Main.Operation
                                         continue;
                                     }
 
-                                    Console.WriteLine(ex.StackTrace);
                                     throw new UserInformationException($"Failed to load source provider for \"{sanitizedUrl}\": {ex.Message}", "SourceProviderFailed", ex);
                                 }
 
