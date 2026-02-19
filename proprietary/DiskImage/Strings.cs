@@ -90,4 +90,44 @@ internal static class Strings
     /// Error message for when restore path is invalid.
     /// </summary>
     public static string RestoreInvalidPath => LC.L("Invalid restore path: {0}");
+
+    /// <summary>
+    /// Display name for the web module.
+    /// </summary>
+    public static string WebModuleDisplayName => LC.L("Disk Image Web Module");
+
+    /// <summary>
+    /// Description for the web module.
+    /// </summary>
+    public static string WebModuleDescription => LC.L("Provides web-based access to disk image operations.");
+
+    /// <summary>
+    /// Short description for the web module operation option.
+    /// </summary>
+    public static string WebModuleOperationShort => LC.L("The operation to perform.");
+
+    /// <summary>
+    /// Long description for the web module operation option.
+    /// </summary>
+    public static string WebModuleOperationLong => LC.L("The operation to perform in the web module.");
+
+    /// <summary>
+    /// Short description for the web module URL option.
+    /// </summary>
+    public static string WebModuleURLShort => LC.L("The URL to use.");
+
+    /// <summary>
+    /// Long description for the web module URL option.
+    /// </summary>
+    public static string WebModuleURLLong => LC.L("The URL to use for the web module operation.");
+
+    /// <summary>
+    /// Short description for the web module path option.
+    /// </summary>
+    public static string WebModulePathShort => LC.L("The path to use.");
+
+    /// <summary>
+    /// Long description for the web module path option.
+    /// </summary>
+    public static string WebModulePathLong => LC.L("The path to use for the web module operation.");
 }
