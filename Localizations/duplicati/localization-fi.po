@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-20 13:45+0100\n"
+"POT-Creation-Date: 2026-02-18 13:48+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Kari Koskinen <kakoskin@gmail.com>, 2025\n"
 "Language-Team: Finnish (https://app.transifex.com/duplicati/teams/67655/fi/)\n"
@@ -182,7 +182,7 @@ msgstr "Toimenpide keskeytettiin"
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
 #: Library/Backend/Jottacloud/Jottacloud.cs:319
-#: Library/Backend/SMB/SMBShareConnection.cs:361
+#: Library/Backend/SMB/SMBShareConnection.cs:428
 msgid "The requested file does not exist"
 msgstr "Haluttua tiedostoa ei ole olemassa."
 
@@ -358,7 +358,7 @@ msgstr "Aseta SSL-politiikka salattuja yhteyksiä varten."
 msgid "Google Cloud Storage"
 msgstr "Google Cloud Storage"
 
-#: Library/Backend/GoogleServices/Strings.cs:31
+#: Library/Backend/GoogleServices/Strings.cs:32
 #, csharp-format
 msgid ""
 "This option is only used when creating new buckets. Use this option to change what region the data is stored in. Charges vary with bucket location. Known bucket locations:\n"
@@ -367,7 +367,7 @@ msgstr ""
 "Tätä valitsinta käytetään vain luotaessa uusia ämpäreitä. Käytä tätä valitsinta muuttaaksesi aluetta, johon tiedot tallennetaan. Hinnat vaihtelevat alueen mukaan. Tunnetut alueet ovat:\n"
 "{0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:34
+#: Library/Backend/GoogleServices/Strings.cs:35
 #, csharp-format
 msgid ""
 "This option is only used when creating new buckets. Use this option to change what storage type the bucket has. Charges and functionality vary with bucket storage class. Known storage classes:\n"
@@ -377,15 +377,20 @@ msgstr ""
 "valitsinta muuttaaksesi luotavan säilön tallennusluokkaa. Hinnat ja "
 "toiminnallisuus vaihtelevat luokan mukaan. Tunnetut luokat ovat: {0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:48
+#: Library/Backend/GoogleServices/Strings.cs:51
 msgid "Google Drive"
 msgstr "Google Drive"
 
-#: Library/Backend/GoogleServices/Strings.cs:50
+#: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Tiedostoa ei löydy: {0}"
+
+#: Library/Backend/S3/Strings.cs:31 Library/Backend/AliyunOSS/Strings.cs:30
+#: Library/Backend/Idrivee2/Strings.cs:31
+msgid "Access Key ID"
+msgstr "Pääsyavaimen tunnus"
 
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
 #: Library/Utility/Strings.cs:93
@@ -601,11 +606,6 @@ msgstr "Ryhmän tunniste"
 msgid "Email address of the group"
 msgstr "Ryhmän sähköpostiosoite"
 
-#: Library/Backend/AliyunOSS/Strings.cs:30
-#: Library/Backend/Idrivee2/Strings.cs:31
-msgid "Access Key ID"
-msgstr "Pääsyavaimen tunnus"
-
 #: Library/Backend/AliyunOSS/Strings.cs:32
 #: Library/Backend/Idrivee2/Strings.cs:29
 msgid "Access Key Secret"
@@ -820,11 +820,11 @@ msgstr "Kansio"
 msgid "Unexpected error code: {0} - {1}"
 msgstr "Odottamaton virhe: {0}-{1}"
 
-#: Library/SecretProvider/Strings.cs:152
+#: Library/SecretProvider/Strings.cs:159
 msgid "The Azure tenant ID"
 msgstr "Azure Entra vuokralaisen tunniste"
 
-#: Library/SecretProvider/Strings.cs:153
+#: Library/SecretProvider/Strings.cs:160
 msgid "The ID of the Azure tenant to use for authentication"
 msgstr "Todennuksessa käytettävä Azure Entra vuokralaisen tunniste"
 
@@ -911,11 +911,11 @@ msgstr ""
 "\"any\" tarkoittavat kaikkia mahdollisia verkkorajapintoja. "
 "Arvolla\"loopback\" www-palvelin kuuntelee vain paikallisia yhteyksiä."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:269
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:277
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Aseta lokitietojen säilytysaika"
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:270
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:278
 msgid "Clean up old log data"
 msgstr "Poista vanhat lokitiedot"
 
@@ -940,16 +940,16 @@ msgstr ""
 "Tämä asetus asettaa tietokannan salausavaimen. Tämä asetus voidaan antaa "
 "myös ympäristömuuttujassa {0}. Valitsin --{1} poistaa salauksen käytöstä."
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:97
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:101
 msgid "Temporary storage folder"
 msgstr "Kansio tilapäistiedotoille"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:127
+#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Palvelin käynnistyi ja kuntelee verkkorajapintaa {0} ja porttia {1}"
 
-#: Library/RestAPI/Strings.cs:123
+#: Library/RestAPI/Strings.cs:125
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -958,7 +958,7 @@ msgstr ""
 "Aloituspäivällä {0}, varmuuskopioiden välillä {1} ja sallituilla päivillä "
 "{2} ei löydy sopivaa päivää."
 
-#: Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:131
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr ""
@@ -1198,7 +1198,7 @@ msgstr ""
 msgid "Show largest prefix"
 msgstr "Näytä pisin yhteinen polku"
 
-#: Library/Main/Strings.cs:84
+#: Library/Main/Strings.cs:88
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
@@ -1206,11 +1206,11 @@ msgstr ""
 "Duplicati näyttää kaikki hakuehtoa vastaavat tiedostot etsittäessä. Käytä "
 "tätä valitsinta näyttääksesi vain osumat annetussa kansiossa."
 
-#: Library/Main/Strings.cs:85
+#: Library/Main/Strings.cs:89
 msgid "Show folder contents"
 msgstr "Näytä kansion sisältö"
 
-#: Library/Main/Strings.cs:86
+#: Library/Main/Strings.cs:90
 msgid ""
 "After a failed transmission, Duplicati will wait a short period before "
 "attempting again. This is useful if the network drops out occasionally "
@@ -1220,15 +1220,15 @@ msgstr ""
 "siirtoyritystä. Tästä on hyötyä, mikäli verkkoyhteys katkeaa satunnaisesti "
 "siirron aikana."
 
-#: Library/Main/Strings.cs:87
+#: Library/Main/Strings.cs:91
 msgid "Time to wait between retries"
 msgstr "Odotusaika uudelleenyritysten välillä."
 
-#: Library/Main/Strings.cs:91
+#: Library/Main/Strings.cs:95
 msgid "Set control files"
 msgstr "Valitse ohjaustiedostot"
 
-#: Library/Main/Strings.cs:94
+#: Library/Main/Strings.cs:98
 msgid ""
 "This option allows you to exclude files that are larger than the given "
 "value. Use this to prevent backups becoming extremely large."
@@ -1236,35 +1236,35 @@ msgstr ""
 "Tämä asetus ohittaa tiedostot, jotka ovat suurempia kuin annettu koko. Käytä"
 " tätä estääksesi varmuuskopioiden kasvamista liian suuriksi."
 
-#: Library/Main/Strings.cs:95
+#: Library/Main/Strings.cs:99
 msgid "Limit the size of files being backed up"
 msgstr "Varmuuskopioitavien tiedotojen kokoraja"
 
-#: Library/Main/Strings.cs:100
+#: Library/Main/Strings.cs:104
 msgid "Thread priority"
 msgstr "Säikeiden prioriteetti"
 
-#: Library/Main/Strings.cs:102
+#: Library/Main/Strings.cs:106
 msgid "Limit the size of the volumes"
 msgstr "Rajoita datatiedostojen kokoa"
 
-#: Library/Main/Strings.cs:110
+#: Library/Main/Strings.cs:114
 msgid "Select what module to use for compression"
 msgstr "Valitse pakkausmoduuli"
 
-#: Library/Main/Strings.cs:112
+#: Library/Main/Strings.cs:116
 msgid "Select what module to use for encryption"
 msgstr "Valitse salausmoduuli"
 
-#: Library/Main/Strings.cs:122
+#: Library/Main/Strings.cs:126
 msgid "The path where ready volumes are placed until uploaded"
 msgstr "Tilapäiskansio siirtoa odottaville datatiedostoille"
 
-#: Library/Main/Strings.cs:130
+#: Library/Main/Strings.cs:134
 msgid "Log information level"
 msgstr "Lokiin tallennettavat tiedot"
 
-#: Library/Main/Strings.cs:138
+#: Library/Main/Strings.cs:142
 msgid ""
 "If Duplicati detects that the target folder is missing, it will create it "
 "automatically. Activate this option to prevent automatic folder creation."
@@ -1272,7 +1272,7 @@ msgstr ""
 "Jos kohdekansio etäpalvelimella puuttuu, Duplicati luo sen automaattisesti. "
 "Tämä estää poistaa automaattisen kansion luomisen."
 
-#: Library/Main/Strings.cs:140
+#: Library/Main/Strings.cs:144
 msgid ""
 "Use this option to exclude faulty writers from a snapshot. This is "
 "equivalent to the -wx flag of the vshadow.exe tool, except that it only "
@@ -1286,25 +1286,25 @@ msgstr ""
 "instanssien GUID:ja. Useat GUID:it erotetaan puolipisteellä. Useimmat GUID-"
 "tyypit ovat sallittuja, mukaanlukien kaarisulkeilla tai ilman olevat."
 
-#: Library/Main/Strings.cs:141
+#: Library/Main/Strings.cs:145
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr ""
 "Puolipistein erotettu lista VSS-kirjoittajista (vain Windows-järjestelmillä)"
 
-#: Library/Main/Strings.cs:151
+#: Library/Main/Strings.cs:157
 msgid "Verify uploads by listing contents"
 msgstr "Tarkista siirtojen onnistuminen listaamalla etäpalvelimen tiedostot"
 
-#: Library/Main/Strings.cs:153
+#: Library/Main/Strings.cs:159
 msgid "Upload files synchronously"
 msgstr "Lataa tiedostot varmuuskopioinnin aikana"
 
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:161
 msgid "Do not re-use connections"
 msgstr "Älä uudelleenkäytä yhteyttä."
 
-#: Library/Main/Strings.cs:156
+#: Library/Main/Strings.cs:162
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
@@ -1314,27 +1314,27 @@ msgstr ""
 "vain uudelleenyritysten lukumäärän. Tällä valitsimella Duplicati tulostaa "
 "virheilmoituksen jokaisella yrityksellä."
 
-#: Library/Main/Strings.cs:157
+#: Library/Main/Strings.cs:163
 msgid "Show error messages when a retry is performed"
 msgstr "Näytä virheilmoitus uudelleenyrityksen jälkeen"
 
-#: Library/Main/Strings.cs:159
+#: Library/Main/Strings.cs:165
 msgid "Upload empty backup files"
 msgstr "Lataa tyhjätkin varmuuskopiot"
 
-#: Library/Main/Strings.cs:167
+#: Library/Main/Strings.cs:173
 msgid "Symlink handling"
 msgstr "Symbolisten linkkien tallentaminen"
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:175
 msgid "Hardlink handling"
 msgstr "Kovien linkkien käsittely"
 
-#: Library/Main/Strings.cs:171
+#: Library/Main/Strings.cs:177
 msgid "Exclude files by attribute"
 msgstr "Ohita tiedostoja ominaisuuksien perusteella"
 
-#: Library/Main/Strings.cs:172
+#: Library/Main/Strings.cs:178
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -1346,19 +1346,19 @@ msgstr ""
 "vedoksen tiedostojen lukemiseen. Tämä voi nopeuttaa varmuuskopioita "
 "tietokoneissa, joissa on Windows XP."
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:179
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "Liitä vedokset levynä (vain Windowsilla)"
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:181
 msgid "Name of the backup"
 msgstr "Varmuuskopion nimi"
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:191
 msgid "Manage non-compressible file extensions"
 msgstr "Hallitse pakkautumattomien tiedostojen listaa"
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:192
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -1370,32 +1370,32 @@ msgstr ""
 " lohkokokoa käytettäessä lohkolistat vievät enemmän tilaa. Huomioi, että "
 "tätä arvoa ei voi muuttaa etätiedostojen luonnin jälkeen."
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:193
 msgid "Block size used in hashing"
 msgstr "Tiivisteen laskennassa käytettävä lohkon koko"
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:195
 msgid "List of files to examine for changes"
 msgstr "Lista mahdollisesti muuttuneista tiedostoista"
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:197
 msgid "Path to the local state database"
 msgstr "Polku paikallisen tilan sisältävään tietokantaan"
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:199
 msgid "List of deleted files"
 msgstr "Lista poistetuista tiedostoista"
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:201
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr ""
 "Pienennä muistinkäyttöä poistamalla muistissa tapahtuva vertailu käytöstä"
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:204
 msgid "Do not query backend at startup"
 msgstr "Älä listaa tiedostoja etäpalvelimella aloitettaessa"
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:205
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -1409,7 +1409,7 @@ msgstr ""
 "hakemistotiedostot vievät etäpalvelimella enemmän tilaa, jota ei välttämättä"
 " koskaan tarvita."
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:207
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -1422,19 +1422,19 @@ msgstr ""
 "datan osuus prosentteina. Arvoa sovelletaan kuhunkin lohkotiedostoon ja koko"
 " tallennettuun dataan."
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:208
 msgid "The maximum wasted space in percent"
 msgstr "Tarpeettoman datan osuus prosentteina"
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:212
 msgid "The hash algorithm used on blocks"
 msgstr "Lohkojen tarkastussummien laskemiseen käytettävä algoritmi"
 
-#: Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:214
 msgid "The hash algorithm used on files"
 msgstr "Tiedostojen tarkastussummien laskemiseen käytettävä algoritmi"
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:215
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -1447,11 +1447,11 @@ msgstr ""
 "valitsin poistaa automaattisen tiivistämisen käytöstä. Tällöin varmuuskopio "
 "tiivistetään vain komennolla \"compact\"."
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:216
 msgid "Disable automatic compacting"
 msgstr "Poista automaattinen tiivistäminen käytöstä"
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:217
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -1462,11 +1462,11 @@ msgstr ""
 "oletuksena alle 20 prosenttia jätetään tiivistämättä. Tämä vähentää "
 "siirrettävän datan määrää."
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:218
 msgid "Volume size threshold"
 msgstr "Datatiedostojen muutosten alaraja"
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:219
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
@@ -1475,11 +1475,11 @@ msgstr ""
 "Tämä asetus määrää kuinka paljon etäpalvelimella saa olla pieniä tiedostoja "
 "ennen kuin ne yhdistetään yhdeksi lohkotiedostoksi."
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:220
 msgid "Maximum number of small volumes"
 msgstr "Pienten tiedostojen määrä"
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:221
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
@@ -1489,37 +1489,37 @@ msgstr ""
 "omalla koneella. Tämä on hidasta, mutta voi vähentää etäpalvelimelta "
 "ladattavan datan määrää."
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:222
 msgid "Use local file data when restoring"
 msgstr "Käytä paikallisia tiedostoja apuna palautettaessa"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:227
 msgid "Keep a number of versions"
 msgstr "Säilytettävien versioiden lukumäärä"
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:228
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr "Aseta ajanjakso, jolta varmuuskopiot säilytetään."
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:229
 msgid "Keep all versions within a timespan"
 msgstr "Säilytä varmuuskopiot tältä ajanjaksolta"
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:234
 msgid "Use this option to continue even if some source entries are missing."
 msgstr ""
 "Käytä tätä valitsinta jatkaaksesi vaikka jotkut varmuuskopioitavat kohteet "
 "puuttuisivatkin."
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:235
 msgid "Ignore missing source elements"
 msgstr "Ohita puuttuvat lähteet"
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:239
 msgid "Overwrite files when restoring"
 msgstr "Ylikirjoita tiedostostot palauttaessasi"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:240
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
@@ -1527,11 +1527,11 @@ msgstr ""
 "Tällä valitsimella Duplicati tulostaa enmmän tilatietoja. Yleensä tämä "
 "tarkoittaa riviä kutakin käsiteltyä tiedostoa kohden."
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:241
 msgid "Output more progress information"
 msgstr "Tulosta enmmän tilatietoja"
 
-#: Library/Main/Strings.cs:237
+#: Library/Main/Strings.cs:245
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -1543,15 +1543,15 @@ msgstr ""
 " ja SHA256-tarkastussummat. Tämän avulla varmuskopion eheyden voi tarkastaa "
 "etäpalvelimella."
 
-#: Library/Main/Strings.cs:238
+#: Library/Main/Strings.cs:246
 msgid "Determine if verification files are uploaded"
 msgstr "Lataa varmistustiedostot etäpalvelimelle"
 
-#: Library/Main/Strings.cs:240
+#: Library/Main/Strings.cs:248
 msgid "The number of samples to test after a backup"
 msgstr "Varmuuskopion jälkeen tarkastettavien tiedostojen lukumäärä"
 
-#: Library/Main/Strings.cs:247
+#: Library/Main/Strings.cs:255
 msgid ""
 "Use this size to control how many bytes are read from a file before "
 "processing."
@@ -1559,19 +1559,19 @@ msgstr ""
 "Käytä tätä kokoa ohjaamaan montako tavua tiedostosta luetaan ennen "
 "käsittelyä."
 
-#: Library/Main/Strings.cs:248
+#: Library/Main/Strings.cs:256
 msgid "Size of the file read buffer"
 msgstr "Lukupuskurin koko"
 
-#: Library/Main/Strings.cs:251
+#: Library/Main/Strings.cs:259
 msgid "Allow the passphrase to change"
 msgstr "Salli salauslausekkeen vaihtaminen"
 
-#: Library/Main/Strings.cs:253
+#: Library/Main/Strings.cs:261
 msgid "List only filesets"
 msgstr "Listaa vain eri versiot varmuuskopiossa"
 
-#: Library/Main/Strings.cs:255
+#: Library/Main/Strings.cs:263
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -1582,7 +1582,7 @@ msgstr ""
 "nopeuttaa varmuuskopiointia ja tiedostojen palauttamista, mutta ei vaikuta "
 "varmuuskopioiden kokoon merkittävästi."
 
-#: Library/Main/Strings.cs:257
+#: Library/Main/Strings.cs:265
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
@@ -1591,11 +1591,11 @@ msgstr ""
 "tiedostojen lukemisen. Tällä valitsimella Duplicati palauttaa myös "
 "tiedostojen oikeudet."
 
-#: Library/Main/Strings.cs:258
+#: Library/Main/Strings.cs:266
 msgid "Restore file permissions"
 msgstr "Palauta tiedostojen oikeudet"
 
-#: Library/Main/Strings.cs:259
+#: Library/Main/Strings.cs:267
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -1606,11 +1606,11 @@ msgstr ""
 "tarkastussumman laskemisen käytöstä. Tällöin palautettujen tiedostojen "
 "eheyttä ei tarkasteta."
 
-#: Library/Main/Strings.cs:260
+#: Library/Main/Strings.cs:268
 msgid "Skip restored file check"
 msgstr "Älä tarkasta palautettuja tiedostoja."
 
-#: Library/Main/Strings.cs:261
+#: Library/Main/Strings.cs:269
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -1621,11 +1621,11 @@ msgstr ""
 "paikallisen datan hyödyntämisen käytöstä ja käyttää vain etäpalvelimella "
 "olevaa dataa."
 
-#: Library/Main/Strings.cs:262
+#: Library/Main/Strings.cs:270
 msgid "Do not use local data"
 msgstr "Älä käytä paikallista dataa"
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:275
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
@@ -1633,11 +1633,11 @@ msgstr ""
 "Tällä valitsimella Duplicati tarkastaa koko palautetun tiedoston lisäksi "
 "kunkin lohkon tarkastustsumman."
 
-#: Library/Main/Strings.cs:268
+#: Library/Main/Strings.cs:276
 msgid "Check block hashes"
 msgstr "Tarkasta lohkojen tarkastussummat"
 
-#: Library/Main/Strings.cs:271
+#: Library/Main/Strings.cs:279
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -1649,23 +1649,23 @@ msgstr ""
 "nopeampaa, mutta sen tiedot eivät riitä tiedostojen palauttamiseen. Voit "
 "käyttää sitä palautettavien tiedostojen etsimiseen."
 
-#: Library/Main/Strings.cs:272
+#: Library/Main/Strings.cs:280
 msgid "Repair database with paths"
 msgstr "Korjaa tietokanta poluista"
 
-#: Library/Main/Strings.cs:276
+#: Library/Main/Strings.cs:284
 msgid "Force the locale setting"
 msgstr "Pakota Duplicati käyttämään tiettyjä lokaaliasetuksia"
 
-#: Library/Main/Strings.cs:280
+#: Library/Main/Strings.cs:288
 msgid "Handle file communication with backend using threaded pipes"
 msgstr "Kommunikoi taustamoduulin kanssa käyttäen säieturvallisia putkia"
 
-#: Library/Main/Strings.cs:296
+#: Library/Main/Strings.cs:304
 msgid "Allow removing all filesets"
 msgstr "Salli kaikkien tiedostojen poisto"
 
-#: Library/Main/Strings.cs:386
+#: Library/Main/Strings.cs:404
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -1673,21 +1673,21 @@ msgid ""
 msgstr ""
 "Salauskirjasto ei tue uudelleenkäytettäviä muunnoksia tiivistefunktiolle {0}"
 
-#: Library/Main/Strings.cs:387
+#: Library/Main/Strings.cs:405
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Salauskirjasto ei tue tiivistefunktiota {0}"
 
-#: Library/Main/Strings.cs:388
+#: Library/Main/Strings.cs:406
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Olemassaolevan varmuuskopion salauslauseketta ei voi vaihtaa"
 
-#: Library/Main/Strings.cs:389
+#: Library/Main/Strings.cs:407
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Vedoksen luominen epäonnistui: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:29
+#: Library/Modules/Builtin/Strings.cs:30
 msgid ""
 "This module will ask the user for an encryption password on the command line"
 " unless encryption is disabled or the password is supplied by other means"
@@ -1696,31 +1696,31 @@ msgstr ""
 "salausta ei ole poistettu käytöstä tai salasanaa ei ole annettu muulla "
 "tavoin."
 
-#: Library/Modules/Builtin/Strings.cs:30
+#: Library/Modules/Builtin/Strings.cs:31
 msgid "Password prompt"
 msgstr "Salauslause"
 
-#: Library/Modules/Builtin/Strings.cs:31
+#: Library/Modules/Builtin/Strings.cs:32
 msgid "Confirm encryption passphrase"
 msgstr "Vahvista salauslauseke"
 
-#: Library/Modules/Builtin/Strings.cs:32
+#: Library/Modules/Builtin/Strings.cs:33
 msgid "Empty passphrases are not allowed"
 msgstr "Tyhjä salauslauseke ei ole sallittu"
 
-#: Library/Modules/Builtin/Strings.cs:33
+#: Library/Modules/Builtin/Strings.cs:34
 msgid "Enter encryption passphrase"
 msgstr "Anna salauslauseke"
 
-#: Library/Modules/Builtin/Strings.cs:34
+#: Library/Modules/Builtin/Strings.cs:35
 msgid "The passphrases do not match"
 msgstr "Salauslausekkeet eivät ole samat"
 
-#: Library/Modules/Builtin/Strings.cs:36
+#: Library/Modules/Builtin/Strings.cs:37
 msgid "Read passphrase from STDIN"
 msgstr "Lue salauslauseke STDIN:stä"
 
-#: Library/Modules/Builtin/Strings.cs:45
+#: Library/Modules/Builtin/Strings.cs:46
 msgid ""
 "This module works internaly to parse source parameters to backup Hyper-V "
 "virtual machines"
@@ -1728,11 +1728,11 @@ msgstr ""
 "Tämä moduuli jäsentää parametrit Hyper-V virtuaalikoneiden "
 "varmuuskopioimista varten"
 
-#: Library/Modules/Builtin/Strings.cs:46
+#: Library/Modules/Builtin/Strings.cs:47
 msgid "Configure Hyper-V module"
 msgstr "Hyper-V-moduuin asetukset"
 
-#: Library/Modules/Builtin/Strings.cs:52
+#: Library/Modules/Builtin/Strings.cs:53
 msgid ""
 "This module works internaly to parse source parameters to backup Microsoft "
 "SQL Server databases"
@@ -1740,82 +1740,82 @@ msgstr ""
 "Tämä moduuli jäsentää parametrit Microsoft SQL-palvelimen varmuuskopioimista"
 " varten"
 
-#: Library/Modules/Builtin/Strings.cs:53
+#: Library/Modules/Builtin/Strings.cs:54
 msgid "Configure Microsoft SQL Server module"
 msgstr "Microsoft SQL-palvelinmoduulin asetukset"
 
-#: Library/Modules/Builtin/Strings.cs:58
+#: Library/Modules/Builtin/Strings.cs:112
 msgid "Run script"
 msgstr "Suorita skripti"
 
-#: Library/Modules/Builtin/Strings.cs:60
+#: Library/Modules/Builtin/Strings.cs:114
 msgid "Run a script on exit"
 msgstr "Suorita skripti lopetettaessa"
 
-#: Library/Modules/Builtin/Strings.cs:61
+#: Library/Modules/Builtin/Strings.cs:115
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "Skriptin \"{0}\" paluuarvo oli {1}"
 
-#: Library/Modules/Builtin/Strings.cs:64
+#: Library/Modules/Builtin/Strings.cs:118
 msgid "Run a required script on startup"
 msgstr "Suorita pakollinen skripti ennen toimenpidettä"
 
-#: Library/Modules/Builtin/Strings.cs:67
+#: Library/Modules/Builtin/Strings.cs:121
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
 msgstr "Virhe suoritettaessa skriptiä \"{0}\": {1}"
 
-#: Library/Modules/Builtin/Strings.cs:68
+#: Library/Modules/Builtin/Strings.cs:122
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
 msgstr "Skripti \"{0}\" aikakatkaistiin"
 
-#: Library/Modules/Builtin/Strings.cs:70
+#: Library/Modules/Builtin/Strings.cs:124
 msgid "Run a script on startup"
 msgstr "Suorita skripti ennen toimenpidettä"
 
-#: Library/Modules/Builtin/Strings.cs:71
+#: Library/Modules/Builtin/Strings.cs:125
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Skripti \"{0}\" antoi virheilmoituksen: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:79
+#: Library/Modules/Builtin/Strings.cs:133
 msgid "This module can send email after an operation completes"
 msgstr "Tämä moduuli lähettää sähköpostin operaation jälkeen."
 
-#: Library/Modules/Builtin/Strings.cs:80
+#: Library/Modules/Builtin/Strings.cs:134
 msgid "Send mail"
 msgstr "Lähetä sähköposti"
 
-#: Library/Modules/Builtin/Strings.cs:91
+#: Library/Modules/Builtin/Strings.cs:145
 msgid "The message body"
 msgstr "Viestin runko"
 
-#: Library/Modules/Builtin/Strings.cs:93
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "SMTP Password"
 msgstr "SMTP-palvelimen salasana"
 
-#: Library/Modules/Builtin/Strings.cs:98
+#: Library/Modules/Builtin/Strings.cs:152
 msgid "Email recipient(s)"
 msgstr "Sähköpostin vastaanottajat"
 
-#: Library/Modules/Builtin/Strings.cs:105
+#: Library/Modules/Builtin/Strings.cs:159
 msgid "Email sender"
 msgstr "Sähköpostin lähettäjä"
 
-#: Library/Modules/Builtin/Strings.cs:108
-#: Library/Modules/Builtin/Strings.cs:148
-#: Library/Modules/Builtin/Strings.cs:182
-#: Library/Modules/Builtin/Strings.cs:211
+#: Library/Modules/Builtin/Strings.cs:162
+#: Library/Modules/Builtin/Strings.cs:202
+#: Library/Modules/Builtin/Strings.cs:236
+#: Library/Modules/Builtin/Strings.cs:265
 msgid "The messages to send"
 msgstr "Lähetettävä viesti"
 
-#: Library/Modules/Builtin/Strings.cs:113
+#: Library/Modules/Builtin/Strings.cs:167
 msgid "SMTP Url"
 msgstr "SMTP palvelimen osoite"
 
-#: Library/Modules/Builtin/Strings.cs:114
+#: Library/Modules/Builtin/Strings.cs:168
 #, csharp-format
 msgid ""
 "This setting supplies the email subject. Values are replaced as described in"
@@ -1824,101 +1824,88 @@ msgstr ""
 "Voit antaa tällä valitsimela sähköpostin otsakkeen. Muuttujat korvataan, "
 "kuten valitsimen --{0} ohjeessa on selitetty."
 
-#: Library/Modules/Builtin/Strings.cs:115
+#: Library/Modules/Builtin/Strings.cs:169
 msgid "The email subject"
 msgstr "Sähköpostin otsake"
 
-#: Library/Modules/Builtin/Strings.cs:117
+#: Library/Modules/Builtin/Strings.cs:171
 msgid "SMTP Username"
 msgstr "Käyttäjätunnus SMTP-palvelimelle"
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:172
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr "Koko SMTP-neuvottelu: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:119
+#: Library/Modules/Builtin/Strings.cs:173
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 "Sähköpostin lähetys palvelimen {0} kautta epäonnistui. Virheilmoitus oli: "
 "{1} Yritetään uudelleen palvelimen {2} kautta."
 
-#: Library/Modules/Builtin/Strings.cs:120
+#: Library/Modules/Builtin/Strings.cs:174
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "Sähköposti lähetettiin onnistuneesti käyttäen palvelinta {0}"
 
-#: Library/Modules/Builtin/Strings.cs:128
+#: Library/Modules/Builtin/Strings.cs:182
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
 "Tämä moduuli mahdollistaa raporttien lähettämisen XMPP-palvelun kautta"
 
-#: Library/Modules/Builtin/Strings.cs:129
+#: Library/Modules/Builtin/Strings.cs:183
 msgid "XMPP report module"
 msgstr "Moduuli raporttien lähettämiseksi XMPP-palvelun kautta"
 
-#: Library/Modules/Builtin/Strings.cs:131
+#: Library/Modules/Builtin/Strings.cs:185
 msgid "XMPP recipient email"
 msgstr "XMPP-vastaanottajan osoite"
 
-#: Library/Modules/Builtin/Strings.cs:141
-#: Library/Modules/Builtin/Strings.cs:173
-#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:195
+#: Library/Modules/Builtin/Strings.cs:227
+#: Library/Modules/Builtin/Strings.cs:258
 msgid "The message template"
 msgstr "Viestin malli"
 
-#: Library/Modules/Builtin/Strings.cs:143
+#: Library/Modules/Builtin/Strings.cs:197
 msgid "The XMPP username"
 msgstr "XMPP-käyttäjätunus"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP password"
 msgstr "XMPP-palvelun salasana"
 
-#: Library/Modules/Builtin/Strings.cs:146
-#: Library/Modules/Builtin/Strings.cs:180
-#: Library/Modules/Builtin/Strings.cs:209
-#, csharp-format
-msgid ""
-"You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
-"You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send a message."
-msgstr ""
-"Voit valita yhden seuraavista: \"{0}\", \"{1}\", \"{2}\", \"{3}\". Voit "
-"valita useamman vaihtoehdon erottamalla ne pilkulla toisistaan, esim. "
-"\"{0},{1}\". Erityinen arvo \"{4}\" on sama kuin \"{0},{1},{2},{3}\", ja sen"
-" valitsemalla jokaisesta varmuuskopiontioperaatiosta lähetetään viesti."
-
-#: Library/Modules/Builtin/Strings.cs:150
-#: Library/Modules/Builtin/Strings.cs:184
-#: Library/Modules/Builtin/Strings.cs:213
+#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:238
+#: Library/Modules/Builtin/Strings.cs:267
 msgid "Send messages for all operations"
 msgstr "Lähetä viesti kaikkien toimenpiteiden jälkeen"
 
-#: Library/Modules/Builtin/Strings.cs:151
+#: Library/Modules/Builtin/Strings.cs:205
 msgid "Timeout occurred while logging in to jabber server"
 msgstr "kirjautuminen Jabber-palvelimelle aikakatkaistiin "
 
-#: Library/Modules/Builtin/Strings.cs:191
+#: Library/Modules/Builtin/Strings.cs:245
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
 "Tämä moduuli mahdollistaa tilaraporttien lähetyksen HTTP -viestien avulla."
 
-#: Library/Modules/Builtin/Strings.cs:192
+#: Library/Modules/Builtin/Strings.cs:246
 msgid "HTTP report module"
 msgstr "HTTP -raportointimodulli"
 
-#: Library/Modules/Builtin/Strings.cs:221 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Hyväksy kaiki ssl-sertifikaatit"
 
-#: Library/Modules/Builtin/Strings.cs:223 Library/Utility/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:86
 msgid "Optionally accept a known SSL certificate"
 msgstr "Hyväksy tietty SSL-sertifikaatti"
 
-#: Library/Modules/Builtin/Strings.cs:232
+#: Library/Modules/Builtin/Strings.cs:286
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "Viestin lähetys epäonnistui: {0}"

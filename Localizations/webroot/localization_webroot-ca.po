@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Marc Riera <marcriera@softcatala.org>, 2024
 # 

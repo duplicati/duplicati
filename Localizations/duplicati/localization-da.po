@@ -19,7 +19,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-20 13:45+0100\n"
+"POT-Creation-Date: 2026-02-18 13:48+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: jhertel <jesper.hertel@gmail.com>, 2025\n"
 "Language-Team: Danish (https://app.transifex.com/duplicati/teams/67655/da/)\n"
@@ -198,7 +198,7 @@ msgstr "Annulleret"
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
 #: Library/Backend/Jottacloud/Jottacloud.cs:319
-#: Library/Backend/SMB/SMBShareConnection.cs:361
+#: Library/Backend/SMB/SMBShareConnection.cs:428
 msgid "The requested file does not exist"
 msgstr "Den ønskede fil eksisterer ikke"
 
@@ -399,7 +399,7 @@ msgstr "Tilføj forsinkelse efter upload af fil"
 msgid "Google Cloud Storage"
 msgstr "Google Cloud Storage"
 
-#: Library/Backend/GoogleServices/Strings.cs:31
+#: Library/Backend/GoogleServices/Strings.cs:32
 #, csharp-format
 msgid ""
 "This option is only used when creating new buckets. Use this option to change what region the data is stored in. Charges vary with bucket location. Known bucket locations:\n"
@@ -408,7 +408,7 @@ msgstr ""
 "Denne indstilling bruges kun, når du opretter nye buckets. Brug denne mulighed til at ændre hvilken region dataene er gemt i. Udgifter varierer med bucket lokationer. Kendte bucket lokationer:\n"
 "{0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:34
+#: Library/Backend/GoogleServices/Strings.cs:35
 #, csharp-format
 msgid ""
 "This option is only used when creating new buckets. Use this option to change what storage type the bucket has. Charges and functionality vary with bucket storage class. Known storage classes:\n"
@@ -417,17 +417,17 @@ msgstr ""
 "Denne indstilling bruges kun, når du opretter nye bucket's. Brug denne indstilling til at ændre hvilken lagertype bucket'en har. Udgifter og funktionalitet varierer med bucket lagerklasse. Kendte lagerklasser:\n"
 "{0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:48
+#: Library/Backend/GoogleServices/Strings.cs:51
 msgid "Google Drive"
 msgstr "Google Drive"
 
-#: Library/Backend/GoogleServices/Strings.cs:50
+#: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Fil ikke fundet: {0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:52
+#: Library/Backend/GoogleServices/Strings.cs:55
 msgid "Team drive ID"
 msgstr "Team drev ID"
 
@@ -849,11 +849,11 @@ msgstr ""
 "Hostnavne der er accepteret, separeret med semikolon. Hvis nogle af "
 "hostnavne er \"*\" vil alle hostnavne være tilladt."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:269
+#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:277
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Indstil den tid, hvorefter logdata vil blive fjernet fra databasen."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:270
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:278
 msgid "Clean up old log data"
 msgstr "Ryd gammel logdata"
 
@@ -880,16 +880,16 @@ msgstr ""
 "miljøvariablen {0}. Brug indstillingen --{1} for at deaktivere "
 "obfuskeringen."
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:97
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:101
 msgid "Temporary storage folder"
 msgstr "Midlertidig mappe"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:127
+#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Serveren er startet og lytter på {0}, port {1}"
 
-#: Library/RestAPI/Strings.cs:123
+#: Library/RestAPI/Strings.cs:125
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -898,7 +898,7 @@ msgstr ""
 "Kan ikke finde en gyldig dato, givet startdatoen {0}, gentagelsesintervallet"
 " {1} og de tilladte dage {2}"
 
-#: Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:131
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Kunne ikke åbne et socket til at lytte på, forsøgte disse porte: {0}"
@@ -943,267 +943,256 @@ msgstr "Kodeord brugt til kryptering af backup"
 msgid "Show all versions"
 msgstr "Vis alle versioner"
 
-#: Library/Main/Strings.cs:85
+#: Library/Main/Strings.cs:89
 msgid "Show folder contents"
 msgstr "Vis mappeindhold"
 
-#: Library/Main/Strings.cs:87
+#: Library/Main/Strings.cs:91
 msgid "Time to wait between retries"
 msgstr "Tid til at vente mellem forsøg"
 
-#: Library/Main/Strings.cs:100
+#: Library/Main/Strings.cs:104
 msgid "Thread priority"
 msgstr "Tråd prioritet"
 
-#: Library/Main/Strings.cs:110
+#: Library/Main/Strings.cs:114
 msgid "Select what module to use for compression"
 msgstr "Vælg hvilket modul, der skal bruges til komprimering"
 
-#: Library/Main/Strings.cs:112
+#: Library/Main/Strings.cs:116
 msgid "Select what module to use for encryption"
 msgstr "Vælg det modul, der skal bruges til kryptering"
 
-#: Library/Main/Strings.cs:124
+#: Library/Main/Strings.cs:128
 msgid "The number of concurrent uploads allowed"
 msgstr "Antal samtidige uploads tilladt"
 
-#: Library/Main/Strings.cs:128
+#: Library/Main/Strings.cs:132
 msgid "Log internal information to a file"
 msgstr "Log interne oplysninger til en fil"
 
-#: Library/Main/Strings.cs:130
+#: Library/Main/Strings.cs:134
 msgid "Log information level"
 msgstr "Log informationsniveau"
 
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:161
 msgid "Do not re-use connections"
 msgstr "Genbrug ikke forbindelser"
 
-#: Library/Main/Strings.cs:159
+#: Library/Main/Strings.cs:165
 msgid "Upload empty backup files"
 msgstr "Upload tomme backup filer"
 
-#: Library/Main/Strings.cs:167
+#: Library/Main/Strings.cs:173
 msgid "Symlink handling"
 msgstr "Symlink håndtering"
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:175
 msgid "Hardlink handling"
 msgstr "Hardlink håndtering"
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:181
 msgid "Name of the backup"
 msgstr "Navn på backupen"
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:183
 msgid "Backup ID"
 msgstr "Backup ID"
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:191
 msgid "Manage non-compressible file extensions"
 msgstr "Administrer ikke-komprimerbare filtyper"
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:195
 msgid "List of files to examine for changes"
 msgstr "Liste over filer, der skal undersøges for ændringer"
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:197
 msgid "Path to the local state database"
 msgstr "Sti til den lokale tilstandsdatabase"
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:199
 msgid "List of deleted files"
 msgstr "Liste over slettede filer"
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:212
 msgid "The hash algorithm used on blocks"
 msgstr "Hash-algoritme, der anvendes til blokke"
 
-#: Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:214
 msgid "The hash algorithm used on files"
 msgstr "Hashalgoritmen der bruges til filer"
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:218
 msgid "Volume size threshold"
 msgstr "Volumenstørrelsestærskel"
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:222
 msgid "Use local file data when restoring"
 msgstr "Brug lokale fildata, ved gendannelse"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:227
 msgid "Keep a number of versions"
 msgstr "Antal versioner, der skal beholdes"
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:239
 msgid "Overwrite files when restoring"
 msgstr "Overskriv filer ved genoprettelse"
 
-#: Library/Main/Strings.cs:389
+#: Library/Main/Strings.cs:407
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Kunne ikke oprette snapshot: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:31
+#: Library/Modules/Builtin/Strings.cs:32
 msgid "Confirm encryption passphrase"
 msgstr "Bekræft krypteringskoden"
 
-#: Library/Modules/Builtin/Strings.cs:33
+#: Library/Modules/Builtin/Strings.cs:34
 msgid "Enter encryption passphrase"
 msgstr "Indtast krypteringssætning"
 
-#: Library/Modules/Builtin/Strings.cs:34
+#: Library/Modules/Builtin/Strings.cs:35
 msgid "The passphrases do not match"
 msgstr "Kodeordene stemmer ikke overens"
 
-#: Library/Modules/Builtin/Strings.cs:58
+#: Library/Modules/Builtin/Strings.cs:112
 msgid "Run script"
 msgstr "Kør script"
 
-#: Library/Modules/Builtin/Strings.cs:60
+#: Library/Modules/Builtin/Strings.cs:114
 msgid "Run a script on exit"
 msgstr "Kør et script når handling udført"
 
-#: Library/Modules/Builtin/Strings.cs:61
+#: Library/Modules/Builtin/Strings.cs:115
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "Scriptet \"{0}\" returneres med kode {1}"
 
-#: Library/Modules/Builtin/Strings.cs:64
+#: Library/Modules/Builtin/Strings.cs:118
 msgid "Run a required script on startup"
 msgstr "Kør et påkrævet script ved opstart"
 
-#: Library/Modules/Builtin/Strings.cs:70
+#: Library/Modules/Builtin/Strings.cs:124
 msgid "Run a script on startup"
 msgstr "Kør et script ved opstart"
 
-#: Library/Modules/Builtin/Strings.cs:71
+#: Library/Modules/Builtin/Strings.cs:125
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Skriptet \"{0}\" rapporterede fejlmeddelelser: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:80
+#: Library/Modules/Builtin/Strings.cs:134
 msgid "Send mail"
 msgstr "Send mail"
 
-#: Library/Modules/Builtin/Strings.cs:91
+#: Library/Modules/Builtin/Strings.cs:145
 msgid "The message body"
 msgstr "Meddelelsesteksten"
 
-#: Library/Modules/Builtin/Strings.cs:93
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "SMTP Password"
 msgstr "SMTP Password"
 
-#: Library/Modules/Builtin/Strings.cs:98
+#: Library/Modules/Builtin/Strings.cs:152
 msgid "Email recipient(s)"
 msgstr "E-mail-modtager(e)"
 
-#: Library/Modules/Builtin/Strings.cs:105
+#: Library/Modules/Builtin/Strings.cs:159
 msgid "Email sender"
 msgstr "E-mail afsender"
 
-#: Library/Modules/Builtin/Strings.cs:108
-#: Library/Modules/Builtin/Strings.cs:148
-#: Library/Modules/Builtin/Strings.cs:182
-#: Library/Modules/Builtin/Strings.cs:211
+#: Library/Modules/Builtin/Strings.cs:162
+#: Library/Modules/Builtin/Strings.cs:202
+#: Library/Modules/Builtin/Strings.cs:236
+#: Library/Modules/Builtin/Strings.cs:265
 msgid "The messages to send"
 msgstr "Beskeder, der skal sendes"
 
-#: Library/Modules/Builtin/Strings.cs:113
+#: Library/Modules/Builtin/Strings.cs:167
 msgid "SMTP Url"
 msgstr "SMTP Url"
 
-#: Library/Modules/Builtin/Strings.cs:115
+#: Library/Modules/Builtin/Strings.cs:169
 msgid "The email subject"
 msgstr "E-mail emnet"
 
-#: Library/Modules/Builtin/Strings.cs:117
+#: Library/Modules/Builtin/Strings.cs:171
 msgid "SMTP Username"
 msgstr "SMTP brugernavn"
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:172
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr "Hele SMTP-kommunikationen: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:119
+#: Library/Modules/Builtin/Strings.cs:173
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 "Kunne ikke sende e-mail med server: {0}, meddelelse: {1}, forsøger igen med "
 "{2}"
 
-#: Library/Modules/Builtin/Strings.cs:120
+#: Library/Modules/Builtin/Strings.cs:174
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "Email sendt med succes ved hjælp af server: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:128
+#: Library/Modules/Builtin/Strings.cs:182
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
 "Dette modul giver support til afsendelse af statusrapporter via XMPP-"
 "meddelelser"
 
-#: Library/Modules/Builtin/Strings.cs:129
+#: Library/Modules/Builtin/Strings.cs:183
 msgid "XMPP report module"
 msgstr "XMPP rapport modul"
 
-#: Library/Modules/Builtin/Strings.cs:131
+#: Library/Modules/Builtin/Strings.cs:185
 msgid "XMPP recipient email"
 msgstr "XMPP modtager email"
 
-#: Library/Modules/Builtin/Strings.cs:141
-#: Library/Modules/Builtin/Strings.cs:173
-#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:195
+#: Library/Modules/Builtin/Strings.cs:227
+#: Library/Modules/Builtin/Strings.cs:258
 msgid "The message template"
 msgstr "Meddelelsesskabelonen"
 
-#: Library/Modules/Builtin/Strings.cs:143
+#: Library/Modules/Builtin/Strings.cs:197
 msgid "The XMPP username"
 msgstr "XMPP brugernavnet"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP password"
 msgstr "XMPP-adgangskoden"
 
-#: Library/Modules/Builtin/Strings.cs:146
-#: Library/Modules/Builtin/Strings.cs:180
-#: Library/Modules/Builtin/Strings.cs:209
-#, csharp-format
-msgid ""
-"You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
-"You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send a message."
-msgstr ""
-"Du kan angive én af \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
-"Du kan angive flere muligheder adskilt med komma f.eks. \"{0},{1}\". Specialværdien \"{4}\" er en forenkling af \"{0},{1},{2},{3}\" og vil medføre at alle backup aktiviteter sender en besked."
-
-#: Library/Modules/Builtin/Strings.cs:150
-#: Library/Modules/Builtin/Strings.cs:184
-#: Library/Modules/Builtin/Strings.cs:213
+#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:238
+#: Library/Modules/Builtin/Strings.cs:267
 msgid "Send messages for all operations"
 msgstr "Send meddelelser fra alle operationer"
 
-#: Library/Modules/Builtin/Strings.cs:151
+#: Library/Modules/Builtin/Strings.cs:205
 msgid "Timeout occurred while logging in to jabber server"
 msgstr "Timeout opstod, mens du loggede ind på jabber-serveren"
 
-#: Library/Modules/Builtin/Strings.cs:191
+#: Library/Modules/Builtin/Strings.cs:245
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
 "Dette modul giver support til afsendelse af statusrapporter via HTTP-"
 "meddelelser"
 
-#: Library/Modules/Builtin/Strings.cs:192
+#: Library/Modules/Builtin/Strings.cs:246
 msgid "HTTP report module"
 msgstr "HTTP rapport modul"
 
-#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:260
 msgid "The name of the parameter to send the message as"
 msgstr "Navnet på parameteren som beskeden bliver sendt som"
 
-#: Library/Modules/Builtin/Strings.cs:221 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Accepter enhvert servercertifikat"
 

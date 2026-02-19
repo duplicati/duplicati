@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Jürg Rast <juergr@gmail.com>, 2016
 # F M, 2016
@@ -24,11 +23,12 @@
 # agrajaghh <agrajaghh@gmail.com>, 2024
 # RiseT, 2024
 # ghChrisHe, 2025
+# Michael, 2026
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: ghChrisHe, 2025\n"
+"Last-Translator: Michael, 2026\n"
 "Language-Team: German (https://app.transifex.com/duplicati/teams/67655/de/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -3395,7 +3395,7 @@ msgstr "Bestehende Datenbank nutzen?"
 
 #: index.html:263
 msgid "Use new UI"
-msgstr "Neues UI benutzen"
+msgstr "Neue Benutzeroberfläche benutzen"
 
 #: templates/backends/filejump.html:31
 msgid "Use username and password authentication"
@@ -3805,6 +3805,14 @@ msgstr "cos_secret_key"
 #: templates/advancedoptionseditor.html:36
 msgid "custom"
 msgstr "benutzerdefiniert"
+
+#: templates/backup-result/entryline.html:4
+msgid "failed"
+msgstr "fehlgeschlagen"
+
+#: templates/backends/rclone.html:3
+msgid "local repository, leave empty for local"
+msgstr "Lokales Repository, leer lassen für lokale Speicherung"
 
 #: scripts/services/EditUriBuiltins.js:1359
 msgid "oss_access_key_id"

@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Vadim P <kladzey@gmail.com>, 2017
 # Alex McArrow <alex.mcarrow@gmail.com>, 2017

@@ -1,14 +1,14 @@
-# 
 # Translators:
 # Rui <xymarior@yandex.com>, 2019
 # Paulo Constança <paulocesarsc@live.com>, 2019
 # Peter J. Mello <admin@petermello.net>, 2020
 # Sérgio Marques <smarquespt@gmail.com>, 2024
+# DeLinuxCo, 2026
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Sérgio Marques <smarquespt@gmail.com>, 2024\n"
+"Last-Translator: DeLinuxCo, 2026\n"
 "Language-Team: Portuguese (https://app.transifex.com/duplicati/teams/67655/pt/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1779,6 +1779,10 @@ msgstr "Fase de recriar base de dados"
 #: scripts/services/ServerStatus.js:59
 msgid "Recreating database …"
 msgstr "A recriar a base de dados"
+
+#: templates/backends/cos.html:20
+msgid "Region"
+msgstr "Região"
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup …"

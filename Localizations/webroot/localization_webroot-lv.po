@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Mārtiņš Mangulis <martins.mangulis@gmail.com>, 2019
 # 
