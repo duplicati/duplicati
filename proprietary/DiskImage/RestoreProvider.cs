@@ -200,7 +200,6 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     {
         path = NormalizePath(path);
 
-        // TODO query the filesystem to check if the file exists.
         if (_pendingWrites.ContainsKey(path))
             return Task.FromResult(true);
 
@@ -654,7 +653,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         // Restore partition-level items
         if (partitionItems.Count > 0)
         {
-            // TODO currently a NOP operation.
+            // Currently a NOP operation. If a partition needs to restore
+            // specific data during restore, it's here.
             processedCount += partitionItems.Count;
             progressCallback?.Invoke(processedCount / (double)totalItems);
         }
