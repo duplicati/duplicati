@@ -98,6 +98,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             if (!int.TryParse(m_devicePath.TrimEnd('/', '\\')[^1..], out var number))
                 throw new InvalidDataException($"Failed to parse device number from {m_devicePath}");
+            if (number < 0)
+                throw new InvalidDataException($"Parsed invalid device number {number} from {m_devicePath}");
+
             var script = @$"
                 Get-Partition -DiskNumber {number} |
                 Where-Object DriveLetter -ne $null |
