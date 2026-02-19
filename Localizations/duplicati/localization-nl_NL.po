@@ -835,6 +835,14 @@ msgid "You must supply a project ID with --{0} for creating a bucket."
 msgstr ""
 "U moet een project-ID opgeven met --{0} voor het aanmaken van een bucket."
 
+#: Library/Backend/GoogleServices/Strings.cs:31
+msgid ""
+"The supplied credentials are missing the full control scope. Please use a "
+"service account with full control access."
+msgstr ""
+"De opgegeven inloggegevens hebben niet de volledige beheerrechten. Gebruik "
+"een serviceaccount met volledige beheerrechten."
+
 #: Library/Backend/GoogleServices/Strings.cs:32
 #, csharp-format
 msgid ""
@@ -897,6 +905,19 @@ msgstr ""
 "Pad naar een bestand met JSON-referenties voor een Google Cloud-"
 "serviceaccount. Indien ingesteld, is AuthID niet vereist."
 
+#: Library/Backend/GoogleServices/Strings.cs:44
+msgid "Specify retention policy mode"
+msgstr "Geef bewaarbeleidsmodus op"
+
+#: Library/Backend/GoogleServices/Strings.cs:45
+msgid ""
+"This option specifies the retention policy mode to use when setting object "
+"lock. Possible values are 'Locked' and 'Unlocked'."
+msgstr ""
+"Met deze optie wordt de bewaarbeleidsmodus gespecificeerd die wordt gebruikt"
+" bij het instellen van objectvergrendeling. Mogelijke waarden zijn "
+"'Vergrendeld' en 'Ontgrendeld'."
+
 #: Library/Backend/GoogleServices/Strings.cs:50
 msgid ""
 "This backend can read and write data to Google Drive. Allowed format is "
@@ -952,6 +973,80 @@ msgstr "Google Cloud Storage configuratiemodule"
 msgid "Expose Google Cloud Storage configuration as a web module"
 msgstr "Toon de Google Cloud Storage-configuratie als een webmodule"
 
+#: Library/Backend/Duplicati/Strings.cs:28
+msgid "This backend can read and write data to Duplicati Storage."
+msgstr "Deze backend kan gegevens lezen en schrijven naar Duplicati Storage."
+
+#: Library/Backend/Duplicati/Strings.cs:29
+msgid "Duplicati Storage Backend"
+msgstr "Duplicati Storage Backend"
+
+#: Library/Backend/Duplicati/Strings.cs:31
+msgid "The API ID for authenticating with the Duplicati storage server."
+msgstr "De API-ID voor authenticatie bij de Duplicati Storage-server."
+
+#: Library/Backend/Duplicati/Strings.cs:32
+msgid ""
+"Specifies the API ID to use when authenticating with the Duplicati storage "
+"server."
+msgstr ""
+"Geeft de API-ID op die gebruikt moet worden voor authenticatie bij de "
+"Duplicati Storage-server."
+
+#: Library/Backend/Duplicati/Strings.cs:33
+msgid "The API Key for authenticating with the Duplicati storage server."
+msgstr "De API-sleutel voor authenticatie bij de Duplicati Storage-server."
+
+#: Library/Backend/Duplicati/Strings.cs:34
+msgid ""
+"Specifies the API Key to use when authenticating with the Duplicati storage "
+"server."
+msgstr ""
+"Geeft de API-sleutel op die gebruikt moet worden voor authenticatie bij de "
+"Duplicati Storage-server,"
+
+#: Library/Backend/Duplicati/Strings.cs:35
+msgid "The Backup ID to use on the Duplicati storage server."
+msgstr ""
+"De back-up-ID die gebruikt moet worden op de Duplicati Storage-server."
+
+#: Library/Backend/Duplicati/Strings.cs:36
+msgid ""
+"Each backupID identifies a separate backup set on the Duplicati storage "
+"server."
+msgstr ""
+"Elke back-up-ID identificeert een afzonderlijke back-upset op de Duplicati "
+"Storage-server."
+
+#: Library/Backend/Duplicati/Strings.cs:37
+msgid "A unique backup id must be specified"
+msgstr "Er moet een uniek back-up-ID worden opgegeven"
+
+#: Library/Backend/Duplicati/Strings.cs:42
+msgid "Lists the backup folders on a Duplicati storage server."
+msgstr ""
+"Geeft een overzicht van de back-upmappen op een Duplicati-opslagserver."
+
+#: Library/Backend/Duplicati/Strings.cs:43
+msgid "List Duplicati Backup Folders"
+msgstr "Toon Duplicati back-upmappen"
+
+#: Library/Backend/Duplicati/Strings.cs:45
+msgid "The action to perform."
+msgstr "De uit te voeren handeling."
+
+#: Library/Backend/Duplicati/Strings.cs:46
+msgid "Specifies the action to perform."
+msgstr "Geeft de uit te voeren handeling op."
+
+#: Library/Backend/Duplicati/Strings.cs:48
+msgid "The URL of the Duplicati storage server."
+msgstr "De URL van de Duplicati Storage-server."
+
+#: Library/Backend/Duplicati/Strings.cs:49
+msgid "Specifies the URL of the Duplicati storage server."
+msgstr "Geeft de URL op van de Duplicati Storage-server."
+
 #: Library/Backend/S3/Strings.cs:26
 msgid ""
 "This backend can read and write data to an S3 compatible server. Allowed "
@@ -963,6 +1058,28 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:27
 msgid "S3 compatible"
 msgstr "S3 compatible"
+
+#: Library/Backend/S3/Strings.cs:28
+#, csharp-format
+msgid ""
+"Secret Access Key can be obtained after logging into your account. This can "
+"also be supplied through the option --{0}."
+msgstr ""
+"De geheime toegangssleutel kunt u verkrijgen nadat u bent ingelogd op uw "
+"account. Deze kunt u ook opgeven via de optie --{0}."
+
+#: Library/Backend/S3/Strings.cs:29
+msgid "Secret Access Key"
+msgstr "Geheime toegangssleutel"
+
+#: Library/Backend/S3/Strings.cs:30
+#, csharp-format
+msgid ""
+"Access Key ID can be obtained after logging into your account. This can also"
+" be supplied through the option --{0}."
+msgstr ""
+"De toegangssleutel-ID kunt u verkrijgen nadat u bent ingelogd op uw account."
+" Deze kunt u ook opgeven via de optie --{0}."
 
 #: Library/Backend/S3/Strings.cs:31 Library/Backend/AliyunOSS/Strings.cs:30
 #: Library/Backend/Idrivee2/Strings.cs:31
@@ -1117,6 +1234,35 @@ msgstr ""
 "Om het aantal weergegeven objecten te beperken, wordt standaard alleen het "
 "eerste niveau van de objecten weergegeven. Gebruik deze optie om alle "
 "objecten in de bucket weer te geven."
+
+#: Library/Backend/S3/Strings.cs:60 Library/Backend/Idrivee2/Strings.cs:34
+msgid "Specify the S3 object lock mode"
+msgstr "Geeft de S3-objectvergrendelingsmodus op"
+
+#: Library/Backend/S3/Strings.cs:61 Library/Backend/Idrivee2/Strings.cs:35
+msgid ""
+"Use this option to specify the S3 object lock mode. Governance mode allows "
+"users with special permissions to bypass the lock, while Compliance mode "
+"enforces strict immutability."
+msgstr ""
+"Gebruik deze optie om de vergrendelingsmodus van het S3-object op te geven. "
+"De governance-modus stelt gebruikers met speciale machtigingen in staat de "
+"vergrendeling te omzeilen, terwijl de compliance-modus strikte "
+"onveranderlijkheid afdwingt."
+
+#: Library/Backend/S3/Strings.cs:62
+msgid "Specify the authentication region"
+msgstr "Geeft de authenticatieregio op"
+
+#: Library/Backend/S3/Strings.cs:63
+msgid ""
+"Use this option to specify the region used when signing requests. "
+"Authentication will use this value or fall back to the location constraint "
+"region if not supplied."
+msgstr ""
+"Gebruik deze optie om de regio op te geven die wordt gebruikt bij het "
+"ondertekenen van verzoeken. Authenticatie gebruikt deze waarde, of anders de"
+" regio die is opgegeven in de locatiebeperking."
 
 #: Library/Backend/S3/Strings.cs:64
 #, csharp-format
@@ -1723,6 +1869,23 @@ msgid "The base URL to use for downloading files"
 msgstr ""
 "De basis-URL die gebruikt moet worden voor het downloaden van bestanden"
 
+#: Library/Backend/Backblaze/Strings.cs:41
+msgid ""
+"Sets the lock mode for B2 object retention. Governance mode allows "
+"privileged users to bypass retention, while Compliance mode enforces strict "
+"retention that cannot be bypassed."
+msgstr ""
+"Stelt de vergrendelingsmodus in voor het bewaren van B2-objecten. De "
+"governance-modus staat bevoegde gebruikers toe om de bewaarplicht te "
+"omzeilen, terwijl de compliance-modus een strikte bewaarplicht afdwingt die "
+"niet kan worden omzeild."
+
+#: Library/Backend/Backblaze/Strings.cs:42
+msgid "The lock mode for B2 object retention (Governance or Compliance)"
+msgstr ""
+"De vergrendelingsmodus voor het bewaren van B2-objecten (Governance or "
+"Compliance)"
+
 #: Library/Backend/Backblaze/Strings.cs:43
 #, csharp-format
 msgid ""
@@ -1731,6 +1894,15 @@ msgid ""
 msgstr ""
 "De instelling \"{0}\" is ongeldig voor \"{1}\". Het moet een integer groter "
 "dan nul zijn."
+
+#: Library/Backend/Backblaze/Strings.cs:44
+#, csharp-format
+msgid ""
+"The setting \"{0}\" is invalid for \"{1}\". It must be either \"Governance\""
+" or \"Compliance\"."
+msgstr ""
+"De instelling \"{0}\" is ongeldig voor \"{1}\". Het moet ofwel "
+"\"Governance\" ofwel \"Compliance\" zijn."
 
 #: Library/Backend/OneDrive/Strings.cs:26
 msgid ""
@@ -2120,6 +2292,18 @@ msgstr ""
 "Met deze optie kunt u het aantal nieuwe pogingen voor Azure-blobbewerkingen "
 "opgeven. Stel deze optie in op 0 om nieuwe pogingen uit te schakelen."
 
+#: Library/Backend/AzureBlob/Strings.cs:46
+msgid "The immutability policy mode"
+msgstr "De onveranderlijkheids-beleidsmodus"
+
+#: Library/Backend/AzureBlob/Strings.cs:47
+msgid ""
+"Use this option to specify the immutability policy mode. The default is "
+"'Unlocked'."
+msgstr ""
+"Gebruik deze optie om de modus voor het onveranderlijkheidsbeleid op te "
+"geven. De standaardinstelling is 'Unlocked'."
+
 #: Library/Backend/Filen/Strings.cs:26
 msgid ""
 "This backend can read and write data to Filen.io using its REST protocol. "
@@ -2149,6 +2333,15 @@ msgstr ""
 #: Library/Backend/Filen/Strings.cs:30
 msgid "Optional API key"
 msgstr "Optionele API-sleutel"
+
+#: Library/Backend/Filen/Strings.cs:31
+msgid ""
+"The API key to use for authentication, which will work even if the account "
+"is MFA protected. Obtain the API key via the Filen CLI tool."
+msgstr ""
+"De API-sleutel die gebruikt moet worden voor authenticatie, die zelfs als "
+"het account is beveiligd met MFA zal werken. Verkrijg de API-sleutel via de "
+"Filen CLI-tool."
 
 #: Library/Backend/Filen/Strings.cs:32
 msgid "Move to trash"
@@ -2597,6 +2790,14 @@ msgstr "Sluiten bestandsingang op PutAsync mislukt"
 msgid "Failed to create file for writing"
 msgstr "Aanmaken bestand voor schrijven mislukt"
 
+#: Library/Backend/SMB/SMBShareConnection.cs:550
+msgid "Failed to rename file on RenameAsync"
+msgstr "Bestand hernoemen op RenameAsync is mislukt"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:553
+msgid "Failed to close file on RenameAsync"
+msgstr "Bestand sluiten op RenameAsync is mislukt"
+
 #: Library/Backend/SMB/Strings.cs:29
 msgid ""
 "The domain used to connect to the server. This may also be supplied as the "
@@ -3002,6 +3203,30 @@ msgstr ""
 msgid "Secrets from a file"
 msgstr "Geheime referenties uit een bestand"
 
+#: Library/SecretProvider/Strings.cs:41
+msgid ""
+"Secret provider that reads secrets from a file\n"
+"Example use:\n"
+"    file://path/to/file?passphrase=secret\n"
+"\n"
+"The file should be a JSON-encoded object with the secrets as key-value pairs.\n"
+"If the file is not encrypted with a passphrase, the passphrase parameter can be omitted.\n"
+"The file must be encrypted with AESCrypt if encryption is desired.\n"
+"For file-based secrets, the lookup is case-insensitive.\n"
+"\n"
+"If the file is encrypted, this provider can also write secrets back to the file.\n"
+msgstr ""
+"Provider van geheime referenties die geheimen leest uit een bestand\n"
+"Gebruiksvoorbeeld:\n"
+"    file://path/to/file?passphrase=secret\n"
+"\n"
+"Het bestand moet een JSON-gecodeerd object zijn met de geheimen als sleutel-waardeparen.\n"
+"Als het bestand niet is versleuteld met een wachtwoordzin, kan de passphrase parameter worden weggelaten.\n"
+"Het bestand moet versleuteld zijn met AESCrypt als versleuteling gewenst is.\n"
+"Voor bestandsgebaseerde geheimen is het opzoekmechanisme hoofdletterongevoelig.\n"
+"\n"
+"Als het bestand is versleuteld, kan deze provider ook geheimen terugschrijven naar het bestand.\n"
+
 #: Library/SecretProvider/Strings.cs:53
 msgid "The decryption passphrase"
 msgstr "De decoderingswachtwoordzin"
@@ -3014,6 +3239,24 @@ msgstr ""
 #: Library/SecretProvider/Strings.cs:59
 msgid "Secrets from AWS Secrets Manager"
 msgstr "Geheime referenties uit AWS Secrets Manager"
+
+#: Library/SecretProvider/Strings.cs:61
+msgid ""
+"Secret provider that reads and writes secrets from AWS Secrets Manager\n"
+"Example use:\n"
+"    aws://?access-key=...&secret-key=...&region-endpoint=us-east-1&secrets=secret1,secret2\n"
+"\n"
+"Either the region endpoint or the service URL must be provided.\n"
+"Each secret is retrieved in the order specified until all requested keys are found.\n"
+"Each secret must be a key-value pair type secret.\n"
+msgstr ""
+"Provider van geheime referenties die geheimen leest en schrijft van AWS Secrets Manager\n"
+"Gebruiksvoorbeeld:\n"
+"    aws://?access-key=...&secret-key=...&region-endpoint=us-east-1&secrets=secret1,secret2\n"
+"\n"
+"Ofwel het regio-eindpunt, ofwel de service-URL moet worden opgegeven.\n"
+"Elk geheim wordt in de opgegeven volgorde opgehaald totdat alle gevraagde sleutels zijn gevonden.\n"
+"Elk geheim moet een sleutel-waardepaar zijn.\n"
 
 #: Library/SecretProvider/Strings.cs:69
 msgid "The AWS access key"
@@ -3092,6 +3335,22 @@ msgstr ""
 msgid "Secrets from HashiCorp Vault"
 msgstr "Geheime referenties uit HashiCorp Vault"
 
+#: Library/SecretProvider/Strings.cs:87
+msgid ""
+"Secret provider that reads and writes secrets from HashiCorp Vault\n"
+"Example use:\n"
+"    hcv://localhost:1234?token=...&mount=secret&secrets=secret1,secret2\n"
+"\n"
+"The secrets parameter should be a comma- or semicolon-separated list of secret names to retrieve from the Vault.\n"
+"Each vault secret is retrieved in the order specified until all requested keys are found.\n"
+msgstr ""
+"Provider van geheime referenties die geheimen leest en schrijft van HashiCorp Vault\n"
+"Gebruiksvoorbeeld:\n"
+"    hcv://localhost:1234?token=...&mount=secret&secrets=secret1,secret2\n"
+"\n"
+"De secrets parameter moet een komma- of puntkomma-gescheiden lijst zijn van geheim-namen die uit de Vault moeten worden opgehaald.\n"
+"Elk vault-geheim wordt opgehaald in de opgegeven volgorde totdat alle gevraagde sleutels zijn gevonden.\n"
+
 #: Library/SecretProvider/Strings.cs:94
 msgid "The Vault token"
 msgstr "Het Vault-token"
@@ -3158,6 +3417,26 @@ msgstr "Het koppelpunt voor de geheimen in de Vault"
 msgid "Secrets from Google Cloud Storage Secret Manager"
 msgstr "Geheimen uit Google Cloud Storage Secret Manager"
 
+#: Library/SecretProvider/Strings.cs:114
+msgid ""
+"Secret provider that reads and writes secrets from Google Cloud Storage Secret Manager\n"
+"Example use:\n"
+"    gcs://?project-id=...&version=latest\n"
+"\n"
+"If the access token is not supplied, the default GCS credentials from the machine will be used.\n"
+"Use the accesstoken property to specify a custom access token.\n"
+"Alternatively, you can supply service-account-json or service-account-file with Google Cloud service account credentials.\n"
+"\n"
+msgstr ""
+"Provider van geheime referenties die geheimen leest en schrijft van Google Cloud Storage Secret Manager\n"
+"Gebruiksvoorbeeld:\n"
+"    gcs://?project-id=...&version=latest\n"
+"\n"
+"Als het toegangstoken niet is opgegeven, zullen de standaard GCSreferenties van de machine worden gebruikt.\n"
+"Gebruik de eigenschap accesstoken om een ​​aangepast toegangstoken op te geven.\n"
+"U kunt ook een service-account-json- of service-account-bestand met de inloggegevens van uw Google Cloud-serviceaccount opgeven.\n"
+"\n"
+
 #: Library/SecretProvider/Strings.cs:123
 msgid "The API type to use"
 msgstr "Het API-type dat gebruikt moet worden"
@@ -3191,6 +3470,26 @@ msgstr ""
 "Cloud Storage. Als dit niet is opgegeven, worden de standaard GCS-"
 "referenties van de machine gebruikt."
 
+#: Library/SecretProvider/Strings.cs:130
+msgid ""
+"String with JSON credentials for a Google Cloud service account. When set, "
+"access-token is not required."
+msgstr ""
+"Tekenreeks met JSON-referenties voor een Google Cloud service account. Als "
+"deze is ingesteld, is een access-token niet vereist."
+
+#: Library/SecretProvider/Strings.cs:131
+msgid "Service account JSON file"
+msgstr "Service account JSON-bestand"
+
+#: Library/SecretProvider/Strings.cs:132
+msgid ""
+"Path to a file with JSON credentials for a Google Cloud service account. "
+"When set, access-token is not required."
+msgstr ""
+"Pad naar een bestand met JSON-referenties voor een Google Cloud service "
+"account. Als deze is ingesteld, is een access-token niet vereist."
+
 #: Library/SecretProvider/Strings.cs:133
 msgid "The secret version to get (or alias)"
 msgstr "De versie van het geheim dat opgehaald moet worden (of alias)"
@@ -3206,6 +3505,32 @@ msgstr ""
 #: Library/SecretProvider/Strings.cs:139
 msgid "Secrets from Azure Key Vault"
 msgstr "Geheime referenties van Azure Key Vault"
+
+#: Library/SecretProvider/Strings.cs:141
+msgid ""
+"Secret provider that reads and writes secrets from Azure Key Vault\n"
+"Example use:\n"
+"    az://?keyvault-name=...&auth-type=ManagedIdentity\n"
+"\n"
+"If a client ID and secret are provided, use the auth type ClientSecret:\n"
+"    az://?keyvault-name=...&auth-type=ClientSecret&tenant-id=...&client-id=...&client-secret=...\n"
+"\n"
+"If a username and password are provided, use the auth type UsernamePassword:\n"
+"    az://?keyvault-name=...&auth-type=UsernamePassword&tenant-id=...&clientid=...&username=...&password=...\n"
+"\n"
+"If the vault-uri parameter is not provided, the keyvault-name parameter will be used to construct the URI.\n"
+msgstr ""
+"Provider van geheime referenties die geheimen leest en schrijft van Azure Key Vault\n"
+"Gebruiksvoorbeeld:\n"
+"    az://?keyvault-name=...&auth-type=ManagedIdentity\n"
+"\n"
+"Als een client-ID en -geheim zijn opgegeven, gebruik het auth-type ClientSecret:\n"
+"    az://?keyvault-name=...&auth-type=ClientSecret&tenant-id=...&client-id=...&client-secret=...\n"
+"\n"
+"Als een gebruikersnaam en wachtwoord zijn opgegeven, gebruik het auth-type UsernamePassword:\n"
+"    az://?keyvault-name=...&auth-type=UsernamePassword&tenant-id=...&clientid=...&username=...&password=...\n"
+"\n"
+"Als de vault-uri parameter niet is opgegeven, zal de  keyvault-name parameter worden gebruikt om de URI samen te stellen.\n"
 
 #: Library/SecretProvider/Strings.cs:153
 msgid "The name of the Azure Key Vault"
@@ -3295,6 +3620,12 @@ msgstr ""
 msgid "Secrets from macOS Keychain"
 msgstr "Geheimen uit macOS Keychain"
 
+#: Library/SecretProvider/Strings.cs:176
+msgid "Secret provider that reads and writes secrets from the macOS Keychain"
+msgstr ""
+"Provider van geheime referenties die geheimen leest en schrijft van de macOS"
+" Keychain"
+
 #: Library/SecretProvider/Strings.cs:177
 msgid "The service name"
 msgstr "De servicenaam"
@@ -3327,6 +3658,14 @@ msgstr "Het type wachtwoord dat verkregen moet worden uit de macOS Keychain"
 msgid "Secrets from Unix pass"
 msgstr "Geheimen van Unix pass"
 
+#: Library/SecretProvider/Strings.cs:188
+msgid ""
+"Secret provider that reads and writes secrets from the Unix pass password "
+"manager"
+msgstr ""
+"Provider van geheime referenties die geheimen leest en schrijft van de Unix "
+"pass wachtwoordbeheerder"
+
 #: Library/SecretProvider/Strings.cs:189
 msgid "The pass command"
 msgstr "De pass opdracht"
@@ -3343,13 +3682,53 @@ msgstr ""
 msgid "Secrets from Windows Credential Manager"
 msgstr "Geheime referenties uit Windows Referentiebeheer "
 
+#: Library/SecretProvider/Strings.cs:196
+msgid ""
+"Secret provider that reads and writes secrets from the Windows Credential "
+"Manager"
+msgstr ""
+"Provider van geheime referenties die geheimen leest en schrijft van Windows "
+"Referentiebeheer"
+
 #: Library/SecretProvider/Strings.cs:201
 msgid "Secrets from libsecret"
 msgstr "Geheime referenties uit libsecret"
 
+#: Library/SecretProvider/Strings.cs:202
+msgid ""
+"Secret provider that reads and writes secrets from the libsecret password "
+"manager"
+msgstr ""
+"Provider van geheime referenties die geheimen leest en schrijft van de "
+"libsecret wachtwoordbeheerder"
+
 #: Library/SecretProvider/Strings.cs:203
 msgid "The collection name"
 msgstr "De naam van de collectie"
+
+#: Library/SecretProvider/Strings.cs:204
+msgid ""
+"The collection name to use for retrieving secrets from the libsecret "
+"password manager. The value \"default\" can be used to access the default "
+"collection, and will resolve to \"login\" if the system does not have a "
+"default collection."
+msgstr ""
+"De naam van de verzameling die gebruikt moet worden om geheimen op te halen "
+"uit de wachtwoordmanager libsecret. De waarde \"default\" kan worden "
+"gebruikt om toegang te krijgen tot de standaardverzameling en zal worden "
+"omgezet naar \"login\" als het systeem geen standaardverzameling heeft."
+
+#: Library/SecretProvider/Strings.cs:207
+msgid "Disable auto-create collection"
+msgstr "Automatisch aanmaken van verzameling uitschakelen"
+
+#: Library/SecretProvider/Strings.cs:208
+msgid ""
+"Disables the automatic creation of the collection if it does not exist when "
+"accessing libsecret"
+msgstr ""
+"Schakelt het automatisch aanmaken van de verzameling uit als deze niet "
+"bestaat tijdens toegang naar libsecret"
 
 #: Library/RestAPI/Strings.cs:29
 msgid "Another instance is running, and was notified"
@@ -3725,6 +4104,15 @@ msgstr ""
 "Gebruik deze optie om database-codering van gevoelige velden uit te "
 "schakelen"
 
+#: Library/RestAPI/Strings.cs:85
+msgid ""
+"Use this option to log to the Windows event log. The provided name is in the"
+" format Log:Source. If no log name is provided, \"Duplicati 2\" is used."
+msgstr ""
+"Gebruik deze optie om logvermeldingen te maken naar het Windows "
+"Gebeurtenislogboek. De opgegeven naam is in de indeling Log:Source. Als geen"
+" logboeknaam is opgegeven, zal \"Duplicati 2\" worden gebruikt."
+
 #: Library/RestAPI/Strings.cs:86
 msgid "Log to the Windows event log"
 msgstr "Schrijf logboekvermeldingen naar het Windows-gebeurtenislogboek"
@@ -3953,6 +4341,16 @@ msgstr ""
 "deze optie niet is ingesteld, zijn alle compressiemodules toegestaan. "
 "Gebruik deze optie om de compressiemodules te beperken die kunnen worden "
 "gebruikt om gegevens te comprimeren."
+
+#: Library/RestAPI/Strings.cs:120
+msgid "Failed to get encryption key from secret provider"
+msgstr ""
+"Encryptiesleutel bij provider voor geheime referenties opvragen is mislukt."
+
+#: Library/RestAPI/Strings.cs:121
+msgid "Failed to set encryption key in secret provider"
+msgstr ""
+"Encryptiesleutel in provider voor geheime referenties instellen is mislukt."
 
 #: Library/RestAPI/Strings.cs:125
 #, csharp-format
@@ -4571,6 +4969,40 @@ msgstr ""
 msgid "Show largest prefix"
 msgstr "Toon grootste voorvoegsel"
 
+#: Library/Main/Strings.cs:84
+msgid ""
+"Use this option to rename files instead of deleting them. The value is the "
+"prefix to add to the filename. If the backend supports renaming, the file is"
+" renamed. Otherwise, the file is downloaded, re-uploaded with the new name, "
+"and then deleted. If the prefix contains a folder separator, the target "
+"folder must exist."
+msgstr ""
+"Gebruik deze optie om de naam van bestanden te wijzigen in plaats van ze te "
+"verwijderen. De waarde is het voorvoegsel dat aan de bestandsnaam moet "
+"worden toegevoegd. Als de backend hernoemen ondersteunt, wordt het bestand "
+"hernoemd. Zo niet, dan wordt het bestand gedownload, opnieuw geüpload met de"
+" nieuwe naam, en vervolgens verwijderd. Als het voorvoegsel een "
+"scheidingsteken voor mappen bevat, moet de doelmap bestaan."
+
+#: Library/Main/Strings.cs:85
+msgid "Prefix for soft-deleted files"
+msgstr "Voorvoegsel voor pseudo-verwijderde bestanden"
+
+#: Library/Main/Strings.cs:86
+msgid ""
+"Use this option to prevent the backend from renaming files, even if the "
+"backend supports it. This will force the soft-delete operation to download, "
+"re-upload with the new name, and then delete the original file."
+msgstr ""
+"Gebruik deze optie om te voorkomen dat de backend bestandsnamen wijzigt, "
+"zelfs als de backend dit ondersteunt. Hierdoor wordt de pseudo-verwijder-"
+"bewerking gedwongen om het bestand te downloaden, opnieuw te uploaden met de"
+" nieuwe naam en vervolgens het oorspronkelijke bestand te verwijderen."
+
+#: Library/Main/Strings.cs:87
+msgid "Prevent backend rename"
+msgstr "Voorkom backend bestandsnaamwijzigingen"
+
 #: Library/Main/Strings.cs:88
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
@@ -4784,6 +5216,37 @@ msgstr ""
 #: Library/Main/Strings.cs:120
 msgid "Enable one or more modules"
 msgstr "Schakel één of meer modules in"
+
+#: Library/Main/Strings.cs:121
+msgid ""
+"This setting controls the usage of snapshots, which allows Duplicati to "
+"backup files that are locked by other programs. If this is set to \"off\", "
+"Duplicati will not attempt to create a disk snapshot. Setting this to "
+"\"auto\" makes Duplicati attempt to create a snapshot, and fail silently if "
+"that was not allowed or supported (note that the OS may still log system "
+"warnings). A setting of \"on\" will also make Duplicati attempt to create a "
+"snapshot, but will produce a warning message in the log if it fails. Setting"
+" it to \"required\" will make Duplicati abort the backup if the snapshot "
+"creation fails. On windows this uses the Volume Shadow Copy Services (VSS) "
+"and requires administrative privileges. On Linux this uses Logical Volume "
+"Management (LVM) and requires root privileges. On macOS this uses Apple File"
+" System (APFS) snapshots and requires root privileges."
+msgstr ""
+"Deze instelling bepaalt het gebruik van snapshots, waarmee Duplicati "
+"bestanden kan back-uppen die door andere programma's zijn vergrendeld. Als "
+"deze instelling op \"uit\" staat, zal Duplicati geen poging doen om een "
+"​​schijfsnapshot te maken. Als u deze instelling op \"auto\" zet, zal "
+"Duplicati proberen een snapshot te maken en stilzwijgend mislukken als dit "
+"niet is toegestaan ​​of ondersteund (merk op dat het besturingssysteem nog "
+"steeds systeemwaarschuwingen kan loggen). Als u deze instelling op \"aan\" "
+"zet, zal Duplicati ook proberen een snapshot te maken, maar zal er een "
+"waarschuwingsbericht in het logboek verschijnen als dit mislukt. Als u deze "
+"instelling op \"vereist\" zet, zal Duplicati de back-up afbreken als het "
+"maken van de snapshot mislukt. Op Windows maakt dit gebruik van Volume "
+"Shadow Copy Services (VSS) en vereist beheerdersrechten. Op Linux maakt dit "
+"gebruik van Logical Volume Management (LVM) en vereist rootrechten. Op macOS"
+" maakt dit gebruik van Apple File System (APFS) snapshots en vereist "
+"rootrechten."
 
 #: Library/Main/Strings.cs:122
 msgid "Control the use of disk snapshots"
@@ -5021,6 +5484,22 @@ msgstr ""
 "andere toepassing als vergrendeld zijn gemarkeerd om consistentie te "
 "garanderen. Deze vlag kan de controle uitschakelen en optimistische "
 "leesbewerkingen van vergrendelde bestanden uitvoeren."
+
+#: Library/Main/Strings.cs:152
+msgid "Ignore backup exclusion attributes"
+msgstr "Negeer back-up-uitsluitingsattributen"
+
+#: Library/Main/Strings.cs:153
+msgid ""
+"By default, Duplicati will skip files marked with backup exclusion extended "
+"attributes, such as the macOS com.apple.backupd flag or a Linux "
+"duplicati.exclude marker. Enable this option to ignore any extended "
+"attributes."
+msgstr ""
+"Standaard slaat Duplicati bestanden over die zijn gemarkeerd met uitgebreide"
+" kenmerken voor back-upuitsluiting, zoals de macOS-vlag com.apple.backupd of"
+" een Linux-markering duplicati.exclude. Schakel deze optie in om alle "
+"uitgebreide kenmerken te negeren."
 
 #: Library/Main/Strings.cs:154
 #, csharp-format
@@ -5591,6 +6070,22 @@ msgstr ""
 #: Library/Main/Strings.cs:229
 msgid "Keep all versions within a timespan"
 msgstr "Behoud alle versies binnen een bepaalde tijdspanne"
+
+#: Library/Main/Strings.cs:230
+msgid ""
+"Sets how long uploaded backup files should be protected with an immutable "
+"object lock (for example, 30d). If this option is not set, the files will "
+"not be protected with an object lock. Not all destinations support object "
+"locking."
+msgstr ""
+"Hiermee wordt ingesteld hoe lang geüploade back-upbestanden moeten worden "
+"beveiligd met een onveranderlijk objectslot (bijvoorbeeld 30 dagen). Als "
+"deze optie niet is ingesteld, worden de bestanden niet beveiligd met een "
+"objectslot. Niet alle bestemmingen ondersteunen objectvergrendeling."
+
+#: Library/Main/Strings.cs:231
+msgid "Lock duration for remote backup files"
+msgstr "Vergrendelingsduur voor externe back-upbestanden"
 
 #: Library/Main/Strings.cs:232
 msgid ""
@@ -6319,6 +6814,21 @@ msgstr ""
 msgid "Activate logging of all database queries"
 msgstr "Activeer logboekregistratie van alle databasequery's"
 
+#: Library/Main/Strings.cs:341
+msgid "Store metadata content in the database"
+msgstr "Sla metadata-inhoud op in de database."
+
+#: Library/Main/Strings.cs:342
+msgid ""
+"By default, metadata content is only stored in the remote volumes. Use this "
+"option to also store metadata content in the local database, which can speed"
+" up certain operations at the cost of increased database size."
+msgstr ""
+"Standaard wordt metadata alleen in de externe volumes opgeslagen. Gebruik "
+"deze optie om metadata ook in de lokale database op te slaan. Dit kan "
+"bepaalde bewerkingen versnellen, maar hierdoor zal wel de databasegrootte "
+"toenemen."
+
 #: Library/Main/Strings.cs:343
 msgid ""
 "If dblock files are missing from the destination, you can attempt to rebuild"
@@ -6363,6 +6873,20 @@ msgstr "list-broken-files"
 #: Library/Main/Strings.cs:348
 msgid "Disable replacement of missing metadata"
 msgstr "Vervanging van ontbrekende metagegevens uitschakelen"
+
+#: Library/Main/Strings.cs:349
+msgid ""
+"If this option is enabled, the purge-broken-files command will skip "
+"calculating the size of the removed files. This can speed up the operation "
+"on large datasets."
+msgstr ""
+"Als deze optie is ingeschakeld, slaat de opdracht purge-broken-files het "
+"berekenen van de grootte van de verwijderde bestanden over. Dit kan de "
+"bewerking bij grote datasets versnellen."
+
+#: Library/Main/Strings.cs:350
+msgid "Skip calculating removed file size"
+msgstr "Sla het berekenen van de grootte van verwijderde bestanden over."
 
 #: Library/Main/Strings.cs:352
 msgid ""
@@ -6634,6 +7158,10 @@ msgstr ""
 "kanalen die tijdens het herstel worden gebruikt. De buffers zorgen voor een "
 "betere asynchrone communicatie tussen de processen in de herstelactiviteit. "
 "Het vergroten van de buffergrootte kan de herstelprestaties verbeteren."
+
+#: Library/Main/Strings.cs:386
+msgid "Allow restore outside target directory"
+msgstr "Herstellen buiten de doelmap toestaan"
 
 #: Library/Main/Strings.cs:388
 msgid "Enable internal profiling"
