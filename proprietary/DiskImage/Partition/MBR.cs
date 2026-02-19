@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -102,7 +103,7 @@ internal class MBR : IPartitionTable
             throw new ArgumentException($"Byte array must be at least {MbrSize} bytes long.", nameof(bytes));
 
         // Read boot signature (2 bytes at offset 510)
-        m_mbrBootSignature = BitConverter.ToUInt16(bytes, 510);
+        m_mbrBootSignature = BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(510, 2));
 
         // Verify boot signature
         if (m_mbrBootSignature != MbrBootSignature)
@@ -173,8 +174,8 @@ internal class MBR : IPartitionTable
         ushort endCylinder = (ushort)(((bytes[offset + 7] & 0xC0) << 2) | bytes[offset + 6]);
 
         // Read LBA values (more reliable than CHS)
-        uint startLBA = BitConverter.ToUInt32(bytes, offset + 8);
-        uint sizeInSectors = BitConverter.ToUInt32(bytes, offset + 12);
+        uint startLBA = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset + 8, 4));
+        uint sizeInSectors = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset + 12, 4));
 
         // Skip entries with zero size
         if (sizeInSectors == 0)

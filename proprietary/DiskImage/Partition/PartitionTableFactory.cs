@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -87,7 +88,7 @@ internal static class PartitionTableFactory
     private static PartitionTableType DetectPartitionTableType(byte[] mbrBytes)
     {
         // Check for valid MBR boot signature
-        ushort bootSignature = BitConverter.ToUInt16(mbrBytes, 510);
+        ushort bootSignature = BinaryPrimitives.ReadUInt16LittleEndian(mbrBytes.AsSpan(510, 2));
         if (bootSignature != MbrBootSignature)
             return PartitionTableType.Unknown;
 
@@ -119,7 +120,7 @@ internal static class PartitionTableFactory
             using var stream = await disk.ReadBytesAsync(sectorSize, sectorSize, cancellationToken).ConfigureAwait(false);
             await stream.ReadAtLeastAsync(headerBytes, HeaderSize, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            var signature = BitConverter.ToInt64(headerBytes, 0);
+            var signature = BinaryPrimitives.ReadInt64LittleEndian(headerBytes.AsSpan(0, 8));
             return signature == GptSignature;
         }
         catch
@@ -139,7 +140,7 @@ internal static class PartitionTableFactory
                 return false;
 
             var headerBytes = bytes[sectorSize..(sectorSize + HeaderSize)];
-            var signature = BitConverter.ToInt64(headerBytes, 0);
+            var signature = BinaryPrimitives.ReadInt64LittleEndian(headerBytes.AsSpan(0, 8));
             return signature == GptSignature;
         }
         catch

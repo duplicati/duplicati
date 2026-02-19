@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -126,7 +127,7 @@ internal class GPT : IPartitionTable
         m_protectiveMbrBytes = bytes[0..sectorSize];
 
         // Verify MBR boot signature (offset 510)
-        ushort bootSignature = BitConverter.ToUInt16(m_protectiveMbrBytes, 510);
+        ushort bootSignature = BinaryPrimitives.ReadUInt16LittleEndian(m_protectiveMbrBytes.AsSpan(510));
         if (bootSignature != MbrBootSignature)
             return false;
 
@@ -204,52 +205,52 @@ internal class GPT : IPartitionTable
             throw new ArgumentException($"Byte array must be at least {HeaderSize} bytes long.", nameof(bytes));
 
         // Read signature (8 bytes, little-endian)
-        m_signature = BitConverter.ToInt64(bytes.Slice(0, 8));
+        m_signature = BinaryPrimitives.ReadInt64LittleEndian(bytes.Slice(0, 8));
 
         // Verify signature
         if (m_signature != GptSignature)
             return Task.FromResult(false);
 
         // Read revision (4 bytes)
-        m_revision = BitConverter.ToUInt32(bytes.Slice(8, 4));
+        m_revision = BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(8, 4));
 
         // Read header size (4 bytes)
-        m_headerSize = BitConverter.ToUInt32(bytes.Slice(12, 4));
+        m_headerSize = BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(12, 4));
 
         // Read header CRC32 (4 bytes)
-        m_headerCrc32 = BitConverter.ToUInt32(bytes.Slice(16, 4));
+        m_headerCrc32 = BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(16, 4));
 
         // Reserved - must be zero (4 bytes at offset 20)
-        var reserved = BitConverter.ToUInt32(bytes.Slice(20, 4));
+        var reserved = BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(20, 4));
         if (reserved != 0)
             return Task.FromResult(false);
 
         // Current LBA (8 bytes at offset 24)
-        m_currentLba = BitConverter.ToInt64(bytes.Slice(24, 8));
+        m_currentLba = BinaryPrimitives.ReadInt64LittleEndian(bytes.Slice(24, 8));
 
         // Backup LBA (8 bytes at offset 32)
-        m_backupLba = BitConverter.ToInt64(bytes.Slice(32, 8));
+        m_backupLba = BinaryPrimitives.ReadInt64LittleEndian(bytes.Slice(32, 8));
 
         // First usable LBA (8 bytes at offset 40)
-        m_firstUsableLba = BitConverter.ToInt64(bytes.Slice(40, 8));
+        m_firstUsableLba = BinaryPrimitives.ReadInt64LittleEndian(bytes.Slice(40, 8));
 
         // Last usable LBA (8 bytes at offset 48)
-        m_lastUsableLba = BitConverter.ToInt64(bytes.Slice(48, 8));
+        m_lastUsableLba = BinaryPrimitives.ReadInt64LittleEndian(bytes.Slice(48, 8));
 
         // Disk GUID (16 bytes at offset 56)
         m_diskGuid = new Guid(bytes.Slice(56, 16));
 
         // Partition entry LBA (8 bytes at offset 72)
-        m_partitionEntryLba = BitConverter.ToInt64(bytes.Slice(72, 8));
+        m_partitionEntryLba = BinaryPrimitives.ReadInt64LittleEndian(bytes.Slice(72, 8));
 
         // Number of partition entries (4 bytes at offset 80)
-        m_numPartitionEntries = BitConverter.ToUInt32(bytes.Slice(80, 4));
+        m_numPartitionEntries = BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(80, 4));
 
         // Size of partition entry (4 bytes at offset 84)
-        m_partitionEntrySize = BitConverter.ToUInt32(bytes.Slice(84, 4));
+        m_partitionEntrySize = BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(84, 4));
 
         // Partition entry CRC32 (4 bytes at offset 88)
-        m_partitionEntryCrc32 = BitConverter.ToUInt32(bytes.Slice(88, 4));
+        m_partitionEntryCrc32 = BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(88, 4));
 
         m_parsed = true;
         return Task.FromResult(true);
@@ -373,13 +374,13 @@ internal class GPT : IPartitionTable
         var uniqueGuid = new Guid(entrySpan.Slice(16, 16));
 
         // Starting LBA (8 bytes at offset 32)
-        long startingLba = BitConverter.ToInt64(entrySpan.Slice(32, 8));
+        long startingLba = BinaryPrimitives.ReadInt64LittleEndian(entrySpan.Slice(32, 8));
 
         // Ending LBA (8 bytes at offset 40)
-        long endingLba = BitConverter.ToInt64(entrySpan.Slice(40, 8));
+        long endingLba = BinaryPrimitives.ReadInt64LittleEndian(entrySpan.Slice(40, 8));
 
         // Attributes (8 bytes at offset 48)
-        long attributes = BitConverter.ToInt64(entrySpan.Slice(48, 8));
+        long attributes = BinaryPrimitives.ReadInt64LittleEndian(entrySpan.Slice(48, 8));
 
         // Partition name (36 UTF-16LE characters = 72 bytes at offset 56)
         string name = System.Text.Encoding.Unicode.GetString(entrySpan.Slice(56, 72)).TrimEnd('\0');
@@ -648,17 +649,17 @@ internal class GPT : IPartitionTable
         }
 
         // Verify Signature
-        long signature = BitConverter.ToInt64(backupHeaderBytes, 0);
+        long signature = BinaryPrimitives.ReadInt64LittleEndian(backupHeaderBytes.AsSpan(0, 8));
         if (signature != GptSignature)
             return false;
 
         // Verify CRC32
-        uint storedCrc = BitConverter.ToUInt32(backupHeaderBytes, 16);
+        uint storedCrc = BinaryPrimitives.ReadUInt32LittleEndian(backupHeaderBytes.AsSpan(16, 4));
 
         // Zero out CRC field for calculation
         var copyForCrc = new byte[HeaderSize];
         Array.Copy(backupHeaderBytes, copyForCrc, HeaderSize);
-        BitConverter.TryWriteBytes(copyForCrc.AsSpan(16), 0u);
+        BinaryPrimitives.WriteUInt32LittleEndian(copyForCrc.AsSpan(16), 0u);
 
         uint calculatedCrc = Crc32.Calculate(copyForCrc, 0, HeaderSize);
         if (storedCrc != calculatedCrc)
@@ -666,32 +667,30 @@ internal class GPT : IPartitionTable
 
         // Verify other fields
         // Revision should be same
-        if (BitConverter.ToUInt32(backupHeaderBytes, 8) != m_revision) return false;
+        if (BinaryPrimitives.ReadUInt32LittleEndian(backupHeaderBytes.AsSpan(8, 4)) != m_revision) return false;
         // Header size should be same
-        if (BitConverter.ToUInt32(backupHeaderBytes, 12) != m_headerSize) return false;
+        if (BinaryPrimitives.ReadUInt32LittleEndian(backupHeaderBytes.AsSpan(12, 4)) != m_headerSize) return false;
         // Reserved should be 0
-        if (BitConverter.ToUInt32(backupHeaderBytes, 20) != 0) return false;
+        if (BinaryPrimitives.ReadUInt32LittleEndian(backupHeaderBytes.AsSpan(20, 4)) != 0) return false;
 
         // Current LBA should be Backup LBA
-        if (BitConverter.ToInt64(backupHeaderBytes, 24) != m_backupLba) return false;
+        if (BinaryPrimitives.ReadInt64LittleEndian(backupHeaderBytes.AsSpan(24, 8)) != m_backupLba) return false;
         // Backup LBA should be Current LBA (Primary LBA)
-        if (BitConverter.ToInt64(backupHeaderBytes, 32) != m_currentLba) return false;
+        if (BinaryPrimitives.ReadInt64LittleEndian(backupHeaderBytes.AsSpan(32, 8)) != m_currentLba) return false;
 
         // Usable LBAs should be same
-        if (BitConverter.ToInt64(backupHeaderBytes, 40) != m_firstUsableLba) return false;
-        if (BitConverter.ToInt64(backupHeaderBytes, 48) != m_lastUsableLba) return false;
+        if (BinaryPrimitives.ReadInt64LittleEndian(backupHeaderBytes.AsSpan(40, 8)) != m_firstUsableLba) return false;
+        if (BinaryPrimitives.ReadInt64LittleEndian(backupHeaderBytes.AsSpan(48, 8)) != m_lastUsableLba) return false;
 
         // Disk GUID should be same
-        var diskGuidBytes = new byte[16];
-        Array.Copy(backupHeaderBytes, 56, diskGuidBytes, 0, 16);
-        if (new Guid(diskGuidBytes) != m_diskGuid) return false;
+        if (new Guid(backupHeaderBytes.AsSpan(56, 16)) != m_diskGuid) return false;
 
         // Number of partition entries should be same
-        if (BitConverter.ToUInt32(backupHeaderBytes, 80) != m_numPartitionEntries) return false;
+        if (BinaryPrimitives.ReadUInt32LittleEndian(backupHeaderBytes.AsSpan(80, 4)) != m_numPartitionEntries) return false;
         // Size of partition entry should be same
-        if (BitConverter.ToUInt32(backupHeaderBytes, 84) != m_partitionEntrySize) return false;
+        if (BinaryPrimitives.ReadUInt32LittleEndian(backupHeaderBytes.AsSpan(84, 4)) != m_partitionEntrySize) return false;
         // Partition entry CRC32 should be same
-        if (BitConverter.ToUInt32(backupHeaderBytes, 88) != m_partitionEntryCrc32) return false;
+        if (BinaryPrimitives.ReadUInt32LittleEndian(backupHeaderBytes.AsSpan(88, 4)) != m_partitionEntryCrc32) return false;
 
         return true;
     }

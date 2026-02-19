@@ -2,6 +2,7 @@
 
 using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -117,11 +118,11 @@ internal static class PartitionTableSynthesizer
 
         // Start LBA (4 bytes, little-endian)
         uint startLba = (uint)(part.StartOffset / sectorSize);
-        BitConverter.GetBytes(startLba).CopyTo(mbrData, offset + 8);
+        BinaryPrimitives.WriteUInt32LittleEndian(mbrData.AsSpan(offset + 8, 4), startLba);
 
         // Size in sectors (4 bytes, little-endian)
         uint sizeInSectors = (uint)(part.Size / sectorSize);
-        BitConverter.GetBytes(sizeInSectors).CopyTo(mbrData, offset + 12);
+        BinaryPrimitives.WriteUInt32LittleEndian(mbrData.AsSpan(offset + 12, 4), sizeInSectors);
     }
 
     /// <summary>
@@ -187,11 +188,11 @@ internal static class PartitionTableSynthesizer
         gptData[453] = 0xFF;
 
         // Start LBA = 1 (GPT header is at LBA 1)
-        BitConverter.GetBytes(1u).CopyTo(gptData, 454);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(454, 4), 1u);
 
         // Size in sectors (max 0xFFFFFFFF for protective MBR)
         uint sizeInSectors = diskSectors > uint.MaxValue ? uint.MaxValue : (uint)(diskSectors - 1);
-        BitConverter.GetBytes(sizeInSectors).CopyTo(gptData, 458);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(458, 4), sizeInSectors);
 
         // Boot signature at offset 510-511
         gptData[510] = 0x55;
@@ -213,54 +214,54 @@ internal static class PartitionTableSynthesizer
         int headerOffset = sectorSize;  // GPT header is at LBA 1
 
         // Signature: "EFI PART" in little-endian
-        BitConverter.GetBytes(GptSignature).CopyTo(gptData, headerOffset + 0);
+        BinaryPrimitives.WriteInt64LittleEndian(gptData.AsSpan(headerOffset + 0, 8), GptSignature);
 
         // Revision: 1.0 (0x00010000)
-        BitConverter.GetBytes(GptRevision).CopyTo(gptData, headerOffset + 8);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 8, 4), GptRevision);
 
         // Header size: 92 bytes
-        BitConverter.GetBytes((uint)GptHeaderSize).CopyTo(gptData, headerOffset + 12);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 12, 4), (uint)GptHeaderSize);
 
         // CRC32 of header (calculated later) - set to 0 for now
-        BitConverter.GetBytes(0u).CopyTo(gptData, headerOffset + 16);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 16, 4), 0u);
 
         // Reserved: must be 0
-        BitConverter.GetBytes(0u).CopyTo(gptData, headerOffset + 20);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 20, 4), 0u);
 
         // Current LBA: 1 (this header is at LBA 1)
-        BitConverter.GetBytes((long)1).CopyTo(gptData, headerOffset + 24);
+        BinaryPrimitives.WriteInt64LittleEndian(gptData.AsSpan(headerOffset + 24, 8), (long)1);
 
         // Backup LBA: last sector of disk
         long backupLba = diskSectors - 1;
-        BitConverter.GetBytes(backupLba).CopyTo(gptData, headerOffset + 32);
+        BinaryPrimitives.WriteInt64LittleEndian(gptData.AsSpan(headerOffset + 32, 8), backupLba);
 
         // First usable LBA: after partition entries
         long firstUsableLba = 2 + partitionEntriesSectors;
-        BitConverter.GetBytes(firstUsableLba).CopyTo(gptData, headerOffset + 40);
+        BinaryPrimitives.WriteInt64LittleEndian(gptData.AsSpan(headerOffset + 40, 8), firstUsableLba);
 
         // Last usable LBA: before backup header
         long lastUsableLba = diskSectors - partitionEntriesSectors - 2;
-        BitConverter.GetBytes(lastUsableLba).CopyTo(gptData, headerOffset + 48);
+        BinaryPrimitives.WriteInt64LittleEndian(gptData.AsSpan(headerOffset + 48, 8), lastUsableLba);
 
         // Disk GUID - generate new or use from metadata if available
         var diskGuid = Guid.NewGuid();
         diskGuid.ToByteArray().CopyTo(gptData, headerOffset + 56);
 
         // Partition entry LBA: 2 (entries start at LBA 2)
-        BitConverter.GetBytes((long)2).CopyTo(gptData, headerOffset + 72);
+        BinaryPrimitives.WriteInt64LittleEndian(gptData.AsSpan(headerOffset + 72, 8), (long)2);
 
         // Number of partition entries
-        BitConverter.GetBytes((uint)numPartitionEntries).CopyTo(gptData, headerOffset + 80);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 80, 4), (uint)numPartitionEntries);
 
         // Size of partition entry: 128 bytes
-        BitConverter.GetBytes((uint)PartitionEntrySize).CopyTo(gptData, headerOffset + 84);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 84, 4), (uint)PartitionEntrySize);
 
         // CRC32 of partition entries (calculated later)
-        BitConverter.GetBytes(0u).CopyTo(gptData, headerOffset + 88);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 88, 4), 0u);
 
         // Calculate and write CRC32 of header
         uint headerCrc = Crc32.Calculate(gptData, headerOffset, GptHeaderSize);
-        BitConverter.GetBytes(headerCrc).CopyTo(gptData, headerOffset + 16);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 16, 4), headerCrc);
     }
 
     /// <summary>
@@ -299,11 +300,11 @@ internal static class PartitionTableSynthesizer
         // Calculate and write CRC32 of partition entries to header
         uint entriesCrc = Crc32.Calculate(entriesData, 0, entriesData.Length);
         int headerOffset = sectorSize;
-        BitConverter.GetBytes(entriesCrc).CopyTo(gptData, headerOffset + 88);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 88, 4), entriesCrc);
 
         // Recalculate header CRC with updated partition entries CRC
         uint headerCrc = Crc32.Calculate(gptData, headerOffset, GptHeaderSize);
-        BitConverter.GetBytes(headerCrc).CopyTo(gptData, headerOffset + 16);
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 16, 4), headerCrc);
     }
 
     /// <summary>
@@ -325,15 +326,15 @@ internal static class PartitionTableSynthesizer
 
         // Starting LBA (8 bytes)
         long startLba = part.StartOffset / sectorSize;
-        BitConverter.GetBytes(startLba).CopyTo(entriesData, offset + 32);
+        BinaryPrimitives.WriteInt64LittleEndian(entriesData.AsSpan(offset + 32, 8), startLba);
 
         // Ending LBA (8 bytes)
         long sizeInSectors = part.Size / sectorSize;
         long endLba = startLba + sizeInSectors - 1;
-        BitConverter.GetBytes(endLba).CopyTo(entriesData, offset + 40);
+        BinaryPrimitives.WriteInt64LittleEndian(entriesData.AsSpan(offset + 40, 8), endLba);
 
         // Attributes (8 bytes) - default to 0
-        BitConverter.GetBytes((long)0).CopyTo(entriesData, offset + 48);
+        BinaryPrimitives.WriteInt64LittleEndian(entriesData.AsSpan(offset + 48, 8), (long)0);
 
         // Partition name (72 bytes, UTF-16LE)
         string name = part.Name ?? $"Partition {part.Number}";
@@ -381,54 +382,54 @@ internal static class PartitionTableSynthesizer
         var secondaryHeader = new byte[GptHeaderSize];
 
         // Signature: "EFI PART"
-        BitConverter.GetBytes(GptSignature).CopyTo(secondaryHeader, 0);
+        BinaryPrimitives.WriteInt64LittleEndian(secondaryHeader.AsSpan(0, 8), GptSignature);
 
         // Revision: 1.0
-        BitConverter.GetBytes(GptRevision).CopyTo(secondaryHeader, 8);
+        BinaryPrimitives.WriteUInt32LittleEndian(secondaryHeader.AsSpan(8, 4), GptRevision);
 
         // Header size: 92 bytes
-        BitConverter.GetBytes((uint)GptHeaderSize).CopyTo(secondaryHeader, 12);
+        BinaryPrimitives.WriteUInt32LittleEndian(secondaryHeader.AsSpan(12, 4), (uint)GptHeaderSize);
 
         // CRC32 (calculated later)
-        BitConverter.GetBytes(0u).CopyTo(secondaryHeader, 16);
+        BinaryPrimitives.WriteUInt32LittleEndian(secondaryHeader.AsSpan(16, 4), 0u);
 
         // Reserved
-        BitConverter.GetBytes(0u).CopyTo(secondaryHeader, 20);
+        BinaryPrimitives.WriteUInt32LittleEndian(secondaryHeader.AsSpan(20, 4), 0u);
 
         // Current LBA: last sector (backup header location)
         long secondaryHeaderLba = diskSectors - 1;
-        BitConverter.GetBytes(secondaryHeaderLba).CopyTo(secondaryHeader, 24);
+        BinaryPrimitives.WriteInt64LittleEndian(secondaryHeader.AsSpan(24, 8), secondaryHeaderLba);
 
         // Backup LBA: 1 (primary header location)
-        BitConverter.GetBytes((long)1).CopyTo(secondaryHeader, 32);
+        BinaryPrimitives.WriteInt64LittleEndian(secondaryHeader.AsSpan(32, 8), (long)1);
 
         // First usable LBA
         long firstUsableLba = 2 + partitionEntriesSectors;
-        BitConverter.GetBytes(firstUsableLba).CopyTo(secondaryHeader, 40);
+        BinaryPrimitives.WriteInt64LittleEndian(secondaryHeader.AsSpan(40, 8), firstUsableLba);
 
         // Last usable LBA
         long lastUsableLba = diskSectors - partitionEntriesSectors - 2;
-        BitConverter.GetBytes(lastUsableLba).CopyTo(secondaryHeader, 48);
+        BinaryPrimitives.WriteInt64LittleEndian(secondaryHeader.AsSpan(48, 8), lastUsableLba);
 
         // Disk GUID (same as primary)
         diskGuid.CopyTo(secondaryHeader, 56);
 
         // Partition entry LBA: right before the secondary header
         long secondaryEntriesLba = diskSectors - partitionEntriesSectors - 1;
-        BitConverter.GetBytes(secondaryEntriesLba).CopyTo(secondaryHeader, 72);
+        BinaryPrimitives.WriteInt64LittleEndian(secondaryHeader.AsSpan(72, 8), secondaryEntriesLba);
 
         // Number of partition entries
-        BitConverter.GetBytes((uint)numPartitionEntries).CopyTo(secondaryHeader, 80);
+        BinaryPrimitives.WriteUInt32LittleEndian(secondaryHeader.AsSpan(80, 4), (uint)numPartitionEntries);
 
         // Size of partition entry
-        BitConverter.GetBytes((uint)PartitionEntrySize).CopyTo(secondaryHeader, 84);
+        BinaryPrimitives.WriteUInt32LittleEndian(secondaryHeader.AsSpan(84, 4), (uint)PartitionEntrySize);
 
         // Partition entries CRC32 (same as primary)
         partitionEntriesCrcBytes.CopyTo(secondaryHeader, 88);
 
         // Calculate and write CRC32 of secondary header
         uint headerCrc = Crc32.Calculate(secondaryHeader, 0, GptHeaderSize);
-        BitConverter.GetBytes(headerCrc).CopyTo(secondaryHeader, 16);
+        BinaryPrimitives.WriteUInt32LittleEndian(secondaryHeader.AsSpan(16, 4), headerCrc);
 
         // Write secondary partition entries (same as primary)
         long entriesStartOffset = 2 * sectorSize;
