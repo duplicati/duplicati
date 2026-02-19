@@ -23,6 +23,7 @@ using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
+using Duplicati.WebserverCore.Exceptions;
 
 namespace Duplicati.WebserverCore.Services;
 
@@ -51,7 +52,11 @@ public class FolderStatusService : IFolderStatusService
     /// </summary>
     public IEnumerable<FolderStatusDto> GetAllFolderStatuses()
     {
+        if (!_connection.ApplicationSettings.EnableFolderStatusService)
+            throw new ServiceUnavailableException("Folder status service is disabled");
+
         var results = new List<FolderStatusDto>();
+
         var activeBackupIds = GetActiveBackupIds();
         var backups = _connection.Backups;
 
@@ -87,6 +92,9 @@ public class FolderStatusService : IFolderStatusService
     /// </summary>
     public FolderStatusDto GetFolderStatus(string path)
     {
+        if (!_connection.ApplicationSettings.EnableFolderStatusService)
+            throw new ServiceUnavailableException("Folder status service is disabled");
+
         if (string.IsNullOrEmpty(path))
         {
             return new FolderStatusDto

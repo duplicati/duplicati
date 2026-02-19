@@ -157,6 +157,11 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_DISABLEAPIEXTENSIONS = "webservice-disable-api-extensions";
 
     /// <summary>
+    /// Enables the folder status service for the TrayIcon
+    /// </summary>
+    public const string OPTION_WEBSERVICE_ENABLE_FOLDER_STATUS_SERVICE = "webservice-enable-folder-status-service";
+
+    /// <summary>
     /// The default listening interface
     /// </summary>
     public const string DEFAULT_OPTION_INTERFACE = "loopback";
