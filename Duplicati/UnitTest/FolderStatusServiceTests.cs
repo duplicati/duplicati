@@ -104,6 +104,7 @@ public class FolderStatusServiceTests
 
         public void RemoveSensitiveInformation() { }
         public void MaskSensitiveInformation() { }
+        public void UnmaskSensitiveInformation(IBackup previous) { }
     }
 
     /// <summary>
