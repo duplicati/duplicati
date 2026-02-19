@@ -11,7 +11,7 @@ namespace Duplicati.Proprietary.DiskImage.Partition;
 /// Represents an unknown partition table type.
 /// Treats the entire disk as a single partition when the partition table type cannot be determined.
 /// </summary>
-public class UnknownPartitionTable : IPartitionTable
+internal class UnknownPartitionTable : IPartitionTable
 {
     /// <summary>
     /// The raw disk associated with this partition table, if available. May be null if no disk access is possible.

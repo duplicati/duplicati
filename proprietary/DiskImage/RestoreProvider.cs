@@ -214,7 +214,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <param name="segment">The partition segment string.</param>
     /// <returns>The corresponding partition.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the partition segment cannot be parsed or the partition is not found.</exception>
-    public IPartition ParsePartition(string segment)
+    internal IPartition ParsePartition(string segment)
     {
         // Example segment: "part_GPT_1"
         var parts = segment.Split('_');
@@ -248,7 +248,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <param name="segment">The filesystem segment string.</param>
     /// <returns>The corresponding filesystem.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the filesystem segment cannot be parsed or the filesystem is not found.</exception>
-    public IFilesystem ParseFilesystem(IPartition partition, string segment)
+    internal IFilesystem ParseFilesystem(IPartition partition, string segment)
     {
         // Example segment: "fs_NTFS"
         var parts = segment.Split('_');
@@ -276,7 +276,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <param name="path">The path to parse.</param>
     /// <returns>A tuple containing the item type, partition, and filesystem.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the path cannot be parsed.</exception>
-    public (string, IPartition?, IFilesystem?) ParsePath(string path)
+    internal (string, IPartition?, IFilesystem?) ParsePath(string path)
     {
         // For disk image restore, the path is expected to be in the format:
         // root/part_{PartitionTableType}_{PartitionNumber}/fs_{FileSystemType}/path/to/file

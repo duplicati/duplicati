@@ -45,7 +45,7 @@ public class UnknownFilesystemFile : IFile
 /// Represents an unknown or unsupported filesystem.
 /// Provides raw block-level access to partition data when the filesystem type cannot be determined.
 /// </summary>
-public class UnknownFilesystem : IFilesystem
+internal class UnknownFilesystem : IFilesystem
 {
     /// <inheritdoc />
     public FileSystemType Type => FileSystemType.Unknown;

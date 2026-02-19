@@ -13,7 +13,7 @@ namespace Duplicati.Proprietary.DiskImage.Partition;
 /// Represents a GPT (GUID Partition Table) partition table.
 /// GPT is the modern partition table format used on UEFI-based systems.
 /// </summary>
-public class GPT : IPartitionTable
+internal class GPT : IPartitionTable
 {
     // Constants for GPT parsing (from PartitionConstants)
     private const int HeaderSize = PartitionConstants.GptHeaderSize;

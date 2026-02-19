@@ -8,7 +8,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk;
 /// <summary>
 /// Low-level disk access interface for raw disk reading and writing.
 /// </summary>
-public interface IRawDisk : IDisposable
+internal interface IRawDisk : IDisposable
 {
     /// <summary>
     /// Gets the disk identifier (e.g., "\\.\PhysicalDrive0" or "/dev/sda")

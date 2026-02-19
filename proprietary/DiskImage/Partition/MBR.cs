@@ -12,7 +12,7 @@ namespace Duplicati.Proprietary.DiskImage.Partition;
 /// Represents an MBR (Master Boot Record) partition table.
 /// MBR is the traditional partition table format used on BIOS-based systems.
 /// </summary>
-public class MBR : IPartitionTable
+internal class MBR : IPartitionTable
 {
     // Constants for MBR parsing (from PartitionConstants)
     private const int MbrSize = PartitionConstants.MbrSize;

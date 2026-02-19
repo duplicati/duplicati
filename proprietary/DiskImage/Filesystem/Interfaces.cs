@@ -12,7 +12,7 @@ namespace Duplicati.Proprietary.DiskImage.Filesystem;
 /// Interface for filesystem access on a partition.
 /// Provides methods for listing, reading, and writing files within a filesystem.
 /// </summary>
-public interface IFilesystem : IDisposable
+internal interface IFilesystem : IDisposable
 {
     /// <summary>
     /// Gets the parent partition.

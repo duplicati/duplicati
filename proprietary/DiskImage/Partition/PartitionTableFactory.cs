@@ -10,7 +10,7 @@ namespace Duplicati.Proprietary.DiskImage.Partition;
 /// Factory for creating partition table instances with auto-detection.
 /// Parses the MBR first to determine if the disk uses GPT or MBR partition tables.
 /// </summary>
-public static class PartitionTableFactory
+internal static class PartitionTableFactory
 {
     // MBR constants (from PartitionConstants)
     private const int MbrSize = PartitionConstants.MbrSize;

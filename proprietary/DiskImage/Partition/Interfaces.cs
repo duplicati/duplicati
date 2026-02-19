@@ -10,7 +10,7 @@ namespace Duplicati.Proprietary.DiskImage.Partition;
 /// <summary>
 /// Represents a single partition on a disk.
 /// </summary>
-public interface IPartition : IDisposable
+internal interface IPartition : IDisposable
 {
     /// <summary>
     /// Gets the parent partition table.
@@ -70,7 +70,7 @@ public interface IPartition : IDisposable
 /// <summary>
 /// Partition table parsing interface.
 /// </summary>
-public interface IPartitionTable : IDisposable
+internal interface IPartitionTable : IDisposable
 {
     /// <summary>
     /// Gets the raw disk this table was parsed from. Null if the table was created from a byte array.
