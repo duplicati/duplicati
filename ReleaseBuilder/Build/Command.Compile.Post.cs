@@ -47,7 +47,8 @@ public static partial class Command
             {
                 case OSType.Windows:
                     await SignWindowsExecutables(buildDir, rtcfg);
-                    await CopyShellExtensionFiles(baseDir, buildDir);
+                    if (target.Interface == InterfaceType.GUI)
+                        await CopyShellExtensionFiles(baseDir, buildDir);
                     break;
 
                 case OSType.MacOS:
