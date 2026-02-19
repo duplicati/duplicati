@@ -35,6 +35,11 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     private bool _disposed;
 
     /// <summary>
+    /// The mount point for the provider. For disk images, this is typically not used since the entire disk is treated as root.
+    /// </summary>
+    private string _mountPoint = string.Empty;
+
+    /// <summary>
     /// Cache for source provider entries to optimize repeated access. Keyed by entry path.
     /// </summary>
     /// <remarks>
@@ -60,15 +65,14 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     /// <exception cref="UserInformationException">Thrown when mount point is specified.</exception>
     public SourceProvider(string url, string mountPoint, Dictionary<string, string?> options)
     {
-        if (!string.IsNullOrEmpty(mountPoint))
-            throw new UserInformationException("Mount point option is not supported for DiskImage provider. The entire disk will be mounted/treated as root.", "MountPointNotSupported");
+        _mountPoint = mountPoint;
 
         var uri = new Library.Utility.Uri(url);
         _devicePath = uri.HostAndPath;
     }
 
     /// <inheritdoc />
-    public string MountedPath => $"root{System.IO.Path.DirectorySeparatorChar}";
+    public string MountedPath => $"{_mountPoint}root{System.IO.Path.DirectorySeparatorChar}";
 
     /// <inheritdoc />
     public string DisplayName => Strings.ProviderDisplayName;
