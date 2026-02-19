@@ -156,27 +156,23 @@ namespace Duplicati.Library.Main.Operation
                         foreach (var url in entry)
                         {
                             var sanitizedUrl = Library.Utility.Utility.GetUrlWithoutCredentials(url);
-                            var m = Regex.Match(url, @"^@(?<mountpoint>[^|]+\|)+(?<url>.+)$", RegexOptions.IgnoreCase);
+                            var m = Regex.Match(url, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
                             if (m.Success)
                             {
                                 var mountpoint = m.Groups["mountpoint"].Value;
 
-                                if (!string.IsNullOrEmpty(mountpoint))
-                                {
-                                    if (mountpoint.Any(x => Path.GetInvalidPathChars().Contains(x)))
-                                        throw new UserInformationException(string.Format("The mountpoint \"{0}\" contains invalid characters", mountpoint), "InvalidMountpoint");
-                                    if (!Path.IsPathRooted(mountpoint))
-                                        throw new UserInformationException(string.Format("The mountpoint \"{0}\" is not a valid rooted mountpoint", mountpoint), "InvalidMountpoint");
-                                    mountpoint = Path.GetFullPath(mountpoint);
-                                    mountpoint = Util.AppendDirSeparator(mountpoint);
-                                }
+                                if (mountpoint.Any(x => Path.GetInvalidPathChars().Contains(x)))
+                                    throw new UserInformationException(string.Format("The mountpoint \"{0}\" contains invalid characters", mountpoint), "InvalidMountpoint");
+                                if (!Path.IsPathRooted(mountpoint))
+                                    throw new UserInformationException(string.Format("The mountpoint \"{0}\" is not a valid rooted mountpoint", mountpoint), "InvalidMountpoint");
+
+                                mountpoint = Util.AppendDirSeparator(mountpoint);
                                 var backendurl = m.Groups["url"].Value;
 
                                 ISourceProvider provider;
                                 try
                                 {
-                                    // TODO double check that all providers that require a mountpoint throws correctly when mountpoint is not set.
-                                    provider = await SourceProviderLoader.GetSourceProvider(backendurl, mountpoint, options.RawOptions, cancellationToken).ConfigureAwait(false);
+                                    provider = await SourceProviderLoader.GetSourceProvider(backendurl, Path.GetFullPath(mountpoint), options.RawOptions, cancellationToken).ConfigureAwait(false);
                                 }
                                 catch (Exception ex)
                                 {
