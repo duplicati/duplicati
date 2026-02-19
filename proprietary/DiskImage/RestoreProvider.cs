@@ -190,8 +190,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <inheritdoc />
     public Task<bool> CreateFolderIfNotExists(string path, CancellationToken cancel)
     {
-        // TODO current disk images don't have folders in the traditional sense
-        // The "folders" are virtual representations of disks/partitions/filesystems
+        // Disk images don't have folders in the traditional sense.
+        // The "folders" are virtual representations of disks/partitions/filesystems.
         return Task.FromResult(false);
     }
 
