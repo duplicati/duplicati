@@ -48,14 +48,14 @@ namespace Duplicati.UnitTest.DiskImage
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public void InitializeDisk(int diskNumber, string tableType)
+        public void InitializeDisk(int diskNumber, Duplicati.Proprietary.DiskImage.PartitionTableType tableType)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public char CreateAndFormatPartition(int diskNumber, string fsType, long sizeMB = 0)
+        public char CreateAndFormatPartition(int diskNumber, Duplicati.Proprietary.DiskImage.FileSystemType fsType, long sizeMB = 0)
         {
             throw new NotImplementedException("macOS disk image operations are not yet implemented.");
         }

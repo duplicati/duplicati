@@ -364,21 +364,17 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
-        public void InitializeDisk(int diskNumber, string tableType)
+        public void InitializeDisk(int diskNumber, Duplicati.Proprietary.DiskImage.PartitionTableType tableType)
         {
-            var partitionStyle = tableType.ToLowerInvariant() switch
-            {
-                "gpt" => "GPT",
-                "mbr" => "MBR",
-                _ => throw new ArgumentException($"Invalid partition table type: {tableType}", nameof(tableType))
-            };
+            if (tableType == Proprietary.DiskImage.PartitionTableType.Unknown)
+                throw new ArgumentException("Invalid partition table type", nameof(tableType));
 
             var script = $@"
                 $disk = Get-Disk -Number {diskNumber}
                 if ($disk.PartitionStyle -ne 'RAW') {{
                     Clear-Disk -Number {diskNumber} -RemoveData -Confirm:$false
                 }}
-                Initialize-Disk -Number {diskNumber} -PartitionStyle {partitionStyle}
+                Initialize-Disk -Number {diskNumber} -PartitionStyle {tableType.ToString().ToUpperInvariant()} -PassThru | Out-Null
             ";
             RunPowerShell(script);
 
@@ -409,9 +405,9 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
-        public char CreateAndFormatPartition(int diskNumber, string fsType, long sizeMB = 0)
+        public char CreateAndFormatPartition(int diskNumber, Duplicati.Proprietary.DiskImage.FileSystemType fsType, long sizeMB = 0)
         {
-            var fsTypeUpper = fsType.ToUpperInvariant();
+            var fsTypeUpper = fsType.ToString().ToUpperInvariant();
 
             // Find an available drive letter
             char driveLetter = FindAvailableDriveLetter();

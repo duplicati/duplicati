@@ -119,7 +119,7 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: GPT + NTFS Single Partition Backup and Restore");
 
             // Setup: Create 100MB VHD, GPT, single NTFS partition with test data
-            var physicalDrivePath = SetupSourceVhd(100, "gpt", "ntfs");
+            var physicalDrivePath = SetupSourceVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
             TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
             TestContext.Progress.WriteLine($"Physical drive path: {physicalDrivePath}");
 
@@ -136,7 +136,7 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine($"Remote files created: {remoteFiles.Length}");
 
             // Setup restore target VHD
-            var restoreDrivePath = SetupRestoreVhd(100, "gpt", "ntfs");
+            var restoreDrivePath = SetupRestoreVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
             TestContext.Progress.WriteLine($"Restore VHD created at: {_restoreVhdPath}");
 
             // Restore to target VHD
@@ -160,7 +160,7 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: MBR + FAT32 Single Partition Backup and Restore");
 
             // Setup: Create 50MB VHD, MBR, single FAT32 partition with test data
-            var physicalDrivePath = SetupSourceVhd(50, "mbr", "fat32");
+            var physicalDrivePath = SetupSourceVhd(50, PartitionTableType.MBR, FileSystemType.FAT32);
             TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
             TestContext.Progress.WriteLine($"Physical drive path: {physicalDrivePath}");
 
@@ -172,7 +172,7 @@ namespace Duplicati.UnitTest
             TestUtils.AssertResults(backupResults);
 
             // Setup restore target VHD
-            var restoreDrivePath = SetupRestoreVhd(50, "mbr", "fat32");
+            var restoreDrivePath = SetupRestoreVhd(50, PartitionTableType.MBR, FileSystemType.FAT32);
             TestContext.Progress.WriteLine($"Restore VHD created at: {_restoreVhdPath}");
 
             // Restore to target VHD
@@ -196,8 +196,8 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: GPT + Multiple Partitions (NTFS + FAT32) Backup");
 
             // Setup: Create 200MB VHD, GPT, two partitions
-            var physicalDrivePath = SetupSourceVhdMultiplePartitions(200, "gpt",
-                new[] { ("ntfs", 100), ("fat32", 50) });
+            var physicalDrivePath = SetupSourceVhdMultiplePartitions(200, PartitionTableType.GPT,
+                new[] { (FileSystemType.NTFS, 100), (FileSystemType.FAT32, 50) });
             TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
             TestContext.Progress.WriteLine($"Physical drive path: {physicalDrivePath}");
 
@@ -222,7 +222,7 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: Full Round-Trip Backup + Restore");
 
             // Setup source VHD: 100MB, GPT, single NTFS partition
-            var sourceDrivePath = SetupSourceVhd(100, "gpt", "ntfs");
+            var sourceDrivePath = SetupSourceVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
             TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
 
             // Backup
@@ -231,7 +231,7 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine($"Backup completed successfully");
 
             // Setup restore target VHD with same geometry
-            var restoreDrivePath = SetupRestoreVhd(100, "gpt", "ntfs");
+            var restoreDrivePath = SetupRestoreVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
             TestContext.Progress.WriteLine($"Restore VHD created at: {_restoreVhdPath}");
 
             // Restore
@@ -256,8 +256,8 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: Geometry Metadata Verification");
 
             // Setup: Create GPT disk with 2 NTFS partitions
-            var physicalDrivePath = SetupSourceVhdMultiplePartitions(200, "gpt",
-                new[] { ("ntfs", 80), ("ntfs", 60) });
+            var physicalDrivePath = SetupSourceVhdMultiplePartitions(200, PartitionTableType.GPT,
+                new[] { (FileSystemType.NTFS, 80), (FileSystemType.NTFS, 60) });
             TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
 
             // Backup
@@ -291,7 +291,7 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: SourceProvider Enumeration");
 
             // Setup: Create GPT disk with one NTFS partition
-            var physicalDrivePath = SetupSourceVhd(100, "gpt", "ntfs");
+            var physicalDrivePath = SetupSourceVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
             TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
 
             // Directly instantiate SourceProvider
@@ -349,8 +349,8 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: MBR + Multiple Partitions Backup");
 
             // Setup: Create 150MB VHD, MBR, two partitions (NTFS + FAT32)
-            var physicalDrivePath = SetupSourceVhdMultiplePartitions(150, "mbr",
-                new[] { ("ntfs", 70), ("fat32", 40) });
+            var physicalDrivePath = SetupSourceVhdMultiplePartitions(150, PartitionTableType.MBR,
+                new[] { (FileSystemType.NTFS, 70), (FileSystemType.FAT32, 40) });
             TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
 
             // Backup
@@ -376,7 +376,7 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: Auto Unmount Option - Restore While Disk Online");
 
             // Setup source VHD: 100MB, GPT, single NTFS partition
-            var sourceDrivePath = SetupSourceVhd(100, "gpt", "ntfs");
+            var sourceDrivePath = SetupSourceVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
             TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
 
             // Backup
@@ -389,8 +389,8 @@ namespace Duplicati.UnitTest
             _restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
 
             // Initialize disk (the restore will overwrite this, but we need it formatted)
-            _diskHelper.InitializeDisk(_restoreDiskNumber, "gpt");
-            _diskHelper.CreateAndFormatPartition(_restoreDiskNumber, "ntfs");
+            _diskHelper.InitializeDisk(_restoreDiskNumber, PartitionTableType.GPT);
+            _diskHelper.CreateAndFormatPartition(_restoreDiskNumber, FileSystemType.NTFS);
             TestContext.Progress.WriteLine($"Restore VHD created and kept online at: {_restoreVhdPath}");
 
             // First attempt: Restore without auto-unmount option should fail
@@ -447,10 +447,10 @@ namespace Duplicati.UnitTest
         /// Sets up a source VHD with a single partition.
         /// </summary>
         /// <param name="sizeMB">The size of the VHD in megabytes.</param>
-        /// <param name="tableType">The partition table type ("gpt" or "mbr").</param>
-        /// <param name="fsType">The filesystem type ("ntfs", "fat32", etc.).</param>
+        /// <param name="tableType">The partition table type (GPT or MBR).</param>
+        /// <param name="fsType">The filesystem type (NTFS, FAT32, EXT4, etc.).</param>
         /// <returns>The physical drive path.</returns>
-        private string SetupSourceVhd(int sizeMB, string tableType, string fsType)
+        private string SetupSourceVhd(int sizeMB, PartitionTableType tableType, FileSystemType fsType)
         {
             // Create and attach VHD
             var physicalDrivePath = _diskHelper.CreateAndAttachDisk(_sourceVhdPath, sizeMB);
@@ -473,10 +473,10 @@ namespace Duplicati.UnitTest
         /// Sets up a source VHD with multiple partitions.
         /// </summary>
         /// <param name="sizeMB">The size of the VHD in megabytes.</param>
-        /// <param name="tableType">The partition table type ("gpt" or "mbr").</param>
+        /// <param name="tableType">The partition table type (GPT or MBR).</param>
         /// <param name="partitions">Array of tuples containing filesystem type and size for each partition.</param>
         /// <returns>The physical drive path.</returns>
-        private string SetupSourceVhdMultiplePartitions(int sizeMB, string tableType, (string fsType, int sizeMB)[] partitions)
+        private string SetupSourceVhdMultiplePartitions(int sizeMB, PartitionTableType tableType, (FileSystemType fsType, int sizeMB)[] partitions)
         {
             // Create and attach VHD
             var physicalDrivePath = _diskHelper.CreateAndAttachDisk(_sourceVhdPath, sizeMB);
@@ -506,10 +506,10 @@ namespace Duplicati.UnitTest
         /// Sets up a restore target VHD with the specified geometry.
         /// </summary>
         /// <param name="sizeMB">The size of the VHD in megabytes.</param>
-        /// <param name="tableType">The partition table type ("gpt" or "mbr").</param>
-        /// <param name="fsType">The filesystem type ("ntfs", "fat32", etc.).</param>
+        /// <param name="tableType">The partition table type (GPT or MBR).</param>
+        /// <param name="fsType">The filesystem type (NTFS, FAT32, EXT4, etc.).</param>
         /// <returns>The physical drive path.</returns>
-        private string SetupRestoreVhd(int sizeMB, string tableType, string fsType)
+        private string SetupRestoreVhd(int sizeMB, PartitionTableType tableType, FileSystemType fsType)
         {
             // Create and attach VHD
             var physicalDrivePath = _diskHelper.CreateAndAttachDisk(_restoreVhdPath, sizeMB);

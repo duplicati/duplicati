@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using Duplicati.Proprietary.DiskImage;
 
 #nullable enable
 
@@ -51,18 +52,18 @@ namespace Duplicati.UnitTest.DiskImage
         /// Initializes a disk with the specified partition table type (GPT or MBR).
         /// </summary>
         /// <param name="diskNumber">The disk number.</param>
-        /// <param name="tableType">The partition table type ("gpt" or "mbr").</param>
-        void InitializeDisk(int diskNumber, string tableType);
+        /// <param name="tableType">The partition table type (GPT or MBR).</param>
+        void InitializeDisk(int diskNumber, PartitionTableType tableType);
 
         /// <summary>
         /// Creates a partition on the specified disk, formats it with the specified filesystem,
         /// and assigns a drive letter or mount point.
         /// </summary>
         /// <param name="diskNumber">The disk number.</param>
-        /// <param name="fsType">The filesystem type ("ntfs", "fat32", "ext4", etc.).</param>
+        /// <param name="fsType">The filesystem type (NTFS, FAT32, EXT4, etc.).</param>
         /// <param name="sizeMB">The size of the partition in MB (0 for all available space).</param>
         /// <returns>The assigned drive letter (Windows) or mount point identifier.</returns>
-        char CreateAndFormatPartition(int diskNumber, string fsType, long sizeMB = 0);
+        char CreateAndFormatPartition(int diskNumber, FileSystemType fsType, long sizeMB = 0);
 
         /// <summary>
         /// Flushes the volume cache to ensure all data is written to disk.
