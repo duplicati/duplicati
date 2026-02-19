@@ -642,6 +642,9 @@ namespace Duplicati.Server
                     connection.DismissNotification(n.ID);
             }
 
+            // Check tempdir free space against volume sizes
+            CheckTempDirFreeSpace(connection, commandlineOptions);
+
             // Emit warnings if the application has been updated
             if (connection.ApplicationSettings.LastConfigIssueCheckVersion != UpdaterManager.SelfVersion.Version)
             {
@@ -689,6 +692,132 @@ namespace Duplicati.Server
 
                 connection.ApplicationSettings.LastConfigIssueCheckVersion = UpdaterManager.SelfVersion.Version;
             }
+        }
+
+        /// <summary>
+        /// Checks if the tempdir has enough free space relative to the volume sizes of configured backups.
+        /// Emits a warning if free space is less than 4 times the volume size.
+        /// </summary>
+        /// <param name="connection">The database connection</param>
+        /// <param name="commandlineOptions">The commandline options</param>
+        private static void CheckTempDirFreeSpace(Connection connection, Dictionary<string, string> commandlineOptions)
+        {
+            const string TEMPDIR_WARNING_ACTION = "config:issue:tempdir-low-space";
+
+            // Get the tempdir path - check Connection settings first, then fall back to system default
+            var tempDir = TempFolder.SystemTempPath;
+            var serverSettings = connection.GetSettings(Connection.ANY_BACKUP_ID);
+            var tempDirSetting = serverSettings?.FirstOrDefault(s =>
+                string.Equals(s.Name, "tempdir", StringComparison.OrdinalIgnoreCase) || string.Equals(s.Name, "--tempdir", StringComparison.OrdinalIgnoreCase));
+            if (tempDirSetting != null && !string.IsNullOrEmpty(tempDirSetting.Value))
+                tempDir = tempDirSetting.Value;
+
+            // Get free space in tempdir using the Utility method
+            var spaceInfo = Library.Utility.Utility.GetFreeSpaceForPath(tempDir);
+            // Could not determine free space, skip the check
+            if (spaceInfo == null)
+                return;
+
+            // Get the maximum volume size from all configured backups
+            var maxVolumeSize = GetMaxVolumeSize(connection, commandlineOptions);
+
+            // Check if free space is less than 4 times the volume size
+            if (spaceInfo.Value.FreeSpace < maxVolumeSize * Library.Utility.Utility.VOLUME_SIZE_FREE_SPACE_MULTIPLIER)
+            {
+                // Emit warning
+                connection.RegisterNotification(
+                    Serialization.NotificationType.Warning,
+                    "Low temporary folder space",
+                    $"The temporary folder '{tempDir}' has limited free space ({Library.Utility.Utility.FormatSizeString(spaceInfo.Value.FreeSpace)}). " +
+                    $"It is recommended to have at least {Library.Utility.Utility.VOLUME_SIZE_FREE_SPACE_MULTIPLIER} times the volume size ({Library.Utility.Utility.FormatSizeString(maxVolumeSize * Library.Utility.Utility.VOLUME_SIZE_FREE_SPACE_MULTIPLIER)}) available for optimal operation.",
+                    null,
+                    null,
+                    TEMPDIR_WARNING_ACTION,
+                    null,
+                    "TempDirLowSpace",
+                    null,
+                    (self, all) =>
+                    {
+                        return all.FirstOrDefault(x => x.Action == TEMPDIR_WARNING_ACTION) ?? self;
+                    }
+                );
+            }
+            else
+            {
+                // Clear any existing warning
+                var existingNotifications = connection.GetNotifications().Where(x => x.Action == TEMPDIR_WARNING_ACTION).ToList();
+                foreach (var n in existingNotifications)
+                    connection.DismissNotification(n.ID);
+            }
+        }
+
+        /// <summary>
+        /// Gets the maximum volume size from all configured backups.
+        /// </summary>
+        /// <param name="connection">The database connection</param>
+        /// <param name="commandlineOptions">The commandline options</param>
+        /// <returns>The maximum volume size in bytes</returns>
+        private static long GetMaxVolumeSize(Connection connection, Dictionary<string, string> commandlineOptions)
+        {
+            const string DEFAULT_VOLUME_SIZE = "50mb";
+            long maxVolumeSize = 0;
+
+            // Check if there's a global dblock-size in commandline options
+            if (commandlineOptions.TryGetValue("dblock-size", out var globalDblockSize) && !string.IsNullOrEmpty(globalDblockSize))
+            {
+                try
+                {
+                    maxVolumeSize = Sizeparser.ParseSize(globalDblockSize, "mb");
+                }
+                catch
+                {
+                    // Ignore parsing errors
+                }
+            }
+
+            // Check if there's a global dblock-size in the database settings
+            var serverSettings = connection.GetSettings(Connection.ANY_BACKUP_ID);
+            var defaultDblockSize = serverSettings?.FirstOrDefault(s => string.Equals(s.Name, "dblock-size", StringComparison.OrdinalIgnoreCase) || string.Equals(s.Name, "--dblock-size", StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(defaultDblockSize?.Value))
+                try
+                {
+                    maxVolumeSize = Math.Max(Sizeparser.ParseSize(defaultDblockSize.Value, "mb"), maxVolumeSize);
+                }
+                catch
+                {
+                    // Ignore parsing errors
+                }
+
+            // If no global setting, use default
+            maxVolumeSize = Math.Max(maxVolumeSize, Sizeparser.ParseSize(DEFAULT_VOLUME_SIZE, "mb"));
+
+            // Check all configured backups for their volume sizes
+            foreach (var backup in connection.Backups)
+            {
+                try
+                {
+                    // Get settings for this backup
+                    var backupId = long.Parse(backup.ID);
+                    var settings = connection.GetSettings(backupId);
+
+                    // Look for dblock-size setting
+                    var dblockSizeSetting = settings?.FirstOrDefault(s =>
+                        string.Equals(s.Name, "dblock-size", StringComparison.OrdinalIgnoreCase) || string.Equals(s.Name, "--dblock-size", StringComparison.OrdinalIgnoreCase));
+
+                    if (dblockSizeSetting != null && !string.IsNullOrEmpty(dblockSizeSetting.Value))
+                    {
+                        var backupVolumeSize = Sizeparser.ParseSize(dblockSizeSetting.Value, "mb");
+                        if (backupVolumeSize > maxVolumeSize)
+                            maxVolumeSize = backupVolumeSize;
+                    }
+                }
+                catch
+                {
+                    // Ignore errors for individual backups
+                }
+            }
+
+            return maxVolumeSize;
         }
 
         /// <summary>

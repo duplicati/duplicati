@@ -4,21 +4,21 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
 # Translators:
-# Peter Krajcovic <krajcovic@oldfactory.sk>, 2017
 # Stanislav Prekop <prekop3@gmail.com>, 2024
 # Martin Rovňák <rovnakm@gmail.com>, 2024
 # Martin Novara, 2024
 # Martin Minka, 2024
 # Vaclav Ilov, 2025
+# Peter Krajcovic <krajcovic@oldfactory.sk>, 2026
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-20 13:45+0100\n"
+"POT-Creation-Date: 2026-02-18 13:48+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Vaclav Ilov, 2025\n"
+"Last-Translator: Peter Krajcovic <krajcovic@oldfactory.sk>, 2026\n"
 "Language-Team: Slovak (Slovakia) (https://app.transifex.com/duplicati/teams/67655/sk_SK/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -53,8 +53,8 @@ msgstr ""
 msgid "Set thread level utilized for crypting"
 msgstr "Nastavte úroveň vlákna používanú na šifrovanie"
 
-#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:196
-#: Library/Main/Strings.cs:249
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:257
 #, csharp-format
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "Možnosť --{0} sa už nepoužíva a bola zrušená."
@@ -272,7 +272,7 @@ msgstr "Chýba šifrovací kľúč."
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
 #: Library/Backend/Jottacloud/Jottacloud.cs:319
-#: Library/Backend/SMB/SMBShareConnection.cs:361
+#: Library/Backend/SMB/SMBShareConnection.cs:428
 msgid "The requested file does not exist"
 msgstr "Požadovaný súbor neexistuje"
 
@@ -402,11 +402,11 @@ msgstr "Nastavenie SSL politiky ak je šifrovanie povolené "
 msgid "Google Cloud Storage"
 msgstr "Google Cloud úložisko"
 
-#: Library/Backend/GoogleServices/Strings.cs:48
+#: Library/Backend/GoogleServices/Strings.cs:51
 msgid "Google Drive"
 msgstr "Google Drive"
 
-#: Library/Backend/GoogleServices/Strings.cs:50
+#: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
 #, csharp-format
 msgid "File not found: {0}"
@@ -415,6 +415,15 @@ msgstr "Súbor nenájdený: {0}"
 #: Library/Backend/S3/Strings.cs:27
 msgid "S3 compatible"
 msgstr "S3 kompatibilné "
+
+#: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
+#: Library/Utility/Strings.cs:93
+msgid ""
+"The password used to connect to the server. This may also be supplied as the"
+" environment variable \"AUTH_PASSWORD\"."
+msgstr ""
+"Heslo používané na pripojenie k serveru. Toto môže byť vložené aj ako "
+"premenná prostredia \"AUTH_PASSWORD\"."
 
 #: Library/Backend/SSHv2/Strings.cs:26
 msgid "Module for generating SSH private/public keys"
@@ -536,6 +545,23 @@ msgstr ""
 msgid "--{0}: {1}"
 msgstr "--{0}: {1}"
 
+#: Library/RestAPI/Strings.cs:38 CommandLine/CLI/Strings.cs:45
+msgid "Path to a file with parameters"
+msgstr "Cesta k súboru s parametrami"
+
+#: Library/RestAPI/Strings.cs:39
+#, csharp-format
+msgid ""
+"Filters cannot be specified on the commandline if filters are also present "
+"in the parameter file. Use the special --{0}, --{1}, or --{2} options to "
+"specify filters inside the parameter file. Each filter must be prefixed with"
+" either a + or a -, and multiple filters must be joined with {3}"
+msgstr ""
+"Filtre nie je možné špecifikovať v príkazovom riadku, ak sú zapísané aj v "
+"súbore parametrov. Použite špeciálne možnosti - {0}, - {1} alebo - {2} na "
+"zadanie filtrov v rámci súboru parametrov. Každý filter musí mať predponu "
+"buď a + alebo -, a viaceré filtre musia byť spojené s {3}"
+
 #: Library/RestAPI/Strings.cs:40 CommandLine/CLI/Strings.cs:41
 #, csharp-format
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
@@ -551,11 +577,11 @@ msgstr "Vážna chyba v Duplicati: {0}"
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr "Zistená nepodporovaná verzia SQLite ({0}), musí byť {1} alebo vyššia"
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:270
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:278
 msgid "Clean up old log data"
 msgstr "Vyčistiť staré záznamy"
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:97
+#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:101
 msgid "Temporary storage folder"
 msgstr "Dočasný adresár"
 
@@ -593,108 +619,108 @@ msgstr "Heslo použité pre šifrované zálohy"
 msgid "Show all versions"
 msgstr "Zobraziť všetky verzie"
 
-#: Library/Main/Strings.cs:85
+#: Library/Main/Strings.cs:89
 msgid "Show folder contents"
 msgstr "Zobraziť obsah adresára"
 
-#: Library/Main/Strings.cs:87
+#: Library/Main/Strings.cs:91
 msgid "Time to wait between retries"
 msgstr "Čas medzi opakovaniami"
 
-#: Library/Main/Strings.cs:130
+#: Library/Main/Strings.cs:134
 msgid "Log information level"
 msgstr "Log informačná úroveň"
 
-#: Library/Main/Strings.cs:171
+#: Library/Main/Strings.cs:177
 msgid "Exclude files by attribute"
 msgstr "Vylúčenie súborov podľa atribútov"
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:181
 msgid "Name of the backup"
 msgstr "Názov zálohy"
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:199
 msgid "List of deleted files"
 msgstr "Zoznam zmazaných súborov"
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:220
 msgid "Maximum number of small volumes"
 msgstr "Maximálny počet malých častí"
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:239
 msgid "Overwrite files when restoring"
 msgstr "Prepísanie súborov pri obnove"
 
-#: Library/Modules/Builtin/Strings.cs:31
+#: Library/Modules/Builtin/Strings.cs:32
 msgid "Confirm encryption passphrase"
 msgstr "Potvrdenie šifrovacej frázy"
 
-#: Library/Modules/Builtin/Strings.cs:32
+#: Library/Modules/Builtin/Strings.cs:33
 msgid "Empty passphrases are not allowed"
 msgstr "Prázdne heslá nie sú povolené"
 
-#: Library/Modules/Builtin/Strings.cs:33
+#: Library/Modules/Builtin/Strings.cs:34
 msgid "Enter encryption passphrase"
 msgstr "Vložte šifrovacie heslo"
 
-#: Library/Modules/Builtin/Strings.cs:46
+#: Library/Modules/Builtin/Strings.cs:47
 msgid "Configure Hyper-V module"
 msgstr "Configurácia Hyper-V modulu"
 
-#: Library/Modules/Builtin/Strings.cs:53
+#: Library/Modules/Builtin/Strings.cs:54
 msgid "Configure Microsoft SQL Server module"
 msgstr "Konfigurácia Microsoft SQL Server modulu"
 
-#: Library/Modules/Builtin/Strings.cs:58
+#: Library/Modules/Builtin/Strings.cs:112
 msgid "Run script"
 msgstr "Spustiť skript"
 
-#: Library/Modules/Builtin/Strings.cs:60
+#: Library/Modules/Builtin/Strings.cs:114
 msgid "Run a script on exit"
 msgstr "Spustiť skript pri vypnutí"
 
-#: Library/Modules/Builtin/Strings.cs:64
+#: Library/Modules/Builtin/Strings.cs:118
 msgid "Run a required script on startup"
 msgstr "Spustiť potrebný skript pri štarte"
 
-#: Library/Modules/Builtin/Strings.cs:70
+#: Library/Modules/Builtin/Strings.cs:124
 msgid "Run a script on startup"
 msgstr "Spustenie skriptu pri štarte"
 
-#: Library/Modules/Builtin/Strings.cs:80
+#: Library/Modules/Builtin/Strings.cs:134
 msgid "Send mail"
 msgstr "Poslať email"
 
-#: Library/Modules/Builtin/Strings.cs:91
+#: Library/Modules/Builtin/Strings.cs:145
 msgid "The message body"
 msgstr "Správa"
 
-#: Library/Modules/Builtin/Strings.cs:93
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "SMTP Password"
 msgstr "SMTP Heslo"
 
-#: Library/Modules/Builtin/Strings.cs:98
+#: Library/Modules/Builtin/Strings.cs:152
 msgid "Email recipient(s)"
 msgstr "Príjemca(i)"
 
-#: Library/Modules/Builtin/Strings.cs:117
+#: Library/Modules/Builtin/Strings.cs:171
 msgid "SMTP Username"
 msgstr "SMTP Užívateľské meno"
 
-#: Library/Modules/Builtin/Strings.cs:120
+#: Library/Modules/Builtin/Strings.cs:174
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "Email úspešne odoslaný s použitím servera: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:143
+#: Library/Modules/Builtin/Strings.cs:197
 msgid "The XMPP username"
 msgstr "XMPP užívateľ"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP password"
 msgstr "XMPP heslo"
 
-#: Library/Modules/Builtin/Strings.cs:221 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Akceptovenie všetkých serverových certifikátov"
 
@@ -765,6 +791,11 @@ msgstr "Podporované generické moduly:"
 msgid "An error occured: {0}"
 msgstr "Chyba: {0}"
 
+#: CommandLine/CLI/Strings.cs:47
+#, csharp-format
+msgid "The inner error message is: {0}"
+msgstr "Vnútorná chybová správa je: {0}"
+
 #: CommandLine/CLI/Strings.cs:49
 msgid "Include files"
 msgstr "Zahrnuté súbory"
@@ -772,6 +803,29 @@ msgstr "Zahrnuté súbory"
 #: CommandLine/CLI/Strings.cs:51
 msgid "Exclude files"
 msgstr "Vylúčené súbory"
+
+#: CommandLine/CLI/Strings.cs:52
+msgid ""
+"If this option is used with a backup operation, it is interpreted as a list "
+"of files to add to the filesets. When used with list or restore, it will "
+"list or restore the control files instead of the normal files."
+msgstr ""
+"Ak sa táto možnosť používa so zálohovacou operáciou, interpretuje sa ako "
+"zoznam súborov, ktoré sa majú pridať do sady súborov. Ak sa použije vo "
+"výpise, alebo pri obnovení, vypíše, alebo obnoví ovládacie súbory namiesto "
+"bežných súborov."
+
+#: CommandLine/CLI/Strings.cs:53
+msgid "Use control files"
+msgstr "Použiť ovládacie súbory"
+
+#: CommandLine/CLI/Strings.cs:54
+msgid ""
+"If this option is set, progress reports and other messages that would "
+"normally go to the console will be redirected to the log."
+msgstr ""
+"Ak je táto možnosť nastavená, správy o priebehu a ostatné správy, ktoré by "
+"sa normálne vypísali do konzoly, budú presmerované do protokolu."
 
 #: CommandLine/CLI/Strings.cs:55
 msgid "Disable console output"

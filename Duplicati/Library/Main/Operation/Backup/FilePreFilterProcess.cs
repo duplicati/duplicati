@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     // Compute current metadata
-                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(MetadataGenerator.GenerateMetadata(e.Entry, e.Attributes, options), options);
+                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(await MetadataGenerator.GenerateMetadata(e.Entry, e.Attributes, options, taskreader.ProgressToken), options);
                     e.MetadataChanged = !SKIPMETADATA && (e.MetaHashAndSize.Blob.Length != e.OldMetaSize || e.MetaHashAndSize.FileHash != e.OldMetaHash);
 
                     // Check if the file is new, or something indicates a change

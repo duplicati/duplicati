@@ -97,7 +97,13 @@ namespace Duplicati.Library.Backend
             { "Rabata EU West 2 (Netherlands)", "s3.eu-west-2.rabata.io" },
             { "Internxt US Central 1 (Texas)", "s3.us-central-1.internxt.com" },
             { "Internxt EU Central 1 (Amsterdam)", "s3.eu-central-1.internxt.com" },
-            { "Cloudflare R2", ".r2.cloudflarestorage.com" }
+            { "Cloudflare R2", ".r2.cloudflarestorage.com" },
+            { "Selectel S3 ru-1", "s3.ru-1.storage.selcloud.ru" },
+            { "Selectel S3 ru-3", "s3.ru-3.storage.selcloud.ru" },
+            { "Selectel S3 ru-7", "s3.ru-7.storage.selcloud.ru" },
+            { "Selectel S3 gis-1", "s3.gis-1.storage.selcloud.ru" },
+            { "Selectel S3 uz-2", "s3.uz-2.srvstorage.uz" },
+            { "Selectel S3 kz-1", "s3.kz-1.srvstorage.kz" }
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
@@ -258,11 +264,12 @@ namespace Duplicati.Library.Backend
             // Check if hostname is actually an URL
             if (System.Uri.IsWellFormedUriString(hostname, UriKind.Absolute))
             {
-                var hosturi = new System.Uri(hostname);
+                var uriToTest = hostname.Contains("://") ? hostname : "http://" + hostname;
+                var hosturi = new System.Uri(uriToTest);
                 if (hosturi.PathAndQuery.Length > 1)
                     throw new UserInformationException(Strings.S3Backend.NoPathAllowedInEndpointError, "S3NoPathInEndpoint");
 
-                hostname = hosturi.Host;
+                hostname = hosturi.Authority;
                 if (!options.ContainsKey(SSL_OPTION))
                     useSSL = hosturi.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase);
             }

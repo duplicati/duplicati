@@ -154,6 +154,11 @@ namespace Duplicati.Library.Main.Database
         private bool m_logQueries;
 
         /// <summary>
+        /// Indicates whether the metadata content should be stored in the database.
+        /// </summary>
+        private bool m_storeMetadataContent;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LocalBackupDatabase"/> class.
         /// This constructor is private to enforce the use of the static and asynchronous CreateAsync methods for instantiation.
         /// </summary>
@@ -192,6 +197,7 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
 
             dbnew.m_logQueries = options.ProfileAllDatabaseQueries;
+            dbnew.m_storeMetadataContent = options.StoreMetadataContentInDatabase;
 
             dbnew.m_findblockCommand = await dbnew.Connection.CreateCommandAsync(@"
                 SELECT ""ID""
@@ -326,8 +332,8 @@ namespace Duplicati.Library.Main.Database
                 .ConfigureAwait(false);
 
             dbnew.m_insertmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"
-                INSERT INTO ""Metadataset"" (""BlocksetID"")
-                VALUES (@BlocksetId);
+                INSERT INTO ""Metadataset"" (""BlocksetID"", ""Content"")
+                VALUES (@BlocksetId, @Content);
                 SELECT last_insert_rowid();
             ", token)
                 .ConfigureAwait(false);
@@ -966,9 +972,10 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filehash">The metadata hash.</param>
         /// <param name="size">The size of the metadata.</param>
         /// <param name="blocksetid">The id of the blockset to add.</param>
+        /// <param name="metahash">The metahash object.</param>
         /// <param name="token"> The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a tuple with the first value indicating if the metadata set was added, and the second value being the metadata ID.</returns>
-        public async Task<(bool, long)> AddMetadataset(string filehash, long size, long blocksetid, CancellationToken token)
+        public async Task<(bool, long)> AddMetadataset(string filehash, long size, long blocksetid, IMetahash metahash, CancellationToken token)
         {
             var (metadatafound, metadataid) = await GetMetadatasetID(filehash, size, token)
                 .ConfigureAwait(false);
@@ -978,6 +985,7 @@ namespace Duplicati.Library.Main.Database
             metadataid = await m_insertmetadatasetCommand
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@BlocksetId", blocksetid)
+                .SetParameterValue("@Content", m_storeMetadataContent ? Library.Utility.Utility.GetStringWithoutBOM(metahash.Blob) : null)
                 .ExecuteScalarInt64Async(m_logQueries, token)
                 .ConfigureAwait(false);
 
@@ -1439,8 +1447,14 @@ namespace Duplicati.Library.Main.Database
                         )
                         SELECT
                             @CurrentFilesetId AS ""FilesetID"",
-                            ""FileID"",
-                            ""Lastmodified""
+                            COALESCE(
+                                (SELECT ""ID"" FROM ""File"" ""NewFile""
+                                 WHERE ""NewFile"".""Path"" = ""OldFile"".""Path""
+                                 AND ""NewFile"".""ID"" != ""OldEntry"".""FileID""
+                                 ORDER BY ""NewFile"".""ID"" DESC LIMIT 1),
+                                ""OldEntry"".""FileID""
+                            ) AS ""FileID"",
+                            ""OldEntry"".""Lastmodified""
                         FROM (
                             SELECT DISTINCT
                                 ""FilesetID"",
@@ -1454,6 +1468,18 @@ namespace Duplicati.Library.Main.Database
                                     FROM ""FilesetEntry""
                                     WHERE ""FilesetID"" = @CurrentFilesetId
                                 )
+                        ) ""OldEntry""
+                        INNER JOIN ""File"" ""OldFile"" ON ""OldEntry"".""FileID"" = ""OldFile"".""ID""
+                        /* 
+                           Filter out files that are already in the current fileset (e.g. via --changed-files).
+                           We check by Path because the FileID might be different (new version of the file).
+                        */
+                        WHERE ""OldFile"".""Path"" NOT IN (
+                            SELECT ""Path"" FROM ""File""
+                            WHERE ""ID"" IN (
+                                SELECT ""FileID"" FROM ""FilesetEntry""
+                                WHERE ""FilesetID"" = @CurrentFilesetId
+                            )
                         )
                     ")
                 .SetParameterValue("@CurrentFilesetId", filesetid)
@@ -1928,6 +1954,49 @@ namespace Duplicati.Library.Main.Database
                 return true;
             else
                 return !m_blocklistHashes.Add(hash);
+        }
+
+        /// <summary>
+        /// Removes duplicate path entries from the specified fileset, keeping the entry with the highest FileID.
+        /// </summary>
+        /// <param name="filesetId">The ID of the fileset to clean up.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the cleanup is finished.</returns>
+        public async Task RemoveDuplicatePathsFromFileset(long filesetId, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+
+            // Find and delete duplicate paths, keeping the one with the highest FileID
+            // Note: FilesetEntry doesn't have an ID column, so we use rowid (or the composite key)
+            var sql = @"
+                DELETE FROM ""FilesetEntry""
+                WHERE (""FilesetID"", ""FileID"") IN (
+                    SELECT ""FilesetID"", ""FileID"" FROM (
+                        SELECT
+                            fe.""FilesetID"",
+                            fe.""FileID"",
+                            ROW_NUMBER() OVER (
+                                PARTITION BY f.""Path""
+                                ORDER BY fe.""FileID"" DESC
+                            ) as rn
+                        FROM ""FilesetEntry"" fe
+                        JOIN ""File"" f ON fe.""FileID"" = f.""ID""
+                        WHERE fe.""FilesetID"" = @FilesetId
+                    ) WHERE rn > 1
+                )
+            ";
+
+            var deletedCount = await cmd
+                .SetCommandAndParameters(sql)
+                .SetParameterValue("@FilesetId", filesetId)
+                .ExecuteNonQueryAsync(token)
+                .ConfigureAwait(false);
+
+            if (deletedCount > 0)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "RemovedDuplicatePaths", null,
+                    "Removed {0} duplicate path entries from fileset {1}", deletedCount, filesetId);
+            }
         }
     }
 }

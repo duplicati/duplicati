@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Matt Dawson <matthewd102@hotmail.com>, 2021
 # Andi Chandler <andi@gowling.com>, 2025

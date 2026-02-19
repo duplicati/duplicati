@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Alisson Oliveira <linukiss@gmail.com>, 2016
 # Ricardo Bezerra <camalau@gmail.com>, 2017
@@ -12,11 +11,12 @@
 # Mathias Maurilio <maurilio.1996.mathias@gmail.com>, 2020
 # Ricardo Malta <rm.malta@gmail.com>, 2021
 # Madson Coelho <madson@coelho.bz>, 2024
+# DeLinuxCo, 2026
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Madson Coelho <madson@coelho.bz>, 2024\n"
+"Last-Translator: DeLinuxCo, 2026\n"
 "Language-Team: Portuguese (Brazil) (https://app.transifex.com/duplicati/teams/67655/pt_BR/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1779,6 +1779,10 @@ msgstr "Recriar banco de dados"
 #: scripts/services/ServerStatus.js:59
 msgid "Recreating database …"
 msgstr "Recriaando banco de dados ..."
+
+#: templates/backends/cos.html:20
+msgid "Region"
+msgstr "Região"
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup …"

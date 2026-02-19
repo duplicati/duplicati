@@ -41,48 +41,79 @@ public class DestinationVerify : IEndpointV2
 
     private static async Task<DestinationTestResponseDto> ExecuteTest(Connection connection, IApplicationSettings applicationSettings, DestinationTestRequestDto input, CancellationToken cancelToken)
     {
-        TupleDisposeWrapper? wrapper = null;
+        var destinationType = input.DestinationType ?? RemoteDestinationType.Backend;
 
         try
         {
-            wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
-
-            using (var b = wrapper.Backend)
+            if (destinationType == RemoteDestinationType.SourceProvider)
             {
-                try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
-                catch (Exception ex) when (SharedRemoteOperation.GetInnerException<FolderMissingException>(ex) is FolderMissingException)
-                {
-                    if (!input.AutoCreate)
-                        throw;
+                using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.SourcePrefix, cancelToken);
 
-                    await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
-                    await b.TestAsync(cancelToken).ConfigureAwait(false);
-                }
+                // We do not call TestAsync here, because we may have read-only access to the source, and test will verify write access
+                // Instead we just check if we can enumerate the files, which is the main thing we need to verify for a source provider
 
-                var anyFiles = false;
-                var anyBackups = false;
-                var anyEncryptedFiles = false;
-                await foreach (var f in b.ListAsync(cancelToken).ConfigureAwait(false))
-                {
-                    if (f.IsFolder)
-                        continue;
-
-                    anyFiles = true;
-                    var parsed = VolumeBase.ParseFilename(f.Name);
-                    if (parsed != null)
-                    {
-                        anyBackups = true;
-                        anyEncryptedFiles = !string.IsNullOrWhiteSpace(parsed.EncryptionModule);
-                        break;
-                    }
-                }
+                // Technically we also count folders as files here, but really we just want to know if there is data to backup
+                var anyFiles = await wrapper.SourceProvider.Enumerate(cancelToken).AnyAsync(cancelToken);
 
                 return DestinationTestResponseDto.Create(
-                    anyFiles,
-                    anyBackups,
-                    anyEncryptedFiles
+                    anyFiles: anyFiles,
+                    anyBackups: false,
+                    anyEncryptedFiles: false
                 );
+            }
+            else if (destinationType == RemoteDestinationType.RestoreDestinationProvider)
+            {
+                using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.SourcePrefix, cancelToken);
 
+                // Here we do call TestAsync, because we need to verify write access
+                await wrapper.RestoreDestinationProvider.Test(cancelToken);
+
+                return DestinationTestResponseDto.Create(
+                    anyFiles: true,
+                    anyBackups: false,
+                    anyEncryptedFiles: false
+                );
+            }
+            else
+            {
+                using var wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
+
+                using (var b = wrapper.Backend)
+                {
+                    try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
+                    catch (Exception ex) when (SharedRemoteOperation.GetInnerException<FolderMissingException>(ex) is FolderMissingException)
+                    {
+                        if (!input.AutoCreate)
+                            throw;
+
+                        await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+                        await b.TestAsync(cancelToken).ConfigureAwait(false);
+                    }
+
+                    var anyFiles = false;
+                    var anyBackups = false;
+                    var anyEncryptedFiles = false;
+                    await foreach (var f in b.ListAsync(cancelToken).ConfigureAwait(false))
+                    {
+                        if (f.IsFolder)
+                            continue;
+
+                        anyFiles = true;
+                        var parsed = VolumeBase.ParseFilename(f.Name);
+                        if (parsed != null)
+                        {
+                            anyBackups = true;
+                            anyEncryptedFiles = !string.IsNullOrWhiteSpace(parsed.EncryptionModule);
+                            break;
+                        }
+                    }
+
+                    return DestinationTestResponseDto.Create(
+                        anyFiles,
+                        anyBackups,
+                        anyEncryptedFiles
+                    );
+                }
             }
         }
         catch (Exception ex) when (SharedRemoteOperation.GetInnerException<FolderMissingException>(ex) is FolderMissingException)
@@ -156,10 +187,6 @@ public class DestinationVerify : IEndpointV2
                 ex.Message,
                 "error"
             );
-        }
-        finally
-        {
-            wrapper?.Dispose();
         }
     }
 }

@@ -31,6 +31,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation;
+using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
 using IndexVolumeWriter = Duplicati.Library.Main.Volumes.IndexVolumeWriter;
 using IRemoteVolume = Duplicati.Library.Main.Database.IRemoteVolume;
@@ -183,6 +184,69 @@ namespace Duplicati.UnitTest
             Assert.DoesNotThrowAsync(() => handler.RunAsync(backend, db));
             CollectionAssert.AreEquivalent(expectedVolumes, backend.LockedVolumes.Select(x => x.Name));
             ClassicAssert.True(backend.WaitedForEmpty);
+        }
+
+        /// <summary>
+        /// Tests that GetRemoteVolumesDependingOnFilesets works correctly with a large number of fileset IDs
+        /// that triggers the temporary table code path (when count > CHUNK_SIZE = 128).
+        /// </summary>
+        [Test]
+        [Category("Database")]
+        public async Task GetRemoteVolumesDependingOnFilesets_WithLargeInput_UsesTemporaryTable()
+        {
+            using var dbfile = new TempFile();
+            using var db = SQLiteLoader.LoadConnection(dbfile);
+
+            // Use DatabaseUpgrader to create the schema from embedded resources
+            DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+
+            using var cmd = db.CreateCommand();
+
+            // Insert an operation record (required for LocalDatabase initialization)
+            cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES ('Test', 0)";
+            cmd.ExecuteNonQuery();
+
+            // Create 150 fileset IDs (exceeds CHUNK_SIZE of 128) to trigger temporary table path
+            var filesetIds = new List<long>();
+            for (int i = 0; i < 150; i++)
+            {
+                // Insert a remote volume for each fileset
+                cmd.CommandText = $@"
+                    INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
+                    VALUES ({i + 1}, 1, 'volume-{i}.zip', 'Files', 'Verified', 0, 0, 0, 0)";
+                cmd.ExecuteNonQuery();
+
+                // Insert a fileset referencing this volume
+                cmd.CommandText = $@"
+                    INSERT INTO ""Fileset"" (""ID"", ""OperationID"", ""VolumeID"", ""IsFullBackup"", ""Timestamp"")
+                    VALUES ({i + 1}, 1, {i + 1}, 1, {i})";
+                cmd.ExecuteNonQuery();
+
+                filesetIds.Add(i + 1);
+            }
+
+            // Close the connection so LocalDatabase can open it
+            db.Close();
+
+            // Create LocalDatabase instance
+            await using var localDb = await LocalDatabase.CreateLocalDatabaseAsync(
+                dbfile,
+                "TestOperation",
+                true,
+                null,
+                CancellationToken.None
+            );
+
+            // Act: Call GetRemoteVolumesDependingOnFilesets with 150 fileset IDs
+            // This should trigger the temporary table code path
+            var volumes = new List<string>();
+            await foreach ((var volume, _) in localDb.GetRemoteVolumesDependingOnFilesets(filesetIds, CancellationToken.None).ConfigureAwait(false))
+                volumes.Add(volume);
+
+            // Assert: Should return all 150 volumes
+            Assert.That(volumes.Count, Is.EqualTo(150));
+            for (int i = 0; i < 150; i++)
+                Assert.That(volumes, Does.Contain($"volume-{i}.zip"));
         }
     }
 }

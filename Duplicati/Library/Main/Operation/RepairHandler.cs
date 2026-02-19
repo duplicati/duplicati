@@ -1164,7 +1164,7 @@ namespace Duplicati.Library.Main.Operation
                         continue;
                     }
 
-                    var metadata = MetadataGenerator.GenerateMetadata(entry, entry.Attributes, m_options);
+                    var metadata = await MetadataGenerator.GenerateMetadata(entry, entry.Attributes, m_options, cancellationToken);
                     var metahash = Utility.WrapMetadata(metadata, m_options);
                     if (metahash.FileHash != block.Hash || metahash.Blob.Length != size)
                     {
@@ -1403,6 +1403,7 @@ namespace Duplicati.Library.Main.Operation
 
             await db.FixDuplicateMetahash(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db.FixDuplicateFileentries(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await db.FixDuplicatePathsInFilesets(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db
                 .FixDuplicateBlocklistHashes(m_options.Blocksize, m_options.BlockhashSize, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);

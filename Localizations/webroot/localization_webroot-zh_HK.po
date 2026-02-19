@@ -1,16 +1,39 @@
-# 
 # Translators:
 # Aticaler, 2024
+# YUCHENG CHIU, 2026
+# vishun, 2026
+# Steve Link, 2026
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Aticaler, 2024\n"
+"Last-Translator: Steve Link, 2026\n"
 "Language-Team: Chinese (Hong Kong) (https://app.transifex.com/duplicati/teams/67655/zh_HK/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: zh_HK\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+
+#: templates/backup-result/entryline.html:5
+msgid "(1 error{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgid_plural ""
+"({{$count}} errors{{item.Result.Interrupted? (', interrupted'|translate) : "
+"''}})"
+msgstr[0] ""
+"({{$count}} 错误{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+
+#: templates/backup-result/entryline.html:10
+msgid ""
+"(1 warning{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgid_plural ""
+"({{$count}} warnings{{item.Result.Interrupted? (', interrupted'|translate) :"
+" ''}})"
+msgstr[0] ""
+"({{$count}} 警告{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+
+#: templates/backup-result/entryline.html:15
+msgid "(interrupted)"
+msgstr "（中断）"
 
 #: templates/advancedoptionseditor.html:50
 msgid "- pick an option -"
@@ -19,6 +42,62 @@ msgstr "選擇一個選項"
 #: scripts/controllers/SystemSettingsController.js:217 templates/delete.html:7
 msgid "...loading..."
 msgstr "...載入中..."
+
+#: templates/commandline.html:25
+msgid "<i class=\"fa fa-check\"></i> Edit as text"
+msgstr "<i class=\"fa fa-check\"></i> 以文本编辑"
+
+#: templates/commandline.html:32
+msgid "<i class=\"fa\"></i> Edit as text"
+msgstr "<i class=\"fa\"></i> 以文本编辑"
+
+#: templates/addoredit.html:312
+msgid ""
+"<p ng-show=\"(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)\" class=\"warning\" translate>\n"
+"                            The chosen size is outside the recommended range. This may cause performance issues, excessively large temporary files or other problems.\n"
+"                        </p>\n"
+"                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link=\"'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'\">See this page for more information.</external-link>"
+msgstr ""
+"<p ng-show=\"(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)\" class=\"warning\" translate>\n"
+"                            当前设置的文件大小超过建议的范围。这可能会导致性能瓶颈、过大的临时文件或者其它问题。\n"
+"                        </p>\n"
+"                        备份将被拆分为多个称为“卷”的小文件储存。此处用于设置单个卷所允许的最大文件大小。<external-link link=\"'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'\">查看此文档了解更多信息，</external-link>"
+
+#: index.html:298
+msgid ""
+"<p>Connection to server was rejected due to invalid authentication.</p>\n"
+"                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
+msgstr ""
+"<p>由于无效的身份验证，连接至服务器被拒绝。</p>\n"
+"                <p>请尝试重新登录，或者从托盘图标重新打开页面 (如果适用)。</p>"
+
+#: templates/backends/filejump.html:30
+msgid ""
+"<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>Use username and password authentication</span>\n"
+"        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>Use API token authentication (recommended)</span>"
+msgstr ""
+"<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>使用用户名和密码验证</span>\n"
+"        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>使用 API 令牌验证 (推荐)</span>"
+
+#: scripts/services/EditUriBuiltins.js:1061
+msgid "API Token"
+msgstr "API Token"
+
+#: scripts/services/EditUriBuiltins.js:1314
+#: templates/backends/openstack.html:44 templates/backends/storj.html:21
+#: templates/backends/storj.html:22
+msgid "API key"
+msgstr "API key"
+
+#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: templates/backends/s3.html:68
+msgid "AWS Access ID"
+msgstr "AWS 访问 ID"
+
+#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: templates/backends/s3.html:73
+msgid "AWS Access Key"
+msgstr "AWS 访问密钥"
 
 #: scripts/services/EditUriBuiltins.js:157
 msgid "AWS IAM Policy"
@@ -32,9 +111,33 @@ msgstr "關於"
 msgid "About {{appname}}"
 msgstr "關於 {{appname}}"
 
+#: scripts/services/EditUriBuiltins.js:1153
+msgid "Access Key"
+msgstr "访问密钥"
+
+#: templates/backends/e2.html:2
+msgid "Access Key ID"
+msgstr "访问密钥 ID"
+
+#: templates/backends/e2.html:6
+msgid "Access Key Secret"
+msgstr "访问密钥机密"
+
 #: scripts/services/AppUtils.js:76
 msgid "Access denied"
 msgstr "存取被拒"
+
+#: templates/backends/storj.html:33 templates/backends/storj.html:34
+msgid "Access grant"
+msgstr "访问授权"
+
+#: templates/backends/azure.html:11 templates/backends/azure.html:12
+msgid "Access key"
+msgstr "访问密钥"
+
+#: templates/settings.html:5
+msgid "Access to user interface"
+msgstr "用户界面访问"
 
 #: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
@@ -65,6 +168,15 @@ msgstr "新增過濾器"
 msgid "Add path"
 msgstr "加入路徑"
 
+#: templates/backup-result/top-right-box.html:18
+msgid "Added"
+msgstr "已添加"
+
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+msgid "Adjust bucket name?"
+msgstr "调整 bucket 名称？"
+
 #: templates/restoredirect.html:66 templates/restoredirect.html:74
 msgid "Advanced Options"
 msgstr "進階選項"
@@ -78,9 +190,27 @@ msgstr "進階選項"
 msgid "Advanced:"
 msgstr "進階："
 
+#: templates/backends/aliyunoss.html:4
+msgid "Aliyun OSS Endpoint"
+msgstr "阿里云 OSS 访问域名(Endpoint)"
+
+#: templates/backends/aliyunoss.html:35
+msgid "Aliyun OSS documents and resources"
+msgstr "阿里云 OSS 文档和资源"
+
 #: scripts/directives/sourceFolderPicker.js:279
 msgid "All Hyper-V Machines"
 msgstr "所有Hyper-V機器"
+
+#: templates/settings.html:175
+msgid ""
+"All usage reports are sent anonymously and do not contain any personal "
+"information. They contain information about hardware and operating system, "
+"the type of backend, backup duration, overall size of source data and "
+"similar data. They do not contain paths, filenames, usernames, passwords or "
+"similar sensitive information."
+msgstr ""
+"所有的使用情况报告均以匿名的方式发送，并不包含任何个人信息。它们仅包含有关硬件和操作系统、后端类型、备份时长、源数据总大小以及其它类似数据的信息。它们不包含路径、文件名、用户名、密码或其它类似的敏感信息。"
 
 #: templates/settings.html:20
 msgid "Allow remote access (requires restart)"
@@ -90,13 +220,48 @@ msgstr "允許遠端存取（需要重新啟動）"
 msgid "Allowed days"
 msgstr "允許日子"
 
+#: templates/pause.html:52
+msgid "Also pause transfers"
+msgstr "同时暂停文件传输"
+
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
 msgstr "在新的位置上發現有檔案存在"
 
+#: scripts/controllers/LocalDatabaseController.js:72
+msgid ""
+"An existing file was found at the new location\n"
+"Are you sure you want the database to point to an existing file?"
+msgstr ""
+"新的位置已存在文件\n"
+"确定要将数据库指向已存在的文件吗？"
+
+#: scripts/controllers/EditBackupController.js:458
+msgid ""
+"An existing local database for the storage has been found.\n"
+"Re-using the database will allow the command-line and server instances to work on the same remote storage.\n"
+"\n"
+" Do you wish to use the existing database?"
+msgstr ""
+"发现该储存在本地已存在数据库\n"
+"重新使用该数据库将导致命令行或服务器实例工作在相同的储存中\n"
+"您希望使用已有的数据库吗？"
+
 #: templates/settings.html:163
 msgid "Anonymous usage reports"
 msgstr "匿名使用報告"
+
+#: scripts/services/AppUtils.js:212
+msgid "Applications"
+msgstr "应用"
+
+#: scripts/controllers/SystemSettingsController.js:194
+msgid "Are you sure you want to delete the remote control registration?"
+msgstr "确定要删除远程控制设置吗？"
+
+#: templates/export.html:8
+msgid "As Command-line"
+msgstr "导出为命令行"
 
 #: scripts/services/EditUriBuiltins.js:1110
 #: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
@@ -108,6 +273,18 @@ msgstr "匿名使用報告"
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
 msgstr "AuthID"
+
+#: templates/backends/smb.html:34
+msgid "Authentication Domain"
+msgstr "认证域"
+
+#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
+msgid "Authentication method"
+msgstr "认证方法"
+
+#: templates/backends/storj.html:5
+msgid "Authentication method ({{auth_method}})"
+msgstr "认证方法 ({{auth_method}})"
 
 #: templates/backends/filejump.html:26 templates/backends/filen.html:12
 #: templates/backends/generic.html:23 templates/backends/openstack.html:35
@@ -125,18 +302,66 @@ msgstr "認證用戶名"
 msgid "Autogenerated passphrase"
 msgstr "自動產生密碼"
 
+#: templates/addoredit.html:258
+msgid "Automatically run backups"
+msgstr "自动运行备份"
+
+#: templates/backends/b2.html:12
+msgid "B2 Application ID"
+msgstr "B2 应用 ID"
+
+#: templates/backends/b2.html:16
+msgid "B2 Application Key"
+msgstr "B2 应用密钥"
+
+#: scripts/services/EditUriBuiltins.js:1250
+msgid "B2 Cloud Storage Account ID"
+msgstr "B2 云存储帐户 ID"
+
+#: templates/backends/b2.html:13
+msgid "B2 Cloud Storage Application ID"
+msgstr "B2 云存储应用 ID"
+
+#: scripts/services/EditUriBuiltins.js:1251 templates/backends/b2.html:17
+msgid "B2 Cloud Storage Application Key"
+msgstr "B2 云存储应用密钥"
+
 #: templates/restore.html:138 templates/restore.html:70
 msgid "Back"
 msgstr "返回"
+
+#: templates/about.html:66
+msgid ""
+"Backend modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.BackendModules\">{{item.Key}} </p>"
+msgstr ""
+"后端模块：<p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.BackendModules\">{{item.Key}} </p>"
+
+#: scripts/services/ServerStatus.js:47
+msgid "Backup complete!"
+msgstr "备份完成！"
 
 #: templates/addoredit.html:92
 msgid "Backup destination"
 msgstr "備份目的地"
 
+#: templates/restore.html:131
+msgid ""
+"Backup is encrypted but no passphrase is available. Type a passphrase below "
+"to use for restoring your files, or, in case of GPG encryption, leave blank "
+"to let gpg retrieve the passphrase by invoking your system's keychain."
+msgstr ""
+"备份已加密，但没有可用的密码。请在下方输入一个密码以用于恢复您的文件。或者在使用GPG加密的情况下，留空以让gpg通过调用您系统的认证链来检索密码。"
+
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
 msgid "Backup location"
 msgstr "備份位置"
+
+#: templates/addoredit.html:321
+msgid "Backup retention"
+msgstr "备份保留策略"
 
 #: templates/home.html:100
 msgid "Backup:"
@@ -145,6 +370,10 @@ msgstr "備份："
 #: templates/settings.html:140
 msgid "Beta"
 msgstr "Beta"
+
+#: scripts/services/AppUtils.js:74
+msgid "Broken access"
+msgstr "访问中断"
 
 #: templates/backends/file.html:8 templates/restore.html:91
 msgid "Browse"
@@ -174,9 +403,76 @@ msgstr "Bucket 建立位置"
 msgid "Bucket name"
 msgstr "Bucket 名稱"
 
+#: scripts/services/EditUriBuiltins.js:1328
+msgid ""
+"Bucket name can only be between 3 and 63 characters long and contain only "
+"lower-case characters, numbers, periods and dashes"
+msgstr "Bucket 名称只能包含3到63个字符，并且只能包含小写字母、数字、句点和破折号。"
+
+#: templates/backends/s3.html:29
+msgid "Bucket region"
+msgstr "Bucket 地區"
+
+#: templates/backends/cos.html:21
+msgid "Bucket region ap-guangzhou"
+msgstr "Bucket 区域 ap-guangzhou"
+
 #: templates/backends/gcs.html:26
 msgid "Bucket storage class"
 msgstr "Bucket 儲存等級"
+
+#: templates/backends/cos.html:26
+msgid "Bucket, format: BucketName-APPID"
+msgstr "Bucket, 格式: BucketName-APPID"
+
+#: scripts/services/ServerStatus.js:51
+msgid "Building list of files to restore …"
+msgstr "正在构建文件还原列表…"
+
+#: scripts/controllers/RestoreController.js:373
+msgid "Building partial temporary database …"
+msgstr "正在构建部分临时数据库…"
+
+#: templates/restore.html:59
+msgid "Busy …"
+msgstr "忙碌 ..."
+
+#: templates/settings.html:21
+msgid ""
+"By allowing remote access, the server listens to requests from any machine "
+"on your network. If you enable this option, make sure you are always using "
+"the computer on a secure firewall protected network."
+msgstr "允许远程访问后，服务器将监听并允许来自你网络上任何机器的请求。启用此项后，请确保您的网络启用了安全防火墙保护。"
+
+#: templates/settings.html:31
+msgid ""
+"By default, the tray icon will open the user interface with a token that "
+"unlocks the user interface. This ensures that you can access the user "
+"interface from the tray icon, while requiring others to enter a password. If"
+" you prefer having to type in the password, even when accessing the user "
+"interface from the tray icon, enable this option."
+msgstr ""
+"默认情况下，托盘图标将使用令牌直接打开用户界面，而不是登录页面。这确保能从托盘图标直接访问，同时要求其他人输入密码。如果您希望从托盘图标访问时也需要输入密码，请启用此选项。"
+
+#: templates/backends/cos.html:2
+msgid "COS App ID"
+msgstr "COS 应用 ID"
+
+#: templates/backends/cos.html:32
+msgid "COS Path or subfolder in the bucket"
+msgstr "COS 桶中的路径或子文件夹"
+
+#: templates/backends/cos.html:8
+msgid "COS Secret ID"
+msgstr "COS 机密 ID"
+
+#: templates/backends/cos.html:14
+msgid "COS Secret Key"
+msgstr "COS 机密密钥"
+
+#: scripts/services/AppUtils.js:206
+msgid "Cache Files"
+msgstr "缓存文件"
 
 #: templates/settings.html:150
 msgid "Canary"
@@ -208,6 +504,30 @@ msgstr "Canary"
 msgid "Cancel"
 msgstr "Cancel"
 
+#: templates/settings.html:56
+msgid "Cancel registration"
+msgstr "取消注册"
+
+#: scripts/directives/sourceFolderPicker.js:460
+msgid "Cannot include \"{{text}}\""
+msgstr "不能包含 \"{{text}}\""
+
+#: scripts/controllers/LocalDatabaseController.js:103
+msgid "Cannot move to existing file"
+msgstr "不能移动到已有文件"
+
+#: scripts/services/AppUtils.js:348
+msgid "Cannot specify filter include or excludes in extra options"
+msgstr "不能在额外选项中指定包含或排除过滤器"
+
+#: templates/settings.html:8
+msgid "Change server passphrase"
+msgstr "更改服务器密码"
+
+#: scripts/controllers/AppController.js:202
+msgid "Change server password"
+msgstr "更改伺服器密碼"
+
 #: templates/about.html:5
 msgid "Changelog"
 msgstr "更新日誌"
@@ -224,9 +544,83 @@ msgstr "檢查失敗："
 msgid "Check for updates now"
 msgstr "立即檢查更新"
 
+#: templates/about.html:35
+msgid "Checking for updates …"
+msgstr "正在检查更新…"
+
+#: templates/edituri.html:16
+msgid "Chose a storage type to get started"
+msgstr "选择存储类型以开始"
+
+#: templates/backends/gcs.html:11 templates/backends/jottacloud.html:11
+#: templates/backends/msgroup.html:16 templates/backends/oauth.html:11
+#: templates/backends/pcloud.html:24 templates/backends/sharepoint.html:11
+msgid "Click the AuthID link to create an AuthID"
+msgstr "点击\"授权 ID\"链接来创建一个授权 ID"
+
+#: templates/backends/filejump.html:10
+msgid "Click the Filejump API token link to set up an API token"
+msgstr "点击 Filejump API 令牌链接来设置 API 令牌"
+
+#: index.html:148 index.html:199
+msgid "Click to set throttle options"
+msgstr "点击设置限速"
+
+#: templates/backends/s3.html:78
+msgid "Client library to use"
+msgstr "使用的客户端库"
+
+#: templates/backends/cos.html:10
+msgid "Cloud API Secret ID"
+msgstr "Cloud API Secret ID"
+
+#: templates/backends/cos.html:16
+msgid "Cloud API Secret Key"
+msgstr "Cloud API Secret Key"
+
+#: templates/commandline.html:8
+msgid "Command"
+msgstr "命令"
+
+#: templates/commandline.html:18
+msgid "Commandline arguments"
+msgstr "命令行参数"
+
+#: templates/home.html:69
+msgid "Commandline …"
+msgstr "命令行..."
+
+#: templates/backup-result/phases/compact.html:3
+msgid "Compact Phase"
+msgstr "压缩阶段"
+
 #: templates/home.html:68
 msgid "Compact now"
 msgstr "立即壓縮"
+
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
+msgid "Compacting remote data …"
+msgstr "正在压缩远程数据…"
+
+#: templates/backup-result/box.html:35
+msgid "Complete log"
+msgstr "全部日志"
+
+#: scripts/services/ServerStatus.js:41
+msgid "Completing backup …"
+msgstr "正在完成备份…"
+
+#: scripts/services/ServerStatus.js:39
+msgid "Completing previous backup …"
+msgstr "正在完成上次备份…"
+
+#: templates/about.html:67
+msgid ""
+"Compression modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.CompressionModules\">{{item.Key}} </p>"
+msgstr ""
+"压缩模块：<p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.CompressionModules\">{{item.Key}} </p>"
 
 #: scripts/directives/sourceFolderPicker.js:582
 msgid "Computer"
@@ -254,6 +648,14 @@ msgstr "確認刪除"
 msgid "Confirm encryption passphrase"
 msgstr "確認加密密碼"
 
+#: templates/changepassword.html:14 templates/settings.html:15
+msgid "Confirm new password"
+msgstr "确认新密码"
+
+#: templates/export.html:29
+msgid "Confirm passphrase"
+msgstr "确认密码"
+
 #: scripts/services/EditUriBackendConfig.js:74
 msgid "Confirmation required"
 msgstr "需要確認"
@@ -265,6 +667,18 @@ msgstr "連接"
 #: index.html:312
 msgid "Connect now"
 msgstr "立即連接"
+
+#: index.html:305
+msgid "Connecting to server …"
+msgstr "正在连接服务器…"
+
+#: templates/commandline.html:48
+msgid "Connecting to task …"
+msgstr "正在连接到任务…"
+
+#: index.html:313
+msgid "Connecting …"
+msgstr "連線中..."
 
 #: index.html:297
 msgid "Connection lost"
@@ -296,17 +710,50 @@ msgstr "繼續但不加密"
 msgid "Copied!"
 msgstr "已複製！"
 
+#: templates/copy_clipboard_buttons.html:3
+msgid "Copy"
+msgstr "复制"
+
 #: templates/addoredit.html:103 templates/restoredirect.html:42
 msgid "Copy Destination URL to Clipboard"
 msgstr "複製目的地網址到剪貼簿"
+
+#: scripts/controllers/EditBackupController.js:111
+#: scripts/controllers/RestoreDirectController.js:33
+msgid "Copy URL"
+msgstr "複製 URL"
 
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
 msgstr "複製失敗。請手動複製網址"
 
+#: templates/backup-result/box.html:41
+msgid "Copy log"
+msgstr "複製 log"
+
+#: scripts/services/AppUtils.js:741
+msgid "Core options"
+msgstr "核心选项"
+
 #: scripts/controllers/StateController.js:34
 msgid "Counting ({{files}} files found, {{size}})"
 msgstr "點算中（找到 {{files}} 個檔案，{{size}}）"
+
+#: templates/settings.html:170
+msgid "Crashes only"
+msgstr "仅崩溃文件"
+
+#: templates/home.html:11
+msgid "Create Order"
+msgstr "创建请求"
+
+#: templates/home.html:21
+msgid "Create Order (descending)"
+msgstr "创建请求 (降序)"
+
+#: templates/home.html:75
+msgid "Create bug report …"
+msgstr "创建问题报告…"
 
 #: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
@@ -316,9 +763,73 @@ msgstr "建立資料夾？"
 msgid "Created new limited user"
 msgstr "已建立受限制的使用者"
 
+#: scripts/services/ServerStatus.js:63
+msgid "Creating bug report …"
+msgstr "正在创建问题报告…"
+
+#: scripts/services/EditUriBuiltins.js:126
+msgid "Creating new user with limited access …"
+msgstr "正在创建受限用户…"
+
+#: scripts/services/ServerStatus.js:52
+msgid "Creating target folders …"
+msgstr "正在创建目标文件夹…"
+
+#: scripts/controllers/RestoreController.js:368
+msgid "Creating temporary backup …"
+msgstr "正在创建临时备份…"
+
+#: scripts/services/EditUriBuiltins.js:126
+msgid "Creating user …"
+msgstr "正在創建用戶..."
+
+#: templates/home.html:105
+msgid "Current action:"
+msgstr "当前操作："
+
+#: templates/home.html:115
+msgid "Current file:"
+msgstr "当前文件："
+
 #: templates/updatechangelog.html:4
 msgid "Current version is {{versionname}} ({{versionnumber}})"
 msgstr "現時版本 {{versionname}} ({{versionnumber}})"
+
+#: templates/backends/s3.html:17
+msgid "Custom S3 endpoint"
+msgstr "自定义 S3 端点"
+
+#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
+msgid "Custom Satellite"
+msgstr "自定义卫星"
+
+#: templates/backends/storj.html:13
+msgid "Custom Satellite ({{satellite}})"
+msgstr "自定义卫星 ({{satellite}})"
+
+#: templates/backends/openstack.html:13
+msgid "Custom authentication url"
+msgstr "自定义认证地址"
+
+#: templates/addoredit.html:327
+msgid "Custom backup retention"
+msgstr "自定义备份保留策略"
+
+#: templates/backends/s3.html:55
+msgid "Custom bucket storage class"
+msgstr "自定义bucket存储类"
+
+#: templates/backends/s3.html:39
+msgid "Custom region for creating buckets"
+msgstr "自定义创建 Bucket 的地区"
+
+#: templates/advancedoptionseditor.html:43
+msgid "DEPRECATED: {{getDeprecationMessage(item)}}"
+msgstr "已废弃: {{getDeprecationMessage(item)}}"
+
+#: templates/home.html:66
+msgid "Database …"
+msgstr "数据库…"
 
 #: scripts/services/AppUtils.js:97 templates/addoredit.html:353
 msgid "Days"
@@ -332,21 +843,41 @@ msgstr "預設"
 msgid "Default ({{channelname}})"
 msgstr "預設 ({{channelname}})"
 
+#: scripts/services/AppUtils.js:193
+msgid "Default excludes"
+msgstr "默认排除规则"
+
 #: templates/settings.html:190
 msgid "Default options"
 msgstr "預設選項"
+
+#: templates/advancedoptionseditor.html:44
+msgid "Default value: \"{{getDefaultValue(item)}}\""
+msgstr "默认值: \"{{getDefaultValue(item)}}\""
 
 #: scripts/controllers/DeleteController.js:67 templates/localdatabase.html:16
 msgid "Delete"
 msgstr "刪除"
 
+#: templates/backup-result/phases/delete.html:3
+msgid "Delete Phase (Old Backup Versions)"
+msgstr "删除阶段 (旧版本备份)"
+
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
 msgstr "刪除備份"
 
+#: templates/addoredit.html:324
+msgid "Delete backups that are older than"
+msgstr "删除早于指定日期的备份"
+
 #: templates/delete.html:13
 msgid "Delete local database"
 msgstr "刪除本地資料庫"
+
+#: templates/settings.html:68
+msgid "Delete remote control setup"
+msgstr "删除遠端控制設定"
 
 #: templates/delete.html:38 templates/delete.html:47
 msgid "Delete remote files"
@@ -356,6 +887,42 @@ msgstr "刪除遠端檔案"
 msgid "Delete the local database"
 msgstr "刪除本地資料庫"
 
+#: templates/delete.html:41
+msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
+msgstr "从远程存储中删除 {{filecount}} 个文件 ({{filesize}}) ？"
+
+#: templates/home.html:60
+msgid "Delete …"
+msgstr "删除中…"
+
+#: templates/backup-result/top-right-box.html:26
+msgid "Deleted"
+msgstr "已删除"
+
+#: templates/backup-result/phases/delete.html:24
+msgid "Deleted Versions"
+msgstr "已删除版本"
+
+#: templates/backup-result/phases/compact.html:23
+msgid "Deleted files"
+msgstr "已删除文件"
+
+#: scripts/services/ServerStatus.js:65
+msgid "Deleting remote files …"
+msgstr "正在删除远程文件…"
+
+#: scripts/services/ServerStatus.js:43
+msgid "Deleting unwanted files …"
+msgstr "正在删除不需要的文件…"
+
+#: templates/addoredit.html:43
+msgid "Description (optional)"
+msgstr "描述 (可选)"
+
+#: templates/home.html:46
+msgid "Description:"
+msgstr "描述："
+
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
 msgstr "桌面"
@@ -363,6 +930,46 @@ msgstr "桌面"
 #: templates/addoredit.html:25
 msgid "Destination"
 msgstr "目的地"
+
+#: templates/home.html:12
+msgid "Destination Type"
+msgstr "后端类型"
+
+#: templates/home.html:22
+msgid "Destination Type (descending)"
+msgstr "后端类型 (降序)"
+
+#: templates/backends/file.html:7 templates/backends/filejump.html:3
+#: templates/backends/filen.html:3 templates/backends/generic.html:14
+#: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
+#: templates/backends/oauth.html:3 templates/backends/pcloud.html:16
+#: templates/backends/sharepoint.html:2 templates/backends/smb.html:29
+msgid "Destination path"
+msgstr "后端备份路径"
+
+#: templates/home.html:18
+msgid "Destination size"
+msgstr "后端大小"
+
+#: templates/home.html:28
+msgid "Destination size (descending)"
+msgstr "后端大小 (降序)"
+
+#: templates/backends/smb.html:8
+msgid "Direct TCP"
+msgstr "TCP 直连"
+
+#: templates/restorewizard.html:9
+msgid "Direct restore from backup files …"
+msgstr "从备份文件直接恢复…"
+
+#: templates/backends/idrive.html:3
+msgid "Directory path"
+msgstr "目录路径"
+
+#: templates/settings.html:60
+msgid "Disable remote control"
+msgstr "禁用远程控制"
 
 #: templates/log.html:32
 msgid "Disabled"
@@ -372,6 +979,10 @@ msgstr "已停用"
 #: templates/notificationarea.html:40
 msgid "Dismiss"
 msgstr "略過"
+
+#: templates/notificationarea.html:50
+msgid "Dismiss all"
+msgstr "忽略所有"
 
 #: templates/settings.html:108
 msgid "Display and color theme"
@@ -385,6 +996,14 @@ msgstr "您真的確定要刪除備份： \"{{name}}\" ？"
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "您真的確定要刪除 \"{{name}}\" 的本地數據庫？"
 
+#: templates/backends/smb.html:33
+msgid "Domain"
+msgstr "域"
+
+#: templates/backends/openstack.html:26
+msgid "Domain name"
+msgstr "域名"
+
 #: templates/export.html:53
 msgid "Done"
 msgstr "完成"
@@ -393,6 +1012,18 @@ msgstr "完成"
 #: templates/updatechangelog.html:10
 msgid "Download"
 msgstr "下載"
+
+#: templates/backup-result/phases/compact.html:28
+msgid "Downloaded files"
+msgstr "已下载文件"
+
+#: scripts/services/ServerStatus.js:56
+msgid "Downloading files …"
+msgstr "正在下载文件…"
+
+#: templates/notificationarea.html:26
+msgid "Downloading update…"
+msgstr "正在下载更新…"
 
 #: scripts/services/AppUtils.js:343
 msgid "Duplicate option {{opt}}"
@@ -406,22 +1037,172 @@ msgstr "Duplicati 網站"
 msgid "Duplicati forum"
 msgstr "Duplicati 討論區"
 
+#: scripts/controllers/AppController.js:192
+msgid ""
+"Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
+"If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
+"Do you want to set a passphrase now?"
+msgstr ""
+"Duplicati 需要使用密码保护数据，并且已为您生成了一个随机的密码。。\n"
+"如果您从托盘图标直接打开 Duplicati，则不需要记住该密码，但如果您计划从其他它位置打开，则需要设置一个您知道的密码。\n"
+"想要现在设置一个吗？"
+
+#: templates/settings.html:93
+msgid ""
+"Duplicati will run when started, but will remain in a paused state for the "
+"duration. Duplicati will occupy minimal system resources and no backups will"
+" be run."
+msgstr "Duplicati 将在启动后暂停一段时间，然后再开始允许。再次期间，Duplicati 会使用最小的系统资源，并且不会运行任何备份。"
+
+#: templates/backup-result/phases/compact.html:16
+#: templates/backup-result/phases/delete.html:16
+#: templates/backup-result/phases/purge.html:16
+#: templates/backup-result/phases/recreate-database.html:16
+#: templates/backup-result/phases/repair.html:16
+#: templates/backup-result/phases/test.html:16
+#: templates/backup-result/top-left-box.html:11 templates/home.html:19
+msgid "Duration"
+msgstr "用时"
+
+#: templates/home.html:29
+msgid "Duration (descending)"
+msgstr "用时 (降序)"
+
+#: templates/delete.html:15
+msgid ""
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"            If you are using the local database for backups from the commandline, you should keep the database."
+msgstr ""
+"每个备份都有一个关联的本地数据库，用来存储远程备份相关的信息。\n"
+"删除一个备份时，您也可以删除其本地数据库，这不会影响从远程文件中恢复数据。\n"
+"但如果你通过命令行进行备份，则应当保留此数据库。"
+
+#: templates/localdatabase.html:5
+msgid ""
+"Each backup has a local database associated with it, which stores "
+"information about the remote backup on the local machine. This makes it "
+"faster to perform many operations, and reduces the amount of data that needs"
+" to be downloaded for each operation."
+msgstr ""
+"每个备份都有一个与之关联的本地数据库，该数据库将远程备份的有关信息存储在本地计算机上。这使得许多操作的执行速度更快，并且减少了每次操作所需要下载的数据。"
+
+#: templates/addoredit.html:174 templates/addoredit.html:389
+#: templates/edituri.html:39 templates/settings.html:194
+msgid "Edit as list"
+msgstr "以列表形式编辑"
+
+#: templates/addoredit.html:177 templates/addoredit.html:392
+#: templates/edituri.html:42 templates/settings.html:200
+msgid "Edit as text"
+msgstr "以文本形式编辑"
+
+#: templates/home.html:58
+msgid "Edit …"
+msgstr "编辑…"
+
+#: templates/backends/msgroup.html:3
+msgid "Email address of the Office 365 group"
+msgstr "Office 365群组的电子邮件地址"
+
+#: templates/settings.html:64
+msgid "Enable remote control"
+msgstr "允許遠端控制"
+
 #: templates/export.html:22
 msgid "Encrypt file"
 msgstr "加密檔案"
+
+#: templates/addoredit.html:47 templates/restore.html:22
+#: templates/restoredirect.html:22 templates/restoredirect.html:58
+msgid "Encryption"
+msgstr "加密方式"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid "Encryption changed"
+msgstr "加密方式已更改"
+
+#: templates/about.html:68
+msgid ""
+"Encryption modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
+msgstr ""
+"加密模块：<p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
+
+#: scripts/services/EditUriBuiltins.js:1315 templates/backends/storj.html:25
+#: templates/backends/storj.html:26
+msgid "Encryption passphrase"
+msgstr "加密密码"
+
+#: templates/backends/storj.html:30
+msgid "Encryption passphrase (for verification)"
+msgstr "加密密码（用于验证）"
+
+#: templates/backup-result/phases/compact.html:12
+#: templates/backup-result/phases/delete.html:12
+#: templates/backup-result/phases/purge.html:12
+#: templates/backup-result/phases/recreate-database.html:12
+#: templates/backup-result/phases/repair.html:12
+#: templates/backup-result/phases/test.html:12
+#: templates/backup-result/top-left-box.html:7
+msgid "End"
+msgstr "结束"
 
 #: scripts/controllers/EditBackupController.js:103
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
 msgstr "輸入網址"
 
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter a backup destination URL:"
+msgstr "输入备份目标URL:"
+
+#: templates/addoredit.html:341
+msgid ""
+"Enter a retention strategy manually. Placeholders are D/W/Y for "
+"days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. "
+"This example keeps one backup for each of the next 7 days, one for each of "
+"the next 4 weeks, and one for each of the next 36 months. This can also be "
+"written as 1W:1D,1M:1W,3Y:1M."
+msgstr ""
+"请手动输入备份保留策略。占位符 D/W/Y 代表 日期/星期/年份，U 代表“永久”。例如策略 "
+"7D:1D,4W:1W,36M:1M，这个例子保留7天中每天一份，4个星期中每星期一份，36个月中每月一份，也可以写成以下形式 "
+"1W:1D,1M:1W,3Y:1M"
+
+#: templates/commandline.html:14
+msgid "Enter a url, or click the &quot;Target URL &gt;&quot; link"
+msgstr "输入一个网址，或者点击&quot;目标网址&gt;&quot;链接"
+
 #: templates/restoredirect.html:61
 msgid "Enter backup passphrase, if any"
 msgstr "輸入備份密碼（如有）"
 
+#: templates/addwizard.html:10
+msgid "Enter configuration details"
+msgstr "进入详细配置"
+
 #: templates/export.html:26
 msgid "Enter encryption passphrase"
 msgstr "輸入加密密碼"
+
+#: templates/addoredit.html:196
+msgid "Enter expression here"
+msgstr "在此输入表达式"
+
+#: templates/commandline.html:19
+msgid "Enter one argument per line without quotes, e.g. *.txt"
+msgstr "每行输入一个参数，不带引号，例如：*.txt"
+
+#: templates/commandline.html:26
+msgid ""
+"Enter one option per line in command-line format, e.g. --dblock-size=100MB"
+msgstr "以命令行格式每行输入一个选项，例如：--dblock-size=100MB"
+
+#: scripts/services/AppUtils.js:128
+msgid "Enter one option per line in command-line format, e.g. {0}"
+msgstr "以命令行格式每行输入一个选项，例如：{0}"
 
 #: templates/restore.html:90
 msgid "Enter the destination path"
@@ -461,6 +1242,14 @@ msgstr "錯誤"
 msgid "Error!"
 msgstr "錯誤！"
 
+#: templates/settings.html:169
+msgid "Errors and crashes"
+msgstr "错误和崩溃日志"
+
+#: templates/backup-result/top-right-box.html:10
+msgid "Examined"
+msgstr "已检查"
+
 #: templates/addoredit.html:214
 msgid "Exclude"
 msgstr "排除"
@@ -484,6 +1273,10 @@ msgstr "排除副檔名"
 #: scripts/services/AppUtils.js:137
 msgid "Exclude files whose names contain"
 msgstr "排除含有此名稱的檔案"
+
+#: scripts/services/AppUtils.js:172
+msgid "Exclude filter group"
+msgstr "排除过滤条件集"
 
 #: scripts/services/AppUtils.js:143
 msgid "Exclude folder"
@@ -512,6 +1305,22 @@ msgstr "匯出備份設定"
 #: templates/delete.html:31 templates/delete.html:34
 msgid "Export configuration"
 msgstr "匯出設定"
+
+#: templates/export.html:18
+msgid "Export passwords"
+msgstr "导出密码"
+
+#: templates/home.html:59
+msgid "Export …"
+msgstr "导出…"
+
+#: templates/export.html:39
+msgid "Exporting …"
+msgstr "正在导出…"
+
+#: templates/externallink.html:1
+msgid "External link"
+msgstr "外部链接"
 
 #: scripts/services/SystemInfo.js:52
 msgid "FTP (Alternative)"
@@ -550,9 +1359,26 @@ msgstr "刪除失敗："
 msgid "Failed to fetch path information: {{message}}"
 msgstr "無法取得路徑資料：{{message}}"
 
+#: scripts/directives/notificationArea.js:45
+msgid "Failed to find backup:"
+msgstr "查找备份失败："
+
+#: scripts/directives/notificationArea.js:68
+msgid "Failed to get bug report URL: {{message}}"
+msgstr "無法獲得錯誤報告的 URL: {{message}}"
+
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+msgid "Failed to import: {{message}}"
+msgstr "匯入失敗: {{message}}"
+
 #: scripts/controllers/EditBackupController.js:714
 msgid "Failed to read backup defaults:"
 msgstr "讀取預設備份失敗："
+
+#: scripts/controllers/ImportController.js:49
+msgid "Failed to read file: {{message}}"
+msgstr "檔案讀取失敗: {{message}}"
 
 #: scripts/controllers/RestoreController.js:423
 msgid "Failed to restore files: {{message}}"
@@ -562,9 +1388,22 @@ msgstr "還原檔案失敗：{{message}}"
 msgid "Failed to save:"
 msgstr "儲存失敗："
 
+#: templates/backup-result/top-right-box.html:6
+msgid "Fatal error, no statistics collected"
+msgstr "致命错误，未收集到统计信息"
+
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
+msgid "Fetching path information …"
+msgstr "获取路径信息…"
+
 #: scripts/services/AppUtils.js:80
 msgid "File"
 msgstr "檔案"
+
+#: templates/backends/filejump.html:8
+msgid "Filejump API token"
+msgstr "Filejump API 令牌"
 
 #: templates/addoredit.html:237
 msgid "Files larger than:"
@@ -578,9 +1417,17 @@ msgstr "過濾器"
 msgid "Finished!"
 msgstr "已完成！"
 
+#: scripts/controllers/AppController.js:191
+msgid "First run setup"
+msgstr "初始配置"
+
 #: scripts/services/AppUtils.js:51
 msgid "Folder"
 msgstr "資籵夾"
+
+#: templates/backends/storj.html:42
+msgid "Folder in the bucket"
+msgstr "bucket中的文件夹"
 
 #: templates/backends/aliyunoss.html:30 templates/backends/b2.html:7
 #: templates/backends/cos.html:30 templates/backends/e2.html:16
@@ -591,9 +1438,17 @@ msgstr "資籵夾"
 msgid "Folder path"
 msgstr "資料夾路徑"
 
+#: templates/backends/mega.html:3
+msgid "Folder path name"
+msgstr "文件夹路径名称"
+
 #: scripts/services/AppUtils.js:114
 msgid "Fri"
 msgstr "星期五"
+
+#: templates/backends/sharepoint.html:3
+msgid "Full destination path, including the server name, but without https"
+msgstr "完整的目标路径，包括服务器名称，但不包括https"
 
 #: scripts/services/AppUtils.js:90
 msgid "GByte"
@@ -628,6 +1483,26 @@ msgstr "產生"
 msgid "Generate IAM access policy"
 msgstr "產生 IAM 存取原則"
 
+#: scripts/controllers/RestoreController.js:70
+msgid "Getting file versions …"
+msgstr "正在获取文件版本..."
+
+#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
+msgid "Group email"
+msgstr "群组邮箱"
+
+#: templates/home.html:16
+msgid "Has Scheduled"
+msgstr "计划运行"
+
+#: templates/home.html:26
+msgid "Has Scheduled (descending)"
+msgstr "计划运行 (降序)"
+
+#: index.html:311
+msgid "Help"
+msgstr "帮助"
+
 #: scripts/controllers/EditBackupController.js:20
 msgid "Hidden files"
 msgstr "隱藏的檔案"
@@ -636,9 +1511,17 @@ msgstr "隱藏的檔案"
 msgid "Hide"
 msgstr "隱藏"
 
+#: templates/backends/file.html:15 templates/restore.html:98
+msgid "Hide hidden items"
+msgstr "隐藏隐藏文件"
+
 #: index.html:208 scripts/services/AppUtils.js:62
 msgid "Home"
 msgstr "首頁"
+
+#: templates/settings.html:24
+msgid "Hostnames"
+msgstr "主机名"
 
 #: scripts/services/AppUtils.js:106 scripts/services/AppUtils.js:96
 #: templates/settings.html:91
@@ -662,9 +1545,76 @@ msgstr "Hyper-V 機器"
 msgid "ID:"
 msgstr "ID："
 
+#: templates/backends/idrive.html:2
+msgid "IDrive Sync directory path"
+msgstr "IDrive 同步目录路径"
+
+#: scripts/services/EditUriBuiltins.js:1370 templates/backends/e2.html:3
+msgid "IDrive e2 Access Key ID"
+msgstr "IDrive e2 访问密钥 ID"
+
+#: scripts/services/EditUriBuiltins.js:1371 templates/backends/e2.html:7
+msgid "IDrive e2 Access Key Secret"
+msgstr "IDrive e2 访问密钥机密"
+
 #: templates/addoredit.html:261
 msgid "If a date was missed, the job will run as soon as possible."
 msgstr "如果錯過了時間，將儘快執行工作。"
+
+#: templates/addoredit.html:361
+msgid ""
+"If at least one newer backup is found, all backups older than this date are "
+"deleted."
+msgstr "如果有新的备份，早于此日期的备份将会被删除。"
+
+#: templates/localdatabase.html:10
+msgid ""
+"If the backup and the remote storage is out of sync, Duplicati will require "
+"that you perform a repair operation to synchronize the database. If the "
+"repair is unsuccessful, you can delete the local database and re-generate."
+msgstr ""
+"如果备份无法与备份后端同步，Duplicati 将要求您执行修复操作以再次同步数据库。如果修复操作仍然无法成功，建议您删除本地数据库并重新生成。"
+
+#: templates/export.html:49
+msgid ""
+"If the backup file was not downloaded automatically, <a "
+"href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
+" as …&quot;</a>."
+msgstr ""
+"如果备份文件没有自动下载，请右键点击<a href=\"{{DownloadURL}}\" "
+"target=\"_blank\">并选择&quot;另存为…&quot;</a>。"
+
+#: templates/notificationarea.html:7
+msgid ""
+"If the backup file was not downloaded automatically, <a "
+"href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
+"&quot;Save as …&quot;</a>."
+msgstr ""
+"如果备份文件没有自动下载，请右键点击<a href=\"{{item.DownloadLink}}\" "
+"target=\"_blank\">并选择&quot;另存为…&quot;</a>。"
+
+#: scripts/services/EditUriBackendConfig.js:114
+msgid ""
+"If you do not enter a path, all files will be stored in the login folder.\n"
+"Are you sure this is what you want?"
+msgstr ""
+"如果没有输入路径，所有文件将存储在登录文件夹。\n"
+"确定这是您想要的吗？"
+
+#: templates/backends/openstack.html:40
+msgid "If you do not enter an API Key, the tenant name is required"
+msgstr "如果您不输入 API 密钥，则需要输入访客名称"
+
+#: templates/pause.html:53
+msgid ""
+"If you pause transfers they could time out and cause retries or failures."
+msgstr "如果暂停文件传输，传输可能会超时，并导致重试或失败。"
+
+#: templates/delete.html:32
+msgid ""
+"If you want to use the backup later, you can export the configuration before"
+" deleting it."
+msgstr "如果您以后还想使用此备份，可以在删除之前先导出配置。"
 
 #: templates/import.html:29
 msgid "Import"
@@ -674,6 +1624,11 @@ msgstr "匯入"
 msgid "Import Destination URL"
 msgstr "匯入目的地網址"
 
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Import URL"
+msgstr "导入URL"
+
 #: templates/import.html:3
 msgid "Import backup configuration"
 msgstr "匯入備份設定"
@@ -681,6 +1636,14 @@ msgstr "匯入備份設定"
 #: templates/addwizard.html:15
 msgid "Import from a file"
 msgstr "從檔案匯入"
+
+#: templates/import.html:19
+msgid "Import metadata"
+msgstr "导入元数据"
+
+#: templates/import.html:33
+msgid "Importing …"
+msgstr "正在导入…"
 
 #: scripts/controllers/EditBackupController.js:171
 msgid "Include a file?"
@@ -694,15 +1657,32 @@ msgstr "包括表達式"
 msgid "Include regular expression"
 msgstr "包括正規表達式"
 
+#: templates/settings.html:151
+msgid ""
+"Individual builds for developers only. Not for use with important data."
+msgstr "仅面向开发者的个别构建版本，不适用于处理重要的数据。"
+
 #: scripts/services/DialogService.js:27
 msgid "Information"
 msgstr "訊息"
+
+#: templates/backup-result/top-right-box.html:3
+msgid "Interrupted, no statistics collected"
+msgstr "中断，未收集统计信息"
 
 #: scripts/controllers/EditBackupController.js:296
 #: scripts/controllers/EditBackupController.js:303
 #: scripts/controllers/EditBackupController.js:313
 msgid "Invalid retention time"
 msgstr "無效的保留時間"
+
+#: scripts/services/EditUriBuiltins.js:1079
+msgid ""
+"It is possible to connect to some FTP without a password.\n"
+"Are you sure your FTP server supports password-less logins?"
+msgstr ""
+"可以在无密码的情况下连接到一些 FTP\n"
+"您确定您的 FTP 服务器支持无密码登录吗？"
 
 #: scripts/services/AppUtils.js:88
 msgid "KByte"
@@ -712,30 +1692,107 @@ msgstr "KByte"
 msgid "KByte/s"
 msgstr "KByte/s"
 
+#: templates/addoredit.html:325
+msgid "Keep a specific number of backups"
+msgstr "保留指定数目的备份"
+
+#: templates/addoredit.html:323
+msgid "Keep all backups"
+msgstr "永久保留备份"
+
+#: templates/backends/openstack.html:18
+msgid "Keystone API version"
+msgstr "Keystone API 版本"
+
 #: templates/settings.html:98
 msgid "Language in user interface"
 msgstr "界面語言"
+
+#: templates/home.html:13
+msgid "Last Run"
+msgstr "上次运行时间"
+
+#: templates/home.html:23
+msgid "Last Run (descending)"
+msgstr "上次运行时间 (降序)"
 
 #: scripts/controllers/RestoreController.js:38
 msgid "Last month"
 msgstr "上個月"
 
+#: templates/home.html:80
+msgid "Last successful backup:"
+msgstr "上次成功备份于："
+
+#: templates/restorewizard.html:27
+msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
+msgstr "上次成功恢复于：{{time}} (耗时 {{duration || '0 秒'}})"
+
 #: scripts/controllers/RestoreController.js:60
 msgid "Latest"
 msgstr "最新"
 
+#: templates/about.html:6
+msgid "Libraries"
+msgstr "第三方库"
+
+#: scripts/controllers/RestoreDirectController.js:70
+msgid "Listing backup dates …"
+msgstr "正在列出备份日期…"
+
+#: scripts/services/ServerStatus.js:66
+msgid "Listing remote files for purge …"
+msgstr "正在列出需要清除的远程文件…"
+
+#: scripts/services/ServerStatus.js:64
+msgid "Listing remote files …"
+msgstr "正在列出远程文件…"
+
 #: templates/log.html:7
 msgid "Live"
 msgstr "即時"
+
+#: templates/addwizard.html:16
+msgid "Load a configuration from an exported job or a storage provider"
+msgstr "从已导出的任务文件或者存储提供商处加载配置"
+
+#: templates/restorewizard.html:16
+msgid "Load destination from an exported job or a storage provider"
+msgstr "从已导出的任务文件或存储提供商处加载目标位置"
 
 #: templates/backuplog.html:23 templates/backuplog.html:41
 #: templates/log.html:24
 msgid "Load older data"
 msgstr "載入舊資料"
 
+#: templates/delete.html:40
+msgid "Loading remote storage usage …"
+msgstr "正在加载远程存储使用情况…"
+
+#: templates/about.html:43 templates/about.html:49 templates/about.html:55
+#: templates/backuplog.html:12 templates/backuplog.html:22
+#: templates/backuplog.html:29 templates/backuplog.html:40
+#: templates/log.html:12 templates/log.html:23
+#: templates/updatechangelog.html:7
+msgid "Loading …"
+msgstr "正在加载…"
+
+#: templates/localdatabase.html:2
+msgid ""
+"Local database for <b ng-"
+"show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
+"hide=\"Backup.Backup.Name\">…loading…</b>"
+msgstr ""
+"本地数据库用于 <b ng-show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
+"hide=\"Backup.Backup.Name\">…加载中…</b>"
+
 #: templates/localdatabase.html:23
 msgid "Local database path:"
 msgstr "本地資料庫路徑："
+
+#: templates/backends/rclone.html:2
+msgid "Local repository"
+msgstr "本地仓库"
 
 #: scripts/services/SystemInfo.js:86
 msgid "Local storage"
@@ -745,9 +1802,21 @@ msgstr "本地儲存"
 msgid "Location"
 msgstr "位置"
 
+#: templates/backends/gcs.html:21
+msgid "Location where buckets are created"
+msgstr "创建 Bucket 的位置"
+
+#: templates/backuplog.html:3
+msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
+msgstr "<b>{{Backup.Backup.Name}}</b>  的日志数据"
+
 #: templates/log.html:3
 msgid "Log data from the server"
 msgstr "來自伺服器的記錄"
+
+#: index.html:310
+msgid "Log in"
+msgstr "登录"
 
 #: index.html:226
 msgid "Log out"
@@ -761,9 +1830,27 @@ msgstr "MByte"
 msgid "MByte/s"
 msgstr "MByte/s"
 
+#: templates/settings.html:51
+msgid "Machine is now registered, open this link to add it to your account:"
+msgstr "设备已注册，请打开此链接以将其添加到您的账户："
+
 #: templates/localdatabase.html:8
 msgid "Maintenance"
 msgstr "維護"
+
+#: templates/backends/rclone.html:13
+msgid ""
+"Make sure that rclone is in your path, or add the location to rclone via the"
+" advanced options."
+msgstr "确保rclone在您的环境变量中，或者通过高级选项添加rclone的位置。"
+
+#: index.html:259
+msgid "Manual"
+msgstr "手册"
+
+#: templates/notificationarea.html:37
+msgid "Manual update found:"
+msgstr "手动更新："
 
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
@@ -800,6 +1887,10 @@ msgstr "沒有密碼"
 msgid "Missing sources"
 msgstr "沒有來源"
 
+#: templates/backup-result/top-right-box.html:22
+msgid "Modified"
+msgstr "已修改"
+
 #: scripts/services/AppUtils.js:110
 msgid "Mon"
 msgstr "星期一"
@@ -807,6 +1898,14 @@ msgstr "星期一"
 #: scripts/services/AppUtils.js:99 templates/addoredit.html:355
 msgid "Months"
 msgstr "月"
+
+#: scripts/services/EditUriBackendConfig.js:137
+msgid ""
+"Most servers require a username, so you will likely need to enter one.\n"
+"Are you sure want to continue without a username?"
+msgstr ""
+"大多数服务均需要一个用户名，所以你最好输入一个。\n"
+"确认要在不输入用户名的情况下继续吗？"
 
 #: templates/localdatabase.html:31
 msgid "Move existing database"
@@ -819,6 +1918,14 @@ msgstr "移動失敗："
 #: scripts/services/AppUtils.js:54
 msgid "My Documents"
 msgstr "我的文件"
+
+#: scripts/services/AppUtils.js:66
+msgid "My Downloads"
+msgstr "我的下载"
+
+#: scripts/services/AppUtils.js:64
+msgid "My Movies"
+msgstr "我的电影"
 
 #: scripts/services/AppUtils.js:56
 msgid "My Music"
@@ -836,9 +1943,25 @@ msgstr "我的圖片"
 msgid "Name"
 msgstr "名稱"
 
+#: templates/home.html:25
+msgid "Name (descending)"
+msgstr "名称 (降序)"
+
+#: templates/backends/smb.html:11
+msgid "Netbios over TCP"
+msgstr "Netbios over TCP (NBT)"
+
 #: templates/home.html:87
 msgid "Never"
 msgstr "永不"
+
+#: templates/changepassword.html:5 templates/settings.html:11
+msgid "New Password"
+msgstr "新密码"
+
+#: templates/notificationarea.html:24
+msgid "New update found: <a href=\"{{state.updateDownloadLink}}\">{{message}}</a>"
+msgstr "新更新可用： <a href=\"{{state.updateDownloadLink}}\">{{message}}</a>"
 
 #: scripts/services/EditUriBuiltins.js:140
 msgid ""
@@ -854,6 +1977,14 @@ msgstr ""
 #: templates/restorewizard.html:36
 msgid "Next"
 msgstr "下一步"
+
+#: templates/home.html:14
+msgid "Next Scheduled Run"
+msgstr "下次调度时间"
+
+#: templates/home.html:24
+msgid "Next Scheduled Run (descending)"
+msgstr "下次调度时间 (降序)"
 
 #: templates/home.html:91
 msgid "Next scheduled run:"
@@ -900,6 +2031,10 @@ msgstr ""
 "\n"
 "您要接受這個主題密匙嗎？"
 
+#: templates/edituri.html:12
+msgid "No editor found for the &quot;{{backend}}&quot; storage type"
+msgstr "未找到 &quot;{{backend}}&quot; 存储类型的编辑器"
+
 #: scripts/controllers/EditBackupController.js:437 templates/addoredit.html:49
 msgid "No encryption"
 msgstr "無加密"
@@ -928,6 +2063,23 @@ msgstr "密碼不正確"
 msgid "None / disabled"
 msgstr "沒有／已停用"
 
+#: scripts/controllers/ExportController.js:13
+msgid "Not using encryption"
+msgstr "未使用加密"
+
+#: templates/throttle.html:22
+msgid ""
+"Note that speeds are entered in bytes, and line speeds are typically "
+"reported in bits. Use a factor of 8 to convert, such that an 8 mbit/s line "
+"is equivalent to 1 MByte/s."
+msgstr ""
+"注意：速度是以bytes为单位输入的，而线路速度通常以bits为单位。两者使用 8 的倍数进行转换。换言之，8 mbit/s的线路相当于1 "
+"MByte/s"
+
+#: templates/addoredit.html:330
+msgid "Nothing will be deleted. The backup size will grow with each change."
+msgstr "不会清理任何备份，备份大小将持续增长"
+
 #: scripts/controllers/AppController.js:204
 #: scripts/controllers/AppController.js:58
 #: scripts/controllers/AppController.js:74
@@ -942,14 +2094,121 @@ msgstr "沒有／已停用"
 msgid "OK"
 msgstr "確定"
 
+#: templates/backends/aliyunoss.html:10 templates/backends/aliyunoss.html:8
+msgid "OSS Access Key ID"
+msgstr "Aliyun OSS Access Key ID"
+
+#: templates/backends/aliyunoss.html:14 templates/backends/aliyunoss.html:16
+msgid "OSS Access Key Secret"
+msgstr "Aliyun OSS Access Key Secret"
+
+#: templates/backends/aliyunoss.html:21
+msgid "OSS Bucket Region"
+msgstr "Aliyun OSS Bucket区域"
+
+#: templates/backends/aliyunoss.html:25 templates/backends/aliyunoss.html:26
+msgid "OSS Bucket name"
+msgstr "Aliyun OSS Bucket名称"
+
+#: templates/backends/aliyunoss.html:2
+msgid "OSS Endpoint"
+msgstr "Aliyun OSS Endpoint"
+
+#: templates/backends/aliyunoss.html:32
+msgid "OSS Path or subfolder in the bucket"
+msgstr "Aliyun OSS路径或bucket的子文件夹"
+
+#: templates/backends/aliyunoss.html:20
+msgid "OSS Region"
+msgstr "Aliyun OSS 区域"
+
+#: templates/settings.html:136
+msgid "Official releases"
+msgstr "官方发布"
+
+#: templates/addoredit.html:348
+msgid ""
+"Once there are more backups than the specified number, the oldest backups "
+"are deleted."
+msgstr "一旦备份版本数超过此值，最旧的备份将被清理"
+
+#: templates/backends/openstack.html:7
+msgid "OpenStack AuthURI"
+msgstr "OpenStack 认证地址"
+
+#: scripts/services/SystemInfo.js:50
+msgid "OpenStack Object Storage / Swift"
+msgstr "OpenStack 对象存储 / Swift"
+
+#: templates/backup-result/top-right-box.html:14
+msgid "Opened"
+msgstr "已打开"
+
+#: scripts/services/EditUriBuiltins.js:1179
+msgid "Openstack API key are not supported in v3 keystone API"
+msgstr "Openstack API key 在 v3 keystone API 中不受支持"
+
+#: scripts/services/AppUtils.js:203
+msgid "Operating System"
+msgstr "操作系统"
+
+#: templates/backup-result/entryline.html:2
+msgid "Operation"
+msgstr "操作"
+
+#: templates/home.html:50
+msgid "Operations:"
+msgstr "操作："
+
+#: templates/backends/openstack.html:45
+msgid "Optional API key"
+msgstr "API key（可选）"
+
+#: templates/backends/file.html:34
+msgid "Optional authentication password"
+msgstr "认证密码（可选）"
+
+#: templates/backends/file.html:30
+msgid "Optional authentication username"
+msgstr "认证用户名（可选）"
+
+#: templates/backends/openstack.html:50
+msgid "Optional region"
+msgstr "区域（可选）"
+
+#: templates/backends/openstack.html:40
+msgid "Optional tenant name"
+msgstr "租户名称（可选）"
+
 #: templates/addoredit.html:28 templates/edituri.html:51
 #: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "選項"
 
+#: templates/settings.html:191
+msgid ""
+"Options added here are applied to all backups, but can be overridden in each"
+" individual backup."
+msgstr "在此添加的选项适用于所有备份，但每个备份中可以单独设置来覆盖此选项"
+
+#: templates/home.html:7
+msgid "Order by"
+msgstr "排序"
+
+#: templates/restore.html:81
+msgid "Original location"
+msgstr "原位置"
+
 #: scripts/services/SystemInfo.js:89
 msgid "Others"
 msgstr "Others"
+
+#: templates/addoredit.html:334
+msgid ""
+"Over time backups will be deleted automatically. There will remain one "
+"backup for each of the last 7 days, each of the last 4 weeks, each of the "
+"last 12 months. There will always be at least one remaining backup."
+msgstr "随着时间，备份将被自动清理。这将保留最近7天中每天一份，最近4个星期中每星期一份，最近12个月中每月一份。同时，保证总是至少存在一个备份。"
 
 #: templates/restore.html:114
 msgid "Overwrite"
@@ -972,6 +2231,10 @@ msgstr "已更改密碼"
 msgid "Passphrases are not matching"
 msgstr "密碼不相同"
 
+#: scripts/controllers/EditBackupController.js:30
+msgid "Passphrases do not match"
+msgstr "密码不匹配"
+
 #: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
@@ -980,6 +2243,10 @@ msgstr "密碼不相同"
 #: templates/backends/smb.html:42
 msgid "Password"
 msgstr "密碼"
+
+#: scripts/services/ServerStatus.js:55
+msgid "Patching files with local blocks …"
+msgstr "正在使用本地块修补文件…"
 
 #: scripts/services/EditUriBuiltins.js:1279
 #: scripts/services/EditUriBuiltins.js:1400
@@ -996,6 +2263,11 @@ msgstr "找不到路徑"
 #: templates/backends/smb.html:28
 msgid "Path on server"
 msgstr "伺服器上路徑"
+
+#: templates/backends/b2.html:8 templates/backends/e2.html:17
+#: templates/backends/s3.html:62
+msgid "Path or subfolder in the bucket"
+msgstr "Bucket 中路径或子文件夹"
 
 #: templates/settings.html:75
 msgid "Pause"
@@ -1017,9 +2289,21 @@ msgstr "權限"
 msgid "Pick location"
 msgstr "選擇位置"
 
+#: scripts/controllers/ImportController.js:17
+msgid "Please select a file to import"
+msgstr "请选择一个导入的文件"
+
+#: templates/restorewizard.html:10
+msgid "Point to your backup files and restore from there"
+msgstr "指向您的备份文件，将从中恢复"
+
 #: templates/backends/generic.html:9
 msgid "Port"
 msgstr "埠"
+
+#: templates/settings.html:30
+msgid "Prevent tray icon automatic log-in"
+msgstr "保持托盘图标自动登录"
 
 #: templates/addoredit.html:114 templates/addoredit.html:247
 #: templates/addoredit.html:297 templates/addoredit.html:411
@@ -1027,13 +2311,133 @@ msgstr "埠"
 msgid "Previous"
 msgstr "Previous"
 
+#: scripts/services/ServerStatus.js:40
+msgid "Processing files to backup …"
+msgstr "处理文件以备份..."
+
+#: templates/home.html:107
+msgid "Progress:"
+msgstr "进度："
+
+#: templates/backends/gcs.html:39
+msgid "ProjectID is optional if the bucket exist"
+msgstr "若 Bucket 存在， 则项目ID 可选"
+
+#: scripts/services/SystemInfo.js:88
+msgid "Proprietary"
+msgstr "专有"
+
+#: scripts/services/AppUtils.js:68
+msgid "Public"
+msgstr "公共"
+
+#: templates/backup-result/phases/purge.html:3
+msgid "Purge Phase"
+msgstr "清除阶段"
+
+#: scripts/services/ServerStatus.js:69
+msgid "Purging files complete!"
+msgstr "清除文件完成！"
+
+#: scripts/services/ServerStatus.js:67
+msgid "Purging files …"
+msgstr "正在清除文件..."
+
+#: scripts/services/ServerStatus.js:49
+msgid "Rebuilding local database …"
+msgstr "正在重新构建本地数据库…"
+
 #: templates/localdatabase.html:17
 msgid "Recreate (delete and repair)"
 msgstr "重建（刪除及修復）"
 
+#: templates/backup-result/phases/recreate-database.html:3
+msgid "Recreate Database Phase"
+msgstr "重建数据库阶段"
+
+#: scripts/services/ServerStatus.js:59
+msgid "Recreating database …"
+msgstr "正在重建数据库…"
+
+#: templates/backends/cos.html:20
+msgid "Region"
+msgstr "Region"
+
+#: templates/settings.html:47
+msgid "Register for remote control"
+msgstr "注册远程控制"
+
+#: scripts/controllers/SystemSettingsController.js:213
+msgid "Registered, waiting for accept"
+msgstr "已注册，等待接受"
+
+#: scripts/controllers/SystemSettingsController.js:209
+msgid "Registering machine..."
+msgstr "设备注册中..."
+
+#: scripts/controllers/RestoreDirectController.js:40
+msgid "Registering temporary backup …"
+msgstr "正在注册临时备份…"
+
+#: templates/settings.html:42
+msgid "Registration URL"
+msgstr "注册URL"
+
+#: scripts/controllers/SystemSettingsController.js:211
+msgid "Registration failed"
+msgstr "注册失败"
+
+#: scripts/controllers/EditBackupController.js:146
+msgid "Relative paths not allowed"
+msgstr "不允许相对路径"
+
+#: index.html:309
+msgid "Reload"
+msgstr "重新加载"
+
 #: templates/backuplog.html:7
 msgid "Remote"
 msgstr "遠端"
+
+#: scripts/services/EditUriBuiltins.js:1338
+msgid "Remote Path"
+msgstr "远程路径"
+
+#: scripts/services/EditUriBuiltins.js:1337
+msgid "Remote Repository"
+msgstr "远程仓库"
+
+#: templates/settings.html:34
+msgid "Remote access control"
+msgstr "远程访问控制"
+
+#: scripts/controllers/SystemSettingsController.js:215
+msgid "Remote control is configured but not enabled"
+msgstr "远程控制已配置但未启用"
+
+#: scripts/controllers/SystemSettingsController.js:207
+msgid "Remote control is connected"
+msgstr "远程控制已连接"
+
+#: scripts/controllers/SystemSettingsController.js:205
+msgid "Remote control is enabled but not connected"
+msgstr "远程控制已启用但未连接"
+
+#: scripts/controllers/SystemSettingsController.js:219
+msgid "Remote control is not set up"
+msgstr "远程控制未设置"
+
+#: templates/backends/rclone.html:10
+msgid "Remote path"
+msgstr "远程路径"
+
+#: templates/backends/rclone.html:6
+msgid "Remote repository"
+msgstr "远程仓库"
+
+#: templates/addoredit.html:307
+msgid "Remote volume size"
+msgstr "远程卷大小"
 
 #: templates/addoredit.html:203
 msgid "Remove"
@@ -1043,9 +2447,21 @@ msgstr "移除"
 msgid "Remove option"
 msgstr "移除選項"
 
+#: templates/backup-result/phases/purge.html:23
+msgid "Removed files"
+msgstr "已删除文件"
+
 #: templates/localdatabase.html:15 templates/notificationarea.html:14
 msgid "Repair"
 msgstr "修復"
+
+#: templates/backup-result/phases/repair.html:3
+msgid "Repair Phase"
+msgstr "修复阶段"
+
+#: scripts/services/ServerStatus.js:61
+msgid "Repairing database …"
+msgstr "正在修复数据库…"
 
 #: templates/addoredit.html:62
 msgid "Repeat Passphrase"
@@ -1063,9 +2479,21 @@ msgstr "重設"
 msgid "Restore"
 msgstr "還原"
 
+#: scripts/services/ServerStatus.js:58
+msgid "Restore complete!"
+msgstr "恢复完成！"
+
 #: templates/restore.html:45
 msgid "Restore files"
 msgstr "還原檔案"
+
+#: templates/restore.html:46
+msgid "Restore files from:"
+msgstr "从以下位置恢复文件："
+
+#: templates/home.html:53
+msgid "Restore files …"
+msgstr "恢复文件…"
 
 #: templates/restore.html:48
 msgid "Restore from"
@@ -1075,14 +2503,43 @@ msgstr "從...還原檔案"
 msgid "Restore from backup configuration"
 msgstr "從備份設定還原"
 
+#: templates/restorewizard.html:15
+msgid "Restore from configuration …"
+msgstr "从配置中恢复…"
+
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
 msgid "Restore options"
 msgstr "還原選項"
 
+#: templates/restore.html:126
+msgid "Restore read/write permissions"
+msgstr "恢复读写权限"
+
+#: templates/backup-result/restore-items.html:2
+msgid "Restored Files"
+msgstr "已恢复文件"
+
+#: templates/backup-result/restore-items.html:6
+msgid "Restored Folders"
+msgstr "已恢复目录"
+
+#: templates/backup-result/restore-items.html:10
+msgid "Restored Symlinks"
+msgstr "已恢复符号链接"
+
+#: scripts/controllers/RestoreController.js:383
+#: scripts/controllers/RestoreController.js:405
+msgid "Restoring files …"
+msgstr "正在恢复文件…"
+
 #: index.html:217
 msgid "Resume"
 msgstr "繼續"
+
+#: templates/backup-result/phases/purge.html:28
+msgid "Rewritten File Lists"
+msgstr "重写文件列表"
 
 #: templates/addoredit.html:269
 msgid "Run again every"
@@ -1092,17 +2549,41 @@ msgstr "每...重覆執行"
 msgid "Run now"
 msgstr "立即執行"
 
+#: templates/commandline.html:44
+msgid "Running commandline entry"
+msgstr "正在运行命令行"
+
 #: index.html:172
 msgid "Running task:"
 msgstr "正在執行工作："
+
+#: scripts/controllers/StateController.js:25
+msgid "Running …"
+msgstr "正在运行…"
+
+#: templates/commandline.html:54
+msgid "Running … <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">stop now</a>"
+msgstr "正在运行… <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">立即停止</a>"
 
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
 msgstr "S3 相容"
 
+#: scripts/services/SystemInfo.js:53
+msgid "SMB / CIFS"
+msgstr "SMB / CIFS"
+
+#: templates/settings.html:130
+msgid "Same as the base install version: {{channelname}}"
+msgstr "与当前安装版本一致：{{channelname}}"
+
 #: scripts/services/AppUtils.js:115
 msgid "Sat"
 msgstr "星期六"
+
+#: templates/backends/storj.html:10
+msgid "Satellite"
+msgstr "卫星"
 
 #: templates/addoredit.html:410 templates/localdatabase.html:29
 msgid "Save"
@@ -1112,9 +2593,21 @@ msgstr "儲存"
 msgid "Save and repair"
 msgstr "儲存並修復"
 
+#: templates/restore.html:118
+msgid "Save different versions with timestamp in file name"
+msgstr "保存不同版本 (文件名中添加时间戳)"
+
 #: templates/import.html:24
 msgid "Save immediately"
 msgstr "立即儲存"
+
+#: scripts/services/ServerStatus.js:53
+msgid "Scanning existing files …"
+msgstr "正在扫描存在的文件…"
+
+#: scripts/services/ServerStatus.js:54
+msgid "Scanning for local blocks …"
+msgstr "正在扫描本地文件块…"
 
 #: templates/addoredit.html:255 templates/addoredit.html:27
 msgid "Schedule"
@@ -1131,6 +2624,10 @@ msgstr "搜尋檔案"
 #: scripts/services/AppUtils.js:104 templates/settings.html:89
 msgid "Seconds"
 msgstr "秒"
+
+#: templates/log.html:30
+msgid "Select a log level and see messages as they happen:"
+msgstr "选择日志级别并实时查看"
 
 #: templates/restore.html:23 templates/restore.html:38
 #: templates/restoredirect.html:23
@@ -1154,6 +2651,14 @@ msgstr "伺服器名稱或 IP"
 msgid "Server is currently paused,"
 msgstr "伺服器目前已暫停，"
 
+#: templates/commandline.html:45
+msgid ""
+"Server is currently paused, <a style=\"cursor: pointer\" ng-"
+"click=\"ServerStatus.resume()\">resume now</a>"
+msgstr ""
+"服务器当前已暂停， <a style=\"cursor: pointer\" ng-"
+"click=\"ServerStatus.resume()\">立即恢复</a>"
+
 #: scripts/controllers/HomeController.js:22
 msgid "Server is currently paused, do you want to resume now?"
 msgstr "伺服器暫停中，您要現在立即繼續嗎？"
@@ -1166,9 +2671,21 @@ msgstr "伺服器已暫停"
 msgid "Server state properties"
 msgstr "伺服器狀態"
 
+#: templates/settings.html:121
+msgid "Set timezone to default"
+msgstr "将时区设置为默认时区"
+
 #: index.html:220 templates/settings.html:2
 msgid "Settings"
 msgstr "設定"
+
+#: templates/backends/smb.html:23
+msgid "Share Name"
+msgstr "共享名称"
+
+#: scripts/services/EditUriBuiltins.js:1042 templates/backends/smb.html:24
+msgid "Share name"
+msgstr "共享名称"
 
 #: templates/addoredit.html:69 templates/notificationarea.html:12
 #: templates/notificationarea.html:31 templates/notificationarea.html:41
@@ -1179,17 +2696,49 @@ msgstr "顯示"
 msgid "Show advanced editor"
 msgstr "顯示進階編輯"
 
+#: templates/notificationarea.html:18 templates/notificationarea.html:19
+msgid "Show help"
+msgstr "显示帮助"
+
+#: templates/addoredit.html:143 templates/backends/file.html:16
+#: templates/restore.html:99
+msgid "Show hidden items"
+msgstr "显示隐藏项"
+
 #: templates/about.html:8
 msgid "Show log"
 msgstr "顯示記錄"
+
+#: templates/home.html:74
+msgid "Show log …"
+msgstr "查看日志…"
 
 #: templates/addoredit.html:135
 msgid "Show treeview"
 msgstr "顯示樹狀檢視"
 
+#: templates/addoredit.html:326
+msgid "Smart backup retention"
+msgstr "智能备份保留策略"
+
+#: templates/backends/openstack.html:45
+msgid ""
+"Some OpenStack providers allow an API key instead of a password and tenant "
+"name"
+msgstr "一些 OpenStack 提供商允许使用 API 密钥，而不是租户名称和密码"
+
+#: templates/backends/s3.html:82
+msgid ""
+"Some S3 providers might only be compatible with a certain client library"
+msgstr "一些 S3 提供商可能只与某个客户端库兼容"
+
 #: templates/addoredit.html:26
 msgid "Source Data"
 msgstr "來源資料"
+
+#: templates/backup-result/top-right-box.html:1
+msgid "Source Files"
+msgstr "源文件"
 
 #: scripts/directives/sourceFolderPicker.js:588 templates/addoredit.html:124
 msgid "Source data"
@@ -1199,13 +2748,56 @@ msgstr "來源資料"
 msgid "Source folders"
 msgstr "來源資料夾"
 
+#: templates/home.html:17
+msgid "Source size"
+msgstr "源文件大小"
+
+#: templates/home.html:27
+msgid "Source size (descending)"
+msgstr "源大小（降序）"
+
 #: templates/home.html:96
 msgid "Source:"
 msgstr "來源："
 
+#: templates/settings.html:146
+msgid "Specific builds for developers only. Not for use with important data."
+msgstr "面向开发者的特定构建，不适用于重要数据"
+
+#: templates/settings.html:135
+msgid "Stable"
+msgstr "Stable"
+
 #: scripts/services/SystemInfo.js:87
 msgid "Standard protocols"
 msgstr "標準通訊協定"
+
+#: templates/backup-result/phases/compact.html:8
+#: templates/backup-result/phases/delete.html:8
+#: templates/backup-result/phases/purge.html:8
+#: templates/backup-result/phases/recreate-database.html:8
+#: templates/backup-result/phases/repair.html:8
+#: templates/backup-result/phases/test.html:8
+#: templates/backup-result/top-left-box.html:3
+msgid "Start"
+msgstr "开始"
+
+#: scripts/services/ServerStatus.js:36
+msgid "Starting backup …"
+msgstr "准备开始备份…"
+
+#: scripts/services/ServerStatus.js:48
+msgid "Starting restore …"
+msgstr "准备开始恢复…"
+
+#: scripts/controllers/RestoreController.js:379
+#: scripts/controllers/RestoreController.js:403
+msgid "Starting the restore process …"
+msgstr "正在开始恢复操作…"
+
+#: templates/settings.html:36
+msgid "Status: {{getRemoteControlStatusText()}}"
+msgstr "状态： {{getRemoteControlStatusText()}}"
 
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
@@ -1220,6 +2812,10 @@ msgstr "停止正在進行的備份"
 msgid "Stop running task"
 msgstr "停止正在進行的工作"
 
+#: index.html:168
+msgid "Stopping after the current file:"
+msgstr "当前文件完成后停止："
+
 #: index.html:173
 msgid "Stopping task:"
 msgstr "停止工作中："
@@ -1231,6 +2827,10 @@ msgstr "儲存類型"
 #: templates/backends/s3.html:45
 msgid "Storage class"
 msgstr "儲存等級"
+
+#: templates/backends/gcs.html:32
+msgid "Storage class for creating a bucket"
+msgstr "创建 Bucket 的存储类别"
 
 #: templates/log.html:6
 msgid "Stored"
@@ -1252,6 +2852,10 @@ msgstr "星期日"
 #: scripts/services/AppUtils.js:78
 msgid "Symbolic link"
 msgstr "符號連結"
+
+#: scripts/services/AppUtils.js:200
+msgid "System Files"
+msgstr "系统文件"
 
 #: templates/settings.html:166
 msgid "System default ({{levelname}})"
@@ -1277,17 +2881,96 @@ msgstr "TByte"
 msgid "TByte/s"
 msgstr "TByte/s"
 
+#: templates/commandline.html:13
+msgid "Target URL &gt;"
+msgstr "目标 URL &gt;"
+
 #: templates/waitarea.html:5
 msgid "Task is running"
 msgstr "工作執行中"
+
+#: scripts/services/AppUtils.js:209
+msgid "Temporary Files"
+msgstr "临时文件"
 
 #: scripts/controllers/EditBackupController.js:22
 msgid "Temporary files"
 msgstr "暫存檔案"
 
+#: templates/backends/openstack.html:39
+msgid "Tenant name"
+msgstr "租户名"
+
+#: templates/backends/cos.html:4
+msgid "Tencent Cloud Account APPID"
+msgstr "腾讯云账号APPID"
+
+#: templates/backends/cos.html:35
+msgid "Tencent Cloud COS documents and resources"
+msgstr "腾讯云COS文档和资源"
+
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:117
+msgid "Terminate"
+msgstr "终止"
+
+#: templates/backup-result/phases/test.html:3
+msgid "Test Phase"
+msgstr "测试阶段"
+
 #: templates/edituri.html:21
 msgid "Test connection"
 msgstr "測試連線"
+
+#: scripts/directives/backupEditUri.js:44
+msgid "Testing connection …"
+msgstr "测试连接中…"
+
+#: scripts/services/EditUriBuiltins.js:52
+msgid "Testing permissions …"
+msgstr "正在测试权限…"
+
+#: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
+msgid "Testing …"
+msgstr "正在测试…"
+
+#: scripts/services/EditUriBuiltins.js:1259
+#: scripts/services/EditUriBuiltins.js:1275
+#: scripts/services/EditUriBuiltins.js:1380
+#: scripts/services/EditUriBuiltins.js:1396
+msgid ""
+"The '{{fieldname}}' field contains an invalid character: {{character}} "
+"(value: {{value}}, index: {{pos}})"
+msgstr "字段 '{{fieldname}}' 包含无效字符：{{character}} (值: {{value}}, 位置: {{pos}})"
+
+#: scripts/directives/notificationArea.js:43
+msgid "The backup is missing, has it been deleted?"
+msgstr "此备份缺失，是否已经被删除？"
+
+#: scripts/directives/notificationArea.js:41
+msgid ""
+"The backup was temporary and does not exist anymore, so the log data is lost"
+msgstr "这是已经不存在的临时备份，因此没有日志数据"
+
+#: scripts/services/EditUriBuiltins.js:1231
+msgid "The bucket name should be all lower-case, convert automatically?"
+msgstr "Bucket 名称应当是全小写，需要自动转换吗？"
+
+#: templates/addoredit.html:313
+msgid ""
+"The chosen size is outside the recommended range. This may cause performance"
+" issues, excessively large temporary files or other problems."
+msgstr "所选尺寸超出推荐范围。这可能会导致性能问题、临时文件过大或其他问题。"
+
+#: scripts/controllers/ExportController.js:13
+msgid ""
+"The configuration should be kept safe. Are you sure you want to save an "
+"unencrypted file containing your passwords?"
+msgstr "配置应该注意安全。您确定要将含有您密码的配置保存为不加密的文件吗？"
+
+#: index.html:302
+msgid "The connection to the server is lost, attempting again in {{time}} …"
+msgstr "与服务器的连接丢失，将在{{time}}后再次尝试…"
 
 #: templates/settings.html:112
 msgid "The dark theme (by Michal)"
@@ -1297,6 +2980,97 @@ msgstr "深色主題（Michai設計）"
 msgid "The default blue on white theme (by Alex)"
 msgstr "預設的藍白色主題（Alexi設計）"
 
+#: scripts/services/EditUriBuiltins.js:1324
+msgid "The encryption passphrases do not match"
+msgstr "加密密码不匹配"
+
+#: scripts/directives/sourceFolderPicker.js:461
+msgid ""
+"The file size is {{size}}, larger than the maximum specified size. If the "
+"file size decreases, it will be included in future backups."
+msgstr "文件大小为{{size}}，超过了指定的最大指定值。如果文件大小减小，它将会包含在未来的备份中。"
+
+#: scripts/directives/backupEditUri.js:131
+msgid ""
+"The folder {{folder}} does not exist.\n"
+"Create it now?"
+msgstr ""
+"文件夹 {{folder}} 不存在\n"
+"是否现在创建？"
+
+#: scripts/directives/backupEditUri.js:171
+msgid ""
+"The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n"
+"\n"
+"Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
+msgstr ""
+"主机密钥已更改，请与服务器管理员确认其是否正确，否则您可能正在被中间人攻击。\n"
+"\n"
+"您想要把现有主机密钥 \"{{prev}}\" 替换为 {{key}} 吗？"
+
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/SystemSettingsController.js:242
+msgid "The passwords do not match"
+msgstr "密码不匹配"
+
+#: scripts/controllers/EditBackupController.js:161
+msgid "The path does not appear to exist, do you want to add it anyway?"
+msgstr "路径似乎不存在，您确定要添加它吗？"
+
+#: scripts/controllers/EditBackupController.js:171
+msgid ""
+"The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n"
+"\n"
+"Do you want to include the specified file?"
+msgstr ""
+"该路径没有以 '{{dirsep}}' 字符结尾，这表示您指定的是一个文件而不是文件夹。\n"
+"您确定想要包含指定文件吗？"
+
+#: scripts/controllers/EditBackupController.js:146
+msgid ""
+"The path must be an absolute path, i.e. it must start with a forward slash "
+"'/'"
+msgstr "路径必须为绝对路径，也就是说必须以斜线 '/' 开头"
+
+#: templates/backends/s3.html:33
+msgid "The region parameter is only applied when creating a new bucket"
+msgstr "\"地区\" 参数只在创建新 Bucket 时生效"
+
+#: templates/backends/openstack.html:50
+msgid "The region parameter is only used when creating a bucket"
+msgstr "\"地区\" 参数只在创建新 Bucket 时使用"
+
+#: scripts/directives/backupEditUri.js:87
+msgid ""
+"The server certificate could not be validated.\n"
+"Do you want to approve the SSL certificate with the hash: {{hash}}?"
+msgstr ""
+"服务器证书验证失败\n"
+"您想要允许该哈希值为 {{hash}} 的 SSL 证书吗？"
+
+#: templates/backends/s3.html:49
+msgid "The storage class affects the availability and price for a stored file"
+msgstr "存储类别影响文件可用性和价格"
+
+#: scripts/controllers/RestoreDirectController.js:108
+msgid ""
+"The target folder contains encrypted files, please supply the passphrase"
+msgstr "目标文件夹包含加密文件，请提供密码"
+
+#: scripts/services/EditUriBuiltins.js:61
+msgid ""
+"The user has too many permissions. Do you want to create a new limited user,"
+" with only permissions to the selected path?"
+msgstr "该用户权限太多，您想要创建一个只能访问所选路径的受限用户吗？"
+
+#: scripts/controllers/RestoreController.js:308
+msgid ""
+"This backup was created on another operating system. Restoring files without"
+" specifying a destination folder can cause files to be restored in "
+"unexpected places. Are you sure you want to continue without choosing a "
+"destination folder?"
+msgstr "该备份创建于其他操作系统上。恢复时不指定目标文件夹可能会使文件恢复到未知的位置。您确定不指定目标文件夹继续吗？"
+
 #: scripts/controllers/RestoreController.js:37
 msgid "This month"
 msgstr "本月"
@@ -1305,29 +3079,109 @@ msgstr "本月"
 msgid "This week"
 msgstr "本週"
 
+#: scripts/controllers/AppController.js:72
+msgid "Throttle settings"
+msgstr "限流设置"
+
 #: scripts/services/AppUtils.js:113
 msgid "Thu"
 msgstr "星期四"
+
+#: templates/backup-result/phases/delete.html:33
+#: templates/backup-result/top-left-box.html:1
+msgid "Time"
+msgstr "时间 "
+
+#: templates/settings.html:117
+msgid "Time zone"
+msgstr "时区"
 
 #: templates/export.html:14
 msgid "To File"
 msgstr "到檔案"
 
+#: templates/confirmdelete.html:3
+msgid ""
+"To confirm you want to delete all remote files for\n"
+"      <span class=\"backupname\">\"{{selection.backupname}}\"</span>, please enter\n"
+"      this phrase:"
+msgstr ""
+"为了确认您要删除所有远程文件\n"
+"      <span class=\"backupname\">\"{{selection.backupname}}\"</span>，请输入\n"
+"      下面的短语："
+
+#: scripts/controllers/ExportController.js:67
+msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
+msgstr "如果不想使用密码加密导出的文件，请去除勾选\"加密文件\""
+
+#: scripts/services/EditUriBuiltins.js:1215
+msgid ""
+"To prevent bucket naming conflicts, it is recommended to prepend your "
+"account ID to the bucket name. Prepend automatically?"
+msgstr "为防止bucket命名冲突，建议在bucket名称前加上您的账户ID。是否自动添加？"
+
+#: templates/settings.html:26
+msgid ""
+"To prevent various DNS based attacks, Duplicati limits the allowed hostnames"
+" to the ones listed here. Direct IP access and localhost is always allowed. "
+"Multiple hostnames can be supplied with a semicolon separator. If any of the"
+" allowed hostnames is an asterisk (*), all hostnames are allowed and this "
+"feature is disabled. If the field is empty, only IP address and localhost "
+"access is allowed."
+msgstr ""
+"为了防止各种基于 DNS 的攻击，Duplicati 将仅允许此处列出的主机名。直接使用 IP 和 localhost "
+"访问是始终允许的。可以使用分号分隔多个主机名，星号 (*) 代表允许所有主机名，同时禁用所有限制。如果该字段为空，则仅允许 IP 地址和本地主机访问。"
+
 #: scripts/controllers/RestoreController.js:34
 msgid "Today"
 msgstr "今日"
+
+#: templates/backends/smb.html:3
+msgid "Transport"
+msgstr "运输"
+
+#: scripts/directives/backupEditUri.js:173
+msgid "Trust host certificate?"
+msgstr "信任主机证书？"
 
 #: scripts/directives/backupEditUri.js:87
 msgid "Trust server certificate?"
 msgstr "信任伺服器證書？"
 
+#: templates/settings.html:141
+msgid ""
+"Try out the new features that we are working on. Test Backup &amp; Restore "
+"before using this in production environments."
+msgstr "尝试使用我们正在开发的新功能。在生产环境中使用之前，先测试备份与恢复功能。"
+
 #: scripts/services/AppUtils.js:111
 msgid "Tue"
 msgstr "星期二"
 
+#: templates/restore.html:133
+msgid "Type passphrase here."
+msgstr "在这里输入密码。"
+
+#: templates/restore.html:57
+msgid "Type to highlight files"
+msgstr "输入以高亮文件"
+
+#: templates/restorewizard.html:25
+msgid "Unknown backup size and versions"
+msgstr "未知的备份大小和版本"
+
 #: templates/pause.html:46
 msgid "Until resumed"
 msgstr "直至手動繼續"
+
+#: templates/about.html:30
+msgid ""
+"Update <a href ng-"
+"click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a> is available."
+" <a href=\"{{state.updateDownloadLink}}\">Download now</a>"
+msgstr ""
+"更新 <a href ng-click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a>"
+" 可用。<a href=\"{{state.updateDownloadLink}}\">立即下载</a>"
 
 #: templates/settings.html:126
 msgid "Update channel"
@@ -1337,9 +3191,54 @@ msgstr "更新頻道"
 msgid "Update failed:"
 msgstr "更新失敗："
 
+#: scripts/controllers/LocalDatabaseController.js:88
+msgid "Updating with existing database"
+msgstr "正在更新存在的数据库"
+
+#: templates/backup-result/phases/compact.html:33
+msgid "Uploaded files"
+msgstr "已上传文件"
+
+#: scripts/services/ServerStatus.js:45
+msgid "Uploading verification file …"
+msgstr "正在上传校验文件…"
+
+#: templates/settings.html:173
+msgid ""
+"Usage reports help us improve the user experience and evaluate impact of new"
+" features. We use them to generate <external-link link=\"'https://usage-"
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
+msgstr ""
+"使用报告帮助我们改善用户体验并评估新功能的影响。我们使用它们来生成<external-link link=\"'https://usage-"
+"reporter.duplicati.com/'\">public usage statistics</external-link>。"
+
+#: templates/settings.html:161
+msgid "Usage statistics"
+msgstr "使用情况统计"
+
+#: templates/settings.html:167
+msgid "Usage statistics, warnings, errors, and crashes"
+msgstr "使用情况统计、警告、错误和崩溃"
+
+#: templates/backends/filejump.html:32
+msgid "Use API token authentication (recommended)"
+msgstr "使用API token 认证（推荐）"
+
 #: templates/backends/generic.html:2 templates/backends/s3.html:2
 msgid "Use SSL"
 msgstr "使用 SSL"
+
+#: scripts/controllers/EditBackupController.js:458
+msgid "Use existing database?"
+msgstr "使用已存在的数据库？"
+
+#: index.html:263
+msgid "Use new UI"
+msgstr "使用新UI"
+
+#: templates/backends/filejump.html:31
+msgid "Use username and password authentication"
+msgstr "使用用户名和密码认证"
 
 #: scripts/controllers/EditBackupController.js:352
 msgid "Use weak passphrase"
@@ -1348,6 +3247,22 @@ msgstr "使用強度為弱的密碼"
 #: scripts/controllers/EditBackupController.js:31
 msgid "Useless"
 msgstr "不使用"
+
+#: scripts/directives/sourceFolderPicker.js:575
+msgid "User data"
+msgstr "用户数据"
+
+#: templates/backends/openstack.html:27
+msgid "User domain name"
+msgstr "用户域名称"
+
+#: scripts/services/EditUriBuiltins.js:61
+msgid "User has too many permissions"
+msgstr "用户权限太多"
+
+#: templates/settings.html:96
+msgid "User interface settings"
+msgstr "界面设置"
 
 #: scripts/services/EditUriBuiltins.js:1074
 #: scripts/services/EditUriBuiltins.js:1162
@@ -1360,9 +3275,54 @@ msgstr "不使用"
 msgid "Username"
 msgstr "使用者"
 
+#: templates/backends/filejump.html:14
+msgid ""
+"Username and password authentication is not recommended and does not work with MFA/2FA enabled accounts.\n"
+"        Use the API token if possible."
+msgstr ""
+"用户名和密码认证不推荐，并且无法与启用了MFA/2FA的账户一起使用。\n"
+"        如果可能的话，请使用API token。"
+
+#: scripts/services/ServerStatus.js:60
+msgid "Vacuuming database …"
+msgstr "正在清理数据库…"
+
+#: templates/addoredit.html:155
+msgid "Validating …"
+msgstr "正在验证…"
+
+#: templates/backup-result/phases/test.html:20
+#: templates/backup-result/test-items.html:2
+msgid "Verifications"
+msgstr "验证"
+
+#: templates/backends/storj.html:29
+msgid "Verify encryption passphrase"
+msgstr "验证加密密码"
+
 #: templates/home.html:67
 msgid "Verify files"
 msgstr "驗證檔案"
+
+#: scripts/services/ServerStatus.js:37 scripts/services/ServerStatus.js:46
+msgid "Verifying backend data …"
+msgstr "正在校验后端数据…"
+
+#: scripts/services/ServerStatus.js:62
+msgid "Verifying files …"
+msgstr "正在校验文件…"
+
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:50
+msgid "Verifying remote data …"
+msgstr "正在校验远程数据…"
+
+#: scripts/services/ServerStatus.js:57
+msgid "Verifying restored files …"
+msgstr "正在校验恢复后的文件…"
+
+#: templates/backup-result/phases/delete.html:33
+msgid "Version ID"
+msgstr "版本 ID"
 
 #: scripts/controllers/EditBackupController.js:35
 msgid "Very strong"
@@ -1371,6 +3331,44 @@ msgstr "十分強"
 #: scripts/controllers/EditBackupController.js:32
 msgid "Very weak"
 msgstr "十分弱"
+
+#: index.html:245
+msgid "Visit us on"
+msgstr "了解我们"
+
+#: templates/delete.html:21
+msgid ""
+"WARNING: The remote database is found to be in use by the commandline "
+"library."
+msgstr "警告：远程数据库被发现正被命令行使用。"
+
+#: templates/delete.html:44
+msgid "WARNING: This will prevent you from restoring the data in the future."
+msgstr "警告：这将阻止您将来恢复数据"
+
+#: templates/waitarea.html:2
+msgid "Waiting for task to begin"
+msgstr "等待任务开始…"
+
+#: templates/commandline.html:51
+msgid "Waiting for task to start …"
+msgstr "等待任务启动…"
+
+#: scripts/services/ServerStatus.js:42
+msgid "Waiting for upload to finish …"
+msgstr "等待上传完成…"
+
+#: templates/settings.html:168
+msgid "Warnings, errors and crashes"
+msgstr "警告、错误和崩溃"
+
+#: templates/addoredit.html:54
+msgid "We recommend that you encrypt all backups stored outside your system"
+msgstr "我们建议您加密所有保存在第三方系统中的数据"
+
+#: scripts/controllers/EditBackupController.js:33
+msgid "Weak"
+msgstr "强度低"
 
 #: scripts/controllers/EditBackupController.js:352
 msgid "Weak passphrase"
@@ -1383,6 +3381,14 @@ msgstr "星期三"
 #: scripts/services/AppUtils.js:98 templates/addoredit.html:354
 msgid "Weeks"
 msgstr "星期"
+
+#: templates/restorewizard.html:3
+msgid "Where do you want to restore from?"
+msgstr "您想从哪里恢复呢？"
+
+#: templates/restore.html:78
+msgid "Where do you want to restore the files to?"
+msgstr "您想把文件恢复到哪里？"
 
 #: scripts/services/AppUtils.js:100 templates/addoredit.html:356
 msgid "Years"
@@ -1407,9 +3413,63 @@ msgstr "年"
 msgid "Yes"
 msgstr "是"
 
+#: scripts/controllers/EditBackupController.js:367
+msgid "Yes, I have stored the passphrase safely"
+msgstr "是，我已将密码安全保存"
+
+#: scripts/controllers/ExportController.js:13
+msgid "Yes, I understand the risk"
+msgstr "是，我理解该风险"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid "Yes, I'm brave!"
+msgstr "是，我无所谓"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid "Yes, please break my backup!"
+msgstr "是，请清除我的备份"
+
 #: scripts/controllers/RestoreController.js:35
 msgid "Yesterday"
 msgstr "Yesterday"
+
+#: scripts/controllers/LocalDatabaseController.js:88
+msgid ""
+"You are changing the database path away from an existing database.\n"
+"Are you sure this is what you want?"
+msgstr ""
+"您正在更改现有数据库路径。\n"
+"您确定要这么做吗？"
+
+#: templates/about.html:28
+msgid "You are currently running {{appname}} {{version}}"
+msgstr "当前正在运行 {{appname}} {{version}}"
+
+#: scripts/controllers/StateController.js:107
+msgid ""
+"You can stop the backup after any file uploads currently in progress have "
+"finished. If you terminate the backup, the next run will need to recover "
+"from a failed backup."
+msgstr "您可以在当前正在进行的文件上传完成后停止备份。如果终止备份，下一次运行将需要从失败的备份中恢复。"
+
+#: scripts/controllers/StateController.js:116
+msgid ""
+"You can stop the task immediately, or allow the process to continue its "
+"current file and then stop. If you terminate the task, the backup could be "
+"left in an inconsistent state."
+msgstr "您可以立即停止任务，或允许进程继续当前文件，然后停止。如果终止任务，备份可能会处于不一致的状态。"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid ""
+"You have changed the encryption mode. This may break stuff. You are "
+"encouraged to create a new backup instead"
+msgstr "您已经更改了加密方式，这可能破坏备份。您应当创建一份新的备份。"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid ""
+"You have changed the passphrase, which is not supported. You are encouraged "
+"to create a new backup instead."
+msgstr "您已经更改了密码，这是不支持的操作。您应当创建一份新的备份。"
 
 #: scripts/controllers/EditBackupController.js:437
 msgid ""
@@ -1417,13 +3477,109 @@ msgid ""
 " data stored on a remote server."
 msgstr "您選擇了不加密備份。建議備份所有儲存在遠端伺服器上資料。"
 
+#: scripts/controllers/RestoreController.js:302
+msgid "You have chosen to restore to a new location, but not entered one"
+msgstr "您选择了恢复到新位置，但没有指定具体位置"
+
+#: scripts/controllers/EditBackupController.js:367
+msgid ""
+"You have generated a strong passphrase. Make sure you have made a safe copy "
+"of the passphrase, as the data cannot be recovered if you lose the "
+"passphrase."
+msgstr "您已经生成了一个强密码。确保您已经安全记录下了该密码，否则，如果您丢失了该密码，数据将无法恢复。"
+
+#: scripts/controllers/EditBackupController.js:267
+msgid "You must choose at least one source folder"
+msgstr "您必须至少一个源文件夹"
+
+#: scripts/services/EditUriBuiltins.js:1173
+msgid "You must enter a domain name to use v3 API"
+msgstr "您必须输入域名称以使用 v3 API"
+
+#: scripts/controllers/EditBackupController.js:247
+msgid "You must enter a name for the backup"
+msgstr "您必须输入备份名称"
+
+#: scripts/controllers/EditBackupController.js:254
+msgid "You must enter a passphrase or disable encryption"
+msgstr "您必须输入加密密码或禁用加密"
+
+#: scripts/services/EditUriBuiltins.js:1170
+msgid "You must enter a password to use v3 API"
+msgstr "您必须输入密码以使用 v3 API"
+
+#: scripts/controllers/EditBackupController.js:303
+msgid "You must enter a positive number of backups to keep"
+msgstr "您输入要保留的版本数必须为正数"
+
+#: scripts/services/EditUriBuiltins.js:1176
+msgid "You must enter a tenant (aka project) name to use v3 API"
+msgstr "您必须输入租户名称（即项目）以使用 v3 API"
+
+#: scripts/services/EditUriBuiltins.js:1190
+msgid "You must enter a tenant name if you do not provide an API key"
+msgstr "如果您不提供API key，则必须输入租户名称"
+
+#: scripts/controllers/EditBackupController.js:296
+msgid "You must enter a valid duration for the time to keep backups"
+msgstr "您必须输入有效的期限来保留备份"
+
+#: scripts/controllers/EditBackupController.js:313
+msgid "You must enter a valid retention policy string"
+msgstr "您必须输入一个有效的保留策略"
+
+#: scripts/services/EditUriBuiltins.js:1187
+msgid "You must enter either a password or an API key"
+msgstr "您必须输入密码或API key"
+
+#: scripts/services/EditUriBuiltins.js:1194
+msgid "You must enter either a password or an API key, not both"
+msgstr "您必须输入密码或API key，两者不能同时都输入"
+
+#: scripts/services/EditUriBackendConfig.js:123
+msgid "You must fill in the password"
+msgstr "您必须填写密码"
+
 #: scripts/services/EditUriBackendConfig.js:100
 msgid "You must fill in the server name or address"
 msgstr "您必須填寫伺服器名稱或地址"
 
+#: scripts/services/EditUriBackendConfig.js:121
+#: scripts/services/EditUriBackendConfig.js:130
+msgid "You must fill in the username"
+msgstr "您必须填写用户名"
+
+#: scripts/services/EditUriBackendConfig.js:86
+msgid "You must fill in {{field}}"
+msgstr "您必须填写 {{field}}"
+
+#: scripts/services/EditUriBuiltins.js:1166
+msgid "You must select or fill in the AuthURI"
+msgstr "您必须选择或填写认证地址"
+
 #: scripts/services/EditUriBuiltins.js:1208
 msgid "You must select or fill in the server"
 msgstr "您必須選擇或填寫伺服器"
+
+#: scripts/services/EditUriBackendConfig.js:107
+msgid "You must specify a path"
+msgstr "您必须指定路径"
+
+#: scripts/services/EditUriBackendConfig.js:93
+msgid "You should fill in {{field}} {{reason}}"
+msgstr "您应该填写{{field}} {{reason}}"
+
+#: templates/restore.html:144
+msgid "Your files and folders have been restored successfully."
+msgstr "您的文件和文件夹已经恢复成功。"
+
+#: scripts/controllers/EditBackupController.js:352
+msgid "Your passphrase is easy to guess. Consider changing passphrase."
+msgstr "您的密码很容易被猜到，请考虑更换密码。"
+
+#: templates/backends/gcs.html:3 templates/backends/openstack.html:3
+msgid "bucket/folder/subfolder"
+msgstr "Bucket / 文件夹 / 子文件夹"
 
 #: scripts/services/AppUtils.js:87
 msgid "byte"
@@ -1433,19 +3589,121 @@ msgstr "byte"
 msgid "byte/s"
 msgstr "byte/s"
 
+#: scripts/services/EditUriBuiltins.js:1346
+msgid "cos_app_id"
+msgstr "cos_app_id"
+
+#: scripts/services/EditUriBuiltins.js:1350
+msgid "cos_bucket"
+msgstr "cos_bucket"
+
+#: scripts/services/EditUriBuiltins.js:1349
+msgid "cos_region"
+msgstr "cos_region"
+
+#: scripts/services/EditUriBuiltins.js:1347
+msgid "cos_secret_id"
+msgstr "cos_secret_id"
+
+#: scripts/services/EditUriBuiltins.js:1348
+msgid "cos_secret_key"
+msgstr "cos_secret_key"
+
 #: templates/addoredit.html:272 templates/addoredit.html:357
 #: templates/advancedoptionseditor.html:29
 #: templates/advancedoptionseditor.html:36
 msgid "custom"
 msgstr "custom"
 
+#: templates/backup-result/entryline.html:4
+msgid "failed"
+msgstr "失败"
+
+#: templates/backends/rclone.html:3
+msgid "local repository, leave empty for local"
+msgstr "本地版本库，留空表示本地"
+
+#: scripts/services/EditUriBuiltins.js:1359
+msgid "oss_access_key_id"
+msgstr "oss_access_key_id"
+
+#: scripts/services/EditUriBuiltins.js:1360
+msgid "oss_access_key_secret"
+msgstr "oss_access_key_secret"
+
+#: scripts/services/EditUriBuiltins.js:1362
+msgid "oss_bucket_name"
+msgstr "oss_bucket_name"
+
+#: scripts/services/EditUriBuiltins.js:1358
+msgid "oss_endpoint"
+msgstr "oss_endpoint"
+
+#: scripts/services/EditUriBuiltins.js:1361
+msgid "oss_region"
+msgstr "oss_region"
+
+#: templates/backends/pcloud.html:10
+msgid "pCloud EU (eapi.pcloud.com)"
+msgstr "pCloud EU (eapi.pcloud.com)"
+
+#: templates/backends/pcloud.html:7
+msgid "pCloud Global (api.pcloud.com)"
+msgstr "pCloud Global (api.pcloud.com)"
+
+#: templates/backends/rclone.html:11
+msgid "remote path, e.g. backup"
+msgstr "远程路径，例如：backup"
+
+#: templates/backends/rclone.html:7
+msgid "remote repository, e.g. remote"
+msgstr "远程仓库，例如：remote"
+
 #: templates/restoredirect.html:95 templates/waitarea.html:15
 msgid "resume now"
 msgstr "立即繼續"
 
+#: scripts/services/EditUriBuiltins.js:1309
+msgid "storj_shared_access"
+msgstr "storj_shared_access"
+
+#: scripts/services/EditUriBuiltins.js:1143
+msgid "unless you are explicitly specifying --group-id"
+msgstr "除非您明确指定 --group-id"
+
+#: templates/about.html:12
+msgid ""
+"{{appname}} was primarily developed by <a href=\"{{mail1}}\">{{dev1}}</a> "
+"and <a href=\"{{mail2}}\">{{dev2}}</a>. {{appname}} can be downloaded from "
+"<a href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} is licensed "
+"under the <a href=\"{{licenselink}}\">{{licensename}}</a>."
+msgstr ""
+"{{appname}} 主要由 <a href=\"{{mail1}}\">{{dev1}}</a> 和 <a "
+"href=\"{{mail2}}\">{{dev2}}</a> 开发. {{appname}} 可以从 <a "
+"href=\"{{websitelink}}\">{{websitename}}</a> 下载. {{appname}} 采用 <a "
+"href=\"{{licenselink}}\">{{licensename}}</a> 授权."
+
+#: templates/about.html:53
+msgid ""
+"{{brandingService.appName}} is using the following third party libraries:"
+msgstr "{{brandingService.appName}} 正在使用以下第三方库："
+
+#: scripts/controllers/StateController.js:53
+msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
+msgstr "剩余 {{files}} 个文件 ({{size}}) {{speed_txt}}"
+
+#: templates/home.html:101 templates/restorewizard.html:23
+msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
+msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
+msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} 个版本"
+
 #: templates/pause.html:26
 msgid "{{number}} Hour"
 msgstr "{{number}} 小時"
+
+#: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
+msgid "{{number}} Hours"
+msgstr "{{number}} 小时"
 
 #: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
 #: templates/pause.html:6

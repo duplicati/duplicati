@@ -154,7 +154,7 @@ public static partial class Command
     /// <summary>
     /// The packages that are required for GUI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> FedoraGUIDepends = ["libICE", "libSM", "fontconfig", "libicu", "desktop-file-utils"];
+    private static readonly IReadOnlyList<string> FedoraGUIDepends = ["fontconfig", "libicu", "desktop-file-utils"];
     /// <summary>
     /// The packages that are required for CLI builds
     /// </summary>

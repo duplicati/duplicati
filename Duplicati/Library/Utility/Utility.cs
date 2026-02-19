@@ -66,6 +66,11 @@ namespace Duplicati.Library.Utility
         public const FileAttributes ATTRIBUTE_ERROR = (FileAttributes)(1 << 30);
 
         /// <summary>
+        /// The multiplier used to determine if there is enough free space on the temporary volume
+        /// </summary>
+        public const long VOLUME_SIZE_FREE_SPACE_MULTIPLIER = 10;
+
+        /// <summary>
         /// The callback delegate type used to collecting file information
         /// </summary>
         /// <param name="rootpath">The path that the file enumeration started at</param>
@@ -190,6 +195,33 @@ namespace Duplicati.Library.Utility
             }
 
             return streamLength;
+        }
+
+        /// <summary>
+        /// Reads a byte array and returns a string, removing any BOM if present
+        /// </summary>
+        /// <param name="s">The byte array to read from.</param>
+        /// <returns>The resulting string.</returns>
+        public static string GetStringWithoutBOM(byte[] s)
+        {
+            using var ms = new MemoryStream(s);
+            return GetStringWithoutBOM(ms, leaveOpen: false);
+        }
+
+        /// <summary>
+        /// Reads a stream and returns a string, removing any BOM if present
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <param name="leaveOpen">If true, the stream is not closed after reading.</param>
+        /// <returns>The resulting string.</returns>
+        public static string GetStringWithoutBOM(Stream stream, bool leaveOpen)
+        {
+            if (stream.CanSeek)
+                try { stream.Position = 0; }
+                catch { }
+
+            using var sr = new StreamReader(stream, Encoding.UTF8, true, leaveOpen: leaveOpen);
+            return sr.ReadToEnd();
         }
 
         /// <summary>
@@ -534,13 +566,13 @@ namespace Duplicati.Library.Utility
         /// <param name="buf">The buffer to read into.</param>
         /// <param name="count">The amount of bytes to read.</param>
         /// <returns>The number of bytes read</returns>
-        public static async Task<int> ForceStreamReadAsync(this System.IO.Stream stream, byte[] buf, int count)
+        public static async Task<int> ForceStreamReadAsync(this System.IO.Stream stream, byte[] buf, int count, CancellationToken cancellationToken)
         {
             int a;
             int index = 0;
             do
             {
-                a = await stream.ReadAsync(buf, index, count).ConfigureAwait(false);
+                a = await stream.ReadAsync(buf, index, count, cancellationToken).ConfigureAwait(false);
                 index += a;
                 count -= a;
             } while (a != 0 && count > 0);
@@ -1632,10 +1664,10 @@ namespace Duplicati.Library.Utility
                 return null;
 
             var idx = url.IndexOf("://");
-            if (idx < 0 && idx < 15 && idx + "://".Length < url.Length)
+            if (idx < 0 || idx > 15)
                 return null;
 
-            return url.Substring(0, idx);
+            return url[..idx];
         }
 
         /// <summary>
@@ -2036,6 +2068,92 @@ namespace Duplicati.Library.Utility
             Console.WriteLine();
             return value;
         }
+
+        /// <summary>
+        /// Gets the free and total space available for the specified path.
+        /// Uses the same approach as FileBackend.GetQuotaInfoAsync.
+        /// </summary>
+        /// <param name="path">The path to check</param>
+        /// <returns>A tuple with (freeSpace, totalSpace) in bytes, or null if it could not be determined</returns>
+        public static (long FreeSpace, long TotalSpace)? GetFreeSpaceForPath(string path)
+        {
+            try
+            {
+                // Get the drive info for the path
+                var root = Path.GetPathRoot(path);
+                if (string.IsNullOrEmpty(root))
+                    return null;
+
+                // On Windows, DriveInfo is only valid for lettered drives
+                if (OperatingSystem.IsWindows() && root.Length > 0 && char.IsLetter(root[0]))
+                {
+                    try
+                    {
+                        var driveInfo = new DriveInfo(root);
+                        if (driveInfo.TotalSize > 0)
+                            return (driveInfo.AvailableFreeSpace, driveInfo.TotalSize);
+                    }
+                    catch (ArgumentException)
+                    {
+                        // Fall through to Win32 API fallback
+                    }
+
+                    // Fallback to Win32 API for UNC paths and other cases
+                    return GetDiskFreeSpaceWin32(path);
+                }
+                else if (!OperatingSystem.IsWindows())
+                {
+                    var driveInfo = new DriveInfo(root);
+                    if (driveInfo.TotalSize > 0)
+                        return (driveInfo.AvailableFreeSpace, driveInfo.TotalSize);
+                }
+                else
+                {
+                    // Windows but not a lettered drive (e.g., UNC path)
+                    return GetDiskFreeSpaceWin32(path);
+                }
+            }
+            catch
+            {
+                // Ignore errors and return null
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the free and total disk space using the Win32 API's GetDiskFreeSpaceEx function.
+        /// </summary>
+        /// <param name="directory">Directory</param>
+        /// <returns>A tuple with (freeSpace, totalSpace) in bytes, or null if it could not be determined</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
+        private static (long FreeSpace, long TotalSpace)? GetDiskFreeSpaceWin32(string directory)
+        {
+            if (!OperatingSystem.IsWindows())
+                return null;
+
+            try
+            {
+                if (GetDiskFreeSpaceEx(directory, out var available, out var total, out _))
+                    return ((long)available, (long)total);
+            }
+            catch
+            {
+                // Ignore errors
+            }
+
+            return null;
+        }
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        [SupportedOSPlatform("windows")]
+        private static extern bool GetDiskFreeSpaceEx(
+            string lpDirectoryName,
+            out ulong lpFreeBytesAvailable,
+            out ulong lpTotalNumberOfBytes,
+            out ulong lpTotalNumberOfFreeBytes);
 
     }
 }

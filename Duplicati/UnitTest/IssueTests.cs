@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Principal;
@@ -700,24 +701,12 @@ namespace Duplicati.UnitTest
                     var original_dir_rules = original_dir_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
                     var restored_dir_rules = restored_dir_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
 
-                    // Disable only on Windows warning, as the if ensures this.
-#pragma warning disable CA1416
-                    static bool cmp_elem(FileSystemAccessRule a, FileSystemAccessRule b) =>
-                        a.IdentityReference.Value == b.IdentityReference.Value &&
-                        a.FileSystemRights == b.FileSystemRights &&
-                        a.AccessControlType == b.AccessControlType;
-#pragma warning restore CA1416
-
-                    static bool cmp_coll(AuthorizationRuleCollection a, AuthorizationRuleCollection b) =>
-                        a.Count == b.Count &&
-                        a.Cast<FileSystemAccessRule>().Zip(b.Cast<FileSystemAccessRule>(), cmp_elem).All(x => x);
-
                     if (skip_metadata && original_dir_info.Attributes != default_dir_attrs)
                         Assert.That(original_dir_info.Attributes, Is.Not.EqualTo(restored_dir_info.Attributes), "Directory attributes should not be equal");
                     else
                         Assert.That(original_dir_info.Attributes, Is.EqualTo(restored_dir_info.Attributes), "Directory attributes should be equal");
 
-                    var dir_permissions_equal = cmp_coll(original_dir_rules, restored_dir_rules);
+                    var dir_permissions_equal = CompareCollection(original_dir_rules, restored_dir_rules);
                     if (restorePermissions && !skip_metadata)
                         Assert.That(dir_permissions_equal, Is.True, "Directory permissions should be equal");
                     else
@@ -733,7 +722,7 @@ namespace Duplicati.UnitTest
                     else
                         Assert.That(original_file_info.Attributes, Is.EqualTo(restored_file_info.Attributes), "File attributes should be equal");
 
-                    var file_permissions_equal = cmp_coll(original_file_rules, restored_file_rules);
+                    var file_permissions_equal = CompareCollection(original_file_rules, restored_file_rules);
                     if (restorePermissions && !skip_metadata)
                         Assert.That(file_permissions_equal, Is.True, "File permissions should be equal");
                     else
@@ -799,6 +788,20 @@ namespace Duplicati.UnitTest
                 // users from accessing the files
             }
         }
+
+        [SupportedOSPlatform("windows")]
+        static bool CompareElement(FileSystemAccessRule a, FileSystemAccessRule b) =>
+            a.IdentityReference.Value == b.IdentityReference.Value &&
+            a.FileSystemRights == b.FileSystemRights &&
+            a.AccessControlType == b.AccessControlType;
+
+        // Use order-independent comparison since ACL rules may be returned in different orders
+        [SupportedOSPlatform("windows")]
+        static bool CompareCollection(AuthorizationRuleCollection a, AuthorizationRuleCollection b) =>
+            a.Count == b.Count &&
+            a.Cast<FileSystemAccessRule>().All(ruleA =>
+                b.Cast<FileSystemAccessRule>().Any(ruleB => CompareElement(ruleA, ruleB)));
+
 
 
         [Test]

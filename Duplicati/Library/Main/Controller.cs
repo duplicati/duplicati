@@ -142,9 +142,32 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new RestoreResults(), ref paths, ref filter, async (result, backendManager) =>
             {
+                using var restoreDestination =
+                    (m_options.Restorepath ?? "").StartsWith("@")
+
+                    // Remote destination
+                    ? await DynamicLoader.RestoreDestinationProviderLoader.GetRestoreDestinationProvider(
+                        m_options.Restorepath.Substring(1),
+                        m_options.RawOptions,
+                        result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false)
+
+                    // Local destination
+                    : new SourceProvider.FileRestoreDestinationProvider(m_options.Restorepath ?? "", m_options.AllowRestoreOutsideTargetDirectory);
+
+                if (restoreDestination == null)
+                    throw new UserInformationException($"Could not find restore destination for path: {m_options.Restorepath}", "InvalidRestoreDestination");
+
                 await new Operation.RestoreHandler(m_options, result)
-                    .RunAsync(paths, backendManager, filter)
+                    .RunAsync(paths, backendManager, filter, restoreDestination)
                     .ConfigureAwait(false);
+
+                await restoreDestination.Finalize((pg) =>
+                {
+                    result.OperationProgressUpdater.UpdateProgress((float)pg);
+                }, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
+                result.EndTime = DateTime.UtcNow;
 
                 UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.RestoredFiles);
                 UsageReporter.Reporter.Report("RESTORE_FILESIZE", result.SizeOfRestoredFiles);
@@ -191,10 +214,11 @@ namespace Duplicati.Library.Main
         /// <param name="folders">The folders to list</param>
         /// <param name="offset">The offset to start listing from</param>
         /// <param name="limit">The maximum number of entries to list</param>
+        /// <param name="extendedData">Whether to include extended data</param>
         /// <returns>>The folder contents</returns>
-        public IListFolderResults ListFolder(string[] folders, long offset, long limit)
+        public IListFolderResults ListFolder(string[] folders, long offset, long limit, bool extendedData)
             => RunAction(new ListFolderResults(), (result, _) =>
-                Operation.ListFolderHandler.RunAsync(m_options, result, folders, offset, limit)
+                Operation.ListFolderHandler.RunAsync(m_options, result, folders, offset, limit, extendedData)
             );
 
         /// <summary>
@@ -216,10 +240,11 @@ namespace Duplicati.Library.Main
         /// <param name="filter">The filter to use for searching</param>
         /// <param name="offset">The offset to start searching from</param>
         /// <param name="limit">The maximum number of results to return</param>
+        /// <param name="extendedData">Whether to include extended data</param>
         /// <returns>>The search results</returns>
-        public ISearchFilesResults SearchEntries(string[] pathprefixes, IFilter filter, long offset, long limit)
+        public ISearchFilesResults SearchEntries(string[] pathprefixes, IFilter filter, long offset, long limit, bool extendedData)
             => RunAction(new SearchFilesResults(), ref filter, (result, backendManager) =>
-                Operation.SearchEntriesHandler.RunAsync(m_options, result, pathprefixes, filter, offset, limit)
+                Operation.SearchEntriesHandler.RunAsync(m_options, result, pathprefixes, filter, offset, limit, extendedData)
             );
 
         public IListResults List()

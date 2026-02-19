@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Brian Kirkegaard, 2016
 # Rune Henriksen <pectojilien@gmail.com>, 2017

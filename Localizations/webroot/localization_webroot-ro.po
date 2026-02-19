@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Leonte Cristian <leontecristian86@gmail.com>, 2017
 # Daniel Jircă <daniel.jirca@gmail.com>, 2019

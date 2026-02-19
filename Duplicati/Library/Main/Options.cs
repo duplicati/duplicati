@@ -356,7 +356,7 @@ namespace Duplicati.Library.Main
         private IEnumerable<ICommandLineArgument> GetOSConditionalCommands()
         {
             var items = new List<ICommandLineArgument>();
-            if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+            if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
                 yield return new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, DEFAULT_SNAPSHOT_POLICY.ToString(), null, Enum.GetNames(typeof(OptimizationStrategy)));
 
             if (OperatingSystem.IsWindows())
@@ -462,6 +462,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("log-socket-data", CommandLineArgument.ArgumentType.Integer, Strings.Options.LogsocketdataShort, Strings.Options.LogsocketdataLong, "-1"),
 
             new CommandLineArgument("profile-all-database-queries", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ProfilealldatabasequeriesShort, Strings.Options.ProfilealldatabasequeriesLong, "false"),
+            new CommandLineArgument("store-metadata-content-in-database", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadatacontentindatabaseShort, Strings.Options.StoremetadatacontentindatabaseLong, "false"),
 
             new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsLong, "false"),
             new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepLong, "false"),
@@ -519,6 +520,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong, "false", null, null, Strings.Options.PatchwithlocalblocksDeprecated("restore-with-local-blocks")),
             new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
             new CommandLineArgument("dont-compress-restore-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontcompressrestorepathsShort, Strings.Options.DontcompressrestorepathsLong, "false"),
+            new CommandLineArgument("allow-restore-outside-target-directory", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowRestoreOutsideTargetDirectoryShort, Strings.Options.AllowRestoreOutsideTargetDirectoryLong, "false"),
 
             new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
             new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
@@ -1139,6 +1141,11 @@ namespace Duplicati.Library.Main
         public bool ProfileAllDatabaseQueries => GetBool("profile-all-database-queries");
 
         /// <summary>
+        /// A value indicating if metadata content should be stored in the database
+        /// </summary>
+        public bool StoreMetadataContentInDatabase => GetBool("store-metadata-content-in-database");
+
+        /// <summary>
         /// Gets the attribute filter used to exclude files and folders.
         /// </summary>
         public System.IO.FileAttributes FileAttributeFilter
@@ -1470,6 +1477,11 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <value><c>true</c> if no local db is used; otherwise, <c>false</c>.</value>
         public bool DontCompressRestorePaths => GetBool("dont-compress-restore-paths");
+
+        /// <summary>
+        /// Gets a value indicating whether to allow restore outside target directory.
+        /// </summary>
+        public bool AllowRestoreOutsideTargetDirectory => GetBool("allow-restore-outside-target-directory");
 
         /// <summary>
         /// Gets a flag indicating if block hashes are checked before being applied
