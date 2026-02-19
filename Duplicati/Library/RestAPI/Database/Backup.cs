@@ -227,12 +227,18 @@ namespace Duplicati.Server.Database
         }
 
         /// <inheritdoc/>
-        public void UnmaskSensitiveInformation(IBackup previous)
+        public void UnmaskSensitiveInformation(IBackup previous, IReadOnlyDictionary<long, string> connectionStrings)
         {
             if (previous == null)
                 throw new ArgumentNullException(nameof(previous));
 
-            TargetURL = QuerystringMasking.Unmask(TargetURL, previous.TargetURL);
+            // If there is a connection string ID, and it is different from the previous one,
+            // the user has changed the connection strings source
+            var constr = ConnectionStringID > 0 && ConnectionStringID != previous.ConnectionStringID
+                ? connectionStrings.GetValueOrDefault(previous.ConnectionStringID)
+                : previous.TargetURL;
+
+            TargetURL = QuerystringMasking.Unmask(TargetURL, [constr, previous.TargetURL]);
             Sources = SourceMasking.UnmaskSources(Sources, previous.Sources);
 
             // Unmask additional target URLs
@@ -241,7 +247,7 @@ namespace Duplicati.Server.Database
             {
                 var prevTargets = prevAdditionalTargets.ToDictionary(
                     x => x.TargetUrlKey,
-                    x => x.TargetUrl,
+                    x => x,
                     StringComparer.OrdinalIgnoreCase);
 
                 foreach (var target in AdditionalTargetURLs)
@@ -249,7 +255,17 @@ namespace Duplicati.Server.Database
                     if (target != null && Connection.UrlContainsPasswordPlaceholder(target.TargetUrl))
                     {
                         if (prevTargets.TryGetValue(target.TargetUrlKey, out var prevValue))
-                            target.TargetUrl = QuerystringMasking.Unmask(target.TargetUrl, prevValue);
+                        {
+                            var prevTarget = target.ConnectionStringID > 0 && target.ConnectionStringID != prevValue.ConnectionStringID
+                                ? connectionStrings.GetValueOrDefault(prevValue.ConnectionStringID)
+                                : prevValue.TargetUrl;
+
+                            target.TargetUrl = QuerystringMasking.Unmask(target.TargetUrl, [prevTarget, prevValue.TargetUrl]);
+                        }
+                        else if (target.ConnectionStringID > 0)
+                        {
+                            target.TargetUrl = QuerystringMasking.Unmask(target.TargetUrl, connectionStrings.GetValueOrDefault(target.ConnectionStringID));
+                        }
                         else
                             throw new InvalidOperationException($"Cannot unmask target URL with key '{target.TargetUrlKey}' because it did not exist in the previous configuration.");
                     }

@@ -93,15 +93,7 @@ public class BackupPutDelete : IEndpointV1
                 }).ToList() ?? new List<TargetUrlEntry>()
             };
 
-            if (backup.ConnectionStringID > 0 && backup.ConnectionStringID != existing.ConnectionStringID)
-            {
-                var cs = connection.GetConnectionString(backup.ConnectionStringID);
-                if (cs != null)
-                {
-                    backup.TargetURL = QuerystringMasking.Unmask(backup.TargetURL, cs.BaseUrl);
-                }
-            }
-
+            var connectionStrings = connection.GetConnectionStrings().ToDictionary(x => x.ID, x => x.BaseUrl);
             var schedule = input.Schedule == null ? null : new Schedule()
             {
                 ID = input.Schedule.ID,
@@ -121,7 +113,7 @@ public class BackupPutDelete : IEndpointV1
                 if (connection.Backups.Any(x => x.Name.Equals(backup.Name, StringComparison.OrdinalIgnoreCase) && x.ID != backup.ID))
                     throw new ConflictException($"There already exists a backup with the name: {backup.Name}");
 
-                backup.UnmaskSensitiveInformation(existing);
+                backup.UnmaskSensitiveInformation(existing, connectionStrings);
                 var err = connection.ValidateBackup(backup, schedule);
                 if (!string.IsNullOrWhiteSpace(err))
                     throw new BadRequestException(err);

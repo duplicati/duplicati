@@ -74,7 +74,8 @@ public class BackupConfigMaskingTests
         Assert.That(backupConfig.Settings.Single(s => s.Name == "passphrase").Value, Is.EqualTo(placeholder));
         Assert.That(backupConfig.Settings.Single(s => s.Name == "nonsecret").Value, Is.EqualTo("keepme"));
 
-        backupConfig.UnmaskSensitiveInformation(original);
+        var connectionStrings = new Dictionary<long, string>();
+        backupConfig.UnmaskSensitiveInformation(original, connectionStrings);
 
         Assert.That(EqualsIgnoreQueryOrder(backupConfig.TargetURL, original.TargetURL));
         Assert.That(backupConfig.Settings.Single(s => s.Name == "passphrase").Value, Is.EqualTo("secretpass"));
@@ -181,6 +182,159 @@ public class BackupConfigMaskingTests
             Assert.Ignore("ValidateBackup does not detect placeholder values");
 
         Assert.That(err, Is.Not.Null.And.Not.Empty);
+    }
+
+    [Test]
+    public void Unmask_WithConnectionStringIdChanged_UsesConnectionStringForUnmasking()
+    {
+        var placeholder = Connection.PASSWORD_PLACEHOLDER;
+
+        // Previous backup has connection string ID 1
+        var previous = new Backup
+        {
+            ID = "1",
+            Name = "Test",
+            Description = string.Empty,
+            Tags = Array.Empty<string>(),
+            TargetURL = "http://old.example.com?authid=old-secret&foo=bar",
+            ConnectionStringID = 1,
+            Sources = Array.Empty<string>(),
+            Settings = Array.Empty<ISetting>(),
+            Filters = Array.Empty<IFilter>(),
+            Metadata = new Dictionary<string, string>()
+        };
+
+        // New backup has different connection string ID 2 (changed)
+        // The masked URL should be unmasked using the connection string, not the previous URL
+        var newBackup = new Backup
+        {
+            ID = "1",
+            Name = "Test",
+            Description = string.Empty,
+            Tags = Array.Empty<string>(),
+            TargetURL = $"http://new.example.com?authid={placeholder}&foo=bar",
+            ConnectionStringID = 2, // Changed from 1
+            Sources = Array.Empty<string>(),
+            Settings = Array.Empty<ISetting>(),
+            Filters = Array.Empty<IFilter>(),
+            Metadata = new Dictionary<string, string>()
+        };
+
+        // Connection strings dictionary - connection string ID 1 has the credentials
+        var connectionStrings = new Dictionary<long, string>
+        {
+            [1] = "http://connection-string.example.com?authid=connection-secret&foo=bar"
+        };
+
+        newBackup.UnmaskSensitiveInformation(previous, connectionStrings);
+
+        // Should use the connection string value, not the previous URL value
+        Assert.That(newBackup.TargetURL, Does.Contain("authid=connection-secret"));
+        Assert.That(newBackup.TargetURL, Does.Not.Contain("old-secret"));
+        Assert.That(newBackup.TargetURL, Does.Not.Contain(placeholder));
+    }
+
+    [Test]
+    public void Unmask_WithConnectionStringIdUnchanged_UsesPreviousUrlForUnmasking()
+    {
+        var placeholder = Connection.PASSWORD_PLACEHOLDER;
+
+        // Previous backup has connection string ID 1
+        var previous = new Backup
+        {
+            ID = "1",
+            Name = "Test",
+            Description = string.Empty,
+            Tags = Array.Empty<string>(),
+            TargetURL = "http://old.example.com?authid=old-secret&foo=bar",
+            ConnectionStringID = 1,
+            Sources = Array.Empty<string>(),
+            Settings = Array.Empty<ISetting>(),
+            Filters = Array.Empty<IFilter>(),
+            Metadata = new Dictionary<string, string>()
+        };
+
+        // New backup has same connection string ID (unchanged)
+        // The masked URL should be unmasked using the previous URL
+        var newBackup = new Backup
+        {
+            ID = "1",
+            Name = "Test",
+            Description = string.Empty,
+            Tags = Array.Empty<string>(),
+            TargetURL = $"http://new.example.com?authid={placeholder}&foo=bar",
+            ConnectionStringID = 1, // Same as previous
+            Sources = Array.Empty<string>(),
+            Settings = Array.Empty<ISetting>(),
+            Filters = Array.Empty<IFilter>(),
+            Metadata = new Dictionary<string, string>()
+        };
+
+        // Connection strings dictionary - should NOT be used when connectionStringID is unchanged
+        var connectionStrings = new Dictionary<long, string>
+        {
+            [1] = "http://connection-string.example.com?authid=connection-secret&foo=bar"
+        };
+
+        newBackup.UnmaskSensitiveInformation(previous, connectionStrings);
+
+        // Should use the previous URL value, not the connection string value
+        Assert.That(newBackup.TargetURL, Does.Contain("authid=old-secret"));
+        Assert.That(newBackup.TargetURL, Does.Not.Contain("connection-secret"));
+        Assert.That(newBackup.TargetURL, Does.Not.Contain(placeholder));
+    }
+
+    [Test]
+    public void Unmask_WithConnectionStringIdChangedButValueInPreviousUrl_CopiesFromPreviousUrl()
+    {
+        var placeholder = Connection.PASSWORD_PLACEHOLDER;
+
+        // Previous backup has connection string ID 1 with authid in the URL
+        var previous = new Backup
+        {
+            ID = "1",
+            Name = "Test",
+            Description = string.Empty,
+            Tags = Array.Empty<string>(),
+            TargetURL = "http://old.example.com?authid=old-secret&custom=value-from-prev",
+            ConnectionStringID = 1,
+            Sources = Array.Empty<string>(),
+            Settings = Array.Empty<ISetting>(),
+            Filters = Array.Empty<IFilter>(),
+            Metadata = new Dictionary<string, string>()
+        };
+
+        // New backup has different connection string ID 2 (changed)
+        // The masked URL has authid (should come from connection string) 
+        // AND a custom param that only exists in previous URL
+        var newBackup = new Backup
+        {
+            ID = "1",
+            Name = "Test",
+            Description = string.Empty,
+            Tags = Array.Empty<string>(),
+            // Note: custom param is masked but doesn't exist in connection string
+            TargetURL = $"http://new.example.com?authid={placeholder}&custom={placeholder}",
+            ConnectionStringID = 2, // Changed from 1
+            Sources = Array.Empty<string>(),
+            Settings = Array.Empty<ISetting>(),
+            Filters = Array.Empty<IFilter>(),
+            Metadata = new Dictionary<string, string>()
+        };
+
+        // Connection strings dictionary - has authid but NOT the custom param
+        var connectionStrings = new Dictionary<long, string>
+        {
+            [1] = "http://connection-string.example.com?authid=connection-secret"
+        };
+
+        newBackup.UnmaskSensitiveInformation(previous, connectionStrings);
+
+        // authid should come from connection string
+        Assert.That(newBackup.TargetURL, Does.Contain("authid=connection-secret"));
+        // custom should fall back to previous URL since it's not in connection string
+        Assert.That(newBackup.TargetURL, Does.Contain("custom=value-from-prev"));
+        Assert.That(newBackup.TargetURL, Does.Not.Contain(placeholder));
     }
 }
 
