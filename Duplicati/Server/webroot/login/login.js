@@ -3,6 +3,27 @@ $(document).ready(function() {
     
     document.getElementById('no-js-warning').style.display = 'none';
 
+    // Check SSO configuration from the server
+    $.ajax({
+        url: './api/v1/auth/entra/config',
+        type: 'GET',
+        accepts: 'application/json'
+    })
+    .done(function(data) {
+        if (data && data.Enabled) {
+            if (data.AutoRedirect) {
+                // SSO-only mode: redirect straight to Azure AD
+                window.location = './api/v1/auth/entra/authorize';
+            } else {
+                // SSO available: show the button alongside the password form
+                document.getElementById('sso-section').style.display = 'block';
+            }
+        }
+    })
+    .fail(function() {
+        // SSO not available or endpoint not reachable – proceed with password form only
+    });
+
     $('#login-form').on('submit', function() {
 
         if (processing)

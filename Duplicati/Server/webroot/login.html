@@ -19,6 +19,22 @@
       type="text/css"
       href="oem/root/login/oem.css?v=2.0.0.7"
     />
+    <style>
+      #sso-section { margin-top: 12px; }
+      #sso-login-button {
+        display: inline-block;
+        padding: 8px 16px;
+        background: #0078d4;
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+      }
+      #sso-login-button:hover { background: #106ebe; }
+      .sso-divider { margin: 10px 0; color: #888; font-size: 12px; }
+    </style>
   </head>
 
   <body>
@@ -39,6 +55,10 @@
           <p><input type="submit" id="login-button" value="Sign In" /></p>
         </fieldset>
       </form>
+      <div id="sso-section" style="display:none">
+        <div class="sso-divider">— or —</div>
+        <a id="sso-login-button" href="./api/v1/auth/entra/authorize">Sign in with Microsoft</a>
+      </div>
       <div>
         <a
           href="https://docs.duplicati.com/detailed-descriptions/duplicati-access-password"
