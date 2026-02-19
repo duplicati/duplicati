@@ -535,7 +535,7 @@ namespace Duplicati.UnitTest
             options["concurrency-fileprocessors"] = "1";
 
             using var c = new Controller("file://" + TARGETFOLDER, options, null);
-            var sourceUrl = $"@diskimage://{physicalDrivePath}";
+            var sourceUrl = $"@/testdisk|diskimage://{physicalDrivePath}";
             return c.Backup(new[] { sourceUrl });
         }
 
