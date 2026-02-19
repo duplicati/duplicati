@@ -63,6 +63,11 @@ namespace Duplicati.Server.Serialization.Interface
         string? Interval { get; set; }
 
         /// <summary>
+        /// The connection string ID for this target URL (if applicable)
+        /// </summary>
+        long ConnectionStringID { get; set; }
+
+        /// <summary>
         /// Additional options as a JSON object (auto-create-folders, backend-retries, etc.)
         /// </summary>
         Dictionary<string, object>? Options { get; set; }

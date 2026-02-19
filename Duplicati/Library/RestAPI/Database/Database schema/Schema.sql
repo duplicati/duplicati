@@ -192,6 +192,7 @@ CREATE TABLE "BackupTargetUrl" (
     "Mode" TEXT NOT NULL DEFAULT 'inline',
     "Interval" TEXT NULL,
     "Options" TEXT NULL,
+    "ConnectionStringID" INTEGER NOT NULL DEFAULT -1,
     "CreatedAt" INTEGER NOT NULL DEFAULT 0,
     "UpdatedAt" INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY ("BackupID") REFERENCES "Backup"("ID") ON DELETE CASCADE

@@ -47,6 +47,11 @@ public sealed record TargetUrlInputDto
     public string? Interval { get; init; }
 
     /// <summary>
+    /// The ID of the connection string used for this target URL
+    /// </summary>
+    public long ConnectionStringID { get; init; }
+
+    /// <summary>
     /// Additional options for the lightweight backend manager
     /// </summary>
     public Dictionary<string, object>? Options { get; init; }

@@ -72,6 +72,7 @@ public class BackupListService(Connection connection) : IBackupListService
                     TargetUrl = x.TargetUrl,
                     Mode = x.Mode ?? "inline",
                     Interval = x.Interval,
+                    ConnectionStringID = x.ConnectionStringID,
                     Options = x.Options
                 }).ToList() ?? new List<TargetUrlEntry>()
             };
@@ -345,6 +346,7 @@ public class BackupListService(Connection connection) : IBackupListService
                     TargetUrl = t.TargetUrl,
                     Mode = t.Mode,
                     Interval = t.Interval,
+                    ConnectionStringID = t.ConnectionStringID,
                     Options = t.Options
                 }).ToArray() ?? Array.Empty<Dto.TargetUrlDto>()
             },

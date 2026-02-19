@@ -1653,11 +1653,12 @@ namespace Duplicati.Server.Database
                         TargetUrl = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 3) ?? "", m_key),
                         Mode = ConvertToString(rd, 4) ?? "inline",
                         Interval = ConvertToString(rd, 5),
-                        Options = ParseOptionsJson(ConvertToString(rd, 6)),
-                        CreatedAt = ConvertToDateTime(rd, 7),
-                        UpdatedAt = ConvertToDateTime(rd, 8)
+                        ConnectionStringID = ConvertToInt64(rd, 6),
+                        Options = ParseOptionsJson(ConvertToString(rd, 7)),
+                        CreatedAt = ConvertToDateTime(rd, 8),
+                        UpdatedAt = ConvertToDateTime(rd, 9)
                     },
-                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""BackupID"", ""TargetUrlKey"", ""TargetURL"", ""Mode"", ""Interval"", ""Options"", ""CreatedAt"", ""UpdatedAt"" FROM ""BackupTargetUrl"" WHERE ""BackupID"" = @Id")
+                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""BackupID"", ""TargetUrlKey"", ""TargetURL"", ""Mode"", ""Interval"", ""ConnectionStringID"", ""Options"", ""CreatedAt"", ""UpdatedAt"" FROM ""BackupTargetUrl"" WHERE ""BackupID"" = @Id")
                         .SetParameterValue("@Id", backupId))
                     .ToList();
             }
@@ -1718,12 +1719,13 @@ namespace Duplicati.Server.Database
 
                         using (var cmd = m_connection.CreateCommand(tr))
                         {
-                            cmd.SetCommandAndParameters(@"INSERT INTO ""BackupTargetUrl"" (""BackupID"", ""TargetUrlKey"", ""TargetURL"", ""Mode"", ""Interval"", ""Options"", ""CreatedAt"", ""UpdatedAt"") VALUES (@BackupId, @TargetUrlKey, @TargetUrl, @Mode, @Interval, @Options, @CreatedAt, @UpdatedAt)");
+                            cmd.SetCommandAndParameters(@"INSERT INTO ""BackupTargetUrl"" (""BackupID"", ""TargetUrlKey"", ""TargetURL"", ""Mode"", ""Interval"", ""ConnectionStringID"", ""Options"", ""CreatedAt"", ""UpdatedAt"") VALUES (@BackupId, @TargetUrlKey, @TargetUrl, @Mode, @Interval, @ConnectionStringID, @Options, @CreatedAt, @UpdatedAt)");
                             cmd.SetParameterValue("@BackupId", backupId);
                             cmd.SetParameterValue("@TargetUrlKey", target.TargetUrlKey);
                             cmd.SetParameterValue("@TargetUrl", encryptedUrl);
                             cmd.SetParameterValue("@Mode", target.Mode);
                             cmd.SetParameterValue("@Interval", target.Interval);
+                            cmd.SetParameterValue("@ConnectionStringID", target.ConnectionStringID);
                             cmd.SetParameterValue("@Options", optionsJson);
                             cmd.SetParameterValue("@CreatedAt", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(now));
                             cmd.SetParameterValue("@UpdatedAt", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(now));

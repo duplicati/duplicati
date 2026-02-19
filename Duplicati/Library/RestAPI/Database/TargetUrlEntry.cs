@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 
@@ -61,6 +63,11 @@ namespace Duplicati.Server.Database
         /// The interval for interval mode (e.g., "1h", "30m")
         /// </summary>
         public string? Interval { get; set; }
+
+        /// <summary>
+        /// The connection string ID for this target URL (if applicable)
+        /// </summary>
+        public long ConnectionStringID { get; set; }
 
         /// <summary>
         /// Additional options as a JSON object (auto-create-folders, backend-retries, etc.)

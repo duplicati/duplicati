@@ -88,6 +88,7 @@ public class BackupPutDelete : IEndpointV1
                     TargetUrl = x.TargetUrl,
                     Mode = x.Mode ?? "inline",
                     Interval = x.Interval,
+                    ConnectionStringID = x.ConnectionStringID,
                     Options = x.Options
                 }).ToList() ?? new List<TargetUrlEntry>()
             };
