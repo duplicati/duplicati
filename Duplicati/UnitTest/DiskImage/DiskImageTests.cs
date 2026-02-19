@@ -416,7 +416,7 @@ namespace Duplicati.UnitTest
                         "Restore should fail when target disk is online and auto-unmount is not enabled");
                     TestContext.Progress.WriteLine($"Restore failed as expected with errors: {string.Join(", ", results.Errors)}");
                 }
-                catch (System.IO.IOException _)
+                catch (IOException)
                 {
                     // Assumed to fail
                 }
