@@ -145,7 +145,8 @@ public class BackupGet : IEndpointV1
                     TargetUrl = x.TargetUrl,
                     Mode = x.Mode,
                     Interval = x.Interval,
-                    Options = x.Options
+                    ConnectionStringID = x.ConnectionStringID,
+                    Options = x.Options,
                 }).ToArray() ?? Array.Empty<Dto.TargetUrlDto>(),
             },
             sourcenames

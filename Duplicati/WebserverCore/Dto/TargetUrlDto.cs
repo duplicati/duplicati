@@ -49,10 +49,10 @@ public sealed record TargetUrlDto
     /// <summary>
     /// The ID of the connection string used for this target URL
     /// </summary>
-    public long ConnectionStringID { get; init; }
+    public required long ConnectionStringID { get; init; }
 
     /// <summary>
     /// Additional options for the lightweight backend manager (JSON object)
     /// </summary>
-    public Dictionary<string, object>? Options { get; init; }
+    public required Dictionary<string, object>? Options { get; init; }
 }
