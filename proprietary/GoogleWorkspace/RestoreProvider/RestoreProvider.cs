@@ -541,4 +541,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             f?.Dispose();
         }
     }
+
+    /// <inheritdoc/>
+    public IList<string> GetPriorityFiles() => new List<string>();
 }
