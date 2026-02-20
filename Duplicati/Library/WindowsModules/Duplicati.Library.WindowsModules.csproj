@@ -8,13 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Vanara.PInvoke.VssApi" Version="4.1.6" />
-    <PackageReference Include="Vanara.PInvoke.Kernel32" Version="4.1.6" />
-    <PackageReference Include="Vanara.PInvoke.Security" Version="4.1.6" />
-    <PackageReference Include="Vanara.PInvoke.User32" Version="4.1.6" />
-    <PackageReference Include="Vanara.Security" Version="4.1.6" />
+    <PackageReference Include="Vanara.PInvoke.VssApi" Version="5.0.0" />
+    <PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.0" />
+    <PackageReference Include="Vanara.PInvoke.Security" Version="5.0.0" />
+    <PackageReference Include="Vanara.PInvoke.User32" Version="5.0.0" />
+    <PackageReference Include="Vanara.Security" Version="5.0.0" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
   </ItemGroup>

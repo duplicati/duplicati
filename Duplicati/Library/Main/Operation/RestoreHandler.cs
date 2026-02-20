@@ -409,8 +409,13 @@ namespace Duplicati.Library.Main.Operation
             Restore.DeadlockTimer.initial_threshold = (int)TimeSpan.FromMinutes(1).TotalMilliseconds * Math.Max(1, (int)(volsize / (10L * 1024L * 1024L)));
             Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
 
+            // Initialize priority files synchronization
+            var priorityFiles = restoreDestination.GetPriorityFiles();
+            Restore.FileProcessor.priority_files_remaining = priorityFiles.Count;
+            Restore.FileProcessor.priority_files_completed = new TaskCompletionSource();
+
             // Create the process network
-            var filelister = Restore.FileLister.Run(channels, database, m_options, m_result);
+            var filelister = Restore.FileLister.Run(channels, database, m_options, m_result, priorityFiles);
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], restoreDestination, m_options, m_result)).ToArray();
             var blockmanager = Restore.BlockManager.Run(channels, database, fileprocessor_requests, fileprocessor_responses, m_options, m_result);
             var volumecache = Restore.VolumeManager.Run(channels, m_options, m_result);
@@ -490,20 +495,46 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
+        /// Creates a filter that matches only the given priority files.
+        /// Priority file names are matched as suffix patterns (e.g., "geometry.json" becomes "*geometry.json").
+        /// </summary>
+        /// <param name="priorityFiles">The list of priority file names to include.</param>
+        /// <returns>A filter that includes only files matching the priority file patterns.</returns>
+        private static Library.Utility.IFilter BuildPriorityFilter(IList<string> priorityFiles)
+        {
+            var priorityPatterns = priorityFiles.Select(pf => "*" + pf);
+            return new FilterExpression(priorityPatterns, true);
+        }
+
+        /// <summary>
+        /// Creates a filter that excludes the given priority files from the original filter.
+        /// The exclude filter is placed first so it takes precedence in the joined expression.
+        /// </summary>
+        /// <param name="priorityFiles">The list of priority file names to exclude.</param>
+        /// <param name="originalFilter">The original filter to combine with.</param>
+        /// <returns>A filter that matches the original filter but excludes priority files.</returns>
+        private static Library.Utility.IFilter BuildExcludePriorityFilter(IList<string> priorityFiles, Library.Utility.IFilter originalFilter)
+        {
+            var excludePatterns = priorityFiles.Select(pf => "*" + pf);
+            var excludeFilter = new FilterExpression(excludePatterns, false);
+            // Put exclude first so it takes precedence in JoinedFilterExpression
+            return JoinedFilterExpression.Join(excludeFilter, originalFilter);
+        }
+
+        /// <summary>
         /// Perform the restore operation.
         /// This is the legacy implementation, which performs the restore in a single thread. Kept as in case the new implementation fails.
         /// </summary>
+        /// <param name="backendManager">The backend manager for downloading volumes.</param>
         /// <param name="database">The database containing information about the restore.</param>
         /// <param name="filter">The filter of which files to restore.</param>
         /// <param name="restoreDestination">The destination to restore to.</param>
         /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
         private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
-            //In this case, we check that the remote storage fits with the database.
-            //We can then query the database and find the blocks that we need to do the restore
-            //using (var database = new LocalRestoreDatabase(dbparent))
             using (var metadatastorage = new RestoreHandlerMetadataStorage())
             {
+                // One-time setup
                 await Utility.UpdateOptionsFromDb(database, m_options, cancellationToken)
                     .ConfigureAwait(false);
                 await Utility.VerifyOptionsAndUpdateDatabase(database, m_options, cancellationToken)
@@ -516,75 +547,205 @@ namespace Duplicati.Library.Main.Operation
                     await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, cancellationToken).ConfigureAwait(false);
                 }
 
-                //Figure out what files are to be patched, and what blocks are needed
-                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
-                using (new Logging.Timer(LOGTAG, "PrepareBlockList", "PrepareBlockList"))
-                    await PrepareBlockAndFileList(database, m_options, filter, restoreDestination, m_result)
-                        .ConfigureAwait(false);
+                // Get priority files from restore destination
+                var priorityFiles = restoreDestination.GetPriorityFiles();
 
-                //Make the entire output setup
-                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
-                using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
-                    await CreateDirectoryStructure(database, restoreDestination, string.IsNullOrEmpty(restoreDestination.TargetDestination), m_options, m_result)
-                        .ConfigureAwait(false);
-
-                //If we are patching an existing target folder, do not touch stuff that is already updated
-                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForExistingFiles);
-                using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
-                using (var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
-                using (new Logging.Timer(LOGTAG, "ScanForExistingTargetBlocks", "ScanForExistingTargetBlocks"))
-                    await ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, restoreDestination, m_result).ConfigureAwait(false);
-
-                //Look for existing blocks in the original source files only
-                if (m_options.UseLocalBlocks && !string.IsNullOrEmpty(restoreDestination.TargetDestination))
+                if (priorityFiles.Count > 0)
                 {
-                    using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
-                    using (new Logging.Timer(LOGTAG, "ScanForExistingSourceBlocksFast", "ScanForExistingSourceBlocksFast"))
+                    // Phase 1: Restore priority files only
+                    Logging.Log.WriteInformationMessage(LOGTAG, "PriorityFilesRestore", "Restoring {0} priority file(s) first: {1}", priorityFiles.Count, string.Join(", ", priorityFiles));
+                    var priorityFilter = BuildPriorityFilter(priorityFiles);
+                    var restoredBefore = m_result.RestoredFiles;
+
+                    await RestoreCoreAsync(backendManager, database, priorityFilter, restoreDestination, metadatastorage, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    // Warn about any priority files not found in backup
+                    var restoredInPhase1 = m_result.RestoredFiles - restoredBefore;
+                    if (restoredInPhase1 == 0)
                     {
-                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForLocalBlocks);
-                        await ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, restoreDestination, m_result).ConfigureAwait(false);
+                        foreach (var pf in priorityFiles)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "PriorityFileNotFound", null,
+                                "Priority file '{0}' was not found in the backup. This may cause subsequent restore steps to fail.", pf);
+                    }
+
+                    // Phase 2: Restore remaining files (excluding priority files)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RemainingFilesRestore", "Restoring remaining files (excluding priority files)");
+                    var phase2Filter = BuildExcludePriorityFilter(priorityFiles, filter);
+                    await RestoreCoreAsync(backendManager, database, phase2Filter, restoreDestination, metadatastorage, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    // No priority files — single phase
+                    await RestoreCoreAsync(backendManager, database, filter, restoreDestination, metadatastorage, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+            }
+
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Finalize);
+            m_result.EndTime = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Core restore logic extracted from the legacy restore flow.
+        /// Performs the full restore pipeline: prepare file/block lists, scan for existing blocks,
+        /// download and patch from remote volumes, restore empty files, apply metadata, and verify.
+        /// </summary>
+        /// <param name="backendManager">The backend manager for downloading volumes.</param>
+        /// <param name="database">The database containing information about the restore.</param>
+        /// <param name="filter">The filter of which files to restore in this phase.</param>
+        /// <param name="restoreDestination">The destination to restore to.</param>
+        /// <param name="metadatastorage">Shared metadata storage across phases.</param>
+        /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
+        private async Task RestoreCoreAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination, RestoreHandlerMetadataStorage metadatastorage, CancellationToken cancellationToken)
+        {
+            //Figure out what files are to be patched, and what blocks are needed
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
+            using (new Logging.Timer(LOGTAG, "PrepareBlockList", "PrepareBlockList"))
+                await PrepareBlockAndFileList(database, m_options, filter, restoreDestination, m_result)
+                    .ConfigureAwait(false);
+
+            //Make the entire output setup
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
+            using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
+                await CreateDirectoryStructure(database, restoreDestination, string.IsNullOrEmpty(restoreDestination.TargetDestination), m_options, m_result)
+                    .ConfigureAwait(false);
+
+            //If we are patching an existing target folder, do not touch stuff that is already updated
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForExistingFiles);
+            using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+            using (var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
+            using (new Logging.Timer(LOGTAG, "ScanForExistingTargetBlocks", "ScanForExistingTargetBlocks"))
+                await ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, restoreDestination, m_result).ConfigureAwait(false);
+
+            //Look for existing blocks in the original source files only
+            if (m_options.UseLocalBlocks && !string.IsNullOrEmpty(restoreDestination.TargetDestination))
+            {
+                using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+                using (new Logging.Timer(LOGTAG, "ScanForExistingSourceBlocksFast", "ScanForExistingSourceBlocksFast"))
+                {
+                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForLocalBlocks);
+                    await ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, restoreDestination, m_result).ConfigureAwait(false);
+                }
+            }
+
+            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+            {
+                await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            // If other local files already have the blocks we want, we use them instead of downloading
+            if (m_options.UseLocalBlocks)
+            {
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PatchWithLocalBlocks);
+                using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+                using (new Logging.Timer(LOGTAG, "PatchWithLocalBlocks", "PatchWithLocalBlocks"))
+                    await ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_result, metadatastorage, restoreDestination).ConfigureAwait(false);
+            }
+
+            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+            {
+                await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            // Fill BLOCKS with remote sources
+            List<IRemoteVolume> volumes;
+            using (new Logging.Timer(LOGTAG, "GetMissingVolumes", "GetMissingVolumes"))
+                volumes = await database
+                    .GetMissingVolumes(cancellationToken)
+                    .ToListAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+
+            if (volumes.Count > 0)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "RemoteFileCount", "{0} remote files are required to restore", volumes.Count);
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
+            }
+
+            var brokenFiles = new List<string>();
+
+            using (new Logging.Timer(LOGTAG, "PatchWithBlocklist", "PatchWithBlocklist"))
+                await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(volumes, cancellationToken).ConfigureAwait(false))
+                {
+                    try
+                    {
+                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        {
+                            await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
+                            return;
+                        }
+
+                        using (tmpfile)
+                        using (var blocks = new BlockVolumeReader(GetCompressionModule(name), tmpfile, m_options))
+                            await PatchWithBlocklist(database, blocks, m_options, m_result, m_blockbuffer, metadatastorage, restoreDestination, cancellationToken)
+                                .ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        brokenFiles.Add(name);
+                        Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", name, ex.Message);
+                        if (ex.IsAbortException())
+                            throw;
                     }
                 }
 
-                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+            var fileErrors = 0L;
+
+            // Restore empty files. They might not have any blocks so don't appear in any volume.
+            await foreach (var file in database.GetFilesToRestore(true, cancellationToken).Where(item => item.Length == 0).ConfigureAwait(false))
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "RestoreEmptyFile", "Restoring empty file \"{0}\"", file.Path);
+
+                try
                 {
-                    await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
-                    return;
+                    var folderpath = SystemIO.IO_OS.PathGetDirectoryName(file.Path);
+                    if (!string.IsNullOrEmpty(folderpath))
+                    {
+                        await restoreDestination.CreateFolderIfNotExists(folderpath, cancellationToken).ConfigureAwait(false);
+                    }
+                    // Just create the file and close it right away, empty statement is intentional.
+                    using (var stream = await restoreDestination.OpenWrite(file.Path, cancellationToken).ConfigureAwait(false))
+                    {
+                        try
+                        {
+                            stream.SetLength(0);
+                        }
+                        catch (NotSupportedException)
+                        {
+                            // Some streams do not support setting length, ignore
+                        }
+                    }
                 }
-
-                // If other local files already have the blocks we want, we use them instead of downloading
-                if (m_options.UseLocalBlocks)
+                catch (Exception ex)
                 {
-                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PatchWithLocalBlocks);
-                    using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
-                    using (new Logging.Timer(LOGTAG, "PatchWithLocalBlocks", "PatchWithLocalBlocks"))
-                        await ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_result, metadatastorage, restoreDestination).ConfigureAwait(false);
+                    fileErrors++;
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore empty file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
+                    if (ex.IsAbortException())
+                        throw;
                 }
+            }
 
-                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                {
-                    await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
-                    return;
-                }
+            // Enforcing the length of files is now already done during ScanForExistingTargetBlocks
+            // and thus not necessary anymore.
 
-                // Fill BLOCKS with remote sources
-                List<IRemoteVolume> volumes;
-                using (new Logging.Timer(LOGTAG, "GetMissingVolumes", "GetMissingVolumes"))
-                    volumes = await database
-                        .GetMissingVolumes(cancellationToken)
-                        .ToListAsync(cancellationToken: cancellationToken)
-                        .ConfigureAwait(false);
+            // Apply metadata
+            if (!m_options.SkipMetadata)
+                await ApplyStoredMetadata(m_options, metadatastorage, restoreDestination, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
-                if (volumes.Count > 0)
-                {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "RemoteFileCount", "{0} remote files are required to restore", volumes.Count);
-                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
-                }
+            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                return;
 
-                var brokenFiles = new List<string>();
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
 
-                using (new Logging.Timer(LOGTAG, "PatchWithBlocklist", "PatchWithBlocklist"))
-                    await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(volumes, cancellationToken).ConfigureAwait(false))
+            if (m_options.PerformRestoredFileVerification)
+            {
+                // After all blocks in the files are restored, verify the file hash
+                using (var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
+                using (new Logging.Timer(LOGTAG, "RestoreVerification", "RestoreVerification"))
+                    await foreach (var file in database.GetFilesToRestore(true, cancellationToken).ConfigureAwait(false))
                     {
                         try
                         {
@@ -594,123 +755,39 @@ namespace Duplicati.Library.Main.Operation
                                 return;
                             }
 
-                            using (tmpfile)
-                            using (var blocks = new BlockVolumeReader(GetCompressionModule(name), tmpfile, m_options))
-                                await PatchWithBlocklist(database, blocks, m_options, m_result, m_blockbuffer, metadatastorage, restoreDestination, cancellationToken)
-                                    .ConfigureAwait(false);
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "TestFileIntegrity", "Testing restored file integrity: {0}", file.Path);
+
+                            string key;
+                            long size;
+                            using (var fs = await restoreDestination.OpenRead(file.Path, cancellationToken).ConfigureAwait(false))
+                            {
+                                size = fs.Length;
+                                key = Convert.ToBase64String(filehasher.ComputeHash(fs));
+                            }
+
+                            if (key != file.Hash)
+                                throw new Exception(string.Format("Failed to restore file: \"{0}\". File hash is {1}, expected hash is {2}", file.Path, key, file.Hash));
+                            m_result.RestoredFiles++;
+                            m_result.SizeOfRestoredFiles += size;
                         }
                         catch (Exception ex)
                         {
-                            brokenFiles.Add(name);
-                            Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", name, ex.Message);
+                            fileErrors++;
+                            Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
                             if (ex.IsAbortException())
                                 throw;
                         }
                     }
-
-                var fileErrors = 0L;
-
-                // Restore empty files. They might not have any blocks so don't appear in any volume.
-                await foreach (var file in database.GetFilesToRestore(true, cancellationToken).Where(item => item.Length == 0).ConfigureAwait(false))
-                {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "RestoreEmptyFile", "Restoring empty file \"{0}\"", file.Path);
-
-                    try
-                    {
-                        var folderpath = SystemIO.IO_OS.PathGetDirectoryName(file.Path);
-                        if (!string.IsNullOrEmpty(folderpath))
-                        {
-                            await restoreDestination.CreateFolderIfNotExists(folderpath, cancellationToken).ConfigureAwait(false);
-                        }
-                        // Just create the file and close it right away, empty statement is intentional.
-                        using (var stream = await restoreDestination.OpenWrite(file.Path, cancellationToken).ConfigureAwait(false))
-                        {
-                            try
-                            {
-                                stream.SetLength(0);
-                            }
-                            catch (NotSupportedException)
-                            {
-                                // Some streams do not support setting length, ignore
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        fileErrors++;
-                        Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore empty file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
-                        if (ex.IsAbortException())
-                            throw;
-                    }
-                }
-
-                // Enforcing the length of files is now already done during ScanForExistingTargetBlocks
-                // and thus not necessary anymore.
-
-                // Apply metadata
-                if (!m_options.SkipMetadata)
-                    await ApplyStoredMetadata(m_options, metadatastorage, restoreDestination, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-
-                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                    return;
-
-                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
-
-
-                if (m_options.PerformRestoredFileVerification)
-                {
-                    // After all blocks in the files are restored, verify the file hash
-                    using (var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
-                    using (new Logging.Timer(LOGTAG, "RestoreVerification", "RestoreVerification"))
-                        await foreach (var file in database.GetFilesToRestore(true, cancellationToken).ConfigureAwait(false))
-                        {
-                            try
-                            {
-                                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                                {
-                                    await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
-                                    return;
-                                }
-
-                                Logging.Log.WriteVerboseMessage(LOGTAG, "TestFileIntegrity", "Testing restored file integrity: {0}", file.Path);
-
-                                string key;
-                                long size;
-                                using (var fs = await restoreDestination.OpenRead(file.Path, cancellationToken).ConfigureAwait(false))
-                                {
-                                    size = fs.Length;
-                                    key = Convert.ToBase64String(filehasher.ComputeHash(fs));
-                                }
-
-                                if (key != file.Hash)
-                                    throw new Exception(string.Format("Failed to restore file: \"{0}\". File hash is {1}, expected hash is {2}", file.Path, key, file.Hash));
-                                m_result.RestoredFiles++;
-                                m_result.SizeOfRestoredFiles += size;
-                            }
-                            catch (Exception ex)
-                            {
-                                fileErrors++;
-                                Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
-                                if (ex.IsAbortException())
-                                    throw;
-                            }
-                        }
-                }
-
-                if (fileErrors > 0 && brokenFiles.Count > 0)
-                    Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles));
-                else if (fileErrors > 0)
-                    Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files", fileErrors);
-                else if (m_result.RestoredFiles == 0)
-                    Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
-
-                // Drop the temp tables
-                await database.DropRestoreTable(cancellationToken).ConfigureAwait(false);
-                await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
             }
 
-            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Finalize);
-            m_result.EndTime = DateTime.UtcNow;
+            if (fileErrors > 0 && brokenFiles.Count > 0)
+                Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles));
+            else if (fileErrors > 0)
+                Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files", fileErrors);
+
+            // Drop the temp tables
+            await database.DropRestoreTable(cancellationToken).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
         }
 
         public static async Task<bool> ApplyMetadata(string path, System.IO.Stream stream, Options options, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)

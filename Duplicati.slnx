@@ -73,6 +73,7 @@
     <Project Path="Duplicati/PackageRef/Duplicati.PackageRef.csproj" />
   </Folder>
   <Folder Name="/Proprietary/">
+    <Project Path="proprietary/DiskImage/Duplicati.Proprietary.DiskImage.csproj" />
     <Project Path="proprietary/LicenseChecker/Duplicati.Proprietary.LicenseChecker.csproj" />
     <Project Path="proprietary/LoaderHelper/Duplicati.Proprietary.LoaderHelper.csproj" />
     <Project Path="proprietary/GoogleWorkspace/Duplicati.Proprietary.GoogleWorkspace.csproj" />

@@ -175,7 +175,8 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// <param name="Hash">The file hash.</param>
     /// <param name="Length">The length of the file.</param>
     /// <param name="BlocksetID">The BlocksetID of the file.</param>
-    public class FileRequest(long ID, string OriginalPath, string TargetPath, string Hash, long Length, long BlocksetID)
+    /// <param name="IsPriorityFile">Whether this is a priority file that should be processed before other files.</param>
+    public class FileRequest(long ID, string OriginalPath, string TargetPath, string Hash, long Length, long BlocksetID, bool IsPriorityFile = false)
     {
         public long ID { get; } = ID;
         public string OriginalPath { get; } = OriginalPath;
@@ -183,6 +184,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         public string Hash { get; } = Hash;
         public long Length { get; } = Length;
         public long BlocksetID { get; } = BlocksetID;
+        public bool IsPriorityFile { get; } = IsPriorityFile;
     }
 
 }
