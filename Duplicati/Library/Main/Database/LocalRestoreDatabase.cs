@@ -862,7 +862,7 @@ namespace Duplicati.Library.Main.Database
                                 ELSE ""Path""
                             END
                     ")
-                        .SetParameterValue("@Path", Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"))
+                        .SetParameterValue("@Path", Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath) ?? "").Replace("\\", "/"))
                         .ExecuteNonQueryAsync(token)
                         .ConfigureAwait(false);
                 }

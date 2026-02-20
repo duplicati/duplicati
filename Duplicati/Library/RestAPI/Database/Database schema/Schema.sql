@@ -13,7 +13,8 @@ CREATE TABLE "Backup" (
     "Tags" TEXT NOT NULL,
     "TargetURL" TEXT NOT NULL,
     "DBPath" TEXT NOT NULL,
-    "ExternalID" TEXT NULL
+    "ExternalID" TEXT NULL,
+    "ConnectionStringID" INTEGER NOT NULL DEFAULT -1
 );
 
 /*
@@ -165,5 +166,40 @@ CREATE TABLE "TokenFamily" (
     "LastUpdated" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (9);
+/*
+ * Connection strings storage
+ */
+CREATE TABLE "ConnectionString" (
+    "ID" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL UNIQUE,
+    "Description" TEXT NOT NULL DEFAULT '',
+    "BaseUrl" TEXT NOT NULL,
+    "CreatedAt" INTEGER NOT NULL,
+    "UpdatedAt" INTEGER NOT NULL
+);
+
+CREATE UNIQUE INDEX "IX_ConnectionString_Name" ON "ConnectionString" ("Name");
+
+/*
+ * Table for storing additional target URLs for backups
+ * Used by RemoteSynchronizationModule for remote sync destinations
+ */
+CREATE TABLE "BackupTargetUrl" (
+    "ID" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "BackupID" INTEGER NOT NULL,
+    "TargetUrlKey" TEXT NOT NULL,
+    "TargetURL" TEXT NOT NULL,
+    "Mode" TEXT NOT NULL DEFAULT 'inline',
+    "Interval" TEXT NULL,
+    "Options" TEXT NULL,
+    "ConnectionStringID" INTEGER NOT NULL DEFAULT -1,
+    "CreatedAt" INTEGER NOT NULL DEFAULT 0,
+    "UpdatedAt" INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY ("BackupID") REFERENCES "Backup"("ID") ON DELETE CASCADE
+);
+
+CREATE INDEX "IX_BackupTargetUrl_BackupID" ON "BackupTargetUrl" ("BackupID");
+CREATE UNIQUE INDEX "IX_BackupTargetUrl_TargetUrlKey" ON "BackupTargetUrl" ("TargetUrlKey");
+
+INSERT INTO "Version" ("Version") VALUES (11);
 

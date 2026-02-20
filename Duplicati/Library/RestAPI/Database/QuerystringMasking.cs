@@ -74,19 +74,25 @@ public static class QuerystringMasking
     /// <param name="previousUrl">The previous URL to copy unmasked values from.</param>
     /// <returns>The unmasked URL.</returns>
     public static string Unmask(string newUrl, string previousUrl)
+        => Unmask(newUrl, string.IsNullOrEmpty(previousUrl) ? null : [previousUrl]);
+
+    /// <summary>
+    /// Unmasks sensitive properties in the <paramref name="newUrl"/> by copying values from the <paramref name="previousUrls"/>
+    /// using the list as a priority list to find the value.
+    /// </summary>
+    /// <param name="newUrl">The new URL which may contain masked properties.</param>
+    /// <param name="previousUrls">The list of previous URLs to copy unmasked values from, used as a priority list.</param>
+    /// <returns>The unmasked URL.</returns>
+    public static string Unmask(string newUrl, IReadOnlyList<string>? previousUrls)
     {
         if (string.IsNullOrEmpty(newUrl))
             throw new ArgumentException("newUrl is null or empty");
-        if (string.IsNullOrEmpty(previousUrl))
-            throw new ArgumentException("previousUrl is null or empty");
 
         var newUb = new Library.Utility.Uri(newUrl);
         if (string.IsNullOrWhiteSpace(newUb.Query))
             return newUrl;
-        var prevUb = new Library.Utility.Uri(previousUrl);
 
         var newQuery = Library.Utility.Uri.ParseQueryString(newUb.Query, false);
-        var prevQuery = Library.Utility.Uri.ParseQueryString(prevUb.Query ?? "", false);
 
         var modified = false;
         foreach (var key in newQuery.AllKeys)
@@ -97,10 +103,27 @@ public static class QuerystringMasking
             var newValues = GetValuesCaseInsensitive(newQuery, key);
             if (newValues is null || newValues.Length == 0) continue;
 
-            // If any value contains the mask, replace the entire set for that key from the previous URL
+            // If any value contains the mask, replace the entire set for that key from the previous URLs
             if (newValues.Any(v => Connection.IsPasswordPlaceholder(v)))
             {
-                var prevValues = GetValuesCaseInsensitive(prevQuery, key);
+                string[]? prevValues = null;
+
+                // Search through previous URLs in priority order
+                if (previousUrls != null)
+                {
+                    foreach (var previousUrl in previousUrls)
+                    {
+                        if (string.IsNullOrEmpty(previousUrl))
+                            continue;
+
+                        var prevUb = new Library.Utility.Uri(previousUrl);
+                        var prevQuery = Library.Utility.Uri.ParseQueryString(prevUb.Query ?? "", false);
+                        prevValues = GetValuesCaseInsensitive(prevQuery, key);
+                        if (prevValues != null && prevValues.Any(x => !Connection.IsPasswordPlaceholder(x)))
+                            break;
+                    }
+                }
+
                 if (prevValues is null || prevValues.Length == 0)
                     throw new InvalidOperationException($"Missing previous value for protected parameter '{key}'.");
 

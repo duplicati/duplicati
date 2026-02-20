@@ -623,7 +623,7 @@ public partial class RestoreProvider
                 }
 
                 // Remove the "/content.json" suffix to get the message path so replies can find it
-                var restoreMessagePath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath));
+                var restoreMessagePath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath) ?? "");
 
                 if (!_ignoreExisting)
                 {

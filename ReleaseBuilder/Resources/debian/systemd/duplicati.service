@@ -9,7 +9,6 @@ IOSchedulingPriority=7
 EnvironmentFile=-/etc/default/duplicati
 ExecStart=/usr/bin/duplicati-server $DAEMON_OPTS
 Restart=always
-SupplementaryGroups=$SUPPLEMENTARY_GROUPS
 
 [Install]
 WantedBy=multi-user.target

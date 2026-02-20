@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Lennart Jansson <petterallan@gmail.com>, 2018
 # nils måsén <nils@piksel.se>, 2018

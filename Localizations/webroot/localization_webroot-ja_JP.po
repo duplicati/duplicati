@@ -1,7 +1,6 @@
-# 
 # Translators:
 # AlbireoGT, 2017
-# Shuuji TAKAHASHI (shuuji3) <shuuji3@gmail.com>, 2018
+# TAKAHASHI Shuuji <shuuji3@gmail.com>, 2018
 # yu hi <yuhisa@gmail.com>, 2019
 # あわしろいくや <ikunya@gmail.com>, 2020
 # Suguru Hirahara, 2024

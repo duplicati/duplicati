@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Claudio Marchesini <markeclaudio@gmail.com>, 2017
 # Devis Cerri <cerride@gmail.com>, 2017
@@ -2256,7 +2255,7 @@ msgstr "Aperto"
 
 #: scripts/services/EditUriBuiltins.js:1179
 msgid "Openstack API key are not supported in v3 keystone API"
-msgstr "La chiave API Openstack non è supportata in v3 keystone API"
+msgstr "La chiave API Openstack non è supportata nella keystone API v3"
 
 #: scripts/services/AppUtils.js:203
 msgid "Operating System"
@@ -3524,7 +3523,7 @@ msgstr "In attesa dell'inizio dell'attività..."
 
 #: scripts/services/ServerStatus.js:42
 msgid "Waiting for upload to finish …"
-msgstr "In attesa del completamento del caricamento..."
+msgstr "In attesa che il caricamento finisca..."
 
 #: templates/settings.html:168
 msgid "Warnings, errors and crashes"

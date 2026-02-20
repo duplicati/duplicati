@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.RestAPI;
+using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
@@ -50,6 +51,7 @@ public class BackupListService(Connection connection) : IBackupListService
                 Description = data.Backup.Description,
                 Tags = data.Backup.Tags,
                 TargetURL = data.Backup.TargetURL,
+                ConnectionStringID = data.Backup.ConnectionStringID,
                 Sources = data.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
                 {
@@ -63,8 +65,26 @@ public class BackupListService(Connection connection) : IBackupListService
                     Include = x.Include,
                     Expression = x.Expression
                 }).ToArray(),
-                Metadata = data.Backup.Metadata ?? new Dictionary<string, string>()
+                Metadata = data.Backup.Metadata ?? new Dictionary<string, string>(),
+                AdditionalTargetURLs = data.Backup.AdditionalTargetURLs?.Select(x => new TargetUrlEntry
+                {
+                    TargetUrlKey = x.UrlKey ?? Guid.NewGuid().ToString("D"),
+                    TargetUrl = x.TargetUrl,
+                    Mode = x.Mode ?? "inline",
+                    Interval = x.Interval,
+                    ConnectionStringID = x.ConnectionStringID,
+                    Options = x.Options
+                }).ToList() ?? new List<TargetUrlEntry>()
             };
+
+            if (backup.ConnectionStringID > 0)
+            {
+                var cs = connection.GetConnectionString(backup.ConnectionStringID);
+                if (cs != null)
+                {
+                    backup.TargetURL = QuerystringMasking.Unmask(backup.TargetURL, cs.BaseUrl);
+                }
+            }
 
             var schedule = data.Schedule == null ? null : new Schedule()
             {
@@ -319,7 +339,16 @@ public class BackupListService(Connection connection) : IBackupListService
                 TargetURL = x.Backup.TargetURL,
                 DBPath = x.Backup.DBPath,
                 DBPathExists = File.Exists(x.Backup.DBPath),
-                Tags = x.Backup.Tags
+                Tags = x.Backup.Tags,
+                AdditionalTargetURLs = x.Backup.AdditionalTargetURLs?.Select(t => new Dto.TargetUrlDto
+                {
+                    UrlKey = t.TargetUrlKey,
+                    TargetUrl = t.TargetUrl,
+                    Mode = t.Mode,
+                    Interval = t.Interval,
+                    ConnectionStringID = t.ConnectionStringID,
+                    Options = t.Options
+                }).ToArray() ?? Array.Empty<Dto.TargetUrlDto>()
             },
             Schedule = x.Schedule == null ? null : new Dto.ScheduleDto()
             {

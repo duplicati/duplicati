@@ -264,11 +264,12 @@ namespace Duplicati.Library.Backend
             // Check if hostname is actually an URL
             if (System.Uri.IsWellFormedUriString(hostname, UriKind.Absolute))
             {
-                var hosturi = new System.Uri(hostname);
+                var uriToTest = hostname.Contains("://") ? hostname : "http://" + hostname;
+                var hosturi = new System.Uri(uriToTest);
                 if (hosturi.PathAndQuery.Length > 1)
                     throw new UserInformationException(Strings.S3Backend.NoPathAllowedInEndpointError, "S3NoPathInEndpoint");
 
-                hostname = hosturi.Host;
+                hostname = hosturi.Authority;
                 if (!options.ContainsKey(SSL_OPTION))
                     useSSL = hosturi.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase);
             }

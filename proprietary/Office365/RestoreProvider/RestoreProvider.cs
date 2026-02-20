@@ -881,7 +881,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             // Determine parent folder ID
             // We assume the path structure reflects the hierarchy
             // If parent path is not in map, we assume it's the root (mailboxId)
-            var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+            var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
             var parentId = mailboxId;
 
             if (parentPath != null && _restoredEmailFolderMap.TryGetValue(parentPath, out var mappedParentId))
@@ -942,7 +942,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
                 // Determine target folder
                 var targetFolderId = mailboxId;
-                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(emailSource.Key.TrimEnd(Path.DirectorySeparatorChar)));
+                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(emailSource.Key.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
                 if (parentPath != null && _restoredEmailFolderMap.TryGetValue(parentPath, out var mappedFolderId))
                 {
                     targetFolderId = mappedFolderId;
@@ -1071,7 +1071,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         var restoreTarget = await DriveRestore.GetDefaultDriveAndFolder(cancel);
         if (!string.IsNullOrWhiteSpace(restoreTarget.FolderId))
         {
-            var rootFolderPath = Util.AppendDirSeparator(Path.GetDirectoryName(sortedFolders.First().Key.TrimEnd(Path.DirectorySeparatorChar)));
+            var rootFolderPath = Util.AppendDirSeparator(Path.GetDirectoryName(sortedFolders.First().Key.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
             _restoredDriveFolderMap.AddOrUpdate(rootFolderPath, restoreTarget.FolderId, (k, v) => v);
         }
 
@@ -1118,7 +1118,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
 
             // Determine parent folder ID
-            var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+            var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
             var parentId = defaultRootId;
 
             if (parentPath != null && (drivePath == null || parentPath.TrimEnd(Path.DirectorySeparatorChar) != drivePath.TrimEnd(Path.DirectorySeparatorChar)))
@@ -1220,7 +1220,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                 }
 
                 // Determine parent folder ID
-                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
                 var parentId = defaultRootId;
 
                 if (parentPath != null && (drivePath == null || parentPath.TrimEnd(Path.DirectorySeparatorChar) != drivePath.TrimEnd(Path.DirectorySeparatorChar)))
@@ -1357,7 +1357,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
         // Group attachments by event path
         var attachments = GetMetadataByType(SourceItemType.CalendarEventAttachment)
-            .GroupBy(k => Util.AppendDirSeparator(Path.GetDirectoryName(k.Key.TrimEnd(Path.DirectorySeparatorChar))))
+            .GroupBy(k => Util.AppendDirSeparator(Path.GetDirectoryName(k.Key.TrimEnd(Path.DirectorySeparatorChar)) ?? ""))
             .ToDictionary(g => g.Key, g => g.ToList());
 
         var singles = new List<(string Path, GraphEvent Event)>();
@@ -1615,7 +1615,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
 
             // Determine parent folder ID
-            var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+            var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
             var parentId = defaultFolderId;
 
             if (parentPath != null && _restoredContactFolderMap.TryGetValue(parentPath, out var mappedParentId))
@@ -1675,7 +1675,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
                 // Determine target folder
                 var targetFolderId = defaultFolderId;
-                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
                 if (parentPath != null && _restoredContactFolderMap.TryGetValue(parentPath, out var mappedFolderId))
                 {
                     targetFolderId = mappedFolderId;
@@ -1782,7 +1782,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
                 // Determine target folder
                 var targetFolderId = defaultFolderId;
-                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
                 if (parentPath != null && _restoredContactFolderMap.TryGetValue(parentPath, out var mappedFolderId))
                     targetFolderId = mappedFolderId;
 

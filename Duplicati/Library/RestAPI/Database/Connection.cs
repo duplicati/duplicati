@@ -35,6 +35,7 @@ using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.RegularExpressions;
 using Duplicati.WebserverCore.Abstractions;
+using System.Text.Json;
 
 #nullable enable
 
@@ -66,6 +67,8 @@ namespace Duplicati.Server.Database
                 .Concat(CompressionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
                 .Concat(GenericLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
                 .Concat(WebLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
+                .Concat(SourceProviderLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
+                .Concat(RestoreDestinationProviderLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
                 .Concat(new Options(new Dictionary<string, string?>()).SupportedCommands)
                 .Where(x => x.Type == Library.Interface.CommandLineArgument.ArgumentType.Password)
                 .SelectMany(x => new string[] { x.Name }.Concat(x.Aliases ?? []))
@@ -807,6 +810,10 @@ namespace Duplicati.Server.Database
                     if (item.Metadata != null)
                         SetMetadata(item.Metadata, id, tr);
 
+                    // Save additional target URLs if present
+                    if (item.AdditionalTargetURLs != null)
+                        SetBackupTargetUrls(id, item.AdditionalTargetURLs.Cast<TargetUrlEntry>(), tr);
+
                     if (updateSchedule)
                     {
                         var tags = new string[] { "ID=" + item.ID };
@@ -1520,6 +1527,227 @@ namespace Duplicati.Server.Database
                     : fieldValue;
 
             return null;
+        }
+
+        public ConnectionString[] GetConnectionStrings()
+        {
+            lock (m_lock)
+            {
+                return ReadFromDb(cmd =>
+                {
+                    var cs = new ConnectionString();
+                    cs.ID = cmd.GetInt64(0);
+                    cs.Name = cmd.GetString(1);
+                    cs.Description = cmd.GetString(2);
+                    cs.BaseUrl = DecryptSensitiveFields(cmd.GetString(3), m_key) ?? "";
+                    cs.CreatedAt = Library.Utility.Utility.EPOCH.AddSeconds(cmd.GetInt64(4));
+                    cs.UpdatedAt = Library.Utility.Utility.EPOCH.AddSeconds(cmd.GetInt64(5));
+                    return cs;
+                }, cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Description"", ""BaseUrl"", ""CreatedAt"", ""UpdatedAt"" FROM ""ConnectionString""")).ToArray();
+            }
+        }
+
+        public ConnectionString? GetConnectionString(long id)
+        {
+            lock (m_lock)
+            {
+                return ReadFromDb(cmd =>
+                {
+                    var cs = new ConnectionString();
+                    cs.ID = cmd.GetInt64(0);
+                    cs.Name = cmd.GetString(1);
+                    cs.Description = cmd.GetString(2);
+                    cs.BaseUrl = DecryptSensitiveFields(cmd.GetString(3), m_key) ?? "";
+                    cs.CreatedAt = Library.Utility.Utility.EPOCH.AddSeconds(cmd.GetInt64(4));
+                    cs.UpdatedAt = Library.Utility.Utility.EPOCH.AddSeconds(cmd.GetInt64(5));
+                    return cs;
+                }, cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Description"", ""BaseUrl"", ""CreatedAt"", ""UpdatedAt"" FROM ""ConnectionString"" WHERE ""ID"" = @ID").SetParameterValue("@ID", id)).FirstOrDefault();
+            }
+        }
+
+        public void AddConnectionString(ConnectionString cs)
+        {
+            lock (m_lock)
+            {
+                cs.CreatedAt = DateTime.UtcNow;
+                cs.UpdatedAt = DateTime.UtcNow;
+                if (UrlContainsPasswordPlaceholder(cs.BaseUrl))
+                    throw new ArgumentException("Connection string base URL contains password placeholder");
+
+                var encryptedUrl = m_encryptSensitiveFields ? EncryptedFieldHelper.Encrypt(cs.BaseUrl, m_key) : cs.BaseUrl;
+
+                using (var cmd = m_connection.CreateCommand())
+                {
+                    cmd.SetCommandAndParameters(@"INSERT INTO ""ConnectionString"" (""Name"", ""Description"", ""BaseUrl"", ""CreatedAt"", ""UpdatedAt"") VALUES (@Name, @Description, @BaseUrl, @CreatedAt, @UpdatedAt)");
+                    cmd.SetParameterValue("@Name", cs.Name);
+                    cmd.SetParameterValue("@Description", cs.Description);
+                    cmd.SetParameterValue("@BaseUrl", encryptedUrl);
+                    cmd.SetParameterValue("@CreatedAt", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(cs.CreatedAt));
+                    cmd.SetParameterValue("@UpdatedAt", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(cs.UpdatedAt));
+                    cmd.ExecuteNonQuery();
+                    cs.ID = cmd.ExecuteScalarInt64(@"SELECT last_insert_rowid();");
+                }
+            }
+        }
+
+        public void UpdateConnectionString(ConnectionString cs)
+        {
+            lock (m_lock)
+            {
+                cs.UpdatedAt = DateTime.UtcNow;
+                if (UrlContainsPasswordPlaceholder(cs.BaseUrl))
+                    throw new ArgumentException("Connection string base URL contains password placeholder");
+
+                var encryptedUrl = m_encryptSensitiveFields ? EncryptedFieldHelper.Encrypt(cs.BaseUrl, m_key) : cs.BaseUrl;
+
+                using (var cmd = m_connection.CreateCommand())
+                {
+                    cmd.SetCommandAndParameters(@"UPDATE ""ConnectionString"" SET ""Name"" = @Name, ""Description"" = @Description, ""BaseUrl"" = @BaseUrl, ""UpdatedAt"" = @UpdatedAt WHERE ""ID"" = @ID");
+                    cmd.SetParameterValue("@Name", cs.Name);
+                    cmd.SetParameterValue("@Description", cs.Description);
+                    cmd.SetParameterValue("@BaseUrl", encryptedUrl);
+                    cmd.SetParameterValue("@UpdatedAt", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(cs.UpdatedAt));
+                    cmd.SetParameterValue("@ID", cs.ID);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void DeleteConnectionString(long id)
+        {
+            lock (m_lock)
+            {
+                using (var cmd = m_connection.CreateCommand())
+                {
+                    cmd.SetCommandAndParameters(@"DELETE FROM ""ConnectionString"" WHERE ""ID"" = @ID");
+                    cmd.SetParameterValue("@ID", id);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public (string ID, string Name)[] GetBackupsUsingConnectionString(long id)
+        {
+            lock (m_lock)
+            {
+                return ReadFromDb(
+                    cmd => (cmd.GetInt64(0).ToString(), cmd.GetString(1)),
+                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"" FROM ""Backup"" WHERE ""ConnectionStringID"" = @ID").SetParameterValue("@ID", id)
+                ).ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Gets the additional target URLs for a backup
+        /// </summary>
+        /// <param name="backupId">The backup ID</param>
+        /// <returns>The list of additional target URLs</returns>
+        internal List<TargetUrlEntry> GetBackupTargetUrls(long backupId)
+        {
+            lock (m_lock)
+            {
+                return ReadFromDb(
+                    (rd) => new TargetUrlEntry()
+                    {
+                        ID = ConvertToInt64(rd, 0),
+                        BackupID = ConvertToInt64(rd, 1),
+                        TargetUrlKey = ConvertToString(rd, 2) ?? "",
+                        TargetUrl = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 3) ?? "", m_key),
+                        Mode = ConvertToString(rd, 4) ?? "inline",
+                        Interval = ConvertToString(rd, 5),
+                        ConnectionStringID = ConvertToInt64(rd, 6),
+                        Options = ParseOptionsJson(ConvertToString(rd, 7)),
+                        CreatedAt = ConvertToDateTime(rd, 8),
+                        UpdatedAt = ConvertToDateTime(rd, 9)
+                    },
+                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""BackupID"", ""TargetUrlKey"", ""TargetURL"", ""Mode"", ""Interval"", ""ConnectionStringID"", ""Options"", ""CreatedAt"", ""UpdatedAt"" FROM ""BackupTargetUrl"" WHERE ""BackupID"" = @Id")
+                        .SetParameterValue("@Id", backupId))
+                    .ToList();
+            }
+        }
+
+        /// <summary>
+        /// Parses the options JSON string into a dictionary
+        /// </summary>
+        /// <param name="json">The JSON string</param>
+        /// <returns>The dictionary or null if empty</returns>
+        private static Dictionary<string, object>? ParseOptionsJson(string? json)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(json))
+                    return JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            }
+            catch
+            {
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Sets the additional target URLs for a backup
+        /// </summary>
+        /// <param name="backupId">The backup ID</param>
+        /// <param name="targets">The target URLs to set</param>
+        /// <param name="transaction">The database transaction</param>
+        internal void SetBackupTargetUrls(long backupId, IEnumerable<TargetUrlEntry> targets, IDbTransaction? transaction = null)
+        {
+            lock (m_lock)
+            {
+                var tr = transaction ?? m_connection.BeginTransaction();
+                try
+                {
+                    // Delete existing entries
+                    using (var cmd = m_connection.CreateCommand(tr))
+                        cmd.SetCommandAndParameters(@"DELETE FROM ""BackupTargetUrl"" WHERE ""BackupID"" = @Id")
+                            .SetParameterValue("@Id", backupId)
+                            .ExecuteNonQuery();
+
+                    // Insert new entries
+                    var now = DateTime.UtcNow;
+                    foreach (var target in targets)
+                    {
+                        if (UrlContainsPasswordPlaceholder(target.TargetUrl))
+                            throw new Exception("Attempted to save a target URL with the password placeholder");
+
+                        var encryptedUrl = m_encryptSensitiveFields
+                            ? EncryptedFieldHelper.Encrypt(target.TargetUrl, m_key)
+                            : target.TargetUrl;
+
+                        var optionsJson = target.Options != null
+                            ? JsonSerializer.Serialize(target.Options)
+                            : null;
+
+                        using (var cmd = m_connection.CreateCommand(tr))
+                        {
+                            cmd.SetCommandAndParameters(@"INSERT INTO ""BackupTargetUrl"" (""BackupID"", ""TargetUrlKey"", ""TargetURL"", ""Mode"", ""Interval"", ""ConnectionStringID"", ""Options"", ""CreatedAt"", ""UpdatedAt"") VALUES (@BackupId, @TargetUrlKey, @TargetUrl, @Mode, @Interval, @ConnectionStringID, @Options, @CreatedAt, @UpdatedAt)");
+                            cmd.SetParameterValue("@BackupId", backupId);
+                            cmd.SetParameterValue("@TargetUrlKey", target.TargetUrlKey);
+                            cmd.SetParameterValue("@TargetUrl", encryptedUrl);
+                            cmd.SetParameterValue("@Mode", target.Mode);
+                            cmd.SetParameterValue("@Interval", target.Interval);
+                            cmd.SetParameterValue("@ConnectionStringID", target.ConnectionStringID);
+                            cmd.SetParameterValue("@Options", optionsJson);
+                            cmd.SetParameterValue("@CreatedAt", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(now));
+                            cmd.SetParameterValue("@UpdatedAt", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(now));
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+                    if (transaction == null)
+                    {
+                        tr.Commit();
+                        tr.Dispose();
+                    }
+                }
+                catch
+                {
+                    if (transaction == null)
+                        tr.Dispose();
+                    throw;
+                }
+            }
         }
 
         #region IDisposable implementation

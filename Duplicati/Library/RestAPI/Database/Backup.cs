@@ -50,6 +50,7 @@ namespace Duplicati.Server.Database
                 this.Settings = con.GetSettings(id);
                 this.Filters = con.GetFilters(id);
                 this.Metadata = con.GetMetadata(id);
+                this.AdditionalTargetURLs = con.GetBackupTargetUrls(id);
             }
         }
 
@@ -85,6 +86,11 @@ namespace Duplicati.Server.Database
         public string DBPath { get; internal set; }
 
         /// <summary>
+        /// The connection string ID, or -1 if not used
+        /// </summary>
+        public long ConnectionStringID { get; set; } = -1;
+
+        /// <summary>
         /// The backup source folders and files
         /// </summary>
         public string[] Sources { get; set; }
@@ -103,6 +109,12 @@ namespace Duplicati.Server.Database
         /// The backup metadata
         /// </summary>
         public IDictionary<string, string> Metadata { get; set; }
+
+        /// <summary>
+        /// Additional target URLs for remote synchronization
+        /// These are used by RemoteSynchronizationModule and are separate from the primary TargetURL
+        /// </summary>
+        public IEnumerable<ITargetUrlEntry> AdditionalTargetURLs { get; set; } = new List<ITargetUrlEntry>();
 
         /// <summary>
         /// Gets a value indicating if this instance is not persisted to the database
@@ -171,6 +183,29 @@ namespace Duplicati.Server.Database
             SanitizeTargetUrl();
             SanitizeSettings();
             SanitizeSources();
+            SanitizeAdditionalTargetUrls();
+        }
+
+        /// <summary>
+        /// Sanitizes the additional target URLs from any fields in the PasswordFieldNames list.
+        /// </summary>
+        private void SanitizeAdditionalTargetUrls()
+        {
+            if (AdditionalTargetURLs == null)
+                return;
+
+            foreach (var target in AdditionalTargetURLs)
+            {
+                if (target == null || string.IsNullOrEmpty(target.TargetUrl))
+                    continue;
+
+                var url = new Duplicati.Library.Utility.Uri(target.TargetUrl);
+                var filteredParameters = url.QueryParameters;
+                foreach (var field in Connection.PasswordFieldNames)
+                    filteredParameters.Remove(field);
+                url = url.SetQuery(Duplicati.Library.Utility.Uri.BuildUriQuery(filteredParameters));
+                target.TargetUrl = url.ToString();
+            }
         }
 
         /// <inheritdoc/>
@@ -180,19 +215,62 @@ namespace Duplicati.Server.Database
             TargetURL = QuerystringMasking.Mask(TargetURL, protectedNames);
             Sources = SourceMasking.MaskSources(Sources, protectedNames);
 
+            // Mask additional target URLs
+            if (AdditionalTargetURLs != null)
+                foreach (var target in AdditionalTargetURLs)
+                    if (target != null)
+                        target.TargetUrl = QuerystringMasking.Mask(target.TargetUrl, protectedNames);
+
             foreach (var setting in this.Settings)
                 if (protectedNames.Contains(setting.Name))
                     setting.Value = Connection.PASSWORD_PLACEHOLDER;
         }
 
         /// <inheritdoc/>
-        public void UnmaskSensitiveInformation(IBackup previous)
+        public void UnmaskSensitiveInformation(IBackup previous, IReadOnlyDictionary<long, string> connectionStrings)
         {
             if (previous == null)
                 throw new ArgumentNullException(nameof(previous));
 
-            TargetURL = QuerystringMasking.Unmask(TargetURL, previous.TargetURL);
+            // If there is a connection string ID, and it is different from the previous one,
+            // the user has changed the connection strings source
+            var constr = ConnectionStringID > 0 && ConnectionStringID != previous.ConnectionStringID
+                ? connectionStrings.GetValueOrDefault(previous.ConnectionStringID)
+                : previous.TargetURL;
+
+            TargetURL = QuerystringMasking.Unmask(TargetURL, [constr, previous.TargetURL]);
             Sources = SourceMasking.UnmaskSources(Sources, previous.Sources);
+
+            // Unmask additional target URLs
+            var prevAdditionalTargets = previous.AdditionalTargetURLs?.ToList();
+            if (AdditionalTargetURLs != null && prevAdditionalTargets != null)
+            {
+                var prevTargets = prevAdditionalTargets.ToDictionary(
+                    x => x.TargetUrlKey,
+                    x => x,
+                    StringComparer.OrdinalIgnoreCase);
+
+                foreach (var target in AdditionalTargetURLs)
+                {
+                    if (target != null && Connection.UrlContainsPasswordPlaceholder(target.TargetUrl))
+                    {
+                        if (prevTargets.TryGetValue(target.TargetUrlKey, out var prevValue))
+                        {
+                            var prevTarget = target.ConnectionStringID > 0 && target.ConnectionStringID != prevValue.ConnectionStringID
+                                ? connectionStrings.GetValueOrDefault(prevValue.ConnectionStringID)
+                                : prevValue.TargetUrl;
+
+                            target.TargetUrl = QuerystringMasking.Unmask(target.TargetUrl, [prevTarget, prevValue.TargetUrl]);
+                        }
+                        else if (target.ConnectionStringID > 0)
+                        {
+                            target.TargetUrl = QuerystringMasking.Unmask(target.TargetUrl, connectionStrings.GetValueOrDefault(target.ConnectionStringID));
+                        }
+                        else
+                            throw new InvalidOperationException($"Cannot unmask target URL with key '{target.TargetUrlKey}' because it did not exist in the previous configuration.");
+                    }
+                }
+            }
 
             var prevSettings = previous.Settings.ToDictionary(x => x.Name, x => x.Value, StringComparer.OrdinalIgnoreCase);
             foreach (var setting in this.Settings)
@@ -221,7 +299,19 @@ namespace Duplicati.Server.Database
                 Sources = (string[])this.Sources?.Clone() ?? [],
                 Settings = this.Settings?.Select(s => new Setting { Name = s.Name, Value = s.Value, Filter = s.Filter }).ToArray() ?? [],
                 Filters = this.Filters?.Select(f => new Filter { Order = f.Order, Include = f.Include, Expression = f.Expression }).ToArray() ?? [],
-                Metadata = new Dictionary<string, string>(this.Metadata)
+                Metadata = new Dictionary<string, string>(this.Metadata),
+                AdditionalTargetURLs = this.AdditionalTargetURLs?.Select(t => new TargetUrlEntry
+                {
+                    ID = t.ID,
+                    BackupID = t.BackupID,
+                    TargetUrlKey = t.TargetUrlKey,
+                    TargetUrl = t.TargetUrl,
+                    Mode = t.Mode,
+                    Interval = t.Interval,
+                    Options = t.Options?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+                    CreatedAt = t.CreatedAt,
+                    UpdatedAt = t.UpdatedAt
+                }).Cast<ITargetUrlEntry>().ToList() ?? new List<ITargetUrlEntry>()
             };
         }
     }

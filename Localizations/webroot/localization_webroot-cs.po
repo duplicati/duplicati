@@ -1,4 +1,3 @@
-# 
 # Translators:
 # vita.brno, 2019
 # Jakub Loucký <jakub.loucky@outlook.cz>, 2020
