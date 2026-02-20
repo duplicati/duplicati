@@ -120,7 +120,7 @@ public class BackupPost : IEndpointV1
         var restorepath = input.restore_path;
         if (restorepath != null && restorepath.StartsWith("@"))
         {
-            var res = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, restorepath.Substring(1), id, input.source_prefix, cancellationToken);
+            var res = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, restorepath.Substring(1), id, input.connection_string_id ?? -1, input.source_prefix, cancellationToken);
             if (!string.IsNullOrWhiteSpace(res.Url))
                 restorepath = "@" + res.Url;
         }
