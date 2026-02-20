@@ -7,12 +7,51 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Proprietary.DiskImage;
 
+/// <summary>
+/// Represents a physical drive returned by PowerShell Get-Disk.
+/// </summary>
+public class PhysicalDriveInfo
+{
+    /// <summary>
+    /// The device path (e.g., \\.\PHYSICALDRIVE0).
+    /// </summary>
+    public string Path { get; set; } = "";
+
+    /// <summary>
+    /// The size of the drive in bytes.
+    /// </summary>
+    public ulong Size { get; set; }
+
+    /// <summary>
+    /// The display name of the drive.
+    /// </summary>
+    public string DisplayName { get; set; } = "";
+
+    /// <summary>
+    /// The GUID of the drive.
+    /// </summary>
+    public string? Guid { get; set; }
+
+    /// <summary>
+    /// The drive letters associated with this drive.
+    /// </summary>
+    public string[] DriveLetters { get; set; } = [];
+
+    /// <summary>
+    /// Whether the drive is online.
+    /// </summary>
+    public bool? Online { get; set; }
+}
+
 public class WebModule : IWebModule
 {
+    private static readonly string LOGTAG = Log.LogTagFromType<WebModule>();
+
     public string Key => OptionsHelper.ModuleKey;
 
     public string DisplayName => Strings.WebModuleDisplayName;
@@ -109,41 +148,52 @@ $diskInfo | ConvertTo-Json -Depth 4
 
         try
         {
+            // PowerShell ConvertTo-Json returns a single object for 1 item, array for multiple
             using var doc = JsonDocument.Parse(output);
             if (doc.RootElement.ValueKind == JsonValueKind.Array)
             {
-                foreach (var disk in doc.RootElement.EnumerateArray())
+                var drives = JsonSerializer.Deserialize<PhysicalDriveInfo[]>(output);
+                if (drives != null)
                 {
-                    AddDiskToResult(disk, result);
+                    foreach (var drive in drives)
+                    {
+                        AddDiskToResult(drive, result);
+                    }
                 }
             }
             else if (doc.RootElement.ValueKind == JsonValueKind.Object)
             {
-                AddDiskToResult(doc.RootElement, result);
+                var drive = JsonSerializer.Deserialize<PhysicalDriveInfo>(output);
+                if (drive != null)
+                {
+                    AddDiskToResult(drive, result);
+                }
             }
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
-            // Ignore parse errors
+            Log.WriteWarningMessage(LOGTAG, "FailedDriveOutputParsing", ex, "Failed to parse output");
         }
 
         return result;
     }
 
-    private void AddDiskToResult(JsonElement disk, Dictionary<string, string> result)
+    private void AddDiskToResult(PhysicalDriveInfo drive, Dictionary<string, string> result)
     {
-        var number = disk.GetProperty("Number").GetInt32();
-        var friendlyName = disk.GetProperty("FriendlyName").GetString();
-        var size = disk.GetProperty("Size").GetInt64();
-        var path = disk.GetProperty("Path").GetString();
+        // Extract drive number from path (e.g., \\.\PHYSICALDRIVE0 -> 0)
+        var number = 0;
+        if (drive.Path.StartsWith("\\\\.\\PHYSICALDRIVE", StringComparison.OrdinalIgnoreCase))
+        {
+            int.TryParse(drive.Path.AsSpan("\\\\.\\PHYSICALDRIVE".Length), out number);
+        }
 
-        var displayPath = $"diskimage://\\\\.\\PhysicalDrive{number}/";
+        var displayPath = $"diskimage://{drive.Path}/";
         var metadata = new Dictionary<string, string?>
         {
             { "diskimage:Number", number.ToString() },
-            { "diskimage:FriendlyName", friendlyName },
-            { "diskimage:Size", size.ToString() },
-            { "diskimage:DevicePath", path }
+            { "diskimage:FriendlyName", drive.DisplayName },
+            { "diskimage:Size", drive.Size.ToString() },
+            { "diskimage:DevicePath", drive.Path }
         };
 
         result[displayPath] = JsonSerializer.Serialize(metadata);
