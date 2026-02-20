@@ -572,12 +572,15 @@ namespace Duplicati.Server
                 connection.ApplicationSettings.EnableForeverTokens();
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS))
-                connection.ApplicationSettings.DisableSigninTokens = Library.Utility.Utility.ParseBool(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS], true);
+                connection.ApplicationSettings.DisableSigninTokens = Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS);
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_DISABLEAPIEXTENSIONS))
                 connection.ApplicationSettings.DisabledAPIExtensions = commandlineOptions.GetValueOrDefault(WebServerLoader.OPTION_WEBSERVICE_DISABLEAPIEXTENSIONS)?
                     .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+
+            if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOLDER_STATUS_SERVICE))
+                connection.ApplicationSettings.EnableFolderStatusService = Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOLDER_STATUS_SERVICE);
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_PASSWORD))
                 connection.ApplicationSettings.SetWebserverPassword(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_PASSWORD]);
@@ -1278,6 +1281,7 @@ namespace Duplicati.Server
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_CORS_ORIGINS, CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverCorsOriginsDescription, Strings.Program.WebserverCorsOriginsDescription, WebServerLoader.DEFAULT_OPTION_SPAPATHS),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_PRE_AUTH_TOKENS, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPreAuthTokensDescription, Strings.Program.WebserverPreAuthTokensDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_TOKENDURATION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.WebserverTokenDurationDescription, Strings.Program.WebserverTokenDurationDescription, WebServerLoader.DEFAULT_OPTION_TOKENDURATION),
+            new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOLDER_STATUS_SERVICE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverEnableFolderStatusServiceDescription, Strings.Program.WebserverEnableFolderStatusServiceDescription),
             new CommandLineArgument(PING_PONG_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
             new CommandLineArgument(DISABLE_UPDATE_CHECK_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisableupdatecheckShort, Strings.Program.DisableupdatecheckLong),
             new CommandLineArgument(LOG_RETENTION_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
