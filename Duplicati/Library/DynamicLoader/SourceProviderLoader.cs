@@ -139,7 +139,7 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// Gets a list of loaded SourceProviders, the instances can be used to extract interface information, not used to interact with the SourceProvider.
         /// </summary>
-        public static ISourceProviderModule[] SourceProviders { get { return _SourceProviderLoader.Interfaces; } }
+        public static ISourceProviderModule[] Modules { get { return _SourceProviderLoader.Interfaces; } }
 
         /// <summary>
         /// Gets a list of keys supported

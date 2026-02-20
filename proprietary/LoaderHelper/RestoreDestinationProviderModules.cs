@@ -35,7 +35,8 @@ public static class RestoreDestinationProviderModules
     /// </summary>
     private static readonly Lazy<IReadOnlyList<IRestoreDestinationProviderModule>> LicensedRestoreDestinationProvidersLazy = new(() =>
         new IRestoreDestinationProviderModule?[] {
-            LicenseHelper.IsOffice365Enabled ? new Office365.RestoreProvider() : null
+            LicenseHelper.IsOffice365Enabled ? new Office365.RestoreProvider() : null,
+            LicenseHelper.IsGoogleWorkspaceEnabled ? new GoogleWorkspace.RestoreProvider() : null
         }
         .WhereNotNull()
         .ToList()

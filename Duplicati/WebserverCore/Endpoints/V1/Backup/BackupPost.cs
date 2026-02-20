@@ -23,6 +23,7 @@ using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Endpoints.Shared;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -44,8 +45,8 @@ public class BackupPost : IEndpointV1
             => UpdateDatabasePath(connection, GetBackup(connection, id), input.path, false))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/restore", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromBody] Dto.RestoreInputDto input)
-            => ExecuteRestore(GetBackup(connection, id), queueRunnerService, input))
+        group.MapPost("/backup/{id}/restore", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromServices] IApplicationSettings applicationSettings, [FromRoute] string id, [FromBody] Dto.RestoreInputDto input, CancellationToken cancellationToken)
+            => ExecuteRestore(connection, applicationSettings, id, queueRunnerService, input, cancellationToken))
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/createreport", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
@@ -113,16 +114,27 @@ public class BackupPost : IEndpointV1
 
 
 
-    private static Dto.TaskStartedDto ExecuteRestore(IBackup backup, IQueueRunnerService queueRunnerService, Dto.RestoreInputDto input)
-        => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateRestoreTask(
+    private static async Task<Dto.TaskStartedDto> ExecuteRestore(Connection connection, IApplicationSettings applicationSettings, string id, IQueueRunnerService queueRunnerService, Dto.RestoreInputDto input, CancellationToken cancellationToken)
+    {
+        var backup = GetBackup(connection, id);
+        var restorepath = input.restore_path;
+        if (restorepath != null && restorepath.StartsWith("@"))
+        {
+            var res = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, restorepath.Substring(1), id, input.source_prefix, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(res.Url))
+                restorepath = "@" + res.Url;
+        }
+
+        return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateRestoreTask(
             backup,
             input.paths ?? [],
             Library.Utility.Timeparser.ParseTimeInterval(input.time, DateTime.Now),
-            input.restore_path,
+            restorepath,
             input.overwrite ?? false,
             input.permissions ?? false,
             input.skip_metadata ?? false,
             string.IsNullOrWhiteSpace(input.passphrase) ? null : input.passphrase)));
+    }
 
     private static Dto.TaskStartedDto ExecuteCreateReport(IBackup backup, IQueueRunnerService queueRunnerService)
         => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.CreateReport, backup)));
