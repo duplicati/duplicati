@@ -53,7 +53,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (Environment.OSVersion.Platform != PlatformID.Win32NT)
                 throw new PlatformNotSupportedException("Windows raw disk access is only supported on Windows platforms.");
 
-            m_devicePath = devicePath;
+            m_devicePath = devicePath.TrimEnd(Path.DirectorySeparatorChar);
         }
 
         /// <inheritdoc />

@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Pipelines;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
@@ -77,32 +80,41 @@ public class WebModule : IWebModule
     public async Task<IDictionary<string, string>> Execute(IDictionary<string, string?> options, CancellationToken cancellationToken)
     {
         var op = Utility.ParseEnumOption(options.AsReadOnly(), KEY_OPERATION, DEFAULT_OPERATION);
-        options.TryGetValue(KEY_URL, out var url);
         options.TryGetValue(KEY_PATH, out var path);
 
         if (op != Operation.ListDestination)
             throw new UserInformationException($"Unsupported operation: {op}", "UnsupportedOperation");
 
         if (string.IsNullOrWhiteSpace(path) || path == "/")
-        {
             return await ListPhysicalDrives(cancellationToken);
-        }
 
-        if (string.IsNullOrWhiteSpace(url))
-            throw new UserInformationException($"Missing URL", "MissingURL");
+        var parts = path[4..].Split(Path.DirectorySeparatorChar, 2);
+        var physicalDrivePath = "\\\\.\\" + parts.First();
+        var subpath = parts.Last();
 
-        using var client = new SourceProvider(url, "", new Dictionary<string, string?>(options));
+        using var client = new SourceProvider("diskimage://" + physicalDrivePath, "", new Dictionary<string, string?>(options));
         await client.Initialize(cancellationToken);
 
-        var targetEntry = await client.GetEntry(path.TrimStart('/'), isFolder: true, cancellationToken).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(subpath))
+            return new Dictionary<string, string>()
+            {
+                {$"{physicalDrivePath}\\root\\", "{}"}
+            };
+
+        var targetEntry = await client.GetEntry(subpath, isFolder: true, cancellationToken).ConfigureAwait(false);
         if (targetEntry == null)
             throw new DirectoryNotFoundException($"Path not found: {path}");
 
         var result = new Dictionary<string, string>();
         await foreach (var entry in targetEntry.Enumerate(cancellationToken))
         {
+            if (entry.Path.EndsWith("geometry.json", StringComparison.OrdinalIgnoreCase))
+                continue;
             var metadata = await entry.GetMinorMetadata(cancellationToken);
-            result[entry.Path] = JsonSerializer.Serialize(metadata);
+            if (metadata.ContainsKey("partition:Number"))
+                result[$"{physicalDrivePath}\\{entry.Path.TrimEnd(Path.DirectorySeparatorChar)}"] = JsonSerializer.Serialize(metadata);
+            else
+                result[$"{physicalDrivePath}\\{entry.Path}"] = JsonSerializer.Serialize(metadata);
         }
 
         return result;
@@ -187,13 +199,14 @@ $diskInfo | ConvertTo-Json -Depth 4
             int.TryParse(drive.Path.AsSpan("\\\\.\\PHYSICALDRIVE".Length), out number);
         }
 
-        var displayPath = $"diskimage://{drive.Path}/";
+        var displayPath = Util.AppendDirSeparator(drive.Path);
         var metadata = new Dictionary<string, string?>
         {
             { "diskimage:Number", number.ToString() },
             { "diskimage:FriendlyName", drive.DisplayName },
             { "diskimage:Size", drive.Size.ToString() },
-            { "diskimage:DevicePath", drive.Path }
+            { "diskimage:DevicePath", drive.Path },
+            { "diskimage:Name", $"{drive.DisplayName} ({Library.Utility.Utility.FormatSizeString(drive.Size)})" },
         };
 
         result[displayPath] = JsonSerializer.Serialize(metadata);

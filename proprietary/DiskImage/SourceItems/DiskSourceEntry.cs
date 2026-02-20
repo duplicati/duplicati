@@ -123,13 +123,7 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
 
             // Then yield the actual partition and filesystem entries
             foreach (var partition in partitions)
-            {
-                var partitionEntry = new PartitionSourceEntry(this.Path, partition);
-                await foreach (var child in partitionEntry.Enumerate(cancellationToken))
-                {
-                    yield return child;
-                }
-            }
+                yield return new PartitionSourceEntry(this.Path, partition);
         }
         else
         {

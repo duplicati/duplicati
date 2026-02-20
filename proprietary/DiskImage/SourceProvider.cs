@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -94,7 +95,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
 
         if (OperatingSystem.IsWindows())
         {
-            _disk = new Windows(_devicePath);
+            _disk = new Windows(_devicePath.TrimEnd(Path.DirectorySeparatorChar));
             if (!await _disk.InitializeAsync(cancellationToken))
                 throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
         }

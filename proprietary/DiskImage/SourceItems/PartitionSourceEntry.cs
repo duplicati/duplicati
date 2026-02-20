@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Proprietary.DiskImage.Partition;
 using Duplicati.Proprietary.DiskImage.Filesystem;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 
@@ -57,7 +58,14 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition)
         metadata["partition:TableType"] = partition.PartitionTable.TableType.ToString();
 
         if (!string.IsNullOrEmpty(partition.Name))
+        {
             metadata["partition:Name"] = partition.Name;
+            metadata["diskimage:Name"] = $"{partition.Name} ({partition.Type}, {Utility.FormatSizeString(partition.Size)})";
+        }
+        else
+        {
+            metadata["diskimage:Name"] = $"{partition.Type} ({Utility.FormatSizeString(partition.Size)})";        
+        }
 
         if (partition.VolumeGuid.HasValue)
             metadata["partition:VolumeGuid"] = partition.VolumeGuid.Value.ToString();
