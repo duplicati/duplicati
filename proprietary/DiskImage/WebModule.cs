@@ -199,7 +199,9 @@ $diskInfo | ConvertTo-Json -Depth 4
             int.TryParse(drive.Path.AsSpan("\\\\.\\PHYSICALDRIVE".Length), out number);
         }
 
-        var displayPath = Util.AppendDirSeparator(drive.Path);
+        // For now, we only allow picking full disks, not individual partitions 
+        // var resultpath = Util.AppendDirSeparator(drive.Path);   
+        var resultpath = drive.Path.TrimEnd(Path.DirectorySeparatorChar);
         var metadata = new Dictionary<string, string?>
         {
             { "diskimage:Number", number.ToString() },
@@ -209,7 +211,7 @@ $diskInfo | ConvertTo-Json -Depth 4
             { "diskimage:Name", $"{drive.DisplayName} ({Library.Utility.Utility.FormatSizeString(drive.Size)})" },
         };
 
-        result[displayPath] = JsonSerializer.Serialize(metadata);
+        result[resultpath] = JsonSerializer.Serialize(metadata);
     }
 
     private async Task<string> RunPowerShellAsync(string script, CancellationToken cancellationToken)
