@@ -33,6 +33,7 @@ using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using System.Threading;
+using System.Text.Json;
 
 namespace Duplicati.Server
 {
@@ -645,6 +646,10 @@ namespace Duplicati.Server
                     foreach (var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
 
+                // Map AdditionalTargetURLs to remote-sync-json-config option for backup operations
+                if (data.Operation == DuplicatiOperation.Backup)
+                    ApplyAdditionalTargetUrls(backup, options);
+
                 // Pack in the system or task config for easy restore
                 if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
                     tempfolder = StoreTaskConfigAndGetTempFolder(databaseConnection, data, options);
@@ -1119,6 +1124,68 @@ namespace Duplicati.Server
             options.TryGetValue("disable-module", out var disabledModules);
             var mods = (disabledModules ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Maps the backup's AdditionalTargetURLs to the remote-sync-json-config option
+        /// so the RemoteSynchronizationModule can pick them up.
+        /// </summary>
+        /// <param name="backup">The backup containing additional target URLs.</param>
+        /// <param name="options">The options dictionary to update.</param>
+        private static void ApplyAdditionalTargetUrls(IBackup backup, Dictionary<string, string?> options)
+        {
+            if (backup.AdditionalTargetURLs == null)
+                return;
+
+            var additionalTargets = backup.AdditionalTargetURLs.ToList();
+            if (additionalTargets.Count == 0)
+                return;
+
+            var destinations = new List<Dictionary<string, object?>>();
+            foreach (var target in additionalTargets)
+            {
+                var dest = new Dictionary<string, object?>
+                {
+                    ["url"] = target.TargetUrl,
+                    ["mode"] = target.Mode
+                };
+
+                if (!string.IsNullOrWhiteSpace(target.Interval))
+                    dest["interval"] = target.Interval;
+
+                // Add options from the Options dictionary
+                if (target.Options != null)
+                {
+                    foreach (var opt in target.Options)
+                    {
+                        // Skip null values and already-handled properties
+                        if (opt.Value == null)
+                            continue;
+                        if (opt.Key.Equals("url", StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        if (opt.Key.Equals("mode", StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        if (opt.Key.Equals("interval", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        dest[opt.Key] = opt.Value;
+                    }
+                }
+
+                destinations.Add(dest);
+            }
+
+            var config = new Dictionary<string, object>
+            {
+                ["sync-on-warnings"] = true,
+                ["destinations"] = destinations
+            };
+
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.KebabCaseLower
+            };
+            options["remote-sync-json-config"] = JsonSerializer.Serialize(config, jsonOptions);
         }
 
         internal static Dictionary<string, string?> ApplyOptions(Connection databaseConnection, Serialization.Interface.IBackup backup, Dictionary<string, string?> options, out string url)
