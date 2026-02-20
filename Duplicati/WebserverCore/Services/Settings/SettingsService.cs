@@ -36,6 +36,7 @@ public class SettingsService(Connection connection) : ISettingsService
         Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATE,
         Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD,
         Server.Database.ServerSettings.CONST.REMOTE_CONTROL_STORAGE_API_KEY,
+        Server.Database.ServerSettings.CONST.CLIENT_LICENSE_KEY,
         // Not used anymore, but not completely removed
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
@@ -60,6 +61,7 @@ public class SettingsService(Connection connection) : ISettingsService
         Server.Database.ServerSettings.CONST.REMOTE_CONTROL_STORAGE_ENDPOINT_URL,
         Server.Database.ServerSettings.CONST.REMOTE_CONTROL_STORAGE_API_KEY,
         Server.Database.ServerSettings.CONST.REMOTE_CONTROL_STORAGE_API_ID,
+        Server.Database.ServerSettings.CONST.CLIENT_LICENSE_KEY,
         "ServerSSLCertificate",
         "server-passphrase-trayicon-hash",
         "server-passphrase-trayicon-salt"

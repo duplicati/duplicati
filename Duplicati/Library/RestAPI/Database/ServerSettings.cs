@@ -82,6 +82,7 @@ namespace Duplicati.Server.Database
             public const string REMOTE_CONTROL_STORAGE_API_ID = "remote-control-storage-api-id";
             public const string REMOTE_CONTROL_STORAGE_API_KEY = "remote-control-storage-api-key";
             public const string REMOTE_CONTROL_STORAGE_ENDPOINT_URL = "remote-control-storage-endpoint-url";
+            public const string CLIENT_LICENSE_KEY = "client-license-key";
         }
 
         private readonly Dictionary<string, string?> settings;
@@ -706,6 +707,12 @@ namespace Duplicati.Server.Database
         {
             get => settings[CONST.REMOTE_CONTROL_STORAGE_ENDPOINT_URL];
             set => SetAndSaveSetting(CONST.REMOTE_CONTROL_STORAGE_ENDPOINT_URL, value);
+        }
+
+        public string? ClientLicenseKey
+        {
+            get => settings[CONST.CLIENT_LICENSE_KEY];
+            set => SetAndSaveSetting(CONST.CLIENT_LICENSE_KEY, value);
         }
 
         public string? BackupListSortOrder
