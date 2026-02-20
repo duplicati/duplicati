@@ -7,7 +7,131 @@ namespace Duplicati.Proprietary.LicenseChecker;
 
 public static class LicenseHelper
 {
-    public static LicenseData? LicenseData => licenseData.Value;
+    private static readonly object _licenseLock = new();
+    private static LicenseData? _cachedLicenseData;
+    private static string? _remoteClientLicenseKey;
+    private static bool _isInitialized;
+
+    public static void SetRemoteClientLicenseKey(string? key)
+    {
+        lock (_licenseLock)
+        {
+            if (_remoteClientLicenseKey != key)
+            {
+                _remoteClientLicenseKey = key;
+                _cachedLicenseData = null; // Force reload
+                _isInitialized = false;
+            }
+        }
+    }
+
+    public static void ReloadLicense()
+    {
+        lock (_licenseLock)
+        {
+            _cachedLicenseData = null;
+            _isInitialized = false;
+        }
+    }
+
+    public static LicenseData? LicenseData
+    {
+        get
+        {
+            lock (_licenseLock)
+            {
+                if (!_isInitialized)
+                {
+                    _cachedLicenseData = LoadLicenseData();
+                    _isInitialized = true;
+                }
+                return _cachedLicenseData;
+            }
+        }
+    }
+
+    private static LicenseData? LoadLicenseData()
+    {
+        // Priority: File > Environment > ClientLicenseKey (server-provided)
+        // Local license always takes precedence over server-provided license
+        string? key = null;
+
+        // Check for a license file in the installation directory (highest priority)
+        var keyfilepath = Path.Combine(UpdaterManager.INSTALLATIONDIR, "license.key");
+        if (File.Exists(keyfilepath))
+            key = $"file://{keyfilepath}";
+
+        // Check for a license key in the environment variables
+        if (string.IsNullOrWhiteSpace(key))
+            key = Environment.GetEnvironmentVariable("DUPLICATI_LICENSE_KEY");
+
+        // Fall back to server-provided license key (lowest priority)
+        if (string.IsNullOrWhiteSpace(key))
+            key = _remoteClientLicenseKey;
+
+        if (string.IsNullOrWhiteSpace(key))
+            return null;
+
+        using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        return LicenseChecker.ObtainLicenseAsync(key, ct.Token).Await();
+    }
+
+    /// <summary>
+    /// Gets the local license data (from file or environment only, ignoring server-provided license).
+    /// Used for SystemInfo to report local license status.
+    /// </summary>
+    public static LicenseData? GetLocalLicenseData()
+    {
+        string? key = null;
+
+        // Check for a license file in the installation directory
+        var keyfilepath = Path.Combine(UpdaterManager.INSTALLATIONDIR, "license.key");
+        if (File.Exists(keyfilepath))
+            key = $"file://{keyfilepath}";
+
+        // Check for a license key in the environment variables
+        if (string.IsNullOrWhiteSpace(key))
+            key = Environment.GetEnvironmentVariable("DUPLICATI_LICENSE_KEY");
+
+        if (string.IsNullOrWhiteSpace(key))
+            return null;
+
+        try
+        {
+            using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            return LicenseChecker.ObtainLicenseAsync(key, ct.Token).Await();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Gets the remote (server-provided) license data only.
+    /// Used for OnConnect metadata to report remote license status.
+    /// </summary>
+    public static LicenseData? GetRemoteLicenseData()
+    {
+        string? key;
+        lock (_licenseLock)
+        {
+            key = _remoteClientLicenseKey;
+        }
+
+        if (string.IsNullOrWhiteSpace(key))
+            return null;
+
+        try
+        {
+            using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            return LicenseChecker.ObtainLicenseAsync(key, ct.Token).Await();
+        }
+        catch
+        {
+            return null;
+        }
+    }
 
     public static int AvailableOffice365UserSeats => GetFeatureSeats(DuplicatiLicenseFeatures.Office365Users);
     public static int AvailableOffice365GroupSeats => GetFeatureSeats(DuplicatiLicenseFeatures.Office365Groups);
@@ -54,26 +178,4 @@ public static class LicenseHelper
 
         return seats;
     }
-
-    private static Lazy<LicenseData?> licenseData = new Lazy<LicenseData?>(() =>
-    {
-        string? key = null;
-
-        // Check for a license file in the installation directory
-        var keyfilepath = Path.Combine(UpdaterManager.INSTALLATIONDIR, "license.key");
-        if (File.Exists(keyfilepath))
-            key = $"file://{keyfilepath}";
-
-        // Check for a license key in the environment variables
-        if (string.IsNullOrWhiteSpace(key))
-            key = Environment.GetEnvironmentVariable("DUPLICATI_LICENSE_KEY");
-
-        // No license key found
-        if (string.IsNullOrWhiteSpace(key))
-            return null;
-
-        using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        return LicenseChecker.ObtainLicenseAsync(key, ct.Token).Await();
-    });
-
 }
