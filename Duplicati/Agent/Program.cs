@@ -51,7 +51,7 @@ public static class Program
     /// <param name="AgentRegistrationUrl">The server URL to connect to</param>
     /// <param name="AgentSettingsFile">The file to use for the agent settings</param>
     /// <param name="AgentSettingsFilePassphrase">The passphrase for the agent settings file</param>
-    /// <param name="WebserviceListenInterface">The interface to listen on for the webserver</param>
+    /// <param name="WebserviceInterface">The interface to listen on for the webserver</param>
     /// <param name="WebservicePort">The port to listen on for the webserver</param>
     /// <param name="WebservicePassword">The password for the webserver, random if none supplied</param>
     /// <param name="SettingsEncryptionKey">The encryption key for the database settings</param>
@@ -72,7 +72,7 @@ public static class Program
         FileInfo AgentSettingsFile,
         string? AgentSettingsFilePassphrase,
         bool AgentRegisterOnly,
-        string WebserviceListenInterface,
+        string WebserviceInterface,
         string WebservicePort,
         string WebservicePassword,
         string? SettingsEncryptionKey,
@@ -112,7 +112,7 @@ public static class Program
             new Option<FileInfo>("--agent-settings-file", description: "The file to use for the agent settings", getDefaultValue: () => new FileInfo(Settings.DefaultSettingsFile)),
             new Option<string?>("--agent-settings-file-passphrase", description: "The passphrase for the agent settings file", getDefaultValue: () => null),
             new Option<bool>("--agent-register-only", description: "Only register the agent, then exit", getDefaultValue: () => false),
-            new Option<string>("--webservice-listen-interface", description: "The interface to listen on for the webserver", getDefaultValue: () => "loopback"),
+            new Option<string>("--webservice-interface", description: "The interface to listen on for the webserver", getDefaultValue: () => "loopback"),
             new Option<string>("--webservice-port", description: "The port to listen on for the webserver", getDefaultValue: () => "8210"),
             new Option<string?>("--webservice-password", description: "The password for the webserver, not set, or set to \"random\", a random value is used.", getDefaultValue: () => null),
             new Option<string?>("--settings-encryption-key", description: "The encryption key for the database settings", getDefaultValue: () => null),
@@ -207,7 +207,7 @@ public static class Program
             AgentSettingsFile: agentSettingsFile,
             AgentSettingsFilePassphrase: agentSettingsFilePassphrase,
             AgentRegisterOnly: true,
-            WebserviceListenInterface: "loopback",
+            WebserviceInterface: "loopback",
             WebservicePort: "8210",
             WebservicePassword: null!,
             SettingsEncryptionKey: null,
@@ -493,7 +493,7 @@ public static class Program
         // Lock down the instance, reset tokens and password,
         // and forward relevant settings from agent to the webserver
         var args = new[] {
-            EncodeOption("--webservice-listen-interface", agentConfig.WebserviceListenInterface),
+            EncodeOption("--webservice-interface", agentConfig.WebserviceInterface),
             EncodeOption("--webservice-password", agentConfig.WebservicePassword),
             EncodeOption("--webservice-port", agentConfig.WebservicePort),
             EncodeOption("--webservice-reset-jwt-config", agentConfig.WebserviceResetJwtConfig.ToString()),
