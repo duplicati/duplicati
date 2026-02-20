@@ -1,0 +1,58 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
+namespace Duplicati.WebserverCore.Dto;
+
+/// <summary>
+/// The target URL input DTO
+/// </summary>
+public sealed record TargetUrlInputDto
+{
+    /// <summary>
+    /// The unique key for this target URL entry (optional for new entries, required for updates)
+    /// </summary>
+    public string? UrlKey { get; init; }
+
+    /// <summary>
+    /// The target URL
+    /// </summary>
+    public required string TargetUrl { get; init; }
+
+    /// <summary>
+    /// The synchronization mode: inline, interval, or counting
+    /// </summary>
+    public string Mode { get; init; } = "inline";
+
+    /// <summary>
+    /// The interval for interval mode (e.g., "1h", "30m")
+    /// </summary>
+    public string? Interval { get; init; }
+
+    /// <summary>
+    /// The ID of the connection string used for this target URL
+    /// </summary>
+    public long ConnectionStringID { get; init; }
+
+    /// <summary>
+    /// Additional options for the lightweight backend manager
+    /// </summary>
+    public Dictionary<string, object>? Options { get; init; }
+}

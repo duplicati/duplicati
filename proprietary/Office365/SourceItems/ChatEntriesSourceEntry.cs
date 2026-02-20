@@ -52,4 +52,14 @@ internal class ChatEntriesSourceEntry(SourceProvider provider, string path, Grap
         else
             throw new NotImplementedException();
     }
+
+    public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+        => Task.FromResult(new Dictionary<string, string?>()
+            {
+                { "o365:v", "1" },
+                { "o365:Id", chat.Id },
+                { "o365:Type", type.ToString() },
+            }
+            .Where(kv => !string.IsNullOrEmpty(kv.Value))
+            .ToDictionary(kv => kv.Key, kv => kv.Value));
 }

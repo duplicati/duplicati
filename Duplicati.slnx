@@ -75,6 +75,7 @@
   <Folder Name="/Proprietary/">
     <Project Path="proprietary/LicenseChecker/Duplicati.Proprietary.LicenseChecker.csproj" />
     <Project Path="proprietary/LoaderHelper/Duplicati.Proprietary.LoaderHelper.csproj" />
+    <Project Path="proprietary/GoogleWorkspace/Duplicati.Proprietary.GoogleWorkspace.csproj" />
     <Project Path="proprietary/Office365/Duplicati.Proprietary.Office365.csproj" />
   </Folder>
   <Folder Name="/SourceProviders/">

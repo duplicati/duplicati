@@ -53,6 +53,10 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         string TargetURL { get; set; }
         /// <summary>
+        /// The connection string ID, or -1 if not used
+        /// </summary>
+        public long ConnectionStringID { get; set; }
+        /// <summary>
         /// The path to the local database
         /// </summary>
         string DBPath { get; }
@@ -96,7 +100,14 @@ namespace Duplicati.Server.Serialization.Interface
         /// Unmasks sensitive information in the backup settings and target URL
         /// </summary>
         /// <param name="previous">The previous backup configuration to restore sensitive information from</param>
-        void UnmaskSensitiveInformation(IBackup previous);
+        /// <param name="connectionStrings">The connection strings to restore sensitive information from</param>
+        void UnmaskSensitiveInformation(IBackup previous, IReadOnlyDictionary<long, string> connectionStrings);
+
+        /// <summary>
+        /// Additional target URLs for remote synchronization
+        /// These are used by RemoteSynchronizationModule and are separate from the primary TargetURL
+        /// </summary>
+        IEnumerable<ITargetUrlEntry> AdditionalTargetURLs { get; set; }
     }
 }
 

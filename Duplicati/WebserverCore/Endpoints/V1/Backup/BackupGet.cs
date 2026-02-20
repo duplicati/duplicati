@@ -134,10 +134,20 @@ public class BackupGet : IEndpointV1
                 Description = bk.Description,
                 Tags = bk.Tags,
                 TargetURL = bk.TargetURL,
+                ConnectionStringID = bk.ConnectionStringID,
                 DBPath = bk.DBPath,
                 DBPathExists = File.Exists(bk.DBPath),
                 IsTemporary = bk.IsTemporary,
                 IsUnencryptedOrPassphraseStored = false,
+                AdditionalTargetURLs = bk.AdditionalTargetURLs?.Select(x => new Dto.TargetUrlDto
+                {
+                    UrlKey = x.TargetUrlKey,
+                    TargetUrl = x.TargetUrl,
+                    Mode = x.Mode,
+                    Interval = x.Interval,
+                    ConnectionStringID = x.ConnectionStringID,
+                    Options = x.Options,
+                }).ToArray() ?? Array.Empty<Dto.TargetUrlDto>(),
             },
             sourcenames
         );

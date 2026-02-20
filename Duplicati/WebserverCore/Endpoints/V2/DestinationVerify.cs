@@ -47,7 +47,7 @@ public class DestinationVerify : IEndpointV2
         {
             if (destinationType == RemoteDestinationType.SourceProvider)
             {
-                using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.SourcePrefix, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetSourceProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, input.SourcePrefix, cancelToken);
 
                 // We do not call TestAsync here, because we may have read-only access to the source, and test will verify write access
                 // Instead we just check if we can enumerate the files, which is the main thing we need to verify for a source provider
@@ -63,7 +63,7 @@ public class DestinationVerify : IEndpointV2
             }
             else if (destinationType == RemoteDestinationType.RestoreDestinationProvider)
             {
-                using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.SourcePrefix, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTesting(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, input.SourcePrefix, cancelToken);
 
                 // Here we do call TestAsync, because we need to verify write access
                 await wrapper.RestoreDestinationProvider.Test(cancelToken);
@@ -76,7 +76,7 @@ public class DestinationVerify : IEndpointV2
             }
             else
             {
-                using var wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, input.DestinationUrl, input.BackupId, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetBackend(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, cancelToken);
 
                 using (var b = wrapper.Backend)
                 {

@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Server;
 using Duplicati.Server.Database;
-using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -68,6 +67,7 @@ public class BackupPutDelete : IEndpointV1
                 Description = input.Backup.Description,
                 Tags = input.Backup.Tags,
                 TargetURL = input.Backup.TargetURL,
+                ConnectionStringID = input.Backup.ConnectionStringID,
                 Sources = input.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
                 {
@@ -81,9 +81,19 @@ public class BackupPutDelete : IEndpointV1
                     Include = x.Include,
                     Expression = x.Expression
                 }).ToArray(),
-                Metadata = input.Backup.Metadata
+                Metadata = input.Backup.Metadata,
+                AdditionalTargetURLs = input.Backup.AdditionalTargetURLs?.Select(x => new TargetUrlEntry
+                {
+                    TargetUrlKey = x.UrlKey ?? Guid.NewGuid().ToString("D"),
+                    TargetUrl = x.TargetUrl,
+                    Mode = x.Mode ?? "inline",
+                    Interval = x.Interval,
+                    ConnectionStringID = x.ConnectionStringID,
+                    Options = x.Options
+                }).ToList() ?? new List<TargetUrlEntry>()
             };
 
+            var connectionStrings = connection.GetConnectionStrings().ToDictionary(x => x.ID, x => x.BaseUrl);
             var schedule = input.Schedule == null ? null : new Schedule()
             {
                 ID = input.Schedule.ID,
@@ -103,7 +113,7 @@ public class BackupPutDelete : IEndpointV1
                 if (connection.Backups.Any(x => x.Name.Equals(backup.Name, StringComparison.OrdinalIgnoreCase) && x.ID != backup.ID))
                     throw new ConflictException($"There already exists a backup with the name: {backup.Name}");
 
-                backup.UnmaskSensitiveInformation(existing);
+                backup.UnmaskSensitiveInformation(existing, connectionStrings);
                 var err = connection.ValidateBackup(backup, schedule);
                 if (!string.IsNullOrWhiteSpace(err))
                     throw new BadRequestException(err);

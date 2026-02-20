@@ -35,7 +35,8 @@ public static class SourceProviderModules
     /// </summary>
     private static Lazy<IReadOnlyList<ISourceProviderModule>> LicensedSourceProvidersLazy = new(() =>
         new ISourceProviderModule?[] {
-            LicenseHelper.IsOffice365Enabled ? new Office365.SourceProvider() : null
+            LicenseHelper.IsOffice365Enabled ? new Office365.SourceProvider() : null,
+            LicenseHelper.IsGoogleWorkspaceEnabled ? new GoogleWorkspace.SourceProvider() : null
         }
         .WhereNotNull()
         .ToList()
