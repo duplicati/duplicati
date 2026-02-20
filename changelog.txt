@@ -1,3 +1,107 @@
+2026-02-20 - 2.2.0.105_canary_2026-02-20
+==========
+This release is a canary release intended to be used for testing.
+
+This canary release is intended to be the base for the next beta/stable release.
+
+# Changes in this version
+
+## Database schema updates
+
+This version updates the Server database schema to **version 11** (was 9 in 2.2.0.104).
+These changes add the new remote destination repository table, and a table for tracking multiple backup destinations.
+
+Updates are applied automatically, and if you need to downgrade, the database tool can perform downgrades.
+Downgrades will wipe the new backup destinations and the backup destination repository, but otherwise does not cause data loss.
+
+## Multiple backup destinations
+
+This version adds support for configuring multiple destinations for a single backup job.
+This allows you to backup to multiple locations simultaneously, such as a local drive and a cloud storage provider.
+With multiple destinations, you can now configure a complete 3-2-1 backup strategy in a single job.
+After each completed backup, Duplicati will ensure that data is available on all destinations.
+
+A 3-2-1 backup strategy is where you have 3 copies of your data, 2 of which are on different media, and 1 of which is offsite/immutable.
+
+## Windows folder status indicator
+
+Thanks to @AndyBodnar, this version adds a Windows shell extension that shows the backup status of folders with icon overlays.
+The feature is disabled by default but can be enabled with the option `--enable-folder-status-service` on either Server or TrayIcon.
+Once the feature is enabled, you can run the `RegisterFolderStatusExtension.ps1` script to register the extension, and you can then see the backup status of folders in Windows Explorer.
+
+## Google Workspace backup
+
+This version adds support for backing up Google Workspace, including Gmail, Google Drive, Contacts, Calendar, and Chat.
+Like the Office 365 backup feature, this is a proprietary module (source available) that requires a license to use in production.
+Without a license, testing is possible with up to 5 users.
+
+If you prefer a clean OSI-approved installation, you can prevent proprietary modules from loading by setting the environment variable `DUPLICATI_DISABLE_PROPRIETARY_MODULES=1` or simply delete the files named `Duplicati.Proprietary.*` from your installation.
+
+## Full disk backup
+
+This version adds simple support for backup and restore of entire disks, including the MBR/GPT partition table.
+In this initial version, only Windows is supported, the backup is accessing the disk directly (no VSS).
+We are working on adding support for Linux and macOS, as well as VSS support for Windows.
+Like the Office 365 / Google Workspace backup features, this is a proprietary module (source available).
+
+Full disk backup requires administrative privileges to access the disk directly.
+Full disk restore requires administrative privileges and requires that the disk is unmounted and not write-protected.
+
+## Bugfixes and improvements
+
+- Fixed S3 endpoint port preservation and path validation, thanks @aureliandevel
+- Added connection string repository for simpler management of re-used backend connections
+
+## Detailed list of changes:
+
+- Added support for full disk backup and restore on Windows
+- Fixed incorrect commandline argument names in Agent
+- Added support for assigning license from console
+- Added Windows folder icon overlay for backup status, thanks @AndyBodnar
+- Fixed compile errors after merges
+- Added Google Workspace backup support
+- Added temp disk space check endpoint
+- Added support for multiple backup destinations
+- Updated translations
+- Fixed race condition with index file uploads during backup
+- Added latest translations
+- Updated translations from Transifex
+- Rolled back supplementary groups change
+- Fixed S3 host port preservation and path validation, thanks @aureliandevel
+- Fixed nullable warnings
+- Fixed large volume inputs handling
+- Fixed RPM spec ownership calculation
+- Fixed scheme detection on short paths
+
+## ngclient changes:
+
+### Features
+
+- Added support for picking disks for backup (if supported by the backend)
+- Added support for Google Workspace
+- Added support for saving multiple destinations
+- Added destination page
+- Added const to toggle auto-save of destinations
+- Added missing dropdown options for filters
+
+### Bug Fixes
+
+- Fixed issue with crashes in Chrome when showing tooltips
+- Fixed issue with "loader" buttons shrinking visually
+- Fixed advanced options not possible with UNC paths
+- Fixed include filters converting to paths
+- Fixed multi-line small screen styling of menu
+- Fixed non-existent icons
+
+### Improvements
+
+- Improved mobile display (responsive layout)
+- Improved status content
+- Improved status file text
+- Updated localizations, thansk to all translators
+- Updated status and destinations
+- Automatically open warnings/errors on the logs page
+
 2026-02-06 - 2.2.0.104_canary_2026-02-06
 ==========
 This release is a canary release intended to be used for testing.
