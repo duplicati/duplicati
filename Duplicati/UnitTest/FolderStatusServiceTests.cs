@@ -95,16 +95,19 @@ public class FolderStatusServiceTests
         public string Description { get; set; } = string.Empty;
         public string[] Tags { get; set; } = Array.Empty<string>();
         public string TargetURL { get; set; } = string.Empty;
+        public long ConnectionStringID { get; set; } = -1;
         public string DBPath => string.Empty;
         public string[] Sources { get; set; } = Array.Empty<string>();
         public ISetting[] Settings { get; set; } = Array.Empty<ISetting>();
         public IFilter[] Filters { get; set; } = Array.Empty<IFilter>();
         public IDictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
         public bool IsTemporary => false;
+        public IEnumerable<ITargetUrlEntry> AdditionalTargetURLs { get; set; } = Array.Empty<ITargetUrlEntry>();
 
         public void RemoveSensitiveInformation() { }
         public void MaskSensitiveInformation() { }
         public void UnmaskSensitiveInformation(IBackup previous) { }
+        public void UnmaskSensitiveInformation(IBackup previous, IReadOnlyDictionary<long, string> connectionStrings) { }
     }
 
     /// <summary>
