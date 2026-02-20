@@ -51,7 +51,11 @@ public static partial class Command
     /// <summary>
     /// Projects that only makes sense for Windows
     /// </summary>
-    private static readonly IReadOnlySet<string> WindowsOnlyProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "Duplicati.WindowsService.csproj", "Duplicati.WindowsModulesLoader.csproj" };
+    private static readonly IReadOnlySet<string> WindowsOnlyProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) {
+        "Duplicati.WindowsService.csproj",
+        "Duplicati.WindowsModulesLoader.csproj",
+        "Duplicati.ShellExtension.csproj"
+    };
 
     /// <summary>
     /// Projects the pull in GUI dependencies
@@ -66,7 +70,11 @@ public static partial class Command
     /// <summary>
     /// Projects that are built for support reasons but where ouput is not used in the final build
     /// </summary>
-    private static readonly IReadOnlySet<string> EphemeralProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "Duplicati.WindowsModulesLoader.csproj" };
+    private static readonly IReadOnlySet<string> EphemeralProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) {
+        "Duplicati.WindowsModulesLoader.csproj", 
+        // Shell extensions are not ephemeral, but does not produce an .exe output
+        "Duplicati.ShellExtension.csproj"
+    };
 
     /// <summary>
     /// Projects that are always excluded from builds
@@ -491,6 +499,7 @@ public static partial class Command
             throw new FileNotFoundException($"Version file not found: {versionFilePath}");
 
         var sourceProjects = Directory.EnumerateDirectories(Path.Combine(baseDir, "Executables"), "*", SearchOption.TopDirectoryOnly)
+            .Append(Path.Combine(baseDir, "Duplicati", "ShellExtension"))
             .SelectMany(x => Directory.EnumerateFiles(x, "*.csproj", SearchOption.TopDirectoryOnly))
             .Where(x => !ExcludedProjects.Contains(Path.GetFileName(x)))
             .ToList();
