@@ -195,6 +195,10 @@ public class FolderStatusService : IFolderStatusService
             return FolderBackupStatusValues.Never;
         }
 
+        // Validate that the date is parseable
+        if (!DateTime.TryParse(lastDateStr, out _))
+            return FolderBackupStatusValues.Never;
+
         // Check for errors
         if (backup.Metadata.TryGetValue("LastErrorDate", out var errorDate) &&
             !string.IsNullOrEmpty(errorDate))
