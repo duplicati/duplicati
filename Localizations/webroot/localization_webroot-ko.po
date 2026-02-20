@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Myung Joon Shin <mj.shin1999@gmail.com>, 2019
 # arn junmo <comqlalf@naver.com>, 2019

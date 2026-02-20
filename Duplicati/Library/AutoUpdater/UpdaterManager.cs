@@ -116,7 +116,7 @@ namespace Duplicati.Library.AutoUpdater
         static UpdaterManager()
         {
             // Set the installation path
-            INSTALLATIONDIR = Util.AppendDirSeparator(Path.GetDirectoryName(Utility.Utility.getEntryAssembly().Location));
+            INSTALLATIONDIR = Util.AppendDirSeparator(Path.GetDirectoryName(Utility.Utility.getEntryAssembly().Location) ?? "");
 
             // Attempt to read the installed manifest file
             UpdateInfo? selfVersion = null;

@@ -250,7 +250,7 @@ namespace Duplicati.Server.Serializable
             get
             {
                 return
-                    (from n in Library.DynamicLoader.SourceProviderLoader.SourceProviders
+                    (from n in Library.DynamicLoader.SourceProviderLoader.Modules
                      select new DynamicModule(n))
                      .Concat(
                         from n in Library.DynamicLoader.BackendLoader.Backends
@@ -268,7 +268,7 @@ namespace Duplicati.Server.Serializable
             get
             {
                 return
-                    (from n in Library.DynamicLoader.RestoreDestinationProviderLoader.ResotreDestinationProviders
+                    (from n in Library.DynamicLoader.RestoreDestinationProviderLoader.Modules
                      select new DynamicModule(n))
                     .ToArray();
             }

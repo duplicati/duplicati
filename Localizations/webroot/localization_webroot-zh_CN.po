@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Herald Yu <yuhr123@gmail.com>, 2018
 # mays_wind <i@mayswind.net>, 2022

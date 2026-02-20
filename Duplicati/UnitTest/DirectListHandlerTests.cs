@@ -547,5 +547,314 @@ namespace Duplicati.UnitTest
                 fileId++;
             }
         }
+
+        /// <summary>
+        /// Tests that ListFolder works correctly with a large number of prefix IDs
+        /// that triggers the temporary table code path (when count > CHUNK_SIZE = 128).
+        /// </summary>
+        [Test]
+        [Category("Database")]
+        public async Task ListFolder_WithLargePrefixIds_UsesTemporaryTable()
+        {
+            using var tempFile = new TempFile();
+            await using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Insert fileset entry
+            using (var cmd = db.Connection.CreateCommand())
+            {
+                cmd.SetCommandAndParameters(@"
+                    INSERT OR IGNORE INTO Fileset (ID, OperationID, VolumeID, IsFullBackup, Timestamp)
+                    VALUES (@filesetId, 1, 1, 1, 0);")
+                    .SetParameterValue("@filesetId", 1L)
+                    .ExecuteNonQuery();
+            }
+
+            // Create 150 prefix IDs (exceeds CHUNK_SIZE of 128) to trigger temporary table path
+            var prefixIds = new List<long>();
+            for (int i = 0; i < 150; i++)
+            {
+                var prefix = $"/test/prefix/{i}/";
+                using var cmd = db.Connection.CreateCommand();
+                
+                // Insert prefix
+                cmd.SetCommandAndParameters(@"
+                    INSERT OR IGNORE INTO PathPrefix (Prefix)
+                    VALUES (@prefix);")
+                    .SetParameterValue("@prefix", prefix)
+                    .ExecuteNonQuery();
+
+                // Get prefix ID
+                var prefixId = cmd.SetCommandAndParameters("SELECT ID FROM PathPrefix WHERE Prefix = @prefix")
+                    .SetParameterValue("@prefix", prefix)
+                    .ExecuteScalarInt64();
+
+                prefixIds.Add(prefixId);
+
+                // Insert FileLookup
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO FileLookup (ID, PrefixID, Path, BlocksetID, MetadataID)
+                    VALUES (@fileId, @prefixId, @path, 1, 1);")
+                    .SetParameterValue("@fileId", i + 1)
+                    .SetParameterValue("@prefixId", prefixId)
+                    .SetParameterValue("@path", $"file{i}.txt")
+                    .ExecuteNonQuery();
+
+                // Insert FilesetEntry
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO FilesetEntry (FilesetID, FileID, Lastmodified)
+                    VALUES (@filesetId, @fileId, 0);")
+                    .SetParameterValue("@filesetId", 1L)
+                    .SetParameterValue("@fileId", i + 1)
+                    .ExecuteNonQuery();
+            }
+
+            // Act: Call ListFolder with 150 prefix IDs
+            // This should trigger the temporary table code path
+            var result = await db.ListFolder(prefixIds, 1, 0, 1000, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Assert: Should return all 150 files
+            Assert.That(result.Items.Count(), Is.EqualTo(150));
+        }
+
+        /// <summary>
+        /// Tests that <see cref="LocalListDatabase.ListFileVersions"/> works correctly
+        /// with a large number of fileset IDs that triggers the temporary table code path
+        /// (when count > CHUNK_SIZE = 128).
+        /// </summary>
+        [Test]
+        [Category("Database")]
+        public async Task ListFileVersions_WithLargeFilesetIds_UsesTemporaryTable()
+        {
+            // Arrange
+            using var tempFile = new TempFile();
+            await using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Insert operation entry
+            using (var cmd = db.Connection.CreateCommand())
+            {
+                cmd.SetCommandAndParameters(@"
+                    INSERT OR IGNORE INTO Operation (ID, Description, Timestamp)
+                    VALUES (1, 'TestOperation', 0);")
+                    .ExecuteNonQuery();
+            }
+
+            // Create 150 filesets (exceeds CHUNK_SIZE of 128) to trigger temporary table path
+            var filesetIds = new List<long>();
+            for (int i = 0; i < 150; i++)
+            {
+                using var cmd = db.Connection.CreateCommand();
+
+                // Insert RemoteVolume for the fileset
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO RemoteVolume (ID, OperationID, Name, Type, State, Size, VerificationCount, DeleteGraceTime, ArchiveTime, LockExpirationTime)
+                    VALUES (@id, @operationId, @name, @type, @state, @size, @verificationCount, @deleteGraceTime, @archiveTime, @lockExpirationTime);")
+                    .SetParameterValue("@id", i + 1)
+                    .SetParameterValue("@operationId", 1L)
+                    .SetParameterValue("@name", $"volume{i}.zip")
+                    .SetParameterValue("@type", "Files")
+                    .SetParameterValue("@state", "Verified")
+                    .SetParameterValue("@size", 1024L)
+                    .SetParameterValue("@verificationCount", 0)
+                    .SetParameterValue("@deleteGraceTime", 0)
+                    .SetParameterValue("@archiveTime", 0)
+                    .SetParameterValue("@lockExpirationTime", 0)
+                    .ExecuteNonQuery();
+
+                // Insert Fileset
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO Fileset (ID, OperationID, VolumeID, IsFullBackup, Timestamp)
+                    VALUES (@id, @operationId, @volumeId, @isFullBackup, @timestamp);")
+                    .SetParameterValue("@id", i + 1)
+                    .SetParameterValue("@operationId", 1L)
+                    .SetParameterValue("@volumeId", i + 1)
+                    .SetParameterValue("@isFullBackup", 1)
+                    .SetParameterValue("@timestamp", i)
+                    .ExecuteNonQuery();
+
+                filesetIds.Add(i + 1);
+            }
+
+            // Insert a single file that exists in all filesets
+            using (var cmd = db.Connection.CreateCommand())
+            {
+                // Insert Blockset
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO Blockset (ID, Length, FullHash)
+                    VALUES (1, 1024, 'fullhash');")
+                    .ExecuteNonQuery();
+
+                // Insert Metadataset
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO Metadataset (ID, BlocksetID)
+                    VALUES (1, 1);")
+                    .ExecuteNonQuery();
+
+                // Insert PathPrefix
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO PathPrefix (ID, Prefix)
+                    VALUES (1, '/test/');")
+                    .ExecuteNonQuery();
+
+                // Insert FileLookup
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO FileLookup (ID, PrefixID, Path, BlocksetID, MetadataID)
+                    VALUES (1, 1, 'file.txt', 1, 1);")
+                    .ExecuteNonQuery();
+
+                // Insert FilesetEntry for each fileset
+                for (int i = 0; i < 150; i++)
+                {
+                    cmd.SetCommandAndParameters(@"
+                        INSERT INTO FilesetEntry (FilesetID, FileID, Lastmodified)
+                        VALUES (@filesetId, @fileId, @lastModified);")
+                        .SetParameterValue("@filesetId", i + 1)
+                        .SetParameterValue("@fileId", 1)
+                        .SetParameterValue("@lastModified", 0)
+                        .ExecuteNonQuery();
+                }
+            }
+
+            // Act: Call ListFileVersions with 150 fileset IDs
+            // This should trigger the temporary table code path
+            var result = await db.ListFileVersions(
+                new[] { "file.txt" },
+                filesetIds.ToArray(),
+                0,
+                1000,
+                CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Assert: Should return all 150 file versions
+            Assert.That(result.Items.Count(), Is.EqualTo(150));
+        }
+
+        /// <summary>
+        /// Tests that <see cref="LocalListDatabase.SearchEntries"/> works correctly
+        /// with a large number of fileset IDs that triggers the temporary table code path
+        /// (when count > CHUNK_SIZE = 128).
+        /// </summary>
+        [Test]
+        [Category("Database")]
+        public async Task SearchEntries_WithLargeFilesetIds_UsesTemporaryTable()
+        {
+            // Arrange
+            using var tempFile = new TempFile();
+            await using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Insert operation entry
+            using (var cmd = db.Connection.CreateCommand())
+            {
+                cmd.SetCommandAndParameters(@"
+                    INSERT OR IGNORE INTO Operation (ID, Description, Timestamp)
+                    VALUES (1, 'TestOperation', 0);")
+                    .ExecuteNonQuery();
+            }
+
+            // Create 150 filesets (exceeds CHUNK_SIZE of 128) to trigger temporary table path
+            var filesetIds = new List<long>();
+            for (int i = 0; i < 150; i++)
+            {
+                using var cmd = db.Connection.CreateCommand();
+
+                // Insert RemoteVolume for the fileset
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO RemoteVolume (ID, OperationID, Name, Type, State, Size, VerificationCount, DeleteGraceTime, ArchiveTime, LockExpirationTime)
+                    VALUES (@id, @operationId, @name, @type, @state, @size, @verificationCount, @deleteGraceTime, @archiveTime, @lockExpirationTime);")
+                    .SetParameterValue("@id", i + 1)
+                    .SetParameterValue("@operationId", 1L)
+                    .SetParameterValue("@name", $"volume{i}.zip")
+                    .SetParameterValue("@type", "Files")
+                    .SetParameterValue("@state", "Verified")
+                    .SetParameterValue("@size", 1024L)
+                    .SetParameterValue("@verificationCount", 0)
+                    .SetParameterValue("@deleteGraceTime", 0)
+                    .SetParameterValue("@archiveTime", 0)
+                    .SetParameterValue("@lockExpirationTime", 0)
+                    .ExecuteNonQuery();
+
+                // Insert Fileset
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO Fileset (ID, OperationID, VolumeID, IsFullBackup, Timestamp)
+                    VALUES (@id, @operationId, @volumeId, @isFullBackup, @timestamp);")
+                    .SetParameterValue("@id", i + 1)
+                    .SetParameterValue("@operationId", 1L)
+                    .SetParameterValue("@volumeId", i + 1)
+                    .SetParameterValue("@isFullBackup", 1)
+                    .SetParameterValue("@timestamp", i)
+                    .ExecuteNonQuery();
+
+                filesetIds.Add(i + 1);
+            }
+
+            // Insert files that exist in all filesets
+            using (var cmd = db.Connection.CreateCommand())
+            {
+                // Insert Blockset
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO Blockset (ID, Length, FullHash)
+                    VALUES (1, 1024, 'fullhash');")
+                    .ExecuteNonQuery();
+
+                // Insert Metadataset
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO Metadataset (ID, BlocksetID)
+                    VALUES (1, 1);")
+                    .ExecuteNonQuery();
+
+                // Insert PathPrefix
+                cmd.SetCommandAndParameters(@"
+                    INSERT INTO PathPrefix (ID, Prefix)
+                    VALUES (1, '/test/');")
+                    .ExecuteNonQuery();
+
+                // Insert FileLookup entries
+                for (int i = 0; i < 10; i++)
+                {
+                    cmd.SetCommandAndParameters(@"
+                        INSERT INTO FileLookup (ID, PrefixID, Path, BlocksetID, MetadataID)
+                        VALUES (@id, @prefixId, @path, @blocksetId, @metadataId);")
+                        .SetParameterValue("@id", i + 1)
+                        .SetParameterValue("@prefixId", 1)
+                        .SetParameterValue("@path", $"file{i}.txt")
+                        .SetParameterValue("@blocksetId", 1)
+                        .SetParameterValue("@metadataId", 1)
+                        .ExecuteNonQuery();
+                }
+
+                // Insert FilesetEntry for each fileset and file
+                for (int i = 0; i < 150; i++)
+                {
+                    for (int j = 0; j < 10; j++)
+                    {
+                        cmd.SetCommandAndParameters(@"
+                            INSERT INTO FilesetEntry (FilesetID, FileID, Lastmodified)
+                            VALUES (@filesetId, @fileId, @lastModified);")
+                            .SetParameterValue("@filesetId", i + 1)
+                            .SetParameterValue("@fileId", j + 1)
+                            .SetParameterValue("@lastModified", 0)
+                            .ExecuteNonQuery();
+                    }
+                }
+            }
+
+            // Act: Call SearchEntries with 150 fileset IDs
+            // This should trigger the temporary table code path
+            // Use a simple filter that matches all files (empty filter matches everything)
+            var result = await db.SearchEntries(
+                null,
+                new FilterExpression("*", true),
+                filesetIds.ToArray(),
+                0,
+                2000,
+                CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Assert: Should return all 1500 file versions (150 filesets * 10 files)
+            Assert.That(result.Items.Count(), Is.EqualTo(1500));
+        }
     }
 }

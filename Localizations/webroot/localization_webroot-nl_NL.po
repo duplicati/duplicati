@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Kees Zaaijer, 2025
 # 

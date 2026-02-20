@@ -106,4 +106,58 @@ public class EmptyMetadataTests : BasicSetupHelper
         await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "verify", true, null, CancellationToken.None))
             await db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None);
     }
+
+    /// <summary>
+    /// Tests that GetEmptyMetadataBlocksetId works correctly with a large number of block volume IDs
+    /// that triggers the temporary table code path (when count > CHUNK_SIZE = 128).
+    /// </summary>
+    [Test]
+    [Category("Database")]
+    public async Task GetEmptyMetadataBlocksetId_WithLargeInput_UsesTemporaryTable()
+    {
+        using var dbfile = new TempFile();
+        using var db = SQLiteLoader.LoadConnection(dbfile);
+
+        // Use DatabaseUpgrader to create the schema from embedded resources
+        DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+
+        using var cmd = db.CreateCommand();
+
+        // Insert an operation record (required for LocalDatabase initialization)
+        cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES ('Test', 0)";
+        cmd.ExecuteNonQuery();
+
+        // Create 150 block volume IDs (exceeds CHUNK_SIZE of 128) to trigger temporary table path
+        var blockVolumeIds = new List<long>();
+        for (int i = 0; i < 150; i++)
+        {
+            blockVolumeIds.Add(i + 1);
+
+            // Insert a remote volume for each block volume ID
+            cmd.CommandText = $@"
+                INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
+                VALUES ({i + 1}, 1, 'block-volume-{i}.zip', 'Blocks', 'Verified', 0, 0, 0, 0)";
+            cmd.ExecuteNonQuery();
+        }
+
+        // Insert a blockset entry that represents empty metadata (hash of empty data)
+        // This will be found when GetEmptyMetadataBlocksetId is called
+        cmd.CommandText = @"
+            INSERT INTO ""Blockset"" (""ID"", ""FullHash"", ""Length"")
+            VALUES (1, 'da39a3ee5e6b4b0d3255bfef95601890afd80709', 0)";
+        cmd.ExecuteNonQuery();
+
+        // Close the connection so LocalDatabase can open it
+        db.Close();
+
+        // Create LocalListBrokenFilesDatabase instance (which inherits GetEmptyMetadataBlocksetId from LocalDatabase)
+        await using var localDb = await LocalListBrokenFilesDatabase.CreateAsync(dbfile, null, CancellationToken.None).ConfigureAwait(false);
+
+        // Act: Call GetEmptyMetadataBlocksetId with 150 block volume IDs
+        // This should trigger the temporary table code path
+        var emptyId = await localDb.GetEmptyMetadataBlocksetId(blockVolumeIds, "da39a3ee5e6b4b0d3255bfef95601890afd80709", 0, CancellationToken.None);
+
+        // Assert: Should find the empty metadata blockset (ID = 1)
+        Assert.That(emptyId, Is.EqualTo(1));
+    }
 }

@@ -1,4 +1,3 @@
-# 
 # Translators:
 # Slawomir Ciunczyk <s.ciunczyk@ciunczyk.com>, 2016
 # Jerzy Wartałowicz <juwicz@gmail.com>, 2017
@@ -6,12 +5,12 @@
 # norill <norill@wp.pl>, 2019
 # marekjedrzejewski <marekjedrzejewski@users.noreply.github.com>, 2019
 # Waldemar Stoczkowski, 2021
-# Mariusz Wierzbicki <engineer@post.pl>, 2025
+# Mariusz Wierzbicki <engineer@post.pl>, 2026
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Mariusz Wierzbicki <engineer@post.pl>, 2025\n"
+"Last-Translator: Mariusz Wierzbicki <engineer@post.pl>, 2026\n"
 "Language-Team: Polish (https://app.transifex.com/duplicati/teams/67655/pl/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -224,6 +223,10 @@ msgstr "Dokumentacja i zasoby Aliyun OSS"
 msgid "All Hyper-V Machines"
 msgstr "Wszystkie Maszyny Hyper-V"
 
+#: scripts/directives/sourceFolderPicker.js:319
+msgid "All Microsoft SQL Servers"
+msgstr "Wszystkie serwery Microsoft SQL"
+
 #: templates/settings.html:175
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
@@ -371,7 +374,7 @@ msgstr "Backup zakończony!"
 
 #: templates/addoredit.html:92
 msgid "Backup destination"
-msgstr "Miejsce docelowe kopii"
+msgstr "Lokalizacja docelowa kopii"
 
 #: templates/restore.html:131
 msgid ""
@@ -860,9 +863,25 @@ msgstr "Niestandardowa retencja kopii"
 msgid "Custom bucket storage class"
 msgstr "Niestandardowa klasa przechowywania zasobnika"
 
+#: templates/backends/gcs.html:18
+msgid "Custom location"
+msgstr "Niestandardowa lokalizacja"
+
 #: templates/backends/s3.html:39
 msgid "Custom region for creating buckets"
 msgstr "Niestandardowy region do tworzenia zasobników"
+
+#: templates/backends/s3.html:34
+msgid "Custom region value"
+msgstr "Niestandardowa wartość regionu"
+
+#: templates/backends/openstack.html:10 templates/backends/s3.html:12
+msgid "Custom server url"
+msgstr "Niestandardowy adres URL serwera"
+
+#: templates/backends/gcs.html:29 templates/backends/s3.html:50
+msgid "Custom storage class"
+msgstr "Niestandardowa klasa magazynu"
 
 #: templates/advancedoptionseditor.html:43
 msgid "DEPRECATED: {{getDeprecationMessage(item)}}"
@@ -974,7 +993,7 @@ msgstr "Lokalizacja docelowa"
 
 #: templates/home.html:12
 msgid "Destination Type"
-msgstr "Typ docelowy"
+msgstr "Typ miejsca docelowego"
 
 #: templates/home.html:22
 msgid "Destination Type (descending)"
@@ -1588,6 +1607,10 @@ msgstr "Jak chcesz potraktować istniejące pliki?"
 msgid "Hyper-V Machine"
 msgstr "Maszyna Hyper-V"
 
+#: scripts/directives/sourceFolderPicker.js:279
+msgid "Hyper-V Machine: {{name}}"
+msgstr "Maszyna Hyper-V: {{name}}"
+
 #: scripts/services/AppUtils.js:72
 msgid "Hyper-V Machines"
 msgstr "Maszyny Hyper-V"
@@ -1939,6 +1962,14 @@ msgstr "Maksymalna szybkość wysyłania"
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "Menu"
+
+#: scripts/directives/sourceFolderPicker.js:323
+msgid "Microsoft SQL Database: {{name}}"
+msgstr "Baza danych Microsoft SQL: {{name}}"
+
+#: scripts/directives/sourceFolderPicker.js:323
+msgid "Microsoft SQL Server: {{name}}"
+msgstr "Serwer Microsoft SQL: {{name}}"
 
 #: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
 #: templates/settings.html:90
@@ -3053,7 +3084,7 @@ msgid ""
 " issues, excessively large temporary files or other problems."
 msgstr ""
 "Wybrany rozmiar znajduje się poza zalecanym zakresem. Może to powodować "
-"problemy z wydajnością, nadmiernie duże pliki tymczasowe lub inne problemy."
+"problemy z wydajnością, zbyt duże pliki tymczasowe lub inne problemy."
 
 #: scripts/controllers/ExportController.js:13
 msgid ""

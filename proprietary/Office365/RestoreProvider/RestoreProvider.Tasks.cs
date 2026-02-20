@@ -138,7 +138,7 @@ public partial class RestoreProvider
                 var originalPath = task.Key;
 
                 // Find parent list
-                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)));
+                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
                 if (parentPath == null || !_restoredTaskListMap.TryGetValue(parentPath, out var listId))
                 {
                     Log.WriteWarningMessage(LOGTAG, "RestoreTaskListTasksMissingParent", null, $"Could not find parent list for task {originalPath}, skipping.");
@@ -213,7 +213,7 @@ public partial class RestoreProvider
                 var parentDir = Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)); // ChecklistItems
                 if (parentDir == null) continue;
 
-                var taskPath = Util.AppendDirSeparator(Path.GetDirectoryName(parentDir)); // TaskId
+                var taskPath = Util.AppendDirSeparator(Path.GetDirectoryName(parentDir) ?? ""); // TaskId
 
                 if (taskPath == null || !_restoredTaskMap.TryGetValue(taskPath, out var taskId))
                 {
@@ -227,7 +227,7 @@ public partial class RestoreProvider
                 var tasksDir = Path.GetDirectoryName(taskPath.TrimEnd(Path.DirectorySeparatorChar)); // Tasks
                 if (tasksDir == null) continue;
 
-                var listPath = Util.AppendDirSeparator(Path.GetDirectoryName(tasksDir)); // ListId
+                var listPath = Util.AppendDirSeparator(Path.GetDirectoryName(tasksDir) ?? ""); // ListId
 
                 if (listPath == null || !_restoredTaskListMap.TryGetValue(listPath, out var listId))
                 {
@@ -273,7 +273,7 @@ public partial class RestoreProvider
                 var parentDir = Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)); // LinkedResources
                 if (parentDir == null) continue;
 
-                var taskPath = Util.AppendDirSeparator(Path.GetDirectoryName(parentDir)); // TaskId
+                var taskPath = Util.AppendDirSeparator(Path.GetDirectoryName(parentDir) ?? ""); // TaskId
 
                 if (taskPath == null || !_restoredTaskMap.TryGetValue(taskPath, out var taskId))
                 {
@@ -285,7 +285,7 @@ public partial class RestoreProvider
                 var tasksDir = Path.GetDirectoryName(taskPath.TrimEnd(Path.DirectorySeparatorChar)); // Tasks
                 if (tasksDir == null) continue;
 
-                var listPath = Util.AppendDirSeparator(Path.GetDirectoryName(tasksDir)); // ListId
+                var listPath = Util.AppendDirSeparator(Path.GetDirectoryName(tasksDir) ?? ""); // ListId
 
                 if (listPath == null || !_restoredTaskListMap.TryGetValue(listPath, out var listId))
                 {
