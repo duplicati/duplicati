@@ -82,6 +82,8 @@ namespace Duplicati.Server.Database
             public const string REMOTE_CONTROL_STORAGE_API_ID = "remote-control-storage-api-id";
             public const string REMOTE_CONTROL_STORAGE_API_KEY = "remote-control-storage-api-key";
             public const string REMOTE_CONTROL_STORAGE_ENDPOINT_URL = "remote-control-storage-endpoint-url";
+            public const string CLIENT_LICENSE_KEY = "client-license-key";
+            public const string ENABLE_FOLDER_STATUS_SERVICE = "enable-folder-status-service";
         }
 
         private readonly Dictionary<string, string?> settings;
@@ -706,6 +708,18 @@ namespace Duplicati.Server.Database
         {
             get => settings[CONST.REMOTE_CONTROL_STORAGE_ENDPOINT_URL];
             set => SetAndSaveSetting(CONST.REMOTE_CONTROL_STORAGE_ENDPOINT_URL, value);
+        }
+
+        public string? ClientLicenseKey
+        {
+            get => settings[CONST.CLIENT_LICENSE_KEY];
+            set => SetAndSaveSetting(CONST.CLIENT_LICENSE_KEY, value);
+        }
+        
+        public bool EnableFolderStatusService
+        {
+            get => Utility.ParseBool(settings[CONST.ENABLE_FOLDER_STATUS_SERVICE], false);
+            set => SetAndSaveSetting(CONST.ENABLE_FOLDER_STATUS_SERVICE, value.ToString());
         }
 
         public string? BackupListSortOrder

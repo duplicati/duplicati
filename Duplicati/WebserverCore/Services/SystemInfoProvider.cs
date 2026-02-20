@@ -397,6 +397,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             DefaultOAuthURL = AuthIdOptionsHelper.DUPLICATI_OAUTH_SERVICE,
             DefaultOAuthURLv2 = AuthIdOptionsHelper.DUPLICATI_OAUTH_SERVICE_NEW,
             PowerModeProviders = systeminfo.PowerModeProviders,
+            LocalLicenseStatus = SystemInfoDto.LicenseStatusDto.Map(Proprietary.LicenseChecker.LicenseHelper.GetLocalLicenseData()),
+            RemoteLicenseStatus = SystemInfoDto.LicenseStatusDto.Map(Proprietary.LicenseChecker.LicenseHelper.GetRemoteLicenseData())
         };
     }
 }

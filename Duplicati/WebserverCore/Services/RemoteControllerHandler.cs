@@ -98,6 +98,15 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
                 connection.ApplicationSettings.RemoteControlStorageApiKey = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageApiKeyKey);
                 connection.ApplicationSettings.RemoteControlStorageEndpointUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageEndpointUrlKey);
 
+                var newLicenseKey = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ClientLicenseKeyKey);
+                var currentLicenseKey = connection.ApplicationSettings.ClientLicenseKey;
+
+                if (newLicenseKey != currentLicenseKey)
+                {
+                    connection.ApplicationSettings.ClientLicenseKey = newLicenseKey;
+                    Duplicati.Proprietary.LicenseChecker.LicenseHelper.SetRemoteClientLicenseKey(newLicenseKey);
+                }
+
                 var backupConfigs = message.ControlRequestMessage.Parameters
                     .Where(kv => kv.Key.StartsWith(ControlRequestMessage.BackupConfigKeyPrefix, StringComparison.OrdinalIgnoreCase))
                     .Select(kv => kv.Key)

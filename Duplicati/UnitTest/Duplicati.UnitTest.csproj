@@ -44,6 +44,7 @@
     <ProjectReference Include="..\Tools\Duplicati.Tools.csproj" />
     <ProjectReference Include="..\..\Tools\RemoteSynchronization\RemoteSynchronization.csproj" />
     <ProjectReference Include="..\..\proprietary\DiskImage\Duplicati.Proprietary.DiskImage.csproj" />
+    <ProjectReference Include="..\WebserverCore\Duplicati.WebserverCore.csproj" />
   </ItemGroup>
 
   <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->
