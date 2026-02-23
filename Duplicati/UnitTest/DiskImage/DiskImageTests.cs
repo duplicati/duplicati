@@ -37,15 +37,15 @@ namespace Duplicati.UnitTest
 {
     /// <summary>
     /// Unit tests for the DiskImage backup and restore functionality.
-    /// These tests use VHD files managed via diskpart to test the full backup and restore flow.
+    /// These tests use disk image files managed to test the full backup and restore flow.
     /// </summary>
     [TestFixture]
     [Category("DiskImage")]
-    [Platform("Win")]
+    [Platform("Win,MacOsX")]
     public class DiskImageTests : BasicSetupHelper
     {
-        private string _sourceVhdPath = null!;
-        private string _restoreVhdPath = null!;
+        private string _sourceImagePath = null!;
+        private string _restoreImagePath = null!;
         private DiskImage.IDiskImageHelper _diskHelper = null!;
 
         private const long MiB20 = 20 * 1024 * 1024;
@@ -54,7 +54,7 @@ namespace Duplicati.UnitTest
 
         /// <summary>
         /// Sets up the test environment before each test.
-        /// Creates the disk helper and temporary VHD paths.
+        /// Creates the disk helper and temporary disk image paths.
         /// </summary>
         [SetUp]
         public void DiskImageSetUp()
@@ -68,36 +68,37 @@ namespace Duplicati.UnitTest
                 Assert.Ignore("DiskImage tests require administrator privileges");
             }
 
-            // Create temp VHD paths
+            // Create temp disk image paths
             var tempPath = Path.GetTempPath();
-            _sourceVhdPath = Path.Combine(tempPath, $"duplicati_test_source_{Guid.NewGuid()}.vhdx");
-            _restoreVhdPath = Path.Combine(tempPath, $"duplicati_test_restore_{Guid.NewGuid()}.vhdx");
+            var extension = OperatingSystem.IsWindows() ? "vhdx" : "dmg";
+            _sourceImagePath = Path.Combine(tempPath, $"duplicati_test_source_{Guid.NewGuid()}.{extension}");
+            _restoreImagePath = Path.Combine(tempPath, $"duplicati_test_restore_{Guid.NewGuid()}.{extension}");
         }
 
         /// <summary>
         /// Cleans up the test environment after each test.
-        /// Detaches and deletes VHD files.
+        /// Detaches and deletes disk image files.
         /// </summary>
         [TearDown]
         public void DiskImageTearDown()
         {
-            // Cleanup VHDs
+            // Cleanup disk images
             try
             {
-                _diskHelper.CleanupDisk(_sourceVhdPath);
+                _diskHelper.CleanupDisk(_sourceImagePath);
             }
             catch (Exception ex)
             {
-                TestContext.Progress.WriteLine($"Warning: Failed to cleanup source VHD: {ex.Message}");
+                TestContext.Progress.WriteLine($"Warning: Failed to cleanup source disk image: {ex.Message}");
             }
 
             try
             {
-                _diskHelper.CleanupDisk(_restoreVhdPath);
+                _diskHelper.CleanupDisk(_restoreImagePath);
             }
             catch (Exception ex)
             {
-                TestContext.Progress.WriteLine($"Warning: Failed to cleanup restore VHD: {ex.Message}");
+                TestContext.Progress.WriteLine($"Warning: Failed to cleanup restore disk image: {ex.Message}");
             }
 
             try
@@ -118,8 +119,8 @@ namespace Duplicati.UnitTest
         {
             await TestContext.Progress.WriteLineAsync("Test: Full Round-Trip Backup + Restore");
 
-            var sourceDrivePath = _diskHelper.CreateDisk(_sourceVhdPath, size);
-            await TestContext.Progress.WriteLineAsync($"Source Disk created at: {_sourceVhdPath}");
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, size);
+            await TestContext.Progress.WriteLineAsync($"Source Disk created at: {_sourceImagePath}");
 
             var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, tableType, partitions);
             await TestContext.Progress.WriteLineAsync($"Source Disk initialized with partition(s): {string.Join(", ", sourcePartitions)}");
@@ -134,9 +135,9 @@ namespace Duplicati.UnitTest
             TestUtils.AssertResults(backupResults);
             await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
-            // Setup restore target VHD with same geometry
-            var restoreDrivePath = _diskHelper.CreateDisk(_restoreVhdPath, size);
-            await TestContext.Progress.WriteLineAsync($"Restore VHD created at: {_restoreVhdPath}");
+            // Setup restore target disk image with same geometry
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, size);
+            await TestContext.Progress.WriteLineAsync($"Restore disk image created at: {_restoreImagePath}");
 
             // Restore
             var restoreResults = RunRestore(restoreDrivePath);
@@ -161,8 +162,8 @@ namespace Duplicati.UnitTest
         {
             await TestContext.Progress.WriteLineAsync("Test: Full Round-Trip Backup + Restore");
 
-            var sourceDrivePath = _diskHelper.CreateDisk(_sourceVhdPath, 100 * 1024 * 1024);
-            await TestContext.Progress.WriteLineAsync($"Source Disk created at: {_sourceVhdPath}");
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, 100 * 1024 * 1024);
+            await TestContext.Progress.WriteLineAsync($"Source Disk created at: {_sourceImagePath}");
 
             var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 50)]);
             await TestContext.Progress.WriteLineAsync($"Source Disk initialized with partition(s): {string.Join(", ", sourcePartitions)}");
@@ -195,9 +196,9 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: SourceProvider Enumeration");
 
             // Setup: Create GPT disk with one FAT32 partition
-            var sourceDrivePath = _diskHelper.CreateDisk(_sourceVhdPath, MiB100);
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, MiB100);
             var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
-            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
+            TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
 
             // Directly instantiate SourceProvider
             // Note: When directly instantiating SourceProvider, we don't use the @ prefix
@@ -255,22 +256,22 @@ namespace Duplicati.UnitTest
         {
             TestContext.Progress.WriteLine("Test: Auto Unmount Option - Restore While Disk Online");
 
-            // Setup source VHD: 100MB, GPT, single FAT32 partition
-            var sourceDrivePath = _diskHelper.CreateDisk(_sourceVhdPath, MiB100);
+            // Setup source disk image: 100MB, GPT, single FAT32 partition
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, MiB100);
             var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
-            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
+            TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
 
             // Backup
             var backupResults = RunBackup(sourceDrivePath);
             TestUtils.AssertResults(backupResults);
             TestContext.Progress.WriteLine($"Backup completed successfully");
 
-            // Create and attach VHD
-            var restoreDrivePath = _diskHelper.CreateDisk(_restoreVhdPath, MiB100);
+            // Create and attach disk image
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, MiB100);
 
             // Initialize disk (the restore will overwrite this, but we need it formatted)
             _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
-            TestContext.Progress.WriteLine($"Restore VHD created and kept online at: {_restoreVhdPath}");
+            TestContext.Progress.WriteLine($"Restore disk image created and kept online at: {_restoreImagePath}");
 
             // First attempt: Restore without auto-unmount option should fail
             // because the disk is online and in use
@@ -499,7 +500,7 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(sourceTable.SectorSize, restoreTable.SectorSize, "Sector sizes should match");
             Assert.AreEqual(sourceTable.Size, restoreTable.Size, "Size of the disks should match");
 
-            // Parse partition information from diskpart output
+            // Retrieve partition information
             var sourcePartitions = _diskHelper.GetPartitions(sourceDrivePath);
             var restorePartitions = _diskHelper.GetPartitions(restoreDrivePath);
 
