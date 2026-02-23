@@ -195,7 +195,7 @@ namespace Duplicati.UnitTest.DiskImage
                 var fsType = p.Item1 switch
                 {
                     Proprietary.DiskImage.FileSystemType.NTFS => throw new NotSupportedException("NTFS is not natively supported on macOS for creating partitions. Use ExFAT or FAT32 instead."),
-                    Proprietary.DiskImage.FileSystemType.FAT32 => "MS-DOS FAT32",
+                    Proprietary.DiskImage.FileSystemType.FAT32 => "\"MS-DOS FAT32\"",
                     Proprietary.DiskImage.FileSystemType.ExFAT => "ExFAT",
                     Proprietary.DiskImage.FileSystemType.HFSPlus => "HFS+",
                     Proprietary.DiskImage.FileSystemType.APFS => "APFS",
