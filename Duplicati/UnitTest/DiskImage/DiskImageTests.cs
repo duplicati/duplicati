@@ -426,12 +426,12 @@ namespace Duplicati.UnitTest
                 Assert.That(geometryFile, Is.Not.Null, "geometry.json should be present in the backup");
 
                 // Restore and parse the geometry.json file
-                var tempGeometryPath = Path.Combine(Path.GetTempPath(), $"geometry_{Guid.NewGuid()}.json");
+                var geometryPath = Path.Combine(RESTOREFOLDER, $"geometry.json");
                 try
                 {
                     var restoreOptions = new Dictionary<string, string>(options)
                     {
-                        ["restore-path"] = Path.GetDirectoryName(tempGeometryPath)!,
+                        ["restore-path"] = RESTOREFOLDER,
                         ["overwrite"] = "true"
                     };
 
@@ -442,9 +442,9 @@ namespace Duplicati.UnitTest
                     }
 
                     // Read and parse the geometry.json
-                    if (File.Exists(tempGeometryPath))
+                    if (File.Exists(geometryPath))
                     {
-                        var json = File.ReadAllText(tempGeometryPath);
+                        var json = File.ReadAllText(geometryPath);
                         var geometry = GeometryMetadata.FromJson(json);
 
                         Assert.That(geometry, Is.Not.Null, "geometry.json should deserialize successfully");
@@ -465,9 +465,9 @@ namespace Duplicati.UnitTest
                 {
                     try
                     {
-                        if (File.Exists(tempGeometryPath))
+                        if (File.Exists(geometryPath))
                         {
-                            File.Delete(tempGeometryPath);
+                            File.Delete(geometryPath);
                         }
                     }
                     catch
