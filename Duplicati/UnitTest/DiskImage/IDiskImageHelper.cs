@@ -39,98 +39,55 @@ namespace Duplicati.UnitTest.DiskImage
         /// <param name="imagePath">The path where the disk image file will be created.</param>
         /// <param name="sizeMB">The size of the disk image in megabytes.</param>
         /// <returns>The physical drive path (e.g., \\.\PhysicalDriveN on Windows, /dev/loopN on Linux).</returns>
-        string CreateAndAttachDisk(string imagePath, long sizeMB);
+        string CreateDisk(string imagePath, long sizeMB);
 
         /// <summary>
-        /// Gets the disk number or identifier for an attached disk image.
+        /// Initializes, partitions, and formats a disk based on the provided parameters
         /// </summary>
-        /// <param name="imagePath">The path to the disk image file.</param>
-        /// <returns>The disk number/index, or -1 if not found.</returns>
-        int GetDiskNumber(string imagePath);
+        /// <param name="diskIdentifier">The identifier of the disk to initialize.</param>
+        /// <param name="tableType">The type of partition table to create (e.g., GPT, MBR).</param>
+        /// <param name="partitions">An array of tuples specifying the file system type and size for each partition. If the size is 0, the partition will use the remaining available space.</param>
+        /// <returns>An array of mount points for the created partitions.</returns>
+        string[] InitializeDisk(string diskIdentifier, PartitionTableType tableType, (FileSystemType, long)[] partitions);
 
         /// <summary>
-        /// Initializes a disk with the specified partition table type (GPT or MBR).
+        /// Mounts all of the partitions on the specified disk and returns their mount points.
         /// </summary>
-        /// <param name="diskNumber">The disk number.</param>
-        /// <param name="tableType">The partition table type (GPT or MBR).</param>
-        void InitializeDisk(int diskNumber, PartitionTableType tableType);
+        /// <param name="diskIdentifier">The identifier of the disk to mount.</param>
+        /// <returns>An array of mount points for the mounted partitions.</returns>
+        string[] Mount(string diskIdentifier);
 
         /// <summary>
-        /// Creates a partition on the specified disk, formats it with the specified filesystem,
-        /// and assigns a drive letter or mount point.
+        /// Unmounts all of the partitions on the specified disk, ensuring they are safely detached from the system. The disk will still be attached, but will be pulled offline. After this call, the disk device can be written to.
         /// </summary>
-        /// <param name="diskNumber">The disk number.</param>
-        /// <param name="fsType">The filesystem type (NTFS, FAT32, EXT4, etc.).</param>
-        /// <param name="sizeMB">The size of the partition in MB (0 for all available space).</param>
-        /// <returns>The assigned drive letter (Windows) or mount point identifier.</returns>
-        char CreateAndFormatPartition(int diskNumber, FileSystemType fsType, long sizeMB = 0);
-
-        /// <summary>
-        /// Flushes the volume cache to ensure all data is written to disk.
-        /// </summary>
-        /// <param name="driveLetter">The drive letter or mount point identifier.</param>
-        void FlushVolume(char driveLetter);
-
-        /// <summary>
-        /// Populates a drive with test data including files of various sizes and directory structures.
-        /// </summary>
-        /// <param name="driveLetter">The drive letter to populate.</param>
-        /// <param name="fileCount">The number of files to create.</param>
-        /// <param name="fileSizeKB">The size of each file in KB.</param>
-        void PopulateTestData(char driveLetter, int fileCount = 10, int fileSizeKB = 10);
-
-        /// <summary>
-        /// Detaches a disk image file from the system.
-        /// </summary>
-        /// <param name="imagePath">The path to the disk image file.</param>
-        void DetachDisk(string imagePath);
-
-        /// <summary>
-        /// Unmounts a disk image for writing operations by removing drive letters/mount points
-        /// and setting the disk offline.
-        /// </summary>
-        /// <param name="imagePath">The path to the disk image file.</param>
-        /// <param name="driveLetter">Optional drive letter to unmount. If null, will attempt to detect.</param>
-        void UnmountForWriting(string imagePath, char? driveLetter = null);
-
-        /// <summary>
-        /// Brings a disk online for read operations.
-        /// </summary>
-        /// <param name="imagePath">The path to the disk image file.</param>
-        void BringOnline(string imagePath);
-
-        /// <summary>
-        /// Mounts a disk image for reading and returns the assigned drive letter.
-        /// </summary>
-        /// <param name="imagePath">The path to the disk image file.</param>
-        /// <param name="driveLetter">Optional preferred drive letter. If null, one will be assigned.</param>
-        /// <returns>The assigned drive letter.</returns>
-        char MountForReading(string imagePath, char? driveLetter = null);
+        /// <param name="diskIdentifier">The identifier of the disk to unmount.</param>
+        void Unmount(string diskIdentifier);
 
         /// <summary>
         /// Cleans up and deletes a disk image file, ensuring it is detached first.
         /// </summary>
         /// <param name="imagePath">The path to the disk image file.</param>
-        void CleanupDisk(string imagePath);
-
-        /// <summary>
-        /// Gets detailed information about a disk.
-        /// </summary>
-        /// <param name="diskNumber">The disk number.</param>
-        /// <returns>Detailed information about the disk.</returns>
-        string GetDiskDetails(int diskNumber);
-
-        /// <summary>
-        /// Gets the volume information for a drive letter.
-        /// </summary>
-        /// <param name="driveLetter">The drive letter.</param>
-        /// <returns>The volume information.</returns>
-        string GetVolumeInfo(char driveLetter);
+        /// <param name="diskIdentifier">The identifier of the disk to clean up. If null, the method will attempt to determine the disk based on the image path.</param>
+        void CleanupDisk(string imagePath, string? diskIdentifier = null);
 
         /// <summary>
         /// Checks if the current process has the necessary privileges to perform disk operations.
         /// </summary>
         /// <returns><c>true</c> if running with sufficient privileges; otherwise, <c>false</c>.</returns>
         bool HasRequiredPrivileges();
+
+        /// <summary>
+        /// Retrieves the partition table information for a given disk identifier.
+        /// </summary>
+        /// <param name="diskIdentifier">The identifier of the disk.</param>
+        /// <returns>The partition table geometry of the disk.</returns>
+        PartitionTableGeometry GetPartitionTable(string diskIdentifier);
+
+        /// <summary>
+        /// Retrieves the partition information for a given disk identifier.
+        /// </summary>
+        /// <param name="diskIdentifier">The identifier of the disk.</param>
+        /// <returns>An array of partition geometries for the disk.</returns>
+        PartitionGeometry[] GetPartitions(string diskIdentifier);
     }
 }
