@@ -89,5 +89,11 @@ namespace Duplicati.UnitTest.DiskImage
         /// <param name="diskIdentifier">The identifier of the disk.</param>
         /// <returns>An array of partition geometries for the disk.</returns>
         PartitionGeometry[] GetPartitions(string diskIdentifier);
+
+        /// <summary>
+        /// Flushes the specified disk. Important prior to reading the disk raw.
+        /// </summary>
+        /// <param name="diskIdentifier">The identifier of the disk to flush.</param>
+        void FlushDisk(string diskIdentifier);
     }
 }
