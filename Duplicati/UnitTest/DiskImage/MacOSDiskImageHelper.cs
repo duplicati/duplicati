@@ -152,9 +152,16 @@ namespace Duplicati.UnitTest.DiskImage
         public string[] Mount(string diskIdentifier)
         {
             // Check if already mounted
-            var mountPoints = GetMountPoints(diskIdentifier);
-            if (mountPoints.Length > 0)
-                return mountPoints;
+            try
+            {
+                var mountPoints = GetMountPoints(diskIdentifier);
+                if (mountPoints.Length > 0)
+                    return mountPoints;
+            }
+            catch
+            {
+                // Ignore errors and try mounting
+            }
 
             // Mount all volumes on the disk
             RunProcess("diskutil", $"mountDisk {diskIdentifier}");
