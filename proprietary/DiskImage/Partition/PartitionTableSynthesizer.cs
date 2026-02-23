@@ -304,6 +304,7 @@ internal static class PartitionTableSynthesizer
         BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 88, 4), entriesCrc);
 
         // Recalculate header CRC with updated partition entries CRC
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 16, 4), 0u); // Clear header CRC before calculation
         uint headerCrc = Crc32.Calculate(gptData, headerOffset, GptHeaderSize);
         BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 16, 4), headerCrc);
     }
