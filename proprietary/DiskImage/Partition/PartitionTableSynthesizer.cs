@@ -169,6 +169,7 @@ internal static class PartitionTableSynthesizer
     private static void WriteProtectiveMBR(byte[] gptData, GeometryMetadata metadata, int sectorSize, long diskSectors)
     {
         // Boot code (first 446 bytes) - zeros
+        gptData.AsSpan(0, 446).Clear();
 
         // Partition entry 1 (at offset 446): Protective MBR entry
         // Status byte
