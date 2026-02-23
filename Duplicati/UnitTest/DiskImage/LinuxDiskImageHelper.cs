@@ -34,7 +34,7 @@ namespace Duplicati.UnitTest.DiskImage
     {
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public string CreateDisk(string imagePath, long sizeMB) => throw new NotImplementedException();
+        public string CreateDisk(string imagePath, long sizeB) => throw new NotImplementedException();
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>

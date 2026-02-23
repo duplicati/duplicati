@@ -44,7 +44,7 @@ namespace Duplicati.UnitTest.DiskImage
         private string? _lastDiskDevice;
 
         /// <inheritdoc />
-        public string CreateDisk(string imagePath, long sizeMB)
+        public string CreateDisk(string imagePath, long sizeB)
         {
             // Ensure the directory exists
             var directory = Path.GetDirectoryName(imagePath);
@@ -67,7 +67,7 @@ namespace Duplicati.UnitTest.DiskImage
             var psi = new ProcessStartInfo
             {
                 FileName = "hdiutil",
-                Arguments = $"create -size {sizeMB}m -type UDIF -layout NONE -o \"{imagePath}\"",
+                Arguments = $"create -size {sizeB}b -type UDIF -layout NONE -o \"{imagePath}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,

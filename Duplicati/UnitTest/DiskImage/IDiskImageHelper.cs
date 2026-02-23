@@ -37,9 +37,9 @@ namespace Duplicati.UnitTest.DiskImage
         /// Creates a virtual disk file, attaches it to the system, and returns the physical drive path.
         /// </summary>
         /// <param name="imagePath">The path where the disk image file will be created.</param>
-        /// <param name="sizeMB">The size of the disk image in megabytes.</param>
+        /// <param name="sizeB">The size of the disk image in bytes.</param>
         /// <returns>The physical drive path (e.g., \\.\PhysicalDriveN on Windows, /dev/loopN on Linux).</returns>
-        string CreateDisk(string imagePath, long sizeMB);
+        string CreateDisk(string imagePath, long sizeB);
 
         /// <summary>
         /// Initializes, partitions, and formats a disk based on the provided parameters
