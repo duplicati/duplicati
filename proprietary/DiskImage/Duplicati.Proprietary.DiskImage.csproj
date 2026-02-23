@@ -24,6 +24,8 @@
   <Target Name="CompileNativeLibrary" AfterTargets="Build" Condition="$([MSBuild]::IsOSPlatform('osx'))">
     <!-- Compile the dylib directly to the project directory -->
     <Exec Command="clang -dynamiclib -o $(OutputPath)libSystem_wrapper.dylib $(ProjectDir)Disk/macos_libSystem_wrapper.c" />
+    <!-- Change permissions to 777, so everybody can delete / overwrite the lib when building. -->
+    <Exec Command="chmod 777 $(OutputPath)libSystem_wrapper.dylib" />
   </Target>
 
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('osx'))">
