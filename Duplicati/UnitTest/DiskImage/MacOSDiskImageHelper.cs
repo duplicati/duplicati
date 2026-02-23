@@ -471,9 +471,9 @@ namespace Duplicati.UnitTest.DiskImage
                 var parts = line.Split([':'], 2);
                 switch (parts[0].Trim())
                 {
-                    case "Device Node":
-                        if (!string.Equals(parts[1].Trim(), diskIdentifier, StringComparison.OrdinalIgnoreCase))
-                            throw new InvalidOperationException($"Disk identifier mismatch in diskutil info output: expected {diskIdentifier}, got {parts[1].Trim()}");
+                    case "Device Identifier":
+                        if (!diskIdentifier.EndsWith(parts[1].Trim(), StringComparison.OrdinalIgnoreCase))
+                            throw new InvalidOperationException($"Disk identifier mismatch in diskutil info output: {diskIdentifier} doesn't end with {parts[1].Trim()}");
                         break;
                     case "Content (IOContent)":
                         tableType = parts[1].Trim() switch
@@ -484,23 +484,9 @@ namespace Duplicati.UnitTest.DiskImage
                         };
                         break;
                     case "Disk Size":
-                        var sizePart = parts[1].Trim().Split(' ').FirstOrDefault();
-                        var unitPart = parts[1].Trim().Split(' ').Skip(1).FirstOrDefault();
-                        if (sizePart != null && unitPart != null)
-                        {
-                            if (long.TryParse(sizePart, out long parsedSize))
-                            {
-                                size = unitPart switch
-                                {
-                                    "TB" => parsedSize * 1_000_000_000_000,
-                                    "GB" => parsedSize * 1_000_000_000,
-                                    "MB" => parsedSize * 1_000_000,
-                                    "KB" => parsedSize * 1_000,
-                                    "B" => parsedSize,
-                                    _ => -1
-                                };
-                            }
-                        }
+                        var totalbytesPart = parts[1].Trim().Split(' ').Skip(2).FirstOrDefault()?.TrimStart('(').TrimEnd(')');
+                        if (totalbytesPart is not null)
+                            size = long.TryParse(totalbytesPart, out long parsedSize) ? parsedSize : -1;
                         break;
                     case "Device Block Size":
                         var sectorSizePart = parts[1].Trim().Split(' ').FirstOrDefault();
