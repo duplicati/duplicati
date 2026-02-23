@@ -64,55 +64,13 @@ namespace Duplicati.UnitTest.DiskImage
 
             // Create a raw disk image using hdiutil
             // Use UDIF format with "Free Space" filesystem (unformatted)
-            var psi = new ProcessStartInfo
-            {
-                FileName = "hdiutil",
-                Arguments = $"create -size {sizeB} -type UDIF -layout NONE -o \"{imagePath}\"",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+            RunProcess("hdiutil", $"create -size {sizeB} -type UDIF -layout NONE -o \"{imagePath}\"");
 
-            using (var process = new Process { StartInfo = psi })
-            {
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-                process.WaitForExit();
+            var output = RunProcess("hdiutil", $"attach -nomount \"{imagePath}\"");
 
-                if (process.ExitCode != 0)
-                    throw new InvalidOperationException($"Failed to create disk image '{imagePath}': {error}");
-            }
-
-            // Attach the disk image without mounting
-            psi = new ProcessStartInfo
-            {
-                FileName = "hdiutil",
-                Arguments = $"attach -nomount \"{imagePath}\"",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            string diskDevice;
-            using (var process = new Process { StartInfo = psi })
-            {
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-                process.WaitForExit();
-
-                if (process.ExitCode != 0)
-                    throw new InvalidOperationException($"Failed to attach disk image: {error}");
-
-                // Parse the disk device from output (e.g., "/dev/disk4")
-                diskDevice = output.Trim().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim()
-                    ?? throw new InvalidOperationException("Failed to get disk device from hdiutil attach output");
-
-                _lastDiskDevice = diskDevice;
-            }
+            // Parse the disk device from output (e.g., "/dev/disk4")
+            var diskDevice = output.Trim().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim()
+                ?? throw new InvalidOperationException("Failed to get disk device from hdiutil attach output");
 
             // Return the raw device path for direct I/O
             return diskDevice.Replace("/dev/disk", "/dev/rdisk");
@@ -120,20 +78,7 @@ namespace Duplicati.UnitTest.DiskImage
 
         private string[] GetPartitionNames(string diskIdentifier)
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "diskutil",
-                Arguments = $"list {diskIdentifier}",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process { StartInfo = psi };
-            process.Start();
-            string output = process.StandardOutput.ReadToEnd();
-            process.WaitForExit();
+            var output = RunProcess("diskutil", $"list {diskIdentifier}");
 
             // Very hardcoded to disks with < 10 partitions and no identifiers with spaces. Should be sufficient for test purposes.
             return output
@@ -154,20 +99,7 @@ namespace Duplicati.UnitTest.DiskImage
 
             foreach (var partition in partitions)
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "diskutil",
-                    Arguments = $"info /dev/{partition}",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = new Process { StartInfo = psi };
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
+                var output = RunProcess("diskutil", $"info /dev/{partition}");
 
                 var mountLine = output
                     .Split('\n')
@@ -208,24 +140,7 @@ namespace Duplicati.UnitTest.DiskImage
             : ["Free Space \"\" 0"];
             var partitionArgs = string.Join(" ", partitionStrings);
 
-            var psi = new ProcessStartInfo
-            {
-                FileName = "diskutil",
-                Arguments = $"partitionDisk {diskIdentifier} {tableType.ToString().ToUpperInvariant()} {partitionArgs}",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process { StartInfo = psi };
-            process.Start();
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0)
-                throw new InvalidOperationException($"Failed to initialize disk: {error}");
+            RunProcess("diskutil", $"partitionDisk {diskIdentifier} {tableType.ToString().ToUpperInvariant()} {partitionArgs}");
 
             if (partitions.Length == 0)
                 return [];
@@ -242,24 +157,7 @@ namespace Duplicati.UnitTest.DiskImage
                 return mountPoints;
 
             // Mount all volumes on the disk
-            var psi = new ProcessStartInfo
-            {
-                FileName = "diskutil",
-                Arguments = $"mountDisk {diskIdentifier}",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process { StartInfo = psi };
-            process.Start();
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0)
-                throw new InvalidOperationException($"Failed to mount disk: {error}");
+            RunProcess("diskutil", $"mountDisk {diskIdentifier}");
 
             // Find the mount points for the mounted partitions
             return GetMountPoints(diskIdentifier);
@@ -268,42 +166,14 @@ namespace Duplicati.UnitTest.DiskImage
         public void Unmount(string diskIdentifier)
         {
             // Unmount all volumes on the disk
-            var psi = new ProcessStartInfo
-            {
-                FileName = "diskutil",
-                Arguments = $"unmountDisk {diskIdentifier}",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process { StartInfo = psi };
-            process.Start();
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0)
-                throw new InvalidOperationException($"Failed to mount disk: {error}");
+            RunProcess("diskutil", $"unmountDisk {diskIdentifier}");
         }
 
         /// <inheritdoc />
         public void FlushDisk(string diskIdentifier)
         {
             // On macOS, use sync to flush all filesystem buffers
-            var psi = new ProcessStartInfo
-            {
-                FileName = "sync",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process { StartInfo = psi };
-            process.Start();
-            process.WaitForExit();
+            RunProcess("sync", "");
         }
 
         /// <inheritdoc />
@@ -311,25 +181,7 @@ namespace Duplicati.UnitTest.DiskImage
         {
             if (diskIdentifier is null)
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "hdiutil",
-                    Arguments = $"info",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = new Process { StartInfo = psi };
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
-
-                if (process.ExitCode != 0)
-                {
-                    throw new InvalidOperationException($"Failed to get hdiutil info: {process.StandardError.ReadToEnd()}");
-                }
+                var output = RunProcess("hdiutil", $"info");
 
                 diskIdentifier = output
                     .Split("================================================")
@@ -367,23 +219,7 @@ namespace Duplicati.UnitTest.DiskImage
 
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "diskutil",
-                    Arguments = $"eject {diskIdentifier}",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = new Process { StartInfo = psi };
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-                process.WaitForExit();
-                if (process.ExitCode != 0)
-                    TestContext.Progress.WriteLine($"Warning: Failed to eject disk {diskIdentifier}: {error}");
+                RunProcess("diskutil", $"eject {diskIdentifier}");
             }
             catch (Exception ex)
             {
@@ -407,20 +243,7 @@ namespace Duplicati.UnitTest.DiskImage
             // On macOS, check if running as root (UID 0)
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "id",
-                    Arguments = "-u",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = new Process { StartInfo = psi };
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd().Trim();
-                process.WaitForExit();
+                var output = RunProcess("id", "-u");
 
                 if (int.TryParse(output, out int uid))
                 {
@@ -438,24 +261,7 @@ namespace Duplicati.UnitTest.DiskImage
         /// <inheritdoc />
         public Proprietary.DiskImage.PartitionTableGeometry GetPartitionTable(string diskIdentifier)
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "diskutil",
-                Arguments = $"info {diskIdentifier}",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process { StartInfo = psi };
-            process.Start();
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0)
-                throw new InvalidOperationException($"Process diskutil exited with code {process.ExitCode}: {error}");
+            var output = RunProcess("diskutil", $"info {diskIdentifier}");
 
             var lines = output
                 .Split('\n')
@@ -516,24 +322,7 @@ namespace Duplicati.UnitTest.DiskImage
             var partitions = new List<PartitionGeometry>();
             foreach (var name in names)
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "diskutil",
-                    Arguments = $"info /dev/{name}",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = new Process { StartInfo = psi };
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-                process.WaitForExit();
-
-                if (process.ExitCode != 0)
-                    throw new InvalidOperationException($"Process diskutil exited with code {process.ExitCode}: {error}");
+                var output = RunProcess("diskutil", $"info /dev/{name}");
 
                 var lines = output
                     .Split('\n')
@@ -599,6 +388,35 @@ namespace Duplicati.UnitTest.DiskImage
             }
 
             return partitions.ToArray();
+        }
+
+        private string RunProcess(string fileName, string arguments)
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = new Process { StartInfo = psi };
+            process.Start();
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                Console.WriteLine($"Error running process {fileName} {arguments}");
+                Console.WriteLine($"Error: {error}");
+                Console.WriteLine($"Output: {output}");
+                throw new InvalidOperationException($"Process {fileName} exited with code {process.ExitCode}: {error}");
+            }
+
+            return output;
         }
 
         /// <inheritdoc />
