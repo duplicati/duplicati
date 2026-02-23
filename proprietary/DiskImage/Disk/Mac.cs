@@ -23,14 +23,12 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         // Disk ioctl constants from <sys/disk.h>
         private const ulong DKIOCGETBLOCKSIZE = 0x4004_6418;  // _IOR('d', 24, uint32_t)
         private const ulong DKIOCGETBLOCKCOUNT = 0x4008_6419; // _IOR('d', 25, uint64_t)
+        private const ulong DKIOCSYNCHRONIZECACHE = 0x2000_6416; // _IO('d', 22)
 
         // File open flags
         private const int O_RDONLY = 0x0000;
         private const int O_RDWR = 0x0002;
         private const int O_SYNC = 0x0080;
-
-        // fcntl constants
-        private const int F_FULLFSYNC = 51;
 
         private readonly string m_devicePath;
         private int m_fileDescriptor = -1;
@@ -248,8 +246,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             if (m_shouldFlush && m_fileDescriptor >= 0)
             {
-                // Use F_FULLFSYNC on macOS to guarantee flush to physical media
-                if (fcntl(m_fileDescriptor, F_FULLFSYNC, 0) < 0)
+                // Use DKIOCSYNCHRONIZECACHE on macOS to guarantee flush to physical media
+                if (ioctl_no_arg(m_fileDescriptor, DKIOCSYNCHRONIZECACHE) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
                     string errorMessage = GetErrnoMessage(errorCode);
@@ -484,14 +482,14 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         [LibraryImport("libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_uint64(int fd, ulong request, ref ulong value);
 
+        [LibraryImport("libSystem_wrapper.dylib", SetLastError = true)]
+        internal static partial int ioctl_no_arg(int fd, ulong request);
+
         [LibraryImport("libSystem", SetLastError = true)]
         private static partial int open([MarshalAs(UnmanagedType.LPStr)] string pathname, int flags);
 
         [LibraryImport("libSystem", SetLastError = true)]
         private static partial int close(int fd);
-
-        [LibraryImport("libSystem", SetLastError = true)]
-        private static partial int fcntl(int fd, int cmd, int arg);
 
         [LibraryImport("libSystem", SetLastError = true)]
         private static unsafe partial IntPtr pread(int fd, byte* buf, IntPtr count, long offset);

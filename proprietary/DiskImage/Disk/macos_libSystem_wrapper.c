@@ -19,3 +19,9 @@ int ioctl_uint64(int fd, unsigned long request, unsigned long *value)
 {
     return ioctl(fd, request, value);
 }
+
+// Wrapper for ioctl that takes no argument
+int ioctl_no_arg(int fd, unsigned long request)
+{
+    return ioctl(fd, request);
+}
