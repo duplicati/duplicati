@@ -337,7 +337,7 @@ internal static class PartitionTableSynthesizer
         BinaryPrimitives.WriteInt64LittleEndian(entriesData.AsSpan(offset + 48, 8), (long)0);
 
         // Partition name (72 bytes, UTF-16LE)
-        string name = part.Name ?? $"Partition {part.Number}";
+        string name = part.Name ?? "";
         var nameBytes = Encoding.Unicode.GetBytes(name);
         int nameLength = Math.Min(nameBytes.Length, 72);
         Array.Copy(nameBytes, 0, entriesData, offset + 56, nameLength);
