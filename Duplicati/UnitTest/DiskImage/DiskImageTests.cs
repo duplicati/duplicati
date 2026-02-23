@@ -304,25 +304,24 @@ namespace Duplicati.UnitTest
             await provider.Initialize(CancellationToken.None);
 
             // Enumerate entries
-            var entries = new List<ISourceProviderEntry>();
+            var diskEntries = new List<ISourceProviderEntry>();
             await foreach (var entry in provider.Enumerate(CancellationToken.None))
             {
-                entries.Add(entry);
+                diskEntries.Add(entry);
                 TestContext.Progress.WriteLine($"Found entry: {entry.Path} (IsFolder: {entry.IsFolder}, Size: {entry.Size})");
             }
 
             // Verify hierarchy: disk → partition → filesystem → files
-            Assert.That(entries.Count, Is.GreaterThan(0), "Should have at least one entry (the disk)");
+            Assert.That(diskEntries.Count, Is.GreaterThan(0), "Should have at least one entry (the disk)");
 
             // Fetch the rest of the enumaration.
             // Check for disk entry
-            var diskEntry = entries.FirstOrDefault(e => e.IsRootEntry);
+            var diskEntry = diskEntries.FirstOrDefault(e => e.IsRootEntry);
             Assert.That(diskEntry, Is.Not.Null, "Should have a root disk entry");
 
+            var entries = new List<ISourceProviderEntry>();
             await foreach (var entry in diskEntry!.Enumerate(CancellationToken.None))
-            {
                 entries.Add(entry);
-            }
 
             TestContext.Progress.WriteLine($"Total entries found: {entries.Count}");
 
@@ -334,8 +333,14 @@ namespace Duplicati.UnitTest
             var partitionEntries = entries.Where(e => e.Path.Contains("part_")).ToList();
             Assert.That(partitionEntries.Count, Is.GreaterThan(0), "Should have at least one partition entry");
 
+            // Add all of the filesystems.
+            var fsEntries = new List<ISourceProviderEntry>();
+            foreach (var partitionEntry in partitionEntries)
+                await foreach (var entry in partitionEntry.Enumerate(CancellationToken.None))
+                    fsEntries.Add(entry);
+
             // Check for filesystem entries
-            var fsEntries = entries.Where(e => e.Path.Contains("fs_")).ToList();
+            Assert.That(fsEntries.All(x => x.Path.Contains("fs_")));
             Assert.That(fsEntries.Count, Is.GreaterThan(0), "Should have at least one filesystem entry");
         }
 
