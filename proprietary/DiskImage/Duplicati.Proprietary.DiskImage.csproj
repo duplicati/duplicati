@@ -23,13 +23,13 @@
 
   <Target Name="CompileNativeLibrary" AfterTargets="Build" Condition="$([MSBuild]::IsOSPlatform('osx'))">
     <!-- Compile the dylib directly to the project directory -->
-    <Exec Command="clang -dynamiclib -o $(OutputPath)libSystem_ioctl_wrapper.dylib $(ProjectDir)Disk/macos_libSystem_ioctl_wrapper.c" />
+    <Exec Command="clang -dynamiclib -o $(OutputPath)libSystem_wrapper.dylib $(ProjectDir)Disk/macos_libSystem_wrapper.c" />
   </Target>
 
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('osx'))">
-    <ContentWithTargetPath Include="$(OutputPath)libSystem_ioctl_wrapper.dylib">
+    <ContentWithTargetPath Include="$(OutputPath)libSystem_wrapper.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>libSystem_ioctl_wrapper.dylib</TargetPath>
+      <TargetPath>libSystem_wrapper.dylib</TargetPath>
     </ContentWithTargetPath>
   </ItemGroup>
 

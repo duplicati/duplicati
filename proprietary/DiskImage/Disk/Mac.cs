@@ -478,10 +478,10 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
         #region P/Invoke Declarations
 
-        [LibraryImport("libSystem_ioctl_wrapper.dylib", SetLastError = true)]
+        [LibraryImport("libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_uint32(int fd, ulong request, ref uint value);
 
-        [LibraryImport("libSystem_ioctl_wrapper.dylib", SetLastError = true)]
+        [LibraryImport("libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_uint64(int fd, ulong request, ref ulong value);
 
         [LibraryImport("libSystem", SetLastError = true)]
