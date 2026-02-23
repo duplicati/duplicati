@@ -341,7 +341,7 @@ namespace Duplicati.UnitTest.DiskImage
                             .Select(l => l.Trim())
                             .Where(l => l.Length > 0)
                             .ToList();
-                        var imagePathLine = lines.FirstOrDefault(l => l.StartsWith("image-path:"));
+                        var imagePathLine = lines.FirstOrDefault(l => l.StartsWith("image-path"));
                         if (imagePathLine == null)
                             return null;
 
@@ -354,13 +354,16 @@ namespace Duplicati.UnitTest.DiskImage
                             return null;
 
                         var device = deviceLine
-                            .Split([' '], 2)[0]
+                            .Split(['\t'], 2)[0]
                             .Trim();
 
                         return device;
                     })
                     .FirstOrDefault(d => d != null);
             }
+
+            if (diskIdentifier is null)
+                throw new InvalidOperationException($"Failed to determine disk identifier for {imagePath} during cleanup");
 
             try
             {
