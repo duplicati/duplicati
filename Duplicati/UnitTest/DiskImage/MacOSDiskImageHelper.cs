@@ -67,7 +67,7 @@ namespace Duplicati.UnitTest.DiskImage
             var psi = new ProcessStartInfo
             {
                 FileName = "hdiutil",
-                Arguments = $"create -size {sizeB}b -type UDIF -layout NONE -o \"{imagePath}\"",
+                Arguments = $"create -size {sizeB} -type UDIF -layout NONE -o \"{imagePath}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
