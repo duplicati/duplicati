@@ -20,7 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.IO;
+using Duplicati.Proprietary.DiskImage;
 
 #nullable enable
 
@@ -34,111 +34,39 @@ namespace Duplicati.UnitTest.DiskImage
     {
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public string CreateAndAttachDisk(string imagePath, long sizeMB)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
+        public string CreateDisk(string imagePath, long sizeMB) => throw new NotImplementedException();
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public int GetDiskNumber(string imagePath)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
+        public string[] InitializeDisk(string diskIdentifier, PartitionTableType tableType, (FileSystemType, long)[] partitions) => throw new NotImplementedException();
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void InitializeDisk(int diskNumber, Duplicati.Proprietary.DiskImage.PartitionTableType tableType)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
+        public string[] Mount(string diskIdentifier) => throw new NotImplementedException();
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public char CreateAndFormatPartition(int diskNumber, Duplicati.Proprietary.DiskImage.FileSystemType fsType, long sizeMB = 0)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
+        public void Unmount(string diskIdentifier) => throw new NotImplementedException();
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void FlushVolume(char driveLetter)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
+        public void CleanupDisk(string imagePath, string? diskIdentifier = null) => throw new NotImplementedException();
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void PopulateTestData(char driveLetter, int fileCount = 10, int fileSizeKB = 10)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
+        public bool HasRequiredPrivileges() => throw new NotImplementedException();
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void DetachDisk(string imagePath)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
+        public PartitionTableGeometry GetPartitionTable(string diskIdentifier) => throw new NotImplementedException();
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void UnmountForWriting(string imagePath, char? driveLetter = null)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
+        public PartitionGeometry[] GetPartitions(string diskIdentifier) => throw new NotImplementedException();
 
         /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void BringOnline(string imagePath)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public char MountForReading(string imagePath, char? driveLetter = null)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void CleanupDisk(string imagePath)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public string GetDiskDetails(int diskNumber)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public string GetVolumeInfo(char driveLetter)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <remarks>
-        /// On Linux, checks if running as root (UID 0).
-        /// </remarks>
-        public bool HasRequiredPrivileges()
-        {
-            // On Linux, check if running as root (UID 0)
-            try
-            {
-                return Environment.UserName == "root" || System.Diagnostics.Process.GetCurrentProcess().Id == 0;
-            }
-            catch
-            {
-                return false;
-            }
-        }
+        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented
+        public void FlushDisk(string diskIdentifier) => throw new NotImplementedException();
 
         /// <inheritdoc />
         public void Dispose()
