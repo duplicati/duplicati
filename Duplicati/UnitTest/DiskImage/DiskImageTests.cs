@@ -69,10 +69,9 @@ namespace Duplicati.UnitTest
             }
 
             // Create temp disk image paths
-            var tempPath = Path.GetTempPath();
             var extension = OperatingSystem.IsWindows() ? "vhdx" : "dmg";
-            _sourceImagePath = Path.Combine(tempPath, $"duplicati_test_source_{Guid.NewGuid()}.{extension}");
-            _restoreImagePath = Path.Combine(tempPath, $"duplicati_test_restore_{Guid.NewGuid()}.{extension}");
+            _sourceImagePath = Path.Combine(DATAFOLDER, $"duplicati_test_source_{Guid.NewGuid()}.{extension}");
+            _restoreImagePath = Path.Combine(DATAFOLDER, $"duplicati_test_restore_{Guid.NewGuid()}.{extension}");
         }
 
         /// <summary>
