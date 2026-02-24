@@ -137,7 +137,7 @@ namespace Duplicati.UnitTest.DiskImage
                 var sizeArg = p.Item2 > 0 ? $"{p.Item2}" : "0";
                 return $"{fsType} \"Partition\" {sizeArg}";
             })
-            : ["Free Space \"\" 0"];
+            : ["\"Free Space\" \"\" 0"];
             var partitionArgs = string.Join(" ", partitionStrings);
 
             RunProcess("diskutil", $"partitionDisk {diskIdentifier} {tableType.ToString().ToUpperInvariant()} {partitionArgs}");
