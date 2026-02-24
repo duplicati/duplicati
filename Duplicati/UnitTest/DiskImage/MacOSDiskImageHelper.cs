@@ -307,22 +307,8 @@ namespace Duplicati.UnitTest.DiskImage
         /// <inheritdoc />
         public bool HasRequiredPrivileges()
         {
-            // On macOS, check if running as root (UID 0)
-            try
-            {
-                var output = RunProcess("id", "-u");
-
-                if (int.TryParse(output, out int uid))
-                {
-                    return uid == 0;
-                }
-            }
-            catch
-            {
-                // Ignore errors
-            }
-
-            return false;
+            // Root is not required for virtual disks.
+            return true;
         }
 
         /// <inheritdoc />
