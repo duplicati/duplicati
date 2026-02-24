@@ -123,7 +123,7 @@ public class WebModule : IWebModule
     private async Task<IDictionary<string, string>> ListPhysicalDrives(CancellationToken cancellationToken)
     {
         if (!OperatingSystem.IsWindows())
-            throw new PlatformNotSupportedException(Strings.RestorePlatformNotSupported);
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
 
         var script = @"
 $diskInfo =
