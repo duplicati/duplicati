@@ -178,7 +178,7 @@ namespace Duplicati.UnitTest.DiskImage
         public string[] InitializeDisk(string diskIdentifier, Proprietary.DiskImage.PartitionTableType tableType, (Proprietary.DiskImage.FileSystemType, long)[] partitions)
         {
             if (tableType == Proprietary.DiskImage.PartitionTableType.Unknown)
-                throw new ArgumentException("Invalid partition table type", nameof(tableType));
+                return []; // No partition table, so nothing to initialize
 
             // Use diskutil to partition the disk with the specified scheme
             // "Free Space" means no filesystem, just the partition table
@@ -369,7 +369,7 @@ namespace Duplicati.UnitTest.DiskImage
                 }
             }
 
-            if (tableType == PartitionTableType.Unknown || size == -1 || sectorSize == -1)
+            if (size == -1 || sectorSize == -1)
                 throw new InvalidOperationException($"Failed to retrieve partition table information for disk {diskIdentifier}");
 
             return new Proprietary.DiskImage.PartitionTableGeometry
