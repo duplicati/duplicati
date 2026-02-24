@@ -48,9 +48,7 @@ namespace Duplicati.UnitTest
         private string _restoreImagePath = null!;
         private DiskImage.IDiskImageHelper _diskHelper = null!;
 
-        private const long MiB20 = 20 * 1024 * 1024;
-        private const long MiB50 = 50 * 1024 * 1024;
-        private const long MiB100 = 100 * 1024 * 1024;
+        private const long MiB = 1024 * 1024;
 
         /// <summary>
         /// Sets up the test environment before each test.
@@ -196,7 +194,7 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: SourceProvider Enumeration");
 
             // Setup: Create GPT disk with one FAT32 partition
-            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, MiB100);
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (100 * MiB));
             var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
             TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
 
@@ -257,7 +255,7 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine("Test: Auto Unmount Option - Restore While Disk Online");
 
             // Setup source disk image: 100MB, GPT, single FAT32 partition
-            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, MiB100);
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (100 * MiB));
             var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
             TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
 
@@ -267,7 +265,7 @@ namespace Duplicati.UnitTest
             TestContext.Progress.WriteLine($"Backup completed successfully");
 
             // Create and attach disk image
-            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, MiB100);
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (100 * MiB));
 
             // Initialize disk (the restore will overwrite this, but we need it formatted)
             _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
