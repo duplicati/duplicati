@@ -454,10 +454,10 @@ namespace Duplicati.UnitTest
         {
             await TestContext.Progress.WriteLineAsync("Test: Full Round-Trip Backup + Restore");
 
-            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, 100 * 1024 * 1024);
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, 100 * MiB);
             await TestContext.Progress.WriteLineAsync($"Source Disk created at: {_sourceImagePath}");
 
-            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 50)]);
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 50 * MiB)]);
             await TestContext.Progress.WriteLineAsync($"Source Disk initialized with partition(s): {string.Join(", ", sourcePartitions)}");
 
             // Backup
