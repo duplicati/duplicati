@@ -221,7 +221,60 @@ namespace Duplicati.UnitTest.DiskImage
             // Mount all volumes on the disk
             RunProcess("diskutil", $"mountDisk {diskIdentifier}");
 
-            // Find the mount points for the mounted partitions
+            return WaitForMountPoints(diskIdentifier);
+        }
+
+        /// <summary>
+        /// Waits for mount points to be fully established after a mount operation.
+        /// Uses exponential backoff starting from a short delay to minimize wait time
+        /// in the common case while still handling slow mounts.
+        ///
+        /// After mounting (especially after raw partition table writes during restore),
+        /// macOS may need time to fully recognize filesystems and establish mount points
+        /// in /Volumes/. Without this retry loop, mount points may be:
+        /// - Not yet available (empty array)
+        /// - In a transient location like /private/var/ instead of /Volumes/
+        /// - Mounted but with empty directories (filesystem not yet recognized)
+        /// </summary>
+        /// <param name="diskIdentifier">The disk identifier to check mount points for.</param>
+        /// <returns>An array of mount point paths.</returns>
+        private string[] WaitForMountPoints(string diskIdentifier)
+        {
+            const int maxRetries = 10;
+            const int initialDelayMs = 100;
+            const int maxDelayMs = 1000;
+
+            var delayMs = initialDelayMs;
+            for (int i = 0; i < maxRetries; i++)
+            {
+                var mountPoints = GetMountPoints(diskIdentifier);
+
+                if (mountPoints.Length > 0)
+                {
+                    // Check if any mount points are in a transient location (not under /Volumes/)
+                    if (mountPoints.Any(mp => !mp.StartsWith("/Volumes/")))
+                    {
+                        Thread.Sleep(delayMs);
+                        delayMs = Math.Min(delayMs * 2, maxDelayMs);
+                        continue;
+                    }
+
+                    // Check if all mount points have filesystem entries (not empty)
+                    var allNonEmpty = mountPoints.All(mp =>
+                    {
+                        try { return Directory.GetFileSystemEntries(mp).Length > 0; }
+                        catch { return false; }
+                    });
+
+                    if (allNonEmpty || i == maxRetries - 1)
+                        return mountPoints;
+                }
+
+                Thread.Sleep(delayMs);
+                delayMs = Math.Min(delayMs * 2, maxDelayMs);
+            }
+
+            // Final attempt - return whatever we have
             return GetMountPoints(diskIdentifier);
         }
 
