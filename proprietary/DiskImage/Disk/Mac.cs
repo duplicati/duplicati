@@ -158,32 +158,6 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_initialized)
                 return Task.FromResult(true);
 
-            // First, try to unmount the disk if it's mounted (required for write access)
-            if (enableWrite)
-            {
-                try
-                {
-                    string blockDevicePath = m_devicePath.Replace("/dev/rdisk", "/dev/disk");
-                    var psi = new ProcessStartInfo
-                    {
-                        FileName = "diskutil",
-                        Arguments = $"unmountDisk {blockDevicePath}",
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
-
-                    using var process = new Process { StartInfo = psi };
-                    process.Start();
-                    process.WaitForExit(TimeSpan.FromSeconds(10));
-                }
-                catch (Exception ex)
-                {
-                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "initialize", null, $"Failed to unmount disk before opening: {ex.Message}");
-                }
-            }
-
             // Open the device
             int flags = enableWrite ? O_RDWR | O_SYNC : O_RDONLY;
             m_fileDescriptor = open(m_devicePath, flags);
