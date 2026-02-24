@@ -38,11 +38,6 @@ namespace Duplicati.UnitTest.DiskImage
     /// </summary>
     internal class MacOSDiskImageHelper : IDiskImageHelper
     {
-        /// <summary>
-        /// Tracks the last attached disk device path for cleanup.
-        /// </summary>
-        private string? _lastDiskDevice;
-
         /// <inheritdoc />
         public string CreateDisk(string imagePath, long sizeB)
         {
