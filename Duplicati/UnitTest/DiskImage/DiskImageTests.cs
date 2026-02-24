@@ -108,9 +108,302 @@ namespace Duplicati.UnitTest
             }
         }
 
+        #region GPT Single Partition
+
         [Test, Category("DiskImage")]
-        public Task Test_SingleGPTFAT32() =>
-            FullRoundTrip((int)MiB100, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+        public Task Test_GPT_FAT32() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_NTFS()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("Test_GPT_NTFS is only supported on Windows.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [(FileSystemType.NTFS, 0)]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_APFS()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [(FileSystemType.APFS, 0)]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [(FileSystemType.HFSPlus, 0)]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_ExFAT() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [(FileSystemType.ExFAT, 0)]);
+
+        #endregion
+
+        #region MBR Single Partition
+
+        // APFS is only supported on GPT partition tables.
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_FAT32() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
+
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [(FileSystemType.HFSPlus, 0)]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_ExFAT() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [(FileSystemType.ExFAT, 0)]);
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_NTFS()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("Test_MBR_NTFS is only supported on Windows.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [(FileSystemType.NTFS, 0)]);
+        }
+
+        #endregion
+
+        #region Unknown Partition Table
+
+        [Test, Category("DiskImage")]
+        public Task Test_Unknown_NoPartitions() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.Unknown, []);
+
+        #endregion
+
+        #region GPT Two Partitions
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_APFS_APFS()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.APFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_HFSPlus_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_APFS_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_FAT32_APFS()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.APFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_ExFAT_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.ExFAT, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_FAT32_ExFAT() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.ExFAT, 0)
+            ]);
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_NTFS_FAT32()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("This test is only supported on Windows.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
+
+        #endregion
+
+        #region MBR Two Partitions
+
+        // APFS is only supported on GPT partition tables.
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_HFSPlus_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_FAT32_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_NTFS_FAT32()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("This test is only supported on Windows.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
+
+        #endregion
+
+        #region GPT Three Partitions
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_Three_APFS()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS is only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.APFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_Three_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_Three_Mixed_Mac()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.APFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_Three_Mixed_Diverse()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_Three_Mixed_ExFAT()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.ExFAT, 50 * MiB),
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        #endregion
+
+        #region MBR Three Partitions
+
+        // APFS is only supported on GPT partition tables.
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_HFSPlus_HFSPlus_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_FAT32_ExFAT_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.ExFAT, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_NTFS_FAT32_ExFAT()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("This test is only supported on Windows.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.ExFAT, 0)
+            ]);
+        }
+
+        #endregion
 
         public async Task FullRoundTrip(int size, PartitionTableType tableType, (FileSystemType, long)[] partitions)
         {
