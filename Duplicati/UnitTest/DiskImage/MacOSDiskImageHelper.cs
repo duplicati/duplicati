@@ -352,7 +352,7 @@ namespace Duplicati.UnitTest.DiskImage
                         tableType = parts[1].Trim() switch
                         {
                             "GUID_partition_scheme" => PartitionTableType.GPT,
-                            "MBR_partition_scheme" => PartitionTableType.MBR,
+                            "FDisk_partition_scheme" => PartitionTableType.MBR,
                             _ => PartitionTableType.Unknown
                         };
                         break;
