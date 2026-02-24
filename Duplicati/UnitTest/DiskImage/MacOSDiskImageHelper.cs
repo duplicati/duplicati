@@ -101,17 +101,77 @@ namespace Duplicati.UnitTest.DiskImage
             {
                 var output = RunProcess("diskutil", $"info /dev/{partition}");
 
-                var mountLine = output
-                    .Split('\n')
-                    .FirstOrDefault(l => l.Trim().StartsWith("Mount Point:"))
-                    ?? throw new InvalidOperationException($"Failed to get mount point for partition {partition} of disk {diskIdentifier}");
+                // Check if this is an APFS Physical Store
+                var isApfsPhysicalStore = output.Contains("APFS Physical Store") ||
+                    output.Split('\n').Any(l => l.Trim().StartsWith("Partition Type:") && l.Contains("Apple_APFS"));
 
-                var mountPoint = mountLine.Split([':'], 2)[1].Trim();
-                if (!string.IsNullOrEmpty(mountPoint) && mountPoint != "Not mounted")
-                    mountPoints.Add(mountPoint);
+                if (isApfsPhysicalStore)
+                {
+                    // For APFS, get the container and then get volumes from it
+                    var containerLine = output
+                        .Split('\n')
+                        .FirstOrDefault(l => l.Trim().StartsWith("APFS Container:"));
+
+                    if (containerLine != null)
+                    {
+                        var containerId = containerLine.Split([':'], 2)[1].Trim();
+                        // Get volumes from the container (they are like disk5s1, disk5s2, etc.)
+                        var containerVolumes = GetApfsContainerVolumes(containerId);
+                        foreach (var volume in containerVolumes)
+                        {
+                            var volumeOutput = RunProcess("diskutil", $"info {volume}");
+                            var mountPoint = ExtractMountPoint(volumeOutput);
+                            if (!string.IsNullOrEmpty(mountPoint))
+                                mountPoints.Add(mountPoint);
+                        }
+                    }
+                }
+                else
+                {
+                    // Regular partition - extract mount point directly
+                    var mountPoint = ExtractMountPoint(output);
+                    if (!string.IsNullOrEmpty(mountPoint))
+                        mountPoints.Add(mountPoint);
+                }
             }
 
             return [.. mountPoints];
+        }
+
+        private string[] GetApfsContainerVolumes(string containerId)
+        {
+            var output = RunProcess("diskutil", $"list {containerId}");
+
+            // Parse volumes from container listing (format: disk5s1, disk5s2, etc.)
+            return output
+                .Split('\n')
+                .Select(x => x.Trim())
+                .Where(x => x.StartsWith(containerId + "s", StringComparison.OrdinalIgnoreCase))
+                .Select(x => x.Split([' '], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault())
+                .Where(x => x is not null)
+                .Select(x => x!)
+                .ToArray();
+        }
+
+        private string? ExtractMountPoint(string diskutilInfoOutput)
+        {
+            // Look for "Mount Point:" line
+            var mountLine = diskutilInfoOutput
+                .Split('\n')
+                .FirstOrDefault(l => l.Trim().StartsWith("Mount Point:"));
+
+            if (mountLine == null)
+                return null;
+
+            var mountPoint = mountLine.Split([':'], 2)[1].Trim();
+
+            // Return null if not mounted or not applicable
+            if (string.IsNullOrEmpty(mountPoint) ||
+                mountPoint == "Not mounted" ||
+                mountPoint == "Not applicable (no file system)")
+                return null;
+
+            return mountPoint;
         }
 
         /// <inheritdoc />
