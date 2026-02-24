@@ -428,6 +428,7 @@ namespace Duplicati.UnitTest
 
             // Setup restore target disk image with same geometry
             var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, size);
+            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
             await TestContext.Progress.WriteLineAsync($"Restore disk image created at: {_restoreImagePath}");
 
             // Restore
@@ -436,11 +437,11 @@ namespace Duplicati.UnitTest
             await TestContext.Progress.WriteLineAsync($"Restore completed successfully");
 
             // Verify partition table matches
+            var restorePartitions = _diskHelper.Mount(restoreDrivePath);
             VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
             await TestContext.Progress.WriteLineAsync($"Partition table verified to match source");
 
             // Verify data matches byte-for-byte
-            var restorePartitions = _diskHelper.Mount(restoreDrivePath);
             foreach (var (sourcePartition, restorePartition) in sourcePartitions.Zip(restorePartitions, (s, r) => (s, r)))
                 CompareDirectories(sourcePartition, restorePartition);
 
