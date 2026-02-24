@@ -20,12 +20,14 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
+using Duplicati.Proprietary.DiskImage;
 using NUnit.Framework;
 
 #nullable enable
@@ -298,320 +300,33 @@ namespace Duplicati.UnitTest.DiskImage
         /// </summary>
         /// <param name="script">The PowerShell script to execute.</param>
         /// <returns>The output from PowerShell.</returns>
-        public static string RunPowerShell(string script)
+        private static string RunPowerShell(string script)
         {
             var session = GetSession();
             return session.ExecuteScript(script);
         }
 
-        /// <inheritdoc />
-        public string CreateAndAttachDisk(string imagePath, long sizeMB)
+        /// <summary>
+        /// Extracts the disk number from a disk identifier string (e.g., "\\.\PhysicalDrive2" -> 2).
+        /// </summary>
+        /// <param name="diskIdentifier">The disk identifier string.</param>
+        /// <returns>The disk number.</returns>
+        private static int ParseDiskNumber(string diskIdentifier)
         {
-            // Ensure the directory exists
-            var directory = Path.GetDirectoryName(imagePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
+            const string prefix = @"\\.\PhysicalDrive";
+            if (diskIdentifier.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(diskIdentifier.Substring(prefix.Length), out int num))
+                return num;
 
-            // Delete existing VHD if it exists
-            if (File.Exists(imagePath))
-            {
-                try
-                {
-                    DetachDisk(imagePath);
-                    File.Delete(imagePath);
-                }
-                catch
-                {
-                    // Ignore errors during cleanup
-                }
-            }
-
-            // Create the VHD using PowerShell
-            var script = $@"New-VHD -Path '{imagePath}' -SizeBytes {sizeMB}MB -Fixed | Out-Null; Mount-DiskImage -ImagePath '{imagePath}' | Out-Null";
-            RunPowerShell(script);
-
-            // Wait for the disk to be attached and get the disk number
-            int diskNumber = WaitForDiskAttachment(imagePath, TimeSpan.FromSeconds(30));
-            if (diskNumber < 0)
-            {
-                throw new InvalidOperationException($"Failed to get disk number for VHD: {imagePath}");
-            }
-
-            return $"\\\\.\\PhysicalDrive{diskNumber}";
+            throw new ArgumentException($"Invalid disk identifier: {diskIdentifier}. Expected format: \\\\.\\PhysicalDriveN", nameof(diskIdentifier));
         }
 
         /// <summary>
-        /// Waits for a VHD to be attached and returns its disk number.
+        /// Gets the disk number for a VHD image file.
         /// </summary>
         /// <param name="imagePath">The path to the VHD file.</param>
-        /// <param name="timeout">Maximum time to wait.</param>
-        /// <returns>The disk number, or -1 if not found within the timeout.</returns>
-        private int WaitForDiskAttachment(string imagePath, TimeSpan timeout)
-        {
-            var startTime = DateTime.UtcNow;
-            while (DateTime.UtcNow - startTime < timeout)
-            {
-                var diskNumber = this.GetDiskNumber(imagePath);
-                if (diskNumber >= 0)
-                {
-                    return diskNumber;
-                }
-                Thread.Sleep(100);
-            }
-            return -1;
-        }
-
-        /// <inheritdoc />
-        public void InitializeDisk(int diskNumber, Duplicati.Proprietary.DiskImage.PartitionTableType tableType)
-        {
-            if (tableType == Proprietary.DiskImage.PartitionTableType.Unknown)
-                throw new ArgumentException("Invalid partition table type", nameof(tableType));
-
-            var script = $@"
-                $disk = Get-Disk -Number {diskNumber}
-                if ($disk.PartitionStyle -ne 'RAW') {{
-                    Clear-Disk -Number {diskNumber} -RemoveData -Confirm:$false
-                }}
-                Initialize-Disk -Number {diskNumber} -PartitionStyle {tableType.ToString().ToUpperInvariant()} -PassThru | Out-Null
-            ";
-            RunPowerShell(script);
-
-            // Wait for the initialization to complete
-            WaitForDiskInitialization(diskNumber, TimeSpan.FromSeconds(30));
-        }
-
-        /// <summary>
-        /// Waits for a disk to be initialized.
-        /// </summary>
-        /// <param name="diskNumber">The disk number.</param>
-        /// <param name="timeout">Maximum time to wait.</param>
-        /// <exception cref="TimeoutException">Thrown if initialization times out.</exception>
-        private static void WaitForDiskInitialization(int diskNumber, TimeSpan timeout)
-        {
-            var startTime = DateTime.UtcNow;
-            while (DateTime.UtcNow - startTime < timeout)
-            {
-                var script = $"(Get-Disk -Number {diskNumber}).PartitionStyle";
-                var result = RunPowerShell(script)?.Trim();
-                if (result == "GPT" || result == "MBR")
-                {
-                    return;
-                }
-                Thread.Sleep(100);
-            }
-            throw new TimeoutException($"Disk {diskNumber} initialization timed out");
-        }
-
-        /// <inheritdoc />
-        public char CreateAndFormatPartition(int diskNumber, Duplicati.Proprietary.DiskImage.FileSystemType fsType, long sizeMB = 0)
-        {
-            var fsTypeUpper = fsType.ToString().ToUpperInvariant();
-
-            // Find an available drive letter
-            char driveLetter = FindAvailableDriveLetter();
-
-            var sizeParam = sizeMB > 0 ? $"-Size {sizeMB}MB" : "-UseMaximumSize";
-
-            var script = $@"
-                $partition = New-Partition -DiskNumber {diskNumber} {sizeParam} -AssignDriveLetter
-                # Wait for the partition to be ready
-                $timeout = (Get-Date).AddSeconds(30)
-                while ((Get-Date) -lt $timeout) {{
-                    $vol = Get-Partition -DiskNumber {diskNumber} | Where-Object {{ $_.PartitionNumber -eq $partition.PartitionNumber }} | Get-Volume
-                    if ($vol) {{ break }}
-                    Start-Sleep -Milliseconds 100
-                }}
-                # Format the volume
-                $vol = Format-Volume -Partition $partition -FileSystem {fsTypeUpper} -NewFileSystemLabel 'TestVol' -Confirm:$false
-                # Get the assigned drive letter
-                (Get-Partition -DiskNumber {diskNumber} | Where-Object {{ $_.PartitionNumber -eq $partition.PartitionNumber }} | Get-Volume).DriveLetter
-            ";
-
-            var result = RunPowerShell(script);
-            var assignedLetter = result?.Trim();
-
-            if (!string.IsNullOrEmpty(assignedLetter) && assignedLetter.Length == 1 && char.IsLetter(assignedLetter[0]))
-            {
-                return char.ToUpperInvariant(assignedLetter[0]);
-            }
-
-            // Fallback: try to find the drive letter by checking the disk
-            return FindDriveLetterForDisk(diskNumber);
-        }
-
-        /// <summary>
-        /// Finds the drive letter assigned to a disk.
-        /// </summary>
-        /// <param name="diskNumber">The disk number.</param>
-        /// <returns>The drive letter.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if drive letter cannot be found.</exception>
-        private static char FindDriveLetterForDisk(int diskNumber)
-        {
-            var script = $@"
-                Get-Partition -DiskNumber {diskNumber} | Get-Volume | Where-Object {{ $_.DriveLetter -ne $null }} | Select-Object -ExpandProperty DriveLetter
-            ";
-            var result = RunPowerShell(script)?.Trim();
-
-            if (!string.IsNullOrEmpty(result) && result.Length >= 1 && char.IsLetter(result[0]))
-            {
-                return char.ToUpperInvariant(result[0]);
-            }
-
-            throw new InvalidOperationException($"Could not find drive letter for disk {diskNumber}");
-        }
-
-        /// <inheritdoc />
-        public void FlushVolume(char driveLetter)
-        {
-            try
-            {
-                var script = $@"
-                    Write-VolumeCache -DriveLetter {driveLetter}
-                ";
-                RunPowerShell(script);
-            }
-            catch (Exception ex)
-            {
-                TestContext.Progress.WriteLine($"Warning: Failed to flush volume cache: {ex.Message}");
-            }
-        }
-
-        /// <inheritdoc />
-        public void PopulateTestData(char driveLetter, int fileCount = 10, int fileSizeKB = 10)
-        {
-            var drivePath = $"{driveLetter}:\\";
-
-            // Create a small text file
-            File.WriteAllText(Path.Combine(drivePath, "testfile_small.txt"),
-                "This is a small test file for disk image backup testing.\n" +
-                "It contains simple text data.\n" +
-                new string('=', 100));
-
-            // Create a medium binary file with random data
-            var random = new Random(42); // Fixed seed for reproducibility
-            var mediumData = new byte[fileSizeKB * 1024];
-            random.NextBytes(mediumData);
-            File.WriteAllBytes(Path.Combine(drivePath, "testfile_medium.bin"), mediumData);
-
-            // Create nested directories with files
-            var testDir = Path.Combine(drivePath, "testdir");
-            Directory.CreateDirectory(testDir);
-            File.WriteAllText(Path.Combine(testDir, "nested_file.txt"),
-                "This file is in a nested directory.\n" +
-                $"Created at: {DateTime.UtcNow:O}\n");
-
-            var subDir = Path.Combine(testDir, "subdir");
-            Directory.CreateDirectory(subDir);
-            var deepData = new byte[1024];
-            random.NextBytes(deepData);
-            File.WriteAllBytes(Path.Combine(subDir, "deep_file.bin"), deepData);
-
-            // Create additional files if requested
-            for (int i = 0; i < fileCount - 4; i++)
-            {
-                var fileData = new byte[fileSizeKB * 1024];
-                random.NextBytes(fileData);
-                File.WriteAllBytes(Path.Combine(drivePath, $"testfile_{i:D3}.bin"), fileData);
-            }
-        }
-
-        /// <inheritdoc />
-        public void DetachDisk(string imagePath)
-        {
-            try
-            {
-                var script = $@"
-                    $image = Get-DiskImage -ImagePath '{imagePath}' -ErrorAction SilentlyContinue
-                    if ($image -and $image.Attached) {{
-                        Dismount-DiskImage -ImagePath '{imagePath}'
-                    }}
-                ";
-                RunPowerShell(script);
-            }
-            catch
-            {
-                // Ignore errors during detach - the disk may already be detached
-            }
-        }
-
-        /// <inheritdoc />
-        public void UnmountForWriting(string imagePath, char? driveLetter = null)
-        {
-            var diskNumber = GetDiskNumber(imagePath);
-            if (driveLetter == null)
-            {
-                try { driveLetter = FindDriveLetterForDisk(diskNumber); } catch { }
-            }
-
-            string script = string.Empty;
-            if (driveLetter != null && driveLetter != '\0')
-            {
-                // Remove the drive letter
-                script = $@"
-                    Get-Volume -Drive {driveLetter} | Get-Partition | Remove-PartitionAccessPath -AccessPath {driveLetter}:\
-                ";
-                RunPowerShell(script);
-            }
-
-            // Pull the disk offline to ensure it's not in use
-            script = $@"
-                Set-Disk -Number {diskNumber} -IsOffline $true
-            ";
-            RunPowerShell(script);
-
-            // Clear the readonly flag
-            script = $@"
-                Set-Disk -Number {diskNumber} -IsReadOnly $false
-            ";
-            RunPowerShell(script);
-        }
-
-        /// <inheritdoc />
-        public void BringOnline(string imagePath)
-        {
-            var diskNumber = GetDiskNumber(imagePath);
-            if (diskNumber >= 0)
-            {
-                var script = $@"
-                    Set-Disk -Number {diskNumber} -IsOffline $false
-                    Update-Disk -Number {diskNumber}
-                    Update-HostStorageCache
-                ";
-                RunPowerShell(script);
-            }
-        }
-
-        /// <inheritdoc />
-        public char MountForReading(string imagePath, char? driveLetter = null)
-        {
-            driveLetter ??= FindAvailableDriveLetter();
-
-            try
-            {
-                var diskNumber = GetDiskNumber(imagePath);
-                if (diskNumber >= 0)
-                {
-                    var script = $@"
-                        Set-Disk -Number {diskNumber} -IsOffline $false
-                        Update-Disk -Number {diskNumber}
-                        Update-HostStorageCache
-                        Get-Partition -DiskNumber {diskNumber} | Set-Partition -NewDriveLetter {driveLetter}
-                    ";
-                    RunPowerShell(script);
-                }
-            }
-            catch (Exception ex)
-            {
-                TestContext.Progress.WriteLine($"Warning: Failed to mount VHD for reading: {ex.Message}");
-            }
-
-            return driveLetter.Value;
-        }
-
-        /// <inheritdoc />
-        public int GetDiskNumber(string imagePath)
+        /// <returns>The disk number, or -1 if not found.</returns>
+        private static int GetDiskNumber(string imagePath)
         {
             try
             {
@@ -624,9 +339,7 @@ namespace Duplicati.UnitTest.DiskImage
                 var result = RunPowerShell(script)?.Trim();
 
                 if (!string.IsNullOrEmpty(result) && int.TryParse(result, out int diskNumber))
-                {
                     return diskNumber;
-                }
 
                 // Alternative approach: query by disk image path
                 script = $@"
@@ -635,9 +348,7 @@ namespace Duplicati.UnitTest.DiskImage
                 result = RunPowerShell(script)?.Trim();
 
                 if (!string.IsNullOrEmpty(result) && int.TryParse(result, out diskNumber))
-                {
                     return diskNumber;
-                }
             }
             catch (Exception ex)
             {
@@ -645,75 +356,6 @@ namespace Duplicati.UnitTest.DiskImage
             }
 
             return -1;
-        }
-
-        /// <inheritdoc />
-        public void CleanupDisk(string imagePath)
-        {
-            try
-            {
-                DetachDisk(imagePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Warning: Failed to detach VHD {imagePath}: {ex.Message}");
-            }
-
-            try
-            {
-                if (File.Exists(imagePath))
-                {
-                    File.Delete(imagePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Warning: Failed to delete VHD file {imagePath}: {ex.Message}");
-            }
-        }
-
-        /// <inheritdoc />
-        public string GetDiskDetails(int diskNumber)
-        {
-            var script = $@"
-                Write-Output ""Disk Details for Disk {diskNumber}:""
-                Write-Output ""================================""
-                Get-Disk -Number {diskNumber} | Format-List
-                Write-Output ''
-                Write-Output ""Partitions:""
-                Write-Output ""===========""
-                Get-Partition -DiskNumber {diskNumber} | Format-Table
-            ";
-            return RunPowerShell(script);
-        }
-
-        /// <inheritdoc />
-        public string GetVolumeInfo(char driveLetter)
-        {
-            var script = $@"
-                Get-Volume -DriveLetter {driveLetter} | Format-List
-            ";
-            return RunPowerShell(script);
-        }
-
-        /// <inheritdoc />
-        public bool HasRequiredPrivileges()
-        {
-            if (!OperatingSystem.IsWindows())
-            {
-                return false;
-            }
-
-            try
-            {
-                using var identity = WindowsIdentity.GetCurrent();
-                var principal = new WindowsPrincipal(identity);
-                return principal.IsInRole(WindowsBuiltInRole.Administrator);
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         /// <summary>
@@ -732,12 +374,472 @@ namespace Duplicati.UnitTest.DiskImage
             for (char c = 'Z'; c >= 'D'; c--)
             {
                 if (!usedDrives.Contains(c))
-                {
                     return c;
-                }
             }
 
             throw new InvalidOperationException("No available drive letters found.");
+        }
+
+        /// <summary>
+        /// Gets the drive letters (mount points) for all partitions on a disk.
+        /// </summary>
+        /// <param name="diskNumber">The disk number.</param>
+        /// <returns>An array of mount point paths (e.g., "E:\").</returns>
+        private static string[] GetMountPoints(int diskNumber)
+        {
+            var script = $@"
+                Get-Partition -DiskNumber {diskNumber} -ErrorAction SilentlyContinue |
+                    Where-Object {{ $_.DriveLetter -and $_.DriveLetter -ne [char]0 }} |
+                    ForEach-Object {{ $_.DriveLetter }}
+            ";
+            var result = RunPowerShell(script)?.Trim();
+
+            if (string.IsNullOrEmpty(result))
+                return [];
+
+            return result
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.Trim())
+                .Where(l => l.Length == 1 && char.IsLetter(l[0]))
+                .Select(l => $"{char.ToUpperInvariant(l[0])}:\\")
+                .ToArray();
+        }
+
+        /// <inheritdoc />
+        public string CreateDisk(string imagePath, long sizeB)
+        {
+            // Ensure the directory exists
+            var directory = Path.GetDirectoryName(imagePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            // Delete existing VHD if it exists
+            if (File.Exists(imagePath))
+                try
+                {
+                    CleanupDisk(imagePath);
+                }
+                catch
+                {
+                    // Ignore errors during cleanup
+                }
+
+            // Create the VHD using PowerShell
+            var script = $@"New-VHD -Path '{imagePath}' -SizeBytes {sizeB} -Fixed | Out-Null; Mount-DiskImage -ImagePath '{imagePath}' | Out-Null";
+            RunPowerShell(script);
+
+            // Wait for the disk to be attached and get the disk number
+            int diskNumber = WaitForDiskAttachment(imagePath, TimeSpan.FromSeconds(30));
+            if (diskNumber < 0)
+                throw new InvalidOperationException($"Failed to get disk number for VHD: {imagePath}");
+
+            return $@"\\.\PhysicalDrive{diskNumber}";
+        }
+
+        /// <summary>
+        /// Waits for a VHD to be attached and returns its disk number.
+        /// </summary>
+        /// <param name="imagePath">The path to the VHD file.</param>
+        /// <param name="timeout">Maximum time to wait.</param>
+        /// <returns>The disk number, or -1 if not found within the timeout.</returns>
+        private static int WaitForDiskAttachment(string imagePath, TimeSpan timeout)
+        {
+            var startTime = DateTime.UtcNow;
+            while (DateTime.UtcNow - startTime < timeout)
+            {
+                var diskNumber = GetDiskNumber(imagePath);
+                if (diskNumber >= 0)
+                    return diskNumber;
+                Thread.Sleep(100);
+            }
+            return -1;
+        }
+
+        /// <inheritdoc />
+        public string[] InitializeDisk(string diskIdentifier, PartitionTableType tableType, (FileSystemType, long)[] partitions)
+        {
+            var diskNumber = ParseDiskNumber(diskIdentifier);
+
+            if (tableType == PartitionTableType.Unknown)
+                return []; // No partition table, so nothing to initialize
+
+            // Initialize the disk with the specified partition style
+            var script = $@"
+                $disk = Get-Disk -Number {diskNumber}
+                if ($disk.PartitionStyle -ne 'RAW') {{
+                    Clear-Disk -Number {diskNumber} -RemoveData -Confirm:$false
+                }}
+                Initialize-Disk -Number {diskNumber} -PartitionStyle {tableType.ToString().ToUpperInvariant()} -PassThru | Out-Null
+            ";
+            RunPowerShell(script);
+
+            // Wait for the initialization to complete
+            WaitForDiskInitialization(diskNumber, TimeSpan.FromSeconds(30));
+
+            if (partitions.Length == 0)
+                return [];
+
+            // Create and format each partition
+            foreach (var (fsType, sizeB) in partitions)
+            {
+                var fsTypeStr = fsType.ToString().ToUpperInvariant();
+                var sizeParam = sizeB > 0 ? $"-Size {sizeB}" : "-UseMaximumSize";
+
+                script = $@"
+                    $partition = New-Partition -DiskNumber {diskNumber} {sizeParam} -AssignDriveLetter
+                    # Wait for the partition to be ready
+                    $timeout = (Get-Date).AddSeconds(30)
+                    while ((Get-Date) -lt $timeout) {{
+                        $vol = Get-Partition -DiskNumber {diskNumber} | Where-Object {{ $_.PartitionNumber -eq $partition.PartitionNumber }} | Get-Volume
+                        if ($vol) {{ break }}
+                        Start-Sleep -Milliseconds 100
+                    }}
+                    # Format the volume
+                    Format-Volume -Partition $partition -FileSystem {fsTypeStr} -NewFileSystemLabel 'TestVol' -Confirm:$false | Out-Null
+                ";
+                RunPowerShell(script);
+            }
+
+            return GetMountPoints(diskNumber);
+        }
+
+        /// <summary>
+        /// Waits for a disk to be initialized.
+        /// </summary>
+        /// <param name="diskNumber">The disk number.</param>
+        /// <param name="timeout">Maximum time to wait.</param>
+        /// <exception cref="TimeoutException">Thrown if initialization times out.</exception>
+        private static void WaitForDiskInitialization(int diskNumber, TimeSpan timeout)
+        {
+            var startTime = DateTime.UtcNow;
+            while (DateTime.UtcNow - startTime < timeout)
+            {
+                var script = $"(Get-Disk -Number {diskNumber}).PartitionStyle";
+                var result = RunPowerShell(script)?.Trim();
+                if (result == "GPT" || result == "MBR")
+                    return;
+                Thread.Sleep(100);
+            }
+            throw new TimeoutException($"Disk {diskNumber} initialization timed out");
+        }
+
+        /// <inheritdoc />
+        public string[] Mount(string diskIdentifier)
+        {
+            var diskNumber = ParseDiskNumber(diskIdentifier);
+
+            // Check if already mounted
+            try
+            {
+                var mountPoints = GetMountPoints(diskNumber);
+                if (mountPoints.Length > 0)
+                    return mountPoints;
+            }
+            catch
+            {
+                // Ignore errors and try mounting
+            }
+
+            // Bring the disk online and assign drive letters
+            var script = $@"
+                Set-Disk -Number {diskNumber} -IsOffline $false
+                Update-Disk -Number {diskNumber}
+                Update-HostStorageCache
+                Get-Partition -DiskNumber {diskNumber} | Where-Object {{ $_.Type -ne 'Reserved' -and $_.Type -ne 'System' -and -not $_.DriveLetter }} | ForEach-Object {{
+                    $_ | Add-PartitionAccessPath -AssignDriveLetter -ErrorAction SilentlyContinue
+                }}
+            ";
+            RunPowerShell(script);
+
+            return WaitForMountPoints(diskNumber);
+        }
+
+        /// <summary>
+        /// Waits for mount points to be fully established after a mount operation.
+        /// Uses exponential backoff starting from a short delay to minimize wait time
+        /// in the common case while still handling slow mounts.
+        /// </summary>
+        /// <param name="diskNumber">The disk number to check mount points for.</param>
+        /// <returns>An array of mount point paths.</returns>
+        private static string[] WaitForMountPoints(int diskNumber)
+        {
+            const int maxRetries = 10;
+            const int initialDelayMs = 100;
+            const int maxDelayMs = 1000;
+
+            var delayMs = initialDelayMs;
+            for (int i = 0; i < maxRetries; i++)
+            {
+                var mountPoints = GetMountPoints(diskNumber);
+
+                if (mountPoints.Length > 0)
+                {
+                    // Check if all mount points have filesystem entries (not empty)
+                    var allNonEmpty = mountPoints.All(mp =>
+                    {
+                        try { return Directory.GetFileSystemEntries(mp).Length > 0; }
+                        catch { return false; }
+                    });
+
+                    if (allNonEmpty || i == maxRetries - 1)
+                        return mountPoints;
+                }
+
+                Thread.Sleep(delayMs);
+                delayMs = Math.Min(delayMs * 2, maxDelayMs);
+            }
+
+            // Final attempt - return whatever we have
+            return GetMountPoints(diskNumber);
+        }
+
+        /// <inheritdoc />
+        public void Unmount(string diskIdentifier)
+        {
+            var diskNumber = ParseDiskNumber(diskIdentifier);
+
+            // Remove drive letters from all partitions
+            var script = $@"
+                Get-Partition -DiskNumber {diskNumber} -ErrorAction SilentlyContinue |
+                    Where-Object {{ $_.DriveLetter -and $_.DriveLetter -ne [char]0 }} |
+                    ForEach-Object {{
+                        $letter = $_.DriveLetter
+                        Remove-PartitionAccessPath -DiskNumber {diskNumber} -PartitionNumber $_.PartitionNumber -AccessPath ""$($letter):\"" -ErrorAction SilentlyContinue
+                    }}
+            ";
+            RunPowerShell(script);
+
+            // Pull the disk offline to ensure it's not in use
+            script = $@"
+                Set-Disk -Number {diskNumber} -IsOffline $true
+                Set-Disk -Number {diskNumber} -IsReadOnly $false
+            ";
+            RunPowerShell(script);
+        }
+
+        /// <inheritdoc />
+        public void FlushDisk(string diskIdentifier)
+        {
+            var diskNumber = ParseDiskNumber(diskIdentifier);
+            try
+            {
+                // Flush all volumes on the disk
+                var script = $@"
+                    Get-Partition -DiskNumber {diskNumber} -ErrorAction SilentlyContinue |
+                        Where-Object {{ $_.DriveLetter -and $_.DriveLetter -ne [char]0 }} |
+                        ForEach-Object {{
+                            Write-VolumeCache -DriveLetter $_.DriveLetter -ErrorAction SilentlyContinue
+                        }}
+                ";
+                RunPowerShell(script);
+            }
+            catch (Exception ex)
+            {
+                TestContext.Progress.WriteLine($"Warning: Failed to flush volume cache: {ex.Message}");
+            }
+        }
+
+        /// <inheritdoc />
+        public void CleanupDisk(string imagePath, string? diskIdentifier = null)
+        {
+            try
+            {
+                var script = $@"
+                    $image = Get-DiskImage -ImagePath '{imagePath}' -ErrorAction SilentlyContinue
+                    if ($image -and $image.Attached) {{
+                        Dismount-DiskImage -ImagePath '{imagePath}'
+                    }}
+                ";
+                RunPowerShell(script);
+            }
+            catch (Exception ex)
+            {
+                TestContext.Progress.WriteLine($"Warning: Failed to detach disk image: {ex.Message}");
+            }
+
+            try
+            {
+                if (File.Exists(imagePath))
+                    File.Delete(imagePath);
+            }
+            catch (Exception ex)
+            {
+                TestContext.Progress.WriteLine($"Warning: Failed to delete disk image file: {ex.Message}");
+            }
+        }
+
+        /// <inheritdoc />
+        public bool HasRequiredPrivileges()
+        {
+            if (!OperatingSystem.IsWindows())
+                return false;
+
+            try
+            {
+                using var identity = WindowsIdentity.GetCurrent();
+                var principal = new WindowsPrincipal(identity);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <inheritdoc />
+        public PartitionTableGeometry GetPartitionTable(string diskIdentifier)
+        {
+            var diskNumber = ParseDiskNumber(diskIdentifier);
+
+            var script = $@"
+                $disk = Get-Disk -Number {diskNumber}
+                Write-Output ""PartitionStyle:$($disk.PartitionStyle)""
+                Write-Output ""Size:$($disk.Size)""
+                Write-Output ""LogicalSectorSize:$($disk.LogicalSectorSize)""
+            ";
+            var output = RunPowerShell(script);
+
+            PartitionTableType tableType = PartitionTableType.Unknown;
+            long size = -1;
+            int sectorSize = -1;
+
+            foreach (var line in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var parts = line.Split([':'], 2);
+                if (parts.Length != 2) continue;
+
+                switch (parts[0].Trim())
+                {
+                    case "PartitionStyle":
+                        tableType = parts[1].Trim() switch
+                        {
+                            "GPT" => PartitionTableType.GPT,
+                            "MBR" => PartitionTableType.MBR,
+                            _ => PartitionTableType.Unknown
+                        };
+                        break;
+                    case "Size":
+                        if (long.TryParse(parts[1].Trim(), out long parsedSize))
+                            size = parsedSize;
+                        break;
+                    case "LogicalSectorSize":
+                        if (int.TryParse(parts[1].Trim(), out int parsedSectorSize))
+                            sectorSize = parsedSectorSize;
+                        break;
+                }
+            }
+
+            if (size == -1 || sectorSize == -1)
+                throw new InvalidOperationException($"Failed to retrieve partition table information for disk {diskIdentifier}");
+
+            return new PartitionTableGeometry
+            {
+                Type = tableType,
+                Size = size,
+                SectorSize = sectorSize
+            };
+        }
+
+        /// <inheritdoc />
+        public PartitionGeometry[] GetPartitions(string diskIdentifier)
+        {
+            var diskNumber = ParseDiskNumber(diskIdentifier);
+
+            var script = $@"
+                Get-Partition -DiskNumber {diskNumber} -ErrorAction SilentlyContinue |
+                    Where-Object {{ $_.Type -ne 'Reserved' -and $_.Type -ne 'System' }} |
+                    ForEach-Object {{
+                        $vol = $_ | Get-Volume -ErrorAction SilentlyContinue
+                        Write-Output ""---PARTITION---""
+                        Write-Output ""Number:$($_.PartitionNumber)""
+                        Write-Output ""Type:$($_.Type)""
+                        Write-Output ""Offset:$($_.Offset)""
+                        Write-Output ""Size:$($_.Size)""
+                        Write-Output ""GptType:$($_.GptType)""
+                        Write-Output ""Guid:$($_.Guid)""
+                        if ($vol) {{
+                            Write-Output ""FileSystem:$($vol.FileSystem)""
+                            Write-Output ""FileSystemLabel:$($vol.FileSystemLabel)""
+                        }}
+                    }}
+            ";
+            var output = RunPowerShell(script);
+
+            var partitions = new List<PartitionGeometry>();
+            PartitionGeometry? current = null;
+
+            foreach (var line in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (line.Trim() == "---PARTITION---")
+                {
+                    if (current != null)
+                        partitions.Add(current);
+                    current = new PartitionGeometry
+                    {
+                        Number = -1,
+                        Type = PartitionType.Unknown,
+                        StartOffset = -1,
+                        Size = -1,
+                        Name = null,
+                        FilesystemType = FileSystemType.Unknown,
+                        VolumeGuid = null,
+                        TableType = PartitionTableType.Unknown
+                    };
+                    continue;
+                }
+
+                if (current == null) continue;
+
+                var parts = line.Split([':'], 2);
+                if (parts.Length != 2) continue;
+
+                switch (parts[0].Trim())
+                {
+                    case "Number":
+                        if (int.TryParse(parts[1].Trim(), out int num))
+                            current.Number = num;
+                        break;
+                    case "Type":
+                        current.Type = parts[1].Trim() switch
+                        {
+                            "Basic" => PartitionType.Primary,
+                            "IFS" => PartitionType.Primary,
+                            _ => PartitionType.Unknown
+                        };
+                        break;
+                    case "Offset":
+                        if (long.TryParse(parts[1].Trim(), out long offset))
+                            current.StartOffset = offset;
+                        break;
+                    case "Size":
+                        if (long.TryParse(parts[1].Trim(), out long size))
+                            current.Size = size;
+                        break;
+                    case "Guid":
+                        if (Guid.TryParse(parts[1].Trim(), out Guid guid))
+                            current.VolumeGuid = guid;
+                        break;
+                    case "FileSystem":
+                        current.FilesystemType = parts[1].Trim() switch
+                        {
+                            "NTFS" => FileSystemType.NTFS,
+                            "FAT32" => FileSystemType.FAT32,
+                            "exFAT" => FileSystemType.ExFAT,
+                            "FAT" => FileSystemType.FAT32,
+                            "ReFS" => FileSystemType.ReFS,
+                            _ => FileSystemType.Unknown
+                        };
+                        break;
+                    case "FileSystemLabel":
+                        current.Name = parts[1].Trim();
+                        break;
+                }
+            }
+
+            if (current != null)
+                partitions.Add(current);
+
+            return partitions.ToArray();
         }
 
         /// <inheritdoc />
