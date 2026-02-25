@@ -574,7 +574,7 @@ namespace Duplicati.UnitTest
 
             // Initialize disk (the restore will overwrite this, but we need it formatted)
             _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 50 * MiB), (FileSystemType.FAT32, 0)]);
-            _diskHelper.Mount(restoreDrivePath);
+            _diskHelper.Mount(restoreDrivePath, _restoreMountPath);
             TestContext.Progress.WriteLine($"Restore disk image created and kept online at: {_restoreImagePath}");
 
             // First attempt: Restore without auto-unmount option should fail
