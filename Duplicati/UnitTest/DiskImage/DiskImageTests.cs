@@ -573,7 +573,7 @@ namespace Duplicati.UnitTest
             var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (100 * MiB));
 
             // Initialize disk (the restore will overwrite this, but we need it formatted)
-            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 50 * MiB), (FileSystemType.FAT32, 0)]);
             _diskHelper.Mount(restoreDrivePath);
             TestContext.Progress.WriteLine($"Restore disk image created and kept online at: {_restoreImagePath}");
 
