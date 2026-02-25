@@ -279,8 +279,12 @@ namespace Duplicati.UnitTest.DiskImage
             }
             try
             {
-                try { RunProcess("diskutil", $"unmount force /dev/{volume}"); } catch { } // Unmount first in case it's already mounted somewhere else, to ensure it gets mounted to the correct location
-                RunProcess("diskutil", $"mount -nobrowse {mountArgs} /dev/{volume}");
+                // Unmount first in case it's already mounted somewhere else, to ensure it gets mounted to the correct location
+                var oldMp = ExtractMountPoint(RunProcess("diskutil", $"info /dev/{volume}"));
+                if (oldMp is not null && !oldMp.StartsWith(baseMountPath ?? "/Volumes/"))
+                    RunProcess("diskutil", $"unmount force /dev/{volume}");
+
+                RunProcess("diskutil", $"mount nobrowse {mountArgs} /dev/{volume}");
             }
             catch (Exception ex)
             {
