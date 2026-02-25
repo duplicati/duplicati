@@ -366,8 +366,16 @@ namespace Duplicati.UnitTest.DiskImage
 
         public void Unmount(string diskIdentifier)
         {
+            var partitions = GetPartitionNames(diskIdentifier);
+            foreach (var partition in partitions)
+            {
+                var mp = ExtractMountPoint(RunProcess("diskutil", $"info /dev/{partition}"));
+                if (mp is not null)
+                    RunProcess("diskutil", $"unmount /dev/{partition}");
+            }
+
             // Unmount all volumes on the disk
-            RunProcess("diskutil", $"unmountDisk {diskIdentifier}");
+            RunProcess("diskutil", $"unmountDisk force {diskIdentifier}");
         }
 
         /// <inheritdoc />
