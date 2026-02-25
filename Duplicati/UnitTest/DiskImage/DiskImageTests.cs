@@ -428,6 +428,7 @@ namespace Duplicati.UnitTest
             foreach (var partition in sourcePartitions)
                 await ToolTests.GenerateTestData(partition, 10, 5, 2, 1024);
             _diskHelper.FlushDisk(sourceDrivePath);
+            _diskHelper.Unmount(sourceDrivePath);
             await TestContext.Progress.WriteLineAsync($"Test data generated on source partition(s)");
 
             // Backup
