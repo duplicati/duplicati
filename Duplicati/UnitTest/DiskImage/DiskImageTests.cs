@@ -46,6 +46,8 @@ namespace Duplicati.UnitTest
     {
         private string _sourceImagePath = null!;
         private string _restoreImagePath = null!;
+        private string _sourceMountPath = null!;
+        private string _restoreMountPath = null!;
         private DiskImage.IDiskImageHelper _diskHelper = null!;
 
         private const long MiB = 1024 * 1024;
@@ -70,6 +72,10 @@ namespace Duplicati.UnitTest
             var extension = OperatingSystem.IsWindows() ? "vhdx" : "dmg";
             _sourceImagePath = Path.Combine(DATAFOLDER, $"duplicati_test_source_{Guid.NewGuid()}.{extension}");
             _restoreImagePath = Path.Combine(DATAFOLDER, $"duplicati_test_restore_{Guid.NewGuid()}.{extension}");
+            _sourceMountPath = Path.Combine(DATAFOLDER, $"mnt_source_{Guid.NewGuid()}");
+            _restoreMountPath = Path.Combine(DATAFOLDER, $"mnt_restore_{Guid.NewGuid()}");
+            Directory.CreateDirectory(_sourceMountPath);
+            Directory.CreateDirectory(_restoreMountPath);
         }
 
         /// <summary>
@@ -106,6 +112,9 @@ namespace Duplicati.UnitTest
             {
                 TestContext.Progress.WriteLine($"Warning: Failed to dispose disk helper: {ex.Message}");
             }
+
+            Directory.Delete(_sourceMountPath, true);
+            Directory.Delete(_restoreMountPath, true);
         }
 
         #region GPT Single Partition
@@ -437,7 +446,8 @@ namespace Duplicati.UnitTest
             await TestContext.Progress.WriteLineAsync($"Restore completed successfully");
 
             // Verify partition table matches
-            var restorePartitions = _diskHelper.Mount(restoreDrivePath);
+            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath);
+            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath);
             VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
             await TestContext.Progress.WriteLineAsync($"Partition table verified to match source");
 

@@ -524,7 +524,7 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
-        public string[] Mount(string diskIdentifier)
+        public string[] Mount(string diskIdentifier, string? baseMountPath = null)
         {
             var diskNumber = ParseDiskNumber(diskIdentifier);
 

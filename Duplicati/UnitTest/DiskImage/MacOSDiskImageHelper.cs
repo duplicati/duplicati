@@ -204,24 +204,105 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
-        public string[] Mount(string diskIdentifier)
+        public string[] Mount(string diskIdentifier, string? baseMountPath = null)
         {
             // Check if already mounted
             try
             {
-                var mountPoints = GetMountPoints(diskIdentifier);
-                if (mountPoints.Length > 0)
-                    return mountPoints;
+                var existingMountPoints = GetMountPoints(diskIdentifier);
+                if (existingMountPoints.Length > 0 && existingMountPoints.All(mp => mp.StartsWith(baseMountPath ?? "/Volumes/")))
+                {
+                    return existingMountPoints;
+                }
             }
             catch
             {
                 // Ignore errors and try mounting
             }
 
-            // Mount all volumes on the disk
-            RunProcess("diskutil", $"mountDisk {diskIdentifier}");
+            // Get the list of partitions first to ensure we target the correct disk
+            var partitions = GetPartitionNames(diskIdentifier);
 
-            return WaitForMountPoints(diskIdentifier);
+            List<string> mountPoints = [];
+            foreach (var partition in partitions)
+            {
+                var output = RunProcess("diskutil", $"info /dev/{partition}");
+
+                // Check if this is an APFS Physical Store
+                var isApfsPhysicalStore = output.Contains("APFS Physical Store") ||
+                    output.Split('\n').Any(l => l.Trim().StartsWith("Partition Type:") && l.Contains("Apple_APFS"));
+
+                if (isApfsPhysicalStore)
+                {
+                    // For APFS, get the container and mount volumes from it
+                    var containerLine = output
+                        .Split('\n')
+                        .FirstOrDefault(l => l.Trim().StartsWith("APFS Container:"));
+
+                    if (containerLine != null)
+                    {
+                        var containerId = containerLine.Split([':'], 2)[1].Trim();
+                        // Get volumes from the container (they are like disk5s1, disk5s2, etc.)
+                        var containerVolumes = GetApfsContainerVolumes(containerId);
+                        foreach (var volume in containerVolumes)
+                        {
+                            MountVolume(volume, baseMountPath, mountPoints);
+                        }
+                    }
+                }
+                else
+                {
+                    // Regular partition - mount directly
+                    MountVolume(partition, baseMountPath, mountPoints);
+                }
+            }
+
+            return mountPoints.Count == 0 ? WaitForMountPoints(diskIdentifier) : [.. mountPoints];
+        }
+
+        /// <summary>
+        /// Mounts a single volume/partition with optional custom mount point.
+        /// </summary>
+        /// <param name="volume">The volume identifier (e.g., "disk4s1").</param>
+        /// <param name="baseMountPath">Optional base path for mounting.</param>
+        /// <param name="mountPoints">List to collect mount points.</param>
+        private void MountVolume(string volume, string? baseMountPath, List<string> mountPoints)
+        {
+            var dir = "";
+            var mountArgs = "";
+            if (baseMountPath is not null)
+            {
+                dir = Path.Combine(baseMountPath, volume);
+                Directory.CreateDirectory(dir); // diskutil will mount to this directory instead of /Volumes/ if it exists, so create it ahead of time
+                //mountPoints.Add(dir);
+                mountArgs = $"-mountPoint \"{dir}\"";
+            }
+            try
+            {
+                RunProcess("diskutil", $"mount -nobrowse {mountArgs} /dev/{volume}");
+            }
+            catch (Exception ex)
+            {
+                TestContext.Progress.WriteLine($"Warning: Failed to mount volume /dev/{volume}: {ex.Message}");
+            }
+
+            // Verify the mount
+            var mp = RunProcess("diskutil", $"info /dev/{volume}");
+            var mountPoint = ExtractMountPoint(mp);
+            if (!string.IsNullOrEmpty(mountPoint))
+            {
+                mountPoints.Add(mountPoint);
+
+                if (!mountPoint.StartsWith(baseMountPath ?? "/Volumes/"))
+                {
+                    TestContext.Progress.WriteLine($"Warning: Volume /dev/{volume} did not mount to expected location. Output: {mp}");
+                }
+            }
+            else
+            {
+                TestContext.Progress.WriteLine($"Warning: Volume /dev/{volume} did not report a mount point after mounting. Output: {mp}");
+            }
+
         }
 
         /// <summary>
