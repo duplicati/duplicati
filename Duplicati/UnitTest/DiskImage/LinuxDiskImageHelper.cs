@@ -42,7 +42,7 @@ namespace Duplicati.UnitTest.DiskImage
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public string[] Mount(string diskIdentifier, string? baseMountPath = null) => throw new NotImplementedException();
+        public string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false) => throw new NotImplementedException();
 
         /// <inheritdoc />
         /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>

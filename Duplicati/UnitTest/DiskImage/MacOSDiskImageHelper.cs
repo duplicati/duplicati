@@ -204,7 +204,7 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
-        public string[] Mount(string diskIdentifier, string? baseMountPath = null)
+        public string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false)
         {
             // Check if already mounted
             try
@@ -246,14 +246,14 @@ namespace Duplicati.UnitTest.DiskImage
                         var containerVolumes = GetApfsContainerVolumes(containerId);
                         foreach (var volume in containerVolumes)
                         {
-                            MountVolume(volume, baseMountPath, mountPoints);
+                            MountVolume(volume, baseMountPath, mountPoints, readOnly);
                         }
                     }
                 }
                 else
                 {
                     // Regular partition - mount directly
-                    MountVolume(partition, baseMountPath, mountPoints);
+                    MountVolume(partition, baseMountPath, mountPoints, readOnly);
                 }
             }
 
@@ -266,10 +266,11 @@ namespace Duplicati.UnitTest.DiskImage
         /// <param name="volume">The volume identifier (e.g., "disk4s1").</param>
         /// <param name="baseMountPath">Optional base path for mounting.</param>
         /// <param name="mountPoints">List to collect mount points.</param>
-        private void MountVolume(string volume, string? baseMountPath, List<string> mountPoints)
+        /// <param name="readOnly">Indicates whether the volume should be mounted as read-only.</param>
+        private void MountVolume(string volume, string? baseMountPath, List<string> mountPoints, bool readOnly)
         {
             var dir = "";
-            var mountArgs = "";
+            var mountArgs = readOnly ? "readOnly" : "";
             if (baseMountPath is not null)
             {
                 dir = Path.Combine(baseMountPath, volume);

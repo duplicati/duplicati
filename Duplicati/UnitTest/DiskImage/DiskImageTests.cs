@@ -447,8 +447,8 @@ namespace Duplicati.UnitTest
             await TestContext.Progress.WriteLineAsync($"Restore completed successfully");
 
             // Verify partition table matches
-            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath);
-            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath);
+            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);
+            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true);
             VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
             await TestContext.Progress.WriteLineAsync($"Partition table verified to match source");
 
@@ -626,7 +626,7 @@ namespace Duplicati.UnitTest
             VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
 
             // Verify data matches byte-for-byte
-            var restorePartitions = _diskHelper.Mount(restoreDrivePath);
+            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true);
             var sourcePartition = sourcePartitions.First();
             var restorePartition = restorePartitions.First();
             CompareDirectories(sourcePartition, restorePartition);
