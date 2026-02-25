@@ -177,7 +177,7 @@ namespace Duplicati.UnitTest.DiskImage
 
             // Use diskutil to partition the disk with the specified scheme
             // "Free Space" means no filesystem, just the partition table
-            var partitionStrings = partitions.Length > 0 ? partitions.Select(p =>
+            var partitionStrings = partitions.Length > 0 ? partitions.Select((p, i) =>
             {
                 var fsType = p.Item1 switch
                 {
@@ -190,7 +190,7 @@ namespace Duplicati.UnitTest.DiskImage
                 };
 
                 var sizeArg = p.Item2 > 0 ? $"{p.Item2}" : "0";
-                return $"{fsType} \"Partition\" {sizeArg}";
+                return $"{fsType} \"Partition {i + 1}\" {sizeArg}";
             })
             : ["\"Free Space\" \"\" 0"];
             var partitionArgs = string.Join(" ", partitionStrings);
@@ -279,6 +279,7 @@ namespace Duplicati.UnitTest.DiskImage
             }
             try
             {
+                try { RunProcess("diskutil", $"unmount force /dev/{volume}"); } catch { } // Unmount first in case it's already mounted somewhere else, to ensure it gets mounted to the correct location
                 RunProcess("diskutil", $"mount -nobrowse {mountArgs} /dev/{volume}");
             }
             catch (Exception ex)
