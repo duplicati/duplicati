@@ -696,10 +696,10 @@ namespace Duplicati.UnitTest
             }
 
             // Compare file contents byte-by-byte
-            foreach (var sourceFile in sourceFiles)
+            foreach (var relativeSourceFile in sourceFiles)
             {
-                var relativePath = sourceFile.Substring(3);
-                var restoreFile = Path.Combine(restorePath, relativePath);
+                var sourceFile = Path.Combine(sourcePath, relativeSourceFile);
+                var restoreFile = Path.Combine(restorePath, sourceFile);
 
                 if (File.Exists(restoreFile))
                 {
@@ -707,9 +707,9 @@ namespace Duplicati.UnitTest
                     var restoreBytes = File.ReadAllBytes(restoreFile);
 
                     Assert.That(restoreBytes.Length, Is.EqualTo(sourceBytes.Length),
-                        $"File size mismatch for {relativePath}");
+                        $"File size mismatch for {sourceFile}");
                     Assert.That(restoreBytes, Is.EqualTo(sourceBytes),
-                        $"File content mismatch for {relativePath}");
+                        $"File content mismatch for {sourceFile}");
                 }
             }
 
