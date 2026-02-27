@@ -853,22 +853,17 @@ namespace Duplicati.UnitTest.DiskImage
 
             // Re-attach the disk image with the desired read-only state
             var script = $@"
-                $image = Get-DiskImage -ImagePath '{imagePath}' -ErrorAction SilentlyContinue
+                $image = Get-DiskImage -ImagePath '{imagePath}'
                 if ($image) {{
                     if ($image.Attached) {{
                         Dismount-DiskImage -ImagePath '{imagePath}'
                     }}
-                    $params = @{{ ImagePath = '{imagePath}' }}
-                    if ({readOnly.ToString().ToLowerInvariant()}) {{
-                        $params['ReadOnly'] = $true
-                    }}
-                    New-VHD @params | Out-Null
-                    Mount-DiskImage -ImagePath '{imagePath}' | Out-Null
+                    Mount-VHD -Path '{imagePath}' {(readOnly ? "-ReadOnly" : "")}
                 }} else {{
                     throw 'Disk image not found: {imagePath}'
                 }}
             ";
-            RunPowerShell(script);
+            var output = RunPowerShell(script);
 
             // Wait for the disk to be attached and get the new disk number
             int newDiskNumber = WaitForDiskAttachment(imagePath, TimeSpan.FromSeconds(5));
