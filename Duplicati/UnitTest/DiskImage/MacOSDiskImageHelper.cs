@@ -363,8 +363,20 @@ namespace Duplicati.UnitTest.DiskImage
 
         public void Unmount(string diskIdentifier)
         {
-            // Unmount all volumes on the disk
-            RunProcess("diskutil", $"unmountDisk {diskIdentifier}");
+            int retryCount = 3;
+            for (int i = 0; i < retryCount; i++)
+            {
+                try
+                {
+                    // Unmount all volumes on the disk
+                    RunProcess("diskutil", $"unmountDisk {diskIdentifier}");
+                }
+                catch
+                {
+                    // Sometimes an unmount is issued too fast after writing data, which makes diskutil throw an errory.
+                    Thread.Sleep(500);
+                }
+            }
         }
 
         /// <inheritdoc />
