@@ -700,8 +700,23 @@ namespace Duplicati.UnitTest
             };
 
             // Get all files in source, except for system files, which cannot be read directly
-            var sourceFiles = Directory.EnumerateFiles(sourcePath, "*", options).Select(f => Path.GetRelativePath(sourcePath, f)).OrderBy(f => f).ToList();
-            var restoreFiles = Directory.EnumerateFiles(restorePath, "*", options).Select(f => Path.GetRelativePath(restorePath, f)).OrderBy(f => f).ToList();
+            var sourceFiles = Directory.EnumerateFiles(sourcePath, "*", options)
+                .Select(f => Path.GetRelativePath(sourcePath, f))
+                .Where(f => !string.IsNullOrEmpty(f))
+                .OrderBy(f => f)
+                .ToList();
+            var restoreFiles = Directory.EnumerateFiles(restorePath, "*", options)
+                .Select(f => Path.GetRelativePath(restorePath, f))
+                .Where(f => !string.IsNullOrEmpty(f))
+                .OrderBy(f => f)
+                .ToList();
+
+            Assert.That(sourceFiles.Count, Is.EqualTo(restoreFiles.Count),
+                $"Number of files in source and restore should match. Source: {sourceFiles.Count}, Restore: {restoreFiles.Count}");
+            Assert.That(sourceFiles.Count, Is.GreaterThan(0),
+                "Source partition should contain files to verify");
+            Assert.That(restoreFiles.Count, Is.GreaterThan(0),
+                "Restore partition should contain files to verify");
 
             // Check that all source files exist in restore
             foreach (var relativePath in sourceFiles)
@@ -714,7 +729,7 @@ namespace Duplicati.UnitTest
             foreach (var relativeSourceFile in sourceFiles)
             {
                 var sourceFile = Path.Combine(sourcePath, relativeSourceFile);
-                var restoreFile = Path.Combine(restorePath, sourceFile);
+                var restoreFile = Path.Combine(restorePath, relativeSourceFile);
 
                 if (File.Exists(restoreFile))
                 {
