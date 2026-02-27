@@ -284,6 +284,16 @@ namespace Duplicati.UnitTest
             ]);
         }
 
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_FAT32_ExFAT()
+        {
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.ExFAT, 0)
+            ]);
+        }
+
         [Test, Category("DiskImage")]
         public Task Test_MBR_FAT32_HFSPlus()
         {
