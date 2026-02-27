@@ -280,19 +280,13 @@ namespace Duplicati.UnitTest.DiskImage
                 var readOnlyArg = readOnly ? " -readOnly" : "";
                 mountArgs = $"{readOnlyArg} -mountPoint \"{dir}\"";
             }
-            try
-            {
-                // Unmount first in case it's already mounted somewhere else, to ensure it gets mounted to the correct location
-                var oldMp = ExtractMountPoint(RunProcess("diskutil", $"info /dev/{volume}"));
-                if (oldMp is not null && !oldMp.StartsWith(baseMountPath ?? "/Volumes/"))
-                    RunProcess("diskutil", $"unmount force /dev/{volume}");
 
-                RunProcess("diskutil", $"mount nobrowse {mountArgs} /dev/{volume}");
-            }
-            catch (Exception ex)
-            {
-                TestContext.Progress.WriteLine($"Warning: Failed to mount volume /dev/{volume}: {ex.Message}");
-            }
+            // Unmount first in case it's already mounted somewhere else, to ensure it gets mounted to the correct location
+            var oldMp = ExtractMountPoint(RunProcess("diskutil", $"info /dev/{volume}"));
+            if (oldMp is not null && !oldMp.StartsWith(baseMountPath ?? "/Volumes/"))
+                RunProcess("diskutil", $"unmount force /dev/{volume}");
+
+            RunProcess("diskutil", $"mount -nobrowse {mountArgs} /dev/{volume}");
 
             // Verify the mount
             var mp = RunProcess("diskutil", $"info /dev/{volume}");
