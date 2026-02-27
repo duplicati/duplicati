@@ -463,10 +463,10 @@ namespace Duplicati.UnitTest
             restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, tableType, readOnly: true);
             await TestContext.Progress.WriteLineAsync($"Source and restore disks re-attached as read-only for verification");
 
-            // Verify partition table matches
-            VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
+            // Verify partition table matches. Mount before verification, to make disks online on Windows.
             sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);
             var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true);
+            VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
             await TestContext.Progress.WriteLineAsync($"Partition table verified to match source");
 
             // Verify data matches byte-for-byte
@@ -645,12 +645,14 @@ namespace Duplicati.UnitTest
             }
             TestContext.Progress.WriteLine($"Restore completed successfully with auto-unmount option");
 
+            // Mount before verification, to make disks online on Windows.
+            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);
+            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true);
+
             // Verify partition table matches
             VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
 
             // Verify data matches byte-for-byte
-            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);
-            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true);
             var sourcePartition = sourcePartitions.First();
             var restorePartition = restorePartitions.First();
             CompareDirectories(sourcePartition, restorePartition);
