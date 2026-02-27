@@ -350,28 +350,6 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <summary>
-        /// Finds an available drive letter that is not currently in use.
-        /// </summary>
-        /// <returns>An available drive letter.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if no available drive letters are found.</exception>
-        private static char FindAvailableDriveLetter()
-        {
-            var usedDrives = DriveInfo.GetDrives()
-                .Where(d => d.Name.Length >= 2)
-                .Select(d => char.ToUpperInvariant(d.Name[0]))
-                .ToHashSet();
-
-            // Try letters from Z down to D (avoid A, B, C which are typically reserved)
-            for (char c = 'Z'; c >= 'D'; c--)
-            {
-                if (!usedDrives.Contains(c))
-                    return c;
-            }
-
-            throw new InvalidOperationException("No available drive letters found.");
-        }
-
-        /// <summary>
         /// Gets the drive letters (mount points) for all partitions on a disk.
         /// </summary>
         /// <param name="diskNumber">The disk number.</param>
