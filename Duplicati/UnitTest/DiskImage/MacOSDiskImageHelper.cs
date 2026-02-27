@@ -272,13 +272,13 @@ namespace Duplicati.UnitTest.DiskImage
         private void MountVolume(string volume, string? baseMountPath, List<string> mountPoints, bool readOnly)
         {
             var dir = "";
-            var mountArgs = readOnly ? "readOnly" : "";
+            var mountArgs = readOnly ? "-readOnly" : "";
             if (baseMountPath is not null)
             {
                 dir = Path.Combine(baseMountPath, volume);
                 Directory.CreateDirectory(dir); // diskutil will mount to this directory instead of /Volumes/ if it exists, so create it ahead of time
-                //mountPoints.Add(dir);
-                mountArgs = $"-mountPoint \"{dir}\"";
+                var readOnlyArg = readOnly ? " -readOnly" : "";
+                mountArgs = $"{readOnlyArg} -mountPoint \"{dir}\"";
             }
             try
             {
