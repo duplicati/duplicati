@@ -456,6 +456,11 @@ namespace Duplicati.UnitTest
             TestUtils.AssertResults(restoreResults);
             await TestContext.Progress.WriteLineAsync($"Restore completed successfully");
 
+            // Reattach drives in readonly
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: true);
+            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, tableType, readOnly: true);
+            await TestContext.Progress.WriteLineAsync($"Source and restore disks re-attached as read-only for verification");
+
             // Verify partition table matches
             VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
             sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);

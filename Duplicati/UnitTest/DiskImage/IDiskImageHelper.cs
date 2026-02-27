@@ -97,5 +97,15 @@ namespace Duplicati.UnitTest.DiskImage
         /// </summary>
         /// <param name="diskIdentifier">The identifier of the disk to flush.</param>
         void FlushDisk(string diskIdentifier);
+
+        /// <summary>
+        /// Re-attaches the disk, optionally as read-only. This is useful for ensuring the disk is in a clean state after unmounting, and can also be used to force a read-only re-attachment for testing read-only scenarios.
+        /// </summary>
+        /// <param name="imagePath">The path to the disk image file.</param>
+        /// <param name="diskIdentifier">The identifier of the disk to re-attach.</param>
+        /// <param name="tableType">The type of partition table on the disk.</param>
+        /// <param name="readOnly">Indicates whether the disk should be re-attached as read-only.</param>
+        /// <returns>The identifier of the re-attached disk.</returns>
+        string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false);
     }
 }

@@ -69,6 +69,10 @@ namespace Duplicati.UnitTest.DiskImage
         public void FlushDisk(string diskIdentifier) => throw new NotImplementedException();
 
         /// <inheritdoc />
+        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
+        public string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false) => throw new NotImplementedException();
+
+        /// <inheritdoc />
         public void Dispose()
         {
             // Nothing to dispose in the stub implementation

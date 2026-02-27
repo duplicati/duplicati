@@ -586,7 +586,26 @@ namespace Duplicati.UnitTest.DiskImage
             return partitions.ToArray();
         }
 
-        private string RunProcess(string fileName, string arguments)
+        public string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false)
+        {
+            RunProcess("diskutil", $"eject {diskIdentifier}");
+            var reattachoutput = RunProcess("hdiutil", $"attach -nomount -noautofsck -readonly \"{imagePath}\"");
+            if (tableType == PartitionTableType.Unknown)
+                return reattachoutput.Split('\n').First().Trim();
+            else
+                return reattachoutput
+                    .Split('\n')
+                    .Select(x => x.Trim()
+                        .Split(' ')
+                        .Where(y => !string.IsNullOrEmpty(y))
+                        .Select(y => y.Trim())
+                        .ToArray()
+                    )
+                    .Where(x => x.Length > 0 && x[^1].EndsWith("_partition_scheme"))
+                    .First().First();
+        }
+
+        public static string RunProcess(string fileName, string arguments)
         {
             var psi = new ProcessStartInfo
             {
