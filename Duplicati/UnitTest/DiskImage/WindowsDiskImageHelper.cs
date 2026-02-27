@@ -331,23 +331,14 @@ namespace Duplicati.UnitTest.DiskImage
             try
             {
                 var script = $@"
-                    $diskImage = Get-DiskImage -ImagePath '{imagePath}' -ErrorAction SilentlyContinue
-                    if ($diskImage -and $diskImage.Attached) {{
-                        Get-Disk | Where-Object {{ $_.Path -like '*{Path.GetFileName(imagePath)}*' -or ($_ | Get-DiskImage).ImagePath -eq '{imagePath}' }} | Select-Object -ExpandProperty Number
+                    $image = Get-DiskImage -ImagePath '{imagePath}'
+                    if ($image -and $image.Attached) {{
+                        $image | Get-Disk | Select-Object -ExpandProperty Number
                     }}
                 ";
                 var result = RunPowerShell(script)?.Trim();
 
                 if (!string.IsNullOrEmpty(result) && int.TryParse(result, out int diskNumber))
-                    return diskNumber;
-
-                // Alternative approach: query by disk image path
-                script = $@"
-                    Get-DiskImage -ImagePath '{imagePath}' | Get-Disk | Select-Object -ExpandProperty Number
-                ";
-                result = RunPowerShell(script)?.Trim();
-
-                if (!string.IsNullOrEmpty(result) && int.TryParse(result, out diskNumber))
                     return diskNumber;
             }
             catch (Exception ex)
