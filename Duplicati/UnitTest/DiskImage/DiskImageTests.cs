@@ -321,7 +321,7 @@ namespace Duplicati.UnitTest
         #region GPT Three Partitions
 
         [Test, Category("DiskImage")]
-        public Task Test_GPT_Three_APFS()
+        public Task Test_GPT_APFS_APFS_APFS()
         {
             if (!OperatingSystem.IsMacOS())
                 Assert.Ignore("APFS is only supported on macOS.");
@@ -333,7 +333,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test, Category("DiskImage")]
-        public Task Test_GPT_Three_HFSPlus()
+        public Task Test_GPT_HFSPlus_HFSPlus_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
                 Assert.Ignore("HFSPlus is only supported on macOS.");
@@ -344,8 +344,9 @@ namespace Duplicati.UnitTest
             ]);
         }
 
+        // TODO follow naming scheme.
         [Test, Category("DiskImage")]
-        public Task Test_GPT_Three_Mixed_Mac()
+        public Task Test_GPT_APFS_HFSPlus_APFS()
         {
             if (!OperatingSystem.IsMacOS())
                 Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
@@ -357,7 +358,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test, Category("DiskImage")]
-        public Task Test_GPT_Three_Mixed_Diverse()
+        public Task Test_GPT_FAT32_APFS_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
                 Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
@@ -369,7 +370,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test, Category("DiskImage")]
-        public Task Test_GPT_Three_Mixed_ExFAT()
+        public Task Test_GPT_ExFAT_APFS_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
                 Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
