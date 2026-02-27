@@ -326,7 +326,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     catch (Exception ex)
                     {
-                        LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorEnumerate", e.Path, "Failed to enumerate path: {0}");
+                        if (ex is not OperationCanceledException)
+                            LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorEnumerate", e.Path, "Failed to enumerate path: {0}");
                     }
                 }
             }

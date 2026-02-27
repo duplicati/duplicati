@@ -845,6 +845,16 @@ namespace Duplicati.Library.Main.Operation
                             //If the scanner is still running for some reason, make sure we kill it now
                             counterToken.Cancel();
                         }
+
+                        try
+                        {
+                            // Await the scanner as it m
+                            await parallelScanner.ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // This is expected if the scanner is still running, so we can ignore this
+                        }
                     }
 
                     // Add the fileset file to the dlist file
