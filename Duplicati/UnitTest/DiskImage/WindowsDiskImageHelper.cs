@@ -824,6 +824,11 @@ namespace Duplicati.UnitTest.DiskImage
             var script = $@"
                 $image = Get-DiskImage -ImagePath '{imagePath}'
                 if ($image) {{
+                    $disk = $image | Get-Disk
+                    # Pull disk online to repopulate Windows cache
+                    if ($disk.IsOffline -Eq $true) {{
+                        $disk | Set-Disk -IsOffline $false
+                    }}
                     if ($image.Attached) {{
                         Dismount-DiskImage -ImagePath '{imagePath}'
                     }}
