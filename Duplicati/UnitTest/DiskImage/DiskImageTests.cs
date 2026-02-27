@@ -485,7 +485,9 @@ namespace Duplicati.UnitTest
             var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, 100 * MiB);
             await TestContext.Progress.WriteLineAsync($"Source Disk created at: {_sourceImagePath}");
 
-            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 50 * MiB)]);
+            (FileSystemType, long)[] partitions = [(FileSystemType.FAT32, 50 * MiB), (FileSystemType.FAT32, 0)];
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, partitions);
+            _diskHelper.Unmount(sourceDrivePath);
             await TestContext.Progress.WriteLineAsync($"Source Disk initialized with partition(s): {string.Join(", ", sourcePartitions)}");
 
             // Backup
@@ -506,7 +508,7 @@ namespace Duplicati.UnitTest
             }
 
             // Verify geometry metadata contains correct information
-            VerifyGeometryMetadata(TARGETFOLDER, TestOptions);
+            VerifyGeometryMetadata(TARGETFOLDER, TestOptions, partitions);
         }
 
         [Test]
@@ -760,9 +762,9 @@ namespace Duplicati.UnitTest
         /// </summary>
         /// <param name="target">The backup target URL.</param>
         /// <param name="options">The options to use when accessing the backup.</param>
-        private void VerifyGeometryMetadata(string target, Dictionary<string, string> options)
+        /// <param name="partitions">The expected partitions and their sizes.</param>
+        private void VerifyGeometryMetadata(string target, Dictionary<string, string> options, (FileSystemType, long)[] partitions)
         {
-            // TODO make it check the expected geometry as well.
             TestContext.Progress.WriteLine("Verifying geometry metadata...");
 
             using (var c = new Controller("file://" + target, options, null))
@@ -807,6 +809,23 @@ namespace Duplicati.UnitTest
                         TestContext.Progress.WriteLine($"Geometry metadata verified: Disk size={geometry.Disk.Size}, " +
                             $"Sector size={geometry.Disk.SectorSize}, Partitions={geometry.Partitions.Count}, " +
                             $"Table type={geometry.PartitionTable!.Type}");
+
+                        for (int i = 0; i < geometry.Partitions.Count; i++)
+                        {
+                            var partition = geometry.Partitions[i];
+                            TestContext.Progress.WriteLine($"Partition {i}: Type={partition.Type}, Start={partition.StartOffset}, Size={partition.Size}");
+
+                            Assert.That(partition.Size, Is.GreaterThan(0), $"Partition {i} size should be greater than 0");
+                            if (partitions[i].Item2 > 0)
+                            {
+                                Assert.That(partition.Size, Is.EqualTo(partitions[i].Item2), $"Partition {i} size should match expected");
+                            }
+                            Assert.That(partition.StartOffset, Is.GreaterThanOrEqualTo(0), $"Partition {i} start offset should be non-negative");
+                            Assert.That(partition.Type, Is.Not.Null, $"Partition {i} type should be present");
+                            Assert.That(partition.FilesystemType, Is.Not.Null, $"Partition {i} filesystem type should be present");
+                            // Type shouldn't be checked until implemented.
+                            //Assert.That(partition.FilesystemType, Is.EqualTo(partitions[i].Item1), $"Partition {i} filesystem type should be known");
+                        }
                     }
                 }
                 finally
