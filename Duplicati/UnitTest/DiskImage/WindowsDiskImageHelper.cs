@@ -184,7 +184,7 @@ namespace Duplicati.UnitTest.DiskImage
                 _process.StandardInput.WriteLine(command);
 
                 // Wait for output with a timeout
-                var timeout = TimeSpan.FromSeconds(60);
+                var timeout = TimeSpan.FromSeconds(30);
                 if (!_outputAvailable.Wait(timeout))
                 {
                     throw new TimeoutException($"PowerShell command timed out after {timeout.TotalSeconds} seconds.\nScript:\n{script}");
@@ -429,7 +429,7 @@ namespace Duplicati.UnitTest.DiskImage
             RunPowerShell(script);
 
             // Wait for the disk to be attached and get the disk number
-            int diskNumber = WaitForDiskAttachment(imagePath, TimeSpan.FromSeconds(30));
+            int diskNumber = WaitForDiskAttachment(imagePath, TimeSpan.FromSeconds(5));
             if (diskNumber < 0)
                 throw new InvalidOperationException($"Failed to get disk number for VHD: {imagePath}");
 
@@ -474,7 +474,7 @@ namespace Duplicati.UnitTest.DiskImage
             RunPowerShell(script);
 
             // Wait for the initialization to complete
-            WaitForDiskInitialization(diskNumber, TimeSpan.FromSeconds(30));
+            WaitForDiskInitialization(diskNumber, TimeSpan.FromSeconds(5));
 
             if (partitions.Length == 0)
                 return [];
@@ -871,7 +871,7 @@ namespace Duplicati.UnitTest.DiskImage
             RunPowerShell(script);
 
             // Wait for the disk to be attached and get the new disk number
-            int newDiskNumber = WaitForDiskAttachment(imagePath, TimeSpan.FromSeconds(30));
+            int newDiskNumber = WaitForDiskAttachment(imagePath, TimeSpan.FromSeconds(5));
             if (newDiskNumber < 0)
                 throw new InvalidOperationException($"Failed to re-attach VHD: {imagePath}");
 
