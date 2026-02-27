@@ -61,7 +61,7 @@ namespace Duplicati.UnitTest.DiskImage
             // Use UDIF format with "Free Space" filesystem (unformatted)
             RunProcess("hdiutil", $"create -size {sizeB} -type UDIF -layout NONE -o \"{imagePath}\"");
 
-            var output = RunProcess("hdiutil", $"attach -nomount \"{imagePath}\"");
+            var output = RunProcess("hdiutil", $"attach -nomount -noautofsck \"{imagePath}\"");
 
             // Parse the disk device from output (e.g., "/dev/disk4")
             var diskDevice = output.Trim().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim()
