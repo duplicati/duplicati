@@ -450,6 +450,7 @@ namespace Duplicati.UnitTest
             // Setup restore target disk image with same geometry
             var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, size);
             _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
+            _diskHelper.Unmount(restoreDrivePath);
             await TestContext.Progress.WriteLineAsync($"Restore disk image created at: {_restoreImagePath}");
 
             // Restore
