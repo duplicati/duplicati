@@ -95,17 +95,21 @@ namespace Duplicati.UnitTest.DiskImage
             foreach (var partition in partitions)
             {
                 var output = RunProcess("diskutil", $"info /dev/{partition}");
+                var lines = output
+                    .Split('\n')
+                    .Select(l => l.Trim())
+                    .Where(l => l.Length > 0)
+                    .ToList();
 
                 // Check if this is an APFS Physical Store
                 var isApfsPhysicalStore = output.Contains("APFS Physical Store") ||
-                    output.Split('\n').Any(l => l.Trim().StartsWith("Partition Type:") && l.Contains("Apple_APFS"));
+                    lines.Any(l => l.StartsWith("Partition Type:") && l.Contains("Apple_APFS"));
 
                 if (isApfsPhysicalStore)
                 {
                     // For APFS, get the container and then get volumes from it
-                    var containerLine = output
-                        .Split('\n')
-                        .FirstOrDefault(l => l.Trim().StartsWith("APFS Container:"));
+                    var containerLine = lines
+                        .FirstOrDefault(l => l.StartsWith("APFS Container:"));
 
                     if (containerLine != null)
                     {
