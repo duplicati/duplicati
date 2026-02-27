@@ -674,8 +674,6 @@ namespace Duplicati.UnitTest
         /// <returns>The restore results.</returns>
         private IRestoreResults RunRestore(string restoreDrivePath)
         {
-            _diskHelper.Unmount(restoreDrivePath);
-
             var options = new Dictionary<string, string>(TestOptions);
             options["restore-path"] = $"@diskimage://{restoreDrivePath}";
             options["overwrite"] = "true";
