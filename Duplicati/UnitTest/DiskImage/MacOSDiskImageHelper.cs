@@ -145,10 +145,8 @@ namespace Duplicati.UnitTest.DiskImage
             return output
                 .Split('\n')
                 .Select(x => x.Trim())
-                .Where(x => x.StartsWith(containerId + "s", StringComparison.OrdinalIgnoreCase))
-                .Select(x => x.Split([' '], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault())
-                .Where(x => x is not null)
-                .Select(x => x!)
+                .Where(x => x.Contains("APFS Volume", StringComparison.OrdinalIgnoreCase))
+                .Select(x => x.Split(' ')[^1])
                 .ToArray();
         }
 
