@@ -565,7 +565,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("DiskImage")]
-        public void Test_AutoUnmountOption_RestoreWhileOnline()
+        public async Task Test_AutoUnmountOption_RestoreWhileOnline()
         {
             TestContext.Progress.WriteLine("Test: Auto Unmount Option - Restore While Disk Online");
 
@@ -573,6 +573,12 @@ namespace Duplicati.UnitTest
             var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (100 * MiB));
             var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
             TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
+
+            // Generate some test data
+            await ToolTests.GenerateTestData(sourcePartitions.First(), 10, 5, 2, 1024);
+            _diskHelper.FlushDisk(sourceDrivePath);
+            _diskHelper.Unmount(sourceDrivePath);
+            TestContext.Progress.WriteLine($"Test data generated on source partition");
 
             // Backup
             var backupResults = RunBackup(sourceDrivePath);
@@ -636,6 +642,7 @@ namespace Duplicati.UnitTest
             VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
 
             // Verify data matches byte-for-byte
+            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);
             var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true);
             var sourcePartition = sourcePartitions.First();
             var restorePartition = restorePartitions.First();
