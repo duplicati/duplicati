@@ -848,8 +848,9 @@ namespace Duplicati.Library.Main.Operation
 
                         try
                         {
-                            // Await the scanner as it m
-                            await parallelScanner.ConfigureAwait(false);
+                            // Await the scanner as it may still be running
+                            if (parallelScanner != null)
+                                await parallelScanner.ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
