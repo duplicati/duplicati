@@ -121,14 +121,14 @@ namespace Duplicati.UnitTest
 
         [Test, Category("DiskImage")]
         public Task Test_GPT_FAT32() =>
-            FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+            FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
 
         [Test, Category("DiskImage")]
         public Task Test_GPT_NTFS()
         {
             if (!OperatingSystem.IsWindows())
                 Assert.Ignore("Test_GPT_NTFS is only supported on Windows.");
-            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [(FileSystemType.NTFS, 0)]);
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.NTFS, 0)]);
         }
 
         [Test, Category("DiskImage")]
@@ -136,7 +136,7 @@ namespace Duplicati.UnitTest
         {
             if (!OperatingSystem.IsMacOS())
                 Assert.Ignore("APFS is only supported on macOS.");
-            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [(FileSystemType.APFS, 0)]);
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.APFS, 0)]);
         }
 
         [Test, Category("DiskImage")]
@@ -144,12 +144,12 @@ namespace Duplicati.UnitTest
         {
             if (!OperatingSystem.IsMacOS())
                 Assert.Ignore("HFSPlus is only supported on macOS.");
-            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [(FileSystemType.HFSPlus, 0)]);
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.HFSPlus, 0)]);
         }
 
         [Test, Category("DiskImage")]
         public Task Test_GPT_ExFAT() =>
-            FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [(FileSystemType.ExFAT, 0)]);
+            FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.ExFAT, 0)]);
 
         #endregion
 
@@ -159,7 +159,7 @@ namespace Duplicati.UnitTest
 
         [Test, Category("DiskImage")]
         public Task Test_MBR_FAT32() =>
-            FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
+            FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
 
 
         [Test, Category("DiskImage")]
@@ -167,19 +167,19 @@ namespace Duplicati.UnitTest
         {
             if (!OperatingSystem.IsMacOS())
                 Assert.Ignore("HFSPlus is only supported on macOS.");
-            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [(FileSystemType.HFSPlus, 0)]);
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.HFSPlus, 0)]);
         }
 
         [Test, Category("DiskImage")]
         public Task Test_MBR_ExFAT() =>
-            FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [(FileSystemType.ExFAT, 0)]);
+            FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.ExFAT, 0)]);
 
         [Test, Category("DiskImage")]
         public Task Test_MBR_NTFS()
         {
             if (!OperatingSystem.IsWindows())
                 Assert.Ignore("Test_MBR_NTFS is only supported on Windows.");
-            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [(FileSystemType.NTFS, 0)]);
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.NTFS, 0)]);
         }
 
         #endregion
@@ -188,7 +188,7 @@ namespace Duplicati.UnitTest
 
         [Test, Category("DiskImage")]
         public Task Test_Unknown_NoPartitions() =>
-            FullRoundTrip((int)(100 * MiB), PartitionTableType.Unknown, []);
+            FullRoundTrip((int)(50 * MiB), PartitionTableType.Unknown, []);
 
         #endregion
 
