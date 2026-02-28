@@ -539,6 +539,25 @@ namespace Duplicati.Library.Main
         public long DeletedSymlinks { get; internal set; }
         public string RestorePath { get; internal set; }
 
+        /// <summary>
+        /// Number of LRU evictions triggered by low disk space in the temp directory
+        /// (disk-pressure path, unlimited cache mode only).
+        /// </summary>
+        public long CachePressureEvictions { get; internal set; }
+        public bool ShouldSerializeCachePressureEvictions() => CachePressureEvictions > 0;
+
+        /// <summary>
+        /// Number of volumes re-downloaded after being evicted due to disk pressure.
+        /// </summary>
+        public long CachePressureRedownloads { get; internal set; }
+        public bool ShouldSerializeCachePressureRedownloads() => CachePressureRedownloads > 0;
+
+        /// <summary>
+        /// Total number of distinct dblock volumes accessed during the restore.
+        /// </summary>
+        public long TotalVolumesAccessed { get; internal set; }
+        public bool ShouldSerializeTotalVolumesAccessed() => TotalVolumesAccessed > 0;
+
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
 
         public IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
