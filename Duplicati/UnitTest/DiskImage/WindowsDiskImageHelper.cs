@@ -357,7 +357,7 @@ namespace Duplicati.UnitTest.DiskImage
         private static string[] GetMountPoints(int diskNumber)
         {
             var script = $@"
-                Get-Partition -DiskNumber {diskNumber} -ErrorAction SilentlyContinue |
+                Get-Partition -DiskNumber {diskNumber} |
                     Where-Object {{ $_.DriveLetter -and $_.DriveLetter -ne [char]0 }} |
                     ForEach-Object {{ $_.DriveLetter }}
             ";
@@ -515,7 +515,7 @@ namespace Duplicati.UnitTest.DiskImage
                 Update-Disk -Number {diskNumber}
                 Update-HostStorageCache
                 Get-Partition -DiskNumber {diskNumber} | Where-Object {{ $_.Type -ne 'Reserved' -and $_.Type -ne 'System' -and -not $_.DriveLetter }} | ForEach-Object {{
-                    $_ | Add-PartitionAccessPath -AssignDriveLetter -ErrorAction SilentlyContinue
+                    $_ | Add-PartitionAccessPath -AssignDriveLetter
                 }}
             ";
             RunPowerShell(script);
@@ -569,11 +569,11 @@ namespace Duplicati.UnitTest.DiskImage
 
             // Remove drive letters from all partitions
             var script = $@"
-                Get-Partition -DiskNumber {diskNumber} -ErrorAction SilentlyContinue |
+                Get-Partition -DiskNumber {diskNumber} |
                     Where-Object {{ $_.DriveLetter -and $_.DriveLetter -ne [char]0 }} |
                     ForEach-Object {{
                         $letter = $_.DriveLetter
-                        Remove-PartitionAccessPath -DiskNumber {diskNumber} -PartitionNumber $_.PartitionNumber -AccessPath ""$($letter):\"" -ErrorAction SilentlyContinue
+                        Remove-PartitionAccessPath -DiskNumber {diskNumber} -PartitionNumber $_.PartitionNumber -AccessPath ""$($letter):\""
                     }}
             ";
             RunPowerShell(script);
@@ -594,10 +594,10 @@ namespace Duplicati.UnitTest.DiskImage
             {
                 // Flush all volumes on the disk
                 var script = $@"
-                    Get-Partition -DiskNumber {diskNumber} -ErrorAction SilentlyContinue |
+                    Get-Partition -DiskNumber {diskNumber} |
                         Where-Object {{ $_.DriveLetter -and $_.DriveLetter -ne [char]0 }} |
                         ForEach-Object {{
-                            Write-VolumeCache -DriveLetter $_.DriveLetter -ErrorAction SilentlyContinue
+                            Write-VolumeCache -DriveLetter $_.DriveLetter
                         }}
                 ";
                 RunPowerShell(script);
@@ -614,7 +614,7 @@ namespace Duplicati.UnitTest.DiskImage
             try
             {
                 var script = $@"
-                    $image = Get-DiskImage -ImagePath '{imagePath}' -ErrorAction SilentlyContinue
+                    $image = Get-DiskImage -ImagePath '{imagePath}'
                     if ($image -and $image.Attached) {{
                         Dismount-DiskImage -ImagePath '{imagePath}'
                     }}
@@ -715,10 +715,10 @@ namespace Duplicati.UnitTest.DiskImage
             var diskNumber = ParseDiskNumber(diskIdentifier);
 
             var script = $@"
-                Get-Partition -DiskNumber {diskNumber} -ErrorAction SilentlyContinue |
+                Get-Partition -DiskNumber {diskNumber} |
                     Where-Object {{ $_.Type -ne 'Reserved' -and $_.Type -ne 'System' }} |
                     ForEach-Object {{
-                        $vol = $_ | Get-Volume -ErrorAction SilentlyContinue
+                        $vol = $_ | Get-Volume
                         Write-Output ""---PARTITION---""
                         Write-Output ""Number:$($_.PartitionNumber)""
                         Write-Output ""Type:$($_.Type)""
