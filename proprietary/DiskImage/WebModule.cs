@@ -95,6 +95,8 @@ public class WebModule : IWebModule
                 return await WindowsListPhysicalDrives(cancellationToken);
             else if (OperatingSystem.IsMacOS())
                 return await MacListPhysicalDrives(cancellationToken);
+            else if (OperatingSystem.IsLinux())
+                return await LinuxListPhysicalDrives(cancellationToken);
             else
                 throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
 
@@ -102,6 +104,8 @@ public class WebModule : IWebModule
         if (OperatingSystem.IsWindows())
             prefix = "\\\\.\\";
         else if (OperatingSystem.IsMacOS())
+            prefix = "/dev/";
+        else if (OperatingSystem.IsLinux())
             prefix = "/dev/";
         else
             throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
@@ -270,6 +274,124 @@ $diskInfo | ConvertTo-Json -Depth 4
         }
 
         return result;
+    }
+
+    private async Task<IDictionary<string, string>> LinuxListPhysicalDrives(CancellationToken cancellationToken)
+    {
+        if (!OperatingSystem.IsLinux())
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
+
+        var result = new Dictionary<string, string>();
+
+        try
+        {
+            // Enumerate block devices from /sys/block/
+            // This is a virtual filesystem present on all Linux distributions
+            const string sysBlockPath = "/sys/block/";
+            if (!Directory.Exists(sysBlockPath))
+                return result;
+
+            var devices = Directory.GetDirectories(sysBlockPath)
+                .Select(d => Path.GetFileName(d))
+                .Where(device => !string.IsNullOrEmpty(device))
+                .Where(device => !device.StartsWith("loop", StringComparison.OrdinalIgnoreCase))
+                .Where(device => !device.StartsWith("ram", StringComparison.OrdinalIgnoreCase))
+                .Where(device => !device.StartsWith("dm-", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            foreach (var device in devices)
+            {
+                try
+                {
+                    var devicePath = $"/dev/{device}";
+
+                    // Read size in 512-byte sectors from /sys/block/{dev}/size
+                    var sizePath = Path.Combine(sysBlockPath, device, "size");
+                    long sizeInSectors = 0;
+                    if (File.Exists(sizePath))
+                    {
+                        var sizeText = await File.ReadAllTextAsync(sizePath, cancellationToken);
+                        long.TryParse(sizeText.Trim(), out sizeInSectors);
+                    }
+                    var sizeInBytes = (ulong)(sizeInSectors * 512);
+
+                    // Try to get display name from /sys/block/{dev}/device/model
+                    var modelPath = Path.Combine(sysBlockPath, device, "device", "model");
+                    string displayName = device;
+                    if (File.Exists(modelPath))
+                    {
+                        var modelText = await File.ReadAllTextAsync(modelPath, cancellationToken);
+                        displayName = modelText.Trim();
+                    }
+
+                    // Get mount points by reading /proc/mounts
+                    var mountPoints = GetLinuxMountPoints(device);
+
+                    var driveInfo = new PhysicalDriveInfo
+                    {
+                        Number = device,
+                        Path = devicePath,
+                        Size = sizeInBytes,
+                        DisplayName = displayName,
+                        Guid = null, // Linux block devices don't have a single GUID like Windows or macOS
+                        MountPoints = mountPoints,
+                        Online = true // Physical drives are always considered online
+                    };
+
+                    AddDiskToResult(driveInfo, result);
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "LinuxDriveEnumerationFailed", ex, $"Failed to enumerate drive: {device}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.WriteErrorMessage(LOGTAG, "LinuxDriveListFailed", ex, "Failed to list physical drives on Linux");
+        }
+
+        return result;
+    }
+
+    private string[] GetLinuxMountPoints(string device)
+    {
+        var mountPoints = new List<string>();
+
+        try
+        {
+            // Read /proc/mounts to find mount points for this device
+            if (File.Exists("/proc/mounts"))
+            {
+                var mountsText = File.ReadAllText("/proc/mounts");
+                var lines = mountsText.Split(['\n'], StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var line in lines)
+                {
+                    var parts = line.Split([' '], StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2)
+                    {
+                        var source = parts[0];
+                        var mountPoint = parts[1];
+
+                        // Check if this mount is for our device or one of its partitions
+                        // Device: /dev/sda, Partitions: /dev/sda1, /dev/sda2, etc.
+                        if (source == $"/dev/{device}" || source.StartsWith($"/dev/{device}", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Decode escaped spaces in mount point
+                            mountPoint = mountPoint.Replace("\\040", " ");
+                            mountPoints.Add(mountPoint);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.WriteWarningMessage(LOGTAG, "LinuxMountPointReadFailed", ex, $"Failed to read mount points for {device}");
+        }
+
+        return mountPoints.ToArray();
     }
 
     private void AddDiskToResult(PhysicalDriveInfo drive, Dictionary<string, string> result)
