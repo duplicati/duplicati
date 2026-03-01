@@ -648,6 +648,7 @@ namespace Duplicati.UnitTest.DiskImage
                 FileSystemType.XFS => ("mkfs.xfs", $"-f {partitionDevice}"),
                 FileSystemType.Btrfs => ("mkfs.btrfs", $"-f {partitionDevice}"),
                 FileSystemType.NTFS => ("mkfs.ntfs", $"-F {partitionDevice}"),
+                FileSystemType.ZFS => throw new NotSupportedException("ZFS is not supported for testing. ZFS requires pool creation which is incompatible with standard partition-based testing."),
                 _ => throw new NotSupportedException($"Unsupported filesystem type on Linux: {fsType}")
             };
 
