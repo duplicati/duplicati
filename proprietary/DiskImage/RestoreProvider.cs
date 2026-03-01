@@ -143,6 +143,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             _targetDisk = new Windows(_devicePath);
         else if (OperatingSystem.IsMacOS())
             _targetDisk = new Mac(_devicePath);
+        else if (OperatingSystem.IsLinux())
+            _targetDisk = new Linux(_devicePath);
         else
             throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
 
