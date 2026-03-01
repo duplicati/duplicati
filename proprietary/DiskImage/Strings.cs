@@ -64,7 +64,7 @@ internal static class Strings
     /// <summary>
     /// Error message for when platform is not supported.
     /// </summary>
-    public static string PlatformNotSupported => LC.L("Disk image restore is only supported on Windows and macOS.");
+    public static string PlatformNotSupported => LC.L("Disk image operations are only supported on Windows, macOS, and Linux.");
 
     /// <summary>
     /// Error message for when restore target device is not found.
