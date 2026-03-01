@@ -34,6 +34,7 @@
     <Project Path="Duplicati/CommandLine/BackendTester/Duplicati.CommandLine.BackendTester.csproj" />
     <Project Path="Duplicati/CommandLine/BackendTool/Duplicati.CommandLine.BackendTool.csproj" />
     <Project Path="Duplicati/CommandLine/CLI/Duplicati.CommandLine.csproj" />
+    <Project Path="Duplicati/CommandLine/ConfigureTool/Duplicati.CommandLine.ConfigureTool.csproj" />
     <Project Path="Duplicati/CommandLine/DatabaseTool/Duplicati.CommandLine.DatabaseTool.csproj" />
     <Project Path="Duplicati/CommandLine/RecoveryTool/Duplicati.CommandLine.RecoveryTool.csproj" />
     <Project Path="Duplicati/CommandLine/SecretTool/Duplicati.CommandLine.SecretTool.csproj" />
@@ -49,6 +50,7 @@
     <Project Path="Executables/Duplicati.CommandLine.AutoUpdater/Duplicati.CommandLine.AutoUpdater.csproj" />
     <Project Path="Executables/Duplicati.CommandLine.BackendTester/Duplicati.CommandLine.BackendTester.csproj" />
     <Project Path="Executables/Duplicati.CommandLine.BackendTool/Duplicati.CommandLine.BackendTool.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.ConfigureTool/Duplicati.CommandLine.ConfigureTool.csproj" />
     <Project Path="Executables/Duplicati.CommandLine.DatabaseTool/Duplicati.CommandLine.DatabaseTool.csproj" />
     <Project Path="Executables/Duplicati.CommandLine.RecoveryTool/Duplicati.CommandLine.RecoveryTool.csproj" />
     <Project Path="Executables/Duplicati.CommandLine.SecretTool/Duplicati.CommandLine.SecretTool.csproj" />
@@ -88,6 +90,7 @@
   </Folder>
   <Project Path="Duplicati/Library/AutoUpdater/Duplicati.Library.AutoUpdater.csproj" />
   <Project Path="Duplicati/Library/Backend/OAuthHelper/Duplicati.Library.OAuthHelper.csproj" />
+  <Project Path="Duplicati/Library/Certificates/Duplicati.Library.Certificates.csproj" />
   <Project Path="Duplicati/Library/Backends/Duplicati.Library.Backends.csproj" />
   <Project Path="Duplicati/Library/Common/Duplicati.Library.Common.csproj" />
   <Project Path="Duplicati/Library/Encryption/Duplicati.Library.Encryption.csproj" />
