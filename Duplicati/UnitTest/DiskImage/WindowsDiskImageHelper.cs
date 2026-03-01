@@ -532,11 +532,8 @@ namespace Duplicati.UnitTest.DiskImage
         /// <returns>An array of mount point paths.</returns>
         private static string[] WaitForMountPoints(int diskNumber)
         {
-            const int maxRetries = 10;
-            const int initialDelayMs = 100;
-            const int maxDelayMs = 1000;
+            const int maxRetries = 2;
 
-            var delayMs = initialDelayMs;
             for (int i = 0; i < maxRetries; i++)
             {
                 var mountPoints = GetMountPoints(diskNumber);
@@ -553,9 +550,6 @@ namespace Duplicati.UnitTest.DiskImage
                     if (allNonEmpty || i == maxRetries - 1)
                         return mountPoints;
                 }
-
-                Thread.Sleep(delayMs);
-                delayMs = Math.Min(delayMs * 2, maxDelayMs);
             }
 
             // Final attempt - return whatever we have
