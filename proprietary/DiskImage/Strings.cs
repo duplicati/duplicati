@@ -62,6 +62,11 @@ internal static class Strings
     public static string DiskRestoreValidateSizeLong => LC.L("If set, the target disk size will be validated against the source size before restoring.");
 
     /// <summary>
+    /// Error message for when platform is not supported.
+    /// </summary>
+    public static string PlatformNotSupported => LC.L("Disk image restore is only supported on Windows and macOS.");
+
+    /// <summary>
     /// Error message for when restore target device is not found.
     /// </summary>
     public static string RestoreTargetNotFound => LC.L("Restore target device not found: {0}");
@@ -75,11 +80,6 @@ internal static class Strings
     /// Error message for when overwrite option is not set.
     /// </summary>
     public static string RestoreOverwriteNotSet => LC.L("The overwrite option must be set to restore to a disk image target. Use --overwrite to enable.");
-
-    /// <summary>
-    /// Error message for when platform is not supported.
-    /// </summary>
-    public static string RestorePlatformNotSupported => LC.L("Disk image restore is only supported on Windows.");
 
     /// <summary>
     /// Error message for when device cannot be opened for writing.

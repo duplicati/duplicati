@@ -36,7 +36,7 @@ internal static class PartitionTableFactory
 
         // Read the first sector (LBA 0 - MBR)
         var mbrBytes = new byte[MbrSize];
-        using var stream = await disk.ReadBytesAsync(0, MbrSize, cancellationToken).ConfigureAwait(false);
+        using var stream = await disk.ReadSectorsAsync(0, 1, cancellationToken).ConfigureAwait(false);
         await stream.ReadAtLeastAsync(mbrBytes, MbrSize, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         // Detect partition table type from MBR

@@ -37,23 +37,24 @@ namespace Duplicati.UnitTest
 {
     /// <summary>
     /// Unit tests for the DiskImage backup and restore functionality.
-    /// These tests use VHD files managed via diskpart to test the full backup and restore flow.
+    /// These tests use disk image files managed to test the full backup and restore flow.
     /// </summary>
     [TestFixture]
     [Category("DiskImage")]
-    [Platform("Win")]
+    [Platform("Win,MacOsX")]
     public class DiskImageTests : BasicSetupHelper
     {
-        private string _sourceVhdPath = null!;
-        private string _restoreVhdPath = null!;
-        private int _sourceDiskNumber = -1;
-        private int _restoreDiskNumber = -1;
-        private char _sourceDriveLetter;
+        private string _sourceImagePath = null!;
+        private string _restoreImagePath = null!;
+        private string _sourceMountPath = null!;
+        private string _restoreMountPath = null!;
         private DiskImage.IDiskImageHelper _diskHelper = null!;
+
+        private const long MiB = 1024 * 1024;
 
         /// <summary>
         /// Sets up the test environment before each test.
-        /// Creates the disk helper and temporary VHD paths.
+        /// Creates the disk helper and temporary disk image paths.
         /// </summary>
         [SetUp]
         public void DiskImageSetUp()
@@ -67,36 +68,40 @@ namespace Duplicati.UnitTest
                 Assert.Ignore("DiskImage tests require administrator privileges");
             }
 
-            // Create temp VHD paths
-            var tempPath = Path.GetTempPath();
-            _sourceVhdPath = Path.Combine(tempPath, $"duplicati_test_source_{Guid.NewGuid()}.vhdx");
-            _restoreVhdPath = Path.Combine(tempPath, $"duplicati_test_restore_{Guid.NewGuid()}.vhdx");
+            // Create temp disk image paths
+            var extension = OperatingSystem.IsWindows() ? "vhdx" : "dmg";
+            _sourceImagePath = Path.Combine(DATAFOLDER, $"duplicati_test_source_{Guid.NewGuid()}.{extension}");
+            _restoreImagePath = Path.Combine(DATAFOLDER, $"duplicati_test_restore_{Guid.NewGuid()}.{extension}");
+            _sourceMountPath = Path.Combine(DATAFOLDER, $"mnt_source_{Guid.NewGuid()}");
+            _restoreMountPath = Path.Combine(DATAFOLDER, $"mnt_restore_{Guid.NewGuid()}");
+            Directory.CreateDirectory(_sourceMountPath);
+            Directory.CreateDirectory(_restoreMountPath);
         }
 
         /// <summary>
         /// Cleans up the test environment after each test.
-        /// Detaches and deletes VHD files.
+        /// Detaches and deletes disk image files.
         /// </summary>
         [TearDown]
         public void DiskImageTearDown()
         {
-            // Cleanup VHDs
+            // Cleanup disk images
             try
             {
-                _diskHelper.CleanupDisk(_sourceVhdPath);
+                _diskHelper.CleanupDisk(_sourceImagePath);
             }
             catch (Exception ex)
             {
-                TestContext.Progress.WriteLine($"Warning: Failed to cleanup source VHD: {ex.Message}");
+                TestContext.Progress.WriteLine($"Warning: Failed to cleanup source disk image: {ex.Message}");
             }
 
             try
             {
-                _diskHelper.CleanupDisk(_restoreVhdPath);
+                _diskHelper.CleanupDisk(_restoreImagePath);
             }
             catch (Exception ex)
             {
-                TestContext.Progress.WriteLine($"Warning: Failed to cleanup restore VHD: {ex.Message}");
+                TestContext.Progress.WriteLine($"Warning: Failed to cleanup restore disk image: {ex.Message}");
             }
 
             try
@@ -107,161 +112,386 @@ namespace Duplicati.UnitTest
             {
                 TestContext.Progress.WriteLine($"Warning: Failed to dispose disk helper: {ex.Message}");
             }
+
+            Directory.Delete(_sourceMountPath, true);
+            Directory.Delete(_restoreMountPath, true);
         }
 
-        /// <summary>
-        /// Test Scenario 1: GPT + NTFS - Single Partition Backup and Restore
-        /// </summary>
-        [Test]
-        [Category("DiskImage")]
-        public void Test_GptNtfs_SinglePartition_BackupAndRestore()
+        #region GPT Single Partition
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_FAT32() =>
+            FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_NTFS()
         {
-            TestContext.Progress.WriteLine("Test: GPT + NTFS Single Partition Backup and Restore");
-
-            // Setup: Create 100MB VHD, GPT, single NTFS partition with test data
-            var physicalDrivePath = SetupSourceVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
-            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
-            TestContext.Progress.WriteLine($"Physical drive path: {physicalDrivePath}");
-
-            // Backup via Controller
-            var backupResults = RunBackup(physicalDrivePath);
-            TestContext.Progress.WriteLine($"Backup completed. Files examined: {backupResults.ExaminedFiles}, Size: {backupResults.SizeOfExaminedFiles}");
-
-            // Assert backup completed with no errors/warnings
-            TestUtils.AssertResults(backupResults);
-
-            // Verify backup created expected files
-            var remoteFiles = Directory.GetFiles(TARGETFOLDER);
-            Assert.That(remoteFiles.Length, Is.GreaterThan(0), "Backup should create remote files");
-            TestContext.Progress.WriteLine($"Remote files created: {remoteFiles.Length}");
-
-            // Setup restore target VHD
-            var restoreDrivePath = SetupRestoreVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
-            TestContext.Progress.WriteLine($"Restore VHD created at: {_restoreVhdPath}");
-
-            // Restore to target VHD
-            var restoreResults = RunRestore(restoreDrivePath);
-            TestContext.Progress.WriteLine($"Restore completed. Files restored: {restoreResults.RestoredFiles}, Size: {restoreResults.SizeOfRestoredFiles}");
-
-            // Assert restore completed with no errors/warnings
-            TestUtils.AssertResults(restoreResults);
-
-            // Verify restored data matches original
-            VerifyRestoredData(_sourceDriveLetter);
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("Test_GPT_NTFS is only supported on Windows.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.NTFS, 0)]);
         }
 
-        /// <summary>
-        /// Test Scenario 2: MBR + FAT32 - Single Partition Backup and Restore
-        /// </summary>
-        [Test]
-        [Category("DiskImage")]
-        public void Test_MbrFat32_SinglePartition_BackupAndRestore()
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_APFS()
         {
-            TestContext.Progress.WriteLine("Test: MBR + FAT32 Single Partition Backup and Restore");
-
-            // Setup: Create 50MB VHD, MBR, single FAT32 partition with test data
-            var physicalDrivePath = SetupSourceVhd(50, PartitionTableType.MBR, FileSystemType.FAT32);
-            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
-            TestContext.Progress.WriteLine($"Physical drive path: {physicalDrivePath}");
-
-            // Backup via Controller
-            var backupResults = RunBackup(physicalDrivePath);
-            TestContext.Progress.WriteLine($"Backup completed. Files examined: {backupResults.ExaminedFiles}");
-
-            // Assert backup completed with no errors/warnings
-            TestUtils.AssertResults(backupResults);
-
-            // Setup restore target VHD
-            var restoreDrivePath = SetupRestoreVhd(50, PartitionTableType.MBR, FileSystemType.FAT32);
-            TestContext.Progress.WriteLine($"Restore VHD created at: {_restoreVhdPath}");
-
-            // Restore to target VHD
-            var restoreResults = RunRestore(restoreDrivePath);
-            TestContext.Progress.WriteLine($"Restore completed. Files restored: {restoreResults.RestoredFiles}");
-
-            // Assert restore completed with no errors/warnings
-            TestUtils.AssertResults(restoreResults);
-
-            // Verify restored data matches original
-            VerifyRestoredData(_sourceDriveLetter);
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS is only supported on macOS.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.APFS, 0)]);
         }
 
-        /// <summary>
-        /// Test Scenario 3: GPT + Multiple Partitions - NTFS + FAT32
-        /// </summary>
-        [Test]
-        [Category("DiskImage")]
-        public void Test_Gpt_MultiplePartitions_Backup()
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_HFSPlus()
         {
-            TestContext.Progress.WriteLine("Test: GPT + Multiple Partitions (NTFS + FAT32) Backup");
-
-            // Setup: Create 200MB VHD, GPT, two partitions
-            var physicalDrivePath = SetupSourceVhdMultiplePartitions(200, PartitionTableType.GPT,
-                new[] { (FileSystemType.NTFS, 100), (FileSystemType.FAT32, 50) });
-            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
-            TestContext.Progress.WriteLine($"Physical drive path: {physicalDrivePath}");
-
-            // Backup via Controller
-            var backupResults = RunBackup(physicalDrivePath);
-            TestContext.Progress.WriteLine($"Backup completed. Files examined: {backupResults.ExaminedFiles}");
-
-            // Assert backup completed with no errors/warnings
-            TestUtils.AssertResults(backupResults);
-
-            // Verify geometry metadata contains both partitions
-            VerifyGeometryMetadata();
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.HFSPlus, 0)]);
         }
 
-        /// <summary>
-        /// Test Scenario 4: Full Round-Trip - Backup + Restore to Second VHD
-        /// </summary>
-        [Test]
-        [Category("DiskImage")]
-        public void Test_FullRoundTrip_BackupAndRestore()
-        {
-            TestContext.Progress.WriteLine("Test: Full Round-Trip Backup + Restore");
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_ExFAT() =>
+            FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.ExFAT, 0)]);
 
-            // Setup source VHD: 100MB, GPT, single NTFS partition
-            var sourceDrivePath = SetupSourceVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
-            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
+        #endregion
+
+        #region MBR Single Partition
+
+        // APFS is only supported on GPT partition tables.
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_FAT32() =>
+            FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
+
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.HFSPlus, 0)]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_ExFAT() =>
+            FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.ExFAT, 0)]);
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_NTFS()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("Test_MBR_NTFS is only supported on Windows.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.NTFS, 0)]);
+        }
+
+        #endregion
+
+        #region Unknown Partition Table
+
+        [Test, Category("DiskImage")]
+        public Task Test_Unknown_NoPartitions() =>
+            FullRoundTrip((int)(50 * MiB), PartitionTableType.Unknown, []);
+
+        #endregion
+
+        #region GPT Two Partitions
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_APFS_APFS()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.APFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_HFSPlus_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_APFS_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_FAT32_APFS()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.APFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_ExFAT_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.ExFAT, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_FAT32_ExFAT() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.ExFAT, 0)
+            ]);
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_NTFS_FAT32()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("This test is only supported on Windows.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
+
+        #endregion
+
+        #region MBR Two Partitions
+
+        // APFS is only supported on GPT partition tables.
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_HFSPlus_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_FAT32_ExFAT()
+        {
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.ExFAT, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_FAT32_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_NTFS_FAT32()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("This test is only supported on Windows.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
+
+        #endregion
+
+        #region GPT Three Partitions
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_APFS_APFS_APFS()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS is only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.APFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_HFSPlus_HFSPlus_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        // TODO follow naming scheme.
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_APFS_HFSPlus_APFS()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.APFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_FAT32_APFS_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_ExFAT_APFS_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.ExFAT, 50 * MiB),
+                (FileSystemType.APFS, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        #endregion
+
+        #region MBR Three Partitions
+
+        // APFS is only supported on GPT partition tables.
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_HFSPlus_HFSPlus_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_FAT32_ExFAT_HFSPlus()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("HFSPlus is only supported on macOS.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.ExFAT, 50 * MiB),
+                (FileSystemType.HFSPlus, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_NTFS_FAT32_ExFAT()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("This test is only supported on Windows.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.ExFAT, 0)
+            ]);
+        }
+
+        #endregion
+
+        public async Task FullRoundTrip(int size, PartitionTableType tableType, (FileSystemType, long)[] partitions)
+        {
+            await TestContext.Progress.WriteLineAsync("Test: Full Round-Trip Backup + Restore");
+
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, size);
+            await TestContext.Progress.WriteLineAsync($"Source Disk created at: {_sourceImagePath}");
+
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, tableType, partitions);
+            await TestContext.Progress.WriteLineAsync($"Source Disk initialized with partition(s): {string.Join(", ", sourcePartitions)}");
+
+            // Populate source partition with test data
+            foreach (var partition in sourcePartitions)
+                await ToolTests.GenerateTestData(partition, 10, 5, 2, 1024);
+            _diskHelper.FlushDisk(sourceDrivePath);
+            _diskHelper.Unmount(sourceDrivePath);
+            await TestContext.Progress.WriteLineAsync($"Test data generated on source partition(s)");
 
             // Backup
             var backupResults = RunBackup(sourceDrivePath);
             TestUtils.AssertResults(backupResults);
-            TestContext.Progress.WriteLine($"Backup completed successfully");
+            await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
-            // Setup restore target VHD with same geometry
-            var restoreDrivePath = SetupRestoreVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
-            TestContext.Progress.WriteLine($"Restore VHD created at: {_restoreVhdPath}");
+            // Setup restore target disk image with same geometry
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, size);
+            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
+            _diskHelper.Unmount(restoreDrivePath);
+            await TestContext.Progress.WriteLineAsync($"Restore disk image created at: {_restoreImagePath}");
 
             // Restore
             var restoreResults = RunRestore(restoreDrivePath);
             TestUtils.AssertResults(restoreResults);
-            TestContext.Progress.WriteLine($"Restore completed successfully");
+            await TestContext.Progress.WriteLineAsync($"Restore completed successfully");
 
-            // Verify partition table matches
-            VerifyPartitionTableMatches();
+            // Reattach drives in readonly
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: true);
+            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, tableType, readOnly: true);
+            await TestContext.Progress.WriteLineAsync($"Source and restore disks re-attached as read-only for verification");
+
+            // Verify partition table matches. Mount before verification, to make disks online on Windows.
+            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);
+            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true);
+            VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
+            await TestContext.Progress.WriteLineAsync($"Partition table verified to match source");
 
             // Verify data matches byte-for-byte
-            VerifyRestoredData(_sourceDriveLetter);
+            foreach (var (sourcePartition, restorePartition) in sourcePartitions.Zip(restorePartitions, (s, r) => (s, r)))
+                CompareDirectories(sourcePartition, restorePartition);
+
+            await TestContext.Progress.WriteLineAsync($"Restored data verified to match source");
         }
 
-        /// <summary>
-        /// Test Scenario 5: Geometry Metadata Verification
-        /// </summary>
         [Test]
         [Category("DiskImage")]
-        public void Test_GeometryMetadata_Verification()
+        public async Task Test_GeometryMetadata_Verification()
         {
-            TestContext.Progress.WriteLine("Test: Geometry Metadata Verification");
+            await TestContext.Progress.WriteLineAsync("Test: Full Round-Trip Backup + Restore");
 
-            // Setup: Create GPT disk with 2 NTFS partitions
-            var physicalDrivePath = SetupSourceVhdMultiplePartitions(200, PartitionTableType.GPT,
-                new[] { (FileSystemType.NTFS, 80), (FileSystemType.NTFS, 60) });
-            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, 100 * MiB);
+            await TestContext.Progress.WriteLineAsync($"Source Disk created at: {_sourceImagePath}");
+
+            (FileSystemType, long)[] partitions = [(FileSystemType.FAT32, 50 * MiB), (FileSystemType.FAT32, 0)];
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, partitions);
+            _diskHelper.Unmount(sourceDrivePath);
+            await TestContext.Progress.WriteLineAsync($"Source Disk initialized with partition(s): {string.Join(", ", sourcePartitions)}");
 
             // Backup
-            var backupResults = RunBackup(physicalDrivePath);
+            var backupResults = RunBackup(sourceDrivePath);
             TestUtils.AssertResults(backupResults);
 
             // List backup contents and verify geometry.json is present
@@ -278,26 +508,24 @@ namespace Duplicati.UnitTest
             }
 
             // Verify geometry metadata contains correct information
-            VerifyGeometryMetadata();
+            VerifyGeometryMetadata(TARGETFOLDER, TestOptions, partitions);
         }
 
-        /// <summary>
-        /// Test Scenario 6: SourceProvider Enumeration
-        /// </summary>
         [Test]
         [Category("DiskImage")]
         public async Task Test_SourceProvider_Enumeration()
         {
             TestContext.Progress.WriteLine("Test: SourceProvider Enumeration");
 
-            // Setup: Create GPT disk with one NTFS partition
-            var physicalDrivePath = SetupSourceVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
-            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
+            // Setup: Create GPT disk with one FAT32 partition
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (100 * MiB));
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+            TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
 
             // Directly instantiate SourceProvider
             // Note: When directly instantiating SourceProvider, we don't use the @ prefix
             // The @ prefix is only for Controller to recognize it as a remote source
-            var sourceUrl = $"diskimage://{physicalDrivePath}";
+            var sourceUrl = $"diskimage://{sourceDrivePath}";
             using var provider = new SourceProvider(sourceUrl, "", new Dictionary<string, string?>());
 
             // Initialize the provider
@@ -344,59 +572,35 @@ namespace Duplicati.UnitTest
             Assert.That(fsEntries.Count, Is.GreaterThan(0), "Should have at least one filesystem entry");
         }
 
-        /// <summary>
-        /// Test Scenario 7: MBR + Multiple Partitions
-        /// </summary>
         [Test]
         [Category("DiskImage")]
-        public void Test_Mbr_MultiplePartitions_Backup()
-        {
-            TestContext.Progress.WriteLine("Test: MBR + Multiple Partitions Backup");
-
-            // Setup: Create 150MB VHD, MBR, two partitions (NTFS + FAT32)
-            var physicalDrivePath = SetupSourceVhdMultiplePartitions(150, PartitionTableType.MBR,
-                new[] { (FileSystemType.NTFS, 70), (FileSystemType.FAT32, 40) });
-            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
-
-            // Backup
-            var backupResults = RunBackup(physicalDrivePath);
-            TestUtils.AssertResults(backupResults);
-            TestContext.Progress.WriteLine($"Backup completed. Files examined: {backupResults.ExaminedFiles}");
-
-            // Verify both partitions are captured
-            VerifyGeometryMetadata();
-
-            // Verify partition table type is MBR in geometry metadata
-            VerifyPartitionTableType(PartitionTableType.MBR);
-        }
-
-        /// <summary>
-        /// Test Scenario 8: Auto Unmount Option - Verify that restore fails when disk is online
-        /// and succeeds when auto-unmount option is enabled.
-        /// </summary>
-        [Test]
-        [Category("DiskImage")]
-        public void Test_AutoUnmountOption_RestoreWhileOnline()
+        public async Task Test_AutoUnmountOption_RestoreWhileOnline()
         {
             TestContext.Progress.WriteLine("Test: Auto Unmount Option - Restore While Disk Online");
 
-            // Setup source VHD: 100MB, GPT, single NTFS partition
-            var sourceDrivePath = SetupSourceVhd(100, PartitionTableType.GPT, FileSystemType.NTFS);
-            TestContext.Progress.WriteLine($"Source VHD created at: {_sourceVhdPath}");
+            // Setup source disk image: 100MB, GPT, single FAT32 partition
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (100 * MiB));
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+            TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
+
+            // Generate some test data
+            await ToolTests.GenerateTestData(sourcePartitions.First(), 10, 5, 2, 1024);
+            _diskHelper.FlushDisk(sourceDrivePath);
+            _diskHelper.Unmount(sourceDrivePath);
+            TestContext.Progress.WriteLine($"Test data generated on source partition");
 
             // Backup
             var backupResults = RunBackup(sourceDrivePath);
             TestUtils.AssertResults(backupResults);
             TestContext.Progress.WriteLine($"Backup completed successfully");
 
-            // Create and attach VHD
-            var restoreDrivePath = _diskHelper.CreateAndAttachDisk(_restoreVhdPath, 100);
-            _restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
+            // Create and attach disk image
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (100 * MiB));
 
             // Initialize disk (the restore will overwrite this, but we need it formatted)
-            _diskHelper.InitializeDisk(_restoreDiskNumber, PartitionTableType.GPT);
-            _diskHelper.CreateAndFormatPartition(_restoreDiskNumber, FileSystemType.NTFS);
-            TestContext.Progress.WriteLine($"Restore VHD created and kept online at: {_restoreVhdPath}");
+            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 50 * MiB), (FileSystemType.FAT32, 0)]);
+            _diskHelper.Mount(restoreDrivePath, _restoreMountPath);
+            TestContext.Progress.WriteLine($"Restore disk image created and kept online at: {_restoreImagePath}");
 
             // First attempt: Restore without auto-unmount option should fail
             // because the disk is online and in use
@@ -425,6 +629,10 @@ namespace Duplicati.UnitTest
                 {
                     // Assumed to fail
                 }
+                catch (UserInformationException)
+                {
+                    // Assumed to fail
+                }
             }
 
             // Second attempt: Restore with auto-unmount option should succeed
@@ -439,94 +647,20 @@ namespace Duplicati.UnitTest
             }
             TestContext.Progress.WriteLine($"Restore completed successfully with auto-unmount option");
 
+            // Mount before verification, to make disks online on Windows.
+            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);
+            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true);
+
             // Verify partition table matches
-            VerifyPartitionTableMatches();
+            VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
 
             // Verify data matches byte-for-byte
-            VerifyRestoredData(_sourceDriveLetter);
+            var sourcePartition = sourcePartitions.First();
+            var restorePartition = restorePartitions.First();
+            CompareDirectories(sourcePartition, restorePartition);
         }
 
         #region Helper Methods
-
-        /// <summary>
-        /// Sets up a source VHD with a single partition.
-        /// </summary>
-        /// <param name="sizeMB">The size of the VHD in megabytes.</param>
-        /// <param name="tableType">The partition table type (GPT or MBR).</param>
-        /// <param name="fsType">The filesystem type (NTFS, FAT32, EXT4, etc.).</param>
-        /// <returns>The physical drive path.</returns>
-        private string SetupSourceVhd(int sizeMB, PartitionTableType tableType, FileSystemType fsType)
-        {
-            // Create and attach VHD
-            var physicalDrivePath = _diskHelper.CreateAndAttachDisk(_sourceVhdPath, sizeMB);
-            _sourceDiskNumber = _diskHelper.GetDiskNumber(_sourceVhdPath);
-
-            // Initialize disk
-            _diskHelper.InitializeDisk(_sourceDiskNumber, tableType);
-
-            // Create and format partition
-            _sourceDriveLetter = _diskHelper.CreateAndFormatPartition(_sourceDiskNumber, fsType);
-
-            // Populate with test data
-            _diskHelper.PopulateTestData(_sourceDriveLetter);
-            _diskHelper.FlushVolume(_sourceDriveLetter);
-
-            return physicalDrivePath;
-        }
-
-        /// <summary>
-        /// Sets up a source VHD with multiple partitions.
-        /// </summary>
-        /// <param name="sizeMB">The size of the VHD in megabytes.</param>
-        /// <param name="tableType">The partition table type (GPT or MBR).</param>
-        /// <param name="partitions">Array of tuples containing filesystem type and size for each partition.</param>
-        /// <returns>The physical drive path.</returns>
-        private string SetupSourceVhdMultiplePartitions(int sizeMB, PartitionTableType tableType, (FileSystemType fsType, int sizeMB)[] partitions)
-        {
-            // Create and attach VHD
-            var physicalDrivePath = _diskHelper.CreateAndAttachDisk(_sourceVhdPath, sizeMB);
-            _sourceDiskNumber = _diskHelper.GetDiskNumber(_sourceVhdPath);
-
-            // Initialize disk
-            _diskHelper.InitializeDisk(_sourceDiskNumber, tableType);
-
-            // Create and format partitions
-            for (int i = 0; i < partitions.Length; i++)
-            {
-                var (fsType, partSize) = partitions[i];
-                var driveLetter = _diskHelper.CreateAndFormatPartition(_sourceDiskNumber, fsType, partSize);
-                _diskHelper.PopulateTestData(driveLetter, 5, 5); // Smaller data set for multiple partitions
-                _diskHelper.FlushVolume(driveLetter);
-
-                if (i == 0)
-                {
-                    _sourceDriveLetter = driveLetter;
-                }
-            }
-
-            return physicalDrivePath;
-        }
-
-        /// <summary>
-        /// Sets up a restore target VHD with the specified geometry.
-        /// </summary>
-        /// <param name="sizeMB">The size of the VHD in megabytes.</param>
-        /// <param name="tableType">The partition table type (GPT or MBR).</param>
-        /// <param name="fsType">The filesystem type (NTFS, FAT32, EXT4, etc.).</param>
-        /// <returns>The physical drive path.</returns>
-        private string SetupRestoreVhd(int sizeMB, PartitionTableType tableType, FileSystemType fsType)
-        {
-            // Create and attach VHD
-            var physicalDrivePath = _diskHelper.CreateAndAttachDisk(_restoreVhdPath, sizeMB);
-            _restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
-
-            // Initialize disk (the restore will overwrite this, but we need it formatted)
-            _diskHelper.InitializeDisk(_restoreDiskNumber, tableType);
-            var restoreDriveLetter = _diskHelper.CreateAndFormatPartition(_restoreDiskNumber, fsType);
-            _diskHelper.UnmountForWriting(_restoreVhdPath, restoreDriveLetter);
-
-            return physicalDrivePath;
-        }
 
         /// <summary>
         /// Runs a backup operation using the Controller.
@@ -551,8 +685,6 @@ namespace Duplicati.UnitTest
         /// <returns>The restore results.</returns>
         private IRestoreResults RunRestore(string restoreDrivePath)
         {
-            _diskHelper.UnmountForWriting(_restoreVhdPath);
-
             var options = new Dictionary<string, string>(TestOptions);
             options["restore-path"] = $"@diskimage://{restoreDrivePath}";
             options["overwrite"] = "true";
@@ -561,79 +693,7 @@ namespace Duplicati.UnitTest
             using var c = new Controller("file://" + TARGETFOLDER, options, null);
             var results = c.Restore(new[] { "*" });
 
-            _diskHelper.BringOnline(_restoreVhdPath);
-
             return results;
-        }
-
-        /// <summary>
-        /// Verifies that the restored data matches the original data.
-        /// </summary>
-        /// <param name="originalDriveLetter">The drive letter of the original source drive.</param>
-        private void VerifyRestoredData(char originalDriveLetter)
-        {
-            TestContext.Progress.WriteLine("Verifying restored data...");
-
-            // Attach the restored VHD to get its drive letter
-            var restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
-            if (restoreDiskNumber < 0)
-            {
-                // Re-attach the VHD if needed - for Windows, we need to use the static method
-                // since this is a special case for re-attaching
-                if (_diskHelper is DiskImage.WindowsDiskImageHelper)
-                {
-                    DiskImage.WindowsDiskImageHelper.RunPowerShell($"Mount-DiskImage -ImagePath '{_restoreVhdPath}'");
-                }
-                restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
-            }
-
-            // Get the drive letter for the restored partition
-            var restoreDriveLetter = GetDriveLetterForDisk(restoreDiskNumber);
-            if (restoreDriveLetter == '\0')
-            {
-                TestContext.Progress.WriteLine("Restored VHD not mounted, attempting to mount...");
-                restoreDriveLetter = _diskHelper.MountForReading(_restoreVhdPath);
-                // Give Windows some time to mount the volume and assign the drive letter
-                Thread.Sleep(2000);
-            }
-
-            if (restoreDriveLetter == '\0')
-            {
-                // Second attempt to get drive letter after mounting failed
-                Assert.Fail("Could not find drive letter for restored VHD");
-                return;
-            }
-
-            TestContext.Progress.WriteLine($"Comparing source drive {originalDriveLetter}: with restored drive {restoreDriveLetter}:");
-
-            try
-            {
-                // Compare directory structures and file contents
-                var sourcePath = $"{originalDriveLetter}:\\";
-                var restorePath = $"{restoreDriveLetter}:\\";
-
-                // Wait for the restore path to become available
-                for (int i = 0; i < 10; i++)
-                {
-                    if (Directory.Exists(restorePath))
-                        break;
-                    Thread.Sleep(1000);
-                }
-
-                CompareDirectories(sourcePath, restorePath);
-            }
-            finally
-            {
-                // Detach the restored VHD
-                try
-                {
-                    _diskHelper.DetachDisk(_restoreVhdPath);
-                }
-                catch (Exception ex)
-                {
-                    TestContext.Progress.WriteLine($"Warning: Failed to detach restored VHD: {ex.Message}");
-                }
-            }
         }
 
         /// <summary>
@@ -651,8 +711,23 @@ namespace Duplicati.UnitTest
             };
 
             // Get all files in source, except for system files, which cannot be read directly
-            var sourceFiles = Directory.EnumerateFiles(sourcePath, "*", options).Select(f => Path.GetRelativePath(sourcePath, f)).OrderBy(f => f).ToList();
-            var restoreFiles = Directory.EnumerateFiles(restorePath, "*", options).Select(f => Path.GetRelativePath(restorePath, f)).OrderBy(f => f).ToList();
+            var sourceFiles = Directory.EnumerateFiles(sourcePath, "*", options)
+                .Select(f => Path.GetRelativePath(sourcePath, f))
+                .Where(f => !string.IsNullOrEmpty(f))
+                .OrderBy(f => f)
+                .ToList();
+            var restoreFiles = Directory.EnumerateFiles(restorePath, "*", options)
+                .Select(f => Path.GetRelativePath(restorePath, f))
+                .Where(f => !string.IsNullOrEmpty(f))
+                .OrderBy(f => f)
+                .ToList();
+
+            Assert.That(sourceFiles.Count, Is.EqualTo(restoreFiles.Count),
+                $"Number of files in source and restore should match. Source: {sourceFiles.Count}, Restore: {restoreFiles.Count}");
+            Assert.That(sourceFiles.Count, Is.GreaterThan(0),
+                "Source partition should contain files to verify");
+            Assert.That(restoreFiles.Count, Is.GreaterThan(0),
+                "Restore partition should contain files to verify");
 
             // Check that all source files exist in restore
             foreach (var relativePath in sourceFiles)
@@ -662,10 +737,10 @@ namespace Duplicati.UnitTest
             }
 
             // Compare file contents byte-by-byte
-            foreach (var sourceFile in sourceFiles)
+            foreach (var relativeSourceFile in sourceFiles)
             {
-                var relativePath = sourceFile.Substring(3);
-                var restoreFile = Path.Combine(restorePath, relativePath);
+                var sourceFile = Path.Combine(sourcePath, relativeSourceFile);
+                var restoreFile = Path.Combine(restorePath, relativeSourceFile);
 
                 if (File.Exists(restoreFile))
                 {
@@ -673,9 +748,9 @@ namespace Duplicati.UnitTest
                     var restoreBytes = File.ReadAllBytes(restoreFile);
 
                     Assert.That(restoreBytes.Length, Is.EqualTo(sourceBytes.Length),
-                        $"File size mismatch for {relativePath}");
+                        $"File size mismatch for {sourceFile}");
                     Assert.That(restoreBytes, Is.EqualTo(sourceBytes),
-                        $"File content mismatch for {relativePath}");
+                        $"File content mismatch for {sourceFile}");
                 }
             }
 
@@ -683,36 +758,16 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
-        /// Gets the drive letter for a disk number by querying PowerShell.
-        /// </summary>
-        /// <param name="diskNumber">The disk number.</param>
-        /// <returns>The drive letter, or '\0' if not found.</returns>
-        private char GetDriveLetterForDisk(int diskNumber)
-        {
-            // Use PowerShell to find the drive letter for this disk
-            var script = $@"Get-Partition -DiskNumber {diskNumber} | Get-Volume | Where-Object {{ $_.DriveLetter -ne $null }} | Select-Object -ExpandProperty DriveLetter";
-            var output = DiskImage.WindowsDiskImageHelper.RunPowerShell(script)?.Trim();
-
-            if (!string.IsNullOrEmpty(output) && output.Length >= 1 && char.IsLetter(output[0]))
-            {
-                var driveLetter = char.ToUpperInvariant(output[0]);
-                if (Directory.Exists($"{driveLetter}:\\"))
-                {
-                    return driveLetter;
-                }
-            }
-
-            return '\0';
-        }
-
-        /// <summary>
         /// Verifies that the geometry metadata is present and valid.
         /// </summary>
-        private void VerifyGeometryMetadata()
+        /// <param name="target">The backup target URL.</param>
+        /// <param name="options">The options to use when accessing the backup.</param>
+        /// <param name="partitions">The expected partitions and their sizes.</param>
+        private void VerifyGeometryMetadata(string target, Dictionary<string, string> options, (FileSystemType, long)[] partitions)
         {
             TestContext.Progress.WriteLine("Verifying geometry metadata...");
 
-            using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
+            using (var c = new Controller("file://" + target, options, null))
             {
                 var listResults = c.List("*");
                 Assert.That(listResults.Files, Is.Not.Null);
@@ -721,25 +776,25 @@ namespace Duplicati.UnitTest
                 Assert.That(geometryFile, Is.Not.Null, "geometry.json should be present in the backup");
 
                 // Restore and parse the geometry.json file
-                var tempGeometryPath = Path.Combine(Path.GetTempPath(), $"geometry_{Guid.NewGuid()}.json");
+                var geometryPath = Path.Combine(RESTOREFOLDER, $"geometry.json");
                 try
                 {
-                    var restoreOptions = new Dictionary<string, string>(TestOptions)
+                    var restoreOptions = new Dictionary<string, string>(options)
                     {
-                        ["restore-path"] = Path.GetDirectoryName(tempGeometryPath)!,
+                        ["restore-path"] = RESTOREFOLDER,
                         ["overwrite"] = "true"
                     };
 
-                    using (var restoreController = new Controller("file://" + TARGETFOLDER, restoreOptions, null))
+                    using (var restoreController = new Controller("file://" + target, restoreOptions, null))
                     {
                         var restoreResults = restoreController.Restore(new[] { geometryFile!.Path });
                         TestUtils.AssertResults(restoreResults);
                     }
 
                     // Read and parse the geometry.json
-                    if (File.Exists(tempGeometryPath))
+                    if (File.Exists(geometryPath))
                     {
-                        var json = File.ReadAllText(tempGeometryPath);
+                        var json = File.ReadAllText(geometryPath);
                         var geometry = GeometryMetadata.FromJson(json);
 
                         Assert.That(geometry, Is.Not.Null, "geometry.json should deserialize successfully");
@@ -754,83 +809,32 @@ namespace Duplicati.UnitTest
                         TestContext.Progress.WriteLine($"Geometry metadata verified: Disk size={geometry.Disk.Size}, " +
                             $"Sector size={geometry.Disk.SectorSize}, Partitions={geometry.Partitions.Count}, " +
                             $"Table type={geometry.PartitionTable!.Type}");
+
+                        for (int i = 0; i < geometry.Partitions.Count; i++)
+                        {
+                            var partition = geometry.Partitions[i];
+                            TestContext.Progress.WriteLine($"Partition {i}: Type={partition.Type}, Start={partition.StartOffset}, Size={partition.Size}");
+
+                            Assert.That(partition.Size, Is.GreaterThan(0), $"Partition {i} size should be greater than 0");
+                            if (partitions[i].Item2 > 0)
+                            {
+                                Assert.That(partition.Size, Is.EqualTo(partitions[i].Item2), $"Partition {i} size should match expected");
+                            }
+                            Assert.That(partition.StartOffset, Is.GreaterThanOrEqualTo(0), $"Partition {i} start offset should be non-negative");
+                            Assert.That(partition.Type, Is.Not.Null, $"Partition {i} type should be present");
+                            Assert.That(partition.FilesystemType, Is.Not.Null, $"Partition {i} filesystem type should be present");
+                            // Type shouldn't be checked until implemented.
+                            //Assert.That(partition.FilesystemType, Is.EqualTo(partitions[i].Item1), $"Partition {i} filesystem type should be known");
+                        }
                     }
                 }
                 finally
                 {
                     try
                     {
-                        if (File.Exists(tempGeometryPath))
+                        if (File.Exists(geometryPath))
                         {
-                            File.Delete(tempGeometryPath);
-                        }
-                    }
-                    catch
-                    {
-                        // Ignore cleanup errors
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Verifies that the partition table type matches the expected type.
-        /// </summary>
-        /// <param name="expectedType">The expected partition table type.</param>
-        private void VerifyPartitionTableType(PartitionTableType expectedType)
-        {
-            TestContext.Progress.WriteLine($"Verifying partition table type is {expectedType}...");
-
-            using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
-            {
-                var listResults = c.List("*");
-                Assert.That(listResults.Files, Is.Not.Null);
-
-                var geometryFile = listResults.Files.FirstOrDefault(f => f.Path.EndsWith("geometry.json"));
-                Assert.That(geometryFile, Is.Not.Null, "geometry.json should be present in the backup");
-
-                // Restore and parse the geometry.json file
-                var tempGeometryPath = Path.Combine(Path.GetTempPath(), $"geometry_{Guid.NewGuid()}.json");
-                try
-                {
-                    var restoreOptions = new Dictionary<string, string>(TestOptions)
-                    {
-                        ["restore-path"] = Path.GetDirectoryName(tempGeometryPath)!,
-                        ["overwrite"] = "true"
-                    };
-
-                    using (var restoreController = new Controller("file://" + TARGETFOLDER, restoreOptions, null))
-                    {
-                        var restoreResults = restoreController.Restore(new[] { geometryFile!.Path });
-
-                        // Ignore NoFilesRestored warning as geometry.json is a special metadata file
-                        var hasRelevantWarnings = restoreResults.Warnings.Any(w => !w.Contains("NoFilesRestored"));
-                        if (restoreResults.Errors.Any() || hasRelevantWarnings)
-                        {
-                            TestUtils.AssertResults(restoreResults);
-                        }
-                    }
-
-                    if (File.Exists(tempGeometryPath))
-                    {
-                        var json = File.ReadAllText(tempGeometryPath);
-                        var geometry = GeometryMetadata.FromJson(json);
-
-                        Assert.That(geometry, Is.Not.Null, "geometry.json should deserialize successfully");
-                        Assert.That(geometry!.PartitionTable, Is.Not.Null, "Partition table should be present");
-                        Assert.That(geometry.PartitionTable!.Type, Is.EqualTo(expectedType),
-                            $"Partition table type should be {expectedType}");
-
-                        TestContext.Progress.WriteLine($"Partition table type verified: {geometry.PartitionTable.Type}");
-                    }
-                }
-                finally
-                {
-                    try
-                    {
-                        if (File.Exists(tempGeometryPath))
-                        {
-                            File.Delete(tempGeometryPath);
+                            File.Delete(geometryPath);
                         }
                     }
                     catch
@@ -844,95 +848,40 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Verifies that the restored partition table matches the source.
         /// </summary>
-        private void VerifyPartitionTableMatches()
+        /// <param name="sourceDrivePath">The physical drive path of the source disk.</param>
+        /// <param name="restoreDrivePath">The physical drive path of the restored disk.</param>
+        private void VerifyPartitionTableMatches(string sourceDrivePath, string restoreDrivePath)
         {
             TestContext.Progress.WriteLine("Verifying partition table matches...");
 
             // Get source disk details
-            var sourceDetails = _diskHelper.GetDiskDetails(_sourceDiskNumber);
-            TestContext.Progress.WriteLine("Source disk details:\n" + sourceDetails);
+            var sourceTable = _diskHelper.GetPartitionTable(sourceDrivePath);
+            TestContext.Progress.WriteLine("Source disk details:\n" + sourceTable);
 
             // Get restore disk details
-            var restoreDiskNumber = _diskHelper.GetDiskNumber(_restoreVhdPath);
-            var restoreDetails = _diskHelper.GetDiskDetails(restoreDiskNumber);
-            TestContext.Progress.WriteLine("Restore disk details:\n" + restoreDetails);
+            var restoreTable = _diskHelper.GetPartitionTable(restoreDrivePath);
+            TestContext.Progress.WriteLine("Restore disk details:\n" + restoreTable);
 
-            // Parse partition information from diskpart output
-            var sourcePartitions = ParsePartitionsFromDiskpartOutput(sourceDetails);
-            var restorePartitions = ParsePartitionsFromDiskpartOutput(restoreDetails);
+            Assert.AreEqual(sourceTable.Type, restoreTable.Type, "Partition table types should match");
+            Assert.AreEqual(sourceTable.SectorSize, restoreTable.SectorSize, "Sector sizes should match");
+            Assert.AreEqual(sourceTable.Size, restoreTable.Size, "Size of the disks should match");
+
+            // Retrieve partition information
+            var sourcePartitions = _diskHelper.GetPartitions(sourceDrivePath);
+            var restorePartitions = _diskHelper.GetPartitions(restoreDrivePath);
 
             // Verify partition counts match
-            Assert.That(restorePartitions.Count, Is.EqualTo(sourcePartitions.Count),
-                "Restored disk should have same number of partitions as source");
+            Assert.AreEqual(sourcePartitions.Length, restorePartitions.Length, "Number of partitions should match");
 
-            // Verify partition sizes match
-            for (int i = 0; i < sourcePartitions.Count; i++)
+            // Verify partitions match
+            for (int i = 0; i < sourcePartitions.Length; i++)
             {
-                Assert.That(restorePartitions[i].Size, Is.EqualTo(sourcePartitions[i].Size),
-                    $"Partition {i + 1} size should match");
-                Assert.That(restorePartitions[i].Type, Is.EqualTo(sourcePartitions[i].Type),
-                    $"Partition {i + 1} type should match");
+                Assert.AreEqual(sourcePartitions[i].Type, restorePartitions[i].Type, $"Partition {i} types should match");
+                Assert.AreEqual(sourcePartitions[i].StartOffset, restorePartitions[i].StartOffset, $"Partition {i} offsets should match");
+                Assert.AreEqual(sourcePartitions[i].Size, restorePartitions[i].Size, $"Partition {i} sizes should match");
             }
 
-            TestContext.Progress.WriteLine($"Partition table verified: {sourcePartitions.Count} partitions match");
-        }
-
-        /// <summary>
-        /// Parses partition information from diskpart detail disk output.
-        /// </summary>
-        /// <param name="output">The diskpart output text.</param>
-        /// <returns>A list of tuples containing partition size and type.</returns>
-        private List<(long Size, string Type)> ParsePartitionsFromDiskpartOutput(string output)
-        {
-            var partitions = new List<(long Size, string Type)>();
-            var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-            bool inPartitionSection = false;
-            foreach (var line in lines)
-            {
-                // Look for partition section header
-                if (line.Contains("Partition", StringComparison.OrdinalIgnoreCase) &&
-                    line.Contains("Type", StringComparison.OrdinalIgnoreCase))
-                {
-                    inPartitionSection = true;
-                    continue;
-                }
-
-                if (inPartitionSection && line.Trim().StartsWith("Partition"))
-                {
-                    // Parse partition line
-                    var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 3)
-                    {
-                        // Try to extract size information
-                        long size = 0;
-                        string type = "Unknown";
-
-                        for (int i = 0; i < parts.Length; i++)
-                        {
-                            if (parts[i].EndsWith("MB", StringComparison.OrdinalIgnoreCase) &&
-                                long.TryParse(parts[i].Replace("MB", ""), out var mb))
-                            {
-                                size = mb * 1024 * 1024;
-                            }
-                            else if (parts[i].EndsWith("GB", StringComparison.OrdinalIgnoreCase) &&
-                                     long.TryParse(parts[i].Replace("GB", ""), out var gb))
-                            {
-                                size = gb * 1024 * 1024 * 1024;
-                            }
-                            else if (parts[i].Equals("Primary", StringComparison.OrdinalIgnoreCase) ||
-                                     parts[i].Equals("Extended", StringComparison.OrdinalIgnoreCase))
-                            {
-                                type = parts[i];
-                            }
-                        }
-
-                        partitions.Add((size, type));
-                    }
-                }
-            }
-
-            return partitions;
+            TestContext.Progress.WriteLine($"Partition table verified.");
         }
 
         #endregion

@@ -141,8 +141,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         if (OperatingSystem.IsWindows())
             _targetDisk = new Windows(_devicePath);
+        else if (OperatingSystem.IsMacOS())
+            _targetDisk = new Mac(_devicePath);
         else
-            throw new PlatformNotSupportedException(Strings.RestorePlatformNotSupported);
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
 
         if (_autoUnmount)
             if (!await _targetDisk.AutoUnmountAsync(cancel).ConfigureAwait(false))

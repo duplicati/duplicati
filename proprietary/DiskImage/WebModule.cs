@@ -21,7 +21,12 @@ namespace Duplicati.Proprietary.DiskImage;
 public class PhysicalDriveInfo
 {
     /// <summary>
-    /// The device path (e.g., \\.\PHYSICALDRIVE0).
+    /// The drive number (e.g., 0 for \\.\PHYSICALDRIVE0), 3 for /dev/disk3, a for /dev/sda, etc.
+    /// </summary>
+    public string Number { get; set; } = "";
+
+    /// <summary>
+    /// The device path (e.g., \\.\PHYSICALDRIVE0, /dev/disk3, /dev/sda, etc.).
     /// </summary>
     public string Path { get; set; } = "";
 
@@ -41,9 +46,9 @@ public class PhysicalDriveInfo
     public string? Guid { get; set; }
 
     /// <summary>
-    /// The drive letters associated with this drive.
+    /// The mount points associated with this drive.
     /// </summary>
-    public string[] DriveLetters { get; set; } = [];
+    public string[] MountPoints { get; set; } = [];
 
     /// <summary>
     /// Whether the drive is online.
@@ -86,10 +91,23 @@ public class WebModule : IWebModule
             throw new UserInformationException($"Unsupported operation: {op}", "UnsupportedOperation");
 
         if (string.IsNullOrWhiteSpace(path) || path == "/")
-            return await ListPhysicalDrives(cancellationToken);
+            if (OperatingSystem.IsWindows())
+                return await WindowsListPhysicalDrives(cancellationToken);
+            else if (OperatingSystem.IsMacOS())
+                return await MacListPhysicalDrives(cancellationToken);
+            else
+                throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
 
-        var parts = path[4..].Split(Path.DirectorySeparatorChar, 2);
-        var physicalDrivePath = "\\\\.\\" + parts.First();
+        string prefix = "";
+        if (OperatingSystem.IsWindows())
+            prefix = "\\\\.\\";
+        else if (OperatingSystem.IsMacOS())
+            prefix = "/dev/";
+        else
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
+
+        List<string> parts = [.. path[prefix.Length..].Split(Path.DirectorySeparatorChar, 2)];
+        var physicalDrivePath = prefix + parts.First();
         var subpath = parts.Last();
 
         using var client = new SourceProvider("diskimage://" + physicalDrivePath, "", new Dictionary<string, string?>(options));
@@ -98,12 +116,11 @@ public class WebModule : IWebModule
         if (string.IsNullOrWhiteSpace(subpath))
             return new Dictionary<string, string>()
             {
-                {$"{physicalDrivePath}\\root\\", "{}"}
+                {$"{physicalDrivePath}{Path.DirectorySeparatorChar}root{Path.DirectorySeparatorChar}", "{}"}
             };
 
-        var targetEntry = await client.GetEntry(subpath, isFolder: true, cancellationToken).ConfigureAwait(false);
-        if (targetEntry == null)
-            throw new DirectoryNotFoundException($"Path not found: {path}");
+        var targetEntry = await client.GetEntry(subpath, isFolder: true, cancellationToken).ConfigureAwait(false)
+            ?? throw new DirectoryNotFoundException($"Path not found: {path}");
 
         var result = new Dictionary<string, string>();
         await foreach (var entry in targetEntry.Enumerate(cancellationToken))
@@ -112,18 +129,18 @@ public class WebModule : IWebModule
                 continue;
             var metadata = await entry.GetMinorMetadata(cancellationToken);
             if (metadata.ContainsKey("partition:Number"))
-                result[$"{physicalDrivePath}\\{entry.Path.TrimEnd(Path.DirectorySeparatorChar)}"] = JsonSerializer.Serialize(metadata);
+                result[$"{physicalDrivePath}{Path.DirectorySeparatorChar}{entry.Path.TrimEnd(Path.DirectorySeparatorChar)}"] = JsonSerializer.Serialize(metadata);
             else
-                result[$"{physicalDrivePath}\\{entry.Path}"] = JsonSerializer.Serialize(metadata);
+                result[$"{physicalDrivePath}{Path.DirectorySeparatorChar}{entry.Path}"] = JsonSerializer.Serialize(metadata);
         }
 
         return result;
     }
 
-    private async Task<IDictionary<string, string>> ListPhysicalDrives(CancellationToken cancellationToken)
+    private async Task<IDictionary<string, string>> WindowsListPhysicalDrives(CancellationToken cancellationToken)
     {
         if (!OperatingSystem.IsWindows())
-            throw new PlatformNotSupportedException(Strings.RestorePlatformNotSupported);
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
 
         var script = @"
 $diskInfo =
@@ -169,6 +186,12 @@ $diskInfo | ConvertTo-Json -Depth 4
                 {
                     foreach (var drive in drives)
                     {
+                        var number = -1;
+                        if (drive.Path.StartsWith("\\\\.\\PHYSICALDRIVE", StringComparison.OrdinalIgnoreCase))
+                        {
+                            int.TryParse(drive.Path.AsSpan("\\\\.\\PHYSICALDRIVE".Length), out number);
+                        }
+                        drive.Number = number.ToString();
                         AddDiskToResult(drive, result);
                     }
                 }
@@ -178,6 +201,13 @@ $diskInfo | ConvertTo-Json -Depth 4
                 var drive = JsonSerializer.Deserialize<PhysicalDriveInfo>(output);
                 if (drive != null)
                 {
+                    // Extract drive number from path (e.g., \\.\PHYSICALDRIVE0 -> 0)
+                    var number = -1;
+                    if (drive.Path.StartsWith("\\\\.\\PHYSICALDRIVE", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int.TryParse(drive.Path.AsSpan("\\\\.\\PHYSICALDRIVE".Length), out number);
+                    }
+                    drive.Number = number.ToString();
                     AddDiskToResult(drive, result);
                 }
             }
@@ -190,21 +220,66 @@ $diskInfo | ConvertTo-Json -Depth 4
         return result;
     }
 
-    private void AddDiskToResult(PhysicalDriveInfo drive, Dictionary<string, string> result)
+    private async Task<IDictionary<string, string>> MacListPhysicalDrives(CancellationToken cancellationToken)
     {
-        // Extract drive number from path (e.g., \\.\PHYSICALDRIVE0 -> 0)
-        var number = 0;
-        if (drive.Path.StartsWith("\\\\.\\PHYSICALDRIVE", StringComparison.OrdinalIgnoreCase))
+        if (!OperatingSystem.IsMacOS())
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
+
+        var output = await RunShellAsync("diskutil list", cancellationToken);
+
+        var result = new Dictionary<string, string>();
+        if (string.IsNullOrWhiteSpace(output))
+            return result;
+
+        var devices = output.Split("/dev/disk", StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var device in devices)
         {
-            int.TryParse(drive.Path.AsSpan("\\\\.\\PHYSICALDRIVE".Length), out number);
+            var lines = device.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+            if (lines.Length == 0)
+                continue;
+            if (lines[0].Contains("synthesized", StringComparison.OrdinalIgnoreCase))
+                continue; // Skip synthesized disks (e.g., APFS containers)
+            var mainLine = lines[2].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var identifier = mainLine.Last();
+            if (string.IsNullOrWhiteSpace(identifier))
+                continue; // Skip if we can't determine an identifier
+            var path = $"/dev/{identifier}";
+            var size = mainLine[^3..^1]; // Size is typically the third-to-last token alongside the unit (e.g., "500 GB")
+            size[0] = size[0].Trim()[1..]; // Remove any leading/trailing whitespace, and the leading + or *
+            var sizeinBytes = Sizeparser.ParseSize(string.Join(' ', size));
+
+            var info = await RunShellAsync($"diskutil info {path}", cancellationToken);
+            var infoLines = info.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+            var displayName = infoLines.FirstOrDefault(l => l.TrimStart().StartsWith("Device / Media Name:", StringComparison.OrdinalIgnoreCase))?.Split(':', 2)[1].Trim() ?? identifier;
+            var guid = infoLines.FirstOrDefault(l => l.TrimStart().StartsWith("Disk / Partition UUID:", StringComparison.OrdinalIgnoreCase))?.Split(':', 2)[1].Trim() ?? null;
+
+            var mountpoints = lines[3..].Select(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault()!).Where(m => !string.IsNullOrWhiteSpace(m)).ToArray();
+
+            var driveInfo = new PhysicalDriveInfo
+            {
+                Number = identifier["/dev/disk".Length..],
+                Path = path,
+                Size = (ulong)sizeinBytes,
+                DisplayName = displayName,
+                Guid = guid,
+                MountPoints = mountpoints
+            };
+
+            AddDiskToResult(driveInfo, result);
         }
 
-        // For now, we only allow picking full disks, not individual partitions 
-        // var resultpath = Util.AppendDirSeparator(drive.Path);   
+        return result;
+    }
+
+    private void AddDiskToResult(PhysicalDriveInfo drive, Dictionary<string, string> result)
+    {
+        // For now, we only allow picking full disks, not individual partitions
+        // var resultpath = Util.AppendDirSeparator(drive.Path);
         var resultpath = drive.Path.TrimEnd(Path.DirectorySeparatorChar);
         var metadata = new Dictionary<string, string?>
         {
-            { "diskimage:Number", number.ToString() },
+            { "diskimage:Number", drive.Number },
             { "diskimage:FriendlyName", drive.DisplayName },
             { "diskimage:Size", drive.Size.ToString() },
             { "diskimage:DevicePath", drive.Path },
@@ -216,10 +291,41 @@ $diskInfo | ConvertTo-Json -Depth 4
 
     private async Task<string> RunPowerShellAsync(string script, CancellationToken cancellationToken)
     {
+        if (!OperatingSystem.IsWindows())
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
+
         var startInfo = new ProcessStartInfo
         {
             FileName = "powershell.exe",
             Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script.Replace("\"", "\\\"")}\"",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = new Process { StartInfo = startInfo };
+        var output = new StringBuilder();
+        process.OutputDataReceived += (s, e) => { if (e.Data != null) output.AppendLine(e.Data); };
+
+        process.Start();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+
+        await process.WaitForExitAsync(cancellationToken);
+
+        return output.ToString();
+    }
+
+    private async Task<string> RunShellAsync(string script, CancellationToken cancellationToken)
+    {
+        if (OperatingSystem.IsWindows())
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "/bin/sh",
+            Arguments = $"-c \"{script.Replace("\"", "\\\"")}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,

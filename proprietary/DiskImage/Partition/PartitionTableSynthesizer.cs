@@ -169,6 +169,7 @@ internal static class PartitionTableSynthesizer
     private static void WriteProtectiveMBR(byte[] gptData, GeometryMetadata metadata, int sectorSize, long diskSectors)
     {
         // Boot code (first 446 bytes) - zeros
+        gptData.AsSpan(0, 446).Clear();
 
         // Partition entry 1 (at offset 446): Protective MBR entry
         // Status byte
@@ -303,6 +304,7 @@ internal static class PartitionTableSynthesizer
         BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 88, 4), entriesCrc);
 
         // Recalculate header CRC with updated partition entries CRC
+        BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 16, 4), 0u); // Clear header CRC before calculation
         uint headerCrc = Crc32.Calculate(gptData, headerOffset, GptHeaderSize);
         BinaryPrimitives.WriteUInt32LittleEndian(gptData.AsSpan(headerOffset + 16, 4), headerCrc);
     }
@@ -337,7 +339,7 @@ internal static class PartitionTableSynthesizer
         BinaryPrimitives.WriteInt64LittleEndian(entriesData.AsSpan(offset + 48, 8), (long)0);
 
         // Partition name (72 bytes, UTF-16LE)
-        string name = part.Name ?? $"Partition {part.Number}";
+        string name = part.Name ?? "";
         var nameBytes = Encoding.Unicode.GetBytes(name);
         int nameLength = Math.Min(nameBytes.Length, 72);
         Array.Copy(nameBytes, 0, entriesData, offset + 56, nameLength);
