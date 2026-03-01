@@ -21,7 +21,7 @@
     <PackageReference Include="Vanara.PInvoke.Shared" Version="5.0.0" />
   </ItemGroup>
 
-  <Target Name="CompileNativeLibrary" AfterTargets="Build" Condition="$([MSBuild]::IsOSPlatform('osx'))">
+  <Target Name="CompileNativeLibraryMac" AfterTargets="Build" Condition="$([MSBuild]::IsOSPlatform('osx'))">
     <!-- Compile the dylib directly to the project directory -->
     <Exec Command="clang -dynamiclib -o $(OutputPath)libSystem_wrapper.dylib $(ProjectDir)Disk/macos_libSystem_wrapper.c" />
     <!-- Change permissions to 777, so everybody can delete / overwrite the lib when building. -->
@@ -32,6 +32,20 @@
     <ContentWithTargetPath Include="$(OutputPath)libSystem_wrapper.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>libSystem_wrapper.dylib</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+
+  <Target Name="CompileNativeLibraryLinux" AfterTargets="Build" Condition="$([MSBuild]::IsOSPlatform('linux'))">
+    <!-- Compile the shared library directly to the project directory -->
+    <Exec Command="gcc -shared -fPIC -o $(OutputPath)libc_wrapper.so $(ProjectDir)Disk/linux_libc_wrapper.c" />
+    <!-- Change permissions to 777, so everybody can delete / overwrite the lib when building. -->
+    <Exec Command="chmod 777 $(OutputPath)libc_wrapper.so" />
+  </Target>
+
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('linux'))">
+    <ContentWithTargetPath Include="$(OutputPath)libc_wrapper.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libc_wrapper.so</TargetPath>
     </ContentWithTargetPath>
   </ItemGroup>
 
