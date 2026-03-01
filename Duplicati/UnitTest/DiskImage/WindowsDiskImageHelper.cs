@@ -152,10 +152,11 @@ namespace Duplicati.UnitTest.DiskImage
         /// Executes a PowerShell script and returns the output.
         /// </summary>
         /// <param name="script">The PowerShell script to execute.</param>
+        /// <param name="timeoutSeconds">The timeout in seconds for the script execution.</param>
         /// <returns>The output from PowerShell.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the PowerShell process is not running.</exception>
         /// <exception cref="TimeoutException">Thrown if the command times out.</exception>
-        public string ExecuteScript(string script)
+        public string ExecuteScript(string script, int timeoutSeconds)
         {
             lock (_lock)
             {
@@ -184,7 +185,7 @@ namespace Duplicati.UnitTest.DiskImage
                 _process.StandardInput.WriteLine(command);
 
                 // Wait for output with a timeout
-                var timeout = TimeSpan.FromSeconds(30);
+                var timeout = TimeSpan.FromSeconds(timeoutSeconds);
                 if (!_outputAvailable.Wait(timeout))
                 {
                     throw new TimeoutException($"PowerShell command timed out after {timeout.TotalSeconds} seconds.\nScript:\n{script}");
@@ -299,11 +300,12 @@ namespace Duplicati.UnitTest.DiskImage
         /// Runs a PowerShell script using the persistent session.
         /// </summary>
         /// <param name="script">The PowerShell script to execute.</param>
+        /// <param name="timeoutSeconds">The timeout in seconds for the script execution.</param>
         /// <returns>The output from PowerShell.</returns>
-        private static string RunPowerShell(string script)
+        private static string RunPowerShell(string script, int timeoutSeconds = 30)
         {
             var session = GetSession();
-            return session.ExecuteScript(script);
+            return session.ExecuteScript(script, timeoutSeconds);
         }
 
         /// <summary>
@@ -831,7 +833,7 @@ namespace Duplicati.UnitTest.DiskImage
                     throw 'Disk image not found: {imagePath}'
                 }}
             ";
-            var output = RunPowerShell(script);
+            var output = RunPowerShell(script, 300);
 
             // Wait for the disk to be attached and get the new disk number
             int newDiskNumber = WaitForDiskAttachment(imagePath, TimeSpan.FromSeconds(5));
