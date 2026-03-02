@@ -429,10 +429,10 @@ namespace Duplicati.UnitTest.DiskImage
         /// <inheritdoc />
         public string[] InitializeDisk(string diskIdentifier, PartitionTableType tableType, (FileSystemType, long)[] partitions)
         {
-            var diskNumber = ParseDiskNumber(diskIdentifier);
-
             if (tableType == PartitionTableType.Unknown)
                 return []; // No partition table, so nothing to initialize
+
+            var diskNumber = ParseDiskNumber(diskIdentifier);
 
             // Initialize the disk with the specified partition style
             var script = $@"
