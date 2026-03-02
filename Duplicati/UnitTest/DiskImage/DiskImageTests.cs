@@ -277,6 +277,13 @@ namespace Duplicati.UnitTest
         #region GPT Two Partitions
 
         [Test, Category("DiskImage")]
+        public Task Test_GPT_FAT32_FAT32() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+
+        [Test, Category("DiskImage")]
         public Task Test_GPT_APFS_APFS()
         {
             if (!OperatingSystem.IsMacOS())
@@ -408,6 +415,13 @@ namespace Duplicati.UnitTest
 
         #region MBR Two Partitions
 
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_FAT32_FAT32() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+
         // APFS is only supported on GPT partition tables.
 
         [Test, Category("DiskImage")]
@@ -511,6 +525,16 @@ namespace Duplicati.UnitTest
         #endregion
 
         #region GPT Three Partitions
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_FAT32_FAT32_FAT32()
+        {
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
 
         [Test, Category("DiskImage")]
         public Task Test_GPT_APFS_APFS_APFS()
@@ -638,6 +662,16 @@ namespace Duplicati.UnitTest
         #region MBR Three Partitions
 
         // APFS is only supported on GPT partition tables.
+
+        [Test, Category("DiskImage")]
+        public Task Test_MBR_FAT32_FAT32_FAT32()
+        {
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
 
         [Test, Category("DiskImage")]
         public Task Test_MBR_HFSPlus_HFSPlus_HFSPlus()
