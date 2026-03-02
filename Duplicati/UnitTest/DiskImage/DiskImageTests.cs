@@ -495,7 +495,7 @@ namespace Duplicati.UnitTest
             if (!OperatingSystem.IsLinux())
                 Assert.Ignore("This test is only supported on Linux.");
             return FullRoundTrip((int)(360 * MiB), PartitionTableType.MBR, [
-                (FileSystemType.XFS, 50 * MiB),
+                (FileSystemType.XFS, 310 * MiB),
                 (FileSystemType.Ext4, 0)
             ]);
         }
@@ -614,7 +614,7 @@ namespace Duplicati.UnitTest
         {
             if (!OperatingSystem.IsLinux())
                 Assert.Ignore("This test is only supported on Linux.");
-            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+            return FullRoundTrip((int)(410 * MiB), PartitionTableType.GPT, [
                 (FileSystemType.FAT32, 50 * MiB),
                 (FileSystemType.Ext4, 50 * MiB),
                 (FileSystemType.XFS, 0)
