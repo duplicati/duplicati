@@ -57,18 +57,37 @@ public class MacOSCATrustInstaller : ICATrustInstaller
     /// <inheritdoc />
     public bool IsInstalled(X509Certificate2 caCertificate)
     {
-        if (!OperatingSystem.IsMacOS() && !OperatingSystem.IsIOS())
+        if (!OperatingSystem.IsMacOS())
             return false;
 
         try
         {
-            // Find certificate by SHA-1 hash
             var hash = caCertificate.GetCertHashString();
-            var result = RunSecurityCommand("find-certificate", "-Z", "-c", caCertificate.Subject, KeychainPath);
 
-            // Check if the hash is in the output
+            // Extract the common name (CN) from the subject for filtering
+            // The -c option filters by common name (partial match)
+            var commonName = caCertificate.GetNameInfo(X509NameType.SimpleName, forIssuer: false);
+            if (string.IsNullOrEmpty(commonName))
+                return false;
+
+            // Find certificates matching the common name, with SHA-1 hashes
+            // -a = all matches, -c = filter by common name, -Z = include SHA-1 hashes
+            var result = RunSecurityCommand("find-certificate", "-a", "-c", commonName, "-Z", ResolveKeyChainPath(KeychainPath));
+
+            // Search for the SHA-1 hash line containing our specific hash
             if (result.ExitCode == 0)
-                return result.Output.Contains(hash, StringComparison.OrdinalIgnoreCase);
+            {
+                var lines = result.Output.Split('\n');
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("SHA-1 hash:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var hashInOutput = line[("SHA-1 hash:".Length)..].Trim();
+                        if (hashInOutput.Equals(hash, StringComparison.OrdinalIgnoreCase))
+                            return true;
+                    }
+                }
+            }
 
             return false;
         }
@@ -92,12 +111,11 @@ public class MacOSCATrustInstaller : ICATrustInstaller
         using var tempFile = new TempFile();
         try
         {
-            // Export as PEM
-            var pem = CertificateStorageHelper.ExportToPem(caCertificate);
-            File.WriteAllText(tempFile, pem);
+            // Export certificate in DER format
+            File.WriteAllBytes(tempFile, caCertificate.RawData);
 
-            // Add certificate to keychain
-            var addResult = RunSecurityCommand("add-certificates", KeychainPath, tempFile);
+            // Add certificate to keychain using 'security import' with explicit x509 format
+            var addResult = RunSecurityCommand("import", tempFile, "-k", ResolveKeyChainPath(KeychainPath), "-t", "cert", "-f", "x509");
             if (addResult.ExitCode != 0)
             {
                 if (addResult.Error.Contains("User interaction is not allowed", StringComparison.OrdinalIgnoreCase) ||
@@ -108,9 +126,9 @@ public class MacOSCATrustInstaller : ICATrustInstaller
                 return TrustInstallationResult.Failed;
             }
 
-            // Trust the certificate
+            // Trust the certificate, this requires elevated privileges
             var trustResult = RunSecurityCommand(
-                "add-trusted-cert", "-d", "-r", "trustRoot", "-k", KeychainPath, tempFile);
+                "add-trusted-cert", "-d", "-r", "trustRoot", "-k", ResolveKeyChainPath(KeychainPath), tempFile);
 
             if (trustResult.ExitCode != 0)
             {
@@ -145,7 +163,7 @@ public class MacOSCATrustInstaller : ICATrustInstaller
             // Delete certificate by SHA-1 hash to avoid accidentally removing
             // other certificates that share the same subject name.
             var hash = caCertificate.GetCertHashString();
-            var result = RunSecurityCommand("delete-certificate", "-Z", hash, KeychainPath);
+            var result = RunSecurityCommand("delete-certificate", "-t", "-Z", hash, ResolveKeyChainPath(KeychainPath));
 
             if (result.ExitCode == 0)
                 return TrustUninstallationResult.Success;
@@ -162,6 +180,18 @@ public class MacOSCATrustInstaller : ICATrustInstaller
         {
             return TrustUninstallationResult.Failed;
         }
+    }
+
+    private static string ResolveKeyChainPath(string path)
+    {
+        if (path.StartsWith("~/") || path == "~")
+        {
+            var home = Environment.GetEnvironmentVariable("HOME");
+            if (string.IsNullOrWhiteSpace(home))
+                home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            return home + path.Substring(1);
+        }
+        return path;
     }
 
     private static (int ExitCode, string Output, string Error) RunSecurityCommand(params string[] arguments)
