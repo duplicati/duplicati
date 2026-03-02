@@ -779,6 +779,8 @@ namespace Duplicati.UnitTest
             await TestContext.Progress.WriteLineAsync($"Source Disk created at: {_sourceImagePath}");
 
             var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, tableType, partitions);
+            if (tableType != PartitionTableType.Unknown)
+                sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath);
             await TestContext.Progress.WriteLineAsync($"Source Disk initialized with partition(s): {string.Join(", ", sourcePartitions)}");
 
             // Populate source partition with test data
@@ -810,9 +812,13 @@ namespace Duplicati.UnitTest
             await TestContext.Progress.WriteLineAsync($"Source and restore disks re-attached as read-only for verification");
 
             // Verify partition table matches. Mount before verification, to make disks online on Windows.
-            var fsTypes = partitions.Select(p => p.Item1).ToArray();
-            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
-            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
+            string[] restorePartitions = [];
+            if (tableType != PartitionTableType.Unknown)
+            {
+                var fsTypes = partitions.Select(p => p.Item1).ToArray();
+                sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
+                restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
+            }
             VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
             await TestContext.Progress.WriteLineAsync($"Partition table verified to match source");
 
