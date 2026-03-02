@@ -143,7 +143,7 @@ namespace Duplicati.UnitTest.DiskImage
                     }
                 }
 
-                nextFreeSector = endOffset;
+                nextFreeSector = endOffset + sectorSize;
             }
 
             // Re-read partition table
