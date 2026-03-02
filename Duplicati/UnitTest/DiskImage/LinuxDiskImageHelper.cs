@@ -97,7 +97,7 @@ namespace Duplicati.UnitTest.DiskImage
             // Get disk size for calculating partition sizes
             var diskSize = GetDiskSize(diskIdentifier);
             var sectorSize = GetSectorSize(diskIdentifier);
-            var usedSpace = 1L * 1024 * 1024; // Start at 1 MiB for alignment
+            long nextFreeSector = tableType == PartitionTableType.GPT ? 34 * sectorSize : 1 * sectorSize; // GPT reserves first sector for MBR followed by 33 sectors. MBR reserves 1 sector.
 
             // Create partitions
             for (int i = 0; i < partitions.Length; i++)
@@ -109,18 +109,26 @@ namespace Duplicati.UnitTest.DiskImage
                 long endOffset;
                 if (size <= 0 || i == partitions.Length - 1)
                 {
-                    // Use remaining space
+                    // Use remaining space, but reserve space for GPT backup header if needed
                     endOffset = diskSize;
+                    if (tableType == PartitionTableType.GPT)
+                    {
+                        // GPT requires at least 33 sectors at the end for backup header
+                        var gptReservedSpace = 34 * sectorSize;
+                        endOffset = diskSize - gptReservedSpace;
+                        if (endOffset < nextFreeSector)
+                            endOffset = nextFreeSector;
+                    }
                 }
                 else
                 {
-                    endOffset = usedSpace + size;
+                    endOffset = nextFreeSector + size;
                     if (endOffset > diskSize)
                         endOffset = diskSize;
                 }
 
                 // Create partition
-                RunProcess("parted", $"-s {diskIdentifier} mkpart primary {usedSpace}B {endOffset}B");
+                RunProcess("parted", $"-s {diskIdentifier} mkpart primary {nextFreeSector}B {endOffset}B");
 
                 // For MBR, set the boot flag on the first partition (some filesystems need this)
                 if (tableType == PartitionTableType.MBR && i == 0)
@@ -135,7 +143,7 @@ namespace Duplicati.UnitTest.DiskImage
                     }
                 }
 
-                usedSpace = endOffset;
+                nextFreeSector = endOffset;
             }
 
             // Re-read partition table
