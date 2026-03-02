@@ -588,7 +588,8 @@ namespace Duplicati.UnitTest.DiskImage
 
         public string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false)
         {
-            RunProcess("diskutil", $"eject {diskIdentifier}");
+            // Eject can fail if issued too fast after writing data, which makes diskutil throw an error. Retry a few times with a delay to mitigate this.
+            RunProcess("diskutil", $"eject {diskIdentifier}", retryCount: 3);
             var reattachoutput = RunProcess("hdiutil", $"attach -nomount -noautofsck -readonly \"{imagePath}\"");
             if (tableType == PartitionTableType.Unknown)
                 return reattachoutput.Split('\n').First().Trim();
@@ -605,33 +606,41 @@ namespace Duplicati.UnitTest.DiskImage
                     .First().First();
         }
 
-        public static string RunProcess(string fileName, string arguments)
+        public static string RunProcess(string fileName, string arguments, int retryCount = 0)
         {
-            var psi = new ProcessStartInfo
+            for (int i = 0; i <= retryCount; i++)
             {
-                FileName = fileName,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+                var psi = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
 
-            using var process = new Process { StartInfo = psi };
-            process.Start();
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
+                using var process = new Process { StartInfo = psi };
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd();
+                string error = process.StandardError.ReadToEnd();
+                process.WaitForExit();
 
-            if (process.ExitCode != 0)
-            {
-                Console.WriteLine($"Error running process {fileName} {arguments}");
-                Console.WriteLine($"Error: {error}");
-                Console.WriteLine($"Output: {output}");
-                throw new InvalidOperationException($"Process {fileName} exited with code {process.ExitCode}: {error}");
+                if (process.ExitCode != 0)
+                    if (i < retryCount)
+                    {
+                        TestContext.Progress.WriteLine($"Warning: Process {fileName} with arguments {arguments} exited with code {process.ExitCode}. Retrying... Attempt {i + 1} of {retryCount}");
+                        Thread.Sleep(500);
+                        continue;
+                    }
+                    else
+                        throw new InvalidOperationException($"Process {fileName} with arguments {arguments} exited with code {process.ExitCode}: {error}. Output: {output}");
+
+                return output;
             }
 
-            return output;
+            // This should never be hit due to the retry loop logic, but is required to satisfy the compiler.
+            throw new InvalidOperationException($"Failed to run process {fileName} with arguments {arguments} after retries. This should not happen.");
         }
 
         /// <inheritdoc />
