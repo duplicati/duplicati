@@ -47,6 +47,11 @@ namespace Duplicati.UnitTest.DiskImage
         /// </summary>
         private readonly Dictionary<string, string> _imageToLoopDevice = new();
 
+        /// <summary>
+        /// Tracks any mount directories that were automatically created for cleanup.
+        /// </summary>
+        private readonly List<string> _autoCreatedMntDirectories = new();
+
         /// <inheritdoc />
         public string CreateDisk(string imagePath, long sizeB)
         {
@@ -88,7 +93,7 @@ namespace Duplicati.UnitTest.DiskImage
         public string[] InitializeDisk(string diskIdentifier, PartitionTableType tableType, (FileSystemType, long)[] partitions)
         {
             if (tableType == PartitionTableType.Unknown)
-                return Array.Empty<string>();
+                return []; // No partition table, so nothing to initialize
 
             // Create partition table using parted
             var label = tableType == PartitionTableType.GPT ? "gpt" : "msdos";
@@ -151,7 +156,6 @@ namespace Duplicati.UnitTest.DiskImage
             System.Threading.Thread.Sleep(200);
 
             // Format each partition
-            var mountPoints = new List<string>();
             for (int i = 0; i < partitions.Length; i++)
             {
                 var (fsType, _) = partitions[i];
@@ -173,8 +177,7 @@ namespace Duplicati.UnitTest.DiskImage
                 FormatPartition(partitionDevice, fsType);
             }
 
-            // Return empty array - partitions need to be mounted separately
-            return Array.Empty<string>();
+            return partitions.Length == 0 ? [] : Mount(diskIdentifier, null, false, null);
         }
 
         /// <inheritdoc />
@@ -207,6 +210,7 @@ namespace Duplicati.UnitTest.DiskImage
                 else
                 {
                     mountPoint = $"/mnt/duplicati_{Path.GetFileName(partitionDevice)}_{Guid.NewGuid():N}";
+                    _autoCreatedMntDirectories.Add(mountPoint);
                 }
 
                 Directory.CreateDirectory(mountPoint);
@@ -324,6 +328,21 @@ namespace Duplicati.UnitTest.DiskImage
             }
 
             _imageToLoopDevice.Remove(imagePath);
+
+            // Clean up any auto-created mount directories
+            foreach (var mntDir in _autoCreatedMntDirectories)
+            {
+                try
+                {
+                    if (Directory.Exists(mntDir))
+                        Directory.Delete(mntDir);
+                }
+                catch (Exception ex)
+                {
+                    TestContext.Progress.WriteLine($"Warning: Failed to delete mount directory {mntDir}: {ex.Message}");
+                }
+            }
+            _autoCreatedMntDirectories.Clear();
         }
 
         /// <inheritdoc />
