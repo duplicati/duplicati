@@ -36,6 +36,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         // File open flags from <fcntl.h>
         private const int O_RDONLY = 0x0000;
         private const int O_RDWR = 0x0002;
+        // TODO Should be processor architecture agnostic.
         // O_DIRECT: bypass kernel page cache for unbuffered I/O
         // Value is architecture-dependent: 0x4000 on x86_64, 0x10000 on aarch64
         // Using 0x4000 as the most common value (x86_64)
@@ -50,6 +51,10 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private long m_size = 0;
         private bool m_shouldFlush = false;
         private readonly SemaphoreSlim m_ioLock = new(1, 1);
+
+        // Aligned buffers for O_DIRECT I/O (must be sector-aligned and a multiple of sector size)
+        private long m_allignedBufferSize = 0;
+        unsafe private byte* m_allignedBufferPtr = null;
 
         /// <inheritdoc />
         public string DevicePath { get { return m_devicePath; } }
@@ -275,6 +280,16 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 m_fileDescriptor = -1;
             }
 
+            unsafe
+            {
+                if (m_allignedBufferPtr is not null)
+                {
+                    NativeMemory.AlignedFree(m_allignedBufferPtr);
+                    m_allignedBufferPtr = null;
+                    m_allignedBufferSize = 0;
+                }
+            }
+
             m_ioLock.Dispose();
 
             m_disposed = true;
@@ -336,6 +351,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (offset + length > Size)
                 throw new InvalidOperationException($"The requested read would read beyond disk size: {offset} + {length} > {Size}");
 
+            // TODO unaligned read
+
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
@@ -343,25 +360,22 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 int totalBytesRead = 0;
                 unsafe
                 {
-                    fixed (byte* bufferPtr = destination.Span)
+                    EnsureAllignedBuffer(length);
+
+                    var bytesRead = pread(m_fileDescriptor, m_allignedBufferPtr, length, offset);
+
+                    if (bytesRead.ToInt64() < 0)
                     {
-                        while (totalBytesRead < length)
-                        {
-                            IntPtr bytesRead = pread(m_fileDescriptor, bufferPtr + totalBytesRead, (IntPtr)(length - totalBytesRead), offset + totalBytesRead);
-                            if (bytesRead.ToInt64() < 0)
-                            {
-                                int errorCode = Marshal.GetLastWin32Error();
-                                string errorMessage = GetErrnoMessage(errorCode);
-                                throw new IOException($"Failed to read from disk at offset {offset + totalBytesRead}: {errorMessage} (errno: {errorCode})");
-                            }
-                            if (bytesRead.ToInt64() == 0)
-                            {
-                                // End of file/device
-                                break;
-                            }
-                            totalBytesRead += (int)bytesRead.ToInt64();
-                        }
+                        int errorCode = Marshal.GetLastWin32Error();
+                        string errorMessage = GetErrnoMessage(errorCode);
+                        throw new IOException($"Failed to read {length} bytes from disk at offset {offset}: {errorMessage} (errno: {errorCode})");
                     }
+
+                    for (int i = 0; i < bytesRead; i++)
+                    {
+                        destination.Span[i] = m_allignedBufferPtr[i];
+                    }
+                    totalBytesRead = (int)bytesRead.ToInt64();
                 }
 
                 return totalBytesRead;
@@ -415,60 +429,30 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 byte[]? rentedBuffer = null;
                 try
                 {
-                    ReadOnlyMemory<byte> writeData;
+                    // Ensure we have an aligned buffer for O_DIRECT writes
+                    EnsureAllignedBuffer(alignedLength);
 
-                    if (remainder != 0)
-                    {
-                        // Need to read-modify-write for partial sector
-                        rentedBuffer = ArrayPool<byte>.Shared.Rent(alignedLength);
-
-                        // Read existing data
-                        unsafe
-                        {
-                            fixed (byte* bufferPtr = rentedBuffer)
-                            {
-                                IntPtr bytesRead = pread(m_fileDescriptor, bufferPtr, (IntPtr)alignedLength, offset);
-                                if (bytesRead.ToInt64() < 0)
-                                {
-                                    int errorCode = Marshal.GetLastWin32Error();
-                                    string errorMessage = GetErrnoMessage(errorCode);
-                                    throw new IOException($"Failed to read existing data for padding at offset {offset}: {errorMessage} (errno: {errorCode})");
-                                }
-                            }
-                        }
-
-                        // Copy new data over existing data
-                        data.CopyTo(rentedBuffer);
-                        writeData = rentedBuffer.AsMemory(0, alignedLength);
-                    }
-                    else
-                    {
-                        writeData = data;
-                    }
+                    // TODO unaligned write
 
                     // Write data using pwrite
                     int totalBytesWritten = 0;
                     unsafe
                     {
-                        fixed (byte* bufferPtr = writeData.Span)
+                        // Copy data to aligned buffer
+                        for (int i = 0; i < dataLength; i++)
                         {
-                            while (totalBytesWritten < alignedLength)
-                            {
-                                IntPtr bytesWritten = pwrite(m_fileDescriptor, bufferPtr + totalBytesWritten, (IntPtr)(alignedLength - totalBytesWritten), offset + totalBytesWritten);
-                                if (bytesWritten.ToInt64() < 0)
-                                {
-                                    int errorCode = Marshal.GetLastWin32Error();
-                                    string errorMessage = GetErrnoMessage(errorCode);
-                                    string hint = errorCode == 13  // EACCES
-                                        ? "The disk may be mounted or you don't have sufficient permissions. Try unmounting the disk before writing."
-                                        : errorCode == 30  // EROFS
-                                            ? "The disk is read-only."
-                                            : "Check the error code for more details.";
-                                    throw new IOException($"Failed to write to disk at offset {offset + totalBytesWritten}: {errorMessage} (errno: {errorCode}). {hint}");
-                                }
-                                totalBytesWritten += (int)bytesWritten.ToInt64();
-                            }
+                            m_allignedBufferPtr[i] = data.Span[i];
                         }
+
+                        var bytesWritten = pwrite(m_fileDescriptor, m_allignedBufferPtr, alignedLength, offset);
+                        totalBytesWritten = (int)bytesWritten.ToInt64();
+                    }
+
+                    if (totalBytesWritten < 0)
+                    {
+                        int errorCode = Marshal.GetLastWin32Error();
+                        string errorMessage = GetErrnoMessage(errorCode);
+                        throw new IOException($"Failed to write {dataLength} bytes to disk at offset {offset}: {errorMessage} (errno: {errorCode})");
                     }
 
                     m_shouldFlush = true;
@@ -508,13 +492,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private static partial int close(int fd);
 
         [LibraryImport("libc", SetLastError = true)]
-        private static unsafe partial IntPtr pread(int fd, byte* buf, IntPtr count, long offset);
+        private static unsafe partial nint pread(int fd, void* buf, nint count, long offset);
 
         [LibraryImport("libc", SetLastError = true)]
-        private static unsafe partial IntPtr pwrite(int fd, byte* buf, IntPtr count, long offset);
+        private static unsafe partial nint pwrite(int fd, void* buf, nint count, long offset);
 
         [LibraryImport("libc", SetLastError = true)]
-        private static partial IntPtr strerror(int errnum);
+        private static partial nint strerror(int errnum);
 
         #endregion
 
@@ -537,6 +521,24 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             catch
             {
                 return $"Unknown error (errno: {errno})";
+            }
+        }
+
+        unsafe
+        private void EnsureAllignedBuffer(int requiredSize)
+        {
+            if (m_allignedBufferSize >= requiredSize)
+                return;
+
+            nuint alignedSize = (nuint)((requiredSize + SectorSize - 1) / SectorSize * SectorSize);
+            // Free existing buffer if it exists
+            if (m_allignedBufferPtr is not null)
+            {
+                m_allignedBufferPtr = (byte*)NativeMemory.AlignedRealloc(m_allignedBufferPtr, alignedSize, (nuint)m_sectorSize);
+            }
+            else
+            {
+                m_allignedBufferPtr = (byte*)NativeMemory.AlignedAlloc(alignedSize, (nuint)m_sectorSize);
             }
         }
     }
