@@ -142,8 +142,10 @@ public class MacOSCATrustInstaller : ICATrustInstaller
 
         try
         {
-            // Find and delete certificate
-            var result = RunSecurityCommand("delete-certificate", "-c", caCertificate.Subject, KeychainPath);
+            // Delete certificate by SHA-1 hash to avoid accidentally removing
+            // other certificates that share the same subject name.
+            var hash = caCertificate.GetCertHashString();
+            var result = RunSecurityCommand("delete-certificate", "-Z", hash, KeychainPath);
 
             if (result.ExitCode == 0)
                 return TrustUninstallationResult.Success;
@@ -181,8 +183,23 @@ public class MacOSCATrustInstaller : ICATrustInstaller
         if (process == null)
             return (-1, string.Empty, "Failed to start security process");
 
+        // Read stdout/stderr to completion before waiting for exit to avoid
+        // deadlocks when the process output fills the OS pipe buffer.
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
+
+        if (!Task.WaitAll([outputTask, errorTask], PROCESS_TIMEOUT))
+        {
+            try
+            {
+                process.Kill();
+            }
+            catch
+            {
+                // Ignore kill errors
+            }
+            return (-1, string.Empty, $"Security process timed out after {PROCESS_TIMEOUT}");
+        }
 
         process.WaitForExit(PROCESS_TIMEOUT);
         if (!process.HasExited)
@@ -198,9 +215,6 @@ public class MacOSCATrustInstaller : ICATrustInstaller
             return (-1, string.Empty, $"Security process timed out after {PROCESS_TIMEOUT}");
         }
 
-        var output = outputTask.Result;
-        var error = errorTask.Result;
-
-        return (process.ExitCode, output, error);
+        return (process.ExitCode, outputTask.Result, errorTask.Result);
     }
 }

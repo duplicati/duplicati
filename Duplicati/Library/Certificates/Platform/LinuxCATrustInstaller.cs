@@ -222,8 +222,23 @@ public class LinuxCATrustInstaller : ICATrustInstaller
         if (process == null)
             return (-1, string.Empty, $"Failed to start process: {fileName}");
 
+        // Read stdout/stderr to completion before waiting for exit to avoid
+        // deadlocks when the process output fills the OS pipe buffer.
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
+
+        if (!Task.WaitAll([outputTask, errorTask], PROCESS_TIMEOUT))
+        {
+            try
+            {
+                process.Kill();
+            }
+            catch
+            {
+                // Ignore kill errors
+            }
+            return (-1, string.Empty, $"Process timed out after {PROCESS_TIMEOUT}");
+        }
 
         process.WaitForExit(PROCESS_TIMEOUT);
         if (!process.HasExited)
@@ -239,9 +254,6 @@ public class LinuxCATrustInstaller : ICATrustInstaller
             return (-1, string.Empty, $"Process timed out after {PROCESS_TIMEOUT}");
         }
 
-        var output = outputTask.Result;
-        var error = errorTask.Result;
-
-        return (process.ExitCode, output, error);
+        return (process.ExitCode, outputTask.Result, errorTask.Result);
     }
 }
