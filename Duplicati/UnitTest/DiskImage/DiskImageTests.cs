@@ -810,8 +810,9 @@ namespace Duplicati.UnitTest
             await TestContext.Progress.WriteLineAsync($"Source and restore disks re-attached as read-only for verification");
 
             // Verify partition table matches. Mount before verification, to make disks online on Windows.
-            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);
-            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true);
+            var fsTypes = partitions.Select(p => p.Item1).ToArray();
+            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
+            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
             VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
             await TestContext.Progress.WriteLineAsync($"Partition table verified to match source");
 

@@ -178,19 +178,24 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
-        public string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false)
+        public string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false, FileSystemType[]? fileSystemTypes = null)
         {
             var mountPoints = new List<string>();
             var partitions = GetPartitionNames(diskIdentifier);
 
-            foreach (var partitionDevice in partitions)
-            {
-                // Get filesystem type to handle special cases
-                var fsType = GetFilesystemType(partitionDevice);
+            if (partitions.Count == 0)
+                throw new InvalidOperationException($"No partitions found for disk {diskIdentifier}");
+            if (fileSystemTypes is not null && fileSystemTypes.Length != partitions.Count)
+                throw new ArgumentException($"Length of fileSystemTypes array ({fileSystemTypes.Length}) must match the number of partitions ({partitions.Count})");
 
-                // Skip swap and LVM partitions
-                if (fsType == "swap" || partitionDevice.Contains("-part"))
-                    continue;
+            for (int i = 0; i < partitions.Count; i++)
+            {
+                var partitionDevice = partitions[i];
+
+                // Get filesystem type to handle special cases
+                FileSystemType? fsType = null;
+                if (fileSystemTypes is not null)
+                    fsType = fileSystemTypes[i];
 
                 // Create mount point
                 string mountPoint;
@@ -207,8 +212,13 @@ namespace Duplicati.UnitTest.DiskImage
                 Directory.CreateDirectory(mountPoint);
 
                 // Mount the partition
-                var readOnlyArg = readOnly ? "-o ro" : "";
-                var mountArgs = $"{readOnlyArg} {partitionDevice} \"{mountPoint}\"".Trim();
+                List<string> options = [];
+                if (readOnly)
+                    options.Add("ro");
+                if (fsType == FileSystemType.XFS)
+                    options.Add("nouuid"); // XFS does not allow mounting with duplicate UUIDs, so we ignore UUIDs for testing
+                var optionsArg = options.Count > 0 ? $"-o {string.Join(",", options)}" : "";
+                var mountArgs = $"{optionsArg} {partitionDevice} \"{mountPoint}\"".Trim();
                 RunProcess("mount", mountArgs);
 
                 mountPoints.Add(mountPoint);

@@ -206,7 +206,7 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
-        public string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false)
+        public string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false, FileSystemType[]? fileSystemTypes = null)
         {
             // Check if already mounted
             try

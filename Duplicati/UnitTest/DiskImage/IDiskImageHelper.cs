@@ -56,8 +56,9 @@ namespace Duplicati.UnitTest.DiskImage
         /// <param name="diskIdentifier">The identifier of the disk to mount.</param>
         /// <param name="baseMountPath">Optional base path for mounting the partitions.</param>
         /// <param name="readOnly">Indicates whether the partitions should be mounted as read-only.</param>
+        /// <param name="fileSystemTypes">Optional array of file system types for the partitions.</param>
         /// <returns>An array of mount points for the mounted partitions.</returns>
-        string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false);
+        string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false, FileSystemType[]? fileSystemTypes = null);
 
         /// <summary>
         /// Unmounts all of the partitions on the specified disk, ensuring they are safely detached from the system. The disk will still be attached, but will be pulled offline. After this call, the disk device can be written to.
