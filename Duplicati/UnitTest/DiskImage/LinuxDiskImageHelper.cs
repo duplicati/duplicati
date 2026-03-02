@@ -97,7 +97,9 @@ namespace Duplicati.UnitTest.DiskImage
             // Get disk size for calculating partition sizes
             var diskSize = GetDiskSize(diskIdentifier);
             var sectorSize = GetSectorSize(diskIdentifier);
-            long nextFreeSector = tableType == PartitionTableType.GPT ? 34 * sectorSize : 1 * sectorSize; // GPT reserves first sector for MBR followed by 33 sectors. MBR reserves 1 sector.
+            var mbrSize = 1 * sectorSize; // MBR requires 1 sector for the partition table
+            var gptSize = mbrSize + 33 * sectorSize; // GPT requires 34 sectors reserved at the beginning (1 for protective MBR + 33 for GPT header and partition entries)
+            long nextFreeSector = tableType == PartitionTableType.GPT ? gptSize : mbrSize;
 
             // Create partitions
             for (int i = 0; i < partitions.Length; i++)
@@ -107,25 +109,21 @@ namespace Duplicati.UnitTest.DiskImage
 
                 // Calculate partition size
                 long endOffset;
-                if (size <= 0 || i == partitions.Length - 1)
+                if (size <= 0)
                 {
-                    // Use remaining space, but reserve space for GPT backup header if needed
-                    endOffset = diskSize;
-                    if (tableType == PartitionTableType.GPT)
-                    {
-                        // GPT requires at least 33 sectors at the end for backup header
-                        var gptReservedSpace = 34 * sectorSize;
-                        endOffset = diskSize - gptReservedSpace;
-                        if (endOffset < nextFreeSector)
-                            endOffset = nextFreeSector;
-                    }
+                    if (i != partitions.Length - 1)
+                        throw new InvalidOperationException("Only the last partition can be sized to fill the remaining space");
+                    endOffset = diskSize - sectorSize;
                 }
                 else
-                {
-                    endOffset = nextFreeSector + size;
-                    if (endOffset > diskSize)
-                        endOffset = diskSize;
-                }
+                    endOffset = nextFreeSector + size - sectorSize;
+
+                // Check if we should clamp
+                if (tableType == PartitionTableType.GPT && endOffset > diskSize - gptSize)
+                    if (size <= 0)
+                        endOffset = diskSize - gptSize;
+                    else
+                        throw new InvalidOperationException($"Partition {partitionNumber} exceeds available space. Max size for this partition is {diskSize - gptSize - nextFreeSector} bytes.");
 
                 // Create partition
                 RunProcess("parted", $"-s {diskIdentifier} mkpart primary {nextFreeSector}B {endOffset}B");
