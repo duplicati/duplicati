@@ -23,6 +23,7 @@ using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
+using System.Reflection;
 using Duplicati.CommandLine.ConfigureTool.Commands;
 using Duplicati.Library.Interface;
 
@@ -60,7 +61,11 @@ public static class Program
             .UseDefaults()
             .UseExceptionHandler((ex, context) =>
             {
-                if (ex is UserInformationException userInformationException)
+                var rex = ex is TargetInvocationException tie
+                    ? tie.InnerException
+                    : ex;
+                    
+                if (rex is UserInformationException userInformationException)
                 {
                     Console.WriteLine("ErrorID: {0}", userInformationException.HelpID);
                     Console.WriteLine("Message: {0}", userInformationException.Message);
@@ -68,7 +73,7 @@ public static class Program
                 }
                 else
                 {
-                    Console.WriteLine("Exception: " + ex);
+                    Console.WriteLine("Exception: " + rex);
                     context.ExitCode = 1;
                 }
             })

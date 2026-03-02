@@ -242,41 +242,36 @@ public static class CertificateGenerator
     }
 
     /// <summary>
-    /// Creates a PFX bundle containing the server certificate, its private key, and the CA certificate chain.
+    /// Creates a PFX bundle containing the server certificate with its private key.
     /// </summary>
-    /// <param name="serverCert">The server certificate.</param>
-    /// <param name="caCert">The CA certificate.</param>
+    /// <param name="serverCert">The server certificate pair (contains the original exportable key).</param>
+    /// <param name="caCert">The CA certificate pair (not included in output due to Windows limitations).</param>
     /// <param name="password">The password to protect the PFX file.</param>
-    /// <returns>The PFX bundle as a byte array.</returns>
-    public static byte[] CreatePfxBundle(
-        X509Certificate2 serverCert,
-        X509Certificate2 caCert,
-        string password)
-    {
-        // Create a collection with both certificates
-        var collection = new X509Certificate2Collection
-        {
-            serverCert,
-            caCert
-        };
-
-        // Export as PFX with the private key
-        return collection.Export(X509ContentType.Pfx, password)!;
-    }
-
-    /// <summary>
-    /// Creates a PFX bundle containing the server certificate, its private key, and the CA certificate chain.
-    /// </summary>
-    /// <param name="serverCert">The server certificate pair.</param>
-    /// <param name="caCert">The CA certificate pair.</param>
-    /// <param name="password">The password to protect the PFX file.</param>
-    /// <returns>The PFX bundle as a byte array.</returns>
+    /// <returns>The PFX containing the server certificate with private key.</returns>
     public static byte[] CreatePfxBundle(
         ServerCertificatePair serverCert,
         CACertificatePair caCert,
         string password)
     {
-        return CreatePfxBundle(serverCert.Certificate, caCert.Certificate, password);
+        // On Windows, X509Certificate2Collection.Export fails with ECDSA keys
+        // due to CAPI/CNG limitations.
+        // To work around this, we manually re-create the certificates 
+        // so the keys are not bound to CAPI/CNG and then export.
+
+        // Load just the certificate without any key
+        using var certOnly = X509CertificateLoader.LoadCertificate(serverCert.Certificate.RawData);
+        using var caCertOnly = X509CertificateLoader.LoadCertificate(caCert.Certificate.RawData);
+
+        // Create a new certificate with the private key explicitly associated
+        // using the original exportable key from the pair
+        using var serverCertWithKey = certOnly.CopyWithPrivateKey(serverCert.PrivateKey);
+        var collection = new X509Certificate2Collection
+        {
+            caCertOnly,
+            serverCertWithKey
+        };
+
+        return collection.Export(X509ContentType.Pfx, password) ?? throw new Exception("Failed to generate PFX bundle?");
     }
 
     /// <summary>
