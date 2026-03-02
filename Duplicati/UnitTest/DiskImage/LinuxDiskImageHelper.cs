@@ -244,19 +244,9 @@ namespace Duplicati.UnitTest.DiskImage
                 var mountInfo = GetMountPoint(partitionDevice);
                 if (!string.IsNullOrEmpty(mountInfo))
                 {
-                    try
-                    {
-                        RunProcess("umount", partitionDevice);
-                    }
-                    catch (Exception ex)
-                    {
-                        TestContext.Progress.WriteLine($"Warning: Failed to unmount {partitionDevice}: {ex.Message}");
-                    }
+                    RunProcess("umount", partitionDevice);
                 }
             }
-
-            // Also try lazy unmount for any remaining mounts
-            System.Threading.Thread.Sleep(100);
         }
 
         /// <inheritdoc />
