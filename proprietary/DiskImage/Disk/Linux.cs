@@ -2,8 +2,10 @@
 
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
@@ -111,37 +113,32 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             }
         }
 
+        private async Task<List<string>> GetMountedPartitionsAsync(CancellationToken cancellationToken)
+        {
+            var mountedPartitions = new List<string>();
+
+            // Read /proc/mounts to find mounted partitions for this device
+            using (var reader = new StreamReader("/proc/mounts"))
+            {
+                string? line;
+                while ((line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false)) != null)
+                    if (line.StartsWith(m_devicePath))
+                    {
+                        var partitionDevice = line.Split(' ').FirstOrDefault();
+                        if (partitionDevice != null)
+                            mountedPartitions.Add(partitionDevice);
+                    }
+            }
+
+            return mountedPartitions;
+        }
+
         /// <inheritdoc />
         public async Task<bool> AutoUnmountAsync(CancellationToken cancellationToken)
         {
-            // Find mounted partitions by parsing /proc/mounts
-            // and unmount any that belong to this device
-            var deviceName = Path.GetFileName(m_devicePath);
-
             try
             {
-                // Read /proc/mounts to find mounted partitions for this device
-                var mountPoints = new System.Collections.Generic.List<string>();
-                using (var reader = new StreamReader("/proc/mounts"))
-                {
-                    string? line;
-                    while ((line = await reader.ReadLineAsync(cancellationToken)) != null)
-                    {
-                        var parts = line.Split(' ');
-                        if (parts.Length >= 2)
-                        {
-                            var dev = parts[0];
-                            var mountPoint = parts[1];
-                            // Check if this mount point belongs to our device
-                            // Device could be /dev/sda1, /dev/nvme0n1p1, /dev/loop0p1, etc.
-                            if (dev.StartsWith(m_devicePath) ||
-                                (dev.StartsWith("/dev/") && dev.Contains(deviceName)))
-                            {
-                                mountPoints.Add(mountPoint.Replace("\\040", " ")); // Decode space encoding
-                            }
-                        }
-                    }
-                }
+                var mountPoints = await GetMountedPartitionsAsync(cancellationToken);
 
                 // Unmount each partition
                 bool allSucceeded = true;
@@ -190,10 +187,15 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             => InitializeAsync(false, cancellationToken);
 
         /// <inheritdoc />
-        public Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
+        public async Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
         {
             if (m_initialized)
-                return Task.FromResult(true);
+                return true;
+
+            if ((await GetMountedPartitionsAsync(cancellationToken)).Count > 0)
+            {
+                throw new IOException($"Cannot initialize disk {m_devicePath} because it has mounted partitions. Please unmount all partitions before initializing.");
+            }
 
             // Open the device with O_DIRECT for unbuffered I/O (matching Windows FILE_FLAG_NO_BUFFERING behavior)
             // Note: O_DIRECT requires sector-aligned buffers and lengths
@@ -205,7 +207,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 int errorCode = Marshal.GetLastWin32Error();
                 string errorMessage = GetErrnoMessage(errorCode);
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
-                return Task.FromResult(false);
+                return false;
             }
 
             // Get disk geometry using ioctls
@@ -219,7 +221,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                     close(m_fileDescriptor);
                     m_fileDescriptor = -1;
                     Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block size: errno {errorCode}");
-                    return Task.FromResult(false);
+                    return false;
                 }
                 m_sectorSize = blockSize;
 
@@ -231,7 +233,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                     close(m_fileDescriptor);
                     m_fileDescriptor = -1;
                     Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get disk size: errno {errorCode}");
-                    return Task.FromResult(false);
+                    return false;
                 }
 
                 m_size = (long)sizeInBytes;
@@ -239,14 +241,14 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 m_initialized = true;
 
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "initialize", $"Successfully initialized disk {m_devicePath}: Size={m_size}, SectorSize={m_sectorSize}");
-                return Task.FromResult(true);
+                return true;
             }
             catch (Exception ex)
             {
                 close(m_fileDescriptor);
                 m_fileDescriptor = -1;
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", ex, "Failed to initialize disk");
-                return Task.FromResult(false);
+                return false;
             }
         }
 
