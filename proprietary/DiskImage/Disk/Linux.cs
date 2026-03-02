@@ -192,7 +192,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_initialized)
                 return true;
 
-            if ((await GetMountedPartitionsAsync(cancellationToken)).Count > 0)
+            if (enableWrite && (await GetMountedPartitionsAsync(cancellationToken)).Count > 0)
             {
                 throw new IOException($"Cannot initialize disk {m_devicePath} because it has mounted partitions. Please unmount all partitions before initializing.");
             }
