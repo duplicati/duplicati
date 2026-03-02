@@ -202,17 +202,10 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             if (m_fileDescriptor < 0)
             {
-                // Try without O_DIRECT if it failed (some systems may not support it for certain devices)
-                flags = enableWrite ? O_RDWR : O_RDONLY;
-                m_fileDescriptor = open(m_devicePath, flags);
-
-                if (m_fileDescriptor < 0)
-                {
-                    int errorCode = Marshal.GetLastWin32Error();
-                    string errorMessage = GetErrnoMessage(errorCode);
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
-                    return Task.FromResult(false);
-                }
+                int errorCode = Marshal.GetLastWin32Error();
+                string errorMessage = GetErrnoMessage(errorCode);
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
+                return Task.FromResult(false);
             }
 
             // Get disk geometry using ioctls
