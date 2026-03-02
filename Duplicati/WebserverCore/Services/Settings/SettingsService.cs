@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.Utility;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -62,10 +63,19 @@ public class SettingsService(Connection connection) : ISettingsService
         Server.Database.ServerSettings.CONST.REMOTE_CONTROL_STORAGE_API_KEY,
         Server.Database.ServerSettings.CONST.REMOTE_CONTROL_STORAGE_API_ID,
         Server.Database.ServerSettings.CONST.CLIENT_LICENSE_KEY,
-        "ServerSSLCertificate",
         "server-passphrase-trayicon-hash",
         "server-passphrase-trayicon-salt"
     ];
+
+    /// <summary>
+    /// Cache of the valid setting names 
+    /// </summary>
+    private static readonly IReadOnlySet<string> VALID_OPTION_NAMES = typeof(Server.Database.ServerSettings.CONST).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
+        .Where(x => x.FieldType == typeof(string))
+        .Select(x => x.GetValue(null)?.ToString())
+        .WhereNotNullOrWhiteSpace()
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
 
     public Abstractions.ServerSettings GetSettings()
         => new Abstractions.ServerSettings(connection.ApplicationSettings);
@@ -134,25 +144,19 @@ public class SettingsService(Connection connection) : ISettingsService
 
     public string? GetSettingMasked(string key)
     {
-        if (key.Equals("server-ssl-certificate", StringComparison.OrdinalIgnoreCase) || key.Equals("ServerSSLCertificate", StringComparison.OrdinalIgnoreCase))
+        if (key.Equals("server-ssl-certificate", StringComparison.OrdinalIgnoreCase))
             return connection.ApplicationSettings.ServerSSLCertificate != null ? "true" : "false";
 
         if (GUARDED_OUTPUT.Any(x => string.Equals(x, key, StringComparison.OrdinalIgnoreCase)))
             throw new NotFoundException("Key not found");
 
-
         if (key.StartsWith("--", StringComparison.Ordinal))
-        {
             return connection.Settings.FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase))?.Value;
-        }
-        else
-        {
-            var prop = connection.ApplicationSettings.GetType().GetProperty(key);
-            if (prop == null)
-                throw new NotFoundException("Key not found");
 
-            return prop.GetValue(connection.ApplicationSettings)?.ToString();
-        }
+        if (!VALID_OPTION_NAMES.Contains(key))
+            throw new NotFoundException("Key not found");
+
+        return connection.GetSettings(Server.Database.Connection.SERVER_SETTINGS_ID).FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase))?.Value;
     }
 
     public void PatchSettingMasked(string key, string value)
@@ -180,8 +184,7 @@ public class SettingsService(Connection connection) : ISettingsService
         }
         else
         {
-            var prop = connection.ApplicationSettings.GetType().GetProperty(key);
-            if (prop == null)
+            if (!VALID_OPTION_NAMES.Contains(key))
                 throw new NotFoundException("Key not found");
 
             var dict = new Dictionary<string, string?>
