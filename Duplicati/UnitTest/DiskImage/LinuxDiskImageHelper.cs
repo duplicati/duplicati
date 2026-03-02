@@ -25,6 +25,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Duplicati.Proprietary.DiskImage;
 using NUnit.Framework;
 
@@ -292,13 +293,24 @@ namespace Duplicati.UnitTest.DiskImage
             // Unmount partitions
             if (!string.IsNullOrEmpty(diskIdentifier))
             {
-                try
+                bool unmounted = false;
+                for (int i = 0; i < 5; i++)
                 {
-                    Unmount(diskIdentifier);
+                    try
+                    {
+                        Unmount(diskIdentifier);
+                        unmounted = true;
+                        break;
+                    }
+                    catch
+                    {
+                        // Try to wait
+                        Thread.Sleep(1000);
+                    }
                 }
-                catch
+                if (!unmounted)
                 {
-                    // Ignore errors
+                    TestContext.Progress.WriteLine($"Warning: Failed to unmount partitions for {diskIdentifier} after multiple attempts.");
                 }
 
                 // Detach loop device
