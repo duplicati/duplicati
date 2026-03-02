@@ -98,3 +98,53 @@ For high-security environments, consider implementing certificate pinning:
 - Extract the CA certificate thumbprint after generation
 - Configure clients or monitoring systems to expect only this specific CA
 - This prevents acceptance of certificates signed by other CAs that might be installed on the system
+
+## Browser Trust (Chrome and Firefox on Linux)
+
+While the CA certificate is installed in the system trust store, Chrome and Firefox on Linux maintain their own certificate stores and may not automatically trust the system CA. This is especially true for sandboxed installations (Snap, Flatpak).
+
+### Exporting the CA Certificate
+
+To manually import the CA into Chrome or Firefox, first export it using the ConfigureTool:
+
+```bash
+# Export to default filename (duplicati-ca.crt)
+duplicati configure-tool https export-ca
+
+# Or specify a custom output path
+duplicati configure-tool https export-ca --file ~/Desktop/duplicati-ca.crt
+```
+
+### Importing to Firefox
+
+1. Open Firefox and go to **Settings** → **Privacy & Security**
+2. Scroll to **Certificates** and click **View Certificates**
+3. Select the **Authorities** tab
+4. Click **Import** and select the exported `duplicati-ca.crt` file
+5. Check **"Trust this CA to identify websites"** and click OK
+
+### Importing to Chrome
+
+1. Open Chrome and go to **Settings** → **Privacy and security** → **Security**
+2. Click **Manage certificates**
+3. Select the **Authorities** tab
+4. Click **Import** and select the exported `duplicati-ca.crt` file
+5. Check **"Trust this certificate for identifying websites"** and click OK
+
+**Note:** For Flatpak or Snap installations of Chrome/Firefox, the browsers run in a sandbox that may restrict file access. If you encounter "error reading file" during import, copy the certificate to a location accessible by the sandbox (e.g., `/tmp/`) before importing:
+
+```bash
+cp ~/duplicati-ca.crt /tmp/duplicati-ca.crt
+chmod 644 /tmp/duplicati-ca.crt
+# Then import from /tmp in the browser
+```
+
+### Avoiding system store trust
+
+Since the certificates are not loaded from the system store anyway when using a Flatpak or Snap installation, you can avoid installing the CA in the system trust store. Apply the commandline option `--no-trust` when you generate the CA certificate:
+
+```bash
+duplicati configure-tool https generate --no-trust
+```
+
+This will generate a CA certificate that is not installed in the system trust store and does not require elevated privileges to install. Once the certificate is generated, you can export it and manually import it into your browser as described above.
