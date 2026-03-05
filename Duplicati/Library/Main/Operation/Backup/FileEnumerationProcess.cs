@@ -324,10 +324,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "DuplicatePath", null, "Duplicate path found: {0}", r.Path);
                             }
                     }
-                    catch (Exception ex)
+                    catch (Exception ex) when (ex is not OperationCanceledException)
                     {
-                        if (ex is not OperationCanceledException)
-                            LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorEnumerate", e.Path, "Failed to enumerate path: {0}");
+                        LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorEnumerate", e.Path, "Failed to enumerate path: {0}");
                     }
                 }
             }
