@@ -450,13 +450,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
         #region P/Invoke Declarations
 
-        [LibraryImport("libSystem_wrapper.dylib", SetLastError = true)]
+        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_uint32(int fd, ulong request, ref uint value);
 
-        [LibraryImport("libSystem_wrapper.dylib", SetLastError = true)]
+        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_uint64(int fd, ulong request, ref ulong value);
 
-        [LibraryImport("libSystem_wrapper.dylib", SetLastError = true)]
+        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_no_arg(int fd, ulong request);
 
         [LibraryImport("libSystem", SetLastError = true)]
