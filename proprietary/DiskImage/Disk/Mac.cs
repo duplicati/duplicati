@@ -153,7 +153,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_fileDescriptor < 0)
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                string errorMessage = GetErrnoMessage(errorCode);
+                string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
                 return Task.FromResult(false);
             }
@@ -212,7 +212,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 if (ioctl_no_arg(m_fileDescriptor, DKIOCSYNCHRONIZECACHE) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
-                    string errorMessage = GetErrnoMessage(errorCode);
+                    string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
                     Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "dispose", null, $"Failed to flush data: {errorMessage} (errno: {errorCode})");
                 }
             }
@@ -299,7 +299,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                             if (bytesRead.ToInt64() < 0)
                             {
                                 int errorCode = Marshal.GetLastWin32Error();
-                                string errorMessage = GetErrnoMessage(errorCode);
+                                string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
                                 throw new IOException($"Failed to read from disk at offset {offset + totalBytesRead}: {errorMessage} (errno: {errorCode})");
                             }
                             if (bytesRead.ToInt64() == 0)
@@ -379,7 +379,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                                 if (bytesRead.ToInt64() < 0)
                                 {
                                     int errorCode = Marshal.GetLastWin32Error();
-                                    string errorMessage = GetErrnoMessage(errorCode);
+                                    string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
                                     throw new IOException($"Failed to read existing data for padding at offset {offset}: {errorMessage} (errno: {errorCode})");
                                 }
                             }
@@ -406,7 +406,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                                 if (bytesWritten.ToInt64() < 0)
                                 {
                                     int errorCode = Marshal.GetLastWin32Error();
-                                    string errorMessage = GetErrnoMessage(errorCode);
+                                    string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
                                     string hint = errorCode == 13  // EACCES
                                         ? "The disk may be mounted or you don't have sufficient permissions. Try unmounting the disk before writing."
                                         : errorCode == 30  // EROFS
@@ -459,33 +459,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         [LibraryImport("libSystem", SetLastError = true)]
         private static unsafe partial IntPtr pwrite(int fd, byte* buf, IntPtr count, long offset);
 
-        [LibraryImport("libSystem", SetLastError = true)]
-        private static partial IntPtr strerror(int errnum);
-
         #endregion
-
-        /// <summary>
-        /// Gets the error message corresponding to the specified errno value.
-        /// </summary>
-        /// <param name="errno">The error number.</param>
-        /// <returns>A string describing the error.</returns>
-        private static string GetErrnoMessage(int errno)
-        {
-            try
-            {
-                IntPtr msgPtr = strerror(errno);
-                var result = msgPtr != IntPtr.Zero
-                    ? Marshal.PtrToStringUTF8(msgPtr) ?? $"Unknown error (errno: {errno})"
-                    : $"Unknown error (errno: {errno})";
-
-                Console.WriteLine($"strerror({errno}) returned: {result}");
-                return result;
-            }
-            catch
-            {
-                return $"Unknown error (errno: {errno})";
-            }
-        }
 
         /// <inheritdoc />
         public static async IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
