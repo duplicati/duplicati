@@ -58,14 +58,7 @@ public class WebModule : IWebModule
             return res;
         }
 
-        string prefix = "";
-        if (OperatingSystem.IsWindows())
-            prefix = "\\\\.\\";
-        else if (OperatingSystem.IsMacOS())
-            prefix = "/dev/";
-        else
-            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
-
+        var prefix = SourceProvider.GetDevicePrefix();
         List<string> parts = [.. path[prefix.Length..].Split(Path.DirectorySeparatorChar, 2)];
         var physicalDrivePath = prefix + parts.First();
         var subpath = parts.Last();

@@ -34,11 +34,15 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private uint m_sectorSize = 0;
         private long m_size = 0;
         private bool m_shouldFlush = false;
+        private const string DEVICE_PREFIX = @"\\.\PHYSICALDRIVE";
 
         // Reusable aligned native buffer for zero-copy I/O
         private SafeHGlobalHandle? m_alignedBuffer;
         private int m_alignedBufferSize = 0;
         private readonly SemaphoreSlim m_ioLock = new(1, 1);
+
+        /// <inheritdoc />
+        public static string Prefix => @"\\.\";
 
         /// <inheritdoc />
         public string DevicePath { get { return m_devicePath; } }
@@ -537,9 +541,9 @@ $diskInfo | ConvertTo-Json -Depth 4
                         foreach (var drive in drives)
                         {
                             var number = -1;
-                            if (drive.Path.StartsWith("\\\\.\\PHYSICALDRIVE", StringComparison.OrdinalIgnoreCase))
+                            if (drive.Path.StartsWith(DEVICE_PREFIX, StringComparison.OrdinalIgnoreCase))
                             {
-                                int.TryParse(drive.Path.AsSpan("\\\\.\\PHYSICALDRIVE".Length), out number);
+                                int.TryParse(drive.Path.AsSpan(DEVICE_PREFIX.Length), out number);
                             }
                             drive.Number = number.ToString();
 
@@ -563,9 +567,9 @@ $diskInfo | ConvertTo-Json -Depth 4
                     {
                         // Extract drive number from path (e.g., \\.\PHYSICALDRIVE0 -> 0)
                         var number = -1;
-                        if (drive.Path.StartsWith("\\\\.\\PHYSICALDRIVE", StringComparison.OrdinalIgnoreCase))
+                        if (drive.Path.StartsWith(DEVICE_PREFIX, StringComparison.OrdinalIgnoreCase))
                         {
-                            int.TryParse(drive.Path.AsSpan("\\\\.\\PHYSICALDRIVE".Length), out number);
+                            int.TryParse(drive.Path.AsSpan(DEVICE_PREFIX.Length), out number);
                         }
                         drive.Number = number.ToString();
                         yield return drive;

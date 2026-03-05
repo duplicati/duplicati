@@ -42,7 +42,11 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private uint m_sectorSize = 0;
         private long m_size = 0;
         private bool m_shouldFlush = false;
+        private const string DEVICE_PREFIX = "/dev/";
         private readonly SemaphoreSlim m_ioLock = new(1, 1);
+
+        /// <inheritdoc />
+        public static string Prefix => "/dev/";
 
         /// <inheritdoc />
         public string DevicePath { get { return m_devicePath; } }
@@ -74,9 +78,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 return devicePath;
 
             // Convert /dev/diskN to /dev/rdiskN for raw/character device access
-            if (devicePath.StartsWith("/dev/disk") && !devicePath.StartsWith("/dev/rdisk"))
+            if (devicePath.StartsWith($"{DEVICE_PREFIX}disk") && !devicePath.StartsWith($"{DEVICE_PREFIX}rdisk"))
             {
-                return devicePath.Replace("/dev/disk", "/dev/rdisk");
+                return devicePath.Replace($"{DEVICE_PREFIX}disk", $"{DEVICE_PREFIX}rdisk");
             }
 
             return devicePath;
@@ -122,7 +126,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         public async Task<bool> AutoUnmountAsync(CancellationToken cancellationToken)
         {
             // Extract disk number from device path
-            string blockDevicePath = m_devicePath.Replace("/dev/rdisk", "/dev/disk");
+            string blockDevicePath = m_devicePath.Replace($"{DEVICE_PREFIX}rdisk", $"{DEVICE_PREFIX}disk");
 
             // Use diskutil to unmount all volumes on the disk
             var unmount = await ProcessRunner.RunProcessAsync("diskutil", $"unmountDisk {blockDevicePath}", 30_000, cancellationToken);
@@ -495,7 +499,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (string.IsNullOrWhiteSpace(list.Output))
                 yield break;
 
-            var devices = list.Output.Split("/dev/disk", StringSplitOptions.RemoveEmptyEntries);
+            var devices = list.Output.Split($"{DEVICE_PREFIX}disk", StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var device in devices)
             {
@@ -510,7 +514,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 if (string.IsNullOrWhiteSpace(identifier))
                     continue; // Skip if we can't determine an identifier
 
-                var path = $"/dev/{identifier}";
+                var path = $"{DEVICE_PREFIX}{identifier}";
                 var size = mainLine[^3..^1]; // Size is typically the third-to-last token alongside the unit (e.g., "500 GB")
                 size[0] = size[0].Trim()[1..]; // Remove any leading/trailing whitespace, and the leading + or *
                 var sizeinBytes = Library.Utility.Sizeparser.ParseSize(string.Join(' ', size));
@@ -529,7 +533,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
                 var driveInfo = new PhysicalDriveInfo
                 {
-                    Number = identifier["/dev/disk".Length..],
+                    Number = identifier[$"{DEVICE_PREFIX}disk".Length..],
                     Path = path,
                     Size = (ulong)sizeinBytes,
                     DisplayName = displayName,

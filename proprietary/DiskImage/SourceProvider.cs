@@ -186,6 +186,21 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
     }
 
+    /// <summary>
+    /// Gets the platform-specific prefix for disk entries (e.g., "\\.\" on Windows, "/dev/" on Unix). This is used to construct entry paths correctly based on the underlying platform.
+    /// </summary>
+    /// <returns>The platform-specific prefix for disk entries.</returns>
+    /// <exception cref="PlatformNotSupportedException">Thrown when the platform is not supported.</exception>
+    public static string GetDevicePrefix()
+    {
+        if (OperatingSystem.IsWindows())
+            return Windows.Prefix;
+        else if (OperatingSystem.IsMacOS())
+            return Mac.Prefix;
+        else
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {

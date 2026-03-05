@@ -13,6 +13,11 @@ namespace Duplicati.Proprietary.DiskImage.Disk;
 internal interface IRawDisk : IDisposable
 {
     /// <summary>
+    /// Gets the platform-specific prefix for disk entries (e.g., "\\.\" on Windows, "/dev/" on Unix).
+    /// </summary>
+    static abstract string Prefix { get; }
+
+    /// <summary>
     /// Gets the disk identifier (e.g., "\\.\PhysicalDrive0" or "/dev/sda")
     /// </summary>
     string DevicePath { get; }
