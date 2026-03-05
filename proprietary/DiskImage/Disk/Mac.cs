@@ -2,12 +2,16 @@
 
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Disk
 {
@@ -121,31 +125,10 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             string blockDevicePath = m_devicePath.Replace("/dev/rdisk", "/dev/disk");
 
             // Use diskutil to unmount all volumes on the disk
-            var psi = new ProcessStartInfo
-            {
-                FileName = "diskutil",
-                Arguments = $"unmountDisk {blockDevicePath}",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process { StartInfo = psi };
-            process.Start();
-
-            string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-            string error = await process.StandardError.ReadToEndAsync(cancellationToken);
-
-            await process.WaitForExitAsync(cancellationToken);
-
-            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "autounmount", output, null);
-
-            if (!string.IsNullOrWhiteSpace(error))
-                Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "autounmount", null, error, null);
+            var unmount = await ProcessRunner.RunProcessAsync("diskutil", $"unmountDisk {blockDevicePath}", 30_000, cancellationToken);
 
             // diskutil returns 0 on success, but may also succeed with warnings
-            return process.ExitCode == 0 || output.Contains("successful");
+            return unmount.ExitCode == 0 || unmount.Output.Contains("successful");
         }
 
         /// <inheritdoc />
@@ -498,5 +481,65 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 return $"Unknown error (errno: {errno})";
             }
         }
+
+        /// <inheritdoc />
+        public static async IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var list = await ProcessRunner.RunProcessAsync("diskutil", "list", 30_000, cancellationToken);
+            if (list.ExitCode != 0)
+            {
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", null, $"Failed to list physical drives: {list.Error}");
+                yield break;
+            }
+
+            if (string.IsNullOrWhiteSpace(list.Output))
+                yield break;
+
+            var devices = list.Output.Split("/dev/disk", StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var device in devices)
+            {
+                var lines = device.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+                if (lines.Length == 0)
+                    continue;
+                if (lines[0].Contains("synthesized", StringComparison.OrdinalIgnoreCase))
+                    continue; // Skip synthesized disks (e.g., APFS containers)
+
+                var mainLine = lines[2].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var identifier = mainLine.Last();
+                if (string.IsNullOrWhiteSpace(identifier))
+                    continue; // Skip if we can't determine an identifier
+
+                var path = $"/dev/{identifier}";
+                var size = mainLine[^3..^1]; // Size is typically the third-to-last token alongside the unit (e.g., "500 GB")
+                size[0] = size[0].Trim()[1..]; // Remove any leading/trailing whitespace, and the leading + or *
+                var sizeinBytes = Library.Utility.Sizeparser.ParseSize(string.Join(' ', size));
+
+                var info = await ProcessRunner.RunProcessAsync("diskutil", $"info {path}", 30_000, cancellationToken);
+                if (info.ExitCode != 0)
+                {
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", null, $"Failed to get info for {path}: {info.Error}");
+                    continue;
+                }
+                var infoLines = info.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+                var displayName = infoLines.FirstOrDefault(l => l.TrimStart().StartsWith("Device / Media Name:", StringComparison.OrdinalIgnoreCase))?.Split(':', 2)[1].Trim() ?? identifier;
+                var guid = infoLines.FirstOrDefault(l => l.TrimStart().StartsWith("Disk / Partition UUID:", StringComparison.OrdinalIgnoreCase))?.Split(':', 2)[1].Trim() ?? null;
+
+                var mountpoints = lines[3..].Select(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault()!).Where(m => !string.IsNullOrWhiteSpace(m)).ToArray();
+
+                var driveInfo = new PhysicalDriveInfo
+                {
+                    Number = identifier["/dev/disk".Length..],
+                    Path = path,
+                    Size = (ulong)sizeinBytes,
+                    DisplayName = displayName,
+                    Guid = guid,
+                    MountPoints = mountpoints
+                };
+
+                yield return driveInfo;
+            }
+        }
+
     }
 }

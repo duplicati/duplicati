@@ -2,7 +2,7 @@
 
 using Duplicati.Library.Localization.Short;
 
-namespace Duplicati.Proprietary.DiskImage;
+namespace Duplicati.Proprietary.DiskImage.General;
 
 /// <summary>
 /// Localization strings for the DiskImage module.

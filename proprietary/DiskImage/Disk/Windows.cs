@@ -1,12 +1,16 @@
 
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Proprietary.DiskImage.General;
 using Vanara.InteropServices;
 using Vanara.PInvoke;
 using static Vanara.PInvoke.Kernel32;
@@ -430,6 +434,28 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         }
 
         /// <summary>
+        /// Runs a PowerShell script and returns the standard output. Throws an exception if the script fails.
+        /// </summary>
+        /// <param name="script">The PowerShell script to run.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+        /// <returns>The standard output of the PowerShell script.</returns>
+        /// <exception cref="IOException">Thrown if the PowerShell script fails.</exception>
+        private static async Task<string> RunPowerShellAsync(string script, CancellationToken cancellationToken)
+        {
+            var program = "powershell.exe";
+            var args = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"{script.Replace("\"", "\\\"")}\"";
+
+            var result = await ProcessRunner.RunProcessAsync(program, args, 60_000, cancellationToken);
+            if (result.ExitCode != 0)
+            {
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "RunPowerShellAsync", null, $"PowerShell script failed with exit code {result.ExitCode}. Output: {result.Output}. Error: {result.Error}");
+                throw new IOException($"PowerShell script failed with exit code {result.ExitCode}. Error: {result.Error}");
+            }
+
+            return result.Output;
+        }
+
+        /// <summary>
         /// Ensures the reusable aligned buffer is at least the specified size.
         /// Reallocates if necessary. Must be called while holding m_ioLock.
         /// </summary>
@@ -441,6 +467,113 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             m_alignedBuffer?.Dispose();
             m_alignedBuffer = new SafeHGlobalHandle(requiredSize);
             m_alignedBufferSize = requiredSize;
+        }
+
+        /// <inheritdoc />
+        public static async IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var script = @"
+$diskInfo =
+    Get-CimInstance Win32_DiskDrive |
+    ForEach-Object {
+        $wmi = $_
+        $diskNumber = [int]$wmi.Index
+        $disk = Get-Disk -Number $diskNumber -ErrorAction SilentlyContinue
+
+        $driveLetters = @(
+            Get-Partition -DiskNumber $diskNumber -ErrorAction SilentlyContinue |
+            Where-Object { $_.DriveLetter } |
+            ForEach-Object { $_.DriveLetter.ToString() } |
+            Sort-Object -Unique
+        )
+
+        [pscustomobject]@{
+            Path         = $wmi.DeviceID
+            Size         = [uint64]$wmi.Size
+            DisplayName  = if ($disk) { $disk.FriendlyName } else { $wmi.Model }
+            Guid         = if ($disk) { $disk.Guid } else { $null }
+            DriveLetters = $driveLetters   # Always an array
+            Online       = if ($disk) { -not $disk.IsOffline } else { $null }
+        }
+    }
+
+$diskInfo | ConvertTo-Json -Depth 4
+";
+            var output = await RunPowerShellAsync(script, cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(output))
+                yield break;
+
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(output);
+            }
+            catch (JsonException ex)
+            {
+                Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "FailedDriveOutputParsing", ex, "Failed to parse output");
+                yield break;
+            }
+            using (doc)
+            {
+
+
+
+                // PowerShell ConvertTo-Json returns a single object for 1 item, array for multiple
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    PhysicalDriveInfo[]? drives = null;
+                    try
+                    {
+                        drives = JsonSerializer.Deserialize<PhysicalDriveInfo[]>(output);
+                    }
+                    catch (JsonException ex)
+                    {
+                        Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "FailedDriveOutputParsing", ex, "Failed to parse output as array");
+                    }
+
+                    if (drives != null)
+                    {
+                        foreach (var drive in drives)
+                        {
+                            var number = -1;
+                            if (drive.Path.StartsWith("\\\\.\\PHYSICALDRIVE", StringComparison.OrdinalIgnoreCase))
+                            {
+                                int.TryParse(drive.Path.AsSpan("\\\\.\\PHYSICALDRIVE".Length), out number);
+                            }
+                            drive.Number = number.ToString();
+
+                            yield return drive;
+                        }
+                    }
+                }
+                else if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                {
+                    PhysicalDriveInfo? drive = null;
+                    try
+                    {
+                        drive = JsonSerializer.Deserialize<PhysicalDriveInfo>(output);
+                    }
+                    catch (JsonException ex)
+                    {
+                        Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "FailedDriveOutputParsing", ex, "Failed to parse output as single object");
+                    }
+
+                    if (drive != null)
+                    {
+                        // Extract drive number from path (e.g., \\.\PHYSICALDRIVE0 -> 0)
+                        var number = -1;
+                        if (drive.Path.StartsWith("\\\\.\\PHYSICALDRIVE", StringComparison.OrdinalIgnoreCase))
+                        {
+                            int.TryParse(drive.Path.AsSpan("\\\\.\\PHYSICALDRIVE".Length), out number);
+                        }
+                        drive.Number = number.ToString();
+                        yield return drive;
+                    }
+                }
+
+
+            }
         }
     }
 }

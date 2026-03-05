@@ -12,6 +12,7 @@ using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.Filesystem;
+using Duplicati.Proprietary.DiskImage.General;
 using Duplicati.Proprietary.DiskImage.Partition;
 
 namespace Duplicati.Proprietary.DiskImage;

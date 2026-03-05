@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Proprietary.DiskImage.Disk;
+using Duplicati.Proprietary.DiskImage.General;
 using Duplicati.Proprietary.DiskImage.Partition;
 using Duplicati.Proprietary.DiskImage.SourceItems;
 
@@ -167,6 +168,22 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
                 await foreach (var e in EnumerateRecursive(child, cancellationToken))
                     yield return e;
         }
+    }
+
+    /// <summary>
+    /// Lists physical drives available on the system. This is a static method that can be used to discover available disks before initializing the provider.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of physical drive information.</returns>
+    /// <exception cref="PlatformNotSupportedException">Thrown when the platform is not supported.</exception>
+    public static IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrives(CancellationToken cancellationToken)
+    {
+        if (OperatingSystem.IsWindows())
+            return Windows.ListPhysicalDrivesAsync(cancellationToken);
+        else if (OperatingSystem.IsMacOS())
+            return Mac.ListPhysicalDrivesAsync(cancellationToken);
+        else
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
     }
 
     /// <inheritdoc />

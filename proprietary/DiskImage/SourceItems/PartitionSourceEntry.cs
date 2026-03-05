@@ -10,6 +10,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Proprietary.DiskImage.Partition;
 using Duplicati.Proprietary.DiskImage.Filesystem;
 using Duplicati.Library.Utility;
+using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 
@@ -64,7 +65,7 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition)
         }
         else
         {
-            metadata["diskimage:Name"] = $"{partition.Type} ({Utility.FormatSizeString(partition.Size)})";        
+            metadata["diskimage:Name"] = $"{partition.Type} ({Utility.FormatSizeString(partition.Size)})";
         }
 
         if (partition.VolumeGuid.HasValue)

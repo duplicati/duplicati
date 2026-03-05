@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Duplicati.Proprietary.DiskImage;
+namespace Duplicati.Proprietary.DiskImage.General;
 
 /// <summary>
 /// Represents the consolidated geometry metadata for a disk image.

@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Disk;
 
@@ -117,4 +119,11 @@ internal interface IRawDisk : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of bytes written.</returns>
     Task<int> WriteBytesAsync(long offset, ReadOnlyMemory<byte> data, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Lists available physical drives on the system, returning a mapping of device paths to friendly names.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of physical drive information.</returns>
+    static abstract IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync(CancellationToken cancellationToken);
 }

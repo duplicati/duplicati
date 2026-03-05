@@ -21,6 +21,7 @@
 
 using System;
 using Duplicati.Proprietary.DiskImage;
+using Duplicati.Proprietary.DiskImage.General;
 
 #nullable enable
 

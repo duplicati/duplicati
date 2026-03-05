@@ -26,7 +26,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Xml.Linq;
+using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage;
+using Duplicati.Proprietary.DiskImage.General;
 using NUnit.Framework;
 
 #nullable enable
@@ -172,9 +174,9 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
-        public string[] InitializeDisk(string diskIdentifier, Proprietary.DiskImage.PartitionTableType tableType, (Proprietary.DiskImage.FileSystemType, long)[] partitions)
+        public string[] InitializeDisk(string diskIdentifier, PartitionTableType tableType, (FileSystemType, long)[] partitions)
         {
-            if (tableType == Proprietary.DiskImage.PartitionTableType.Unknown)
+            if (tableType == PartitionTableType.Unknown)
                 return []; // No partition table, so nothing to initialize
 
             // Use diskutil to partition the disk with the specified scheme
@@ -183,11 +185,11 @@ namespace Duplicati.UnitTest.DiskImage
             {
                 var fsType = p.Item1 switch
                 {
-                    Proprietary.DiskImage.FileSystemType.NTFS => throw new NotSupportedException("NTFS is not natively supported on macOS for creating partitions. Use ExFAT or FAT32 instead."),
-                    Proprietary.DiskImage.FileSystemType.FAT32 => "\"MS-DOS FAT32\"",
-                    Proprietary.DiskImage.FileSystemType.ExFAT => "ExFAT",
-                    Proprietary.DiskImage.FileSystemType.HFSPlus => "HFS+",
-                    Proprietary.DiskImage.FileSystemType.APFS => "APFS",
+                    FileSystemType.NTFS => throw new NotSupportedException("NTFS is not natively supported on macOS for creating partitions. Use ExFAT or FAT32 instead."),
+                    FileSystemType.FAT32 => "\"MS-DOS FAT32\"",
+                    FileSystemType.ExFAT => "ExFAT",
+                    FileSystemType.HFSPlus => "HFS+",
+                    FileSystemType.APFS => "APFS",
                     _ => throw new ArgumentException($"Unsupported filesystem type on macOS: {p.Item1}", nameof(partitions))
                 };
 
@@ -455,7 +457,7 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
-        public Proprietary.DiskImage.PartitionTableGeometry GetPartitionTable(string diskIdentifier)
+        public PartitionTableGeometry GetPartitionTable(string diskIdentifier)
         {
             var output = RunProcess("diskutil", $"info {diskIdentifier}");
 
@@ -501,7 +503,7 @@ namespace Duplicati.UnitTest.DiskImage
             if (size == -1 || sectorSize == -1)
                 throw new InvalidOperationException($"Failed to retrieve partition table information for disk {diskIdentifier}");
 
-            return new Proprietary.DiskImage.PartitionTableGeometry
+            return new PartitionTableGeometry
             {
                 Type = tableType,
                 Size = size,
@@ -533,7 +535,7 @@ namespace Duplicati.UnitTest.DiskImage
                     StartOffset = -1,
                     Size = -1,
                     Name = null,
-                    FilesystemType = Proprietary.DiskImage.FileSystemType.Unknown,
+                    FilesystemType = FileSystemType.Unknown,
                     VolumeGuid = null,
                     TableType = PartitionTableType.Unknown
                 };
@@ -563,11 +565,11 @@ namespace Duplicati.UnitTest.DiskImage
                         case "File System Personality":
                             partition.FilesystemType = parts[1].Trim() switch
                             {
-                                "MS-DOS FAT32" => Proprietary.DiskImage.FileSystemType.FAT32,
-                                "ExFAT" => Proprietary.DiskImage.FileSystemType.ExFAT,
-                                "HFS+" => Proprietary.DiskImage.FileSystemType.HFSPlus,
-                                "APFS" => Proprietary.DiskImage.FileSystemType.APFS,
-                                _ => Proprietary.DiskImage.FileSystemType.Unknown
+                                "MS-DOS FAT32" => FileSystemType.FAT32,
+                                "ExFAT" => FileSystemType.ExFAT,
+                                "HFS+" => FileSystemType.HFSPlus,
+                                "APFS" => FileSystemType.APFS,
+                                _ => FileSystemType.Unknown
                             };
                             break;
                         case "Volume UUID":
@@ -610,33 +612,20 @@ namespace Duplicati.UnitTest.DiskImage
         {
             for (int i = 0; i <= retryCount; i++)
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = fileName,
-                    Arguments = arguments,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
+                var result = ProcessRunner.RunProcessAsync(fileName, arguments, 30_000).Await();
 
-                using var process = new Process { StartInfo = psi };
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-                process.WaitForExit();
 
-                if (process.ExitCode != 0)
+                if (result.ExitCode != 0)
                     if (i < retryCount)
                     {
-                        TestContext.Progress.WriteLine($"Warning: Process {fileName} with arguments {arguments} exited with code {process.ExitCode}. Retrying... Attempt {i + 1} of {retryCount}");
+                        TestContext.Progress.WriteLine($"Warning: Process {fileName} with arguments {arguments} exited with code {result.ExitCode}. Retrying... Attempt {i + 1} of {retryCount}");
                         Thread.Sleep(500);
                         continue;
                     }
                     else
-                        throw new InvalidOperationException($"Process {fileName} with arguments {arguments} exited with code {process.ExitCode}: {error}. Output: {output}");
+                        throw new InvalidOperationException($"Process {fileName} with arguments {arguments} exited with code {result.ExitCode}: {result.Error}. Output: {result.Output}");
 
-                return output;
+                return result.Output;
             }
 
             // This should never be hit due to the retry loop logic, but is required to satisfy the compiler.

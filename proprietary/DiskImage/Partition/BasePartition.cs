@@ -24,6 +24,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Proprietary.DiskImage.Disk;
+using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
 
