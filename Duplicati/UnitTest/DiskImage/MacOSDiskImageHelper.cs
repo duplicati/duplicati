@@ -75,18 +75,54 @@ namespace Duplicati.UnitTest.DiskImage
 
         private string[] GetPartitionNames(string diskIdentifier)
         {
-            var output = RunProcess("diskutil", $"list {diskIdentifier}");
+            var output = RunProcess("diskutil", $"list -plist {diskIdentifier}");
 
-            // Very hardcoded to disks with < 10 partitions and no identifiers with spaces. Should be sufficient for test purposes.
-            return output
-                .Split('\n')
-                .Select(x => x.Trim())
-                .Where(x => x.Length > 1 && x[1] == ':')
-                .Skip(2)
-                .Select(x => x.Split([' '], StringSplitOptions.RemoveEmptyEntries).LastOrDefault())
-                .Where(x => x is not null)
-                .Select(x => x!)
-                .ToArray();
+            var plist = XDocument.Parse(output);
+            var rootDict = plist.Element("plist")?.Element("dict");
+            if (rootDict == null)
+                return [];
+
+            // Find the disk in AllDisksAndPartitions
+            var allDisksAndPartitions = PlistHelper.GetArrayElement(rootDict, "AllDisksAndPartitions");
+            if (allDisksAndPartitions == null)
+                return [];
+
+            // Normalize disk identifier - plist stores just "disk4" but we might have "/dev/disk4" or "/dev/rdisk4"
+            var normalizedId = diskIdentifier.Replace("/dev/rdisk", "disk").Replace("/dev/disk", "disk");
+
+            var diskElement = allDisksAndPartitions.Elements("dict")
+                .FirstOrDefault(d => PlistHelper.GetStringValue(d, "DeviceIdentifier") == normalizedId);
+
+            if (diskElement == null)
+                return [];
+
+            var partitions = new List<string>();
+
+            // Check for regular partitions
+            var partitionsArray = PlistHelper.GetArrayElement(diskElement, "Partitions");
+            if (partitionsArray != null)
+            {
+                foreach (var partition in partitionsArray.Elements("dict"))
+                {
+                    var deviceIdentifier = PlistHelper.GetStringValue(partition, "DeviceIdentifier");
+                    if (!string.IsNullOrWhiteSpace(deviceIdentifier))
+                        partitions.Add(deviceIdentifier);
+                }
+            }
+
+            // Check for APFS volumes
+            var apfsVolumes = PlistHelper.GetArrayElement(diskElement, "APFSVolumes");
+            if (apfsVolumes != null)
+            {
+                foreach (var volume in apfsVolumes.Elements("dict"))
+                {
+                    var deviceIdentifier = PlistHelper.GetStringValue(volume, "DeviceIdentifier");
+                    if (!string.IsNullOrWhiteSpace(deviceIdentifier))
+                        partitions.Add(deviceIdentifier);
+                }
+            }
+
+            return [.. partitions];
         }
 
         private string[] GetMountPoints(string diskIdentifier)
@@ -96,41 +132,42 @@ namespace Duplicati.UnitTest.DiskImage
 
             foreach (var partition in partitions)
             {
-                var output = RunProcess("diskutil", $"info /dev/{partition}");
-                var lines = output
-                    .Split('\n')
-                    .Select(l => l.Trim())
-                    .Where(l => l.Length > 0)
-                    .ToList();
+                var output = RunProcess("diskutil", $"info -plist /dev/{partition}");
+                var plist = XDocument.Parse(output);
+                var dict = plist.Element("plist")?.Element("dict");
+                if (dict == null)
+                    continue;
 
                 // Check if this is an APFS Physical Store
-                var isApfsPhysicalStore = output.Contains("APFS Physical Store") ||
-                    lines.Any(l => l.StartsWith("Partition Type:") && l.Contains("Apple_APFS"));
+                var contentType = PlistHelper.GetStringValue(dict, "Content");
+                var isApfsPhysicalStore = contentType == "Apple_APFS";
 
                 if (isApfsPhysicalStore)
                 {
                     // For APFS, get the container and then get volumes from it
-                    var containerLine = lines
-                        .FirstOrDefault(l => l.StartsWith("APFS Container:"));
-
-                    if (containerLine != null)
+                    var containerId = PlistHelper.GetStringValue(dict, "APFSContainerReference");
+                    if (!string.IsNullOrEmpty(containerId))
                     {
-                        var containerId = containerLine.Split([':'], 2)[1].Trim();
                         // Get volumes from the container (they are like disk5s1, disk5s2, etc.)
                         var containerVolumes = GetApfsContainerVolumes(containerId);
                         foreach (var volume in containerVolumes)
                         {
-                            var volumeOutput = RunProcess("diskutil", $"info {volume}");
-                            var mountPoint = ExtractMountPoint(volumeOutput);
-                            if (!string.IsNullOrEmpty(mountPoint))
-                                mountPoints.Add(mountPoint);
+                            var volumeOutput = RunProcess("diskutil", $"info -plist {volume}");
+                            var volumePlist = XDocument.Parse(volumeOutput);
+                            var volumeDict = volumePlist.Element("plist")?.Element("dict");
+                            if (volumeDict != null)
+                            {
+                                var mountPoint = PlistHelper.GetStringValue(volumeDict, "MountPoint");
+                                if (!string.IsNullOrEmpty(mountPoint))
+                                    mountPoints.Add(mountPoint);
+                            }
                         }
                     }
                 }
                 else
                 {
                     // Regular partition - extract mount point directly
-                    var mountPoint = ExtractMountPoint(output);
+                    var mountPoint = PlistHelper.GetStringValue(dict, "MountPoint");
                     if (!string.IsNullOrEmpty(mountPoint))
                         mountPoints.Add(mountPoint);
                 }
@@ -141,36 +178,39 @@ namespace Duplicati.UnitTest.DiskImage
 
         private string[] GetApfsContainerVolumes(string containerId)
         {
-            var output = RunProcess("diskutil", $"list {containerId}");
+            var output = RunProcess("diskutil", $"list -plist {containerId}");
 
-            // Parse volumes from container listing (format: disk5s1, disk5s2, etc.)
-            return output
-                .Split('\n')
-                .Select(x => x.Trim())
-                .Where(x => x.Contains("APFS Volume", StringComparison.OrdinalIgnoreCase))
-                .Select(x => x.Split(' ')[^1])
-                .ToArray();
-        }
+            var plist = XDocument.Parse(output);
+            var rootDict = plist.Element("plist")?.Element("dict");
+            if (rootDict == null)
+                return [];
 
-        private string? ExtractMountPoint(string diskutilInfoOutput)
-        {
-            // Look for "Mount Point:" line
-            var mountLine = diskutilInfoOutput
-                .Split('\n')
-                .FirstOrDefault(l => l.Trim().StartsWith("Mount Point:"));
+            var allDisksAndPartitions = PlistHelper.GetArrayElement(rootDict, "AllDisksAndPartitions");
+            if (allDisksAndPartitions == null)
+                return [];
 
-            if (mountLine == null)
-                return null;
+            // Normalize container id - plist stores just "disk4" but we might have "/dev/disk4" or "/dev/rdisk4"
+            var normalizedId = containerId.Replace("/dev/rdisk", "disk").Replace("/dev/disk", "disk");
 
-            var mountPoint = mountLine.Split([':'], 2)[1].Trim();
+            var container = allDisksAndPartitions.Elements("dict")
+                .FirstOrDefault(d => PlistHelper.GetStringValue(d, "DeviceIdentifier") == normalizedId);
 
-            // Return null if not mounted or not applicable
-            if (string.IsNullOrEmpty(mountPoint) ||
-                mountPoint == "Not mounted" ||
-                mountPoint == "Not applicable (no file system)")
-                return null;
+            if (container == null)
+                return [];
 
-            return mountPoint;
+            var volumes = new List<string>();
+            var apfsVolumes = PlistHelper.GetArrayElement(container, "APFSVolumes");
+            if (apfsVolumes != null)
+            {
+                foreach (var volume in apfsVolumes.Elements("dict"))
+                {
+                    var deviceIdentifier = PlistHelper.GetStringValue(volume, "DeviceIdentifier");
+                    if (!string.IsNullOrWhiteSpace(deviceIdentifier))
+                        volumes.Add(deviceIdentifier);
+                }
+            }
+
+            return [.. volumes];
         }
 
         /// <inheritdoc />
@@ -199,7 +239,9 @@ namespace Duplicati.UnitTest.DiskImage
             : ["\"Free Space\" \"\" 0"];
             var partitionArgs = string.Join(" ", partitionStrings);
 
-            RunProcess("diskutil", $"partitionDisk {diskIdentifier} {tableType.ToString().ToUpperInvariant()} {partitionArgs}");
+            // Normalize disk identifier for diskutil command (it expects "disk4", not "/dev/rdisk4")
+            var normalizedDiskId = diskIdentifier.Replace("/dev/rdisk", "disk").Replace("/dev/disk", "disk");
+            RunProcess("diskutil", $"partitionDisk {normalizedDiskId} {tableType.ToString().ToUpperInvariant()} {partitionArgs}");
 
             if (partitions.Length == 0)
                 return [];
@@ -230,22 +272,22 @@ namespace Duplicati.UnitTest.DiskImage
             List<string> mountPoints = [];
             foreach (var partition in partitions)
             {
-                var output = RunProcess("diskutil", $"info /dev/{partition}");
+                var output = RunProcess("diskutil", $"info -plist /dev/{partition}");
+                var plist = XDocument.Parse(output);
+                var dict = plist.Element("plist")?.Element("dict");
+                if (dict == null)
+                    continue;
 
                 // Check if this is an APFS Physical Store
-                var isApfsPhysicalStore = output.Contains("APFS Physical Store") ||
-                    output.Split('\n').Any(l => l.Trim().StartsWith("Partition Type:") && l.Contains("Apple_APFS"));
+                var contentType = PlistHelper.GetStringValue(dict, "Content");
+                var isApfsPhysicalStore = contentType == "Apple_APFS";
 
                 if (isApfsPhysicalStore)
                 {
                     // For APFS, get the container and mount volumes from it
-                    var containerLine = output
-                        .Split('\n')
-                        .FirstOrDefault(l => l.Trim().StartsWith("APFS Container:"));
-
-                    if (containerLine != null)
+                    var containerId = PlistHelper.GetStringValue(dict, "APFSContainerReference");
+                    if (!string.IsNullOrEmpty(containerId))
                     {
-                        var containerId = containerLine.Split([':'], 2)[1].Trim();
                         // Get volumes from the container (they are like disk5s1, disk5s2, etc.)
                         var containerVolumes = GetApfsContainerVolumes(containerId);
                         foreach (var volume in containerVolumes)
@@ -284,29 +326,50 @@ namespace Duplicati.UnitTest.DiskImage
             }
 
             // Unmount first in case it's already mounted somewhere else, to ensure it gets mounted to the correct location
-            var oldMp = ExtractMountPoint(RunProcess("diskutil", $"info /dev/{volume}"));
+            var oldMp = GetMountPointFromPlist(RunProcess("diskutil", $"info -plist /dev/{volume}"));
             if (oldMp is not null && !oldMp.StartsWith(baseMountPath ?? "/Volumes/"))
                 RunProcess("diskutil", $"unmount force /dev/{volume}");
 
             RunProcess("diskutil", $"mount -nobrowse {mountArgs} /dev/{volume}");
 
             // Verify the mount
-            var mp = RunProcess("diskutil", $"info /dev/{volume}");
-            var mountPoint = ExtractMountPoint(mp);
+            var mp = RunProcess("diskutil", $"info -plist /dev/{volume}");
+            var mountPoint = GetMountPointFromPlist(mp);
             if (!string.IsNullOrEmpty(mountPoint))
             {
                 mountPoints.Add(mountPoint);
 
                 if (!mountPoint.StartsWith(baseMountPath ?? "/Volumes/"))
                 {
-                    TestContext.Progress.WriteLine($"Warning: Volume /dev/{volume} did not mount to expected location. Output: {mp}");
+                    Console.WriteLine($"Warning: Volume /dev/{volume} did not mount to expected location. Output: {mp}");
                 }
             }
             else
             {
-                TestContext.Progress.WriteLine($"Warning: Volume /dev/{volume} did not report a mount point after mounting. Output: {mp}");
+                Console.WriteLine($"Warning: Volume /dev/{volume} did not report a mount point after mounting. Output: {mp}");
             }
+        }
 
+        /// <summary>
+        /// Extracts the mount point from diskutil info -plist output.
+        /// </summary>
+        private string? GetMountPointFromPlist(string plistOutput)
+        {
+            try
+            {
+                var plist = XDocument.Parse(plistOutput);
+                var dict = plist.Element("plist")?.Element("dict");
+                if (dict == null)
+                    return null;
+
+                var mountPoint = PlistHelper.GetStringValue(dict, "MountPoint");
+                // Return null if not mounted (empty string indicates not mounted)
+                return string.IsNullOrWhiteSpace(mountPoint) ? null : mountPoint;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -435,7 +498,7 @@ namespace Duplicati.UnitTest.DiskImage
             }
             catch (Exception ex)
             {
-                TestContext.Progress.WriteLine($"Warning: Failed to detach disk image: {ex.Message}");
+                Console.WriteLine($"Warning: Failed to detach disk image: {ex.Message}");
             }
 
             try
@@ -445,7 +508,7 @@ namespace Duplicati.UnitTest.DiskImage
             }
             catch (Exception ex)
             {
-                TestContext.Progress.WriteLine($"Warning: Failed to delete disk image file: {ex.Message}");
+                Console.WriteLine($"Warning: Failed to delete disk image file: {ex.Message}");
             }
         }
 
@@ -459,48 +522,32 @@ namespace Duplicati.UnitTest.DiskImage
         /// <inheritdoc />
         public PartitionTableGeometry GetPartitionTable(string diskIdentifier)
         {
-            var output = RunProcess("diskutil", $"info {diskIdentifier}");
+            var output = RunProcess("diskutil", $"info -plist {diskIdentifier}");
 
-            var lines = output
-                .Split('\n')
-                .Select(l => l.Trim())
-                .Where(l => l.Length > 0)
-                .ToList();
+            var plist = XDocument.Parse(output);
+            var dict = plist.Element("plist")?.Element("dict");
+            if (dict == null)
+                throw new InvalidOperationException($"Failed to parse diskutil info plist for {diskIdentifier}");
 
-            PartitionTableType tableType = PartitionTableType.Unknown;
-            long size = -1;
-            int sectorSize = -1;
-            foreach (var line in lines)
+            // Verify disk identifier
+            var deviceIdentifier = PlistHelper.GetStringValue(dict, "DeviceIdentifier");
+            if (!diskIdentifier.EndsWith(deviceIdentifier ?? "", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Disk identifier mismatch in diskutil info output: {diskIdentifier} doesn't end with {deviceIdentifier}");
+
+            // Determine partition table type
+            var contentType = PlistHelper.GetStringValue(dict, "Content");
+            var tableType = contentType switch
             {
-                var parts = line.Split([':'], 2);
-                switch (parts[0].Trim())
-                {
-                    case "Device Identifier":
-                        if (!diskIdentifier.EndsWith(parts[1].Trim(), StringComparison.OrdinalIgnoreCase))
-                            throw new InvalidOperationException($"Disk identifier mismatch in diskutil info output: {diskIdentifier} doesn't end with {parts[1].Trim()}");
-                        break;
-                    case "Content (IOContent)":
-                        tableType = parts[1].Trim() switch
-                        {
-                            "GUID_partition_scheme" => PartitionTableType.GPT,
-                            "FDisk_partition_scheme" => PartitionTableType.MBR,
-                            _ => PartitionTableType.Unknown
-                        };
-                        break;
-                    case "Disk Size":
-                        var totalbytesPart = parts[1].Trim().Split(' ').Skip(2).FirstOrDefault()?.TrimStart('(').TrimEnd(')');
-                        if (totalbytesPart is not null)
-                            size = long.TryParse(totalbytesPart, out long parsedSize) ? parsedSize : -1;
-                        break;
-                    case "Device Block Size":
-                        var sectorSizePart = parts[1].Trim().Split(' ').FirstOrDefault();
-                        if (sectorSizePart != null && int.TryParse(sectorSizePart, out int parsedSectorSize))
-                            sectorSize = parsedSectorSize;
-                        break;
-                }
-            }
+                "GUID_partition_scheme" => PartitionTableType.GPT,
+                "FDisk_partition_scheme" => PartitionTableType.MBR,
+                _ => PartitionTableType.Unknown
+            };
 
-            if (size == -1 || sectorSize == -1)
+            // Get size and sector size
+            var size = PlistHelper.GetLongValue(dict, "TotalSize");
+            var sectorSize = (int)PlistHelper.GetLongValue(dict, "DeviceBlockSize");
+
+            if (size == 0 || sectorSize == 0)
                 throw new InvalidOperationException($"Failed to retrieve partition table information for disk {diskIdentifier}");
 
             return new PartitionTableGeometry
@@ -520,67 +567,51 @@ namespace Duplicati.UnitTest.DiskImage
             var partitions = new List<PartitionGeometry>();
             foreach (var name in names)
             {
-                var output = RunProcess("diskutil", $"info /dev/{name}");
+                var output = RunProcess("diskutil", $"info -plist /dev/{name}");
 
-                var lines = output
-                    .Split('\n')
-                    .Select(l => l.Trim())
-                    .Where(l => l.Length > 0)
-                    .ToList();
+                var plist = XDocument.Parse(output);
+                var dict = plist.Element("plist")?.Element("dict");
+                if (dict == null)
+                    continue;
+
+                // Verify device node
+                var deviceNode = PlistHelper.GetStringValue(dict, "DeviceNode");
+                if (!string.Equals(deviceNode, $"/dev/{name}", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Partition identifier mismatch in diskutil info output: expected /dev/{name}, got {deviceNode}");
+
+                // Extract partition number from name (e.g., "disk4s1" -> 1)
+                var partitionNumber = int.TryParse(
+                    name.LastIndexOf('s') >= 0 ? name[(name.LastIndexOf('s') + 1)..] : "",
+                    out int num) ? num : -1;
+
+                // Parse filesystem type
+                var fsPersonality = PlistHelper.GetStringValue(dict, "FilesystemPersonality");
+                var filesystemType = fsPersonality switch
+                {
+                    "MS-DOS FAT32" => FileSystemType.FAT32,
+                    "ExFAT" => FileSystemType.ExFAT,
+                    "HFS+" => FileSystemType.HFSPlus,
+                    "APFS" => FileSystemType.APFS,
+                    _ => FileSystemType.Unknown
+                };
+
+                // Parse volume UUID
+                Guid? volumeGuid = null;
+                var volumeUuid = PlistHelper.GetStringValue(dict, "VolumeUUID");
+                if (Guid.TryParse(volumeUuid, out Guid parsedGuid))
+                    volumeGuid = parsedGuid;
 
                 PartitionGeometry partition = new()
                 {
-                    Number = int.TryParse(name.AsSpan(name.Length - 1), out int num) ? num : -1,
+                    Number = partitionNumber,
                     Type = PartitionType.Unknown,
-                    StartOffset = -1,
-                    Size = -1,
-                    Name = null,
-                    FilesystemType = FileSystemType.Unknown,
-                    VolumeGuid = null,
+                    StartOffset = PlistHelper.GetLongValue(dict, "PartitionOffset"),
+                    Size = PlistHelper.GetLongValue(dict, "TotalSize"),
+                    Name = PlistHelper.GetStringValue(dict, "VolumeName"),
+                    FilesystemType = filesystemType,
+                    VolumeGuid = volumeGuid,
                     TableType = PartitionTableType.Unknown
                 };
-
-                foreach (var line in lines)
-                {
-                    var parts = line.Split([':'], 2);
-                    switch (parts[0].Trim())
-                    {
-                        case "Device Node":
-                            if (!string.Equals(parts[1].Trim(), $"/dev/{name}", StringComparison.OrdinalIgnoreCase))
-                                throw new InvalidOperationException($"Partition identifier mismatch in diskutil info output: expected /dev/{name}, got {parts[1].Trim()}");
-                            break;
-                        case "Partition Offset":
-                            var offsetPart = parts[1].Trim().Split(' ').FirstOrDefault();
-                            if (offsetPart != null && long.TryParse(offsetPart, out long parsedOffset))
-                                partition.StartOffset = parsedOffset;
-                            break;
-                        case "Disk Size":
-                            var sizePart = parts[1].Trim().Split(' ').FirstOrDefault();
-                            if (sizePart != null && long.TryParse(sizePart, out long parsedSize))
-                                partition.Size = parsedSize;
-                            break;
-                        case "Volume Name":
-                            partition.Name = parts[1].Trim();
-                            break;
-                        case "File System Personality":
-                            partition.FilesystemType = parts[1].Trim() switch
-                            {
-                                "MS-DOS FAT32" => FileSystemType.FAT32,
-                                "ExFAT" => FileSystemType.ExFAT,
-                                "HFS+" => FileSystemType.HFSPlus,
-                                "APFS" => FileSystemType.APFS,
-                                _ => FileSystemType.Unknown
-                            };
-                            break;
-                        case "Volume UUID":
-                            if (Guid.TryParse(parts[1].Trim(), out Guid parsedGuid))
-                                partition.VolumeGuid = parsedGuid;
-                            break;
-                        default:
-                            // Ignore other lines for now
-                            break;
-                    }
-                }
 
                 partitions.Add(partition);
             }
@@ -618,7 +649,7 @@ namespace Duplicati.UnitTest.DiskImage
                 if (result.ExitCode != 0)
                     if (i < retryCount)
                     {
-                        TestContext.Progress.WriteLine($"Warning: Process {fileName} with arguments {arguments} exited with code {result.ExitCode}. Retrying... Attempt {i + 1} of {retryCount}");
+                        Console.WriteLine($"Warning: Process {fileName} with arguments {arguments} exited with code {result.ExitCode}. Retrying... Attempt {i + 1} of {retryCount}");
                         Thread.Sleep(500);
                         continue;
                     }
@@ -638,5 +669,6 @@ namespace Duplicati.UnitTest.DiskImage
             // Nothing to dispose
             GC.SuppressFinalize(this);
         }
+
     }
 }

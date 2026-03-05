@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Disk
@@ -489,7 +490,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         /// <inheritdoc />
         public static async IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var list = await ProcessRunner.RunProcessAsync("diskutil", "list", 30_000, cancellationToken);
+            var list = await ProcessRunner.RunProcessAsync("diskutil", "list -plist", 30_000, cancellationToken);
             if (list.ExitCode != 0)
             {
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", null, $"Failed to list physical drives: {list.Error}");
@@ -499,46 +500,88 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (string.IsNullOrWhiteSpace(list.Output))
                 yield break;
 
-            var devices = list.Output.Split($"{DEVICE_PREFIX}disk", StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (var device in devices)
+            XDocument plist;
+            try
             {
-                var lines = device.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-                if (lines.Length == 0)
-                    continue;
-                if (lines[0].Contains("synthesized", StringComparison.OrdinalIgnoreCase))
-                    continue; // Skip synthesized disks (e.g., APFS containers)
+                plist = XDocument.Parse(list.Output);
+            }
+            catch (Exception ex)
+            {
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", ex, "Failed to parse diskutil list plist output");
+                yield break;
+            }
 
-                var mainLine = lines[2].Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                var identifier = mainLine.Last();
+            // Parse the plist XML structure
+            var rootDict = plist.Element("plist")?.Element("dict");
+            if (rootDict == null)
+                yield break;
+
+            // Get AllDisksAndPartitions array
+            var allDisksAndPartitions = PlistHelper.GetArrayElement(rootDict, "AllDisksAndPartitions");
+            if (allDisksAndPartitions == null)
+                yield break;
+
+            foreach (var diskElement in allDisksAndPartitions.Elements("dict"))
+            {
+                var identifier = PlistHelper.GetStringValue(diskElement, "DeviceIdentifier");
                 if (string.IsNullOrWhiteSpace(identifier))
-                    continue; // Skip if we can't determine an identifier
+                    continue;
+
+                // Skip synthesized disks (e.g., APFS containers)
+                var isSynthetic = PlistHelper.GetBoolValue(diskElement, "SyntheticDisk");
+                if (isSynthetic)
+                    continue;
 
                 var path = $"{DEVICE_PREFIX}{identifier}";
-                var size = mainLine[^3..^1]; // Size is typically the third-to-last token alongside the unit (e.g., "500 GB")
-                size[0] = size[0].Trim()[1..]; // Remove any leading/trailing whitespace, and the leading + or *
-                var sizeinBytes = Library.Utility.Sizeparser.ParseSize(string.Join(' ', size));
+                var size = PlistHelper.GetLongValue(diskElement, "Size");
+                if (size <= 0)
+                    continue;
 
-                var info = await ProcessRunner.RunProcessAsync("diskutil", $"info {path}", 30_000, cancellationToken);
+                // Get detailed info using diskutil info -plist
+                var info = await ProcessRunner.RunProcessAsync("diskutil", $"info -plist {path}", 30_000, cancellationToken);
                 if (info.ExitCode != 0)
                 {
                     Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", null, $"Failed to get info for {path}: {info.Error}");
                     continue;
                 }
-                var infoLines = info.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-                var displayName = infoLines.FirstOrDefault(l => l.TrimStart().StartsWith("Device / Media Name:", StringComparison.OrdinalIgnoreCase))?.Split(':', 2)[1].Trim() ?? identifier;
-                var guid = infoLines.FirstOrDefault(l => l.TrimStart().StartsWith("Disk / Partition UUID:", StringComparison.OrdinalIgnoreCase))?.Split(':', 2)[1].Trim() ?? null;
 
-                var mountpoints = lines[3..].Select(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault()!).Where(m => !string.IsNullOrWhiteSpace(m)).ToArray();
+                string? displayName = null;
+                string? guid = null;
+                try
+                {
+                    var infoDict = PlistHelper.ParsePlistDict(info.Output);
+                    if (infoDict != null)
+                    {
+                        displayName = PlistHelper.GetStringValue(infoDict, "MediaName");
+                        guid = PlistHelper.GetStringValue(infoDict, "DiskUUID");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "listphysicaldrives", ex, $"Failed to parse diskutil info plist for {path}");
+                }
+
+                // Get mount points from partitions
+                var mountPoints = new List<string>();
+                var partitions = PlistHelper.GetArrayElement(diskElement, "Partitions") ?? PlistHelper.GetArrayElement(diskElement, "APFSVolumes");
+                if (partitions != null)
+                {
+                    foreach (var partition in partitions.Elements("dict"))
+                    {
+                        var mountPoint = PlistHelper.GetStringValue(partition, "MountPoint");
+                        if (!string.IsNullOrWhiteSpace(mountPoint))
+                            mountPoints.Add(mountPoint);
+                    }
+                }
 
                 var driveInfo = new PhysicalDriveInfo
                 {
-                    Number = identifier[$"{DEVICE_PREFIX}disk".Length..],
+                    Number = identifier,
                     Path = path,
-                    Size = (ulong)sizeinBytes,
-                    DisplayName = displayName,
+                    Size = (ulong)size,
+                    DisplayName = displayName ?? identifier,
                     Guid = guid,
-                    MountPoints = mountpoints
+                    MountPoints = mountPoints.ToArray()
                 };
 
                 yield return driveInfo;
