@@ -28,54 +28,47 @@ namespace Duplicati.WebserverCore.Services.Settings;
 
 public class SettingsService(Connection connection) : ISettingsService
 {
-    // Remove sensitive information from the output
-    private static readonly string[] GUARDED_OUTPUT = [
-        Server.Database.ServerSettings.CONST.JWT_CONFIG,
-        Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
-        Server.Database.ServerSettings.CONST.PRELOAD_SETTINGS_HASH,
-        Server.Database.ServerSettings.CONST.REMOTE_CONTROL_CONFIG,
-        Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATE,
-        Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD,
-        Server.Database.ServerSettings.CONST.REMOTE_CONTROL_STORAGE_API_KEY,
-        Server.Database.ServerSettings.CONST.CLIENT_LICENSE_KEY,
-        // Not used anymore, but not completely removed
-        Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
-        Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
-        // Completely removed, but no need to expose
-        "server-passphrase-trayicon-hash",
-        "server-passphrase-trayicon-salt"
-    ];
-
-    private static readonly string[] GUARDED_INPUT = [
-        Server.Database.ServerSettings.CONST.JWT_CONFIG,
-        Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
-        Server.Database.ServerSettings.CONST.PRELOAD_SETTINGS_HASH,
-        Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
-        Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
-        Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATE,
-        Server.Database.ServerSettings.CONST.DISABLE_VISUAL_CAPTCHA,
-        Server.Database.ServerSettings.CONST.DISABLE_SIGNIN_TOKENS,
-        Server.Database.ServerSettings.CONST.ENCRYPTED_FIELDS,
-        Server.Database.ServerSettings.CONST.REMOTE_CONTROL_CONFIG,
-        Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD,
-        Server.Database.ServerSettings.CONST.ADDITIONAL_REPORT_URL,
-        Server.Database.ServerSettings.CONST.REMOTE_CONTROL_STORAGE_ENDPOINT_URL,
-        Server.Database.ServerSettings.CONST.REMOTE_CONTROL_STORAGE_API_KEY,
-        Server.Database.ServerSettings.CONST.REMOTE_CONTROL_STORAGE_API_ID,
-        Server.Database.ServerSettings.CONST.CLIENT_LICENSE_KEY,
-        "server-passphrase-trayicon-hash",
-        "server-passphrase-trayicon-salt"
-    ];
+    /// <summary>
+    /// Legacy guarded options that are no longer consts, but should be guarded anyway
+    /// to protect older databases
+    /// </summary>
+    private static readonly string[] LEGACY_GUARDED_OPTIONS =
+        ["server-passphrase-trayicon-hash", "server-passphrase-trayicon-salt"];
 
     /// <summary>
-    /// Cache of the valid setting names 
+    /// Options that should not be returned to the client for security reasons
     /// </summary>
-    private static readonly IReadOnlySet<string> VALID_OPTION_NAMES = typeof(Server.Database.ServerSettings.CONST).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
-        .Where(x => x.FieldType == typeof(string))
-        .Select(x => x.GetValue(null)?.ToString())
+    private static readonly IReadOnlySet<string> GUARDED_OUTPUT =
+        typeof(Server.Database.ServerSettings.CONST)
+        .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+        .Where(f => f.GetCustomAttributes(typeof(GuardedOutputAttribute), false).Any())
+        .Select(f => f.GetValue(null)?.ToString())
+        .Concat(LEGACY_GUARDED_OPTIONS)
         .WhereNotNullOrWhiteSpace()
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Options that should not be set by the client
+    /// </summary>
+    private static readonly IReadOnlySet<string> GUARDED_INPUT =
+        typeof(Server.Database.ServerSettings.CONST)
+        .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+        .Where(f => f.GetCustomAttributes(typeof(GuardedInputAttribute), false).Any())
+        .Select(f => f.GetValue(null)?.ToString())
+        .Concat(LEGACY_GUARDED_OPTIONS)
+        .WhereNotNullOrWhiteSpace()
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Options that are reported as boolean values, but are stored as strings
+    /// </summary>
+    private static readonly IReadOnlySet<string> BOOLEAN_MAPPED_OUTPUT =
+        typeof(Server.Database.ServerSettings.CONST)
+        .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+        .Where(f => f.GetCustomAttributes(typeof(BooleanOutputAttribute), false).Any())
+        .Select(f => f.GetValue(null)?.ToString())
+        .WhereNotNullOrWhiteSpace()
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     public Abstractions.ServerSettings GetSettings()
         => new Abstractions.ServerSettings(connection.ApplicationSettings);
@@ -84,7 +77,7 @@ public class SettingsService(Connection connection) : ISettingsService
     {
         // Join server settings and global settings
         var dict =
-            connection.GetSettings(Server.Database.Connection.SERVER_SETTINGS_ID)
+            connection.GetSettings(Connection.SERVER_SETTINGS_ID)
                 .Where(x => !string.IsNullOrWhiteSpace(x.Name))
                 .Union(
                     connection.Settings
@@ -93,12 +86,17 @@ public class SettingsService(Connection connection) : ISettingsService
                 .DistinctBy(x => x.Name)
                 .ToDictionary(x => x.Name, x => x.Value);
 
-        // Patch cert to boolean
-        dict.TryGetValue("server-ssl-certificate", out var sslcert);
-        dict["server-ssl-certificate"] = (!string.IsNullOrWhiteSpace(sslcert)).ToString();
+        // Handle boolean mapped values
+        var booleanMap = BOOLEAN_MAPPED_OUTPUT
+            .Where(x => dict.ContainsKey(x))
+            .ToDictionary(x => x, x => (!string.IsNullOrWhiteSpace(dict[x])).ToString());
 
         foreach (var key in GUARDED_OUTPUT)
             dict.Remove(key);
+
+        // Replace boolean mapped values, emit even if they are guarded
+        foreach (var kvp in booleanMap)
+            dict[kvp.Key] = kvp.Value;
 
         return dict;
     }
@@ -109,7 +107,7 @@ public class SettingsService(Connection connection) : ISettingsService
             throw new BadRequestException("No values provided");
 
         var passphrase = values.GetValueOrDefault(Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE)?.ToString();
-        foreach (var key in GUARDED_INPUT)
+        foreach (var key in GUARDED_INPUT.Concat(BOOLEAN_MAPPED_OUTPUT))
             values.Remove(key);
 
         // Split into server settings and global settings
@@ -144,8 +142,12 @@ public class SettingsService(Connection connection) : ISettingsService
 
     public string? GetSettingMasked(string key)
     {
-        if (key.Equals("server-ssl-certificate", StringComparison.OrdinalIgnoreCase))
-            return connection.ApplicationSettings.ServerSSLCertificate != null ? "true" : "false";
+        if (BOOLEAN_MAPPED_OUTPUT.Contains(key))
+        {
+            var value = connection.GetSettings(Connection.SERVER_SETTINGS_ID)
+                .FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase))?.Value;
+            return (!string.IsNullOrWhiteSpace(value)).ToString();
+        }
 
         if (GUARDED_OUTPUT.Any(x => string.Equals(x, key, StringComparison.OrdinalIgnoreCase)))
             throw new NotFoundException("Key not found");
@@ -153,10 +155,7 @@ public class SettingsService(Connection connection) : ISettingsService
         if (key.StartsWith("--", StringComparison.Ordinal))
             return connection.Settings.FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase))?.Value;
 
-        if (!VALID_OPTION_NAMES.Contains(key))
-            throw new NotFoundException("Key not found");
-
-        return connection.GetSettings(Server.Database.Connection.SERVER_SETTINGS_ID).FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase))?.Value;
+        return connection.GetSettings(Connection.SERVER_SETTINGS_ID).FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase))?.Value;
     }
 
     public void PatchSettingMasked(string key, string value)
@@ -167,7 +166,7 @@ public class SettingsService(Connection connection) : ISettingsService
             return;
         }
 
-        if (GUARDED_INPUT.Any(x => string.Equals(x, key, StringComparison.OrdinalIgnoreCase)))
+        if (GUARDED_INPUT.Contains(key) || BOOLEAN_MAPPED_OUTPUT.Contains(key))
             throw new BadRequestException($"Cannot update {key} setting");
 
         if (key.StartsWith("--", StringComparison.Ordinal))
@@ -184,9 +183,6 @@ public class SettingsService(Connection connection) : ISettingsService
         }
         else
         {
-            if (!VALID_OPTION_NAMES.Contains(key))
-                throw new NotFoundException("Key not found");
-
             var dict = new Dictionary<string, string?>
             {
                 { key,  value }

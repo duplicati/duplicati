@@ -120,6 +120,10 @@ Error message: {0}", error); }
         public static string AllowedCompressionModulesLong { get { return LC.L(@"Set the allowed compression modules for remote control. The value is a comma-separated list of compression module names. If this option is not set, all compression modules are allowed. Use this option to restrict the compression modules that can be used to compress data."); } }
         public static string SecretProviderFailedToGetEncryptionKey { get { return LC.L(@"Failed to get encryption key from secret provider"); } }
         public static string SecretProviderFailedToSetEncryptionKey { get { return LC.L(@"Failed to set encryption key in secret provider"); } }
+        public static string ConfigureHttpsShort { get { return LC.L(@"Configure HTTPS certificates"); } }
+        public static string ConfigureHttpsLong { get { return LC.L(@"Automatically generate and configure HTTPS certificates for the server"); } }
+        public static string ConfigureHttpsHostnamesShort { get { return LC.L(@"HTTPS hostnames"); } }
+        public static string ConfigureHttpsHostnamesLong { get { return LC.L(@"Comma-separated list of hostnames to include in the HTTPS certificate (used with --configure-https)"); } }
     }
     internal static class Scheduler
     {
