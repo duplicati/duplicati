@@ -107,7 +107,6 @@ public class DuplicatiWebserver
     /// <param name="WebRoot">The root folder with static files</param>
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
-    /// <param name="Certificate">The certificate, if using SSL</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
     /// <param name="TokenLifetimeInMinutes">The lifetime of refresh tokens in minutes</param>
@@ -117,8 +116,7 @@ public class DuplicatiWebserver
     public record InitSettings(
         string WebRoot,
         int Port,
-        System.Net.IPAddress Interface,
-        X509Certificate2Collection? Certificate,
+        IPAddress Interface,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
         int TokenLifetimeInMinutes,
@@ -152,31 +150,32 @@ public class DuplicatiWebserver
             builder.Configuration.Sources.Remove(appCfgSource);
         }
 
+        var useHttps = connection.ApplicationSettings.UseHTTPS && connection.ApplicationSettings.ServerSSLCertificate != null;
         builder.WebHost.ConfigureKestrel(options =>
         {
             // Handle IPv6 addresses
-            if (settings.Interface == System.Net.IPAddress.Any)
+            if (settings.Interface == IPAddress.Any)
             {
                 options.ListenAnyIP(settings.Port, listenOptions =>
                 {
-                    if (settings.Certificate != null)
-                        ConfigureHttps(listenOptions, settings.Certificate);
+                    if (useHttps)
+                        ConfigureHttps(listenOptions, connection);
                 });
             }
-            else if (settings.Interface == System.Net.IPAddress.Loopback)
+            else if (settings.Interface == IPAddress.Loopback)
             {
                 options.ListenLocalhost(settings.Port, listenOptions =>
                 {
-                    if (settings.Certificate != null)
-                        ConfigureHttps(listenOptions, settings.Certificate);
+                    if (useHttps)
+                        ConfigureHttps(listenOptions, connection);
                 });
             }
             else
             {
                 options.Listen(settings.Interface, settings.Port, listenOptions =>
                 {
-                    if (settings.Certificate != null)
-                        ConfigureHttps(listenOptions, settings.Certificate);
+                    if (useHttps)
+                        ConfigureHttps(listenOptions, connection);
                 });
             }
         });
@@ -428,27 +427,37 @@ public class DuplicatiWebserver
     }
 
     /// <summary>
-    /// Configures HTTPS for the server
+    /// Configures HTTPS for the server with dynamic certificate loading.
+    /// This allows certificates to be renewed without restarting the server.
     /// </summary>
     /// <param name="listenOptions">The listen options</param>
-    /// <param name="certificates">The certificates to use</param>
-    private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates)
+    /// <param name="connection">The connection</param>
+    private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, Connection connection)
     {
-        var servedCert = certificates?.FirstOrDefault(x => x.HasPrivateKey)
-            ?? throw new Exception("No certificate with private key found");
-
         listenOptions.UseHttps(new HttpsConnectionAdapterOptions()
         {
-            ServerCertificate = servedCert,
-            ServerCertificateChain = certificates
-        });
+            // Use ServerCertificateSelector for dynamic certificate loading
+            // This allows the certificate to be renewed without server restart
+            ServerCertificateSelector = (connectionContext, hostName) =>
+            {
+                try
+                {
+                    var cert = connection.ApplicationSettings.ServerSSLCertificate;
+                    if (cert == null || cert.Count == 0)
+                    {
+                        Library.Logging.Log.WriteWarningMessage(LOGTAG, "NoCertificateAvailable", null, "No SSL certificate available for HTTPS connection.");
+                        return null;
+                    }
 
-        // This does not appear to have any effect,
-        // but setting it anyway in case it is needed in the future
-        listenOptions.UseHttps(new HttpsConnectionAdapterOptions()
-        {
-            ServerCertificate = servedCert,
-            ServerCertificateChain = certificates
+                    // Return the certificate with private key
+                    return cert.FirstOrDefault(x => x.HasPrivateKey);
+                }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "CertificateLoadFailed", ex, "Failed to load SSL certificate for connection.");
+                    return null;
+                }
+            }
         });
     }
 

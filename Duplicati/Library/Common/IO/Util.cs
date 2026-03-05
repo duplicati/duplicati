@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Duplicati.Library.Logging;
 
 #nullable enable
 
@@ -29,6 +30,11 @@ namespace Duplicati.Library.Common.IO
 {
     public static class Util
     {
+        /// <summary>
+        /// The log tag for messages
+        /// </summary>
+        private static readonly string LOGTAG = Log.LogTagFromType(typeof(Util));
+
         /// <summary>
         /// A cached instance of the directory separator as a string
         /// </summary>
@@ -131,6 +137,26 @@ namespace Duplicati.Library.Common.IO
         }
 
         /// <summary>
+        /// Checks if the path is a Windows drive root (e.g., "C:\" or "D:\").
+        /// </summary>
+        /// <param name="path">The path to check.</param>
+        /// <returns><c>true</c> if the path is a drive root, <c>false</c> otherwise.</returns>
+        private static bool IsDriveRoot(string path)
+        {
+            if (!OperatingSystem.IsWindows())
+                return false;
+
+            // GetPathRoot returns "C:\" for "C:\" or "C:\Users"
+            var root = Path.GetPathRoot(path);
+            if (string.IsNullOrEmpty(root))
+                return false;
+
+            // Check if the input is exactly the root
+            return string.Equals(path.TrimEnd('\\'), root.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)
+                   && root.EndsWith(Path.DirectorySeparatorChar);
+        }
+
+        /// <summary>
         /// Get the final resolved path, accounting for symlinks in existing segments.
         /// </summary>
         /// <param name="path">The path to resolve.</param>
@@ -158,11 +184,24 @@ namespace Duplicati.Library.Common.IO
             }
 
             // 2. Resolve symlinks for the part of the path that actually exists
-            FileSystemInfo info = Directory.Exists(current)
-                ? new DirectoryInfo(current)
-                : new FileInfo(current);
+            // Skip symlink resolution for Windows drive roots (e.g., "C:\") as
+            // ResolveLinkTarget can throw DirectoryNotFoundException on some systems
+            var resolvedPath = current;
+            if (!IsDriveRoot(current))
+            {
+                FileSystemInfo info = Directory.Exists(current)
+                    ? new DirectoryInfo(current)
+                    : new FileInfo(current);
 
-            var resolvedPath = info.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? info.FullName;
+                try
+                {
+                    resolvedPath = info.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? info.FullName;
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "ResolveLinkTargetFailed", ex, "Failed to resolve link target for {0}, assuming it is not a link", current);
+                }
+            }
 
             // 3. Re-attach the non-existent segments to the resolved base path
             while (ghostSegments.Count > 0)
