@@ -166,12 +166,13 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
-        public async System.Threading.Tasks.Task RestoreVolumeCache([Values("0b", "1mb", "5mb", "1gb")] string cache_size, [Values("0", "1", null)] string? channel_size)
+        public async System.Threading.Tasks.Task RestoreVolumeCache([Values("0b", "1mb", "5mb", "1gb", null)] string? cache_size, [Values("0", "1", null)] string? channel_size)
         {
             var opts = TestOptions;
             opts["dblock-size"] = "1mb";
             opts["blocksize"] = "1kb";
-            opts["restore-volume-cache-hint"] = cache_size;
+            if (cache_size != null)
+                opts["restore-volume-cache-hint"] = cache_size;
             if (channel_size != null)
                 opts["restore-channel-buffer-size"] = channel_size;
             opts["restore-legacy"] = "false";
@@ -280,6 +281,62 @@ namespace Duplicati.UnitTest
             var res_restore = c.Restore(["*"]);
             TestUtils.AssertResults(res_restore);
             Assert.AreEqual(original_contents, File.ReadAllBytes(file1Path));
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async System.Threading.Tasks.Task RestoreVolumeCacheDiskPressure()
+        {
+            var opts = TestOptions;
+            opts["dblock-size"] = "1mb";
+            opts["blocksize"] = "1kb";
+            // No restore-volume-cache-hint → unlimited mode (-1 sentinel).
+            // Set restore-volume-cache-min-free to an absurdly large value so
+            // every volume arrival triggers disk-pressure eviction.
+            opts["restore-volume-cache-min-free"] = "999tb";
+            opts["restore-legacy"] = "false";
+            opts["restore-path"] = RESTOREFOLDER;
+
+            // Write enough data to create at least 10 dblock volumes (dblock-size=1mb),
+            // so that the eviction loop is entered multiple times and the CachePressure
+            // warning threshold (5 evictions) is reliably crossed.
+            Random rng = new();
+            for (int i = 0; i < 20; i++)
+            {
+                var data = new byte[512 * 1024]; // 512 KB each → ~10 MB total → ~10 dblock volumes
+                rng.NextBytes(data);
+                File.WriteAllBytes(Path.Combine(this.DATAFOLDER, $"file{i}"), data);
+            }
+
+            using var c = new Controller("file://" + this.TARGETFOLDER, opts, null);
+            TestUtils.AssertResults(c.Backup([this.DATAFOLDER]));
+
+            var timeout_task = System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(120));
+            RestoreResults? result = null;
+
+            var restore_task = System.Threading.Tasks.Task.Run(() =>
+            {
+                result = (RestoreResults)c.Restore(["*"]);
+            });
+
+            var t = await System.Threading.Tasks.Task.WhenAny(timeout_task, restore_task);
+            if (t == timeout_task)
+            {
+                c.Abort();
+                await restore_task;
+                Assert.Fail("Restore timed out");
+            }
+            else
+            {
+                t.GetAwaiter().GetResult();
+            }
+
+            Assert.IsNotNull(result);
+            Assert.That(result!.CachePressureEvictions, Is.GreaterThan(0), "Expected disk-pressure evictions with 999tb min-free");
+            Assert.That(result.TotalVolumesAccessed, Is.GreaterThan(0), "Expected at least one volume to be accessed");
+            Assert.That(result.Warnings.Count(), Is.GreaterThanOrEqualTo(1), "Expected at least one CachePressure warning");
+
+            TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restoring with disk pressure eviction");
         }
     }
 }
