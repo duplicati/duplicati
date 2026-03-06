@@ -197,8 +197,12 @@ public static class CertificateStorageHelper
         if (serverPair == null)
             throw new ArgumentNullException(nameof(serverPair));
 
-        // Create a new certificate that includes the private key
-        using var certWithKey = serverPair.Certificate.CopyWithPrivateKey(serverPair.PrivateKey);
+        // On some platforms (e.g., macOS), X509CertificateLoader.LoadPkcs12 returns a certificate
+        // with HasPrivateKey=true because the platform associates the key with the certificate.
+        // To avoid "The certificate already has an associated private key" error, we load just
+        // the certificate without any key before copying the private key.
+        using var certOnly = X509CertificateLoader.LoadCertificate(serverPair.Certificate.RawData);
+        using var certWithKey = certOnly.CopyWithPrivateKey(serverPair.PrivateKey);
         return SerializeCertificateWithKey(certWithKey, password);
     }
 

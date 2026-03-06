@@ -30,6 +30,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Certificates;
+using Duplicati.Library.RestAPI.Database;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Server.Database;
 using NUnit.Framework;
@@ -63,7 +64,7 @@ public class HttpsConfigurationTests
 
         // Open the database connection
         var dbConnection = await SQLiteLoader.LoadConnectionAsync(_databasePath);
-        _connection = new Connection(dbConnection, false, null, _tempDataFolder, () => { });
+        _connection = new Connection(dbConnection, true, null, _tempDataFolder, () => { });
     }
 
     [TearDown]
@@ -92,36 +93,8 @@ public class HttpsConfigurationTests
     {
         var dbConnection = await SQLiteLoader.LoadConnectionAsync(databasePath);
 
-        // Create minimal schema
-        using (var cmd = dbConnection.CreateCommand())
-        {
-            // Option table for settings
-            cmd.CommandText = @"
-                CREATE TABLE IF NOT EXISTS ""Option"" (
-                    ""Key"" TEXT PRIMARY KEY,
-                    ""Value"" TEXT
-                );
-            ";
-            cmd.ExecuteNonQuery();
-
-            // Notification table
-            cmd.CommandText = @"
-                CREATE TABLE IF NOT EXISTS ""Notification"" (
-                    ""ID"" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ""Type"" TEXT NOT NULL,
-                    ""Title"" TEXT NOT NULL,
-                    ""Message"" TEXT NOT NULL,
-                    ""Exception"" TEXT,
-                    ""ExceptionType"" TEXT,
-                    ""NotificationAction"" TEXT,
-                    ""ActionData"" TEXT,
-                    ""LogEntryID"" INTEGER,
-                    ""Timestamp"" INTEGER NOT NULL,
-                    ""UpdateID"" INTEGER
-                );
-            ";
-            cmd.ExecuteNonQuery();
-        }
+        // Use DatabaseUpgrader to create the schema from embedded resources
+        DatabaseUpgrader.UpgradeDatabase(dbConnection, databasePath, typeof(DatabaseSchemaMarker));
 
         dbConnection.Dispose();
     }
@@ -782,7 +755,7 @@ public class HttpsConfigurationTests
     }
 
     [Test]
-    public void CertificateValidity_ServerCert_Approximately2Years()
+    public void CertificateValidity_ServerCert_Approximately90Days()
     {
         // Arrange & Act
         var caPair = CertificateGenerator.GenerateCACertificate();
@@ -793,8 +766,8 @@ public class HttpsConfigurationTests
 
         // Assert
         var validity = serverPair.Certificate.NotAfter - serverPair.Certificate.NotBefore;
-        Assert.That(validity.TotalDays, Is.GreaterThan(365 * 1.5));
-        Assert.That(validity.TotalDays, Is.LessThan(365 * 2.5));
+        Assert.That(validity.TotalDays, Is.GreaterThan(80));
+        Assert.That(validity.TotalDays, Is.LessThan(100));
     }
 
     [Test]

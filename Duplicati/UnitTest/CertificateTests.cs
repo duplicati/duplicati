@@ -366,7 +366,6 @@ public class CertificateTests
     }
 
     [Test]
-    [Platform(Exclude = "MacOsX", Reason = "macOS keychain export limitations")]
     public void SerializeDeserializeServerCertificatePair_RoundTripsCorrectly()
     {
         // Arrange
@@ -431,7 +430,7 @@ public class CertificateTests
         var encrypted = CertificateStorageHelper.EncryptPrivateKey(caPair.PrivateKey, correctPassword);
 
         // Act & Assert
-        Assert.Throws<CryptographicException>(() =>
+        Assert.Throws<SharpAESCrypt.WrongPasswordException>(() =>
             CertificateStorageHelper.DecryptPrivateKey(encrypted, wrongPassword));
     }
 
