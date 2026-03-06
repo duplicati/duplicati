@@ -366,7 +366,6 @@ public class CertificateTests
     }
 
     [Test]
-    [Platform(Exclude = "MacOsX", Reason = "macOS keychain export limitations")]
     public void SerializeDeserializeServerCertificatePair_RoundTripsCorrectly()
     {
         // Arrange
