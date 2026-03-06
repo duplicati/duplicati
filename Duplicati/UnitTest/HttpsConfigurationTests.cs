@@ -63,7 +63,7 @@ public class HttpsConfigurationTests
 
         // Open the database connection
         var dbConnection = await SQLiteLoader.LoadConnectionAsync(_databasePath);
-        _connection = new Connection(dbConnection, false, null, _tempDataFolder, () => { });
+        _connection = new Connection(dbConnection, true, null, _tempDataFolder, () => { });
     }
 
     [TearDown]

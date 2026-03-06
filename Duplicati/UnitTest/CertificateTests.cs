@@ -431,7 +431,7 @@ public class CertificateTests
         var encrypted = CertificateStorageHelper.EncryptPrivateKey(caPair.PrivateKey, correctPassword);
 
         // Act & Assert
-        Assert.Throws<CryptographicException>(() =>
+        Assert.Throws<SharpAESCrypt.WrongPasswordException>(() =>
             CertificateStorageHelper.DecryptPrivateKey(encrypted, wrongPassword));
     }
 
