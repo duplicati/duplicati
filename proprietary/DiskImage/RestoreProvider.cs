@@ -12,6 +12,7 @@ using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.Filesystem;
+using Duplicati.Proprietary.DiskImage.General;
 using Duplicati.Proprietary.DiskImage.Partition;
 
 namespace Duplicati.Proprietary.DiskImage;
@@ -141,8 +142,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         if (OperatingSystem.IsWindows())
             _targetDisk = new Windows(_devicePath);
+        else if (OperatingSystem.IsMacOS())
+            _targetDisk = new Mac(_devicePath);
         else
-            throw new PlatformNotSupportedException(Strings.RestorePlatformNotSupported);
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
 
         if (_autoUnmount)
             if (!await _targetDisk.AutoUnmountAsync(cancel).ConfigureAwait(false))

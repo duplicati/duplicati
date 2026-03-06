@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Proprietary.DiskImage.Disk;
+using Duplicati.Proprietary.DiskImage.General;
 using Duplicati.Proprietary.DiskImage.Partition;
 using Duplicati.Proprietary.DiskImage.SourceItems;
 
@@ -99,9 +100,15 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             if (!await _disk.InitializeAsync(cancellationToken))
                 throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
         }
+        else if (OperatingSystem.IsMacOS())
+        {
+            _disk = new Mac(_devicePath);
+            if (!await _disk.InitializeAsync(cancellationToken))
+                throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
+        }
         else
         {
-            throw new PlatformNotSupportedException("DiskImage source provider is currently only supported on Windows.");
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
         }
     }
 
@@ -161,6 +168,37 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
                 await foreach (var e in EnumerateRecursive(child, cancellationToken))
                     yield return e;
         }
+    }
+
+    /// <summary>
+    /// Lists physical drives available on the system. This is a static method that can be used to discover available disks before initializing the provider.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of physical drive information.</returns>
+    /// <exception cref="PlatformNotSupportedException">Thrown when the platform is not supported.</exception>
+    public static IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrives(CancellationToken cancellationToken)
+    {
+        if (OperatingSystem.IsWindows())
+            return Windows.ListPhysicalDrivesAsync(cancellationToken);
+        else if (OperatingSystem.IsMacOS())
+            return Mac.ListPhysicalDrivesAsync(cancellationToken);
+        else
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
+    }
+
+    /// <summary>
+    /// Gets the platform-specific prefix for disk entries (e.g., "\\.\" on Windows, "/dev/" on Unix). This is used to construct entry paths correctly based on the underlying platform.
+    /// </summary>
+    /// <returns>The platform-specific prefix for disk entries.</returns>
+    /// <exception cref="PlatformNotSupportedException">Thrown when the platform is not supported.</exception>
+    public static string GetDevicePrefix()
+    {
+        if (OperatingSystem.IsWindows())
+            return Windows.Prefix;
+        else if (OperatingSystem.IsMacOS())
+            return Mac.Prefix;
+        else
+            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
     }
 
     /// <inheritdoc />
