@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
 

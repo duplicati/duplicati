@@ -28,6 +28,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using Duplicati.Proprietary.DiskImage;
 using NUnit.Framework;
+using Duplicati.Proprietary.DiskImage.General;
 
 #nullable enable
 

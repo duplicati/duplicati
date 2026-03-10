@@ -1,5 +1,7 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
+using Duplicati.Proprietary.DiskImage.General;
+
 namespace Duplicati.Proprietary.DiskImage.Partition;
 
 /// <summary>

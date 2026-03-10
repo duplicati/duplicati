@@ -2,12 +2,17 @@
 
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Disk
 {
@@ -38,7 +43,11 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private uint m_sectorSize = 0;
         private long m_size = 0;
         private bool m_shouldFlush = false;
+        private const string DEVICE_PREFIX = "/dev/";
         private readonly SemaphoreSlim m_ioLock = new(1, 1);
+
+        /// <inheritdoc />
+        public static string Prefix => "/dev/";
 
         /// <inheritdoc />
         public string DevicePath { get { return m_devicePath; } }
@@ -70,9 +79,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 return devicePath;
 
             // Convert /dev/diskN to /dev/rdiskN for raw/character device access
-            if (devicePath.StartsWith("/dev/disk") && !devicePath.StartsWith("/dev/rdisk"))
+            if (devicePath.StartsWith($"{DEVICE_PREFIX}disk") && !devicePath.StartsWith($"{DEVICE_PREFIX}rdisk"))
             {
-                return devicePath.Replace("/dev/disk", "/dev/rdisk");
+                return devicePath.Replace($"{DEVICE_PREFIX}disk", $"{DEVICE_PREFIX}rdisk");
             }
 
             return devicePath;
@@ -118,34 +127,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         public async Task<bool> AutoUnmountAsync(CancellationToken cancellationToken)
         {
             // Extract disk number from device path
-            string blockDevicePath = m_devicePath.Replace("/dev/rdisk", "/dev/disk");
+            string blockDevicePath = m_devicePath.Replace($"{DEVICE_PREFIX}rdisk", $"{DEVICE_PREFIX}disk");
 
             // Use diskutil to unmount all volumes on the disk
-            var psi = new ProcessStartInfo
-            {
-                FileName = "diskutil",
-                Arguments = $"unmountDisk {blockDevicePath}",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process { StartInfo = psi };
-            process.Start();
-
-            string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-            string error = await process.StandardError.ReadToEndAsync(cancellationToken);
-
-            await process.WaitForExitAsync(cancellationToken);
-
-            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "autounmount", output, null);
-
-            if (!string.IsNullOrWhiteSpace(error))
-                Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "autounmount", null, error, null);
+            var unmount = await ProcessRunner.RunProcessAsync("diskutil", $"unmountDisk {blockDevicePath}", 30_000, cancellationToken);
 
             // diskutil returns 0 on success, but may also succeed with warnings
-            return process.ExitCode == 0 || output.Contains("successful");
+            return unmount.ExitCode == 0 || unmount.Output.Contains("successful");
         }
 
         /// <inheritdoc />
@@ -165,7 +153,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_fileDescriptor < 0)
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                string errorMessage = GetErrnoMessage(errorCode);
+                string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
                 return Task.FromResult(false);
             }
@@ -224,7 +212,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 if (ioctl_no_arg(m_fileDescriptor, DKIOCSYNCHRONIZECACHE) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
-                    string errorMessage = GetErrnoMessage(errorCode);
+                    string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
                     Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "dispose", null, $"Failed to flush data: {errorMessage} (errno: {errorCode})");
                 }
             }
@@ -311,7 +299,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                             if (bytesRead.ToInt64() < 0)
                             {
                                 int errorCode = Marshal.GetLastWin32Error();
-                                string errorMessage = GetErrnoMessage(errorCode);
+                                string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
                                 throw new IOException($"Failed to read from disk at offset {offset + totalBytesRead}: {errorMessage} (errno: {errorCode})");
                             }
                             if (bytesRead.ToInt64() == 0)
@@ -391,7 +379,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                                 if (bytesRead.ToInt64() < 0)
                                 {
                                     int errorCode = Marshal.GetLastWin32Error();
-                                    string errorMessage = GetErrnoMessage(errorCode);
+                                    string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
                                     throw new IOException($"Failed to read existing data for padding at offset {offset}: {errorMessage} (errno: {errorCode})");
                                 }
                             }
@@ -418,7 +406,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                                 if (bytesWritten.ToInt64() < 0)
                                 {
                                     int errorCode = Marshal.GetLastWin32Error();
-                                    string errorMessage = GetErrnoMessage(errorCode);
+                                    string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
                                     string hint = errorCode == 13  // EACCES
                                         ? "The disk may be mounted or you don't have sufficient permissions. Try unmounting the disk before writing."
                                         : errorCode == 30  // EROFS
@@ -450,13 +438,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
         #region P/Invoke Declarations
 
-        [LibraryImport("libSystem_wrapper.dylib", SetLastError = true)]
+        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_uint32(int fd, ulong request, ref uint value);
 
-        [LibraryImport("libSystem_wrapper.dylib", SetLastError = true)]
+        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_uint64(int fd, ulong request, ref ulong value);
 
-        [LibraryImport("libSystem_wrapper.dylib", SetLastError = true)]
+        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_no_arg(int fd, ulong request);
 
         [LibraryImport("libSystem", SetLastError = true)]
@@ -471,32 +459,108 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         [LibraryImport("libSystem", SetLastError = true)]
         private static unsafe partial IntPtr pwrite(int fd, byte* buf, IntPtr count, long offset);
 
-        [LibraryImport("libSystem", SetLastError = true)]
-        private static partial IntPtr strerror(int errnum);
-
         #endregion
 
-        /// <summary>
-        /// Gets the error message corresponding to the specified errno value.
-        /// </summary>
-        /// <param name="errno">The error number.</param>
-        /// <returns>A string describing the error.</returns>
-        private static string GetErrnoMessage(int errno)
+        /// <inheritdoc />
+        public static async IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
+            var list = await ProcessRunner.RunProcessAsync("diskutil", "list -plist", 30_000, cancellationToken);
+            if (list.ExitCode != 0)
+            {
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", null, $"Failed to list physical drives: {list.Error}");
+                yield break;
+            }
+
+            if (string.IsNullOrWhiteSpace(list.Output))
+                yield break;
+
+            XDocument plist;
             try
             {
-                IntPtr msgPtr = strerror(errno);
-                var result = msgPtr != IntPtr.Zero
-                    ? Marshal.PtrToStringUTF8(msgPtr) ?? $"Unknown error (errno: {errno})"
-                    : $"Unknown error (errno: {errno})";
-
-                Console.WriteLine($"strerror({errno}) returned: {result}");
-                return result;
+                plist = XDocument.Parse(list.Output);
             }
-            catch
+            catch (Exception ex)
             {
-                return $"Unknown error (errno: {errno})";
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", ex, "Failed to parse diskutil list plist output");
+                yield break;
+            }
+
+            // Parse the plist XML structure
+            var rootDict = plist.Element("plist")?.Element("dict");
+            if (rootDict == null)
+                yield break;
+
+            // Get AllDisksAndPartitions array
+            var allDisksAndPartitions = PlistHelper.GetArrayElement(rootDict, "AllDisksAndPartitions");
+            if (allDisksAndPartitions == null)
+                yield break;
+
+            foreach (var diskElement in allDisksAndPartitions.Elements("dict"))
+            {
+                var identifier = PlistHelper.GetStringValue(diskElement, "DeviceIdentifier");
+                if (string.IsNullOrWhiteSpace(identifier))
+                    continue;
+
+                // Skip synthesized disks (e.g., APFS containers)
+                var isSynthetic = PlistHelper.GetBoolValue(diskElement, "SyntheticDisk");
+                if (isSynthetic)
+                    continue;
+
+                var path = $"{DEVICE_PREFIX}{identifier}";
+                var size = PlistHelper.GetLongValue(diskElement, "Size");
+                if (size <= 0)
+                    continue;
+
+                // Get detailed info using diskutil info -plist
+                var info = await ProcessRunner.RunProcessAsync("diskutil", $"info -plist {path}", 30_000, cancellationToken);
+                if (info.ExitCode != 0)
+                {
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", null, $"Failed to get info for {path}: {info.Error}");
+                    continue;
+                }
+
+                string? displayName = null;
+                string? guid = null;
+                try
+                {
+                    var infoDict = PlistHelper.ParsePlistDict(info.Output);
+                    if (infoDict != null)
+                    {
+                        displayName = PlistHelper.GetStringValue(infoDict, "MediaName");
+                        guid = PlistHelper.GetStringValue(infoDict, "DiskUUID");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "listphysicaldrives", ex, $"Failed to parse diskutil info plist for {path}");
+                }
+
+                // Get mount points from partitions
+                var mountPoints = new List<string>();
+                var partitions = PlistHelper.GetArrayElement(diskElement, "Partitions") ?? PlistHelper.GetArrayElement(diskElement, "APFSVolumes");
+                if (partitions != null)
+                {
+                    foreach (var partition in partitions.Elements("dict"))
+                    {
+                        var mountPoint = PlistHelper.GetStringValue(partition, "MountPoint");
+                        if (!string.IsNullOrWhiteSpace(mountPoint))
+                            mountPoints.Add(mountPoint);
+                    }
+                }
+
+                var driveInfo = new PhysicalDriveInfo
+                {
+                    Number = identifier,
+                    Path = path,
+                    Size = (ulong)size,
+                    DisplayName = displayName ?? identifier,
+                    Guid = guid,
+                    MountPoints = mountPoints.ToArray()
+                };
+
+                yield return driveInfo;
             }
         }
+
     }
 }

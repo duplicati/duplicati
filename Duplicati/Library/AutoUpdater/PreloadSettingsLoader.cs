@@ -380,6 +380,7 @@ public static class PreloadSettingsLoader
             PackageHelper.NamedExecutable.ServerUtil => "serverutil",
             PackageHelper.NamedExecutable.Service => "service",
             PackageHelper.NamedExecutable.Agent => "agent",
+            PackageHelper.NamedExecutable.ConfigureTool => "configuretool",
             _ => AnyExecutableMarker,
         };
 

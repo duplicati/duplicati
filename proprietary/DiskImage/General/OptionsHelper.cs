@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 
-namespace Duplicati.Proprietary.DiskImage;
+namespace Duplicati.Proprietary.DiskImage.General;
 
 /// <summary>
 /// Helper class containing constants and command-line argument definitions for the DiskImage module.

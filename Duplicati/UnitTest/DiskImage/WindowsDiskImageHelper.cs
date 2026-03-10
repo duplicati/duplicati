@@ -28,6 +28,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using Duplicati.Proprietary.DiskImage;
+using Duplicati.Proprietary.DiskImage.General;
 using NUnit.Framework;
 
 #nullable enable

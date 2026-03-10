@@ -368,13 +368,22 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="filter">The filter of which files to restore.</param>
         /// <param name="restoreDestination">The destination to restore to.</param>
         /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
-        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
+        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, IFilter filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
             // Perform initial setup
             await Utility.UpdateOptionsFromDb(database, m_options, cancellationToken)
                 .ConfigureAwait(false);
             await Utility.VerifyOptionsAndUpdateDatabase(database, m_options, cancellationToken)
                 .ConfigureAwait(false);
+
+            if (m_options.RestoreChannelBufferSize < 0)
+                throw new UserInformationException("Restore channel buffer size must be greater than or equal to 0", "RestoreChannelBufferSizeTooSmall");
+            if (m_options.RestoreVolumeDecryptors <= 0)
+                throw new UserInformationException("Restore volume decryptors must be greater than 0", "RestoreVolumeDecryptorsTooSmall");
+            if (m_options.RestoreVolumeDecompressors <= 0)
+                throw new UserInformationException("Restore volume decompressors must be greater than 0", "RestoreVolumeDecompressorsTooSmall");
+            if (m_options.RestoreVolumeDownloaders <= 0)
+                throw new UserInformationException("Restore volume downloaders must be greater than 0", "RestoreVolumeDownloadersTooSmall");
 
             // Verify the backend if necessary
             if (!m_options.NoBackendverification)

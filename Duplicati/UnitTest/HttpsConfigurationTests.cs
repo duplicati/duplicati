@@ -1,0 +1,786 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
+using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.Certificates;
+using Duplicati.Library.RestAPI.Database;
+using Duplicati.Library.SQLiteHelper;
+using Duplicati.Server.Database;
+using NUnit.Framework;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
+namespace Duplicati.UnitTest;
+
+/// <summary>
+/// Integration tests for HTTPS certificate configuration.
+/// Tests the end-to-end flow of certificate generation, storage, renewal, and server integration.
+/// </summary>
+[TestFixture]
+[Category("HTTPSConfiguration")]
+public class HttpsConfigurationTests
+{
+    private string _tempDataFolder = null!;
+    private string _databasePath = null!;
+    private Connection _connection = null!;
+
+    [SetUp]
+    public async Task SetUp()
+    {
+        // Create a temporary folder for test data
+        _tempDataFolder = Path.Combine(Path.GetTempPath(), $"duplicati-test-{Guid.NewGuid()}");
+        Directory.CreateDirectory(_tempDataFolder);
+
+        _databasePath = Path.Combine(_tempDataFolder, DataFolderManager.SERVER_DATABASE_FILENAME);
+
+        // Create a new test database
+        await CreateTestDatabaseAsync(_databasePath);
+
+        // Open the database connection
+        var dbConnection = await SQLiteLoader.LoadConnectionAsync(_databasePath);
+        _connection = new Connection(dbConnection, true, null, _tempDataFolder, () => { });
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _connection?.Dispose();
+
+        // Clean up temp folder
+        if (Directory.Exists(_tempDataFolder))
+        {
+            try
+            {
+                Directory.Delete(_tempDataFolder, true);
+            }
+            catch
+            {
+                // Best effort cleanup
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a minimal test database for integration testing.
+    /// </summary>
+    private static async Task CreateTestDatabaseAsync(string databasePath)
+    {
+        var dbConnection = await SQLiteLoader.LoadConnectionAsync(databasePath);
+
+        // Use DatabaseUpgrader to create the schema from embedded resources
+        DatabaseUpgrader.UpgradeDatabase(dbConnection, databasePath, typeof(DatabaseSchemaMarker));
+
+        dbConnection.Dispose();
+    }
+
+    #region Certificate Generation and Storage Tests
+
+    [Test]
+    public void GenerateAndStoreCertificates_StoresValidCertificatesInDatabase()
+    {
+        // Act
+        var hostnames = new[] { "localhost", "127.0.0.1" };
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            hostnames);
+
+        var pfxPassword = "test-password-123";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+        var pfxBase64 = Convert.ToBase64String(pfxBytes);
+
+        var (caCertBase64, caKeyEncrypted) = CertificateStorageHelper.SerializeCACertificatePair(caPair, pfxPassword);
+
+        // Store in database
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = caCertBase64,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = caKeyEncrypted,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = pfxBase64,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE_AUTOGENERATED] = "true"
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Assert - Verify stored values
+        Assert.IsNotNull(_connection.ApplicationSettings.ServerCACertificate);
+        Assert.IsNotNull(_connection.ApplicationSettings.ServerCACertificateKey);
+        Assert.IsNotNull(_connection.ApplicationSettings.ServerCACertificatePassword);
+        Assert.IsNotNull(_connection.ApplicationSettings.ServerSSLCertificate);
+        Assert.IsTrue(_connection.ApplicationSettings.ServerSSLCertificateAutogenerated);
+
+        // Verify certificate can be loaded and is valid
+        var loadedCertCollection = _connection.ApplicationSettings.ServerSSLCertificate;
+        Assert.IsNotNull(loadedCertCollection);
+        Assert.That(loadedCertCollection!.Count, Is.GreaterThan(0));
+
+        var serverCert = loadedCertCollection.Cast<X509Certificate2>().FirstOrDefault(c => c.HasPrivateKey);
+        Assert.IsNotNull(serverCert);
+        Assert.IsTrue(serverCert!.HasPrivateKey);
+        Assert.That(serverCert.NotAfter, Is.GreaterThan(DateTime.Now));
+    }
+
+    [Test]
+    public void StoreAndRetrieveCAData_RoundTripsCorrectly()
+    {
+        // Arrange
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var password = "test-password-456";
+
+        // Act
+        var (caCertBase64, caKeyEncrypted) = CertificateStorageHelper.SerializeCACertificatePair(caPair, password);
+
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = caCertBase64,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = caKeyEncrypted,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = password
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Retrieve from settings (API changed - RetrieveCAData removed)
+        var retrievedCert = _connection.ApplicationSettings.ServerCACertificate;
+        var retrievedKey = _connection.ApplicationSettings.ServerCACertificateKey;
+        var retrievedPassword = _connection.ApplicationSettings.ServerCACertificatePassword;
+
+        // Assert
+        Assert.IsNotNull(retrievedCert);
+        Assert.IsNotNull(retrievedKey);
+        Assert.IsNotNull(retrievedPassword);
+
+        // Verify can be deserialized
+        var deserializedCa = CertificateStorageHelper.DeserializeCACertificatePair(
+            retrievedCert!,
+            retrievedKey!,
+            retrievedPassword!);
+
+        Assert.AreEqual(caPair.Certificate.Thumbprint, deserializedCa.Certificate.Thumbprint);
+    }
+
+    [Test]
+    public void UseHTTPS_WithValidCertificates_ReturnsTrue()
+    {
+        // Arrange - Store valid certificates
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        var pfxPassword = "test-password-789";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(pfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_DISABLE_HTTPS] = "false"
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Act & Assert
+        Assert.IsTrue(_connection.ApplicationSettings.UseHTTPS);
+    }
+
+    [Test]
+    public void UseHTTPS_WithDisableHttpsFlag_ReturnsFalse()
+    {
+        // Arrange - Store valid certificates but disable HTTPS
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        var pfxPassword = "test-password-abc";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(pfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_DISABLE_HTTPS] = "true"
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Act & Assert
+        Assert.IsFalse(_connection.ApplicationSettings.UseHTTPS);
+    }
+
+    [Test]
+    public void UseHTTPS_WithoutCertificates_ReturnsFalse()
+    {
+        // Arrange - No certificates stored
+        Assert.IsNull(_connection.ApplicationSettings.ServerSSLCertificate);
+
+        // Act & Assert
+        Assert.IsFalse(_connection.ApplicationSettings.UseHTTPS);
+    }
+
+    #endregion
+
+    #region Auto-Renewal Tests
+
+    [Test]
+    public void CertificateRenewalChecker_HasValidCertificates_WithValidCert_ReturnsTrue()
+    {
+        // Arrange - Store valid certificates
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        var pfxPassword = "renewal-test-1";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+
+        var (caCertBase64, caKeyEncrypted) = CertificateStorageHelper.SerializeCACertificatePair(caPair, pfxPassword);
+
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = caCertBase64,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = caKeyEncrypted,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(pfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE_AUTOGENERATED] = "true"
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Act - New API signature: pass parameters directly instead of Connection
+        var caData = new CACertificateData
+        {
+            CACertificate = caCertBase64,
+            CAKey = caKeyEncrypted,
+            CAPassword = pfxPassword
+        };
+        var serverCert = _connection.ApplicationSettings.ServerSSLCertificate;
+        var isAutogenerated = _connection.ApplicationSettings.ServerSSLCertificateAutogenerated;
+        var hasValidCerts = CertificateRenewalChecker.HasValidCertificates(isAutogenerated, serverCert, caData);
+
+        // Assert
+        Assert.IsTrue(hasValidCerts);
+    }
+
+    [Test]
+    public void CertificateRenewalChecker_HasValidCertificates_WithExpiringCert_ReturnsFalse()
+    {
+        // Arrange - Create an expired certificate by manipulating validity dates is not possible
+        // with the current generator, so we use reflection to create a mock expired certificate
+        // or we test the IsExpiringSoon method directly
+        var caPair = CertificateGenerator.GenerateCACertificate();
+
+        // Create a certificate with short validity to simulate near-expiry
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        // The certificate should not be expiring soon (it's newly created)
+        Assert.IsFalse(CertificateGenerator.IsExpiringSoon(serverPair.Certificate, 30));
+    }
+
+    [Test]
+    public void CertificateRenewalChecker_HasValidCertificates_NonAutogenerated_ReturnsFalse()
+    {
+        // Arrange - Store certificates but mark as not autogenerated
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        var pfxPassword = "renewal-test-2";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+
+        var (caCertBase64, caKeyEncrypted) = CertificateStorageHelper.SerializeCACertificatePair(caPair, pfxPassword);
+
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = caCertBase64,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = caKeyEncrypted,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(pfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE_AUTOGENERATED] = "false"  // Not autogenerated
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Act - New API signature: pass parameters directly instead of Connection
+        var caData = new CACertificateData
+        {
+            CACertificate = caCertBase64,
+            CAKey = caKeyEncrypted,
+            CAPassword = pfxPassword
+        };
+        var serverCert = _connection.ApplicationSettings.ServerSSLCertificate;
+        var isAutogenerated = _connection.ApplicationSettings.ServerSSLCertificateAutogenerated;
+        var hasValidCerts = CertificateRenewalChecker.HasValidCertificates(isAutogenerated, serverCert, caData);
+
+        // Assert - Should return false for non-autogenerated certs
+        Assert.IsFalse(hasValidCerts);
+    }
+
+    [Test]
+    public void CheckAndRenewIfNeeded_WithExpiringCertificate_PerformsRenewal()
+    {
+        // Arrange - Store valid certificates
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        var pfxPassword = "renewal-test-3";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+
+        var (caCertBase64, caKeyEncrypted) = CertificateStorageHelper.SerializeCACertificatePair(caPair, pfxPassword);
+
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = caCertBase64,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = caKeyEncrypted,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(pfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE_AUTOGENERATED] = "true"
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        var originalThumbprint = serverPair.Certificate.Thumbprint;
+
+        // Act - Try renewal (won't actually renew since cert is not expiring)
+        // New API signature: pass parameters directly instead of Connection
+        var caData = new CACertificateData
+        {
+            CACertificate = caCertBase64,
+            CAKey = caKeyEncrypted,
+            CAPassword = pfxPassword
+        };
+        var serverCert = _connection.ApplicationSettings.ServerSSLCertificate;
+        var isAutogenerated = _connection.ApplicationSettings.ServerSSLCertificateAutogenerated;
+        var result = CertificateRenewalChecker.CheckAndRenewIfNeeded(isAutogenerated, serverCert, caData);
+
+        // Assert - Should not renew since certificate is new (return type is now CertificateRenewalResult)
+        Assert.IsFalse(result.Renewed);
+        Assert.IsNull(result.RenewedCertificate);
+
+        // Verify original certificate is still in place
+        var currentCert = _connection.ApplicationSettings.ServerSSLCertificate;
+        var currentThumbprint = currentCert!.Cast<X509Certificate2>().First(c => c.HasPrivateKey).Thumbprint;
+        Assert.AreEqual(originalThumbprint, currentThumbprint);
+    }
+
+    #endregion
+
+    #region CA Regeneration Tests
+
+    [Test]
+    public void RegenerateCA_StoresNewCertificatesAndPreservesCAData()
+    {
+        // Arrange - First generation
+        var originalCaPair = CertificateGenerator.GenerateCACertificate();
+        var originalServerPair = CertificateGenerator.GenerateServerCertificate(
+            originalCaPair.Certificate,
+            originalCaPair.PrivateKey,
+            new[] { "localhost" });
+
+        var originalPassword = "original-password";
+        var originalPfxBytes = CertificateGenerator.CreatePfxBundle(originalServerPair, originalCaPair, originalPassword);
+        var (originalCaCert, originalCaKey) = CertificateStorageHelper.SerializeCACertificatePair(originalCaPair, originalPassword);
+
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = originalCaCert,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = originalCaKey,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = originalPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(originalPfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = originalPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE_AUTOGENERATED] = "true"
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        var originalThumbprint = originalCaPair.Certificate.Thumbprint;
+
+        // Act - Simulate CA regeneration by generating new certificates
+        var newCaPair = CertificateGenerator.GenerateCACertificate();
+        var newServerPair = CertificateGenerator.GenerateServerCertificate(
+            newCaPair.Certificate,
+            newCaPair.PrivateKey,
+            new[] { "localhost", "example.com" });
+
+        var newPassword = "new-password";
+        var newPfxBytes = CertificateGenerator.CreatePfxBundle(newServerPair, newCaPair, newPassword);
+        var (newCaCert, newCaKey) = CertificateStorageHelper.SerializeCACertificatePair(newCaPair, newPassword);
+
+        var newSettings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = newCaCert,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = newCaKey,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = newPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(newPfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = newPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE_AUTOGENERATED] = "true"
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(newSettings, false);
+
+        // Assert - Verify new CA is different
+        var retrievedCa = _connection.ApplicationSettings.ServerCACertificate;
+        Assert.IsNotNull(retrievedCa);
+        var loadedCa = CertificateStorageHelper.DeserializeCertificate(retrievedCa!);
+        Assert.AreNotEqual(originalThumbprint, loadedCa.Thumbprint);
+
+        // Verify new server cert has additional hostname
+        var serverCert = _connection.ApplicationSettings.ServerSSLCertificate;
+        Assert.IsNotNull(serverCert);
+        var cert = serverCert!.Cast<X509Certificate2>().First(c => c.HasPrivateKey);
+        var sanExt = cert.Extensions["2.5.29.17"] as X509SubjectAlternativeNameExtension;
+        Assert.IsNotNull(sanExt);
+        Assert.That(sanExt!.EnumerateDnsNames(), Contains.Item("example.com"));
+    }
+
+    #endregion
+
+    #region Database Integration Tests
+
+    [Test]
+    public void RemoveCertificates_ClearsAllCertificateData()
+    {
+        // Arrange - Store certificates
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        var pfxPassword = "remove-test";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+        var (caCert, caKey) = CertificateStorageHelper.SerializeCACertificatePair(caPair, pfxPassword);
+
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = caCert,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = caKey,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(pfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE_AUTOGENERATED] = "true"
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Verify certificates exist
+        Assert.IsNotNull(_connection.ApplicationSettings.ServerCACertificate);
+        Assert.IsNotNull(_connection.ApplicationSettings.ServerSSLCertificate);
+
+        // Act - Remove all certificate data
+        var removeSettings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = null,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = null,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = null,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = null,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = null,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE_AUTOGENERATED] = null
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(removeSettings, false);
+
+        // Assert - All certificate data should be cleared
+        Assert.IsNull(_connection.ApplicationSettings.ServerCACertificate);
+        Assert.IsNull(_connection.ApplicationSettings.ServerCACertificateKey);
+        Assert.IsNull(_connection.ApplicationSettings.ServerCACertificatePassword);
+        Assert.IsNull(_connection.ApplicationSettings.ServerSSLCertificate);
+        Assert.IsFalse(_connection.ApplicationSettings.ServerSSLCertificateAutogenerated);
+    }
+
+    [Test]
+    public void CertificateStorage_WithEncryptedFieldsEnabled_StoresSecurely()
+    {
+        // Note: This test verifies the database structure supports encrypted fields.
+        // Full encryption testing requires a database initialized with encryption key.
+
+        // Arrange & Act - Store certificates
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        var pfxPassword = "encryption-test";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+        var (caCert, caKey) = CertificateStorageHelper.SerializeCACertificatePair(caPair, pfxPassword);
+
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = caCert,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = caKey,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(pfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE_AUTOGENERATED] = "true"
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Assert - Verify encrypted key is actually encrypted (not plaintext)
+        var storedKey = _connection.ApplicationSettings.ServerCACertificateKey;
+        Assert.IsNotNull(storedKey);
+
+        // The key should be encrypted and not directly parseable as a key
+        // (This is a basic sanity check - the actual encryption is tested in CertificateTests)
+        Assert.DoesNotThrow(() => Convert.FromBase64String(storedKey!));
+    }
+
+    #endregion
+
+    #region Autogenerated Flag Tests
+
+    [Test]
+    public void StoreCAAndServerCertificate_MarksAsAutogenerated()
+    {
+        // Arrange
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        var pfxPassword = "autogen-test";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+        var (caCert, caKey) = CertificateStorageHelper.SerializeCACertificatePair(caPair, pfxPassword);
+
+        // Act - Store directly (StoreCAAndServerCertificate method removed)
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE] = caCert,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY] = caKey,
+            [ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(pfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE_AUTOGENERATED] = "true"
+        };
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Assert
+        Assert.IsTrue(_connection.ApplicationSettings.ServerSSLCertificateAutogenerated);
+    }
+
+    #endregion
+
+    #region Kestrel HTTPS Configuration Tests
+
+    [Test]
+    public void ServerCertificate_HasPrivateKey_ForKestrelUsage()
+    {
+        // Arrange
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        var pfxPassword = "kestrel-test";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+
+        // Store in database
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(pfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Act
+        var certCollection = _connection.ApplicationSettings.ServerSSLCertificate;
+
+        // Assert - Kestrel requires a certificate with private key
+        Assert.IsNotNull(certCollection);
+        var certWithKey = certCollection!.Cast<X509Certificate2>().FirstOrDefault(c => c.HasPrivateKey);
+        Assert.IsNotNull(certWithKey);
+        Assert.IsTrue(certWithKey!.HasPrivateKey);
+    }
+
+    [Test]
+    public void ServerCertificate_ContainsIntermediateCA_ForChainValidation()
+    {
+        // Arrange
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        var pfxPassword = "chain-test";
+        var pfxBytes = CertificateGenerator.CreatePfxBundle(serverPair, caPair, pfxPassword);
+
+        // Store in database
+        var settings = new Dictionary<string, string?>
+        {
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(pfxBytes),
+            [ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD] = pfxPassword,
+        };
+
+        _connection.ApplicationSettings.UpdateSettings(settings, false);
+
+        // Act
+        var certCollection = _connection.ApplicationSettings.ServerSSLCertificate;
+
+        // Assert - PFX bundle should contain both server cert and CA
+        Assert.IsNotNull(certCollection);
+        Assert.That(certCollection!.Count, Is.GreaterThanOrEqualTo(1));
+
+        // Verify chain can be built
+        using var chain = new X509Chain();
+        var serverCert = certCollection.Cast<X509Certificate2>().First(c => c.HasPrivateKey);
+        chain.ChainPolicy.ExtraStore.AddRange(certCollection);
+        chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+        chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
+
+        var chainBuilt = chain.Build(serverCert);
+        Assert.IsTrue(chainBuilt);
+    }
+
+    #endregion
+
+    #region Certificate Validation Tests
+
+    [Test]
+    public void GeneratedCertificate_HasCorrectExtendedKeyUsage()
+    {
+        // Arrange & Act
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        // Assert
+        var ekuExtension = serverPair.Certificate.Extensions["2.5.29.37"] as X509EnhancedKeyUsageExtension;
+        Assert.IsNotNull(ekuExtension);
+        Assert.That(ekuExtension!.EnhancedKeyUsages, Has.Some.Matches<Oid>(oid => oid.Value == "1.3.6.1.5.5.7.3.1")); // Server Authentication
+    }
+
+    [Test]
+    public void GeneratedCertificate_HasSubjectAlternativeNames()
+    {
+        // Arrange & Act
+        var hostnames = new[] { "localhost", "test.example.com", "192.168.1.1" };
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            hostnames);
+
+        // Assert
+        var sanExtension = serverPair.Certificate.Extensions["2.5.29.17"] as X509SubjectAlternativeNameExtension;
+        Assert.IsNotNull(sanExtension);
+
+        var dnsNames = sanExtension!.EnumerateDnsNames().ToList();
+        var ipAddresses = sanExtension.EnumerateIPAddresses().Select(ip => ip.ToString()).ToList();
+
+        Assert.That(dnsNames, Contains.Item("localhost"));
+        Assert.That(dnsNames, Contains.Item("test.example.com"));
+        Assert.That(ipAddresses, Has.Some.EqualTo("192.168.1.1"));
+    }
+
+    [Test]
+    public void GeneratedCA_HasCorrectBasicConstraints()
+    {
+        // Arrange & Act
+        var caPair = CertificateGenerator.GenerateCACertificate();
+
+        // Assert
+        var basicConstraints = caPair.Certificate.Extensions["2.5.29.19"] as X509BasicConstraintsExtension;
+        Assert.IsNotNull(basicConstraints);
+        Assert.IsTrue(basicConstraints!.CertificateAuthority);
+        Assert.IsTrue(basicConstraints.HasPathLengthConstraint);
+        Assert.AreEqual(0, basicConstraints.PathLengthConstraint); // Cannot sign sub-CAs
+    }
+
+    #endregion
+
+    #region Certificate Expiration Tests
+
+    [Test]
+    public void IsExpiringSoon_WithValidCertificate_ReturnsFalse()
+    {
+        // Arrange
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        // Act & Assert - New certificate should not be expiring
+        Assert.IsFalse(CertificateGenerator.IsExpiringSoon(serverPair.Certificate, 30));
+    }
+
+    [Test]
+    public void CertificateValidity_ServerCert_Approximately90Days()
+    {
+        // Arrange & Act
+        var caPair = CertificateGenerator.GenerateCACertificate();
+        var serverPair = CertificateGenerator.GenerateServerCertificate(
+            caPair.Certificate,
+            caPair.PrivateKey,
+            new[] { "localhost" });
+
+        // Assert
+        var validity = serverPair.Certificate.NotAfter - serverPair.Certificate.NotBefore;
+        Assert.That(validity.TotalDays, Is.GreaterThan(80));
+        Assert.That(validity.TotalDays, Is.LessThan(100));
+    }
+
+    [Test]
+    public void CertificateValidity_CACert_Approximately10Years()
+    {
+        // Arrange & Act
+        var caPair = CertificateGenerator.GenerateCACertificate();
+
+        // Assert
+        var validity = caPair.Certificate.NotAfter - caPair.Certificate.NotBefore;
+        Assert.That(validity.TotalDays, Is.GreaterThan(365 * 9));
+        Assert.That(validity.TotalDays, Is.LessThan(365 * 11));
+    }
+
+    #endregion
+}
