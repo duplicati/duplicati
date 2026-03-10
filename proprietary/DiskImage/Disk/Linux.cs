@@ -6,10 +6,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.Json;
+using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Disk
 {
@@ -57,6 +60,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         // Aligned buffers for O_DIRECT I/O (must be sector-aligned and a multiple of sector size)
         private long m_allignedBufferSize = 0;
         unsafe private byte* m_allignedBufferPtr = null;
+
+        /// <inheritdoc />
+        public static string Prefix => "/dev/";
 
         /// <inheritdoc />
         public string DevicePath { get { return m_devicePath; } }
@@ -534,6 +540,112 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             else
             {
                 m_allignedBufferPtr = (byte*)NativeMemory.AlignedAlloc(alignedSize, (nuint)m_sectorSize);
+            }
+        }
+
+        /// <inheritdoc />
+        public static async IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            // Use lsblk to get list of block devices in JSON format
+            // -J: JSON output
+            // -O: include all available columns
+            // -b: sizes in bytes
+            var result = await ProcessRunner.RunProcessAsync("lsblk", "-JO -b", 30_000, cancellationToken);
+            if (result.ExitCode != 0)
+            {
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", null, $"Failed to list physical drives: {result.Error}");
+                yield break;
+            }
+
+            if (string.IsNullOrWhiteSpace(result.Output))
+                yield break;
+
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(result.Output);
+            }
+            catch (JsonException ex)
+            {
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", ex, "Failed to parse lsblk JSON output");
+                yield break;
+            }
+
+            using (doc)
+            {
+                var rootElement = doc.RootElement;
+                if (!rootElement.TryGetProperty("blockdevices", out var blockDevices))
+                    yield break;
+
+                foreach (var device in blockDevices.EnumerateArray())
+                {
+                    // Only include whole disks (type="disk"), not partitions (type="part")
+                    if (!device.TryGetProperty("type", out var typeElement) || typeElement.GetString() != "disk")
+                        continue;
+
+                    var path = device.TryGetProperty("path", out var pathElement) ? pathElement.GetString() : null;
+                    if (string.IsNullOrWhiteSpace(path))
+                        continue;
+
+                    // Get size
+                    var size = device.TryGetProperty("size", out var sizeElement) ? sizeElement.GetUInt64() : 0UL;
+                    if (size == 0)
+                        continue;
+
+                    // Get device name/number (e.g., sda, nvme0n1)
+                    var name = device.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
+
+                    // Get mount points from children (partitions)
+                    var mountPoints = new List<string>();
+                    if (device.TryGetProperty("children", out var children))
+                    {
+                        foreach (var child in children.EnumerateArray())
+                        {
+                            if (child.TryGetProperty("mountpoint", out var mpElement) && mpElement.ValueKind == JsonValueKind.String)
+                            {
+                                var mountPoint = mpElement.GetString();
+                                if (!string.IsNullOrWhiteSpace(mountPoint))
+                                    mountPoints.Add(mountPoint);
+                            }
+                        }
+                    }
+
+                    // Try to get UUID using blkid (this is expensive, so we only do it for valid disks)
+                    string? guid = null;
+                    try
+                    {
+                        var blkidResult = await ProcessRunner.RunProcessAsync("blkid", $"-o export {path}", 10_000, cancellationToken);
+                        if (blkidResult.ExitCode == 0 && !string.IsNullOrWhiteSpace(blkidResult.Output))
+                        {
+                            // Parse blkid output to find UUID
+                            foreach (var line in blkidResult.Output.Split('\n'))
+                            {
+                                if (line.StartsWith("UUID="))
+                                {
+                                    guid = line[5..].Trim('"');
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore blkid failures - not all disks have UUIDs
+                    }
+
+                    var driveInfo = new PhysicalDriveInfo
+                    {
+                        Number = name ?? path,
+                        Path = path,
+                        Size = size,
+                        DisplayName = name ?? path,
+                        Guid = guid,
+                        MountPoints = [.. mountPoints],
+                        Online = null // Linux doesn't have an equivalent concept to "online" disks
+                    };
+
+                    yield return driveInfo;
+                }
             }
         }
     }
