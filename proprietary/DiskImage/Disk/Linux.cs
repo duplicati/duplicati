@@ -343,16 +343,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             int length = destination.Length;
 
-            if (offset % SectorSize != 0)
-                throw new InvalidOperationException($"Address {offset:X016} is not a multiple of the sector size {SectorSize}");
-
-            if (length % SectorSize != 0)
-                throw new InvalidOperationException($"The requested length of {length} is not a multiple of sector size {SectorSize}");
-
             if (offset + length > Size)
                 throw new InvalidOperationException($"The requested read would read beyond disk size: {offset} + {length} > {Size}");
 
-            // TODO unaligned read
+            // Calculate aligned offset and length for O_DIRECT I/O
+            long alignedOffset = (offset / SectorSize) * SectorSize;
+            long offsetDelta = offset - alignedOffset;
+            long alignedLength = ((offsetDelta + length + SectorSize - 1) / SectorSize) * SectorSize;
 
             await m_ioLock.WaitAsync(cancellationToken);
             try
@@ -361,22 +358,25 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 int totalBytesRead = 0;
                 unsafe
                 {
-                    EnsureAllignedBuffer(length);
+                    EnsureAllignedBuffer((int)alignedLength);
 
-                    var bytesRead = pread(m_fileDescriptor, m_allignedBufferPtr, length, offset);
+                    var bytesRead = pread(m_fileDescriptor, m_allignedBufferPtr, (nint)alignedLength, alignedOffset);
 
                     if (bytesRead.ToInt64() < 0)
                     {
                         int errorCode = Marshal.GetLastWin32Error();
                         string errorMessage = GetErrnoMessage(errorCode);
-                        throw new IOException($"Failed to read {length} bytes from disk at offset {offset}: {errorMessage} (errno: {errorCode})");
+                        throw new IOException($"Failed to read {alignedLength} bytes from disk at offset {alignedOffset}: {errorMessage} (errno: {errorCode})");
                     }
 
-                    for (int i = 0; i < bytesRead; i++)
+                    // Copy only the requested portion from the aligned buffer
+                    int bytesToCopy = Math.Min(length, (int)(bytesRead.ToInt64() - offsetDelta));
+                    if (bytesToCopy > 0)
                     {
-                        destination.Span[i] = m_allignedBufferPtr[i];
+                        var srcSpan = new ReadOnlySpan<byte>(m_allignedBufferPtr + offsetDelta, bytesToCopy);
+                        srcSpan.CopyTo(destination.Span);
                     }
-                    totalBytesRead = (int)bytesRead.ToInt64();
+                    totalBytesRead = bytesToCopy;
                 }
 
                 return totalBytesRead;
@@ -418,54 +418,56 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             int dataLength = data.Length;
 
-            // Pad to sector size if necessary
-            int remainder = dataLength % (int)m_sectorSize;
-            int alignedLength = remainder == 0
-                ? dataLength
-                : dataLength + ((int)m_sectorSize - remainder);
+            if (offset + dataLength > Size)
+                throw new InvalidOperationException($"The requested write would write beyond disk size: {offset} + {dataLength} > {Size}");
+
+            // Calculate aligned offset and length for O_DIRECT I/O
+            long alignedOffset = (offset / SectorSize) * SectorSize;
+            long offsetDelta = offset - alignedOffset;
+            long alignedLength = ((offsetDelta + dataLength + SectorSize - 1) / SectorSize) * SectorSize;
 
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
-                byte[]? rentedBuffer = null;
-                try
+                // Ensure we have an aligned buffer for O_DIRECT writes
+                EnsureAllignedBuffer((int)alignedLength);
+
+                int totalBytesWritten = 0;
+                unsafe
                 {
-                    // Ensure we have an aligned buffer for O_DIRECT writes
-                    EnsureAllignedBuffer(alignedLength);
+                    // Check if this is an unaligned write (needs read-modify-write)
+                    bool isUnaligned = offsetDelta != 0 || dataLength != alignedLength;
 
-                    // TODO unaligned write
-
-                    // Write data using pwrite
-                    int totalBytesWritten = 0;
-                    unsafe
+                    if (isUnaligned)
                     {
-                        // Copy data to aligned buffer
-                        for (int i = 0; i < dataLength; i++)
+                        // Read existing data first (read-modify-write)
+                        var bytesRead = pread(m_fileDescriptor, m_allignedBufferPtr, (nint)alignedLength, alignedOffset);
+                        if (bytesRead.ToInt64() < 0)
                         {
-                            m_allignedBufferPtr[i] = data.Span[i];
+                            int errorCode = Marshal.GetLastWin32Error();
+                            string errorMessage = GetErrnoMessage(errorCode);
+                            throw new IOException($"Failed to read existing data for unaligned write at offset {alignedOffset}: {errorMessage} (errno: {errorCode})");
                         }
-
-                        var bytesWritten = pwrite(m_fileDescriptor, m_allignedBufferPtr, alignedLength, offset);
-                        totalBytesWritten = (int)bytesWritten.ToInt64();
                     }
 
-                    if (totalBytesWritten < 0)
-                    {
-                        int errorCode = Marshal.GetLastWin32Error();
-                        string errorMessage = GetErrnoMessage(errorCode);
-                        throw new IOException($"Failed to write {dataLength} bytes to disk at offset {offset}: {errorMessage} (errno: {errorCode})");
-                    }
+                    // Copy new data into the aligned buffer at the correct offset
+                    var destSpan = new Span<byte>(m_allignedBufferPtr + offsetDelta, dataLength);
+                    data.Span.CopyTo(destSpan);
 
-                    m_shouldFlush = true;
-                    return totalBytesWritten;
+                    // Write the aligned buffer
+                    var bytesWritten = pwrite(m_fileDescriptor, m_allignedBufferPtr, (nint)alignedLength, alignedOffset);
+                    totalBytesWritten = (int)bytesWritten.ToInt64();
                 }
-                finally
+
+                if (totalBytesWritten < 0)
                 {
-                    if (rentedBuffer != null)
-                    {
-                        ArrayPool<byte>.Shared.Return(rentedBuffer);
-                    }
+                    int errorCode = Marshal.GetLastWin32Error();
+                    string errorMessage = GetErrnoMessage(errorCode);
+                    throw new IOException($"Failed to write {dataLength} bytes to disk at offset {offset}: {errorMessage} (errno: {errorCode})");
                 }
+
+                m_shouldFlush = true;
+                return dataLength;
             }
             finally
             {
