@@ -39,4 +39,9 @@
     </ContentWithTargetPath>
   </ItemGroup>
 
+  <!-- Allow the Unit tests to be able to see internal types. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Duplicati.UnitTest" />
+  </ItemGroup>
+
 </Project>
