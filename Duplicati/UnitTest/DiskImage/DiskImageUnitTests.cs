@@ -3031,7 +3031,11 @@ namespace Duplicati.UnitTest.DiskImage
             }
             Assert.IsNotNull(firstFile, "Should have at least one file.");
 
-            // Write at unaligned positions
+            // First, zero-fill the block so gap bytes are deterministic
+            using (var zeroStream = await fs.OpenWriteStreamAsync(firstFile!, CancellationToken.None))
+                await zeroStream.WriteAsync(new byte[blockSize].AsMemory(), CancellationToken.None);
+
+            // Write at unaligned positions using read-write stream (pre-loads zeroed data)
             using (var writeStream = await fs.OpenReadWriteStreamAsync(firstFile!, CancellationToken.None))
             {
                 // Write 3 bytes at position 0
