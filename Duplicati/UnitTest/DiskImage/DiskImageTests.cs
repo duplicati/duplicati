@@ -70,9 +70,7 @@ namespace Duplicati.UnitTest.DiskImage
             }
 
             // Create temp disk image paths
-            var extension = OperatingSystem.IsWindows() ? "vhdx"
-                : OperatingSystem.IsLinux() ? "img"
-                : "dmg";
+            var extension = DiskImageTestHelpers.GetPlatformDiskImageExtension();
             _sourceImagePath = Path.Combine(DATAFOLDER, $"duplicati_test_source_{Guid.NewGuid()}.{extension}");
             _restoreImagePath = Path.Combine(DATAFOLDER, $"duplicati_test_restore_{Guid.NewGuid()}.{extension}");
             _sourceMountPath = Path.Combine(DATAFOLDER, $"mnt_source_{Guid.NewGuid()}");
@@ -88,36 +86,31 @@ namespace Duplicati.UnitTest.DiskImage
         [TearDown]
         public void DiskImageTearDown()
         {
-            // Cleanup disk images
+            // Cleanup disk images using safe helpers
+            DiskImageTestHelpers.SafeDeleteFile(_sourceImagePath);
+            DiskImageTestHelpers.SafeDeleteFile(_restoreImagePath);
+
+            _diskHelper?.Dispose();
+
             try
             {
-                _diskHelper.CleanupDisk(_sourceImagePath);
+                if (Directory.Exists(_sourceMountPath))
+                    Directory.Delete(_sourceMountPath, true);
             }
             catch (Exception ex)
             {
-                TestContext.Progress.WriteLine($"Warning: Failed to cleanup source disk image: {ex.Message}");
+                TestContext.Progress.WriteLine($"Warning: Failed to delete source mount path: {ex.Message}");
             }
 
             try
             {
-                _diskHelper.CleanupDisk(_restoreImagePath);
+                if (Directory.Exists(_restoreMountPath))
+                    Directory.Delete(_restoreMountPath, true);
             }
             catch (Exception ex)
             {
-                TestContext.Progress.WriteLine($"Warning: Failed to cleanup restore disk image: {ex.Message}");
+                TestContext.Progress.WriteLine($"Warning: Failed to delete restore mount path: {ex.Message}");
             }
-
-            try
-            {
-                _diskHelper.Dispose();
-            }
-            catch (Exception ex)
-            {
-                TestContext.Progress.WriteLine($"Warning: Failed to dispose disk helper: {ex.Message}");
-            }
-
-            Directory.Delete(_sourceMountPath, true);
-            Directory.Delete(_restoreMountPath, true);
         }
 
         #region GPT Single Partition

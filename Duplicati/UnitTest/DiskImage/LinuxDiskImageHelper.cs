@@ -416,10 +416,30 @@ namespace Duplicati.UnitTest.DiskImage
 
                     try
                     {
-                        var startStr = RunProcess("blockdev", $"--getstart {partitionDevice}").Trim();
-                        long.TryParse(startStr, out start);
+                        var devName = Path.GetFileName(partitionDevice);
+                        var startFile = $"/sys/class/block/{devName}/start";
+                        if (File.Exists(startFile))
+                        {
+                            var startStr = File.ReadAllText(startFile).Trim();
+                            if (long.TryParse(startStr, out var startSector))
+                            {
+                                start = startSector * 512;
+                            }
+                        }
+                        else
+                        {
+                            var startStr = RunProcess("blockdev", $"--getstart {partitionDevice}").Trim();
+                            if (long.TryParse(startStr, out var startSector))
+                            {
+                                // blockdev --getstart always returns the start sector in 512-byte units
+                                start = startSector * 512;
+                            }
+                        }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        TestContext.Progress.WriteLine($"Warning: Failed to get start for {partitionDevice}: {ex.Message}");
+                    }
 
                     try
                     {

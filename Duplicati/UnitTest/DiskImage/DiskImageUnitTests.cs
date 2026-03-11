@@ -51,89 +51,198 @@ namespace Duplicati.UnitTest.DiskImage
     [Platform("Win,MacOsX,Linux")]
     public class DiskImageUnitTests : BasicSetupHelper
     {
-        private IDiskImageHelper _diskHelper = null!;
-        private string _diskImagePath = "";
-        private string _diskIdentifier = "";
-        private IRawDisk _rawDisk = null!;
+        // Class-level read-only disks (set up once for entire test class)
+        private static IDiskImageHelper? s_diskHelper;
+
+        // GPT disk with 2 FAT32 partitions
+        private static string s_gptDiskPath = "";
+        private static string s_gptDiskIdentifier = "";
+        private static IRawDisk? s_gptRawDisk;
+        private static long s_gptPartition1Offset;
+        private static long s_gptPartition1Size;
+        private static long s_gptPartition2Offset;
+        private static long s_gptPartition2Size;
+
+        // MBR disk with 2 FAT32 partitions
+        private static string s_mbrDiskPath = "";
+        private static string s_mbrDiskIdentifier = "";
+        private static IRawDisk? s_mbrRawDisk;
+        private static long s_mbrPartition1Offset;
+        private static long s_mbrPartition1Size;
+        private static long s_mbrPartition2Offset;
+        private static long s_mbrPartition2Size;
+
+        // Writable disk for tests that need to write (re-initialized before each test)
+        private static string s_writableDiskPath = "";
+        private static string s_writableDiskIdentifier = "";
+
+        // Per-test instance members
+        private IRawDisk _writableRawDisk = null!;
 
         private const long MiB = 1024 * 1024;
 
+        #region Class-level Setup and Teardown
+
         /// <summary>
-        /// Sets up the test environment before each test.
-        /// Creates a 50 MiB disk image with a single FAT32 partition.
+        /// One-time setup for the entire test class.
+        /// Creates read-only GPT and MBR disks with 2 FAT32 partitions each.
         /// </summary>
-        [SetUp]
-        public async Task SetUp()
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
             base.BasicHelperSetUp();
 
             // Create the appropriate disk image helper for the current platform
-            _diskHelper = DiskImage.DiskImageHelperFactory.Create();
+            s_diskHelper = DiskImageHelperFactory.Create();
 
             // Check for admin privileges
-            if (!_diskHelper.HasRequiredPrivileges())
+            if (!s_diskHelper.HasRequiredPrivileges())
             {
                 Assert.Ignore("DiskImage tests require administrator privileges");
             }
 
-            // Create temp disk image path
-            var extension = OperatingSystem.IsWindows() ? "vhdx"
-                : OperatingSystem.IsLinux() ? "img"
-                : "dmg";
-            _diskImagePath = Path.Combine(DATAFOLDER, $"duplicati_unit_test_{Guid.NewGuid()}.{extension}");
+            var extension = DiskImageTestHelpers.GetPlatformDiskImageExtension();
 
-            // Create a 50 MiB disk image
-            _diskIdentifier = _diskHelper.CreateDisk(_diskImagePath, 50 * MiB);
+            // Create GPT disk with 2 FAT32 partitions
+            s_gptDiskPath = Path.Combine(DATAFOLDER, $"duplicati_gpt_class_test.{extension}");
+            s_gptDiskIdentifier = DiskImageTestHelpers.CreateDiskWithTwoFat32Partitions(
+                s_diskHelper, s_gptDiskPath, PartitionTableType.GPT, 50 * MiB);
 
-            // Initialize with a single FAT32 partition (cross-platform compatible)
-            _diskHelper.InitializeDisk(_diskIdentifier, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
-
-            // Unmount any partitions that were mounted during InitializeDisk
-            _diskHelper.Unmount(_diskIdentifier);
-
-            // Create and initialize the raw disk interface
-            if (OperatingSystem.IsWindows())
+            // Get partition info from GPT disk
+            var gptPartitions = s_diskHelper.GetPartitions(s_gptDiskIdentifier);
+            if (gptPartitions.Length >= 2)
             {
-                _rawDisk = new Duplicati.Proprietary.DiskImage.Disk.Windows(_diskIdentifier);
-            }
-            else if (OperatingSystem.IsLinux())
-            {
-                _rawDisk = new Duplicati.Proprietary.DiskImage.Disk.Linux(_diskIdentifier);
-            }
-            else if (OperatingSystem.IsMacOS())
-            {
-                _rawDisk = new Duplicati.Proprietary.DiskImage.Disk.Mac(_diskIdentifier);
-            }
-            else
-            {
-                throw new PlatformNotSupportedException("Unsupported operating system.");
+                s_gptPartition1Offset = gptPartitions[0].StartOffset;
+                s_gptPartition1Size = gptPartitions[0].Size;
+                s_gptPartition2Offset = gptPartitions[1].StartOffset;
+                s_gptPartition2Size = gptPartitions[1].Size;
             }
 
-            if (!await _rawDisk.InitializeAsync(true, CancellationToken.None))
+            // Create and initialize raw disk for GPT (read-only)
+            s_gptRawDisk = DiskImageTestHelpers.CreateRawDiskForIdentifier(s_gptDiskIdentifier);
+            if (!s_gptRawDisk.InitializeAsync(true, CancellationToken.None).Result)
+                throw new InvalidOperationException("Failed to initialize GPT raw disk");
+
+            // Fill GPT partitions with well-known test data
+            DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_gptRawDisk, s_gptPartition1Offset, s_gptPartition1Size, CancellationToken.None).Wait();
+            DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_gptRawDisk, s_gptPartition2Offset, s_gptPartition2Size, CancellationToken.None).Wait();
+            s_diskHelper.FlushDisk(s_gptDiskIdentifier);
+
+            // Create MBR disk with 2 FAT32 partitions
+            s_mbrDiskPath = Path.Combine(DATAFOLDER, $"duplicati_mbr_class_test.{extension}");
+            s_mbrDiskIdentifier = DiskImageTestHelpers.CreateDiskWithTwoFat32Partitions(
+                s_diskHelper, s_mbrDiskPath, PartitionTableType.MBR, 50 * MiB);
+
+            // Get partition info from MBR disk
+            var mbrPartitions = s_diskHelper.GetPartitions(s_mbrDiskIdentifier);
+            if (mbrPartitions.Length >= 2)
             {
-                throw new InvalidOperationException($"Failed to initialize raw disk: {_diskIdentifier}");
+                s_mbrPartition1Offset = mbrPartitions[0].StartOffset;
+                s_mbrPartition1Size = mbrPartitions[0].Size;
+                s_mbrPartition2Offset = mbrPartitions[1].StartOffset;
+                s_mbrPartition2Size = mbrPartitions[1].Size;
+            }
+
+            // Create and initialize raw disk for MBR (read-only)
+            s_mbrRawDisk = DiskImageTestHelpers.CreateRawDiskForIdentifier(s_mbrDiskIdentifier);
+            if (!s_mbrRawDisk.InitializeAsync(true, CancellationToken.None).Result)
+                throw new InvalidOperationException("Failed to initialize MBR raw disk");
+
+            // Fill MBR partitions with well-known test data
+            DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_mbrRawDisk, s_mbrPartition1Offset, s_mbrPartition1Size, CancellationToken.None).Wait();
+            DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_mbrRawDisk, s_mbrPartition2Offset, s_mbrPartition2Size, CancellationToken.None).Wait();
+            s_diskHelper.FlushDisk(s_mbrDiskIdentifier);
+
+            // Create writable disk path (will be created per-test)
+            s_writableDiskPath = Path.Combine(DATAFOLDER, $"duplicati_writable_class_test.{extension}");
+        }
+
+        /// <summary>
+        /// One-time teardown for the entire test class.
+        /// Cleans up all class-level disk resources.
+        /// </summary>
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
+        {
+            // Dispose read-only raw disks
+            s_gptRawDisk?.Dispose();
+            s_mbrRawDisk?.Dispose();
+
+            // Unmount and cleanup class-level disks
+            if (s_diskHelper != null)
+            {
+                DiskImageTestHelpers.SafeUnmount(s_diskHelper, s_gptDiskIdentifier);
+                DiskImageTestHelpers.SafeUnmount(s_diskHelper, s_mbrDiskIdentifier);
+                DiskImageTestHelpers.SafeUnmount(s_diskHelper, s_writableDiskIdentifier);
+            }
+
+            // Delete disk image files
+            DiskImageTestHelpers.SafeDeleteFile(s_gptDiskPath);
+            DiskImageTestHelpers.SafeDeleteFile(s_mbrDiskPath);
+            DiskImageTestHelpers.SafeDeleteFile(s_writableDiskPath);
+
+            s_diskHelper?.Dispose();
+        }
+
+        #endregion
+
+        #region Per-test Setup and Teardown
+
+        /// <summary>
+        /// Sets up the test environment before each test that needs a writable disk.
+        /// Creates a fresh writable disk for tests that write data.
+        /// </summary>
+        [SetUp]
+        public async Task SetUp()
+        {
+            // Create a fresh writable disk for this test
+            if (s_diskHelper != null && !string.IsNullOrEmpty(s_writableDiskPath))
+            {
+                // Clean up any previous writable disk
+                if (!string.IsNullOrEmpty(s_writableDiskIdentifier))
+                {
+                    DiskImageTestHelpers.SafeUnmount(s_diskHelper, s_writableDiskIdentifier);
+                    s_writableDiskIdentifier = "";
+                }
+                DiskImageTestHelpers.SafeDeleteFile(s_writableDiskPath);
+
+                // Create new writable disk (100 MiB, uninitialized)
+                s_writableDiskIdentifier = s_diskHelper.CreateDisk(s_writableDiskPath, 100 * MiB);
+                s_diskHelper.Unmount(s_writableDiskIdentifier);
+
+                // Create raw disk interface (with write access)
+                _writableRawDisk = DiskImageTestHelpers.CreateRawDiskForIdentifier(s_writableDiskIdentifier);
+                if (!await _writableRawDisk.InitializeAsync(true, CancellationToken.None))
+                    throw new InvalidOperationException("Failed to initialize writable raw disk");
             }
         }
 
+        /// <summary>
+        /// Cleans up after each test.
+        /// Unmounts the writable disk so subsequent tests have a clean state.
+        /// </summary>
         [TearDown]
         public void TearDown()
         {
-            if (_diskHelper is not null && _diskIdentifier is not null)
-                _diskHelper.Unmount(_diskIdentifier);
+            // Dispose the writable raw disk
+            _writableRawDisk?.Dispose();
 
-            if (_diskImagePath != null && File.Exists(_diskImagePath))
+            // Unmount writable disk to ensure clean state for next test
+            if (s_diskHelper != null && !string.IsNullOrEmpty(s_writableDiskIdentifier))
             {
-                File.Delete(_diskImagePath);
+                DiskImageTestHelpers.SafeUnmount(s_diskHelper, s_writableDiskIdentifier);
             }
         }
+
+        #endregion
 
         #region IRawDisk Sector-Aligned Tests
 
         [Test]
         public async Task Test_RawDisk_ReadSector_ReturnsNonEmptyData()
         {
-            var sectorSize = _rawDisk.SectorSize;
-            using var stream = await _rawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
+            var sectorSize = s_gptRawDisk!.SectorSize;
+            using var stream = await s_gptRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
             var buffer = new byte[sectorSize];
             var bytesRead = await stream.ReadAsync(buffer.AsMemory(), CancellationToken.None);
             Assert.AreEqual(sectorSize, bytesRead, "Should have read 1 sector.");
@@ -144,28 +253,28 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_ReadBytes_ReturnsData()
         {
-            var sectorSize = _rawDisk.SectorSize;
-            using var stream = await _rawDisk.ReadBytesAsync(sectorSize, sectorSize, CancellationToken.None);
+            var sectorSize = s_gptRawDisk!.SectorSize;
+            using var stream = await s_gptRawDisk.ReadBytesAsync(sectorSize, sectorSize, CancellationToken.None);
             Assert.AreEqual(sectorSize, stream.Length, "Should have read the correct amount of bytes.");
         }
 
         [Test]
         public async Task Test_RawDisk_ReadBytesAsync_CallerProvidedBuffer()
         {
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = s_gptRawDisk!.SectorSize;
             var buffer = new byte[sectorSize];
-            var bytesRead = await _rawDisk.ReadBytesAsync(0, buffer.AsMemory(), CancellationToken.None);
+            var bytesRead = await s_gptRawDisk.ReadBytesAsync(0, buffer.AsMemory(), CancellationToken.None);
             Assert.AreEqual(sectorSize, bytesRead, "Should have read the correct amount of bytes.");
         }
 
         [Test]
         public async Task Test_RawDisk_WriteSectors_DataMatches()
         {
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
             var writeBuffer = new byte[sectorSize];
             new Random().NextBytes(writeBuffer);
-            await _rawDisk.WriteSectorsAsync(1, writeBuffer, CancellationToken.None);
-            using var readStream = await _rawDisk.ReadSectorsAsync(1, 1, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(1, writeBuffer, CancellationToken.None);
+            using var readStream = await _writableRawDisk.ReadSectorsAsync(1, 1, CancellationToken.None);
             var readBuffer = new byte[sectorSize];
             var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
             Assert.AreEqual(sectorSize, bytesRead, "Should have read the correct amount of bytes.");
@@ -175,11 +284,11 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_WriteBytes_DataMatches()
         {
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
             var writeBuffer = new byte[sectorSize];
             new Random().NextBytes(writeBuffer);
-            await _rawDisk.WriteBytesAsync(sectorSize, writeBuffer, CancellationToken.None);
-            using var readStream = await _rawDisk.ReadBytesAsync(sectorSize, sectorSize, CancellationToken.None);
+            await _writableRawDisk.WriteBytesAsync(sectorSize, writeBuffer, CancellationToken.None);
+            using var readStream = await _writableRawDisk.ReadBytesAsync(sectorSize, sectorSize, CancellationToken.None);
             var readBuffer = new byte[sectorSize];
             var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
             Assert.AreEqual(sectorSize, bytesRead, "Should have read the correct amount of bytes.");
@@ -189,11 +298,11 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_WriteBytes_Memory()
         {
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
             var writeBuffer = new byte[sectorSize];
             new Random().NextBytes(writeBuffer);
-            await _rawDisk.WriteBytesAsync(sectorSize, writeBuffer.AsMemory(), CancellationToken.None);
-            using var readStream = await _rawDisk.ReadBytesAsync(sectorSize, sectorSize, CancellationToken.None);
+            await _writableRawDisk.WriteBytesAsync(sectorSize, writeBuffer.AsMemory(), CancellationToken.None);
+            using var readStream = await _writableRawDisk.ReadBytesAsync(sectorSize, sectorSize, CancellationToken.None);
             var readBuffer = new byte[sectorSize];
             var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
             Assert.AreEqual(sectorSize, bytesRead, "Should have read the correct amount of bytes.");
@@ -207,26 +316,24 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_ReadUnalignedOffset_ReturnsCorrectData()
         {
-            // First write aligned data, then read at an unaligned offset
-            var sectorSize = _rawDisk.SectorSize;
+            // Use writable disk for this test
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // Write known pattern at sector 1
             var writeBuffer = new byte[sectorSize];
             for (int i = 0; i < sectorSize; i++)
                 writeBuffer[i] = (byte)(i & 0xFF);
 
-            await _rawDisk.WriteSectorsAsync(1, writeBuffer, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(1, writeBuffer, CancellationToken.None);
 
             // Read at offset = sector_size + 1 (unaligned)
-            // The implementation should handle this by padding to sector boundaries
             var offset = sectorSize + 1;
             var length = sectorSize - 2;
 
-            using var stream = await _rawDisk.ReadBytesAsync(offset, length, CancellationToken.None);
+            using var stream = await _writableRawDisk.ReadBytesAsync(offset, length, CancellationToken.None);
             var readBuffer = new byte[length];
             var bytesRead = await stream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
-            // Should return the data we wrote at sector 1, starting from byte offset 1
             Assert.AreEqual(length, bytesRead, "Should have read the requested length.");
             for (int i = 0; i < length; i++)
                 Assert.AreEqual((byte)((i + 1) & 0xFF), readBuffer[i], $"Byte at position {i} should match.");
@@ -235,19 +342,18 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_ReadUnalignedLength_ReturnsCorrectData()
         {
-            // Test reading with a length that's not a multiple of sector size
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // Write known pattern at sector 0
             var writeBuffer = new byte[sectorSize];
             for (int i = 0; i < sectorSize; i++)
                 writeBuffer[i] = (byte)(i & 0xFF);
 
-            await _rawDisk.WriteSectorsAsync(0, writeBuffer, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(0, writeBuffer, CancellationToken.None);
 
             // Read with unaligned length (sectorSize - 1)
             var length = sectorSize - 1;
-            using var stream = await _rawDisk.ReadBytesAsync(0, length, CancellationToken.None);
+            using var stream = await _writableRawDisk.ReadBytesAsync(0, length, CancellationToken.None);
             var readBuffer = new byte[length];
             var bytesRead = await stream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
@@ -259,19 +365,18 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_ReadShortLength_ReturnsCorrectData()
         {
-            // Read at offset 0 with length = sector_size - 1 (short read)
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // Write known pattern at sector 0
             var writeBuffer = new byte[sectorSize];
             for (int i = 0; i < sectorSize; i++)
                 writeBuffer[i] = (byte)(i & 0xFF);
 
-            await _rawDisk.WriteSectorsAsync(0, writeBuffer, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(0, writeBuffer, CancellationToken.None);
 
             // Read short length
             var length = sectorSize - 1;
-            using var stream = await _rawDisk.ReadBytesAsync(0, length, CancellationToken.None);
+            using var stream = await _writableRawDisk.ReadBytesAsync(0, length, CancellationToken.None);
             var readBuffer = new byte[length];
             var bytesRead = await stream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
@@ -283,24 +388,23 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_ReadStraddlingSectors_ReturnsCorrectData()
         {
-            // Read at offset = sector_size / 2 with length = sector_size (straddles two sectors)
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // Write different patterns at sectors 0 and 1
             var sector0Data = new byte[sectorSize];
             var sector1Data = new byte[sectorSize];
             for (int i = 0; i < sectorSize; i++)
             {
-                sector0Data[i] = (byte)(i | 0xF0);  // Pattern 0xF0-0xFF
-                sector1Data[i] = (byte)(i | 0x0F); // Pattern 0x0F-0x1E
+                sector0Data[i] = (byte)(i | 0xF0);
+                sector1Data[i] = (byte)(i | 0x0F);
             }
 
-            await _rawDisk.WriteSectorsAsync(0, sector0Data, CancellationToken.None);
-            await _rawDisk.WriteSectorsAsync(1, sector1Data, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(0, sector0Data, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(1, sector1Data, CancellationToken.None);
 
             // Read at half-sector offset with full sector length
             var offset = sectorSize / 2;
-            using var stream = await _rawDisk.ReadBytesAsync(offset, sectorSize, CancellationToken.None);
+            using var stream = await _writableRawDisk.ReadBytesAsync(offset, sectorSize, CancellationToken.None);
             var readBuffer = new byte[sectorSize];
             var bytesRead = await stream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
@@ -324,20 +428,19 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_ReadNearEndOfDisk_ReturnsCorrectData()
         {
-            // Read at the very end of the disk where remaining bytes < sector_size
-            var sectorSize = _rawDisk.SectorSize;
-            var diskSize = _rawDisk.Size;
+            var sectorSize = _writableRawDisk.SectorSize;
+            var diskSize = _writableRawDisk.Size;
 
             // Calculate the last sector and write data there
             var lastSector = (diskSize / sectorSize) - 1;
             var writeBuffer = new byte[sectorSize];
             new Random().NextBytes(writeBuffer);
 
-            await _rawDisk.WriteSectorsAsync(lastSector, writeBuffer, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(lastSector, writeBuffer, CancellationToken.None);
 
             // Read from near the end
             var offset = diskSize - sectorSize;
-            using var stream = await _rawDisk.ReadBytesAsync(offset, sectorSize, CancellationToken.None);
+            using var stream = await _writableRawDisk.ReadBytesAsync(offset, sectorSize, CancellationToken.None);
             var readBuffer = new byte[sectorSize];
             var bytesRead = await stream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
@@ -348,21 +451,20 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_ReadUnalignedOffsetWithMemory_ReturnsCorrectData()
         {
-            // Test the Memory-based ReadBytesAsync with unaligned offset
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // Write known pattern at sector 1
             var writeBuffer = new byte[sectorSize];
             for (int i = 0; i < sectorSize; i++)
                 writeBuffer[i] = (byte)((i * 2) & 0xFF);
 
-            await _rawDisk.WriteSectorsAsync(1, writeBuffer, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(1, writeBuffer, CancellationToken.None);
 
             // Read at unaligned offset
             var offset = sectorSize + 4;
             var length = sectorSize - 8;
             var readBuffer = new byte[length];
-            var bytesRead = await _rawDisk.ReadBytesAsync(offset, readBuffer.AsMemory(), CancellationToken.None);
+            var bytesRead = await _writableRawDisk.ReadBytesAsync(offset, readBuffer.AsMemory(), CancellationToken.None);
 
             Assert.AreEqual(length, bytesRead, "Should have read the requested length.");
             for (int i = 0; i < length; i++)
@@ -372,20 +474,19 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_ReadUnalignedLengthWithMemory_ReturnsCorrectData()
         {
-            // Test the Memory-based ReadBytesAsync with unaligned length
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // Write known pattern at sector 0
             var writeBuffer = new byte[sectorSize];
             for (int i = 0; i < sectorSize; i++)
                 writeBuffer[i] = (byte)((i + 100) & 0xFF);
 
-            await _rawDisk.WriteSectorsAsync(0, writeBuffer, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(0, writeBuffer, CancellationToken.None);
 
             // Read with unaligned length
             var length = sectorSize - 5;
             var readBuffer = new byte[length];
-            var bytesRead = await _rawDisk.ReadBytesAsync(0, readBuffer.AsMemory(), CancellationToken.None);
+            var bytesRead = await _writableRawDisk.ReadBytesAsync(0, readBuffer.AsMemory(), CancellationToken.None);
 
             Assert.AreEqual(length, bytesRead, "Should have read the requested length.");
             for (int i = 0; i < length; i++)
@@ -399,8 +500,7 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_WriteUnalignedOffset_DataMatches()
         {
-            // Write at an offset that is NOT sector-aligned
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // First, write known patterns to two consecutive sectors
             var sector1Data = new byte[sectorSize];
@@ -411,24 +511,24 @@ namespace Duplicati.UnitTest.DiskImage
                 sector2Data[i] = (byte)(i | 0xB0);
             }
 
-            await _rawDisk.WriteSectorsAsync(1, sector1Data, CancellationToken.None);
-            await _rawDisk.WriteSectorsAsync(2, sector2Data, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(1, sector1Data, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(2, sector2Data, CancellationToken.None);
 
             // Now write at unaligned offset (sector_size + 5)
             var unalignedOffset = sectorSize + 5;
             var writeData = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
-            var bytesWritten = await _rawDisk.WriteBytesAsync(unalignedOffset, writeData, CancellationToken.None);
+            var bytesWritten = await _writableRawDisk.WriteBytesAsync(unalignedOffset, writeData, CancellationToken.None);
 
             Assert.AreEqual(writeData.Length, bytesWritten, "Should have written all bytes.");
 
             // Read back both sectors and verify only the intended bytes were changed
-            using var readStream = await _rawDisk.ReadSectorsAsync(1, 2, CancellationToken.None);
+            using var readStream = await _writableRawDisk.ReadSectorsAsync(1, 2, CancellationToken.None);
             var readBuffer = new byte[sectorSize * 2];
             var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
             Assert.AreEqual(sectorSize * 2, bytesRead, "Should have read two sectors.");
 
-            // Verify sector 1 data (first 5 bytes should be unchanged, then our written data)
+            // Verify sector 1 data
             for (int i = 0; i < 5; i++)
                 Assert.AreEqual((byte)(i | 0xA0), readBuffer[i], $"Byte at position {i} in sector 1 should be unchanged.");
             for (int i = 0; i < writeData.Length; i++)
@@ -444,15 +544,14 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_WriteUnalignedLength_DataMatches()
         {
-            // Write data whose length is NOT a multiple of sector size
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // Write known pattern to sector 3
             var sectorData = new byte[sectorSize];
             for (int i = 0; i < sectorSize; i++)
                 sectorData[i] = (byte)(i | 0xC0);
 
-            await _rawDisk.WriteSectorsAsync(3, sectorData, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(3, sectorData, CancellationToken.None);
 
             // Write unaligned length (sectorSize - 10)
             var writeLength = sectorSize - 10;
@@ -460,12 +559,12 @@ namespace Duplicati.UnitTest.DiskImage
             for (int i = 0; i < writeLength; i++)
                 writeData[i] = (byte)((i + 50) & 0xFF);
 
-            var bytesWritten = await _rawDisk.WriteBytesAsync(3 * sectorSize, writeData, CancellationToken.None);
+            var bytesWritten = await _writableRawDisk.WriteBytesAsync(3 * sectorSize, writeData, CancellationToken.None);
 
             Assert.AreEqual(writeData.Length, bytesWritten, "Should have written all bytes.");
 
             // Read back and verify
-            using var readStream = await _rawDisk.ReadSectorsAsync(3, 1, CancellationToken.None);
+            using var readStream = await _writableRawDisk.ReadSectorsAsync(3, 1, CancellationToken.None);
             var readBuffer = new byte[sectorSize];
             var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
@@ -475,7 +574,7 @@ namespace Duplicati.UnitTest.DiskImage
             for (int i = 0; i < writeLength; i++)
                 Assert.AreEqual((byte)((i + 50) & 0xFF), readBuffer[i], $"Byte at position {i} should match written data.");
 
-            // Remaining bytes should be unchanged (the padding logic preserves existing data)
+            // Remaining bytes should be unchanged
             for (int i = writeLength; i < sectorSize; i++)
                 Assert.AreEqual((byte)(i | 0xC0), readBuffer[i], $"Byte at position {i} should be unchanged.");
         }
@@ -483,25 +582,24 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_WriteSingleByte_VerifySingleByteChanged()
         {
-            // Write a single byte at a sector-aligned offset, read back full sector, verify only that byte changed
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // Write known pattern to sector 5
             var sectorData = new byte[sectorSize];
             for (int i = 0; i < sectorSize; i++)
                 sectorData[i] = (byte)(i & 0xFF);
 
-            await _rawDisk.WriteSectorsAsync(5, sectorData, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(5, sectorData, CancellationToken.None);
 
             // Write a single byte at offset 5 * sectorSize + 100
             var byteOffset = 5 * sectorSize + 100;
             var singleByte = new byte[] { 0xAB };
-            var bytesWritten = await _rawDisk.WriteBytesAsync(byteOffset, singleByte, CancellationToken.None);
+            var bytesWritten = await _writableRawDisk.WriteBytesAsync(byteOffset, singleByte, CancellationToken.None);
 
             Assert.AreEqual(1, bytesWritten, "Should have written 1 byte.");
 
             // Read back the full sector
-            using var readStream = await _rawDisk.ReadSectorsAsync(5, 1, CancellationToken.None);
+            using var readStream = await _writableRawDisk.ReadSectorsAsync(5, 1, CancellationToken.None);
             var readBuffer = new byte[sectorSize];
             var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
@@ -518,8 +616,7 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_WriteSpanningSectorBoundary_DataMatches()
         {
-            // Write data that spans a sector boundary (e.g. offset = sector_size - 4, length = 8)
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // Write known patterns to sectors 6 and 7
             var sector6Data = new byte[sectorSize];
@@ -530,18 +627,18 @@ namespace Duplicati.UnitTest.DiskImage
                 sector7Data[i] = (byte)(i | 0xE0);
             }
 
-            await _rawDisk.WriteSectorsAsync(6, sector6Data, CancellationToken.None);
-            await _rawDisk.WriteSectorsAsync(7, sector7Data, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(6, sector6Data, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(7, sector7Data, CancellationToken.None);
 
             // Write spanning sector boundary: offset = sector_size - 4, length = 8
             var spanOffset = 6 * sectorSize + sectorSize - 4;
             var spanData = new byte[] { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 };
-            var bytesWritten = await _rawDisk.WriteBytesAsync(spanOffset, spanData, CancellationToken.None);
+            var bytesWritten = await _writableRawDisk.WriteBytesAsync(spanOffset, spanData, CancellationToken.None);
 
             Assert.AreEqual(spanData.Length, bytesWritten, "Should have written all bytes.");
 
             // Read back both sectors
-            using var readStream = await _rawDisk.ReadSectorsAsync(6, 2, CancellationToken.None);
+            using var readStream = await _writableRawDisk.ReadSectorsAsync(6, 2, CancellationToken.None);
             var readBuffer = new byte[sectorSize * 2];
             var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
@@ -563,9 +660,8 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_WriteAtLastSector_NoOverflow()
         {
-            // Write at the last valid sector, verify no overflow
-            var sectorSize = _rawDisk.SectorSize;
-            var diskSize = _rawDisk.Size;
+            var sectorSize = _writableRawDisk.SectorSize;
+            var diskSize = _writableRawDisk.Size;
 
             // Calculate the last sector
             var lastSector = (diskSize / sectorSize) - 1;
@@ -574,11 +670,11 @@ namespace Duplicati.UnitTest.DiskImage
             var writeData = new byte[sectorSize];
             new Random(42).NextBytes(writeData);
 
-            var bytesWritten = await _rawDisk.WriteSectorsAsync(lastSector, writeData, CancellationToken.None);
+            var bytesWritten = await _writableRawDisk.WriteSectorsAsync(lastSector, writeData, CancellationToken.None);
             Assert.AreEqual(sectorSize, bytesWritten, "Should have written a full sector.");
 
             // Read it back and verify
-            using var readStream = await _rawDisk.ReadSectorsAsync(lastSector, 1, CancellationToken.None);
+            using var readStream = await _writableRawDisk.ReadSectorsAsync(lastSector, 1, CancellationToken.None);
             var readBuffer = new byte[sectorSize];
             var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
@@ -589,25 +685,24 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_RawDisk_WriteUnalignedWithMemory_DataMatches()
         {
-            // Test WriteBytesAsync with Memory<byte> for unaligned writes
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = _writableRawDisk.SectorSize;
 
             // Write known pattern to sector 8
             var sectorData = new byte[sectorSize];
             for (int i = 0; i < sectorSize; i++)
                 sectorData[i] = (byte)(i | 0xF0);
 
-            await _rawDisk.WriteSectorsAsync(8, sectorData, CancellationToken.None);
+            await _writableRawDisk.WriteSectorsAsync(8, sectorData, CancellationToken.None);
 
             // Write at unaligned offset using Memory<byte>
             var unalignedOffset = 8 * sectorSize + 10;
             var writeData = new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
-            var bytesWritten = await _rawDisk.WriteBytesAsync(unalignedOffset, writeData.AsMemory(), CancellationToken.None);
+            var bytesWritten = await _writableRawDisk.WriteBytesAsync(unalignedOffset, writeData.AsMemory(), CancellationToken.None);
 
             Assert.AreEqual(writeData.Length, bytesWritten, "Should have written all bytes.");
 
             // Read back and verify
-            using var readStream = await _rawDisk.ReadSectorsAsync(8, 1, CancellationToken.None);
+            using var readStream = await _writableRawDisk.ReadSectorsAsync(8, 1, CancellationToken.None);
             var readBuffer = new byte[sectorSize];
             var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
@@ -633,24 +728,18 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_PartitionTableFactory_GPTBytes_DetectsGPT()
         {
-            // Create raw bytes representing a GPT disk
             var sectorSize = 512;
-            var diskBytes = new byte[sectorSize * 4]; // 4 sectors: MBR + GPT header + 2 for partition entries
+            var diskBytes = new byte[sectorSize * 4];
 
             // MBR (sector 0) - Protective MBR with GPT signature
-            // Boot signature at offset 510-511: 0x55, 0xAA (little-endian 0xAA55)
             diskBytes[510] = 0x55;
             diskBytes[511] = 0xAA;
-
-            // Partition type at offset 450: 0xEE (GPT protective)
             diskBytes[450] = 0xEE;
 
             // GPT header (sector 1) - "EFI PART" signature
-            // Signature: "EFI PART" in little-endian = 0x5452415020494645
-            var gptSignature = "EFI PART"u8.ToArray(); // "EFI PART"
+            var gptSignature = "EFI PART"u8.ToArray();
             Buffer.BlockCopy(gptSignature, 0, diskBytes, sectorSize, 8);
 
-            // Create partition table from bytes
             var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
 
             Assert.IsNotNull(partitionTable, "Partition table should be detected.");
@@ -660,18 +749,13 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_PartitionTableFactory_MBRBytes_DetectsMBR()
         {
-            // Create raw bytes representing an MBR disk
             var sectorSize = 512;
             var diskBytes = new byte[sectorSize];
 
-            // MBR boot signature at offset 510-511: 0x55, 0xAA
             diskBytes[510] = 0x55;
             diskBytes[511] = 0xAA;
-
-            // Partition type at offset 450: NOT 0xEE (use a normal type like 0x83 for Linux)
             diskBytes[450] = 0x83;
 
-            // Create partition table from bytes
             var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
 
             Assert.IsNotNull(partitionTable, "Partition table should be detected.");
@@ -681,13 +765,9 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_PartitionTableFactory_InvalidBytes_ReturnsUnknown()
         {
-            // Create raw bytes with invalid/zeroed data (no valid boot signature)
             var sectorSize = 512;
             var diskBytes = new byte[sectorSize];
 
-            // All zeros - no boot signature at offset 510-511
-
-            // Create partition table from bytes
             var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
 
             Assert.IsNotNull(partitionTable, "Partition table should be created even for unknown type.");
@@ -697,22 +777,16 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_PartitionTableFactory_ProtectiveMBRType_DetectsGPT()
         {
-            // Test the protective MBR path - valid MBR boot signature with type 0xEE
             var sectorSize = 512;
             var diskBytes = new byte[sectorSize * 4];
 
-            // MBR with valid boot signature
             diskBytes[510] = 0x55;
             diskBytes[511] = 0xAA;
-
-            // Protective MBR type at offset 450: 0xEE
             diskBytes[450] = 0xEE;
 
-            // GPT header at sector 1 with "EFI PART" signature
-            var gptSignature = "EFI PART"u8.ToArray(); // "EFI PART"
+            var gptSignature = "EFI PART"u8.ToArray();
             Buffer.BlockCopy(gptSignature, 0, diskBytes, sectorSize, 8);
 
-            // Create partition table from bytes
             var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
 
             Assert.IsNotNull(partitionTable, "Partition table should be detected.");
@@ -722,41 +796,28 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_PartitionTableFactory_ProtectiveMBRWithoutGptHeader_FallsBackToMBR()
         {
-            // Test that if protective MBR type is present but no valid GPT header, it falls back to MBR
             var sectorSize = 512;
             var diskBytes = new byte[sectorSize * 2];
 
-            // MBR with valid boot signature
             diskBytes[510] = 0x55;
             diskBytes[511] = 0xAA;
-
-            // Protective MBR type at offset 450: 0xEE
             diskBytes[450] = 0xEE;
 
-            // NO valid GPT header at sector 1 (leave as zeros)
-
-            // Create partition table from bytes
             var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
 
             Assert.IsNotNull(partitionTable, "Partition table should be detected.");
-            // When GPT header is invalid, it should fall back to parsing as MBR
             Assert.AreEqual(PartitionTableType.MBR, partitionTable!.TableType, "Should fall back to MBR when GPT header is invalid.");
         }
 
         [Test]
         public async Task Test_PartitionTableFactory_GPTFromRealDisk_DetectsGPT()
         {
-            // Use the real disk created in SetUp (which is GPT) to test detection
-            var sectorSize = _rawDisk.SectorSize;
-
-            // GPT requires reading the protective MBR (sector 0), GPT header (sector 1),
-            // and partition entries (sectors 2-33). Read 34 sectors to be safe.
+            var sectorSize = s_gptRawDisk!.SectorSize;
             var sectorsToRead = 34;
-            using var stream = await _rawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
+            using var stream = await s_gptRawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
             var diskBytes = new byte[sectorSize * sectorsToRead];
             await stream.ReadAtLeastAsync(diskBytes, diskBytes.Length, cancellationToken: CancellationToken.None);
 
-            // Create partition table from the real disk bytes
             var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
 
             Assert.IsNotNull(partitionTable, "Partition table should be detected from real disk.");
@@ -770,29 +831,28 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_GPT_ParseFromRealDisk_ReturnsCorrectPartitions()
         {
-            // The SetUp creates a GPT disk with a single FAT32 partition
-            // Read raw bytes and parse with GPT.ParseAsync()
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = s_gptRawDisk!.SectorSize;
 
             // Read enough sectors to include protective MBR, GPT header, and partition entries
-            // GPT typically stores partition entries in sectors 2-33 (128 entries * 128 bytes each = 16384 bytes = 32 sectors at 512b)
             var sectorsToRead = 34;
-            using var stream = await _rawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
+            using var stream = await s_gptRawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
             var diskBytes = new byte[sectorSize * sectorsToRead];
             await stream.ReadAtLeastAsync(diskBytes, diskBytes.Length, cancellationToken: CancellationToken.None);
 
             // Parse the GPT from bytes
-            var gpt = new Duplicati.Proprietary.DiskImage.Partition.GPT(null);
+            var gpt = new GPT(null);
             var parsed = await gpt.ParseAsync(diskBytes, sectorSize, CancellationToken.None);
 
             Assert.IsTrue(parsed, "GPT should parse successfully from real disk bytes.");
 
-            // Verify partition count - we created 1 partition
-            var partitions = new List<Duplicati.Proprietary.DiskImage.Partition.IPartition>();
+            // Verify partition count - we created 2 partitions
+            var partitions = new List<IPartition>();
             await foreach (var partition in gpt.EnumeratePartitions(CancellationToken.None))
+            {
                 partitions.Add(partition);
+            }
 
-            Assert.AreEqual(1, partitions.Count, "Should have 1 partition.");
+            Assert.AreEqual(2, partitions.Count, "Should have 2 partitions.");
 
             // Verify partition properties
             var firstPartition = partitions[0];
@@ -813,101 +873,59 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_MBR_ParseFromRealDisk_ReturnsCorrectPartitions()
         {
-            // Create a separate MBR disk for this test
-            var extension = OperatingSystem.IsWindows() ? "vhdx"
-                : OperatingSystem.IsLinux() ? "img"
-                : "dmg";
-            var mbrDiskPath = Path.Combine(DATAFOLDER, $"duplicati_mbr_test_{Guid.NewGuid()}.{extension}");
-            string mbrDiskIdentifier = "";
-            Duplicati.Proprietary.DiskImage.Disk.IRawDisk? mbrRawDisk = null;
+            var sectorSize = s_mbrRawDisk!.SectorSize;
 
-            try
+            // Read the MBR sector (first 512 bytes)
+            using var stream = await s_mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
+            var mbrBytes = new byte[sectorSize];
+            await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
+
+            // Parse the MBR from bytes
+            var mbr = new MBR(null);
+            var parsed = await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
+
+            Assert.IsTrue(parsed, "MBR should parse successfully from real disk bytes.");
+
+            // Verify partition entries - we created 2 partitions
+            Assert.AreEqual(2, mbr.NumPartitionEntries, "Should have 2 partition entries.");
+
+            // Verify via EnumeratePartitions
+            var partitions = new List<IPartition>();
+            await foreach (var partition in mbr.EnumeratePartitions(CancellationToken.None))
             {
-                // Create a 50 MiB MBR disk
-                mbrDiskIdentifier = _diskHelper.CreateDisk(mbrDiskPath, 50 * MiB);
-
-                // Initialize with MBR and a single FAT32 partition
-                _diskHelper.InitializeDisk(mbrDiskIdentifier, PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
-                _diskHelper.Unmount(mbrDiskIdentifier);
-
-                // Create raw disk interface for MBR disk
-                if (OperatingSystem.IsWindows())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Windows(mbrDiskIdentifier);
-                else if (OperatingSystem.IsLinux())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Linux(mbrDiskIdentifier);
-                else if (OperatingSystem.IsMacOS())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Mac(mbrDiskIdentifier);
-
-                Assert.NotNull(mbrRawDisk, "Raw disk interface should not be null.");
-
-                if (!await mbrRawDisk!.InitializeAsync(true, CancellationToken.None))
-                    throw new InvalidOperationException($"Failed to initialize MBR raw disk: {mbrDiskIdentifier}");
-
-                var sectorSize = mbrRawDisk.SectorSize;
-
-                // Read the MBR sector (first 512 bytes)
-                using var stream = await mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
-                var mbrBytes = new byte[sectorSize];
-                await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
-
-                // Parse the MBR from bytes
-                var mbr = new Duplicati.Proprietary.DiskImage.Partition.MBR(null);
-                var parsed = await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
-
-                Assert.IsTrue(parsed, "MBR should parse successfully from real disk bytes.");
-
-                // Verify partition entries - we created 1 partition
-                Assert.AreEqual(1, mbr.NumPartitionEntries, "Should have 1 partition entry.");
-
-                // Verify via EnumeratePartitions
-                var partitions = new List<Duplicati.Proprietary.DiskImage.Partition.IPartition>();
-                await foreach (var partition in mbr.EnumeratePartitions(CancellationToken.None))
-                    partitions.Add(partition);
-
-                Assert.AreEqual(1, partitions.Count, "Should enumerate 1 partition.");
-
-                // Verify partition properties
-                var firstPartition = partitions[0];
-                Assert.IsNotNull(firstPartition, "First partition should exist.");
-                Assert.AreEqual(1, firstPartition.PartitionNumber, "Partition number should be 1.");
-                Assert.Greater(firstPartition.StartOffset, 0, "StartOffset should be greater than 0.");
-                Assert.Greater(firstPartition.Size, 0, "Size should be greater than 0.");
-
-                // Verify sector alignment
-                Assert.AreEqual(0, firstPartition.StartOffset % sectorSize,
-                    "StartOffset should be sector-aligned.");
-                Assert.AreEqual(0, firstPartition.Size % sectorSize,
-                    "Size should be sector-aligned.");
-
-                mbr.Dispose();
+                partitions.Add(partition);
             }
-            finally
-            {
-                mbrRawDisk?.Dispose();
-                if (!string.IsNullOrEmpty(mbrDiskIdentifier))
-                    _diskHelper.Unmount(mbrDiskIdentifier);
-                if (File.Exists(mbrDiskPath))
-                    File.Delete(mbrDiskPath);
-            }
+
+            Assert.AreEqual(2, partitions.Count, "Should enumerate 2 partitions.");
+
+            // Verify partition properties
+            var firstPartition = partitions[0];
+            Assert.IsNotNull(firstPartition, "First partition should exist.");
+            Assert.AreEqual(1, firstPartition.PartitionNumber, "Partition number should be 1.");
+            Assert.Greater(firstPartition.StartOffset, 0, "StartOffset should be greater than 0.");
+            Assert.Greater(firstPartition.Size, 0, "Size should be greater than 0.");
+
+            // Verify sector alignment
+            Assert.AreEqual(0, firstPartition.StartOffset % sectorSize,
+                "StartOffset should be sector-aligned.");
+            Assert.AreEqual(0, firstPartition.Size % sectorSize,
+                "Size should be sector-aligned.");
+
+            mbr.Dispose();
         }
 
         [Test]
         public async Task Test_GPT_EnumeratePartitions_ReturnsCorrectCount()
         {
-            // Use the GPT disk created in SetUp
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = s_gptRawDisk!.SectorSize;
 
-            // Read disk bytes
-            var sectorsToRead = 34;
-            using var stream = await _rawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
-            var diskBytes = new byte[sectorSize * sectorsToRead];
+            using var stream = await s_gptRawDisk.ReadSectorsAsync(0, 34, CancellationToken.None);
+            var diskBytes = new byte[sectorSize * 34];
             await stream.ReadAtLeastAsync(diskBytes, diskBytes.Length, cancellationToken: CancellationToken.None);
 
-            // Parse GPT
-            var gpt = new Duplicati.Proprietary.DiskImage.Partition.GPT(null);
+            var gpt = new GPT(null);
             await gpt.ParseAsync(diskBytes, sectorSize, CancellationToken.None);
 
-            // Test EnumeratePartitions
             var count = 0;
             await foreach (var partition in gpt.EnumeratePartitions(CancellationToken.None))
             {
@@ -916,7 +934,7 @@ namespace Duplicati.UnitTest.DiskImage
                 Assert.Greater(partition.PartitionNumber, 0, "Partition number should be positive.");
             }
 
-            Assert.AreEqual(1, count, "Should enumerate exactly 1 partition.");
+            Assert.AreEqual(2, count, "Should enumerate exactly 2 partitions.");
 
             gpt.Dispose();
         }
@@ -924,81 +942,38 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_MBR_EnumeratePartitions_ReturnsCorrectCount()
         {
-            // Create a separate MBR disk for this test
-            var extension = OperatingSystem.IsWindows() ? "vhdx"
-                : OperatingSystem.IsLinux() ? "img"
-                : "dmg";
-            var mbrDiskPath = Path.Combine(DATAFOLDER, $"duplicati_mbr_enum_test_{Guid.NewGuid()}.{extension}");
-            string mbrDiskIdentifier = "";
-            Duplicati.Proprietary.DiskImage.Disk.IRawDisk? mbrRawDisk = null;
+            var sectorSize = s_mbrRawDisk!.SectorSize;
 
-            try
+            using var stream = await s_mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
+            var mbrBytes = new byte[sectorSize];
+            await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
+
+            var mbr = new MBR(null);
+            await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
+
+            var count = 0;
+            await foreach (var partition in mbr.EnumeratePartitions(CancellationToken.None))
             {
-                // Create a 50 MiB MBR disk
-                mbrDiskIdentifier = _diskHelper.CreateDisk(mbrDiskPath, 50 * MiB);
-                _diskHelper.InitializeDisk(mbrDiskIdentifier, PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
-                _diskHelper.Unmount(mbrDiskIdentifier);
-
-                // Create raw disk interface
-                if (OperatingSystem.IsWindows())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Windows(mbrDiskIdentifier);
-                else if (OperatingSystem.IsLinux())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Linux(mbrDiskIdentifier);
-                else if (OperatingSystem.IsMacOS())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Mac(mbrDiskIdentifier);
-
-                Assert.NotNull(mbrRawDisk, "Raw disk interface should not be null.");
-
-                if (!await mbrRawDisk!.InitializeAsync(true, CancellationToken.None))
-                    throw new InvalidOperationException("Failed to initialize MBR raw disk");
-
-                var sectorSize = mbrRawDisk.SectorSize;
-
-                // Read and parse MBR
-                using var stream = await mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
-                var mbrBytes = new byte[sectorSize];
-                await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
-
-                var mbr = new Duplicati.Proprietary.DiskImage.Partition.MBR(null);
-                await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
-
-                // Test EnumeratePartitions
-                var count = 0;
-                await foreach (var partition in mbr.EnumeratePartitions(CancellationToken.None))
-                {
-                    count++;
-                    Assert.IsNotNull(partition, "Partition should not be null.");
-                    Assert.Greater(partition.PartitionNumber, 0, "Partition number should be positive.");
-                }
-
-                Assert.AreEqual(1, count, "Should enumerate exactly 1 partition.");
-
-                mbr.Dispose();
+                count++;
+                Assert.IsNotNull(partition, "Partition should not be null.");
+                Assert.Greater(partition.PartitionNumber, 0, "Partition number should be positive.");
             }
-            finally
-            {
-                mbrRawDisk?.Dispose();
-                if (!string.IsNullOrEmpty(mbrDiskIdentifier))
-                    _diskHelper.Unmount(mbrDiskIdentifier);
-                if (File.Exists(mbrDiskPath))
-                    File.Delete(mbrDiskPath);
-            }
+
+            Assert.AreEqual(2, count, "Should enumerate exactly 2 partitions.");
+
+            mbr.Dispose();
         }
 
         [Test]
         public async Task Test_GPT_GetPartitionAsync_ReturnsCorrectPartition()
         {
-            // Use the GPT disk created in SetUp
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = s_gptRawDisk!.SectorSize;
 
-            // Read disk bytes
-            var sectorsToRead = 34;
-            using var stream = await _rawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
-            var diskBytes = new byte[sectorSize * sectorsToRead];
+            using var stream = await s_gptRawDisk.ReadSectorsAsync(0, 34, CancellationToken.None);
+            var diskBytes = new byte[sectorSize * 34];
             await stream.ReadAtLeastAsync(diskBytes, diskBytes.Length, cancellationToken: CancellationToken.None);
 
-            // Parse GPT
-            var gpt = new Duplicati.Proprietary.DiskImage.Partition.GPT(null);
+            var gpt = new GPT(null);
             await gpt.ParseAsync(diskBytes, sectorSize, CancellationToken.None);
 
             // Test GetPartitionAsync for partition 1 (should exist)
@@ -1006,9 +981,14 @@ namespace Duplicati.UnitTest.DiskImage
             Assert.IsNotNull(partition1, "Partition 1 should exist.");
             Assert.AreEqual(1, partition1!.PartitionNumber, "Partition number should be 1.");
 
-            // Test GetPartitionAsync for partition 2 (should not exist - we only created 1)
+            // Test GetPartitionAsync for partition 2 (should exist)
             var partition2 = await gpt.GetPartitionAsync(2, CancellationToken.None);
-            Assert.IsNull(partition2, "Partition 2 should not exist.");
+            Assert.IsNotNull(partition2, "Partition 2 should exist.");
+            Assert.AreEqual(2, partition2!.PartitionNumber, "Partition number should be 2.");
+
+            // Test GetPartitionAsync for partition 3 (should not exist)
+            var partition3 = await gpt.GetPartitionAsync(3, CancellationToken.None);
+            Assert.IsNull(partition3, "Partition 3 should not exist.");
 
             // Test GetPartitionAsync for invalid partition number 0
             var partition0 = await gpt.GetPartitionAsync(0, CancellationToken.None);
@@ -1020,83 +1000,46 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_MBR_GetPartitionAsync_ReturnsCorrectPartition()
         {
-            // Create a separate MBR disk for this test
-            var extension = OperatingSystem.IsWindows() ? "vhdx"
-                : OperatingSystem.IsLinux() ? "img"
-                : "dmg";
-            var mbrDiskPath = Path.Combine(DATAFOLDER, $"duplicati_mbr_get_test_{Guid.NewGuid()}.{extension}");
-            string mbrDiskIdentifier = "";
-            Duplicati.Proprietary.DiskImage.Disk.IRawDisk? mbrRawDisk = null;
+            var sectorSize = s_mbrRawDisk!.SectorSize;
 
-            try
-            {
-                // Create a 50 MiB MBR disk
-                mbrDiskIdentifier = _diskHelper.CreateDisk(mbrDiskPath, 50 * MiB);
-                _diskHelper.InitializeDisk(mbrDiskIdentifier, PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
-                _diskHelper.Unmount(mbrDiskIdentifier);
+            using var stream = await s_mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
+            var mbrBytes = new byte[sectorSize];
+            await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
 
-                // Create raw disk interface
-                if (OperatingSystem.IsWindows())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Windows(mbrDiskIdentifier);
-                else if (OperatingSystem.IsLinux())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Linux(mbrDiskIdentifier);
-                else if (OperatingSystem.IsMacOS())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Mac(mbrDiskIdentifier);
+            var mbr = new MBR(null);
+            await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
 
-                Assert.NotNull(mbrRawDisk, "Raw disk interface should not be null.");
+            // Test GetPartitionAsync for partition 1 (should exist)
+            var partition1 = await mbr.GetPartitionAsync(1, CancellationToken.None);
+            Assert.IsNotNull(partition1, "Partition 1 should exist.");
+            Assert.AreEqual(1, partition1!.PartitionNumber, "Partition number should be 1.");
 
-                if (!await mbrRawDisk!.InitializeAsync(true, CancellationToken.None))
-                    throw new InvalidOperationException("Failed to initialize MBR raw disk");
+            // Test GetPartitionAsync for partition 2 (should exist)
+            var partition2 = await mbr.GetPartitionAsync(2, CancellationToken.None);
+            Assert.IsNotNull(partition2, "Partition 2 should exist.");
+            Assert.AreEqual(2, partition2!.PartitionNumber, "Partition number should be 2.");
 
-                var sectorSize = mbrRawDisk.SectorSize;
+            // Test GetPartitionAsync for partition 3 (should not exist)
+            var partition3 = await mbr.GetPartitionAsync(3, CancellationToken.None);
+            Assert.IsNull(partition3, "Partition 3 should not exist.");
 
-                // Read and parse MBR
-                using var stream = await mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
-                var mbrBytes = new byte[sectorSize];
-                await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
+            // Test GetPartitionAsync for invalid partition number 0
+            var partition0 = await mbr.GetPartitionAsync(0, CancellationToken.None);
+            Assert.IsNull(partition0, "Partition 0 should not exist (invalid number).");
 
-                var mbr = new Duplicati.Proprietary.DiskImage.Partition.MBR(null);
-                await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
-
-                // Test GetPartitionAsync for partition 1 (should exist)
-                var partition1 = await mbr.GetPartitionAsync(1, CancellationToken.None);
-                Assert.IsNotNull(partition1, "Partition 1 should exist.");
-                Assert.AreEqual(1, partition1!.PartitionNumber, "Partition number should be 1.");
-
-                // Test GetPartitionAsync for partition 2 (should not exist)
-                var partition2 = await mbr.GetPartitionAsync(2, CancellationToken.None);
-                Assert.IsNull(partition2, "Partition 2 should not exist.");
-
-                // Test GetPartitionAsync for invalid partition number 0
-                var partition0 = await mbr.GetPartitionAsync(0, CancellationToken.None);
-                Assert.IsNull(partition0, "Partition 0 should not exist (invalid number).");
-
-                mbr.Dispose();
-            }
-            finally
-            {
-                mbrRawDisk?.Dispose();
-                if (!string.IsNullOrEmpty(mbrDiskIdentifier))
-                    _diskHelper.Unmount(mbrDiskIdentifier);
-                if (File.Exists(mbrDiskPath))
-                    File.Delete(mbrDiskPath);
-            }
+            mbr.Dispose();
         }
 
         [Test]
         public async Task Test_GPT_PartitionAlignment_IsSectorAligned()
         {
-            // Use the GPT disk created in SetUp to verify partition alignment
-            var sectorSize = _rawDisk.SectorSize;
+            var sectorSize = s_gptRawDisk!.SectorSize;
 
-            // Read disk bytes
-            var sectorsToRead = 34;
-            using var stream = await _rawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
-            var diskBytes = new byte[sectorSize * sectorsToRead];
+            using var stream = await s_gptRawDisk.ReadSectorsAsync(0, 34, CancellationToken.None);
+            var diskBytes = new byte[sectorSize * 34];
             await stream.ReadAtLeastAsync(diskBytes, diskBytes.Length, cancellationToken: CancellationToken.None);
 
-            // Parse GPT
-            var gpt = new Duplicati.Proprietary.DiskImage.Partition.GPT(null);
+            var gpt = new GPT(null);
             await gpt.ParseAsync(diskBytes, sectorSize, CancellationToken.None);
 
             // Verify all partitions are sector-aligned
@@ -1114,66 +1057,27 @@ namespace Duplicati.UnitTest.DiskImage
         [Test]
         public async Task Test_MBR_PartitionAlignment_IsSectorAligned()
         {
-            // Create a separate MBR disk for this test
-            var extension = OperatingSystem.IsWindows() ? "vhdx"
-                : OperatingSystem.IsLinux() ? "img"
-                : "dmg";
-            var mbrDiskPath = Path.Combine(DATAFOLDER, $"duplicati_mbr_align_test_{Guid.NewGuid()}.{extension}");
-            string mbrDiskIdentifier = "";
-            Duplicati.Proprietary.DiskImage.Disk.IRawDisk? mbrRawDisk = null;
+            var sectorSize = s_mbrRawDisk!.SectorSize;
 
-            try
+            using var stream = await s_mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
+            var mbrBytes = new byte[sectorSize];
+            await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
+
+            var mbr = new MBR(null);
+            await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
+
+            // Verify all partitions are sector-aligned
+            await foreach (var partition in mbr.EnumeratePartitions(CancellationToken.None))
             {
-                // Create a 50 MiB MBR disk
-                mbrDiskIdentifier = _diskHelper.CreateDisk(mbrDiskPath, 50 * MiB);
-                _diskHelper.InitializeDisk(mbrDiskIdentifier, PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
-                _diskHelper.Unmount(mbrDiskIdentifier);
-
-                // Create raw disk interface
-                if (OperatingSystem.IsWindows())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Windows(mbrDiskIdentifier);
-                else if (OperatingSystem.IsLinux())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Linux(mbrDiskIdentifier);
-                else if (OperatingSystem.IsMacOS())
-                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Mac(mbrDiskIdentifier);
-
-                Assert.NotNull(mbrRawDisk, "Raw disk interface should not be null.");
-
-                if (!await mbrRawDisk!.InitializeAsync(true, CancellationToken.None))
-                    throw new InvalidOperationException("Failed to initialize MBR raw disk");
-
-                var sectorSize = mbrRawDisk.SectorSize;
-
-                // Read and parse MBR
-                using var stream = await mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
-                var mbrBytes = new byte[sectorSize];
-                await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
-
-                var mbr = new Duplicati.Proprietary.DiskImage.Partition.MBR(null);
-                await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
-
-                // Verify all partitions are sector-aligned
-                await foreach (var partition in mbr.EnumeratePartitions(CancellationToken.None))
-                {
-                    Assert.AreEqual(0, partition.StartOffset % sectorSize,
-                        $"Partition {partition.PartitionNumber} StartOffset ({partition.StartOffset}) should be sector-aligned (sector size: {sectorSize}).");
-                    Assert.AreEqual(0, partition.Size % sectorSize,
-                        $"Partition {partition.PartitionNumber} Size ({partition.Size}) should be sector-aligned (sector size: {sectorSize}).");
-                }
-
-                mbr.Dispose();
+                Assert.AreEqual(0, partition.StartOffset % sectorSize,
+                    $"Partition {partition.PartitionNumber} StartOffset ({partition.StartOffset}) should be sector-aligned (sector size: {sectorSize}).");
+                Assert.AreEqual(0, partition.Size % sectorSize,
+                    $"Partition {partition.PartitionNumber} Size ({partition.Size}) should be sector-aligned (sector size: {sectorSize}).");
             }
-            finally
-            {
-                mbrRawDisk?.Dispose();
-                if (!string.IsNullOrEmpty(mbrDiskIdentifier))
-                    _diskHelper.Unmount(mbrDiskIdentifier);
-                if (File.Exists(mbrDiskPath))
-                    File.Delete(mbrDiskPath);
-            }
+
+            mbr.Dispose();
         }
 
         #endregion
-
     }
 }
