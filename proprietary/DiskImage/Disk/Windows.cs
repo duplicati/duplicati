@@ -274,51 +274,51 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             int length = destination.Length;
 
-            if (offset % SectorSize != 0)
-                throw new InvalidOperationException($"Address {offset:X016} is not a multiple of the sector size {SectorSize}");
-
-            if (length % SectorSize != 0)
-                throw new InvalidOperationException($"The requested length of {length} is not a multiple of sector size {SectorSize}");
-
             if (offset + length > Size)
                 throw new InvalidOperationException($"The requested read would read beyond disk size: {offset} + {length} > {Size}");
+
+            // Calculate aligned offset and length for unbuffered I/O (FILE_FLAG_NO_BUFFERING)
+            long alignedOffset = (offset / SectorSize) * SectorSize;
+            long offsetDelta = offset - alignedOffset;
+            long alignedLength = ((offsetDelta + length + SectorSize - 1) / SectorSize) * SectorSize;
 
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
                 // Ensure reusable buffer is large enough
-                EnsureAlignedBuffer(length);
+                EnsureAlignedBuffer((int)alignedLength);
 
-                // Move file pointer to the desired offset
-                var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
+                // Move file pointer to the aligned offset
+                var seeked = SetFilePointerEx(m_deviceHandle, alignedOffset, out _, SeekOrigin.Begin);
                 if (!seeked)
                 {
                     var error = Marshal.GetLastWin32Error();
                     var msg = new System.ComponentModel.Win32Exception(error).Message;
-                    throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
+                    throw new IOException($"Failed to seek to offset {alignedOffset}. Win32 Error Code: {error}. Message: {msg}");
                 }
 
-                bool result = ReadFile(m_deviceHandle, m_alignedBuffer!, (uint)length, out uint bytesRead, IntPtr.Zero);
+                bool result = ReadFile(m_deviceHandle, m_alignedBuffer!, (uint)alignedLength, out uint bytesRead, IntPtr.Zero);
 
-                if (!result || bytesRead != length)
+                if (!result || bytesRead < offsetDelta + length)
                 {
                     var error = Marshal.GetLastWin32Error();
                     var msg = new System.ComponentModel.Win32Exception(error).Message;
-                    throw new IOException($"Failed to read from disk. Win32 Error Code: {error}. Message: {msg}");
+                    throw new IOException($"Failed to read from disk at aligned offset {alignedOffset}. Win32 Error Code: {error}. Message: {msg}");
                 }
 
-                // Copy from native buffer to destination
+                // Copy only the requested portion from the aligned buffer
                 unsafe
                 {
                     var srcPtr = (byte*)m_alignedBuffer!.DangerousGetHandle().ToPointer();
                     var destSpan = destination.Span;
-                    for (int i = 0; i < bytesRead; i++)
+                    int bytesToCopy = Math.Min(length, (int)(bytesRead - offsetDelta));
+                    for (int i = 0; i < bytesToCopy; i++)
                     {
-                        destSpan[i] = srcPtr[i];
+                        destSpan[i] = srcPtr[offsetDelta + i];
                     }
                 }
 
-                return (int)bytesRead;
+                return Math.Min(length, (int)(bytesRead - offsetDelta));
             }
             finally
             {
@@ -357,56 +357,62 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             int dataLength = data.Length;
 
-            // Pad to sector size if necessary
-            int remainder = dataLength % (int)m_sectorSize;
-            int alignedLength = remainder == 0
-                ? dataLength
-                : dataLength + ((int)m_sectorSize - remainder);
+            if (offset + dataLength > Size)
+                throw new InvalidOperationException($"The requested write would write beyond disk size: {offset} + {dataLength} > {Size}");
+
+            // Calculate aligned offset and length for unbuffered I/O (FILE_FLAG_NO_BUFFERING)
+            long alignedOffset = (offset / SectorSize) * SectorSize;
+            long offsetDelta = offset - alignedOffset;
+            long alignedLength = ((offsetDelta + dataLength + SectorSize - 1) / SectorSize) * SectorSize;
 
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
                 // Ensure reusable buffer is large enough
-                EnsureAlignedBuffer(alignedLength);
+                EnsureAlignedBuffer((int)alignedLength);
 
-                // Move file pointer to the desired offset
-                var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
-                if (!seeked)
-                {
-                    var error = Marshal.GetLastWin32Error();
-                    var msg = new System.ComponentModel.Win32Exception(error).Message;
-                    throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
-                }
+                // Check if this is an unaligned write (needs read-modify-write)
+                bool isUnaligned = offsetDelta != 0 || dataLength != alignedLength;
 
-                if (remainder != 0)
+                if (isUnaligned)
                 {
-                    // Read existing data to fill the remainder
+                    // Move file pointer to the aligned offset
+                    var seeked = SetFilePointerEx(m_deviceHandle, alignedOffset, out _, SeekOrigin.Begin);
+                    if (!seeked)
+                    {
+                        var error = Marshal.GetLastWin32Error();
+                        var msg = new System.ComponentModel.Win32Exception(error).Message;
+                        throw new IOException($"Failed to seek to aligned offset {alignedOffset}. Win32 Error Code: {error}. Message: {msg}");
+                    }
+
+                    // Read existing data first (read-modify-write)
                     bool readResult = ReadFile(m_deviceHandle, m_alignedBuffer!, (uint)alignedLength, out uint bytesRead, IntPtr.Zero);
                     if (!readResult)
                     {
                         var error = Marshal.GetLastWin32Error();
                         var msg = new System.ComponentModel.Win32Exception(error).Message;
-                        throw new IOException($"Failed to read existing data for padding. Win32 Error Code: {error}. Message: {msg}");
-                    }
-                    // Seek back to the original offset after reading
-                    var seekedBack = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
-                    if (!seekedBack)
-                    {
-                        var error = Marshal.GetLastWin32Error();
-                        var msg = new System.ComponentModel.Win32Exception(error).Message;
-                        throw new IOException($"Failed to seek back to offset after reading. Win32 Error Code: {error}. Message: {msg}");
+                        throw new IOException($"Failed to read existing data for unaligned write at offset {alignedOffset}. Win32 Error Code: {error}. Message: {msg}");
                     }
                 }
 
-                // Copy data from managed buffer to native buffer
+                // Copy data from managed buffer to native buffer at the correct offset
                 unsafe
                 {
                     var destPtr = (byte*)m_alignedBuffer!.DangerousGetHandle().ToPointer();
                     var srcSpan = data.Span;
                     for (int i = 0; i < dataLength; i++)
                     {
-                        destPtr[i] = srcSpan[i];
+                        destPtr[offsetDelta + i] = srcSpan[i];
                     }
+                }
+
+                // Move file pointer to the aligned offset for writing
+                var seekedForWrite = SetFilePointerEx(m_deviceHandle, alignedOffset, out _, SeekOrigin.Begin);
+                if (!seekedForWrite)
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    var msg = new System.ComponentModel.Win32Exception(error).Message;
+                    throw new IOException($"Failed to seek to aligned offset {alignedOffset} for writing. Win32 Error Code: {error}. Message: {msg}");
                 }
 
                 bool result = WriteFile(m_deviceHandle, m_alignedBuffer!, (uint)alignedLength, out uint bytesWritten, IntPtr.Zero);
