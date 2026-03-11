@@ -289,10 +289,13 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         // Normalize path separators
         path = NormalizePath(path);
 
+        // On Windows, both / and \ are path separators. On other platforms, only / is.
+        var separators = OperatingSystem.IsWindows() ? new[] { '/', '\\' } : new[] { '/' };
+
         if (IsGeometryFile(path))
             return ("geometry", null, null);
 
-        var segments = path.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries) ??
+        var segments = path.Split(separators, StringSplitOptions.RemoveEmptyEntries) ??
             throw new InvalidOperationException($"Unable to parse path: {path}");
 
 
