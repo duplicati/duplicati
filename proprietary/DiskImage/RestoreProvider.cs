@@ -292,7 +292,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         if (IsGeometryFile(path))
             return ("geometry", null, null);
 
-        var segments = path.Split(System.IO.Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries) ??
+        var segments = path.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries) ??
             throw new InvalidOperationException($"Unable to parse path: {path}");
 
 
