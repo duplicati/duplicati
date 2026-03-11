@@ -211,7 +211,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_fileDescriptor < 0)
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                string errorMessage = GetErrnoMessage(errorCode);
+                string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
                 return false;
             }
@@ -270,7 +270,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 if (ioctl_no_arg(m_fileDescriptor, BLKFLSBUF) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
-                    string errorMessage = GetErrnoMessage(errorCode);
+                    string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
                     Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "dispose", null, $"Failed to flush data: {errorMessage} (errno: {errorCode})");
                 }
             }
@@ -365,7 +365,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                     if (bytesRead.ToInt64() < 0)
                     {
                         int errorCode = Marshal.GetLastWin32Error();
-                        string errorMessage = GetErrnoMessage(errorCode);
+                        string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
                         throw new IOException($"Failed to read {alignedLength} bytes from disk at offset {alignedOffset}: {errorMessage} (errno: {errorCode})");
                     }
 
@@ -445,7 +445,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                         if (bytesRead.ToInt64() < 0)
                         {
                             int errorCode = Marshal.GetLastWin32Error();
-                            string errorMessage = GetErrnoMessage(errorCode);
+                            string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
                             throw new IOException($"Failed to read existing data for unaligned write at offset {alignedOffset}: {errorMessage} (errno: {errorCode})");
                         }
                     }
@@ -462,7 +462,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 if (totalBytesWritten < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
-                    string errorMessage = GetErrnoMessage(errorCode);
+                    string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
                     throw new IOException($"Failed to write {dataLength} bytes to disk at offset {offset}: {errorMessage} (errno: {errorCode})");
                 }
 
@@ -500,32 +500,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         [LibraryImport("libc", SetLastError = true)]
         private static unsafe partial nint pwrite(int fd, void* buf, nint count, long offset);
 
-        [LibraryImport("libc", SetLastError = true)]
-        private static partial nint strerror(int errnum);
-
         #endregion
-
-        /// <summary>
-        /// Gets the error message corresponding to the specified errno value.
-        /// </summary>
-        /// <param name="errno">The error number.</param>
-        /// <returns>A string describing the error.</returns>
-        private static string GetErrnoMessage(int errno)
-        {
-            try
-            {
-                IntPtr msgPtr = strerror(errno);
-                var result = msgPtr != IntPtr.Zero
-                    ? Marshal.PtrToStringUTF8(msgPtr) ?? $"Unknown error (errno: {errno})"
-                    : $"Unknown error (errno: {errno})";
-
-                return result;
-            }
-            catch
-            {
-                return $"Unknown error (errno: {errno})";
-            }
-        }
 
         unsafe
         private void EnsureAllignedBuffer(int requiredSize)
