@@ -180,18 +180,14 @@ namespace Duplicati.UnitTest.DiskImage
             s_mbrRawDisk?.Dispose();
             s_writableRawDisk?.Dispose();
 
-            // Unmount and cleanup class-level disks
+            // Cleanup class-level disks - this properly detaches and deletes the disk images
+            // Using CleanupDisk ensures the disk is properly detached before the file is deleted
             if (s_diskHelper != null)
             {
-                DiskImageTestHelpers.SafeUnmount(s_diskHelper, s_gptDiskIdentifier);
-                DiskImageTestHelpers.SafeUnmount(s_diskHelper, s_mbrDiskIdentifier);
-                DiskImageTestHelpers.SafeUnmount(s_diskHelper, s_writableDiskIdentifier);
+                s_diskHelper.CleanupDisk(s_gptDiskPath, s_gptDiskIdentifier);
+                s_diskHelper.CleanupDisk(s_mbrDiskPath, s_mbrDiskIdentifier);
+                s_diskHelper.CleanupDisk(s_writableDiskPath, s_writableDiskIdentifier);
             }
-
-            // Delete disk image files
-            DiskImageTestHelpers.SafeDeleteFile(s_gptDiskPath);
-            DiskImageTestHelpers.SafeDeleteFile(s_mbrDiskPath);
-            DiskImageTestHelpers.SafeDeleteFile(s_writableDiskPath);
 
             s_diskHelper?.Dispose();
         }
