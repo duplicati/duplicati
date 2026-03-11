@@ -34,7 +34,7 @@ using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 #nullable enable
 
-namespace Duplicati.UnitTest
+namespace Duplicati.UnitTest.DiskImage
 {
     /// <summary>
     /// Unit tests for the DiskImage backup and restore functionality.
