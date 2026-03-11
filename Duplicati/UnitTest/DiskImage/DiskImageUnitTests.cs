@@ -765,5 +765,415 @@ namespace Duplicati.UnitTest.DiskImage
 
         #endregion
 
+        #region GPT and MBR partition table parsing tests
+
+        [Test]
+        public async Task Test_GPT_ParseFromRealDisk_ReturnsCorrectPartitions()
+        {
+            // The SetUp creates a GPT disk with a single FAT32 partition
+            // Read raw bytes and parse with GPT.ParseAsync()
+            var sectorSize = _rawDisk.SectorSize;
+
+            // Read enough sectors to include protective MBR, GPT header, and partition entries
+            // GPT typically stores partition entries in sectors 2-33 (128 entries * 128 bytes each = 16384 bytes = 32 sectors at 512b)
+            var sectorsToRead = 34;
+            using var stream = await _rawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
+            var diskBytes = new byte[sectorSize * sectorsToRead];
+            await stream.ReadAtLeastAsync(diskBytes, diskBytes.Length, cancellationToken: CancellationToken.None);
+
+            // Parse the GPT from bytes
+            var gpt = new Duplicati.Proprietary.DiskImage.Partition.GPT(null);
+            var parsed = await gpt.ParseAsync(diskBytes, sectorSize, CancellationToken.None);
+
+            Assert.IsTrue(parsed, "GPT should parse successfully from real disk bytes.");
+
+            // Verify partition count - we created 1 partition
+            var partitions = new List<Duplicati.Proprietary.DiskImage.Partition.IPartition>();
+            await foreach (var partition in gpt.EnumeratePartitions(CancellationToken.None))
+                partitions.Add(partition);
+
+            Assert.AreEqual(1, partitions.Count, "Should have 1 partition.");
+
+            // Verify partition properties
+            var firstPartition = partitions[0];
+            Assert.IsNotNull(firstPartition, "First partition should exist.");
+            Assert.AreEqual(1, firstPartition.PartitionNumber, "Partition number should be 1.");
+            Assert.Greater(firstPartition.StartOffset, 0, "StartOffset should be greater than 0.");
+            Assert.Greater(firstPartition.Size, 0, "Size should be greater than 0.");
+
+            // Verify sector alignment
+            Assert.AreEqual(0, firstPartition.StartOffset % sectorSize,
+                "StartOffset should be sector-aligned.");
+            Assert.AreEqual(0, firstPartition.Size % sectorSize,
+                "Size should be sector-aligned.");
+
+            gpt.Dispose();
+        }
+
+        [Test]
+        public async Task Test_MBR_ParseFromRealDisk_ReturnsCorrectPartitions()
+        {
+            // Create a separate MBR disk for this test
+            var extension = OperatingSystem.IsWindows() ? "vhdx"
+                : OperatingSystem.IsLinux() ? "img"
+                : "dmg";
+            var mbrDiskPath = Path.Combine(DATAFOLDER, $"duplicati_mbr_test_{Guid.NewGuid()}.{extension}");
+            string mbrDiskIdentifier = "";
+            Duplicati.Proprietary.DiskImage.Disk.IRawDisk? mbrRawDisk = null;
+
+            try
+            {
+                // Create a 50 MiB MBR disk
+                mbrDiskIdentifier = _diskHelper.CreateDisk(mbrDiskPath, 50 * MiB);
+
+                // Initialize with MBR and a single FAT32 partition
+                _diskHelper.InitializeDisk(mbrDiskIdentifier, PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
+                _diskHelper.Unmount(mbrDiskIdentifier);
+
+                // Create raw disk interface for MBR disk
+                if (OperatingSystem.IsWindows())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Windows(mbrDiskIdentifier);
+                else if (OperatingSystem.IsLinux())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Linux(mbrDiskIdentifier);
+                else if (OperatingSystem.IsMacOS())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Mac(mbrDiskIdentifier);
+
+                Assert.NotNull(mbrRawDisk, "Raw disk interface should not be null.");
+
+                if (!await mbrRawDisk!.InitializeAsync(true, CancellationToken.None))
+                    throw new InvalidOperationException($"Failed to initialize MBR raw disk: {mbrDiskIdentifier}");
+
+                var sectorSize = mbrRawDisk.SectorSize;
+
+                // Read the MBR sector (first 512 bytes)
+                using var stream = await mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
+                var mbrBytes = new byte[sectorSize];
+                await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
+
+                // Parse the MBR from bytes
+                var mbr = new Duplicati.Proprietary.DiskImage.Partition.MBR(null);
+                var parsed = await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
+
+                Assert.IsTrue(parsed, "MBR should parse successfully from real disk bytes.");
+
+                // Verify partition entries - we created 1 partition
+                Assert.AreEqual(1, mbr.NumPartitionEntries, "Should have 1 partition entry.");
+
+                // Verify via EnumeratePartitions
+                var partitions = new List<Duplicati.Proprietary.DiskImage.Partition.IPartition>();
+                await foreach (var partition in mbr.EnumeratePartitions(CancellationToken.None))
+                    partitions.Add(partition);
+
+                Assert.AreEqual(1, partitions.Count, "Should enumerate 1 partition.");
+
+                // Verify partition properties
+                var firstPartition = partitions[0];
+                Assert.IsNotNull(firstPartition, "First partition should exist.");
+                Assert.AreEqual(1, firstPartition.PartitionNumber, "Partition number should be 1.");
+                Assert.Greater(firstPartition.StartOffset, 0, "StartOffset should be greater than 0.");
+                Assert.Greater(firstPartition.Size, 0, "Size should be greater than 0.");
+
+                // Verify sector alignment
+                Assert.AreEqual(0, firstPartition.StartOffset % sectorSize,
+                    "StartOffset should be sector-aligned.");
+                Assert.AreEqual(0, firstPartition.Size % sectorSize,
+                    "Size should be sector-aligned.");
+
+                mbr.Dispose();
+            }
+            finally
+            {
+                mbrRawDisk?.Dispose();
+                if (!string.IsNullOrEmpty(mbrDiskIdentifier))
+                    _diskHelper.Unmount(mbrDiskIdentifier);
+                if (File.Exists(mbrDiskPath))
+                    File.Delete(mbrDiskPath);
+            }
+        }
+
+        [Test]
+        public async Task Test_GPT_EnumeratePartitions_ReturnsCorrectCount()
+        {
+            // Use the GPT disk created in SetUp
+            var sectorSize = _rawDisk.SectorSize;
+
+            // Read disk bytes
+            var sectorsToRead = 34;
+            using var stream = await _rawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
+            var diskBytes = new byte[sectorSize * sectorsToRead];
+            await stream.ReadAtLeastAsync(diskBytes, diskBytes.Length, cancellationToken: CancellationToken.None);
+
+            // Parse GPT
+            var gpt = new Duplicati.Proprietary.DiskImage.Partition.GPT(null);
+            await gpt.ParseAsync(diskBytes, sectorSize, CancellationToken.None);
+
+            // Test EnumeratePartitions
+            var count = 0;
+            await foreach (var partition in gpt.EnumeratePartitions(CancellationToken.None))
+            {
+                count++;
+                Assert.IsNotNull(partition, "Partition should not be null.");
+                Assert.Greater(partition.PartitionNumber, 0, "Partition number should be positive.");
+            }
+
+            Assert.AreEqual(1, count, "Should enumerate exactly 1 partition.");
+
+            gpt.Dispose();
+        }
+
+        [Test]
+        public async Task Test_MBR_EnumeratePartitions_ReturnsCorrectCount()
+        {
+            // Create a separate MBR disk for this test
+            var extension = OperatingSystem.IsWindows() ? "vhdx"
+                : OperatingSystem.IsLinux() ? "img"
+                : "dmg";
+            var mbrDiskPath = Path.Combine(DATAFOLDER, $"duplicati_mbr_enum_test_{Guid.NewGuid()}.{extension}");
+            string mbrDiskIdentifier = "";
+            Duplicati.Proprietary.DiskImage.Disk.IRawDisk? mbrRawDisk = null;
+
+            try
+            {
+                // Create a 50 MiB MBR disk
+                mbrDiskIdentifier = _diskHelper.CreateDisk(mbrDiskPath, 50 * MiB);
+                _diskHelper.InitializeDisk(mbrDiskIdentifier, PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
+                _diskHelper.Unmount(mbrDiskIdentifier);
+
+                // Create raw disk interface
+                if (OperatingSystem.IsWindows())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Windows(mbrDiskIdentifier);
+                else if (OperatingSystem.IsLinux())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Linux(mbrDiskIdentifier);
+                else if (OperatingSystem.IsMacOS())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Mac(mbrDiskIdentifier);
+
+                Assert.NotNull(mbrRawDisk, "Raw disk interface should not be null.");
+
+                if (!await mbrRawDisk!.InitializeAsync(true, CancellationToken.None))
+                    throw new InvalidOperationException("Failed to initialize MBR raw disk");
+
+                var sectorSize = mbrRawDisk.SectorSize;
+
+                // Read and parse MBR
+                using var stream = await mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
+                var mbrBytes = new byte[sectorSize];
+                await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
+
+                var mbr = new Duplicati.Proprietary.DiskImage.Partition.MBR(null);
+                await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
+
+                // Test EnumeratePartitions
+                var count = 0;
+                await foreach (var partition in mbr.EnumeratePartitions(CancellationToken.None))
+                {
+                    count++;
+                    Assert.IsNotNull(partition, "Partition should not be null.");
+                    Assert.Greater(partition.PartitionNumber, 0, "Partition number should be positive.");
+                }
+
+                Assert.AreEqual(1, count, "Should enumerate exactly 1 partition.");
+
+                mbr.Dispose();
+            }
+            finally
+            {
+                mbrRawDisk?.Dispose();
+                if (!string.IsNullOrEmpty(mbrDiskIdentifier))
+                    _diskHelper.Unmount(mbrDiskIdentifier);
+                if (File.Exists(mbrDiskPath))
+                    File.Delete(mbrDiskPath);
+            }
+        }
+
+        [Test]
+        public async Task Test_GPT_GetPartitionAsync_ReturnsCorrectPartition()
+        {
+            // Use the GPT disk created in SetUp
+            var sectorSize = _rawDisk.SectorSize;
+
+            // Read disk bytes
+            var sectorsToRead = 34;
+            using var stream = await _rawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
+            var diskBytes = new byte[sectorSize * sectorsToRead];
+            await stream.ReadAtLeastAsync(diskBytes, diskBytes.Length, cancellationToken: CancellationToken.None);
+
+            // Parse GPT
+            var gpt = new Duplicati.Proprietary.DiskImage.Partition.GPT(null);
+            await gpt.ParseAsync(diskBytes, sectorSize, CancellationToken.None);
+
+            // Test GetPartitionAsync for partition 1 (should exist)
+            var partition1 = await gpt.GetPartitionAsync(1, CancellationToken.None);
+            Assert.IsNotNull(partition1, "Partition 1 should exist.");
+            Assert.AreEqual(1, partition1!.PartitionNumber, "Partition number should be 1.");
+
+            // Test GetPartitionAsync for partition 2 (should not exist - we only created 1)
+            var partition2 = await gpt.GetPartitionAsync(2, CancellationToken.None);
+            Assert.IsNull(partition2, "Partition 2 should not exist.");
+
+            // Test GetPartitionAsync for invalid partition number 0
+            var partition0 = await gpt.GetPartitionAsync(0, CancellationToken.None);
+            Assert.IsNull(partition0, "Partition 0 should not exist (invalid number).");
+
+            gpt.Dispose();
+        }
+
+        [Test]
+        public async Task Test_MBR_GetPartitionAsync_ReturnsCorrectPartition()
+        {
+            // Create a separate MBR disk for this test
+            var extension = OperatingSystem.IsWindows() ? "vhdx"
+                : OperatingSystem.IsLinux() ? "img"
+                : "dmg";
+            var mbrDiskPath = Path.Combine(DATAFOLDER, $"duplicati_mbr_get_test_{Guid.NewGuid()}.{extension}");
+            string mbrDiskIdentifier = "";
+            Duplicati.Proprietary.DiskImage.Disk.IRawDisk? mbrRawDisk = null;
+
+            try
+            {
+                // Create a 50 MiB MBR disk
+                mbrDiskIdentifier = _diskHelper.CreateDisk(mbrDiskPath, 50 * MiB);
+                _diskHelper.InitializeDisk(mbrDiskIdentifier, PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
+                _diskHelper.Unmount(mbrDiskIdentifier);
+
+                // Create raw disk interface
+                if (OperatingSystem.IsWindows())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Windows(mbrDiskIdentifier);
+                else if (OperatingSystem.IsLinux())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Linux(mbrDiskIdentifier);
+                else if (OperatingSystem.IsMacOS())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Mac(mbrDiskIdentifier);
+
+                Assert.NotNull(mbrRawDisk, "Raw disk interface should not be null.");
+
+                if (!await mbrRawDisk!.InitializeAsync(true, CancellationToken.None))
+                    throw new InvalidOperationException("Failed to initialize MBR raw disk");
+
+                var sectorSize = mbrRawDisk.SectorSize;
+
+                // Read and parse MBR
+                using var stream = await mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
+                var mbrBytes = new byte[sectorSize];
+                await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
+
+                var mbr = new Duplicati.Proprietary.DiskImage.Partition.MBR(null);
+                await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
+
+                // Test GetPartitionAsync for partition 1 (should exist)
+                var partition1 = await mbr.GetPartitionAsync(1, CancellationToken.None);
+                Assert.IsNotNull(partition1, "Partition 1 should exist.");
+                Assert.AreEqual(1, partition1!.PartitionNumber, "Partition number should be 1.");
+
+                // Test GetPartitionAsync for partition 2 (should not exist)
+                var partition2 = await mbr.GetPartitionAsync(2, CancellationToken.None);
+                Assert.IsNull(partition2, "Partition 2 should not exist.");
+
+                // Test GetPartitionAsync for invalid partition number 0
+                var partition0 = await mbr.GetPartitionAsync(0, CancellationToken.None);
+                Assert.IsNull(partition0, "Partition 0 should not exist (invalid number).");
+
+                mbr.Dispose();
+            }
+            finally
+            {
+                mbrRawDisk?.Dispose();
+                if (!string.IsNullOrEmpty(mbrDiskIdentifier))
+                    _diskHelper.Unmount(mbrDiskIdentifier);
+                if (File.Exists(mbrDiskPath))
+                    File.Delete(mbrDiskPath);
+            }
+        }
+
+        [Test]
+        public async Task Test_GPT_PartitionAlignment_IsSectorAligned()
+        {
+            // Use the GPT disk created in SetUp to verify partition alignment
+            var sectorSize = _rawDisk.SectorSize;
+
+            // Read disk bytes
+            var sectorsToRead = 34;
+            using var stream = await _rawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
+            var diskBytes = new byte[sectorSize * sectorsToRead];
+            await stream.ReadAtLeastAsync(diskBytes, diskBytes.Length, cancellationToken: CancellationToken.None);
+
+            // Parse GPT
+            var gpt = new Duplicati.Proprietary.DiskImage.Partition.GPT(null);
+            await gpt.ParseAsync(diskBytes, sectorSize, CancellationToken.None);
+
+            // Verify all partitions are sector-aligned
+            await foreach (var partition in gpt.EnumeratePartitions(CancellationToken.None))
+            {
+                Assert.AreEqual(0, partition.StartOffset % sectorSize,
+                    $"Partition {partition.PartitionNumber} StartOffset ({partition.StartOffset}) should be sector-aligned (sector size: {sectorSize}).");
+                Assert.AreEqual(0, partition.Size % sectorSize,
+                    $"Partition {partition.PartitionNumber} Size ({partition.Size}) should be sector-aligned (sector size: {sectorSize}).");
+            }
+
+            gpt.Dispose();
+        }
+
+        [Test]
+        public async Task Test_MBR_PartitionAlignment_IsSectorAligned()
+        {
+            // Create a separate MBR disk for this test
+            var extension = OperatingSystem.IsWindows() ? "vhdx"
+                : OperatingSystem.IsLinux() ? "img"
+                : "dmg";
+            var mbrDiskPath = Path.Combine(DATAFOLDER, $"duplicati_mbr_align_test_{Guid.NewGuid()}.{extension}");
+            string mbrDiskIdentifier = "";
+            Duplicati.Proprietary.DiskImage.Disk.IRawDisk? mbrRawDisk = null;
+
+            try
+            {
+                // Create a 50 MiB MBR disk
+                mbrDiskIdentifier = _diskHelper.CreateDisk(mbrDiskPath, 50 * MiB);
+                _diskHelper.InitializeDisk(mbrDiskIdentifier, PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
+                _diskHelper.Unmount(mbrDiskIdentifier);
+
+                // Create raw disk interface
+                if (OperatingSystem.IsWindows())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Windows(mbrDiskIdentifier);
+                else if (OperatingSystem.IsLinux())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Linux(mbrDiskIdentifier);
+                else if (OperatingSystem.IsMacOS())
+                    mbrRawDisk = new Duplicati.Proprietary.DiskImage.Disk.Mac(mbrDiskIdentifier);
+
+                Assert.NotNull(mbrRawDisk, "Raw disk interface should not be null.");
+
+                if (!await mbrRawDisk!.InitializeAsync(true, CancellationToken.None))
+                    throw new InvalidOperationException("Failed to initialize MBR raw disk");
+
+                var sectorSize = mbrRawDisk.SectorSize;
+
+                // Read and parse MBR
+                using var stream = await mbrRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
+                var mbrBytes = new byte[sectorSize];
+                await stream.ReadAtLeastAsync(mbrBytes, mbrBytes.Length, cancellationToken: CancellationToken.None);
+
+                var mbr = new Duplicati.Proprietary.DiskImage.Partition.MBR(null);
+                await mbr.ParseAsync(mbrBytes, sectorSize, CancellationToken.None);
+
+                // Verify all partitions are sector-aligned
+                await foreach (var partition in mbr.EnumeratePartitions(CancellationToken.None))
+                {
+                    Assert.AreEqual(0, partition.StartOffset % sectorSize,
+                        $"Partition {partition.PartitionNumber} StartOffset ({partition.StartOffset}) should be sector-aligned (sector size: {sectorSize}).");
+                    Assert.AreEqual(0, partition.Size % sectorSize,
+                        $"Partition {partition.PartitionNumber} Size ({partition.Size}) should be sector-aligned (sector size: {sectorSize}).");
+                }
+
+                mbr.Dispose();
+            }
+            finally
+            {
+                mbrRawDisk?.Dispose();
+                if (!string.IsNullOrEmpty(mbrDiskIdentifier))
+                    _diskHelper.Unmount(mbrDiskIdentifier);
+                if (File.Exists(mbrDiskPath))
+                    File.Delete(mbrDiskPath);
+            }
+        }
+
+        #endregion
+
     }
 }
