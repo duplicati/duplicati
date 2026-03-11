@@ -135,7 +135,7 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.APFS, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -143,11 +143,11 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.HFSPlus, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_ExFAT() =>
             FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.ExFAT, 0)]);
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_Ext2()
         {
             if (!OperatingSystem.IsLinux())
@@ -155,7 +155,7 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext2, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_Ext3()
         {
             if (!OperatingSystem.IsLinux())
@@ -171,7 +171,7 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext4, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_XFS()
         {
             if (!OperatingSystem.IsLinux())
@@ -179,7 +179,7 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(310 * MiB), PartitionTableType.GPT, [(FileSystemType.XFS, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_Btrfs()
         {
             if (!OperatingSystem.IsLinux())
@@ -197,8 +197,7 @@ namespace Duplicati.UnitTest.DiskImage
         public Task Test_MBR_FAT32() =>
             FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
 
-
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -206,11 +205,11 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.HFSPlus, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_ExFAT() =>
             FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.ExFAT, 0)]);
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_NTFS()
         {
             if (!OperatingSystem.IsWindows())
@@ -218,7 +217,7 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.NTFS, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_Ext2()
         {
             if (!OperatingSystem.IsLinux())
@@ -226,7 +225,7 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext2, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_Ext3()
         {
             if (!OperatingSystem.IsLinux())
@@ -234,7 +233,7 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext3, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_Ext4()
         {
             if (!OperatingSystem.IsLinux())
@@ -242,7 +241,7 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext4, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_XFS()
         {
             if (!OperatingSystem.IsLinux())
@@ -250,7 +249,7 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(310 * MiB), PartitionTableType.MBR, [(FileSystemType.XFS, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_Btrfs()
         {
             if (!OperatingSystem.IsLinux())
@@ -288,7 +287,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_HFSPlus_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -299,7 +298,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_APFS_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -310,7 +309,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_FAT32_APFS()
         {
             if (!OperatingSystem.IsMacOS())
@@ -321,7 +320,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_ExFAT_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -332,14 +331,14 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_FAT32_ExFAT() =>
             FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
                 (FileSystemType.FAT32, 50 * MiB),
                 (FileSystemType.ExFAT, 0)
             ]);
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_NTFS_FAT32()
         {
             if (!OperatingSystem.IsWindows())
@@ -347,6 +346,17 @@ namespace Duplicati.UnitTest.DiskImage
             return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
                 (FileSystemType.NTFS, 50 * MiB),
                 (FileSystemType.FAT32, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_NTFS_NTFS()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("This test is only supported on Windows.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.NTFS, 0)
             ]);
         }
 
@@ -361,7 +371,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_Ext4_FAT32()
         {
             if (!OperatingSystem.IsLinux())
@@ -372,7 +382,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_Ext4_XFS()
         {
             if (!OperatingSystem.IsLinux())
@@ -383,7 +393,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_XFS_FAT32()
         {
             if (!OperatingSystem.IsLinux())
@@ -394,7 +404,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_Btrfs_FAT32()
         {
             if (!OperatingSystem.IsLinux())
@@ -409,7 +419,7 @@ namespace Duplicati.UnitTest.DiskImage
 
         #region MBR Two Partitions
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_FAT32_FAT32() =>
             FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
                 (FileSystemType.FAT32, 50 * MiB),
@@ -418,7 +428,7 @@ namespace Duplicati.UnitTest.DiskImage
 
         // APFS is only supported on GPT partition tables.
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_HFSPlus_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -430,7 +440,7 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_FAT32_ExFAT()
         {
             return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
@@ -439,7 +449,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_FAT32_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -450,7 +460,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_NTFS_FAT32()
         {
             if (!OperatingSystem.IsWindows())
@@ -461,7 +471,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_Ext4_Ext4()
         {
             if (!OperatingSystem.IsLinux())
@@ -472,7 +482,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_FAT32_Ext4()
         {
             if (!OperatingSystem.IsLinux())
@@ -483,7 +493,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_XFS_Ext4()
         {
             if (!OperatingSystem.IsLinux())
@@ -494,7 +504,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_Btrfs_Ext4()
         {
             if (!OperatingSystem.IsLinux())
@@ -505,7 +515,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_XFS_Btrfs()
         {
             if (!OperatingSystem.IsLinux())
@@ -543,6 +553,18 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         [Test, Category("DiskImage")]
+        public Task Test_GPT_NTFS_NTFS_NTFS()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("NTFS is only supported on Windows.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.NTFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_HFSPlus_HFSPlus_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -554,8 +576,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        // TODO follow naming scheme.
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_APFS_HFSPlus_APFS()
         {
             if (!OperatingSystem.IsMacOS())
@@ -567,7 +588,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_FAT32_APFS_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -579,7 +600,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_ExFAT_APFS_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -603,7 +624,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_FAT32_Ext4_XFS()
         {
             if (!OperatingSystem.IsLinux())
@@ -615,7 +636,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_Ext4_XFS_Btrfs()
         {
             if (!OperatingSystem.IsLinux())
@@ -627,7 +648,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_XFS_Ext4_Ext4()
         {
             if (!OperatingSystem.IsLinux())
@@ -639,7 +660,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_Btrfs_Ext4_FAT32()
         {
             if (!OperatingSystem.IsLinux())
@@ -657,7 +678,7 @@ namespace Duplicati.UnitTest.DiskImage
 
         // APFS is only supported on GPT partition tables.
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_FAT32_FAT32_FAT32()
         {
             return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
@@ -667,7 +688,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_HFSPlus_HFSPlus_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -679,7 +700,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_FAT32_ExFAT_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -691,7 +712,8 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        // GPT NTFS for Windows - local-only (tested via single partition)
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_NTFS_FAT32_ExFAT()
         {
             if (!OperatingSystem.IsWindows())
@@ -703,7 +725,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_Ext4_Ext4_Ext4()
         {
             if (!OperatingSystem.IsLinux())
@@ -715,7 +737,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_FAT32_Ext4_XFS()
         {
             if (!OperatingSystem.IsLinux())
@@ -727,7 +749,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_Ext4_XFS_Btrfs()
         {
             if (!OperatingSystem.IsLinux())
@@ -739,7 +761,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_XFS_Btrfs_Ext4()
         {
             if (!OperatingSystem.IsLinux())
@@ -751,7 +773,7 @@ namespace Duplicati.UnitTest.DiskImage
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_Btrfs_Ext4_XFS()
         {
             if (!OperatingSystem.IsLinux())
