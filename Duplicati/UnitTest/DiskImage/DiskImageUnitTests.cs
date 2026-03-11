@@ -628,5 +628,142 @@ namespace Duplicati.UnitTest.DiskImage
 
         #endregion
 
+        #region PartitionTableFactory detection tests
+
+        [Test]
+        public async Task Test_PartitionTableFactory_GPTBytes_DetectsGPT()
+        {
+            // Create raw bytes representing a GPT disk
+            var sectorSize = 512;
+            var diskBytes = new byte[sectorSize * 4]; // 4 sectors: MBR + GPT header + 2 for partition entries
+
+            // MBR (sector 0) - Protective MBR with GPT signature
+            // Boot signature at offset 510-511: 0x55, 0xAA (little-endian 0xAA55)
+            diskBytes[510] = 0x55;
+            diskBytes[511] = 0xAA;
+
+            // Partition type at offset 450: 0xEE (GPT protective)
+            diskBytes[450] = 0xEE;
+
+            // GPT header (sector 1) - "EFI PART" signature
+            // Signature: "EFI PART" in little-endian = 0x5452415020494645
+            var gptSignature = "EFI PART"u8.ToArray(); // "EFI PART"
+            Buffer.BlockCopy(gptSignature, 0, diskBytes, sectorSize, 8);
+
+            // Create partition table from bytes
+            var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
+
+            Assert.IsNotNull(partitionTable, "Partition table should be detected.");
+            Assert.AreEqual(PartitionTableType.GPT, partitionTable!.TableType, "Should detect GPT partition table.");
+        }
+
+        [Test]
+        public async Task Test_PartitionTableFactory_MBRBytes_DetectsMBR()
+        {
+            // Create raw bytes representing an MBR disk
+            var sectorSize = 512;
+            var diskBytes = new byte[sectorSize];
+
+            // MBR boot signature at offset 510-511: 0x55, 0xAA
+            diskBytes[510] = 0x55;
+            diskBytes[511] = 0xAA;
+
+            // Partition type at offset 450: NOT 0xEE (use a normal type like 0x83 for Linux)
+            diskBytes[450] = 0x83;
+
+            // Create partition table from bytes
+            var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
+
+            Assert.IsNotNull(partitionTable, "Partition table should be detected.");
+            Assert.AreEqual(PartitionTableType.MBR, partitionTable!.TableType, "Should detect MBR partition table.");
+        }
+
+        [Test]
+        public async Task Test_PartitionTableFactory_InvalidBytes_ReturnsUnknown()
+        {
+            // Create raw bytes with invalid/zeroed data (no valid boot signature)
+            var sectorSize = 512;
+            var diskBytes = new byte[sectorSize];
+
+            // All zeros - no boot signature at offset 510-511
+
+            // Create partition table from bytes
+            var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
+
+            Assert.IsNotNull(partitionTable, "Partition table should be created even for unknown type.");
+            Assert.AreEqual(PartitionTableType.Unknown, partitionTable!.TableType, "Should detect Unknown partition table for invalid bytes.");
+        }
+
+        [Test]
+        public async Task Test_PartitionTableFactory_ProtectiveMBRType_DetectsGPT()
+        {
+            // Test the protective MBR path - valid MBR boot signature with type 0xEE
+            var sectorSize = 512;
+            var diskBytes = new byte[sectorSize * 4];
+
+            // MBR with valid boot signature
+            diskBytes[510] = 0x55;
+            diskBytes[511] = 0xAA;
+
+            // Protective MBR type at offset 450: 0xEE
+            diskBytes[450] = 0xEE;
+
+            // GPT header at sector 1 with "EFI PART" signature
+            var gptSignature = "EFI PART"u8.ToArray(); // "EFI PART"
+            Buffer.BlockCopy(gptSignature, 0, diskBytes, sectorSize, 8);
+
+            // Create partition table from bytes
+            var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
+
+            Assert.IsNotNull(partitionTable, "Partition table should be detected.");
+            Assert.AreEqual(PartitionTableType.GPT, partitionTable!.TableType, "Should detect GPT when protective MBR type (0xEE) is present.");
+        }
+
+        [Test]
+        public async Task Test_PartitionTableFactory_ProtectiveMBRWithoutGptHeader_FallsBackToMBR()
+        {
+            // Test that if protective MBR type is present but no valid GPT header, it falls back to MBR
+            var sectorSize = 512;
+            var diskBytes = new byte[sectorSize * 2];
+
+            // MBR with valid boot signature
+            diskBytes[510] = 0x55;
+            diskBytes[511] = 0xAA;
+
+            // Protective MBR type at offset 450: 0xEE
+            diskBytes[450] = 0xEE;
+
+            // NO valid GPT header at sector 1 (leave as zeros)
+
+            // Create partition table from bytes
+            var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
+
+            Assert.IsNotNull(partitionTable, "Partition table should be detected.");
+            // When GPT header is invalid, it should fall back to parsing as MBR
+            Assert.AreEqual(PartitionTableType.MBR, partitionTable!.TableType, "Should fall back to MBR when GPT header is invalid.");
+        }
+
+        [Test]
+        public async Task Test_PartitionTableFactory_GPTFromRealDisk_DetectsGPT()
+        {
+            // Use the real disk created in SetUp (which is GPT) to test detection
+            var sectorSize = _rawDisk.SectorSize;
+
+            // GPT requires reading the protective MBR (sector 0), GPT header (sector 1),
+            // and partition entries (sectors 2-33). Read 34 sectors to be safe.
+            var sectorsToRead = 34;
+            using var stream = await _rawDisk.ReadSectorsAsync(0, sectorsToRead, CancellationToken.None);
+            var diskBytes = new byte[sectorSize * sectorsToRead];
+            await stream.ReadAtLeastAsync(diskBytes, diskBytes.Length, cancellationToken: CancellationToken.None);
+
+            // Create partition table from the real disk bytes
+            var partitionTable = await PartitionTableFactory.CreateAsync(diskBytes, sectorSize, CancellationToken.None);
+
+            Assert.IsNotNull(partitionTable, "Partition table should be detected from real disk.");
+            Assert.AreEqual(PartitionTableType.GPT, partitionTable!.TableType, "Should detect GPT from real disk bytes.");
+        }
+
+        #endregion
+
     }
 }
