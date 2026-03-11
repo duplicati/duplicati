@@ -1363,22 +1363,28 @@ namespace Duplicati.UnitTest.DiskImage
             var partitionOffset = 10 * sectorSize;
             var partitionSize = sectorSize;
 
+            // Read initial data at this offset (may not be zero due to previous tests)
+            using var initialReadStream = await _writableRawDisk.ReadBytesAsync(partitionOffset, 10, CancellationToken.None);
+            var initialBuffer = new byte[10];
+            var initialBytesRead = await initialReadStream.ReadAsync(initialBuffer.AsMemory(), CancellationToken.None);
+            Assert.AreEqual(10, initialBytesRead, "Should read 10 bytes.");
+
             // Create stream but write nothing
             using (var stream = new PartitionWriteStream(_writableRawDisk, partitionOffset, partitionSize))
                 // Don't write anything
                 Assert.AreEqual(0, stream.Length, "Length should be 0 when nothing is written.");
 
-            // Read back and verify no data was flushed (should be zeros)
+            // Read back and verify no data was flushed (should be unchanged)
             using var readStream = await _writableRawDisk.ReadBytesAsync(partitionOffset, 10, CancellationToken.None);
             var readBuffer = new byte[10];
             var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
 
             Assert.AreEqual(10, bytesRead, "Should read 10 bytes.");
 
-            // All bytes should be 0 (uninitialized disk)
+            // All bytes should be unchanged from before the stream was created
             for (int i = 0; i < readBuffer.Length; i++)
             {
-                Assert.AreEqual(0, readBuffer[i], $"Byte at position {i} should be 0 (no data written).");
+                Assert.AreEqual(initialBuffer[i], readBuffer[i], $"Byte at position {i} should be unchanged (no data written).");
             }
         }
 
