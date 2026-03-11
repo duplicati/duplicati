@@ -76,6 +76,7 @@ namespace Duplicati.UnitTest.DiskImage
         // Writable disk for tests that need to write (re-initialized before each test)
         private static string s_writableDiskPath = "";
         private static string s_writableDiskIdentifier = "";
+        private static IRawDisk? s_writableRawDisk;
 
         // Per-test instance members
         private IRawDisk _writableRawDisk = null!;
@@ -105,7 +106,7 @@ namespace Duplicati.UnitTest.DiskImage
             var extension = DiskImageTestHelpers.GetPlatformDiskImageExtension();
 
             // Create GPT disk with 2 FAT32 partitions
-            s_gptDiskPath = Path.Combine(DATAFOLDER, $"duplicati_gpt_class_test.{extension}");
+            s_gptDiskPath = Path.Combine(BASEFOLDER, $"duplicati_gpt_class_test.{extension}");
             s_gptDiskIdentifier = DiskImageTestHelpers.CreateDiskWithTwoFat32Partitions(
                 s_diskHelper, s_gptDiskPath, PartitionTableType.GPT, 50 * MiB);
 
@@ -130,7 +131,7 @@ namespace Duplicati.UnitTest.DiskImage
             s_diskHelper.FlushDisk(s_gptDiskIdentifier);
 
             // Create MBR disk with 2 FAT32 partitions
-            s_mbrDiskPath = Path.Combine(DATAFOLDER, $"duplicati_mbr_class_test.{extension}");
+            s_mbrDiskPath = Path.Combine(BASEFOLDER, $"duplicati_mbr_class_test.{extension}");
             s_mbrDiskIdentifier = DiskImageTestHelpers.CreateDiskWithTwoFat32Partitions(
                 s_diskHelper, s_mbrDiskPath, PartitionTableType.MBR, 50 * MiB);
 
@@ -155,7 +156,16 @@ namespace Duplicati.UnitTest.DiskImage
             s_diskHelper.FlushDisk(s_mbrDiskIdentifier);
 
             // Create writable disk path (will be created per-test)
-            s_writableDiskPath = Path.Combine(DATAFOLDER, $"duplicati_writable_class_test.{extension}");
+            s_writableDiskPath = Path.Combine(BASEFOLDER, $"duplicati_writable_class_test.{extension}");
+
+            // Create new writable disk (100 MiB, uninitialized)
+            s_writableDiskIdentifier = s_diskHelper.CreateDisk(s_writableDiskPath, 100 * MiB);
+            s_diskHelper.Unmount(s_writableDiskIdentifier);
+
+            // Create raw disk interface (with write access)
+            s_writableRawDisk = DiskImageTestHelpers.CreateRawDiskForIdentifier(s_writableDiskIdentifier);
+            if (!s_writableRawDisk.InitializeAsync(true, CancellationToken.None).Result)
+                throw new InvalidOperationException("Failed to initialize writable raw disk");
         }
 
         /// <summary>
@@ -168,6 +178,7 @@ namespace Duplicati.UnitTest.DiskImage
             // Dispose read-only raw disks
             s_gptRawDisk?.Dispose();
             s_mbrRawDisk?.Dispose();
+            s_writableRawDisk?.Dispose();
 
             // Unmount and cleanup class-level disks
             if (s_diskHelper != null)
@@ -191,48 +202,23 @@ namespace Duplicati.UnitTest.DiskImage
 
         /// <summary>
         /// Sets up the test environment before each test that needs a writable disk.
-        /// Creates a fresh writable disk for tests that write data.
         /// </summary>
         [SetUp]
-        public async Task SetUp()
+        public void SetUp()
         {
-            // Create a fresh writable disk for this test
-            if (s_diskHelper != null && !string.IsNullOrEmpty(s_writableDiskPath))
+            if (s_writableRawDisk != null)
             {
-                // Clean up any previous writable disk
-                if (!string.IsNullOrEmpty(s_writableDiskIdentifier))
-                {
-                    DiskImageTestHelpers.SafeUnmount(s_diskHelper, s_writableDiskIdentifier);
-                    s_writableDiskIdentifier = "";
-                }
-                DiskImageTestHelpers.SafeDeleteFile(s_writableDiskPath);
-
-                // Create new writable disk (100 MiB, uninitialized)
-                s_writableDiskIdentifier = s_diskHelper.CreateDisk(s_writableDiskPath, 100 * MiB);
-                s_diskHelper.Unmount(s_writableDiskIdentifier);
-
-                // Create raw disk interface (with write access)
-                _writableRawDisk = DiskImageTestHelpers.CreateRawDiskForIdentifier(s_writableDiskIdentifier);
-                if (!await _writableRawDisk.InitializeAsync(true, CancellationToken.None))
-                    throw new InvalidOperationException("Failed to initialize writable raw disk");
+                _writableRawDisk = s_writableRawDisk;
             }
         }
 
         /// <summary>
         /// Cleans up after each test.
-        /// Unmounts the writable disk so subsequent tests have a clean state.
         /// </summary>
         [TearDown]
         public void TearDown()
         {
-            // Dispose the writable raw disk
-            _writableRawDisk?.Dispose();
-
-            // Unmount writable disk to ensure clean state for next test
-            if (s_diskHelper != null && !string.IsNullOrEmpty(s_writableDiskIdentifier))
-            {
-                DiskImageTestHelpers.SafeUnmount(s_diskHelper, s_writableDiskIdentifier);
-            }
+            // No longer unmounting per-test to improve performance
         }
 
         #endregion
