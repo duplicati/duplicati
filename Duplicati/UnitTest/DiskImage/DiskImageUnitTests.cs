@@ -126,4 +126,81 @@ namespace Duplicati.UnitTest.DiskImage
             }
         }
 
+        #region IRawDisk Sector-Aligned Tests
+
+        [Test]
+        public async Task Test_RawDisk_ReadSector_ReturnsNonEmptyData()
+        {
+            var sectorSize = _rawDisk.SectorSize;
+            using var stream = await _rawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
+            var buffer = new byte[sectorSize];
+            var bytesRead = await stream.ReadAsync(buffer.AsMemory(), CancellationToken.None);
+            Assert.AreEqual(sectorSize, bytesRead, "Should have read 1 sector.");
+            bool hasData = buffer.Any(x => x != 0);
+            Assert.IsTrue(hasData, "Sector 0 should contain data.");
+        }
+
+        [Test]
+        public async Task Test_RawDisk_ReadBytes_ReturnsData()
+        {
+            var sectorSize = _rawDisk.SectorSize;
+            using var stream = await _rawDisk.ReadBytesAsync(sectorSize, sectorSize, CancellationToken.None);
+            Assert.AreEqual(sectorSize, stream.Length, "Should have read the correct amount of bytes.");
+        }
+
+        [Test]
+        public async Task Test_RawDisk_ReadBytesAsync_CallerProvidedBuffer()
+        {
+            var sectorSize = _rawDisk.SectorSize;
+            var buffer = new byte[sectorSize];
+            var bytesRead = await _rawDisk.ReadBytesAsync(0, buffer.AsMemory(), CancellationToken.None);
+            Assert.AreEqual(sectorSize, bytesRead, "Should have read the correct amount of bytes.");
+        }
+
+        [Test]
+        public async Task Test_RawDisk_WriteSectors_DataMatches()
+        {
+            var sectorSize = _rawDisk.SectorSize;
+            var writeBuffer = new byte[sectorSize];
+            new Random().NextBytes(writeBuffer);
+            await _rawDisk.WriteSectorsAsync(1, writeBuffer, CancellationToken.None);
+            using var readStream = await _rawDisk.ReadSectorsAsync(1, 1, CancellationToken.None);
+            var readBuffer = new byte[sectorSize];
+            var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
+            Assert.AreEqual(sectorSize, bytesRead, "Should have read the correct amount of bytes.");
+            Assert.AreEqual(writeBuffer, readBuffer, "Data should match.");
+        }
+
+        [Test]
+        public async Task Test_RawDisk_WriteBytes_DataMatches()
+        {
+            var sectorSize = _rawDisk.SectorSize;
+            var writeBuffer = new byte[sectorSize];
+            new Random().NextBytes(writeBuffer);
+            await _rawDisk.WriteBytesAsync(sectorSize, writeBuffer, CancellationToken.None);
+            using var readStream = await _rawDisk.ReadBytesAsync(sectorSize, sectorSize, CancellationToken.None);
+            var readBuffer = new byte[sectorSize];
+            var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
+            Assert.AreEqual(sectorSize, bytesRead, "Should have read the correct amount of bytes.");
+            Assert.AreEqual(writeBuffer, readBuffer, "Data should match.");
+        }
+
+        [Test]
+        public async Task Test_RawDisk_WriteBytes_Memory()
+        {
+            var sectorSize = _rawDisk.SectorSize;
+            var writeBuffer = new byte[sectorSize];
+            new Random().NextBytes(writeBuffer);
+            await _rawDisk.WriteBytesAsync(sectorSize, writeBuffer.AsMemory(), CancellationToken.None);
+            using var readStream = await _rawDisk.ReadBytesAsync(sectorSize, sectorSize, CancellationToken.None);
+            var readBuffer = new byte[sectorSize];
+            var bytesRead = await readStream.ReadAsync(readBuffer.AsMemory(), CancellationToken.None);
+            Assert.AreEqual(sectorSize, bytesRead, "Should have read the correct amount of bytes.");
+            Assert.AreEqual(writeBuffer, readBuffer, "Data should match.");
+        }
+
+        #endregion
+
     }
+
+}
