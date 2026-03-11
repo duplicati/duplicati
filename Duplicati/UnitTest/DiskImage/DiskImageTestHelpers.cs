@@ -58,23 +58,6 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <summary>
-        /// Creates and initializes a raw disk interface for the specified disk identifier.
-        /// </summary>
-        /// <param name="diskIdentifier">The disk identifier.</param>
-        /// <param name="readOnly">Whether to open the disk in read-only mode.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>An initialized IRawDisk instance.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the disk fails to initialize.</exception>
-        internal static async Task CreateAndInitializeRawDiskAsync(
-            IRawDisk rawDisk,
-            bool readOnly = true,
-            CancellationToken cancellationToken = default)
-        {
-            if (!await rawDisk.InitializeAsync(readOnly, cancellationToken))
-                throw new InvalidOperationException($"Failed to initialize raw disk");
-        }
-
-        /// <summary>
         /// Creates a disk image file with the specified parameters.
         /// </summary>
         /// <param name="diskHelper">The disk image helper.</param>
@@ -95,29 +78,6 @@ namespace Duplicati.UnitTest.DiskImage
             diskHelper.FlushDisk(diskIdentifier);
             diskHelper.Unmount(diskIdentifier);
             return diskIdentifier;
-        }
-
-        /// <summary>
-        /// Creates a disk with two FAT32 partitions for testing.
-        /// </summary>
-        /// <param name="diskHelper">The disk image helper.</param>
-        /// <param name="imagePath">The path where the disk image will be created.</param>
-        /// <param name="tableType">The partition table type (GPT or MBR).</param>
-        /// <param name="partitionSize">The size of each partition in bytes (0 for remaining space on second partition).</param>
-        /// <returns>The disk identifier for the created disk.</returns>
-        internal static string CreateDiskWithTwoFat32Partitions(
-            IDiskImageHelper diskHelper,
-            string imagePath,
-            PartitionTableType tableType,
-            long partitionSize = 50 * MiB)
-        {
-            var totalSize = partitionSize > 0 ? partitionSize * 2 + (10 * MiB) : 110 * MiB; // Extra space for partition table
-            return CreateDiskWithPartitions(
-                diskHelper,
-                imagePath,
-                totalSize,
-                tableType,
-                [(FileSystemType.FAT32, partitionSize), (FileSystemType.FAT32, 0)]);
         }
 
         /// <summary>
@@ -160,53 +120,6 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <summary>
-        /// Verifies that a partition contains the expected well-known test data pattern.
-        /// </summary>
-        /// <param name="rawDisk">The raw disk interface.</param>
-        /// <param name="partitionOffset">The starting offset of the partition in bytes.</param>
-        /// <param name="partitionSize">The size of the partition in bytes.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>True if the data matches the expected pattern; otherwise, false.</returns>
-        internal static async Task<bool> VerifyPartitionTestDataAsync(
-            IRawDisk rawDisk,
-            long partitionOffset,
-            long partitionSize,
-            CancellationToken cancellationToken = default)
-        {
-            const int bufferSize = 64 * 1024; // 64KB chunks
-            var buffer = new byte[bufferSize];
-
-            long bytesRead = 0;
-            long currentOffset = partitionOffset;
-
-            while (bytesRead < partitionSize)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var remaining = partitionSize - bytesRead;
-                var toRead = (int)Math.Min(bufferSize, remaining);
-
-                var actualRead = await rawDisk.ReadBytesAsync(currentOffset, buffer.AsMemory(0, toRead), cancellationToken);
-
-                if (actualRead != toRead)
-                    return false;
-
-                // Verify the pattern
-                for (int i = 0; i < toRead; i++)
-                {
-                    var expected = (byte)((bytesRead + i) & 0xFF);
-                    if (buffer[i] != expected)
-                        return false;
-                }
-
-                bytesRead += toRead;
-                currentOffset += toRead;
-            }
-
-            return true;
-        }
-
-        /// <summary>
         /// Gets the file extension for disk images based on the current platform.
         /// </summary>
         /// <returns>The platform-specific disk image extension (vhdx, img, or dmg).</returns>
@@ -220,48 +133,6 @@ namespace Duplicati.UnitTest.DiskImage
                 return "dmg";
             else
                 throw new PlatformNotSupportedException("Unsupported operating system.");
-        }
-
-        /// <summary>
-        /// Safely unmounts a disk, catching any exceptions during cleanup.
-        /// </summary>
-        /// <param name="diskHelper">The disk image helper.</param>
-        /// <param name="diskIdentifier">The disk identifier to unmount.</param>
-        internal static void SafeUnmount(IDiskImageHelper diskHelper, string? diskIdentifier)
-        {
-            if (string.IsNullOrEmpty(diskIdentifier) || diskHelper == null)
-                return;
-
-            try
-            {
-                diskHelper.Unmount(diskIdentifier);
-            }
-            catch (Exception ex)
-            {
-                // Log but don't throw - this is cleanup code
-                Console.WriteLine($"Warning: Failed to unmount disk {diskIdentifier}: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Safely disposes a raw disk and unmounts the underlying disk identifier.
-        /// </summary>
-        /// <param name="rawDisk">The raw disk to dispose (can be null).</param>
-        /// <param name="diskHelper">The disk image helper.</param>
-        /// <param name="diskIdentifier">The disk identifier to unmount.</param>
-        internal static void SafeDisposeRawDisk(IRawDisk? rawDisk, IDiskImageHelper diskHelper, string? diskIdentifier)
-        {
-            if (rawDisk != null)
-                try
-                {
-                    rawDisk.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Warning: Failed to dispose raw disk: {ex.Message}");
-                }
-
-            SafeUnmount(diskHelper, diskIdentifier);
         }
 
         /// <summary>

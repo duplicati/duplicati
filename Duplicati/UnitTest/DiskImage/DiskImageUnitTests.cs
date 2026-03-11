@@ -107,8 +107,8 @@ namespace Duplicati.UnitTest.DiskImage
 
             // Create GPT disk with 2 FAT32 partitions
             s_gptDiskPath = Path.Combine(BASEFOLDER, $"duplicati_gpt_class_test.{extension}");
-            s_gptDiskIdentifier = DiskImageTestHelpers.CreateDiskWithTwoFat32Partitions(
-                s_diskHelper, s_gptDiskPath, PartitionTableType.GPT, 50 * MiB);
+            s_gptDiskIdentifier = DiskImageTestHelpers.CreateDiskWithPartitions(
+                s_diskHelper, s_gptDiskPath, 100 * MiB, PartitionTableType.GPT, [(FileSystemType.FAT32, 50 * MiB), (FileSystemType.FAT32, 0)]);
 
             // Get partition info from GPT disk
             var gptPartitions = s_diskHelper.GetPartitions(s_gptDiskIdentifier);
@@ -132,8 +132,8 @@ namespace Duplicati.UnitTest.DiskImage
 
             // Create MBR disk with 2 FAT32 partitions
             s_mbrDiskPath = Path.Combine(BASEFOLDER, $"duplicati_mbr_class_test.{extension}");
-            s_mbrDiskIdentifier = DiskImageTestHelpers.CreateDiskWithTwoFat32Partitions(
-                s_diskHelper, s_mbrDiskPath, PartitionTableType.MBR, 50 * MiB);
+            s_mbrDiskIdentifier = DiskImageTestHelpers.CreateDiskWithPartitions(
+                s_diskHelper, s_mbrDiskPath, 100 * MiB, PartitionTableType.MBR, [(FileSystemType.FAT32, 50 * MiB), (FileSystemType.FAT32, 0)]);
 
             // Get partition info from MBR disk
             var mbrPartitions = s_diskHelper.GetPartitions(s_mbrDiskIdentifier);
