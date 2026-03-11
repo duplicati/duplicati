@@ -35,6 +35,7 @@ using Duplicati.Proprietary.DiskImage.Partition;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using StringAssert = NUnit.Framework.Legacy.StringAssert;
+using System.Linq;
 
 #nullable enable
 
@@ -50,10 +51,10 @@ namespace Duplicati.UnitTest.DiskImage
     [Platform("Win,MacOsX,Linux")]
     public class DiskImageUnitTests : BasicSetupHelper
     {
-        private IDiskImageHelper? _diskHelper;
-        private string? _diskImagePath;
-        private string? _diskIdentifier;
-        private IRawDisk? _rawDisk;
+        private IDiskImageHelper _diskHelper = null!;
+        private string _diskImagePath = "";
+        private string _diskIdentifier = "";
+        private IRawDisk _rawDisk = null!;
 
         private const long MiB = 1024 * 1024;
 
