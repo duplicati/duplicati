@@ -435,7 +435,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
                 m_shouldFlush = true;
 
-                return (int)bytesWritten;
+                return dataLength;
             }
             finally
             {
