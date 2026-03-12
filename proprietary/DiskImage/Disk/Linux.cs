@@ -41,11 +41,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         // File open flags from <fcntl.h>
         private const int O_RDONLY = 0x0000;
         private const int O_RDWR = 0x0002;
-        // TODO Should be processor architecture agnostic.
         // O_DIRECT: bypass kernel page cache for unbuffered I/O
-        // Value is architecture-dependent: 0x4000 on x86_64, 0x10000 on aarch64
-        // Using 0x4000 as the most common value (x86_64)
-        private const int O_DIRECT = 0x4000;
+        // Value is architecture-dependent: 0x4000 on x86/x86_64/arm32, 0x10000 on arm64
+        private static int O_DIRECT => RuntimeInformation.IsOSPlatform(OSPlatform.Linux) switch
+        {
+            true when RuntimeInformation.OSArchitecture == Architecture.Arm64 => 0x10000,
+            _ => 0x4000 // Default to x86/x86_64/arm32 value
+        };
 
         private readonly string m_devicePath;
         private int m_fileDescriptor = -1;
@@ -484,6 +486,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         #region P/Invoke Declarations
 
         // P/Invoke to the native wrapper library for ioctls
+        // The .NET runtime will automatically load the correct architecture-specific version
+        // from runtimes/linux-{arch}/native/libc_wrapper.so based on the current RID
         [LibraryImport("libc_wrapper.so", SetLastError = true)]
         internal static partial int ioctl_uint32(int fd, uint request, ref uint value);
 
