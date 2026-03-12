@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <sys/fcntl.h>
 
 // TODO This C wrapper is required since P/Invoke cannot correctly pass variadic
 // arguments to ioctl on non-Windows platforms.
@@ -24,4 +25,10 @@ int ioctl_uint64(int fd, unsigned long request, unsigned long *value)
 int ioctl_no_arg(int fd, unsigned long request)
 {
     return ioctl(fd, request);
+}
+
+// Wrapper for fcntl to set F_NOCACHE (equivalent to O_DIRECT on Linux)
+int fcntl_nocache(int fd)
+{
+    return fcntl(fd, F_NOCACHE, 1);
 }

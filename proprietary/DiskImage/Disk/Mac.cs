@@ -34,9 +34,6 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private const int O_RDONLY = 0x0000;
         private const int O_RDWR = 0x0002;
         private const int O_SYNC = 0x0080;
-        // F_NOCACHE: bypass kernel cache for unbuffered I/O (equivalent to O_DIRECT on Linux)
-        // Value is 0x100000 on macOS
-        private const int O_DIRECT = 0x100000;
 
         private readonly string m_devicePath;
         private int m_fileDescriptor = -1;
@@ -153,9 +150,8 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_initialized)
                 return Task.FromResult(true);
 
-            // Open the device with O_DIRECT (F_NOCACHE) for unbuffered I/O
-            // Note: O_DIRECT requires sector-aligned buffers and lengths
-            int flags = enableWrite ? O_RDWR | O_DIRECT : O_RDONLY | O_DIRECT;
+            // Open the device without O_DIRECT initially
+            int flags = enableWrite ? O_RDWR : O_RDONLY;
             m_fileDescriptor = open(m_devicePath, flags);
 
             if (m_fileDescriptor < 0)
@@ -163,6 +159,17 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 int errorCode = Marshal.GetLastWin32Error();
                 string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
+                return Task.FromResult(false);
+            }
+
+            // Use F_NOCACHE to bypass kernel cache (equivalent to O_DIRECT on Linux)
+            if (fcntl_nocache(m_fileDescriptor) < 0)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to set F_NOCACHE on device {m_devicePath}: {errorMessage} (errno: {errorCode})");
+                close(m_fileDescriptor);
+                m_fileDescriptor = -1;
                 return Task.FromResult(false);
             }
 
@@ -435,6 +442,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
         [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_no_arg(int fd, ulong request);
+
+        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
+        internal static partial int fcntl_nocache(int fd);
 
         [LibraryImport("libSystem", SetLastError = true)]
         private static partial int open([MarshalAs(UnmanagedType.LPStr)] string pathname, int flags);
