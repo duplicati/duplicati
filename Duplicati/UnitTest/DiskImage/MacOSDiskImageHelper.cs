@@ -605,7 +605,7 @@ namespace Duplicati.UnitTest.DiskImage
                 {
                     Number = partitionNumber,
                     Type = PartitionType.Unknown,
-                    StartOffset = PlistHelper.GetLongValue(dict, "PartitionOffset"),
+                    StartOffset = PlistHelper.GetLongValue(dict, "PartitionMapPartitionOffset"),
                     Size = PlistHelper.GetLongValue(dict, "TotalSize"),
                     Name = PlistHelper.GetStringValue(dict, "VolumeName"),
                     FilesystemType = filesystemType,
