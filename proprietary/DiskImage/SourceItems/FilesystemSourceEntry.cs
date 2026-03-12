@@ -52,6 +52,10 @@ internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
         {
             blockSize = unknownMeta.BlockSize;
         }
+        else if (fsMetadata is Fat32FilesystemMetadata fat32Meta)
+        {
+            blockSize = fat32Meta.BlockSize;
+        }
 
         return new FilesystemGeometry
         {
@@ -86,6 +90,15 @@ internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
                 if (fsMetadata is UnkownFilesystemMetadata unknownMeta)
                 {
                     metadata["filesystem:BlockSize"] = unknownMeta.BlockSize.ToString();
+                }
+                // For FAT32, extract cluster information
+                else if (fsMetadata is Fat32FilesystemMetadata fat32Meta)
+                {
+                    metadata["filesystem:BlockSize"] = fat32Meta.BlockSize.ToString();
+                    metadata["filesystem:ClusterSize"] = fat32Meta.ClusterSize.ToString();
+                    metadata["filesystem:TotalClusters"] = fat32Meta.TotalClusters.ToString();
+                    metadata["filesystem:AllocatedClusters"] = fat32Meta.AllocatedClusters.ToString();
+                    metadata["filesystem:FreeClusters"] = fat32Meta.FreeClusters.ToString();
                 }
             }
         }
