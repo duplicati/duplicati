@@ -86,31 +86,36 @@ namespace Duplicati.UnitTest.DiskImage
         [TearDown]
         public void DiskImageTearDown()
         {
-            // Cleanup disk images using safe helpers
+            // Cleanup disk images
+            try
+            {
+                _diskHelper.CleanupDisk(_sourceImagePath);
+            }
+            catch (Exception ex)
+            {
+                TestContext.Progress.WriteLine($"Warning: Failed to cleanup source disk image: {ex.Message}");
+            }
+
+            try
+            {
+                _diskHelper.CleanupDisk(_restoreImagePath);
+            }
+            catch (Exception ex)
+            {
+                TestContext.Progress.WriteLine($"Warning: Failed to cleanup restore disk image: {ex.Message}");
+            }
+
+            try
+            {
+                _diskHelper.Dispose();
+            }
+            catch (Exception ex)
+            {
+                TestContext.Progress.WriteLine($"Warning: Failed to dispose disk helper: {ex.Message}");
+            }
+
             DiskImageTestHelpers.SafeDeleteFile(_sourceImagePath);
             DiskImageTestHelpers.SafeDeleteFile(_restoreImagePath);
-
-            _diskHelper?.Dispose();
-
-            try
-            {
-                if (Directory.Exists(_sourceMountPath))
-                    Directory.Delete(_sourceMountPath, true);
-            }
-            catch (Exception ex)
-            {
-                TestContext.Progress.WriteLine($"Warning: Failed to delete source mount path: {ex.Message}");
-            }
-
-            try
-            {
-                if (Directory.Exists(_restoreMountPath))
-                    Directory.Delete(_restoreMountPath, true);
-            }
-            catch (Exception ex)
-            {
-                TestContext.Progress.WriteLine($"Warning: Failed to delete restore mount path: {ex.Message}");
-            }
         }
 
         #region GPT Single Partition
