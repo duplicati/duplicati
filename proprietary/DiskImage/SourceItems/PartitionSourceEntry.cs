@@ -35,9 +35,9 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition)
     /// <inheritdoc />
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var fs = partition.FilesystemType switch
+        IFilesystem fs = partition.FilesystemType switch
         {
-
+            FileSystemType.FAT32 => new Fat32Filesystem(partition),
             FileSystemType.Unknown => new UnknownFilesystem(partition),
             _ => new UnknownFilesystem(partition)
         };
