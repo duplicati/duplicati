@@ -152,27 +152,11 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 bool allSucceeded = true;
                 foreach (var mountPoint in mountPoints)
                 {
-                    var psi = new ProcessStartInfo
+                    var (ExitCode, Output, Error) = await ProcessRunner.RunProcessAsync("umount", $"\"{mountPoint}\"", 30_000, cancellationToken);
+
+                    if (ExitCode != 0)
                     {
-                        FileName = "umount",
-                        Arguments = $"\"{mountPoint}\"",
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
-
-                    using var process = new Process { StartInfo = psi };
-                    process.Start();
-
-                    string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-                    string error = await process.StandardError.ReadToEndAsync(cancellationToken);
-
-                    await process.WaitForExitAsync(cancellationToken);
-
-                    if (process.ExitCode != 0)
-                    {
-                        Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "autounmount", null, $"Failed to unmount {mountPoint}: {error}");
+                        Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "autounmount", null, $"Failed to unmount {mountPoint}: {Error}");
                         allSucceeded = false;
                     }
                     else
