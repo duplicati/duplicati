@@ -1,3 +1,34 @@
+2026-03-06 - 2.2.0.106_canary_2026-03-06
+==========
+# 2026-03-06 - 2.2.0.106_canary_2026-03-06
+
+This release is a canary release intended to be used for testing.
+
+# Changes in this version
+
+## MacOS full disk backup support
+
+This version extends the full disk backup feature to include basic MacOS support.
+You can now backup and restore entire disks on MacOS, including partition tables.
+This is a proprietary module (source available) that requires a license to use in production.
+
+## Automatic HTTPS support
+
+This version adds support for managed TLS certificates, making it easier to run Duplicati with HTTPS enabled.
+The feature includes automatic certificate generation and management for secure connections.
+
+This release contains a new `Duplicati.CommandLine.ConfigureTool.exe` / `duplicati-configure` tool that can be used to configure the server and generate certificates. See documentation/help for more details.
+
+## Detailed list of changes:
+
+- Added basic MacOS support for full disk backup and restore
+- Added support for managed TLS/HTTPS certificates
+- Fixed agent commandline argument names
+- Improved link detection on Windows
+- Fixed race condition with source provider disposal
+- Fixed Windows full-disk reattach scripts
+- Updated nuget dependencies for Mime
+
 2026-02-20 - 2.2.0.105_canary_2026-02-20
 ==========
 This release is a canary release intended to be used for testing.
