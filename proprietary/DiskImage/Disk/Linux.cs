@@ -346,6 +346,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (offset + length > Size)
                 throw new InvalidOperationException($"The requested read would read beyond disk size: {offset} + {length} > {Size}");
 
+            if (length == 0)
+                return 0;
+
             // Calculate aligned offset and length for O_DIRECT I/O
             long alignedOffset = (offset / SectorSize) * SectorSize;
             long offsetDelta = offset - alignedOffset;
@@ -420,6 +423,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             if (offset + dataLength > Size)
                 throw new InvalidOperationException($"The requested write would write beyond disk size: {offset} + {dataLength} > {Size}");
+
+            if (dataLength == 0)
+                return 0;
 
             // Calculate aligned offset and length for O_DIRECT I/O
             long alignedOffset = (offset / SectorSize) * SectorSize;
