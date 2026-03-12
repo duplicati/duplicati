@@ -106,6 +106,12 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             if (!await _disk.InitializeAsync(cancellationToken))
                 throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
         }
+        else if (OperatingSystem.IsLinux())
+        {
+            _disk = new Linux(_devicePath);
+            if (!await _disk.InitializeAsync(cancellationToken))
+                throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
+        }
         else
         {
             throw new PlatformNotSupportedException(Strings.PlatformNotSupported);

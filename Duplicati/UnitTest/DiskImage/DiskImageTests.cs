@@ -34,7 +34,7 @@ using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 #nullable enable
 
-namespace Duplicati.UnitTest
+namespace Duplicati.UnitTest.DiskImage
 {
     /// <summary>
     /// Unit tests for the DiskImage backup and restore functionality.
@@ -42,7 +42,7 @@ namespace Duplicati.UnitTest
     /// </summary>
     [TestFixture]
     [Category("DiskImage")]
-    [Platform("Win,MacOsX")]
+    [Platform("Win,MacOsX,Linux")]
     public class DiskImageTests : BasicSetupHelper
     {
         private string _sourceImagePath = null!;
@@ -70,7 +70,7 @@ namespace Duplicati.UnitTest
             }
 
             // Create temp disk image paths
-            var extension = OperatingSystem.IsWindows() ? "vhdx" : "dmg";
+            var extension = DiskImageTestHelpers.GetPlatformDiskImageExtension();
             _sourceImagePath = Path.Combine(DATAFOLDER, $"duplicati_test_source_{Guid.NewGuid()}.{extension}");
             _restoreImagePath = Path.Combine(DATAFOLDER, $"duplicati_test_restore_{Guid.NewGuid()}.{extension}");
             _sourceMountPath = Path.Combine(DATAFOLDER, $"mnt_source_{Guid.NewGuid()}");
@@ -114,8 +114,8 @@ namespace Duplicati.UnitTest
                 TestContext.Progress.WriteLine($"Warning: Failed to dispose disk helper: {ex.Message}");
             }
 
-            Directory.Delete(_sourceMountPath, true);
-            Directory.Delete(_restoreMountPath, true);
+            DiskImageTestHelpers.SafeDeleteFile(_sourceImagePath);
+            DiskImageTestHelpers.SafeDeleteFile(_restoreImagePath);
         }
 
         #region GPT Single Partition
@@ -140,7 +140,7 @@ namespace Duplicati.UnitTest
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.APFS, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -148,9 +148,49 @@ namespace Duplicati.UnitTest
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.HFSPlus, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_ExFAT() =>
             FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.ExFAT, 0)]);
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_Ext2()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Ext2 is only supported on Linux.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext2, 0)]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_Ext3()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Ext3 is only supported on Linux.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext3, 0)]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Ext4 is only supported on Linux.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext4, 0)]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_XFS()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("XFS is only supported on Linux.");
+            return FullRoundTrip((int)(310 * MiB), PartitionTableType.GPT, [(FileSystemType.XFS, 0)]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_Btrfs()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Btrfs is only supported on Linux.");
+            return FullRoundTrip((int)(110 * MiB), PartitionTableType.GPT, [(FileSystemType.Btrfs, 0)]);
+        }
 
         #endregion
 
@@ -162,8 +202,7 @@ namespace Duplicati.UnitTest
         public Task Test_MBR_FAT32() =>
             FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
 
-
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -171,16 +210,56 @@ namespace Duplicati.UnitTest
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.HFSPlus, 0)]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_ExFAT() =>
             FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.ExFAT, 0)]);
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_NTFS()
         {
             if (!OperatingSystem.IsWindows())
                 Assert.Ignore("Test_MBR_NTFS is only supported on Windows.");
             return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.NTFS, 0)]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_Ext2()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Ext2 is only supported on Linux.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext2, 0)]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_Ext3()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Ext3 is only supported on Linux.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext3, 0)]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Ext4 is only supported on Linux.");
+            return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext4, 0)]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_XFS()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("XFS is only supported on Linux.");
+            return FullRoundTrip((int)(310 * MiB), PartitionTableType.MBR, [(FileSystemType.XFS, 0)]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_Btrfs()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Btrfs is only supported on Linux.");
+            return FullRoundTrip((int)(110 * MiB), PartitionTableType.MBR, [(FileSystemType.Btrfs, 0)]);
         }
 
         #endregion
@@ -196,6 +275,13 @@ namespace Duplicati.UnitTest
         #region GPT Two Partitions
 
         [Test, Category("DiskImage")]
+        public Task Test_GPT_FAT32_FAT32() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+
+        [Test, Category("DiskImage")]
         public Task Test_GPT_APFS_APFS()
         {
             if (!OperatingSystem.IsMacOS())
@@ -206,7 +292,7 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_HFSPlus_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -217,7 +303,7 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_APFS_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -228,7 +314,7 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_FAT32_APFS()
         {
             if (!OperatingSystem.IsMacOS())
@@ -239,7 +325,7 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_ExFAT_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -250,14 +336,14 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_FAT32_ExFAT() =>
             FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
                 (FileSystemType.FAT32, 50 * MiB),
                 (FileSystemType.ExFAT, 0)
             ]);
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_NTFS_FAT32()
         {
             if (!OperatingSystem.IsWindows())
@@ -268,13 +354,86 @@ namespace Duplicati.UnitTest
             ]);
         }
 
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_NTFS_NTFS()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("This test is only supported on Windows.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.NTFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_Ext4_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Ext4 is only supported on Linux.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.Ext4, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_Ext4_FAT32()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_Ext4_XFS()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(360 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.XFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_XFS_FAT32()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(360 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.XFS, 310 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_Btrfs_FAT32()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(160 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.Btrfs, 110 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
+
         #endregion
 
         #region MBR Two Partitions
 
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_FAT32_FAT32() =>
+            FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+
         // APFS is only supported on GPT partition tables.
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_HFSPlus_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -286,7 +445,7 @@ namespace Duplicati.UnitTest
         }
 
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_FAT32_ExFAT()
         {
             return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
@@ -295,7 +454,7 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_FAT32_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -306,7 +465,7 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_NTFS_FAT32()
         {
             if (!OperatingSystem.IsWindows())
@@ -317,9 +476,74 @@ namespace Duplicati.UnitTest
             ]);
         }
 
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_Ext4_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Ext4 is only supported on Linux.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.Ext4, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_FAT32_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.Ext4, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_XFS_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(360 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.XFS, 310 * MiB),
+                (FileSystemType.Ext4, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_Btrfs_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(160 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.Btrfs, 110 * MiB),
+                (FileSystemType.Ext4, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_XFS_Btrfs()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(420 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.XFS, 310 * MiB),
+                (FileSystemType.Btrfs, 0)
+            ]);
+        }
+
         #endregion
 
         #region GPT Three Partitions
+
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_FAT32_FAT32_FAT32()
+        {
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
 
         [Test, Category("DiskImage")]
         public Task Test_GPT_APFS_APFS_APFS()
@@ -334,6 +558,18 @@ namespace Duplicati.UnitTest
         }
 
         [Test, Category("DiskImage")]
+        public Task Test_GPT_NTFS_NTFS_NTFS()
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("NTFS is only supported on Windows.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.NTFS, 50 * MiB),
+                (FileSystemType.NTFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_HFSPlus_HFSPlus_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -345,8 +581,7 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        // TODO follow naming scheme.
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_APFS_HFSPlus_APFS()
         {
             if (!OperatingSystem.IsMacOS())
@@ -358,7 +593,7 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_FAT32_APFS_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -370,7 +605,7 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_ExFAT_APFS_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -382,13 +617,83 @@ namespace Duplicati.UnitTest
             ]);
         }
 
+        [Test, Category("DiskImage")]
+        public Task Test_GPT_Ext4_Ext4_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Ext4 is only supported on Linux.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.Ext4, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_FAT32_Ext4_XFS()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(410 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.XFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_Ext4_XFS_Btrfs()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(470 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.XFS, 310 * MiB),
+                (FileSystemType.Btrfs, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_XFS_Ext4_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(410 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.XFS, 310 * MiB),
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.Ext4, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_GPT_Btrfs_Ext4_FAT32()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(210 * MiB), PartitionTableType.GPT, [
+                (FileSystemType.Btrfs, 110 * MiB),
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
+
         #endregion
 
         #region MBR Three Partitions
 
         // APFS is only supported on GPT partition tables.
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_FAT32_FAT32_FAT32()
+        {
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.FAT32, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_HFSPlus_HFSPlus_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -400,7 +705,7 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_MBR_FAT32_ExFAT_HFSPlus()
         {
             if (!OperatingSystem.IsMacOS())
@@ -412,7 +717,8 @@ namespace Duplicati.UnitTest
             ]);
         }
 
-        [Test, Category("DiskImage")]
+        // GPT NTFS for Windows - local-only (tested via single partition)
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
         public Task Test_GPT_NTFS_FAT32_ExFAT()
         {
             if (!OperatingSystem.IsWindows())
@@ -421,6 +727,66 @@ namespace Duplicati.UnitTest
                 (FileSystemType.NTFS, 50 * MiB),
                 (FileSystemType.FAT32, 50 * MiB),
                 (FileSystemType.ExFAT, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_Ext4_Ext4_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("Ext4 is only supported on Linux.");
+            return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.Ext4, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_FAT32_Ext4_XFS()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(410 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.FAT32, 50 * MiB),
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.XFS, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_Ext4_XFS_Btrfs()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(470 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.XFS, 310 * MiB),
+                (FileSystemType.Btrfs, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_XFS_Btrfs_Ext4()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(470 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.XFS, 310 * MiB),
+                (FileSystemType.Btrfs, 110 * MiB),
+                (FileSystemType.Ext4, 0)
+            ]);
+        }
+
+        [Test, Category("DiskImage"), Category("DiskImageLocal")]
+        public Task Test_MBR_Btrfs_Ext4_XFS()
+        {
+            if (!OperatingSystem.IsLinux())
+                Assert.Ignore("This test is only supported on Linux.");
+            return FullRoundTrip((int)(470 * MiB), PartitionTableType.MBR, [
+                (FileSystemType.Btrfs, 110 * MiB),
+                (FileSystemType.Ext4, 50 * MiB),
+                (FileSystemType.XFS, 0)
             ]);
         }
 
@@ -465,8 +831,13 @@ namespace Duplicati.UnitTest
             await TestContext.Progress.WriteLineAsync($"Source and restore disks re-attached as read-only for verification");
 
             // Verify partition table matches. Mount before verification, to make disks online on Windows.
-            sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);
-            var restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true);
+            string[] restorePartitions = [];
+            if (tableType != PartitionTableType.Unknown)
+            {
+                var fsTypes = partitions.Select(p => p.Item1).ToArray();
+                sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
+                restorePartitions = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
+            }
             VerifyPartitionTableMatches(sourceDrivePath, restoreDrivePath);
             await TestContext.Progress.WriteLineAsync($"Partition table verified to match source");
 

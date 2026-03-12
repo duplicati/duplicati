@@ -11,29 +11,43 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
+using System.Text.Json;
 using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Disk
 {
     /// <summary>
-    /// macOS implementation of the <see cref="IRawDisk"/> interface for raw disk access.
-    /// Uses POSIX API calls via P/Invoke to read from and write to physical disk devices.
+    /// Linux implementation of the <see cref="IRawDisk"/> interface for raw disk access.
+    /// Uses POSIX API calls via P/Invoke to read from and write to block devices.
     /// </summary>
-    [SupportedOSPlatform("macos")]
-    public partial class Mac : IRawDisk
+    [SupportedOSPlatform("linux")]
+    public partial class Linux : IRawDisk
     {
-        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Mac>();
+        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Linux>();
 
-        // Disk ioctl constants from <sys/disk.h>
-        private const ulong DKIOCGETBLOCKSIZE = 0x4004_6418;  // _IOR('d', 24, uint32_t)
-        private const ulong DKIOCGETBLOCKCOUNT = 0x4008_6419; // _IOR('d', 25, uint64_t)
-        private const ulong DKIOCSYNCHRONIZECACHE = 0x2000_6416; // _IO('d', 22)
+        // Linux block device ioctl constants from <linux/fs.h>
+        // BLKGETSIZE64: _IOR(0x12, 114, size_t) = 0x80081272 (on x86_64)
+        // Returns the size of the block device in bytes as uint64.
+        private const ulong BLKGETSIZE64 = 0x80081272;
+
+        // BLKSSZGET: _IO(0x12, 104) = 0x1268
+        // Returns the logical sector size of the block device as int.
+        private const uint BLKSSZGET = 0x1268;
+
+        // BLKFLSBUF: _IO(0x12, 97) = 0x1261
+        // Flushes the buffer cache for the block device.
+        private const uint BLKFLSBUF = 0x1261;
 
         // File open flags from <fcntl.h>
         private const int O_RDONLY = 0x0000;
         private const int O_RDWR = 0x0002;
-        private const int O_SYNC = 0x0080;
+        // O_DIRECT: bypass kernel page cache for unbuffered I/O
+        // Value is architecture-dependent: 0x4000 on x86/x86_64/arm32, 0x10000 on arm64
+        private static int O_DIRECT => RuntimeInformation.IsOSPlatform(OSPlatform.Linux) switch
+        {
+            true when RuntimeInformation.OSArchitecture == Architecture.Arm64 => 0x10000,
+            _ => 0x4000 // Default to x86/x86_64/arm32 value
+        };
 
         private readonly string m_devicePath;
         private int m_fileDescriptor = -1;
@@ -43,7 +57,6 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private uint m_sectorSize = 0;
         private long m_size = 0;
         private bool m_shouldFlush = false;
-        private const string DEVICE_PREFIX = "/dev/";
         private readonly SemaphoreSlim m_ioLock = new(1, 1);
 
         // Aligned buffers for O_DIRECT I/O (must be sector-aligned and a multiple of sector size)
@@ -60,35 +73,16 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         public bool IsWriteable => m_writeable;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Mac"/> class.
+        /// Initializes a new instance of the <see cref="Linux"/> class.
         /// </summary>
-        /// <param name="devicePath">The macOS device path (e.g., "/dev/rdisk0").</param>
-        /// <exception cref="PlatformNotSupportedException">Thrown when not running on macOS.</exception>
-        public Mac(string devicePath)
+        /// <param name="devicePath">The Linux device path (e.g., "/dev/sda", "/dev/nvme0n1", "/dev/loop0").</param>
+        /// <exception cref="PlatformNotSupportedException">Thrown when not running on Linux.</exception>
+        public Linux(string devicePath)
         {
-            if (!OperatingSystem.IsMacOS())
-                throw new PlatformNotSupportedException("macOS raw disk access is only supported on macOS platforms.");
+            if (!OperatingSystem.IsLinux())
+                throw new PlatformNotSupportedException("Linux raw disk access is only supported on Linux platforms.");
 
-            m_devicePath = NormalizeDevicePath(devicePath);
-        }
-
-        /// <summary>
-        /// Normalizes the device path to use raw device access (/dev/rdiskN instead of /dev/diskN).
-        /// </summary>
-        /// <param name="devicePath">The device path to normalize.</param>
-        /// <returns>The normalized device path using raw device access.</returns>
-        private static string NormalizeDevicePath(string devicePath)
-        {
-            if (string.IsNullOrEmpty(devicePath))
-                return devicePath;
-
-            // Convert /dev/diskN to /dev/rdiskN for raw/character device access
-            if (devicePath.StartsWith($"{DEVICE_PREFIX}disk") && !devicePath.StartsWith($"{DEVICE_PREFIX}rdisk"))
-            {
-                return devicePath.Replace($"{DEVICE_PREFIX}disk", $"{DEVICE_PREFIX}rdisk");
-            }
-
-            return devicePath;
+            m_devicePath = devicePath;
         }
 
         /// <inheritdoc />
@@ -127,17 +121,57 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             }
         }
 
+        private async Task<List<string>> GetMountedPartitionsAsync(CancellationToken cancellationToken)
+        {
+            var mountedPartitions = new List<string>();
+
+            // Read /proc/mounts to find mounted partitions for this device
+            using (var reader = new StreamReader("/proc/mounts"))
+            {
+                string? line;
+                while ((line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false)) != null)
+                    if (line.StartsWith(m_devicePath))
+                    {
+                        var partitionDevice = line.Split(' ').FirstOrDefault();
+                        if (partitionDevice != null)
+                            mountedPartitions.Add(partitionDevice);
+                    }
+            }
+
+            return mountedPartitions;
+        }
+
         /// <inheritdoc />
         public async Task<bool> AutoUnmountAsync(CancellationToken cancellationToken)
         {
-            // Extract disk number from device path
-            string blockDevicePath = m_devicePath.Replace($"{DEVICE_PREFIX}rdisk", $"{DEVICE_PREFIX}disk");
+            try
+            {
+                var mountPoints = await GetMountedPartitionsAsync(cancellationToken);
 
-            // Use diskutil to unmount all volumes on the disk
-            var unmount = await ProcessRunner.RunProcessAsync("diskutil", $"unmountDisk {blockDevicePath}", 30_000, cancellationToken);
+                // Unmount each partition
+                bool allSucceeded = true;
+                foreach (var mountPoint in mountPoints)
+                {
+                    var (ExitCode, Output, Error) = await ProcessRunner.RunProcessAsync("umount", $"\"{mountPoint}\"", 30_000, cancellationToken);
 
-            // diskutil returns 0 on success, but may also succeed with warnings
-            return unmount.ExitCode == 0 || unmount.Output.Contains("successful");
+                    if (ExitCode != 0)
+                    {
+                        Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "autounmount", null, $"Failed to unmount {mountPoint}: {Error}");
+                        allSucceeded = false;
+                    }
+                    else
+                    {
+                        Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "autounmount", $"Successfully unmounted {mountPoint}");
+                    }
+                }
+
+                return allSucceeded;
+            }
+            catch (Exception ex)
+            {
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "autounmount", ex, "Failed to auto-unmount disk");
+                return false;
+            }
         }
 
         /// <inheritdoc />
@@ -145,73 +179,68 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             => InitializeAsync(false, cancellationToken);
 
         /// <inheritdoc />
-        public Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
+        public async Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
         {
             if (m_initialized)
-                return Task.FromResult(true);
+                return true;
 
-            // Open the device without O_DIRECT initially
-            int flags = enableWrite ? O_RDWR : O_RDONLY;
+            if (enableWrite && (await GetMountedPartitionsAsync(cancellationToken)).Count > 0)
+            {
+                throw new IOException($"Cannot initialize disk {m_devicePath} because it has mounted partitions. Please unmount all partitions before initializing.");
+            }
+
+            // Open the device with O_DIRECT for unbuffered I/O (matching Windows FILE_FLAG_NO_BUFFERING behavior)
+            // Note: O_DIRECT requires sector-aligned buffers and lengths
+            int flags = enableWrite ? O_RDWR | O_DIRECT : O_RDONLY | O_DIRECT;
             m_fileDescriptor = open(m_devicePath, flags);
 
             if (m_fileDescriptor < 0)
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
-                return Task.FromResult(false);
-            }
-
-            // Use F_NOCACHE to bypass kernel cache (equivalent to O_DIRECT on Linux)
-            if (fcntl_nocache(m_fileDescriptor) < 0)
-            {
-                int errorCode = Marshal.GetLastWin32Error();
-                string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to set F_NOCACHE on device {m_devicePath}: {errorMessage} (errno: {errorCode})");
-                close(m_fileDescriptor);
-                m_fileDescriptor = -1;
-                return Task.FromResult(false);
+                return false;
             }
 
             // Get disk geometry using ioctls
             try
             {
-                // Get block size (sector size)
+                // Get logical block size (sector size)
                 uint blockSize = 0;
-                if (ioctl_uint32(m_fileDescriptor, DKIOCGETBLOCKSIZE, ref blockSize) < 0)
+                if (ioctl_uint32(m_fileDescriptor, BLKSSZGET, ref blockSize) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
                     close(m_fileDescriptor);
                     m_fileDescriptor = -1;
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block size: {Marshal.GetPInvokeErrorMessage(errorCode)} (errno: {errorCode})");
-                    return Task.FromResult(false);
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block size: errno {errorCode}");
+                    return false;
                 }
                 m_sectorSize = blockSize;
 
-                // Get block count
-                ulong blockCount = 0;
-                if (ioctl_uint64(m_fileDescriptor, DKIOCGETBLOCKCOUNT, ref blockCount) < 0)
+                // Get disk size in bytes
+                ulong sizeInBytes = 0;
+                if (ioctl_uint64(m_fileDescriptor, BLKGETSIZE64, ref sizeInBytes) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
                     close(m_fileDescriptor);
                     m_fileDescriptor = -1;
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block count: {Marshal.GetPInvokeErrorMessage(errorCode)} (errno: {errorCode})");
-                    return Task.FromResult(false);
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get disk size: errno {errorCode}");
+                    return false;
                 }
 
-                m_size = (long)(blockCount * blockSize);
+                m_size = (long)sizeInBytes;
                 m_writeable = enableWrite;
                 m_initialized = true;
 
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "initialize", $"Successfully initialized disk {m_devicePath}: Size={m_size}, SectorSize={m_sectorSize}");
-                return Task.FromResult(true);
+                return true;
             }
             catch (Exception ex)
             {
                 close(m_fileDescriptor);
                 m_fileDescriptor = -1;
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", ex, "Failed to initialize disk");
-                return Task.FromResult(false);
+                return false;
             }
         }
 
@@ -223,11 +252,11 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             if (m_shouldFlush && m_fileDescriptor >= 0)
             {
-                // Use DKIOCSYNCHRONIZECACHE on macOS to guarantee flush to physical media
-                if (ioctl_no_arg(m_fileDescriptor, DKIOCSYNCHRONIZECACHE) < 0)
+                // Use BLKFLSBUF on Linux to flush the block device buffer cache
+                if (ioctl_no_arg(m_fileDescriptor, BLKFLSBUF) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
-                    string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                    string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
                     Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "dispose", null, $"Failed to flush data: {errorMessage} (errno: {errorCode})");
                 }
             }
@@ -325,7 +354,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                     if (bytesRead.ToInt64() < 0)
                     {
                         int errorCode = Marshal.GetLastWin32Error();
-                        string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                        string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
                         throw new IOException($"Failed to read {alignedLength} bytes from disk at offset {alignedOffset}: {errorMessage} (errno: {errorCode})");
                     }
 
@@ -408,7 +437,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                         if (bytesRead.ToInt64() < 0)
                         {
                             int errorCode = Marshal.GetLastWin32Error();
-                            string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                            string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
                             throw new IOException($"Failed to read existing data for unaligned write at offset {alignedOffset}: {errorMessage} (errno: {errorCode})");
                         }
                     }
@@ -425,7 +454,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 if (totalBytesWritten < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
-                    string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                    string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
                     throw new IOException($"Failed to write {dataLength} bytes to disk at offset {offset}: {errorMessage} (errno: {errorCode})");
                 }
 
@@ -440,29 +469,30 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
         #region P/Invoke Declarations
 
-        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
-        internal static partial int ioctl_uint32(int fd, ulong request, ref uint value);
+        // P/Invoke to the native wrapper library for ioctls
+        // The .NET runtime will automatically load the correct architecture-specific version
+        // from runtimes/linux-{arch}/native/libc_wrapper.so based on the current RID
+        [LibraryImport("libc_wrapper.so", SetLastError = true)]
+        internal static partial int ioctl_uint32(int fd, uint request, ref uint value);
 
-        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
+        [LibraryImport("libc_wrapper.so", SetLastError = true)]
         internal static partial int ioctl_uint64(int fd, ulong request, ref ulong value);
 
-        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
-        internal static partial int ioctl_no_arg(int fd, ulong request);
+        [LibraryImport("libc_wrapper.so", SetLastError = true)]
+        internal static partial int ioctl_no_arg(int fd, uint request);
 
-        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
-        internal static partial int fcntl_nocache(int fd);
-
-        [LibraryImport("libSystem", SetLastError = true)]
+        // Standard libc functions
+        [LibraryImport("libc", SetLastError = true)]
         private static partial int open([MarshalAs(UnmanagedType.LPStr)] string pathname, int flags);
 
-        [LibraryImport("libSystem", SetLastError = true)]
+        [LibraryImport("libc", SetLastError = true)]
         private static partial int close(int fd);
 
-        [LibraryImport("libSystem", SetLastError = true)]
-        private static unsafe partial IntPtr pread(int fd, byte* buf, IntPtr count, long offset);
+        [LibraryImport("libc", SetLastError = true)]
+        private static unsafe partial nint pread(int fd, void* buf, nint count, long offset);
 
-        [LibraryImport("libSystem", SetLastError = true)]
-        private static unsafe partial IntPtr pwrite(int fd, byte* buf, IntPtr count, long offset);
+        [LibraryImport("libc", SetLastError = true)]
+        private static unsafe partial nint pwrite(int fd, void* buf, nint count, long offset);
 
         #endregion
 
@@ -482,109 +512,112 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             {
                 m_allignedBufferPtr = (byte*)NativeMemory.AlignedAlloc(alignedSize, (nuint)m_sectorSize);
             }
-            m_allignedBufferSize = (long)alignedSize;
         }
 
         /// <inheritdoc />
         public static async IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var list = await ProcessRunner.RunProcessAsync("diskutil", "list -plist", 30_000, cancellationToken);
-            if (list.ExitCode != 0)
+            // Use lsblk to get list of block devices in JSON format
+            // -J: JSON output
+            // -O: include all available columns
+            // -b: sizes in bytes
+            var result = await ProcessRunner.RunProcessAsync("lsblk", "-JO -b", 30_000, cancellationToken);
+            if (result.ExitCode != 0)
             {
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", null, $"Failed to list physical drives: {list.Error}");
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", null, $"Failed to list physical drives: {result.Error}");
                 yield break;
             }
 
-            if (string.IsNullOrWhiteSpace(list.Output))
+            if (string.IsNullOrWhiteSpace(result.Output))
                 yield break;
 
-            XDocument plist;
+            JsonDocument doc;
             try
             {
-                plist = XDocument.Parse(list.Output);
+                doc = JsonDocument.Parse(result.Output);
             }
-            catch (Exception ex)
+            catch (JsonException ex)
             {
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", ex, "Failed to parse diskutil list plist output");
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", ex, "Failed to parse lsblk JSON output");
                 yield break;
             }
 
-            // Parse the plist XML structure
-            var rootDict = plist.Element("plist")?.Element("dict");
-            if (rootDict == null)
-                yield break;
-
-            // Get AllDisksAndPartitions array
-            var allDisksAndPartitions = PlistHelper.GetArrayElement(rootDict, "AllDisksAndPartitions");
-            if (allDisksAndPartitions == null)
-                yield break;
-
-            foreach (var diskElement in allDisksAndPartitions.Elements("dict"))
+            using (doc)
             {
-                var identifier = PlistHelper.GetStringValue(diskElement, "DeviceIdentifier");
-                if (string.IsNullOrWhiteSpace(identifier))
-                    continue;
+                var rootElement = doc.RootElement;
+                if (!rootElement.TryGetProperty("blockdevices", out var blockDevices))
+                    yield break;
 
-                // Skip synthesized disks (e.g., APFS containers)
-                var isSynthetic = PlistHelper.GetBoolValue(diskElement, "SyntheticDisk");
-                if (isSynthetic)
-                    continue;
-
-                var path = $"{DEVICE_PREFIX}{identifier}";
-                var size = PlistHelper.GetLongValue(diskElement, "Size");
-                if (size <= 0)
-                    continue;
-
-                // Get detailed info using diskutil info -plist
-                var info = await ProcessRunner.RunProcessAsync("diskutil", $"info -plist {path}", 30_000, cancellationToken);
-                if (info.ExitCode != 0)
+                foreach (var device in blockDevices.EnumerateArray())
                 {
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "listphysicaldrives", null, $"Failed to get info for {path}: {info.Error}");
-                    continue;
-                }
+                    // Only include whole disks (type="disk"), not partitions (type="part")
+                    if (!device.TryGetProperty("type", out var typeElement) || typeElement.GetString() != "disk")
+                        continue;
 
-                string? displayName = null;
-                string? guid = null;
-                try
-                {
-                    var infoDict = PlistHelper.ParsePlistDict(info.Output);
-                    if (infoDict != null)
+                    var path = device.TryGetProperty("path", out var pathElement) ? pathElement.GetString() : null;
+                    if (string.IsNullOrWhiteSpace(path))
+                        continue;
+
+                    // Get size
+                    var size = device.TryGetProperty("size", out var sizeElement) ? sizeElement.GetUInt64() : 0UL;
+                    if (size == 0)
+                        continue;
+
+                    // Get device name/number (e.g., sda, nvme0n1)
+                    var name = device.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
+
+                    // Get mount points from children (partitions)
+                    var mountPoints = new List<string>();
+                    if (device.TryGetProperty("children", out var children))
                     {
-                        displayName = PlistHelper.GetStringValue(infoDict, "MediaName");
-                        guid = PlistHelper.GetStringValue(infoDict, "DiskUUID");
+                        foreach (var child in children.EnumerateArray())
+                        {
+                            if (child.TryGetProperty("mountpoint", out var mpElement) && mpElement.ValueKind == JsonValueKind.String)
+                            {
+                                var mountPoint = mpElement.GetString();
+                                if (!string.IsNullOrWhiteSpace(mountPoint))
+                                    mountPoints.Add(mountPoint);
+                            }
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "listphysicaldrives", ex, $"Failed to parse diskutil info plist for {path}");
-                }
 
-                // Get mount points from partitions
-                var mountPoints = new List<string>();
-                var partitions = PlistHelper.GetArrayElement(diskElement, "Partitions") ?? PlistHelper.GetArrayElement(diskElement, "APFSVolumes");
-                if (partitions != null)
-                {
-                    foreach (var partition in partitions.Elements("dict"))
+                    // Try to get UUID using blkid (this is expensive, so we only do it for valid disks)
+                    string? guid = null;
+                    try
                     {
-                        var mountPoint = PlistHelper.GetStringValue(partition, "MountPoint");
-                        if (!string.IsNullOrWhiteSpace(mountPoint))
-                            mountPoints.Add(mountPoint);
+                        var blkidResult = await ProcessRunner.RunProcessAsync("blkid", $"-o export {path}", 10_000, cancellationToken);
+                        if (blkidResult.ExitCode == 0 && !string.IsNullOrWhiteSpace(blkidResult.Output))
+                        {
+                            // Parse blkid output to find UUID
+                            foreach (var line in blkidResult.Output.Split('\n'))
+                            {
+                                if (line.StartsWith("UUID="))
+                                {
+                                    guid = line[5..].Trim('"');
+                                    break;
+                                }
+                            }
+                        }
                     }
+                    catch
+                    {
+                        // Ignore blkid failures - not all disks have UUIDs
+                    }
+
+                    var driveInfo = new PhysicalDriveInfo
+                    {
+                        Number = name ?? path,
+                        Path = path,
+                        Size = size,
+                        DisplayName = name ?? path,
+                        Guid = guid,
+                        MountPoints = [.. mountPoints],
+                        Online = null // Linux doesn't have an equivalent concept to "online" disks
+                    };
+
+                    yield return driveInfo;
                 }
-
-                var driveInfo = new PhysicalDriveInfo
-                {
-                    Number = identifier,
-                    Path = path,
-                    Size = (ulong)size,
-                    DisplayName = displayName ?? identifier,
-                    Guid = guid,
-                    MountPoints = mountPoints.ToArray()
-                };
-
-                yield return driveInfo;
             }
         }
-
     }
 }
