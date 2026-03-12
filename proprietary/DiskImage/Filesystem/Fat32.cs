@@ -475,4 +475,411 @@ internal class Fat32Filesystem : IFilesystem
             throw new ArgumentException($"Start and size must be multiples of the sector size ({sectorSize} bytes).");
     }
 
+    /// <summary>
+    /// A stream that reads data from disk and buffers it in memory for writing back on dispose.
+    /// Similar to UnknownFilesystemStream but specific to FAT32 allocated blocks.
+    /// </summary>
+    private class Fat32Stream : Stream
+    {
+        /// <summary>
+        /// The raw disk to read from.
+        /// </summary>
+        private readonly IRawDisk _disk;
+
+        /// <summary>
+        /// The starting address on the disk for this stream.
+        /// </summary>
+        private readonly long _address;
+
+        /// <summary>
+        /// The size of the stream in bytes.
+        /// </summary>
+        private readonly long _size;
+
+        /// <summary>
+        /// The buffer used to store data before writing to disk.
+        /// </summary>
+        private readonly byte[] _buffer;
+
+        /// <summary>
+        /// Indicates whether the buffer was rented from the ArrayPool.
+        /// </summary>
+        private readonly bool _bufferRented;
+
+        /// <summary>
+        /// The current position within the buffer.
+        /// </summary>
+        private long _position;
+
+        /// <summary>
+        /// Indicates whether the data in the buffer is valid (has been read from disk).
+        /// </summary>
+        private bool _validData;
+
+        /// <summary>
+        /// Indicates whether the stream has been disposed.
+        /// </summary>
+        private bool _disposed;
+
+        /// <summary>
+        /// Indicates whether the stream supports reading.
+        /// </summary>
+        private readonly bool _readEnabled;
+
+        /// <summary>
+        /// Indicates whether the stream supports writing.
+        /// </summary>
+        private readonly bool _writeEnabled;
+
+        /// <summary>
+        /// Indicates whether the buffer has been modified (dirty).
+        /// </summary>
+        private bool _dirty;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Fat32Stream"/> class.
+        /// </summary>
+        /// <param name="disk">The raw disk to read from/write to.</param>
+        /// <param name="address">The starting address on the disk for this stream.</param>
+        /// <param name="size">The size of the stream in bytes.</param>
+        /// <param name="readEnabled">Whether reading is enabled.</param>
+        /// <param name="writeEnabled">Whether writing is enabled.</param>
+        public Fat32Stream(IRawDisk disk, long address, long size, bool readEnabled, bool writeEnabled)
+        {
+            _disk = disk;
+            _address = address;
+            _size = size;
+            _readEnabled = readEnabled;
+            _writeEnabled = writeEnabled;
+            // Rent buffer from ArrayPool to avoid LOH allocations for large buffers (typically 1 MB)
+            _buffer = ArrayPool<byte>.Shared.Rent((int)size);
+            _bufferRented = true;
+            _position = 0;
+            _validData = false;
+            _disposed = false;
+            _dirty = false;
+        }
+
+        public override bool CanRead => _readEnabled;
+        public override bool CanWrite => _writeEnabled;
+        public override bool CanSeek => true;
+        public override long Length => _size;
+        public override long Position
+        {
+            get => _position;
+            set
+            {
+                if (value < 0 || value > _size)
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                _position = value;
+            }
+        }
+
+        public override void Flush()
+        {
+            // No-op - data is written on dispose
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            long newPosition = origin switch
+            {
+                SeekOrigin.Begin => offset,
+                SeekOrigin.Current => _position + offset,
+                SeekOrigin.End => _size + offset,
+                _ => throw new ArgumentException("Invalid seek origin", nameof(origin))
+            };
+
+            if (newPosition < 0 || newPosition > _size)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+
+            _position = newPosition;
+            return _position;
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException("Cannot change the length of this stream.");
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (!_readEnabled)
+                throw new NotSupportedException("Read is not supported on this stream.");
+
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (buffer.Length - offset < count)
+                throw new ArgumentException("Invalid offset and count for buffer length");
+
+            if (!_validData)
+            {
+                // Load the data from disk into the buffer on the first read
+                _disk.ReadBytesAsync(_address, _buffer.AsMemory(0, (int)_size), CancellationToken.None).GetAwaiter().GetResult();
+                _validData = true;
+            }
+
+            int bytesToRead = (int)Math.Min(count, _size - _position);
+            if (bytesToRead <= 0)
+                return 0;
+
+            Buffer.BlockCopy(_buffer, (int)_position, buffer, offset, bytesToRead);
+            _position += bytesToRead;
+            return bytesToRead;
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            if (!_writeEnabled)
+                throw new NotSupportedException("Write is not supported on this stream.");
+
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (buffer.Length - offset < count)
+                throw new ArgumentException("Invalid offset and count for buffer length");
+
+            if (_position + count > _size)
+                throw new ArgumentException("Write would exceed stream size");
+
+            Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
+            _position += count;
+            _validData = true;
+            _dirty = true;
+        }
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            if (!_readEnabled)
+                throw new NotSupportedException("Read is not supported on this stream.");
+
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (buffer.Length - offset < count)
+                throw new ArgumentException("Invalid offset and count for buffer length");
+
+            if (!_validData)
+            {
+                // Load the data from disk into the buffer on the first read
+                await _disk.ReadBytesAsync(_address, _buffer.AsMemory(0, (int)_size), cancellationToken);
+                _validData = true;
+            }
+
+            int bytesToRead = (int)Math.Min(count, _size - _position);
+            if (bytesToRead <= 0)
+                return 0;
+
+            Buffer.BlockCopy(_buffer, (int)_position, buffer, offset, bytesToRead);
+            _position += bytesToRead;
+            return bytesToRead;
+        }
+
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            if (!_writeEnabled)
+                throw new NotSupportedException("Write is not supported on this stream.");
+
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (buffer.Length - offset < count)
+                throw new ArgumentException("Invalid offset and count for buffer length");
+
+            if (_position + count > _size)
+                throw new ArgumentException("Write would exceed stream size");
+
+            Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
+            _position += count;
+            _validData = true;
+            _dirty = true;
+
+            await Task.CompletedTask;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    if (_writeEnabled && _dirty)
+                    {
+                        // Write all buffered data to disk
+                        _disk.WriteBytesAsync(_address, _buffer.AsMemory(0, (int)_size), CancellationToken.None).GetAwaiter().GetResult();
+                    }
+                    // Return the rented buffer to the pool
+                    if (_bufferRented)
+                    {
+                        ArrayPool<byte>.Shared.Return(_buffer);
+                    }
+                }
+                _disposed = true;
+            }
+            base.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// Asynchronously releases the unmanaged resources used by the <see cref="Fat32Stream"/>.
+        /// </summary>
+        public override async ValueTask DisposeAsync()
+        {
+            if (!_disposed)
+            {
+                if (_writeEnabled && _dirty)
+                {
+                    // Write all buffered data to disk
+                    await _disk.WriteBytesAsync(_address, _buffer.AsMemory(0, (int)_size), CancellationToken.None);
+                }
+                // Return the rented buffer to the pool
+                if (_bufferRented)
+                {
+                    ArrayPool<byte>.Shared.Return(_buffer);
+                }
+                _disposed = true;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A stream that returns zeros without reading from disk.
+    /// Used for unallocated blocks to optimize backup performance.
+    /// </summary>
+    internal class Fat32ZeroStream : Stream
+    {
+        /// <summary>
+        /// The size of the stream in bytes.
+        /// </summary>
+        private readonly long _size;
+
+        /// <summary>
+        /// The shared zero buffer for this block size.
+        /// </summary>
+        private readonly byte[] _zeroBuffer;
+
+        /// <summary>
+        /// The current position within the stream.
+        /// </summary>
+        private long _position;
+
+        /// <summary>
+        /// Indicates whether the stream has been disposed.
+        /// </summary>
+        private bool _disposed;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Fat32ZeroStream"/> class.
+        /// </summary>
+        /// <param name="size">The size of the stream in bytes.</param>
+        public Fat32ZeroStream(int size)
+        {
+            if (size <= 0)
+                throw new ArgumentException("Size must be positive.", nameof(size));
+
+            _size = size;
+            _position = 0;
+            _disposed = false;
+
+            // Get or create the shared zero buffer for this size
+            _zeroBuffer = s_zeroBuffers.GetOrAdd(size, s => new byte[s]);
+        }
+
+        public override bool CanRead => true;
+        public override bool CanWrite => false;
+        public override bool CanSeek => true;
+        public override long Length => _size;
+        public override long Position
+        {
+            get => _position;
+            set
+            {
+                if (value < 0 || value > _size)
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                _position = value;
+            }
+        }
+
+        public override void Flush()
+        {
+            // No-op
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            long newPosition = origin switch
+            {
+                SeekOrigin.Begin => offset,
+                SeekOrigin.Current => _position + offset,
+                SeekOrigin.End => _size + offset,
+                _ => throw new ArgumentException("Invalid seek origin", nameof(origin))
+            };
+
+            if (newPosition < 0 || newPosition > _size)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+
+            _position = newPosition;
+            return _position;
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException("Cannot change the length of this stream.");
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (buffer.Length - offset < count)
+                throw new ArgumentException("Invalid offset and count for buffer length");
+
+            int bytesToRead = (int)Math.Min(count, _size - _position);
+            if (bytesToRead <= 0)
+                return 0;
+
+            // Copy zeros from the shared buffer
+            Buffer.BlockCopy(_zeroBuffer, 0, buffer, offset, bytesToRead);
+            _position += bytesToRead;
+            return bytesToRead;
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException("Write is not supported on this stream.");
+        }
+
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Read(buffer, offset, count));
+        }
+
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("Write is not supported on this stream.");
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            // No-op - the shared buffer is never returned
+            _disposed = true;
+            base.Dispose(disposing);
+        }
+    }
 }
