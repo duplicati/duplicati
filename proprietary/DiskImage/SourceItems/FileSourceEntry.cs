@@ -24,6 +24,9 @@ internal class FileSourceEntry(string parentPath, IFilesystem filesystem, IFile 
     public override long Size => file.Size;
 
     /// <inheritdoc />
+    public override DateTime LastModificationUtc => file.LastModified ?? DateTime.UnixEpoch;
+
+    /// <inheritdoc />
     public override Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
         return filesystem.OpenReadStreamAsync(file, cancellationToken);

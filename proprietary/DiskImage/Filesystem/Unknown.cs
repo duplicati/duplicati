@@ -40,6 +40,9 @@ public class UnknownFilesystemFile : IFile
 
     /// <inheritdoc />
     public bool IsDirectory => false;
+
+    /// <inheritdoc />
+    public DateTime? LastModified => null;
 }
 
 /// <summary>

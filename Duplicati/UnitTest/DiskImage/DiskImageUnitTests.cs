@@ -5525,6 +5525,7 @@ namespace Duplicati.UnitTest.DiskImage
             public long? Address => null;
             public long Size => 0;
             public bool IsDirectory => true;
+            public DateTime? LastModified => null;
         }
 
         /// <summary>
@@ -5536,6 +5537,7 @@ namespace Duplicati.UnitTest.DiskImage
             public long? Address => 0;
             public long Size => 100;
             public bool IsDirectory => false;
+            public DateTime? LastModified => null;
         }
 
         #endregion
