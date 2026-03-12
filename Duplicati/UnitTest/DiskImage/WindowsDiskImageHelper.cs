@@ -397,7 +397,9 @@ namespace Duplicati.UnitTest.DiskImage
                 }
 
             // Create the VHD using PowerShell
-            var script = $@"New-VHD -Path '{imagePath}' -SizeBytes {sizeB} -Fixed | Out-Null; Mount-DiskImage -ImagePath '{imagePath}' | Out-Null";
+            // Windows GPT initialization adds 16 MB of overhead, which means that the partitions may not have enough disk towards the end.
+            var overheadBytes = 16 * 1024 * 1024;
+            var script = $@"New-VHD -Path '{imagePath}' -SizeBytes {sizeB + overheadBytes} -Fixed | Out-Null; Mount-DiskImage -ImagePath '{imagePath}' | Out-Null";
             RunPowerShell(script);
 
             // Wait for the disk to be attached and get the disk number
