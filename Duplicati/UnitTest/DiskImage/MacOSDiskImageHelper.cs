@@ -230,10 +230,6 @@ namespace Duplicati.UnitTest.DiskImage
                     FileSystemType.ExFAT => "ExFAT",
                     FileSystemType.HFSPlus => "HFS+",
                     FileSystemType.APFS => "APFS",
-                    // For Unknown filesystem type, create FAT32 so tests can mount it and generate data.
-                    // The "Unknown" type signals the backup process to use raw block-level access,
-                    // not that the partition should be unformatted.
-                    FileSystemType.Unknown => "\"MS-DOS FAT32\"",
                     _ => throw new ArgumentException($"Unsupported filesystem type on macOS: {p.Item1}", nameof(partitions))
                 };
 
