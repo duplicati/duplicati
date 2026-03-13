@@ -159,6 +159,21 @@ public readonly record struct Fat32BootSector
     public uint TotalDataClusters => (uint)((TotalSectors32 - (ReservedSectorCount + NumberOfFats * FatSize32)) / SectorsPerCluster);
 
     /// <summary>
+    /// Minimum valid total sectors for a FAT32 volume (1 MB = 2048 sectors at 512 bytes).
+    /// </summary>
+    private const uint MinTotalSectors = 2048;
+
+    /// <summary>
+    /// Minimum valid FAT size in sectors (for a small volume).
+    /// </summary>
+    private const uint MinFatSize = 1;
+
+    /// <summary>
+    /// Maximum valid FAT size in sectors (for very large volumes, e.g., 2TB with 4KB sectors).
+    /// </summary>
+    private const uint MaxFatSize = 16777215;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Fat32BootSector"/> struct by parsing the provided boot sector data.
     /// </summary>
     /// <param name="bootSectorData">The boot sector data (must be at least 512 bytes).</param>
@@ -195,10 +210,26 @@ public readonly record struct Fat32BootSector
         if (NumberOfFats < 1)
             throw new ArgumentException($"Invalid NumberOfFats: {NumberOfFats}. Must be at least 1.", nameof(bootSectorData));
 
-        // Validate the filesystem type string at offset 0x52 contains "FAT32"
+        // Validate TotalSectors32 is reasonable (at least 1 MB worth of sectors)
+        if (TotalSectors32 < MinTotalSectors)
+            throw new ArgumentException($"Invalid TotalSectors32: {TotalSectors32}. Must be at least {MinTotalSectors} (1 MB).", nameof(bootSectorData));
+
+        // Validate FatSize32 is reasonable
+        if (FatSize32 < MinFatSize || FatSize32 > MaxFatSize)
+            throw new ArgumentException($"Invalid FatSize32: {FatSize32}. Must be between {MinFatSize} and {MaxFatSize}.", nameof(bootSectorData));
+
+        // Validate RootCluster (typically 2, but allow any reasonable value >= 2)
+        if (RootCluster < 2)
+            throw new ArgumentException($"Invalid RootCluster: {RootCluster}. Must be at least 2.", nameof(bootSectorData));
+
+        // Validate ReservedSectorCount is reasonable (typically 0-65535)
+        if (ReservedSectorCount < 1 || ReservedSectorCount > 65535)
+            throw new ArgumentException($"Invalid ReservedSectorCount: {ReservedSectorCount}. Must be between 1 and 65535.", nameof(bootSectorData));
+
+        // Validate the filesystem type string at offset 0x52 contains "FAT32" (exact match)
         var fsType = Encoding.ASCII.GetString(bootSectorData.Slice(FilesystemTypeOffset, FilesystemTypeLength));
-        if (!fsType.Contains("FAT32"))
-            throw new ArgumentException($"Invalid filesystem type: expected 'FAT32' in filesystem type string, got '{fsType}'.", nameof(bootSectorData));
+        if (fsType != "FAT32   " && fsType != "FAT32")
+            throw new ArgumentException($"Invalid filesystem type: expected 'FAT32   ' or 'FAT32' in filesystem type string, got '{fsType}'.", nameof(bootSectorData));
     }
 
     /// <summary>
