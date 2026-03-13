@@ -42,7 +42,7 @@ public class UnknownFilesystemFile : IFile
     public bool IsDirectory => false;
 
     /// <inheritdoc />
-    public DateTime? LastModified => null;
+    public DateTime? LastModified => DateTime.UtcNow;
 }
 
 /// <summary>
