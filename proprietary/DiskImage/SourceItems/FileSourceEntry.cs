@@ -15,7 +15,7 @@ namespace Duplicati.Proprietary.DiskImage.SourceItems;
 /// Represents a file within a filesystem as a source entry for backup operations.
 /// </summary>
 internal class FileSourceEntry(string parentPath, IFilesystem filesystem, IFile file)
-    : DiskImageEntryBase(System.IO.Path.Combine(parentPath, file.Path ?? file.Address?.ToString("X016") ?? "unknown"))
+    : DiskImageEntryBase(System.IO.Path.Combine(parentPath, file.Address?.ToString("X016") ?? file.Path ?? "unknown"))
 {
     /// <inheritdoc />
     public override bool IsFolder => file.IsDirectory;
