@@ -381,7 +381,7 @@ internal class Fat32Filesystem : IFilesystem
         }
         else
         {
-            return new Fat32ZeroStream(m_blockSize);
+            return new Fat32ZeroStream((int)size);
         }
     }
 
@@ -924,6 +924,9 @@ internal class Fat32Filesystem : IFilesystem
 
         protected override void Dispose(bool disposing)
         {
+            if (_disposed)
+                return;
+
             // No-op - the shared buffer is never returned
             _disposed = true;
             base.Dispose(disposing);
