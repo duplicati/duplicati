@@ -23,8 +23,9 @@ internal class FileSourceEntry(string parentPath, IFilesystem filesystem, IFile 
     /// <inheritdoc />
     public override long Size => file.Size;
 
+    /// If the file doesn't report a last modified time, use the current time as a fallback to always back it up.
     /// <inheritdoc />
-    public override DateTime LastModificationUtc => file.LastModified ?? DateTime.UnixEpoch;
+    public override DateTime LastModificationUtc => file.LastModified ?? DateTime.UtcNow;
 
     /// <inheritdoc />
     public override Task<Stream> OpenRead(CancellationToken cancellationToken)
