@@ -1430,10 +1430,6 @@ namespace Duplicati.UnitTest.DiskImage
         [Category("DiskImageFileSystem")]
         public async Task Test_FileSystem_UnallocatedSpace_CompressesWell(int size, PartitionTableType tableType, FileSystemType fsType)
         {
-            // Unknown filesystem type is only supported on Linux
-            if (fsType == FileSystemType.Unknown && !OperatingSystem.IsLinux())
-                Assert.Ignore("Unknown filesystem type is only supported on Linux.");
-
             await TestContext.Progress.WriteLineAsync($"Test: {fsType} Unallocated Space Compression");
 
             // Create source disk with specified partition
@@ -1499,10 +1495,6 @@ namespace Duplicati.UnitTest.DiskImage
         [Category("DiskImageFileSystem")]
         public async Task Test_FileSystem_FullDisk_AllBlocksAllocated(int size, PartitionTableType tableType, FileSystemType fsType)
         {
-            // Unknown filesystem type is only supported on Linux
-            if (fsType == FileSystemType.Unknown && !OperatingSystem.IsLinux())
-                Assert.Ignore("Unknown filesystem type is only supported on Linux.");
-
             await TestContext.Progress.WriteLineAsync($"Test: {fsType} Full Disk - All Blocks Allocated");
 
             // Create source disk with specified partition (must be at least 32MB for FAT32)
