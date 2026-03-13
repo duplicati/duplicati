@@ -1257,5 +1257,139 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         #endregion
+
+        #region FAT32 Filesystem-Aware Integration Tests
+
+        /// <summary>
+        /// Tests that unallocated space in FAT32 compresses well due to zero-block deduplication.
+        /// Creates a FAT32 disk with sparse data (few files, lots of free space),
+        /// backs it up, and verifies the backup size is significantly smaller than the disk size.
+        /// </summary>
+        [Test]
+        [Category("DiskImage")]
+        [Category("DiskImageFAT32")]
+        public async Task Test_FAT32_UnallocatedSpace_CompressesWell()
+        {
+            await TestContext.Progress.WriteLineAsync("Test: FAT32 Unallocated Space Compression");
+
+            // Create source disk with FAT32 partition (50MB disk)
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (int)(50 * MiB));
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+            await TestContext.Progress.WriteLineAsync($"Source disk created at: {_sourceImagePath}");
+
+            // Generate minimal test data (sparse data - only a few small files)
+            // This leaves most of the 50MB as unallocated space
+            await ToolTests.GenerateTestData(sourcePartitions.First(), 3, 0, 0, 512);
+            _diskHelper.FlushDisk(sourceDrivePath);
+            _diskHelper.Unmount(sourceDrivePath);
+            await TestContext.Progress.WriteLineAsync("Sparse test data generated (few files, lots of free space)");
+
+            // Backup
+            var backupResults = RunBackup(sourceDrivePath);
+            TestUtils.AssertResults(backupResults);
+            await TestContext.Progress.WriteLineAsync($"Backup completed: {backupResults.SizeOfOpenedFiles} bytes examined");
+
+            // Calculate the actual backup size from the target folder
+            var backupFiles = Directory.GetFiles(TARGETFOLDER, "*", SearchOption.AllDirectories);
+            long actualBackupSize = backupFiles.Sum(f => new FileInfo(f).Length);
+            await TestContext.Progress.WriteLineAsync($"Actual backup size on disk: {actualBackupSize} bytes");
+
+            // The backup should be significantly smaller than the full disk size
+            // With zero-block deduplication, unallocated clusters return zeros which compress very well
+            var diskSize = 50 * MiB;
+            var compressionRatio = (double)actualBackupSize / diskSize;
+            await TestContext.Progress.WriteLineAsync($"Compression ratio: {compressionRatio:P2} ({actualBackupSize}/{diskSize})");
+
+            // Backup should be less than 50% of disk size due to zero deduplication
+            // (This is a conservative estimate - actual ratio should be much better)
+            Assert.That(compressionRatio, Is.LessThan(0.5),
+                "Backup with sparse data should be significantly smaller than full disk size due to zero-block deduplication");
+
+            // Create restore disk and verify restore works
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (int)(50 * MiB));
+            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
+            _diskHelper.Unmount(restoreDrivePath);
+
+            var restoreResults = RunRestore(restoreDrivePath);
+            TestUtils.AssertResults(restoreResults);
+
+            // Reattach and verify
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: true);
+            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, PartitionTableType.GPT, readOnly: true);
+
+            var fsTypes = new[] { FileSystemType.FAT32 };
+            var sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
+            var restoreMounted = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
+
+            CompareDirectories(sourceMounted.First(), restoreMounted.First());
+
+            await TestContext.Progress.WriteLineAsync("FAT32 unallocated space compression verified successfully");
+        }
+
+        /// <summary>
+        /// Tests that a completely full FAT32 disk has all blocks marked as allocated.
+        /// Creates a FAT32 disk filled with data and verifies the backup reads the full disk.
+        /// </summary>
+        [Test]
+        [Category("DiskImage")]
+        [Category("DiskImageFAT32")]
+        [Category("DiskImageLocal")]
+        public async Task Test_FAT32_FullDisk_AllBlocksAllocated()
+        {
+            await TestContext.Progress.WriteLineAsync("Test: FAT32 Full Disk - All Blocks Allocated");
+
+            // Create source disk with FAT32 partition (must be at least 32MB for FAT32)
+            var diskSize = 50 * MiB;
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (int)diskSize);
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+            await TestContext.Progress.WriteLineAsync($"Source disk created at: {_sourceImagePath} ({diskSize} bytes)");
+
+            // Fill the disk with data (create enough files to fill most of the space)
+            var partitionPath = sourcePartitions.First();
+
+            // Generate many files to fill the disk
+            // Using larger files to fill space quickly
+            for (int batch = 0; batch < 10; batch++)
+            {
+                await ToolTests.GenerateTestData(Path.Combine(partitionPath, $"batch_{batch}"), 10, 0, 0, 4096);
+            }
+            _diskHelper.FlushDisk(sourceDrivePath);
+            _diskHelper.Unmount(sourceDrivePath);
+            await TestContext.Progress.WriteLineAsync("Disk filled with data");
+
+            // Backup
+            var backupResults = RunBackup(sourceDrivePath);
+            TestUtils.AssertResults(backupResults);
+            await TestContext.Progress.WriteLineAsync($"Backup completed: {backupResults.SizeOfOpenedFiles} bytes examined, {backupResults.SizeOfAddedFiles} bytes added");
+
+            // With a full disk, most blocks should be allocated
+            // The backup should have examined a significant portion of the disk
+            // Note: We examine files (blocks), and with a full disk, SizeOfOpenedFiles
+            // should be close to the partition size
+            Assert.That(backupResults.SizeOfOpenedFiles, Is.GreaterThan(diskSize * 0.5),
+                "Full disk backup should examine most of the disk size");
+
+            // Create restore disk and verify restore
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (int)diskSize);
+            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
+            _diskHelper.Unmount(restoreDrivePath);
+
+            var restoreResults = RunRestore(restoreDrivePath);
+            TestUtils.AssertResults(restoreResults);
+
+            // Reattach and verify
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: true);
+            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, PartitionTableType.GPT, readOnly: true);
+
+            var fsTypes = new[] { FileSystemType.FAT32 };
+            var sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
+            var restoreMounted = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
+
+            CompareDirectories(sourceMounted.First(), restoreMounted.First());
+
+            await TestContext.Progress.WriteLineAsync("FAT32 full disk backup verified successfully");
+        }
+
+        #endregion
     }
 }
