@@ -1261,6 +1261,164 @@ namespace Duplicati.UnitTest.DiskImage
         #region FAT32 Filesystem-Aware Integration Tests
 
         /// <summary>
+        /// Tests that incremental backup with FAT32 skips unchanged blocks.
+        /// Creates a FAT32 disk, performs initial backup, modifies one file,
+        /// performs second backup, and verifies only changed blocks were processed.
+        /// </summary>
+        [Test]
+        [Category("DiskImage")]
+        [Category("DiskImageFAT32")]
+        public async Task Test_FAT32_IncrementalBackup_UnchangedBlocks_Skipped()
+        {
+            await TestContext.Progress.WriteLineAsync("Test: FAT32 Incremental Backup - Unchanged Blocks Skipped");
+
+            // Create source disk with FAT32 partition
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (int)(50 * MiB));
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+            await TestContext.Progress.WriteLineAsync($"Source disk created at: {_sourceImagePath}");
+
+            // Generate initial test data
+            await ToolTests.GenerateTestData(sourcePartitions.First(), 10, 3, 1, 1024);
+            _diskHelper.FlushDisk(sourceDrivePath);
+            _diskHelper.Unmount(sourceDrivePath);
+            await TestContext.Progress.WriteLineAsync("Initial test data generated");
+
+            // First backup
+            var firstBackupResults = RunBackup(sourceDrivePath);
+            TestUtils.AssertResults(firstBackupResults);
+            var firstBackupSize = firstBackupResults.SizeOfOpenedFiles;
+            await TestContext.Progress.WriteLineAsync($"First backup completed: {firstBackupResults.OpenedFiles} files opened, {firstBackupSize} bytes");
+
+            // Verify first backup processed the expected amount of data
+            // With FAT32 awareness, unallocated blocks are returned as zeros (no disk read)
+            Assert.That(firstBackupResults.SizeOfOpenedFiles, Is.GreaterThan(0),
+                "First backup should have opened and processed files");
+
+            // Create restore disk for initial restore verification
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (int)(50 * MiB));
+            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
+            _diskHelper.Unmount(restoreDrivePath);
+            await TestContext.Progress.WriteLineAsync($"Restore disk created at: {_restoreImagePath}");
+
+            var restoreResults = RunRestore(restoreDrivePath);
+            TestUtils.AssertResults(restoreResults);
+            await TestContext.Progress.WriteLineAsync("Initial restore completed successfully");
+
+            // Reattach and verify initial restore
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: true);
+            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, PartitionTableType.GPT, readOnly: true);
+
+            var fsTypes = new[] { FileSystemType.FAT32 };
+            var sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
+            var restoreMounted = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
+
+            CompareDirectories(sourceMounted.First(), restoreMounted.First());
+            await TestContext.Progress.WriteLineAsync("Initial restore verified successfully");
+
+            // Unmount both disks to prepare for modification
+            _diskHelper.Unmount(sourceDrivePath);
+            _diskHelper.Unmount(restoreDrivePath);
+            await TestContext.Progress.WriteLineAsync("Both disks unmounted");
+
+            // Remount source drive in write-enabled mode
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: false);
+            sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: false, fileSystemTypes: fsTypes);
+            await TestContext.Progress.WriteLineAsync("Source disk remounted in write mode");
+
+            // Modify a few files on the source - create new files and modify existing ones
+            var sourcePartitionPath = sourceMounted.First();
+            var modifiedFiles = new List<string>();
+
+            // Create a new directory with some new files
+            var newDirPath = Path.Combine(sourcePartitionPath, "incremental_new_files");
+            Directory.CreateDirectory(newDirPath);
+            for (int i = 0; i < 3; i++)
+            {
+                var newFilePath = Path.Combine(newDirPath, $"new_file_{i}.txt");
+                var content = $"This is new content for incremental backup test - file {i} - {Guid.NewGuid()}";
+                await File.WriteAllTextAsync(newFilePath, content);
+                // Set a recent modification time to ensure the backup detects the change
+                File.SetLastWriteTimeUtc(newFilePath, DateTime.UtcNow);
+                modifiedFiles.Add(newFilePath);
+            }
+            // Also update directory timestamp
+            Directory.SetLastWriteTimeUtc(newDirPath, DateTime.UtcNow);
+            await TestContext.Progress.WriteLineAsync($"Created {modifiedFiles.Count} new files in {newDirPath}");
+
+            // Modify an existing file if one exists
+            var existingFiles = Directory.GetFiles(sourcePartitionPath, "*.txt", SearchOption.AllDirectories)
+                .Where(f => !f.Contains("incremental_new_files"))
+                .ToArray();
+            if (existingFiles.Length > 0)
+            {
+                var fileToModify = existingFiles[0];
+                var originalContent = await File.ReadAllTextAsync(fileToModify);
+                var modifiedContent = originalContent + $"\n\nModified for incremental backup test - {Guid.NewGuid()}";
+                await File.WriteAllTextAsync(fileToModify, modifiedContent);
+                // Update modification time to ensure backup detects the change
+                File.SetLastWriteTimeUtc(fileToModify, DateTime.UtcNow.AddSeconds(1));
+                modifiedFiles.Add(fileToModify);
+                await TestContext.Progress.WriteLineAsync($"Modified existing file: {fileToModify}");
+            }
+
+            // Flush and unmount source after modifications
+            _diskHelper.FlushDisk(sourceDrivePath);
+            _diskHelper.Unmount(sourceDrivePath);
+            await TestContext.Progress.WriteLineAsync("Modifications complete, source disk unmounted");
+
+            // Re-attach the source disk for backup (disk needs to be attached for backup to access it)
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: true);
+            await TestContext.Progress.WriteLineAsync($"Source disk re-attached for second backup at: {sourceDrivePath}");
+
+            // Second backup (incremental)
+            var secondBackupResults = RunBackup(sourceDrivePath);
+            TestUtils.AssertResults(secondBackupResults);
+            var secondBackupSize = secondBackupResults.SizeOfOpenedFiles;
+            await TestContext.Progress.WriteLineAsync($"Second backup completed: {secondBackupResults.OpenedFiles} files opened, {secondBackupSize} bytes examined, {secondBackupResults.SizeOfAddedFiles} bytes added");
+
+            // Verify the second backup processed significantly fewer files than the first
+            // The second backup should only process modified/new files, not all files
+            Assert.That(secondBackupResults.OpenedFiles, Is.LessThan(firstBackupResults.OpenedFiles),
+                "Incremental backup should open fewer files than the initial backup");
+            Assert.That(secondBackupResults.SizeOfOpenedFiles, Is.LessThan(firstBackupResults.SizeOfOpenedFiles),
+                "Incremental backup should examine less data than the initial backup");
+
+            // Also verify that the second backup actually modified some files
+            Assert.That(secondBackupResults.ModifiedFiles, Is.GreaterThan(0),
+                "Incremental backup should have added new or modified files");
+
+            // Calculate and log the reduction ratio
+            var fileReductionRatio = (double)secondBackupResults.OpenedFiles / firstBackupResults.OpenedFiles;
+            var sizeReductionRatio = (double)secondBackupResults.SizeOfOpenedFiles / firstBackupResults.SizeOfOpenedFiles;
+            await TestContext.Progress.WriteLineAsync($"File reduction: {fileReductionRatio:P2} ({secondBackupResults.OpenedFiles}/{firstBackupResults.OpenedFiles})");
+            await TestContext.Progress.WriteLineAsync($"Size reduction: {sizeReductionRatio:P2} ({secondBackupResults.SizeOfOpenedFiles}/{firstBackupResults.SizeOfOpenedFiles})");
+
+            // Restore the incremental backup to a fresh disk
+            _diskHelper.CleanupDisk(_restoreImagePath);
+            DiskImageTestHelpers.SafeDeleteFile(_restoreImagePath);
+
+            restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (int)(50 * MiB));
+            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
+            _diskHelper.Unmount(restoreDrivePath);
+            await TestContext.Progress.WriteLineAsync($"Fresh restore disk created for incremental restore");
+
+            var incrementalRestoreResults = RunRestore(restoreDrivePath);
+            TestUtils.AssertResults(incrementalRestoreResults);
+            await TestContext.Progress.WriteLineAsync("Incremental restore completed successfully");
+
+            // Reattach and verify the incremental restore matches the modified source
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: true);
+            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, PartitionTableType.GPT, readOnly: true);
+
+            sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
+            restoreMounted = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
+
+            CompareDirectories(sourceMounted.First(), restoreMounted.First());
+
+            await TestContext.Progress.WriteLineAsync("FAT32 incremental backup and restore verified successfully");
+        }
+
+        /// <summary>
         /// Tests that unallocated space in FAT32 compresses well due to zero-block deduplication.
         /// Creates a FAT32 disk with sparse data (few files, lots of free space),
         /// backs it up, and verifies the backup size is significantly smaller than the disk size.
