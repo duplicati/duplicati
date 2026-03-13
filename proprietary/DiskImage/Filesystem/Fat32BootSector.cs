@@ -13,9 +13,10 @@ namespace Duplicati.Proprietary.DiskImage.Filesystem;
 public readonly record struct Fat32BootSector
 {
     /// <summary>
-    /// The boot sector signature at offset 510 (0x55AA).
+    /// The boot sector signature at offset 510.
+    /// On disk the bytes are 0x55, 0xAA; read as little-endian uint16 this is 0xAA55.
     /// </summary>
-    private const ushort BootSectorSignature = 0x55AA;
+    private const ushort BootSectorSignature = 0xAA55;
 
     /// <summary>
     /// Offset to the boot sector signature.
@@ -167,7 +168,7 @@ public readonly record struct Fat32BootSector
         if (bootSectorData.Length < MinimumBufferSize)
             throw new ArgumentException($"Boot sector data must be at least {MinimumBufferSize} bytes.", nameof(bootSectorData));
 
-        // Validate boot sector signature (0x55AA at offset 510)
+        // Validate boot sector signature (bytes 0x55, 0xAA at offset 510; 0xAA55 as little-endian uint16)
         var signature = BinaryPrimitives.ReadUInt16LittleEndian(bootSectorData.Slice(SignatureOffset, 2));
         if (signature != BootSectorSignature)
             throw new ArgumentException($"Invalid boot sector signature: expected 0x{BootSectorSignature:X4}, got 0x{signature:X4}.", nameof(bootSectorData));

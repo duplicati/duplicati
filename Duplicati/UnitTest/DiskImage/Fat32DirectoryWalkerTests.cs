@@ -55,8 +55,8 @@ namespace Duplicati.UnitTest.DiskImage
             var fsType = System.Text.Encoding.ASCII.GetBytes("FAT32   ");
             fsType.CopyTo(bootSector, 0x52);
 
-            // Boot sector signature at offset 510 (0x55AA)
-            BinaryPrimitives.WriteUInt16LittleEndian(bootSector.AsSpan(510, 2), 0x55AA);
+            // Boot sector signature at offset 510: bytes 0x55, 0xAA on disk (0xAA55 as little-endian uint16)
+            BinaryPrimitives.WriteUInt16LittleEndian(bootSector.AsSpan(510, 2), 0xAA55);
 
             return bootSector;
         }
