@@ -52,7 +52,7 @@ public class UnknownFilesystemFile : IFile
 internal class UnknownFilesystem : IFilesystem
 {
     /// <inheritdoc />
-    public FileSystemType Type => FileSystemType.Unknown;
+    public FileSystemType Type { get; }
 
     /// <inheritdoc />
     public IPartition Partition { get => m_partition; }
@@ -77,13 +77,15 @@ internal class UnknownFilesystem : IFilesystem
     /// </summary>
     /// <param name="partition">The parent partition.</param>
     /// <param name="blockSize">The block size for reading/writing (default is 1MB).</param>
+    /// <param name="overrideType">Optional filesystem type to report (defaults to Unknown). Used when falling back from a specific filesystem type.</param>
     /// <exception cref="ArgumentException">Thrown if block size is invalid.</exception>
-    public UnknownFilesystem(IPartition partition, int blockSize = 1024 * 1024)
+    public UnknownFilesystem(IPartition partition, int blockSize = 1024 * 1024, FileSystemType overrideType = FileSystemType.Unknown)
     {
         m_partition = partition;
         if (blockSize < 0 || blockSize % partition.PartitionTable.RawDisk?.SectorSize != 0)
             throw new ArgumentException("Block size must be non-negative and a multiple of the partition sector size.", nameof(blockSize));
         m_blockSize = blockSize;
+        Type = overrideType;
     }
 
     /// <inheritdoc />

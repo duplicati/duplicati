@@ -777,12 +777,21 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <returns>An IFilesystem instance, or null if the filesystem type is not supported.</returns>
     private IFilesystem? CreateFilesystemFromGeometry(IPartition partition, FilesystemGeometry fsGeom)
     {
-        return fsGeom.Type switch
+        try
         {
-            // For now, we use UnknownFilesystem as the base implementation
-            // Specific filesystem implementations can be added later
-            _ => new UnknownFilesystem(partition, fsGeom.BlockSize)
-        };
+            return fsGeom.Type switch
+            {
+                FileSystemType.FAT32 => new Fat32Filesystem(partition, fsGeom.BlockSize),
+                _ => new UnknownFilesystem(partition, fsGeom.BlockSize)
+            };
+        }
+        catch
+        {
+            // If creating the filesystem fails (e.g., invalid boot sector on blank disk),
+            // fall back to UnknownFilesystem for raw block access but report the original type
+            // so that path lookup works correctly
+            return new UnknownFilesystem(partition, fsGeom.BlockSize, fsGeom.Type);
+        }
     }
 
     /// <summary>
