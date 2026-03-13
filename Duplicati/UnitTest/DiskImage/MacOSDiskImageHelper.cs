@@ -623,7 +623,8 @@ namespace Duplicati.UnitTest.DiskImage
         {
             // Eject can fail if issued too fast after writing data, which makes diskutil throw an error. Retry a few times with a delay to mitigate this.
             RunProcess("diskutil", $"eject {diskIdentifier}", retryCount: 3);
-            var reattachoutput = RunProcess("hdiutil", $"attach -nomount -noautofsck -readonly \"{imagePath}\"");
+            var readOnlyArg = readOnly ? " -readonly" : "";
+            var reattachoutput = RunProcess("hdiutil", $"attach -nomount -noautofsck{readOnlyArg} \"{imagePath}\"");
             if (tableType == PartitionTableType.Unknown)
                 return reattachoutput.Split('\n').First().Trim();
             else
