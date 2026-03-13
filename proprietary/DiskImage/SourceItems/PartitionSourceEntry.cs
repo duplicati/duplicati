@@ -18,7 +18,7 @@ namespace Duplicati.Proprietary.DiskImage.SourceItems;
 /// Represents a partition as a source entry for backup operations.
 /// Acts as a container for the filesystem within the partition.
 /// </summary>
-internal class PartitionSourceEntry(string parentPath, IPartition partition)
+internal class PartitionSourceEntry(string parentPath, IPartition partition, bool treatFilesystemAsUnknown = false)
     : DiskImageEntryBase(System.IO.Path.Combine(parentPath, $"part_{partition.PartitionTable.TableType}_{partition.PartitionNumber}{System.IO.Path.DirectorySeparatorChar}"))
 {
     /// <inheritdoc />
@@ -32,15 +32,21 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition)
     /// </summary>
     public IPartition Partition => partition;
 
+    /// <summary>
+    /// Gets a value indicating whether to treat the filesystem as unknown.
+    /// </summary>
+    private bool TreatFilesystemAsUnknown => treatFilesystemAsUnknown;
+
     /// <inheritdoc />
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        IFilesystem fs = partition.FilesystemType switch
-        {
-            FileSystemType.FAT32 => new Fat32Filesystem(partition),
-            FileSystemType.Unknown => new UnknownFilesystem(partition),
-            _ => new UnknownFilesystem(partition)
-        };
+        IFilesystem fs = TreatFilesystemAsUnknown || partition.FilesystemType == FileSystemType.Unknown
+            ? new UnknownFilesystem(partition)
+            : partition.FilesystemType switch
+            {
+                FileSystemType.FAT32 => new Fat32Filesystem(partition),
+                _ => new UnknownFilesystem(partition)
+            };
         yield return new FilesystemSourceEntry(this.Path, fs);
     }
 

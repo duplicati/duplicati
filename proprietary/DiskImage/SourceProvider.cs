@@ -50,12 +50,18 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     private readonly ConcurrentDictionary<string, ISourceProviderEntry> _entryCache = new();
 
     /// <summary>
+    /// Indicates whether to treat filesystems as unknown (force raw block-based backup).
+    /// </summary>
+    private readonly bool _treatFilesystemAsUnknown;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SourceProvider"/> class.
     /// Default constructor for metadata loading.
     /// </summary>
     public SourceProvider()
     {
         _devicePath = null!;
+        _treatFilesystemAsUnknown = false;
     }
 
     /// <summary>
@@ -71,6 +77,8 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
 
         var uri = new Library.Utility.Uri(url);
         _devicePath = uri.HostAndPath;
+
+        _treatFilesystemAsUnknown = Library.Utility.Utility.ParseBoolOption(options, OptionsHelper.DISK_IMAGE_FILESYSTEM_UNKNOWN_OPTION);
     }
 
     /// <inheritdoc />
@@ -87,6 +95,11 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
 
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => OptionsHelper.SupportedCommands;
+
+    /// <summary>
+    /// Gets a value indicating whether to treat filesystems as unknown (force raw block-based backup).
+    /// </summary>
+    internal bool TreatFilesystemAsUnknown => _treatFilesystemAsUnknown;
 
     /// <inheritdoc />
     public async Task Initialize(CancellationToken cancellationToken)

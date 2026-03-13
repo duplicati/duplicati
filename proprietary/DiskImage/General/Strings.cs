@@ -130,4 +130,14 @@ internal static class Strings
     /// Long description for the web module path option.
     /// </summary>
     public static string WebModulePathLong => LC.L("The path to use for the web module operation.");
+
+    /// <summary>
+    /// Short description for the filesystem unknown option.
+    /// </summary>
+    public static string DiskImageFilesystemUnknownShort => LC.L("Treat filesystem as unknown.");
+
+    /// <summary>
+    /// Long description for the filesystem unknown option.
+    /// </summary>
+    public static string DiskImageFilesystemUnknownLong => LC.L("If set, the filesystem on partitions will be treated as unknown, rather than trying to detect it. This forces raw block-based backup instead of filesystem-aware backup.");
 }
