@@ -1,0 +1,9 @@
+{
+  "Backup": {
+    "Description": "Backup for ${USERNAME} on ${COMPUTERNAME}",
+    "Settings": {
+      "Name": "retention-policy",
+      "Value": "14D:1D,4W:1W,3Y:1M"
+    }
+  }
+}
