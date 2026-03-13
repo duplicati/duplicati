@@ -1258,23 +1258,24 @@ namespace Duplicati.UnitTest.DiskImage
 
         #endregion
 
-        #region FAT32 Filesystem-Aware Integration Tests
+        #region Filesystem-Aware Integration Tests
 
         /// <summary>
-        /// Tests that incremental backup with FAT32 skips unchanged blocks.
-        /// Creates a FAT32 disk, performs initial backup, modifies one file,
+        /// Tests that incremental backup with filesystem awareness skips unchanged blocks.
+        /// Creates a disk with the specified filesystem, performs initial backup, modifies one file,
         /// performs second backup, and verifies only changed blocks were processed.
         /// </summary>
-        [Test]
+        [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.FAT32)]
+        [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.Unknown)]
         [Category("DiskImage")]
-        [Category("DiskImageFAT32")]
-        public async Task Test_FAT32_IncrementalBackup_UnchangedBlocks_Skipped()
+        [Category("DiskImageFileSystem")]
+        public async Task Test_FileSystem_IncrementalBackup_UnchangedBlocks_Skipped(int size, PartitionTableType tableType, FileSystemType fsType)
         {
-            await TestContext.Progress.WriteLineAsync("Test: FAT32 Incremental Backup - Unchanged Blocks Skipped");
+            await TestContext.Progress.WriteLineAsync($"Test: {fsType} Incremental Backup - Unchanged Blocks Skipped");
 
-            // Create source disk with FAT32 partition
-            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (int)(50 * MiB));
-            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+            // Create source disk with specified partition
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, size);
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, tableType, [(fsType, 0)]);
             await TestContext.Progress.WriteLineAsync($"Source disk created at: {_sourceImagePath}");
 
             // Generate initial test data
@@ -1295,8 +1296,8 @@ namespace Duplicati.UnitTest.DiskImage
                 "First backup should have opened and processed files");
 
             // Create restore disk for initial restore verification
-            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (int)(50 * MiB));
-            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, size);
+            _diskHelper.InitializeDisk(restoreDrivePath, tableType, []);
             _diskHelper.Unmount(restoreDrivePath);
             await TestContext.Progress.WriteLineAsync($"Restore disk created at: {_restoreImagePath}");
 
@@ -1305,10 +1306,10 @@ namespace Duplicati.UnitTest.DiskImage
             await TestContext.Progress.WriteLineAsync("Initial restore completed successfully");
 
             // Reattach and verify initial restore
-            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: true);
-            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, PartitionTableType.GPT, readOnly: true);
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: true);
+            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, tableType, readOnly: true);
 
-            var fsTypes = new[] { FileSystemType.FAT32 };
+            var fsTypes = new[] { fsType };
             var sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
             var restoreMounted = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
 
@@ -1321,7 +1322,7 @@ namespace Duplicati.UnitTest.DiskImage
             await TestContext.Progress.WriteLineAsync("Both disks unmounted");
 
             // Remount source drive in write-enabled mode
-            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: false);
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: false);
             sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: false, fileSystemTypes: fsTypes);
             await TestContext.Progress.WriteLineAsync("Source disk remounted in write mode");
 
@@ -1367,7 +1368,7 @@ namespace Duplicati.UnitTest.DiskImage
             await TestContext.Progress.WriteLineAsync("Modifications complete, source disk unmounted");
 
             // Re-attach the source disk for backup (disk needs to be attached for backup to access it)
-            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: true);
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: true);
             await TestContext.Progress.WriteLineAsync($"Source disk re-attached for second backup at: {sourceDrivePath}");
 
             // Second backup (incremental)
@@ -1397,8 +1398,8 @@ namespace Duplicati.UnitTest.DiskImage
             _diskHelper.CleanupDisk(_restoreImagePath);
             DiskImageTestHelpers.SafeDeleteFile(_restoreImagePath);
 
-            restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (int)(50 * MiB));
-            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
+            restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, size);
+            _diskHelper.InitializeDisk(restoreDrivePath, tableType, []);
             _diskHelper.Unmount(restoreDrivePath);
             await TestContext.Progress.WriteLineAsync($"Fresh restore disk created for incremental restore");
 
@@ -1407,32 +1408,37 @@ namespace Duplicati.UnitTest.DiskImage
             await TestContext.Progress.WriteLineAsync("Incremental restore completed successfully");
 
             // Reattach and verify the incremental restore matches the modified source
-            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: true);
-            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, PartitionTableType.GPT, readOnly: true);
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: true);
+            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, tableType, readOnly: true);
 
             sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
             restoreMounted = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
 
             CompareDirectories(sourceMounted.First(), restoreMounted.First());
 
-            await TestContext.Progress.WriteLineAsync("FAT32 incremental backup and restore verified successfully");
+            await TestContext.Progress.WriteLineAsync($"{fsType} incremental backup and restore verified successfully");
         }
 
         /// <summary>
-        /// Tests that unallocated space in FAT32 compresses well due to zero-block deduplication.
-        /// Creates a FAT32 disk with sparse data (few files, lots of free space),
+        /// Tests that unallocated space compresses well due to zero-block deduplication.
+        /// Creates a disk with the specified filesystem and sparse data (few files, lots of free space),
         /// backs it up, and verifies the backup size is significantly smaller than the disk size.
         /// </summary>
-        [Test]
+        [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.FAT32)]
+        [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.Unknown)]
         [Category("DiskImage")]
-        [Category("DiskImageFAT32")]
-        public async Task Test_FAT32_UnallocatedSpace_CompressesWell()
+        [Category("DiskImageFileSystem")]
+        public async Task Test_FileSystem_UnallocatedSpace_CompressesWell(int size, PartitionTableType tableType, FileSystemType fsType)
         {
-            await TestContext.Progress.WriteLineAsync("Test: FAT32 Unallocated Space Compression");
+            // Unknown filesystem type is only supported on Linux
+            if (fsType == FileSystemType.Unknown && !OperatingSystem.IsLinux())
+                Assert.Ignore("Unknown filesystem type is only supported on Linux.");
 
-            // Create source disk with FAT32 partition (50MB disk)
-            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (int)(50 * MiB));
-            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+            await TestContext.Progress.WriteLineAsync($"Test: {fsType} Unallocated Space Compression");
+
+            // Create source disk with specified partition
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, size);
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, tableType, [(fsType, 0)]);
             await TestContext.Progress.WriteLineAsync($"Source disk created at: {_sourceImagePath}");
 
             // Generate minimal test data (sparse data - only a few small files)
@@ -1454,9 +1460,8 @@ namespace Duplicati.UnitTest.DiskImage
 
             // The backup should be significantly smaller than the full disk size
             // With zero-block deduplication, unallocated clusters return zeros which compress very well
-            var diskSize = 50 * MiB;
-            var compressionRatio = (double)actualBackupSize / diskSize;
-            await TestContext.Progress.WriteLineAsync($"Compression ratio: {compressionRatio:P2} ({actualBackupSize}/{diskSize})");
+            var compressionRatio = (double)actualBackupSize / size;
+            await TestContext.Progress.WriteLineAsync($"Compression ratio: {compressionRatio:P2} ({actualBackupSize}/{size})");
 
             // Backup should be less than 50% of disk size due to zero deduplication
             // (This is a conservative estimate - actual ratio should be much better)
@@ -1464,50 +1469,55 @@ namespace Duplicati.UnitTest.DiskImage
                 "Backup with sparse data should be significantly smaller than full disk size due to zero-block deduplication");
 
             // Create restore disk and verify restore works
-            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (int)(50 * MiB));
-            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, size);
+            _diskHelper.InitializeDisk(restoreDrivePath, tableType, []);
             _diskHelper.Unmount(restoreDrivePath);
 
             var restoreResults = RunRestore(restoreDrivePath);
             TestUtils.AssertResults(restoreResults);
 
             // Reattach and verify
-            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: true);
-            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, PartitionTableType.GPT, readOnly: true);
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: true);
+            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, tableType, readOnly: true);
 
-            var fsTypes = new[] { FileSystemType.FAT32 };
+            var fsTypes = new[] { fsType };
             var sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
             var restoreMounted = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
 
             CompareDirectories(sourceMounted.First(), restoreMounted.First());
 
-            await TestContext.Progress.WriteLineAsync("FAT32 unallocated space compression verified successfully");
+            await TestContext.Progress.WriteLineAsync($"{fsType} unallocated space compression verified successfully");
         }
 
         /// <summary>
-        /// Tests that a completely full FAT32 disk has all blocks marked as allocated.
-        /// Creates a FAT32 disk filled with data and verifies the backup reads the full disk.
+        /// Tests that a completely full disk has all blocks marked as allocated.
+        /// Creates a disk filled with data and verifies the backup reads the full disk.
         /// </summary>
-        [Test]
+        [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.FAT32)]
+        [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.Unknown)]
         [Category("DiskImage")]
-        [Category("DiskImageFAT32")]
-        [Category("DiskImageLocal")]
-        public async Task Test_FAT32_FullDisk_AllBlocksAllocated()
+        [Category("DiskImageFileSystem")]
+        public async Task Test_FileSystem_FullDisk_AllBlocksAllocated(int size, PartitionTableType tableType, FileSystemType fsType)
         {
-            await TestContext.Progress.WriteLineAsync("Test: FAT32 Full Disk - All Blocks Allocated");
+            // Unknown filesystem type is only supported on Linux
+            if (fsType == FileSystemType.Unknown && !OperatingSystem.IsLinux())
+                Assert.Ignore("Unknown filesystem type is only supported on Linux.");
 
-            // Create source disk with FAT32 partition (must be at least 32MB for FAT32)
-            var diskSize = 50 * MiB;
-            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (int)diskSize);
-            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
-            await TestContext.Progress.WriteLineAsync($"Source disk created at: {_sourceImagePath} ({diskSize} bytes)");
+            await TestContext.Progress.WriteLineAsync($"Test: {fsType} Full Disk - All Blocks Allocated");
+
+            // Create source disk with specified partition (must be at least 32MB for FAT32)
+            var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, size);
+            var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, tableType, [(fsType, 0)]);
+            await TestContext.Progress.WriteLineAsync($"Source disk created at: {_sourceImagePath} ({size} bytes)");
 
             // Fill the disk with data (create enough files to fill most of the space)
             var partitionPath = sourcePartitions.First();
 
             // Generate many files to fill the disk
             // Using larger files to fill space quickly
-            for (int batch = 0; batch < 10; batch++)
+            // Adjust batch count based on filesystem type - Unknown (raw) mode may need different amounts
+            var batchCount = fsType == FileSystemType.Unknown ? 5 : 10;
+            for (int batch = 0; batch < batchCount; batch++)
             {
                 await ToolTests.GenerateTestData(Path.Combine(partitionPath, $"batch_{batch}"), 10, 0, 0, 4096);
             }
@@ -1524,28 +1534,28 @@ namespace Duplicati.UnitTest.DiskImage
             // The backup should have examined a significant portion of the disk
             // Note: We examine files (blocks), and with a full disk, SizeOfOpenedFiles
             // should be close to the partition size
-            Assert.That(backupResults.SizeOfOpenedFiles, Is.GreaterThan(diskSize * 0.5),
+            Assert.That(backupResults.SizeOfOpenedFiles, Is.GreaterThan(size * 0.5),
                 "Full disk backup should examine most of the disk size");
 
             // Create restore disk and verify restore
-            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (int)diskSize);
-            _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, []);
+            var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, size);
+            _diskHelper.InitializeDisk(restoreDrivePath, tableType, []);
             _diskHelper.Unmount(restoreDrivePath);
 
             var restoreResults = RunRestore(restoreDrivePath);
             TestUtils.AssertResults(restoreResults);
 
             // Reattach and verify
-            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, PartitionTableType.GPT, readOnly: true);
-            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, PartitionTableType.GPT, readOnly: true);
+            sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: true);
+            restoreDrivePath = _diskHelper.ReAttach(_restoreImagePath, restoreDrivePath, tableType, readOnly: true);
 
-            var fsTypes = new[] { FileSystemType.FAT32 };
+            var fsTypes = new[] { fsType };
             var sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true, fileSystemTypes: fsTypes);
             var restoreMounted = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
 
             CompareDirectories(sourceMounted.First(), restoreMounted.First());
 
-            await TestContext.Progress.WriteLineAsync("FAT32 full disk backup verified successfully");
+            await TestContext.Progress.WriteLineAsync($"{fsType} full disk backup verified successfully");
         }
 
         #endregion
