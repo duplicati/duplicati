@@ -404,12 +404,20 @@ internal class Fat32Filesystem : IFilesystem
             throw new ArgumentException("The specified file is a directory.", nameof(file));
 
         long address = fat32File.Address ?? throw new ArgumentException("File address is required.", nameof(file));
-        long size = fat32File.Size;
+        long requestedSize = fat32File.Size;
 
-        BoundsCheck(address, size);
+        BoundsCheck(address, requestedSize);
 
-        // For write operations, always use the full stream (same as UnknownFilesystemStream)
-        return new Fat32Stream(Partition.PartitionTable.RawDisk!, Partition.StartOffset + address, size, readEnabled: false, writeEnabled: true);
+        // Calculate actual available size based on target partition
+        // This ensures we fail fast if the target is too small
+        long actualSize = Math.Min(requestedSize, Partition.Size - address);
+        if (actualSize < requestedSize)
+            throw new IOException($"Target partition is too small to write block at address 0x{address:X}. " +
+                $"Requested size: {requestedSize} bytes, Available: {actualSize} bytes. " +
+                $"The target disk may be smaller than the source disk.");
+
+        // For write operations, always use the full stream
+        return new Fat32Stream(Partition.PartitionTable.RawDisk!, Partition.StartOffset + address, actualSize, readEnabled: false, writeEnabled: true);
     }
 
     /// <inheritdoc />
@@ -431,11 +439,19 @@ internal class Fat32Filesystem : IFilesystem
             throw new ArgumentException("The specified file is a directory.", nameof(file));
 
         long address = fat32File.Address ?? throw new ArgumentException("File address is required.", nameof(file));
-        long size = fat32File.Size;
+        long requestedSize = fat32File.Size;
 
-        BoundsCheck(address, size);
+        BoundsCheck(address, requestedSize);
 
-        return new Fat32Stream(Partition.PartitionTable.RawDisk!, Partition.StartOffset + address, size, readEnabled: true, writeEnabled: true);
+        // Calculate actual available size based on target partition
+        // This ensures we fail fast if the target is too small
+        long actualSize = Math.Min(requestedSize, Partition.Size - address);
+        if (actualSize < requestedSize)
+            throw new IOException($"Target partition is too small to write block at address 0x{address:X}. " +
+                $"Requested size: {requestedSize} bytes, Available: {actualSize} bytes. " +
+                $"The target disk may be smaller than the source disk.");
+
+        return new Fat32Stream(Partition.PartitionTable.RawDisk!, Partition.StartOffset + address, actualSize, readEnabled: true, writeEnabled: true);
     }
 
     /// <inheritdoc />
@@ -677,8 +693,8 @@ internal class Fat32Filesystem : IFilesystem
             if (buffer.Length - offset < count)
                 throw new ArgumentException("Invalid offset and count for buffer length");
 
-            if (_position + count > _size)
-                throw new ArgumentException("Write would exceed stream size");
+            if (_position >= _size)
+                throw new IOException($"Cannot write at position {_position}: stream has ended (size: {_size}). The target partition may be smaller than the source.");
 
             Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
             _position += count;
@@ -730,8 +746,8 @@ internal class Fat32Filesystem : IFilesystem
             if (buffer.Length - offset < count)
                 throw new ArgumentException("Invalid offset and count for buffer length");
 
-            if (_position + count > _size)
-                throw new ArgumentException("Write would exceed stream size");
+            if (_position >= _size)
+                throw new IOException($"Cannot write at position {_position}: stream has ended (size: {_size}). The target partition may be smaller than the source.");
 
             Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
             _position += count;

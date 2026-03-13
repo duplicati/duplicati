@@ -216,11 +216,19 @@ internal class UnknownFilesystem : IFilesystem
             throw new ArgumentException("The specified file is a directory.", nameof(file));
 
         long address = unknownFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
-        long size = unknownFile.Size;
+        long requestedSize = unknownFile.Size;
 
-        BoundsCheck(address, size);
+        BoundsCheck(address, requestedSize);
 
-        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, size, readEnabled: false, writeEnabled: true);
+        // Calculate actual available size based on target partition
+        // This ensures we fail fast if the target is too small
+        long actualSize = Math.Min(requestedSize, m_partition.Size - address);
+        if (actualSize < requestedSize)
+            throw new IOException($"Target partition is too small to write block at address 0x{address:X}. " +
+                $"Requested size: {requestedSize} bytes, Available: {actualSize} bytes. " +
+                $"The target disk may be smaller than the source disk.");
+
+        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, actualSize, readEnabled: false, writeEnabled: true);
     }
 
     /// <inheritdoc />
@@ -242,11 +250,19 @@ internal class UnknownFilesystem : IFilesystem
             throw new ArgumentException("The specified file is a directory.", nameof(file));
 
         long address = unknownFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
-        long size = unknownFile.Size;
+        long requestedSize = unknownFile.Size;
 
-        BoundsCheck(address, size);
+        BoundsCheck(address, requestedSize);
 
-        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, size, readEnabled: true, writeEnabled: true);
+        // Calculate actual available size based on target partition
+        // This ensures we fail fast if the target is too small
+        long actualSize = Math.Min(requestedSize, m_partition.Size - address);
+        if (actualSize < requestedSize)
+            throw new IOException($"Target partition is too small to write block at address 0x{address:X}. " +
+                $"Requested size: {requestedSize} bytes, Available: {actualSize} bytes. " +
+                $"The target disk may be smaller than the source disk.");
+
+        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, actualSize, readEnabled: true, writeEnabled: true);
     }
 
     /// <inheritdoc />
@@ -452,8 +468,8 @@ internal class UnknownFilesystem : IFilesystem
             if (buffer.Length - offset < count)
                 throw new ArgumentException("Invalid offset and count for buffer length");
 
-            if (_position + count > _size)
-                throw new ArgumentException("Write would exceed stream size");
+            if (_position >= _size)
+                throw new IOException($"Cannot write at position {_position}: stream has ended (size: {_size}). The target partition may be smaller than the source.");
 
             Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
             _position += count;
@@ -506,8 +522,8 @@ internal class UnknownFilesystem : IFilesystem
             if (buffer.Length - offset < count)
                 throw new ArgumentException("Invalid offset and count for buffer length");
 
-            if (_position + count > _size)
-                throw new ArgumentException("Write would exceed stream size");
+            if (_position >= _size)
+                throw new IOException($"Cannot write at position {_position}: stream has ended (size: {_size}). The target partition may be smaller than the source.");
 
             Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
             _position += count;
