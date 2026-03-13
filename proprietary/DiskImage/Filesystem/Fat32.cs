@@ -270,6 +270,37 @@ internal class Fat32Filesystem : IFilesystem
         return metadata;
     }
 
+    /// <summary>
+    /// Tries to detect whether a given partition has a FAT32 file system.
+    /// </summary>
+    /// <param name="disk">The raw disk to check for the filesystem.</param>
+    /// <param name="offset">The offset on the disk where the partition starts.</param>
+    /// <param name="size">The size of the partition.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task that resolves to true if a valid FAT32 filesystem is detected, otherwise false.</returns>
+    public static async Task<bool> DetectAsync(IRawDisk disk, long offset, int size, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var bootSectorData = new byte[512];
+            using var stream = await disk.ReadBytesAsync(offset, size, cancellationToken);
+            var bytesRead = await stream.ReadAsync(bootSectorData, cancellationToken);
+            if (bytesRead < 512)
+                return false;
+
+            // Try FAT32: the constructor validates the boot sector signature and
+            // the "FAT32" filesystem-type string at offset 0x52.
+            _ = new Fat32BootSector(bootSectorData);
+            return true;
+        }
+        catch
+        {
+            // Unable to read the partition
+        }
+
+        return false;
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {

@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
+using Duplicati.Proprietary.DiskImage.Filesystem;
 using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
@@ -391,7 +393,7 @@ internal class GPT : IPartitionTable
         PartitionType partitionType = DeterminePartitionType(typeGuid);
 
         // Determine filesystem type based on partition name and known patterns
-        FileSystemType fsType = DetermineFilesystemType(name, typeGuid);
+        FileSystemType fsType = DetermineFilesystemType(startOffset, (int)size, typeGuid.ToString(), CancellationToken.None);
 
         return new BasePartition
         {
@@ -421,40 +423,27 @@ internal class GPT : IPartitionTable
     }
 
     /// <summary>
-    /// Determines the filesystem type based on the partition name and type GUID.
-    /// Uses heuristics based on common naming patterns and known GUIDs.
+    /// Determines the filesystem type based on the partition type GUID and partition data.
     /// </summary>
     /// <param name="name">The partition name.</param>
     /// <param name="typeGuid">The partition type GUID.</param>
     /// <returns>The corresponding <see cref="FileSystemType"/>.</returns>
-    private static FileSystemType DetermineFilesystemType(string name, Guid typeGuid)
+    private FileSystemType DetermineFilesystemType(long offset, int size, string typeGuid, CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrEmpty(name))
+        // First, we try to look at the GUID
+        if (typeGuid == "48465300-0000-11AA-AA11-00306543ECAC")
+            return FileSystemType.HFSPlus;
+
+        if (typeGuid == "7C3457EF-0000-11AA-AA11-00306543ECAC")
+            return FileSystemType.APFS;
+
+        if (m_rawDisk is not null)
         {
-            var upperName = name.ToUpperInvariant();
-            if (upperName.Contains("NTFS")) return FileSystemType.NTFS;
-            if (upperName.Contains("FAT32")) return FileSystemType.FAT32;
-            if (upperName.Contains("FAT16")) return FileSystemType.FAT16;
-            if (upperName.Contains("FAT12")) return FileSystemType.FAT12;
-            if (upperName.Contains("EXFAT")) return FileSystemType.ExFAT;
-            if (upperName.Contains("HFS")) return FileSystemType.HFSPlus;
-            if (upperName.Contains("APFS")) return FileSystemType.APFS;
-            if (upperName.Contains("EXT4")) return FileSystemType.Ext4;
-            if (upperName.Contains("EXT3")) return FileSystemType.Ext3;
-            if (upperName.Contains("EXT2")) return FileSystemType.Ext2;
-            if (upperName.Contains("XFS")) return FileSystemType.XFS;
-            if (upperName.Contains("BTRFS")) return FileSystemType.Btrfs;
-            if (upperName.Contains("ZFS")) return FileSystemType.ZFS;
-            if (upperName.Contains("REFS")) return FileSystemType.ReFS;
+            if (Fat32Filesystem.DetectAsync(m_rawDisk, offset, size, cancellationToken).Await())
+                return FileSystemType.FAT32;
         }
 
-        // Fallback based on GUID
-        return typeGuid.ToString().ToUpper() switch
-        {
-            "48465300-0000-11AA-AA11-00306543ECAC" => FileSystemType.HFSPlus,
-            "7C3457EF-0000-11AA-AA11-00306543ECAC" => FileSystemType.APFS,
-            _ => FileSystemType.Unknown
-        };
+        return FileSystemType.Unknown;
     }
 
     // GPT-specific properties
