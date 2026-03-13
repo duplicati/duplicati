@@ -842,6 +842,137 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// Reproducer for a rare CI failure where a faulty index file is detected
+        /// after a failed backup with no retries. The issue occurs when:
+        /// 1. A dblock upload fails (PutBefore) with no retries
+        /// 2. A second dblock+dindex pair has already been uploaded in parallel
+        /// 3. The subsequent successful backup inherits the orphaned dblock
+        /// 4. The Test operation detects the index file as faulty
+        ///
+        /// This test makes the race condition more deterministic by failing
+        /// the first dblock upload after a delay, ensuring the second upload
+        /// has time to complete.
+        /// </summary>
+        [Test]
+        [Category("Disruption")]
+        public async Task TestFaultyIndexFileAfterFailedUploadWithNoRetries()
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+
+            // Make a base backup
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+
+            // Ensure that the target folder only has a single dlist file
+            Assert.AreEqual(1, Directory.EnumerateFiles(TARGETFOLDER, "*.dlist.*").Count(),
+                "There should be only one dlist file in the target folder after initial backup");
+
+            // Modify source files to force new dblock uploads
+            ModifySourceFiles();
+
+            // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+
+            var hasFailed = false;
+            var secondUploadStarted = false;
+            var secondUploadCompleted = false;
+
+            // Fail the first dblock PutBefore, but allow a second upload to complete.
+            // The Thread.Sleep ensures the second upload has time to start and complete
+            // before the first upload's failure propagates.
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                if (action.IsGetOperation)
+                    return true;
+
+                if (!hasFailed && action == DeterministicErrorBackend.BackendAction.PutBefore)
+                {
+                    hasFailed = true;
+                    // Allow the second upload to start and potentially complete
+                    Thread.Sleep(1000);
+                    return true;
+                }
+
+                if (action == DeterministicErrorBackend.BackendAction.PutBefore)
+                    secondUploadStarted = true;
+                if (action == DeterministicErrorBackend.BackendAction.PutAfter)
+                    secondUploadCompleted = true;
+
+                return false;
+            };
+
+            // This backup should fail due to the injected error
+            using (var c = new Controller(failtarget, testopts, null))
+                NUnit.Framework.Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(
+                    () => c.Backup(new string[] { DATAFOLDER }));
+
+            NUnit.Framework.Assert.That(hasFailed, Is.True, "Failed to trigger the upload error");
+            NUnit.Framework.Assert.That(secondUploadStarted, Is.True, "Second upload was not started");
+            NUnit.Framework.Assert.That(secondUploadCompleted, Is.True, "Second upload was not completed");
+
+            // Ensure that the target folder still has only one dlist file (failed backup should not add one)
+            Assert.AreEqual(1, Directory.EnumerateFiles(TARGETFOLDER, "*.dlist.*").Count(),
+                "There should still be only one dlist file after the failed backup");
+
+            // Now do a successful backup - this should clean up the orphaned files properly
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+
+            // Verify with full remote verification - this is where the faulty index file warning appears
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            {
+                try
+                {
+                    TestUtils.AssertResults(c.Test(long.MaxValue));
+                }
+                catch (TestUtils.TestVerificationException e)
+                {
+                    using var db = await LocalDatabase.CreateLocalDatabaseAsync(testopts["dbpath"], "test", true, null, CancellationToken.None).ConfigureAwait(false);
+                    using var cmd = db.Connection.CreateCommand();
+
+                    var sb = new StringBuilder();
+                    sb.AppendLine(e.Message);
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "Remotevolume", null));
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "IndexBlockLink", null));
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "File", null));
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "FilesetEntry", null));
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "Fileset", null));
+
+                    sb.AppendLine("Files in the source folder:");
+                    foreach (var fe in Directory.EnumerateFileSystemEntries(this.DATAFOLDER))
+                        sb.AppendLine($"File: {fe}");
+
+                    Assert.Fail(sb.ToString());
+                }
+            }
+
+            // Test that we can recreate the database from remote files
+            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+            if (File.Exists(recreatedDatabaseFile))
+                File.Delete(recreatedDatabaseFile);
+
+            testopts["dbpath"] = recreatedDatabaseFile;
+
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Repair());
+
+            // Check that we have the expected number of versions
+            // The recreated database may have 2 or 3 filesets depending on whether
+            // the failed backup's synthetic filelist was created
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var listResults = c.List();
+                TestUtils.AssertResults(listResults);
+                var filesetCount = listResults.Filesets.Count();
+                NUnit.Framework.Assert.That(filesetCount, Is.GreaterThanOrEqualTo(2).And.LessThanOrEqualTo(3),
+                    $"Expected 2 or 3 filesets after recreation, got {filesetCount}");
+            }
+        }
+
         [Test]
         [Category("Disruption")]
         [TestCase(true, false)]
