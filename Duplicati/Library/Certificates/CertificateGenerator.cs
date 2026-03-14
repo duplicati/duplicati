@@ -106,7 +106,10 @@ public static class CertificateGenerator
         // Use a temporary password to avoid unprotected key material in memory
         var tempPassword = CertificateStorageHelper.GeneratePfxPassword();
         var export = certificate.Export(X509ContentType.Pfx, tempPassword);
-        var certWithKey = X509CertificateLoader.LoadPkcs12(export, tempPassword);
+        var certWithKey = X509CertificateLoader.LoadPkcs12(
+            export,
+            tempPassword,
+            X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
         CryptographicOperations.ZeroMemory(export);
 
         // Create a new ECDsa instance with the same key parameters for the return value
@@ -224,7 +227,10 @@ public static class CertificateGenerator
             // Use a temporary password to avoid unprotected key material in memory
             var tempPassword = CertificateStorageHelper.GeneratePfxPassword();
             var export = certWithKey.Export(X509ContentType.Pfx, tempPassword);
-            var finalCert = X509CertificateLoader.LoadPkcs12(export, tempPassword);
+            var finalCert = X509CertificateLoader.LoadPkcs12(
+                export,
+                tempPassword,
+                X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
             CryptographicOperations.ZeroMemory(export);
 
             // Create a new ECDsa instance with the same key parameters
