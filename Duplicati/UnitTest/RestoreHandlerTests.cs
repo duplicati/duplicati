@@ -249,6 +249,74 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
+        public void RestoreThreeVersionsWithoutLocalDb([Values(0, 1, 2)] int version)
+        {
+            // Create three versions with different file contents
+            var file1Path = Path.Combine(this.DATAFOLDER, "file1.txt");
+            var file2Path = Path.Combine(this.DATAFOLDER, "file2.txt");
+
+            // Version 0 (oldest): Create initial files
+            File.WriteAllText(file1Path, "version 0 content");
+            File.WriteAllText(file2Path, "version 0 file2");
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Version 1: Modify file1, keep file2
+            File.WriteAllText(file1Path, "version 1 content");
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Version 2 (newest): Modify both files
+            File.WriteAllText(file1Path, "version 2 content");
+            File.WriteAllText(file2Path, "version 2 file2");
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Prepare expected content based on version being restored
+            // Note: In Duplicati, version 0 is the MOST RECENT backup
+            string expectedFile1Content;
+            string expectedFile2Content;
+            switch (version)
+            {
+                case 0: // Most recent (version 2 in our creation order)
+                    expectedFile1Content = "version 2 content";
+                    expectedFile2Content = "version 2 file2";
+                    break;
+                case 1: // Second most recent (version 1 in our creation order)
+                    expectedFile1Content = "version 1 content";
+                    expectedFile2Content = "version 0 file2";
+                    break;
+                case 2: // Oldest (version 0 in our creation order)
+                    expectedFile1Content = "version 0 content";
+                    expectedFile2Content = "version 0 file2";
+                    break;
+                default:
+                    throw new ArgumentException("Invalid version");
+            }
+
+            // Restore with --version and --no-local-db
+            var restoreOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["version"] = version.ToString(),
+                ["no-local-db"] = "true"
+            };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+                TestUtils.AssertResults(c.Restore(new[] { "*" }));
+
+            // Verify restored files match the expected version
+            var restoredFile1Path = Path.Combine(this.RESTOREFOLDER, "file1.txt");
+            var restoredFile2Path = Path.Combine(this.RESTOREFOLDER, "file2.txt");
+
+            Assert.IsTrue(File.Exists(restoredFile1Path), "Restored file1 should exist");
+            Assert.IsTrue(File.Exists(restoredFile2Path), "Restored file2 should exist");
+            Assert.AreEqual(expectedFile1Content, File.ReadAllText(restoredFile1Path), $"File1 content mismatch for version {version}");
+            Assert.AreEqual(expectedFile2Content, File.ReadAllText(restoredFile2Path), $"File2 content mismatch for version {version}");
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
         public void RestoreOtherProcessIsUsingFile()
         {
             var file1Path = Path.Combine(this.DATAFOLDER, "file1");
