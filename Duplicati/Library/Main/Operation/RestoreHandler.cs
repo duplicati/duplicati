@@ -110,6 +110,11 @@ namespace Duplicati.Library.Main.Operation
             if (time.Ticks > 0)
                 time = Library.Utility.Utility.DeserializeDateTime(Library.Utility.Utility.SerializeDateTime(time)).ToUniversalTime();
 
+            versions ??= [];
+
+            if (versions.Length == 0 && time.Ticks == 0)
+                return null;
+
             return
                 _lst =>
                 {
@@ -121,7 +126,7 @@ namespace Duplicati.Library.Main.Operation
 
                     var numbers = lst.Zip(Enumerable.Range(0, lst.Length), (a, b) => new KeyValuePair<long, IParsedVolume>(b, a)).ToList();
 
-                    if (time.Ticks > 0 && versions != null && versions.Length > 0)
+                    if (time.Ticks > 0 && versions.Length > 0)
                         return from n in numbers
                                where (singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time) && versions.Contains(n.Key)
                                select n;
@@ -129,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
                         return from n in numbers
                                where (singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time)
                                select n;
-                    else if (versions != null && versions.Length > 0)
+                    else if (versions.Length > 0)
                         return from n in numbers
                                where versions.Contains(n.Key)
                                select n;
