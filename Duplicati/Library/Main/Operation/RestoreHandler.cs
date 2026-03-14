@@ -103,6 +103,7 @@ namespace Duplicati.Library.Main.Operation
 
         public static RecreateDatabaseHandler.NumberedFilterFilelistDelegate GetNumberedFilelistFilterDelegate(DateTime time, long[] versions, bool singleTimeMatch = false)
         {
+            versions ??= [];
             if (versions.Length == 0 && time.Ticks == 0)
                 return null;
 
