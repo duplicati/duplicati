@@ -578,24 +578,19 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Checks if a file path is the geometry metadata file.
     /// </summary>
-    /// <param name="path">The file path to check.</param>
+    /// <remarks>Assumes the path has already been normalized by ParsePath.</remarks>
+    /// <param name="path">The file path to check (already normalized by ParsePath).</param>
     /// <returns><c>true</c> if the path is the geometry file; otherwise, <c>false</c>.</returns>
-    private static bool IsGeometryFile(string path)
+    private bool IsGeometryFile(string path)
     {
-        // Check for geometry.json (must be at root or top level)
-        // Valid paths: "geometry.json", "root/geometry.json"
-        if (!path.EndsWith("geometry.json", StringComparison.OrdinalIgnoreCase))
+        if (_targetDisk == null)
             return false;
 
-        // TODO only check the last path for now.
-        return true;
+        string geometryDevicePath = NormalizePath(_targetDisk.DevicePath);
 
-        // Normalize path separators
-        var normalized = path.Replace('\\', '/').TrimStart('/');
-        var segments = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        string expectedGeometryPath = $"{geometryDevicePath}{Path.DirectorySeparatorChar}geometry.json";
 
-        // Should be at most 2 segments (e.g. "root/geometry.json")
-        return segments.Length <= 2;
+        return string.Equals(path, expectedGeometryPath, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <inheritdoc />
