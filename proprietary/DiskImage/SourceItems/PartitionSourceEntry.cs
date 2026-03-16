@@ -11,6 +11,7 @@ using Duplicati.Proprietary.DiskImage.Partition;
 using Duplicati.Proprietary.DiskImage.Filesystem;
 using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.General;
+using Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
 
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 

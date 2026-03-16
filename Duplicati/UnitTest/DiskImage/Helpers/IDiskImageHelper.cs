@@ -25,89 +25,88 @@ using Duplicati.Proprietary.DiskImage.General;
 
 #nullable enable
 
-namespace Duplicati.UnitTest.DiskImage
+namespace Duplicati.UnitTest.DiskImage.Helpers;
+
+/// <summary>
+/// Interface for disk image helper operations that work across different operating systems.
+/// Provides methods for creating, attaching, formatting, and managing virtual disk images
+/// for testing disk image backup and restore operations.
+/// </summary>
+public interface IDiskImageHelper : IDisposable
 {
     /// <summary>
-    /// Interface for disk image helper operations that work across different operating systems.
-    /// Provides methods for creating, attaching, formatting, and managing virtual disk images
-    /// for testing disk image backup and restore operations.
+    /// Creates a virtual disk file, attaches it to the system, and returns the physical drive path.
     /// </summary>
-    public interface IDiskImageHelper : IDisposable
-    {
-        /// <summary>
-        /// Creates a virtual disk file, attaches it to the system, and returns the physical drive path.
-        /// </summary>
-        /// <param name="imagePath">The path where the disk image file will be created.</param>
-        /// <param name="sizeB">The size of the disk image in bytes.</param>
-        /// <returns>The physical drive path (e.g., \\.\PhysicalDriveN on Windows, /dev/loopN on Linux).</returns>
-        string CreateDisk(string imagePath, long sizeB);
+    /// <param name="imagePath">The path where the disk image file will be created.</param>
+    /// <param name="sizeB">The size of the disk image in bytes.</param>
+    /// <returns>The physical drive path (e.g., \\.\PhysicalDriveN on Windows, /dev/loopN on Linux).</returns>
+    string CreateDisk(string imagePath, long sizeB);
 
-        /// <summary>
-        /// Initializes, partitions, and formats a disk based on the provided parameters
-        /// </summary>
-        /// <param name="diskIdentifier">The identifier of the disk to initialize.</param>
-        /// <param name="tableType">The type of partition table to create (e.g., GPT, MBR).</param>
-        /// <param name="partitions">An array of tuples specifying the file system type and size for each partition. If the size is 0, the partition will use the remaining available space.</param>
-        /// <returns>An array of mount points for the created partitions.</returns>
-        string[] InitializeDisk(string diskIdentifier, PartitionTableType tableType, (FileSystemType, long)[] partitions);
+    /// <summary>
+    /// Initializes, partitions, and formats a disk based on the provided parameters
+    /// </summary>
+    /// <param name="diskIdentifier">The identifier of the disk to initialize.</param>
+    /// <param name="tableType">The type of partition table to create (e.g., GPT, MBR).</param>
+    /// <param name="partitions">An array of tuples specifying the file system type and size for each partition. If the size is 0, the partition will use the remaining available space.</param>
+    /// <returns>An array of mount points for the created partitions.</returns>
+    string[] InitializeDisk(string diskIdentifier, PartitionTableType tableType, (FileSystemType, long)[] partitions);
 
-        /// <summary>
-        /// Mounts all of the partitions on the specified disk and returns their mount points.
-        /// </summary>
-        /// <param name="diskIdentifier">The identifier of the disk to mount.</param>
-        /// <param name="baseMountPath">Optional base path for mounting the partitions.</param>
-        /// <param name="readOnly">Indicates whether the partitions should be mounted as read-only.</param>
-        /// <param name="fileSystemTypes">Optional array of file system types for the partitions.</param>
-        /// <returns>An array of mount points for the mounted partitions.</returns>
-        string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false, FileSystemType[]? fileSystemTypes = null);
+    /// <summary>
+    /// Mounts all of the partitions on the specified disk and returns their mount points.
+    /// </summary>
+    /// <param name="diskIdentifier">The identifier of the disk to mount.</param>
+    /// <param name="baseMountPath">Optional base path for mounting the partitions.</param>
+    /// <param name="readOnly">Indicates whether the partitions should be mounted as read-only.</param>
+    /// <param name="fileSystemTypes">Optional array of file system types for the partitions.</param>
+    /// <returns>An array of mount points for the mounted partitions.</returns>
+    string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false, FileSystemType[]? fileSystemTypes = null);
 
-        /// <summary>
-        /// Unmounts all of the partitions on the specified disk, ensuring they are safely detached from the system. The disk will still be attached, but will be pulled offline. After this call, the disk device can be written to.
-        /// </summary>
-        /// <param name="diskIdentifier">The identifier of the disk to unmount.</param>
-        void Unmount(string diskIdentifier);
+    /// <summary>
+    /// Unmounts all of the partitions on the specified disk, ensuring they are safely detached from the system. The disk will still be attached, but will be pulled offline. After this call, the disk device can be written to.
+    /// </summary>
+    /// <param name="diskIdentifier">The identifier of the disk to unmount.</param>
+    void Unmount(string diskIdentifier);
 
-        /// <summary>
-        /// Cleans up and deletes a disk image file, ensuring it is detached first.
-        /// </summary>
-        /// <param name="imagePath">The path to the disk image file.</param>
-        /// <param name="diskIdentifier">The identifier of the disk to clean up. If null, the method will attempt to determine the disk based on the image path.</param>
-        void CleanupDisk(string imagePath, string? diskIdentifier = null);
+    /// <summary>
+    /// Cleans up and deletes a disk image file, ensuring it is detached first.
+    /// </summary>
+    /// <param name="imagePath">The path to the disk image file.</param>
+    /// <param name="diskIdentifier">The identifier of the disk to clean up. If null, the method will attempt to determine the disk based on the image path.</param>
+    void CleanupDisk(string imagePath, string? diskIdentifier = null);
 
-        /// <summary>
-        /// Checks if the current process has the necessary privileges to perform disk operations.
-        /// </summary>
-        /// <returns><c>true</c> if running with sufficient privileges; otherwise, <c>false</c>.</returns>
-        bool HasRequiredPrivileges();
+    /// <summary>
+    /// Checks if the current process has the necessary privileges to perform disk operations.
+    /// </summary>
+    /// <returns><c>true</c> if running with sufficient privileges; otherwise, <c>false</c>.</returns>
+    bool HasRequiredPrivileges();
 
-        /// <summary>
-        /// Retrieves the partition table information for a given disk identifier.
-        /// </summary>
-        /// <param name="diskIdentifier">The identifier of the disk.</param>
-        /// <returns>The partition table geometry of the disk.</returns>
-        PartitionTableGeometry GetPartitionTable(string diskIdentifier);
+    /// <summary>
+    /// Retrieves the partition table information for a given disk identifier.
+    /// </summary>
+    /// <param name="diskIdentifier">The identifier of the disk.</param>
+    /// <returns>The partition table geometry of the disk.</returns>
+    PartitionTableGeometry GetPartitionTable(string diskIdentifier);
 
-        /// <summary>
-        /// Retrieves the partition information for a given disk identifier.
-        /// </summary>
-        /// <param name="diskIdentifier">The identifier of the disk.</param>
-        /// <returns>An array of partition geometries for the disk.</returns>
-        PartitionGeometry[] GetPartitions(string diskIdentifier);
+    /// <summary>
+    /// Retrieves the partition information for a given disk identifier.
+    /// </summary>
+    /// <param name="diskIdentifier">The identifier of the disk.</param>
+    /// <returns>An array of partition geometries for the disk.</returns>
+    PartitionGeometry[] GetPartitions(string diskIdentifier);
 
-        /// <summary>
-        /// Flushes the specified disk. Important prior to reading the disk raw.
-        /// </summary>
-        /// <param name="diskIdentifier">The identifier of the disk to flush.</param>
-        void FlushDisk(string diskIdentifier);
+    /// <summary>
+    /// Flushes the specified disk. Important prior to reading the disk raw.
+    /// </summary>
+    /// <param name="diskIdentifier">The identifier of the disk to flush.</param>
+    void FlushDisk(string diskIdentifier);
 
-        /// <summary>
-        /// Re-attaches the disk, optionally as read-only. This is useful for ensuring the disk is in a clean state after unmounting, and can also be used to force a read-only re-attachment for testing read-only scenarios.
-        /// </summary>
-        /// <param name="imagePath">The path to the disk image file.</param>
-        /// <param name="diskIdentifier">The identifier of the disk to re-attach.</param>
-        /// <param name="tableType">The type of partition table on the disk.</param>
-        /// <param name="readOnly">Indicates whether the disk should be re-attached as read-only.</param>
-        /// <returns>The identifier of the re-attached disk.</returns>
-        string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false);
-    }
+    /// <summary>
+    /// Re-attaches the disk, optionally as read-only. This is useful for ensuring the disk is in a clean state after unmounting, and can also be used to force a read-only re-attachment for testing read-only scenarios.
+    /// </summary>
+    /// <param name="imagePath">The path to the disk image file.</param>
+    /// <param name="diskIdentifier">The identifier of the disk to re-attach.</param>
+    /// <param name="tableType">The type of partition table on the disk.</param>
+    /// <param name="readOnly">Indicates whether the disk should be re-attached as read-only.</param>
+    /// <returns>The identifier of the re-attached disk.</returns>
+    string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false);
 }

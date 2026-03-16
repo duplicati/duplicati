@@ -12,7 +12,7 @@ using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.General;
 using Duplicati.Proprietary.DiskImage.Partition;
 
-namespace Duplicati.Proprietary.DiskImage.Filesystem;
+namespace Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
 
 /// <summary>
 /// Metadata for FAT32 filesystems, storing cluster and block size information.

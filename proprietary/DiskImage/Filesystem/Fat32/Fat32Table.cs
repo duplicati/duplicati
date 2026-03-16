@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Proprietary.DiskImage.Partition;
 
-namespace Duplicati.Proprietary.DiskImage.Filesystem;
+namespace Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
 
 /// <summary>
 /// Reads and provides access to the FAT32 File Allocation Table (FAT).

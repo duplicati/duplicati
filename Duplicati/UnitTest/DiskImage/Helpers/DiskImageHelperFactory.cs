@@ -24,70 +24,69 @@ using System.Runtime.InteropServices;
 
 #nullable enable
 
-namespace Duplicati.UnitTest.DiskImage
+namespace Duplicati.UnitTest.DiskImage.Helpers;
+
+/// <summary>
+/// Factory class for creating the appropriate <see cref="IDiskImageHelper"/> implementation
+/// based on the host operating system.
+/// </summary>
+public static class DiskImageHelperFactory
 {
     /// <summary>
-    /// Factory class for creating the appropriate <see cref="IDiskImageHelper"/> implementation
-    /// based on the host operating system.
+    /// Creates and returns the appropriate disk image helper for the current operating system.
     /// </summary>
-    public static class DiskImageHelperFactory
+    /// <returns>An <see cref="IDiskImageHelper"/> implementation for the current OS.</returns>
+    /// <exception cref="PlatformNotSupportedException">Thrown when the current OS is not supported.</exception>
+    public static IDiskImageHelper Create()
     {
-        /// <summary>
-        /// Creates and returns the appropriate disk image helper for the current operating system.
-        /// </summary>
-        /// <returns>An <see cref="IDiskImageHelper"/> implementation for the current OS.</returns>
-        /// <exception cref="PlatformNotSupportedException">Thrown when the current OS is not supported.</exception>
-        public static IDiskImageHelper Create()
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return new WindowsDiskImageHelper();
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return new LinuxDiskImageHelper();
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return new MacOSDiskImageHelper();
+        }
+        else
+        {
+            throw new PlatformNotSupportedException($"Disk image operations are not supported on this operating system: {RuntimeInformation.OSDescription}");
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether disk image operations are supported on the current platform.
+    /// </summary>
+    /// <value><c>true</c> if disk image operations are supported; otherwise, <c>false</c>.</value>
+    public static bool IsSupported
+    {
+        get
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                || RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                || RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        }
+    }
+
+    /// <summary>
+    /// Gets the name of the current platform.
+    /// </summary>
+    /// <value>The platform name ("Windows", "Linux", "macOS", or "Unknown").</value>
+    public static string CurrentPlatformName
+    {
+        get
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return new WindowsDiskImageHelper();
-            }
+                return "Windows";
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                return new LinuxDiskImageHelper();
-            }
+                return "Linux";
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                return new MacOSDiskImageHelper();
-            }
+                return "macOS";
             else
-            {
-                throw new PlatformNotSupportedException($"Disk image operations are not supported on this operating system: {RuntimeInformation.OSDescription}");
-            }
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether disk image operations are supported on the current platform.
-        /// </summary>
-        /// <value><c>true</c> if disk image operations are supported; otherwise, <c>false</c>.</value>
-        public static bool IsSupported
-        {
-            get
-            {
-                return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                    || RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                    || RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-            }
-        }
-
-        /// <summary>
-        /// Gets the name of the current platform.
-        /// </summary>
-        /// <value>The platform name ("Windows", "Linux", "macOS", or "Unknown").</value>
-        public static string CurrentPlatformName
-        {
-            get
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    return "Windows";
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    return "Linux";
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                    return "macOS";
-                else
-                    return "Unknown";
-            }
+                return "Unknown";
         }
     }
 }

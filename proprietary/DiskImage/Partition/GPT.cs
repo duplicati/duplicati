@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
-using Duplicati.Proprietary.DiskImage.Filesystem;
+using Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
 using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;

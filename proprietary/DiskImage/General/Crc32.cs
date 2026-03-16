@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
-namespace Duplicati.Proprietary.DiskImage.Partition;
+namespace Duplicati.Proprietary.DiskImage.General;
 
 /// <summary>
 /// Provides CRC32 calculation utilities for partition table operations.

@@ -4,7 +4,7 @@ using System;
 using System.Buffers.Binary;
 using System.Text;
 
-namespace Duplicati.Proprietary.DiskImage.Filesystem;
+namespace Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
 
 /// <summary>
 /// Represents a parsed FAT32 Boot Sector (BIOS Parameter Block).

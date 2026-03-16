@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Proprietary.DiskImage.Partition;
 
-namespace Duplicati.Proprietary.DiskImage.Filesystem;
+namespace Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
 
 /// <summary>
 /// Walks the FAT32 directory tree to extract file metadata and build a cluster-to-timestamp map.
