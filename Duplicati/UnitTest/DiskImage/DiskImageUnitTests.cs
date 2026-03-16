@@ -3385,7 +3385,7 @@ public class DiskImageUnitTests : BasicSetupHelper
     /// Creates a RestoreProvider with mock partitions and filesystems for testing path parsing.
     /// Uses reflection to set up the internal state.
     /// </summary>
-    private static RestoreProvider CreateRestoreProviderForPathParsingTests()
+    private static RestoreProvider CreateRestoreProviderForPathParsingTests(IRawDisk rawDisk)
     {
         // Create a RestoreProvider using the default constructor (for metadata loading)
         var provider = new RestoreProvider();
@@ -3415,11 +3415,22 @@ public class DiskImageUnitTests : BasicSetupHelper
         // Use reflection to set the private fields
         var partitionsField = typeof(RestoreProvider).GetField("_partitions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         var filesystemsField = typeof(RestoreProvider).GetField("_filesystems", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var targetDiskField = typeof(RestoreProvider).GetField("_targetDisk", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
         partitionsField?.SetValue(provider, partitions);
         filesystemsField?.SetValue(provider, filesystems);
+        targetDiskField?.SetValue(provider, rawDisk);
 
         return provider;
+    }
+
+    /// <summary>
+    /// Creates a RestoreProvider with mock partitions and filesystems for testing path parsing.
+    /// Uses reflection to set up the internal state. Uses the GPT test disk for the device path.
+    /// </summary>
+    private static RestoreProvider CreateRestoreProviderForPathParsingTests()
+    {
+        return CreateRestoreProviderForPathParsingTests(s_gptRawDisk!);
     }
 
     /// <summary>
@@ -3756,8 +3767,10 @@ public class DiskImageUnitTests : BasicSetupHelper
 
         Assert.IsNotNull(parsePathMethod, "ParsePath method should exist.");
 
-        // Test with geometry.json file
-        var result = parsePathMethod!.Invoke(provider, ["geometry.json"]);
+        // Test with geometry file at the root of the device
+        // Use the actual device path from the GPT test disk
+        var geometryPath = $"{s_gptRawDisk!.DevicePath}/geometry.json";
+        var result = parsePathMethod!.Invoke(provider, [geometryPath]);
         Assert.IsNotNull(result, "Should return a tuple.");
 
         var tuple = ((string Type, IPartition? Partition, IFilesystem? Filesystem))result!;
