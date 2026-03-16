@@ -188,6 +188,8 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             return Windows.ListPhysicalDrivesAsync(cancellationToken);
         else if (OperatingSystem.IsMacOS())
             return Mac.ListPhysicalDrivesAsync(cancellationToken);
+        else if (OperatingSystem.IsLinux())
+            return Linux.ListPhysicalDrivesAsync(cancellationToken);
         else
             throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
     }
@@ -203,6 +205,8 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             return Windows.Prefix;
         else if (OperatingSystem.IsMacOS())
             return Mac.Prefix;
+        else if (OperatingSystem.IsLinux())
+            return Linux.Prefix;
         else
             throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
     }
