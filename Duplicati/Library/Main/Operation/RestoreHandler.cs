@@ -101,7 +101,16 @@ namespace Duplicati.Library.Main.Operation
             return tmp.CompressionModule;
         }
 
-        public static RecreateDatabaseHandler.NumberedFilterFilelistDelegate FilterNumberedFilelist(DateTime time, long[] versions, bool singleTimeMatch = false)
+        public static RecreateDatabaseHandler.NumberedFilterFilelistDelegate GetNumberedFilelistFilterDelegate(DateTime time, long[] versions, bool singleTimeMatch = false)
+        {
+            versions ??= [];
+            if (versions.Length == 0 && time.Ticks == 0)
+                return null;
+
+            return (filelist) => FilterNumberedFilelist(filelist, time, versions, singleTimeMatch);
+        }
+
+        public static IEnumerable<KeyValuePair<long, IParsedVolume>> FilterNumberedFilelist(IEnumerable<IParsedVolume> filelist, DateTime time, long[] versions, bool singleTimeMatch = false)
         {
             if (time.Kind == DateTimeKind.Unspecified)
                 throw new Exception("Unspecified datetime instance, must be either local or UTC");
@@ -110,32 +119,29 @@ namespace Duplicati.Library.Main.Operation
             if (time.Ticks > 0)
                 time = Library.Utility.Utility.DeserializeDateTime(Library.Utility.Utility.SerializeDateTime(time)).ToUniversalTime();
 
-            return
-                _lst =>
-                {
-                    // Unwrap, so we do not query the remote storage twice
-                    var lst = (from n in _lst
-                               where n.FileType == RemoteVolumeType.Files
-                               orderby n.Time descending
-                               select n).ToArray();
+            versions ??= [];
+            // Unwrap, so we do not query the remote storage twice
+            var lst = (from n in filelist
+                       where n.FileType == RemoteVolumeType.Files
+                       orderby n.Time descending
+                       select n).ToArray();
 
-                    var numbers = lst.Zip(Enumerable.Range(0, lst.Length), (a, b) => new KeyValuePair<long, IParsedVolume>(b, a)).ToList();
+            var numbers = lst.Zip(Enumerable.Range(0, lst.Length), (a, b) => new KeyValuePair<long, IParsedVolume>(b, a)).ToList();
 
-                    if (time.Ticks > 0 && versions != null && versions.Length > 0)
-                        return from n in numbers
-                               where (singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time) && versions.Contains(n.Key)
-                               select n;
-                    else if (time.Ticks > 0)
-                        return from n in numbers
-                               where (singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time)
-                               select n;
-                    else if (versions != null && versions.Length > 0)
-                        return from n in numbers
-                               where versions.Contains(n.Key)
-                               select n;
-                    else
-                        return numbers;
-                };
+            if (time.Ticks > 0 && versions.Length > 0)
+                return from n in numbers
+                       where (singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time) && versions.Contains(n.Key)
+                       select n;
+            else if (time.Ticks > 0)
+                return from n in numbers
+                       where (singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time)
+                       select n;
+            else if (versions.Length > 0)
+                return from n in numbers
+                       where versions.Contains(n.Key)
+                       select n;
+            else
+                return numbers;
         }
 
         public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination)
@@ -167,7 +173,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
                     tmpdb = new TempFile();
-                    RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
+                    RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = GetNumberedFilelistFilterDelegate(m_options.Time, m_options.Version);
                     db = await LocalRestoreDatabase.CreateAsync(tmpdb, null, m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);

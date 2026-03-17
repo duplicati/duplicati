@@ -46,6 +46,8 @@ public static class Program
                 Commands.Upgrade.Create(),
                 Commands.List.Create(),
                 Commands.Execute.Create(),
+                Commands.Verify.Create(),
+                Commands.Cleanup.Create(),
             };
 
         return new CommandLineBuilder(rootCmd)
