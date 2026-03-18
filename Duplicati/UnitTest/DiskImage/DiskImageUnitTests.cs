@@ -3769,7 +3769,7 @@ public class DiskImageUnitTests : BasicSetupHelper
 
         // Test with geometry file at the root of the device
         // Use the actual device path from the GPT test disk
-        var geometryPath = $"{s_gptRawDisk!.DevicePath}/geometry.json";
+        var geometryPath = $"{s_gptRawDisk!.DevicePath}{Path.DirectorySeparatorChar}geometry.json";
         var result = parsePathMethod!.Invoke(provider, [geometryPath]);
         Assert.IsNotNull(result, "Should return a tuple.");
 

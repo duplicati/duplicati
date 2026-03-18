@@ -588,7 +588,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         string geometryDevicePath = NormalizePath(_targetDisk.DevicePath);
 
-        string expectedGeometryPath = $"{geometryDevicePath}/geometry.json";
+        string expectedGeometryPath = $"{geometryDevicePath}{Path.DirectorySeparatorChar}geometry.json";
 
         return string.Equals(path, expectedGeometryPath, StringComparison.OrdinalIgnoreCase);
     }
