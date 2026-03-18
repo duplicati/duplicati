@@ -66,7 +66,13 @@ namespace RemoteSynchronization
         List<string> SrcOptions,
         bool VerifyContents,
         bool VerifyGetAfterPut
-    );
+    )
+    {
+        public override string ToString()
+        {
+            return $"Src: {Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(Src)}, Dst: {Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(Dst)}, AutoCreateFolders: {AutoCreateFolders}, BackendRetries: {BackendRetries}, BackendRetryDelay: {BackendRetryDelay}, BackendRetryWithExponentialBackoff: {BackendRetryWithExponentialBackoff}, Confirm: {Confirm}, DryRun: {DryRun}, Force: {Force}, LogFile: {LogFile}, LogLevel: {LogLevel}, ParseArgumentsOnly: {ParseArgumentsOnly}, Progress: {Progress}, Retention: {Retention}, Retry: {Retry}, VerifyContents: {VerifyContents}, VerifyGetAfterPut: {VerifyGetAfterPut}";
+        }
+    };
 
     /// <summary>
     /// Remote synchronization tool.
